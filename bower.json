@@ -1,0 +1,15 @@
+{
+  "name": "editor",
+  "version": "0.0.1",
+  "dependencies": {
+    "angular": "PatternConsulting/bower-angular#1.1.5",
+    "json3": "~3.2.4",
+    "es5-shim": "~2.0.8",
+    "raml-parser": "git@github.com:restful-api-modeling-lang/javascript-parser.git",
+    "CodeMirror": "git@github.com:marijnh/CodeMirror.git"
+  },
+  "devDependencies": {
+    "angular-mocks": "PatternConsulting/bower-angular#1.1.5",
+    "angular-scenario": "PatternConsulting/bower-angular#1.1.5"
+  }
+}
