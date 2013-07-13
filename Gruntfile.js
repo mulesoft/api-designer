@@ -102,7 +102,13 @@ module.exports = function (grunt) {
           ]
         }]
       },
-      server: '.tmp'
+      server: '.tmp',
+      updatelibs: {
+        files: [{
+          dot: true,
+          src: '<%= yeoman.app %>/vendor/*'
+        }]
+      }
     },
     jshint: {
       options: {
@@ -218,7 +224,7 @@ module.exports = function (grunt) {
           src: [
             '*.{ico,png,txt}',
             '.htaccess',
-            'bower_components/**/*',
+            'vendor/**/*',
             'images/{,*/}*.{gif,webp,svg}',
             'styles/fonts/*'
           ]
@@ -228,6 +234,30 @@ module.exports = function (grunt) {
           dest: '<%= yeoman.dist %>/images',
           src: [
             'generated/*'
+          ]
+        }]
+      },
+      updatelibs: {
+        files: [{
+          expand: true,
+          dot: false,
+          cwd: '<%= yeoman.app %>',
+          dest: '<%= yeoman.app %>/vendor/scripts',
+          flatten: true,
+          src: [
+            'bower_components/angular/angular.js',
+            'bower_components/CodeMirror/lib/*.js',
+            'bower_components/CodeMirror/mode/yaml/yaml.js',
+            'bower_components/raml-parser/dist/raml-parser.js'
+          ]
+        }, {
+          expand: true,
+          dot: false,
+          cwd: '<%= yeoman.app %>',
+          dest: '<%= yeoman.app %>/vendor/styles',
+          flatten: true,
+          src: [
+            'bower_components/CodeMirror/lib/*.css'
           ]
         }]
       }
@@ -298,12 +328,17 @@ module.exports = function (grunt) {
     'karma'
   ]);
 
+  grunt.registerTask('updatelibs', [
+    'clean:updatelibs',
+    'copy:updatelibs'
+  ]);
+
   grunt.registerTask('build', [
     'clean:dist',
     'useminPrepare',
     'concurrent:dist',
     'concat',
-    'copy',
+    'copy:dist',
     'cdnify',
     'ngmin',
     'cssmin',
