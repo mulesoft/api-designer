@@ -1,9 +1,16 @@
-<div class="hero-unit">
-  <h1>'Allo, 'Allo!</h1>
-  <p>You now have</p>
-  <ul>
-      <li ng-repeat="thing in awesomeThings">{{thing}}</li>
-  </ul>
-  <p>installed.</p>
-  <h3>Enjoy coding! - Yeoman</h3>
+<div role="raml-editor">
+    <div role="editor">
+<textarea id="code" name="code" style="display: none;">
+%TAG ! tag:raml.org,0.1:
+---
+use: [ "customTrait" ]
+name: Root
+/anotherResource:
+  use: [ "customTrait" ]
+  name: Another Resource
+</textarea>
+    </div>
+    <div role="preview">
+        Test
+    </div>
 </div>

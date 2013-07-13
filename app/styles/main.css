@@ -4,19 +4,14 @@ body {
     color: #333;
 }
 
-.hero-unit {
-    margin: 50px auto 0 auto;
-    width: 300px;
-    font-size: 18px;
-    font-weight: 200;
-    line-height: 30px;
-    background-color: #eee;
-    border-radius: 6px;
-    padding: 60px;
+div[role=raml-editor] {
+    width: 100%;
 }
-
-.hero-unit h1 {
-    font-size: 60px;
-    line-height: 1;
-    letter-spacing: -1px;
+div[role=editor] {
+    width: 50%;
+    float: left;
+}
+div[role=preview] {
+    width: 50%;
+    float: left;
 }

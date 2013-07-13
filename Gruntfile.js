@@ -256,7 +256,8 @@ module.exports = function (grunt) {
           dest: '<%= yeoman.app %>/vendor/styles',
           flatten: true,
           src: [
-            'bower_components/CodeMirror/lib/*.css'
+            'bower_components/CodeMirror/lib/*.css',
+            'bower_components/CodeMirror/theme/solarized.css'
           ]
         }]
       }

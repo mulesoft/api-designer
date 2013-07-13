@@ -1,10 +1,8 @@
-'use strict';
-
 angular.module('editorApp')
   .controller('MainCtrl', function ($scope) {
-    $scope.awesomeThings = [
-      'HTML5 Boilerplate',
-      'AngularJS',
-      'Karma'
-    ];
+    var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+        lineNumbers: true,
+        mode: 'yaml',
+        theme: 'solarized dark'
+      });
   });
