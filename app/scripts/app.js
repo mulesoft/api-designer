@@ -1,5 +1,3 @@
-'use strict';
-
 angular.module('editorApp', [])
   .config(function ($routeProvider) {
     $routeProvider

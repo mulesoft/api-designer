@@ -6,21 +6,20 @@
     <title></title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
-
-    <link rel="stylesheet" href="vendor/styles/codemirror.css">
     <!-- build:css({.tmp,app}) styles/main.css -->
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="vendor/styles/codemirror.css">
     <!-- endbuild -->
-
   </head>
   <body ng-app="editorApp">
-    <!-- Add your site or application content here -->
     <div class="container" ng-view=""></div>
 
+    <!-- build:js({.tmp,app}) scripts/vendor.js -->
     <script src="vendor/scripts/angular.js"></script>
     <script src="vendor/scripts/codemirror.js"></script>
     <script src="vendor/scripts/yaml.js"></script>
     <script src="vendor/scripts/raml-parser.js"></script>
+    <!-- endbuild -->
     <!-- build:js({.tmp,app}) scripts/scripts.js -->
     <script src="scripts/app.js"></script>
     <script src="scripts/controllers/main.js"></script>
