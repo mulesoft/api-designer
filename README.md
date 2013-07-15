@@ -10,10 +10,9 @@ TBD
 
 Install global tools
 ```
-npm install -g grunt-cli
-npm install -g bower
-npm install -g karma    <=== Optional for running the test suite
-npm install -g yeoman   <=== Optional for scaffolding
+npm install -g grunt-cli bower
+npm install -g karma # Optional for running the test suite
+npm install -g yeoman # Optional for scaffolding
 ```
 
 Install node modules
