@@ -4,8 +4,18 @@ angular.module('editorApp')
     var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         lineNumbers: true,
         mode: 'yaml',
-        theme: 'solarized dark'
+        lineWrapping: true,
+        theme: 'solarized dark',
+        autofocus: true,
+        indentUnit: 2,
+        indentWithTabs: false,
+        tabSize: 2,
+        extraKeys: {"Ctrl-Space": "autocomplete"}
       });
+
+      CodeMirror.commands.autocomplete = function(cm) {
+        CodeMirror.showHint(cm, CodeMirror.hint.javascript);
+      };
 
     $scope.raml = {};
     $scope.definition = '';
@@ -19,7 +29,9 @@ angular.module('editorApp')
     $scope.updatePreview = function () {
       var that = this;
       raml.load(this.definition).then(function (data) {
-        console.log(data);
+        a = raml.compose(that.definition);
+
+        console.log(a);
         that.raml = data;
         that.errorMessage = '';
         that.$apply();
@@ -31,5 +43,5 @@ angular.module('editorApp')
     };
 
     editor.on('update', $scope.updated.bind($scope));
-    $scope.updated();
-  });
+      $scope.updated();
+    });
