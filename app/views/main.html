@@ -1,4 +1,4 @@
-<div role="raml-editor">
+<div role="raml-editor" ng-controller="ramlMain">
   <div role="editor">
     <textarea id="code" name="code" style="display: none;">
 %YAML 1.2
@@ -15,9 +15,14 @@ title: Test
     name: Search</textarea>
   </div>
   <div role="preview">
+<!--
     <h1>{{raml.title}}</h1>
     <ul>
       <li ng-repeat="resource in raml.resources" ng-include="'/views/resource.html'"></li>
     </ul>
+ -->
+    {{baseUri}}
+    {{documentation}}
+    {{resources}}
   </div>
 </div>

@@ -1,17 +1,30 @@
+html {
+    height: 100%;
+}
 body {
     background: #fafafa;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: #333;
+    height: 100%;
+    box-sizing: border-box;
+    margin: 0px;
+    padding: 0px;
 }
-
+div.container {
+    height: 100%;
+    box-sizing: border-box;
+    padding: 20px;
+}
 div[role=raml-editor] {
     width: 100%;
+    height: inherit;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
 div[role=editor] {
     width: 50%;
+    height: inherit;
     float: left;
     padding: 0px 15px 0px 0px;
     -webkit-box-sizing: border-box;
@@ -39,5 +52,5 @@ ul[role=methods] {
 
 /* Overrides */
 div.CodeMirror {
-    font-size: 13px;
+    font-size: 12px;
 }

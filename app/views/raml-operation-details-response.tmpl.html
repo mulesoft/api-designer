@@ -1,0 +1,38 @@
+<section role="api-operation-details-section-response" ng-controller="ramlOperationDetailsResponse">
+  <section role="codes-list" ng-repeat="code in statusCodes">
+    <header>
+      <h1>{{code.name}}</h1>
+      <p>{{code.description}}</p>
+    </header>
+    <table ng-show="code.schema">
+      <thead>
+        <tr>
+          <th>Schema</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+        	<td>
+				<pre>{{code.schema}}</pre>
+			</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table ng-show="code.example">
+      <thead>
+        <tr>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+        	<td>
+				<pre>{{code.example}}</pre>
+			</td>
+        </tr>
+      </tbody>
+    </table>
+   
+  </section>
+</section>

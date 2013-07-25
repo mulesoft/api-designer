@@ -1,0 +1,48 @@
+<section role="api-operation-details-section-parameters">
+  <section role="parameter-list" ng-show="(urlParams | filter: {editable: true}).length">
+    <header>
+      <h1>Url Parameters</h1>
+    </header>
+    <table>
+      <thead>
+        <tr>
+          <th>Param</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="param in urlParams | filter: {editable: true}">
+          <td>{{param.name}}</td>
+          <td>{{param.type}}</td>
+          <td>{{param.description}}</td>
+          <td>{{param.example}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+  <section role="parameter-list" ng-show="queryParams.length">
+    <header>
+      <h1>Query Parameters</h1>
+    </header>
+    <table>
+      <thead>
+        <tr>
+          <th>Param</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="param in queryParams">
+          <td>{{param.name}}</td>
+          <td>{{param.type}}</td>
+          <td>{{param.description}}</td>
+          <td>{{param.example}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</section>

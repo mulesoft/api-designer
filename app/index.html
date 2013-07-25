@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title></title>
+    <title>RAML Editor</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
     <!-- build:css({.tmp,app}) styles/main.css -->
@@ -14,21 +14,39 @@
     <!-- endbuild -->
     <style>body { font-family: Ubuntu, sans-serif; }</style>
   </head>
-  <body ng-app="editorApp">
-    <div class="container" ng-view=""></div>
+  <body ng-app="ramlConsoleApp">
+    <div class="container" ng-include="'views/main.html'"></div>
 
     <!-- build:js({.tmp,app}) scripts/vendor.js -->
     <script src="vendor/scripts/angular.js"></script>
+    <script src="vendor/scripts/angular-resource.js"></script>
+    <script src="vendor/scripts/angular-sanitize.js"></script>
     <script src="vendor/scripts/codemirror.js"></script>
     <script src="vendor/scripts/yaml.js"></script>
     <script src="vendor/scripts/show-hint.js"></script>
     <script src="vendor/scripts/raml-parser.js"></script>
     <script src="vendor/scripts/suggest.js"></script>
+    <script src="vendor/scripts/showdown.min.js"></script>
+    <script src="scripts/common/helpers.js"></script>
+    <script src="scripts/common/showdown.js"></script>
+    <script src="scripts/common/eventService.js"></script>
     <!-- endbuild -->
     <!-- build:js({.tmp,app}) scripts/scripts.js -->
     <script src="scripts/app.js"></script>
-    <script src="scripts/controllers/main.js"></script>
     <script src="scripts/codemirror/raml-hint.js"></script>
+    <script src="scripts/directives/prevent-default.js"></script>
+    <script src="scripts/directives/raml-console.js"></script>
+    <script src="scripts/directives/raml-definition.js"></script>
+    <script src="scripts/directives/markdown.js"></script>
+    <script src="scripts/controllers/raml-operation.js"></script>
+    <script src="scripts/controllers/raml-operation-list.js"></script>
+    <script src="scripts/controllers/raml-documentation.js"></script>
+    <script src="scripts/controllers/raml-console-sidebar.js"></script>
+    <script src="scripts/controllers/raml-operation-details.js"></script>
+    <script src="scripts/controllers/raml-operation-details-try-it.js"></script>
+    <script src="scripts/controllers/raml-operation-details-response.js"></script>
+    <script src="scripts/controllers/raml-operation-details-request.js"></script>
+    <script src="scripts/controllers/raml-editor-main.js"></script>
     <!-- endbuild -->
   </body>
 </html>

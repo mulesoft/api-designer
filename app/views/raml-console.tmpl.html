@@ -1,0 +1,12 @@
+<section role="api-console">
+    <header>
+        <ng-include src="'views/raml-console-navbar.tmpl.html'"></ng-include>
+    </header>
+    <aside role="sidebar">
+        <ng-include src="'views/raml-console-sidebar.tmpl.html'" onload="loaded(documentation[0], resources[0])" ng-controller="ramlConsoleSidebar"></ng-include>
+    </aside>
+    <section role="main">
+        <ng-include src="'views/raml-documentation.tmpl.html'" ng-controller="ramlDocumentation"></ng-include>
+        <ng-include src="'views/raml-operation-list.tmpl.html'"></ng-include>
+    </section>
+</section>

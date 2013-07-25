@@ -1,3 +1,5 @@
+var a;
+
 (function () {
   var WORD = /[\w$]+/, RANGE = 500;
 
@@ -11,7 +13,7 @@
     var curWord = start != end && curLine.slice(start, end);
 
     editor.getLineHandle(cur.line);
-    
+
     var d = [];
 
     function extract(root, path) {
@@ -49,13 +51,13 @@
     extract(a, []);
 
     var val, list = [];
-    
+
 
     if (d[cur.line][start]) {
         val = d[cur.line][start].filter(function (e) {
             return e !== 'resources' && e != 'relativeUri';
         });
-        
+
         var s = '';
         for (var i = 0; i < start - 1; i++) {
             s += '  ';
@@ -66,8 +68,8 @@
         }) || [];
     }
 
-      return {list: list, 
-          from: CodeMirror.Pos(cur.line, start), 
+      return {list: list,
+          from: CodeMirror.Pos(cur.line, start),
             to: CodeMirror.Pos(cur.line, end)
       };
   });

@@ -1,0 +1,19 @@
+<section role="api-operation" ng-class="{active:active, first:$first, last:$last}" ng-controller="ramlOperation" scroll-to-if="active">
+  <header id="operationHeader" ng-click="headerClick()">
+    <hgroup>
+      <h1>{{resource.name}}</h1>
+      <h2>{{resource.relativeUri}}</h2>
+    </hgroup>
+    <div role="summary">
+      <ul role="traits">
+        <li ng-repeat="trait in resource.use">{{trait}}</li>
+      </ul>
+      <ul role="operations">
+        <li role="{{op.method}}" ng-repeat="op in resource.methods" ng-class="{active:isMethodActive(op.method)}" ng-click="changeMethod(op.method)" prevent-default>
+          <span>{{op.method}}</span>
+        </li>
+      </ul>
+    </div>
+  </header>
+  <ng-include src="'views/raml-operation-details.tmpl.html'"></ng-include>
+</scection>
