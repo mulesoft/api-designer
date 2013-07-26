@@ -16,6 +16,7 @@ var a;
 
     var d = [];
 
+    /*
     function extract(root, path) {
         var startLine, endLine, startCol, endCol, i, j;
 
@@ -34,10 +35,12 @@ var a;
 
             for (i = startLine; i <= endLine; i++) {
                 d[i] = d[i] || [];
-                for (j = startCol; j <= endCol; j++) {
-                    d[i][j] = d[i][j] || [];
-                    d[i][j].push(root.value);
-                }
+                console.log(path);
+                d[i].push(path);
+                // for (j = startCol; j <= endCol; j++) {
+                //     d[i][j] = d[i][j] || [];
+                //     d[i][j].push(root.value);
+                // }
             }
         } else if (root.constructor.name === 'SequenceNode') {
             root.value.forEach(function (e) {
@@ -53,8 +56,8 @@ var a;
     var val, list = [];
 
 
-    if (d[cur.line][start]) {
-        val = d[cur.line][start].filter(function (e) {
+    if (d[cur.line - 1]) {
+        val = d[cur.line - 1].filter(function (e) {
             return e !== 'resources' && e != 'relativeUri';
         });
 
@@ -63,14 +66,61 @@ var a;
             s += '  ';
         }
 
+        console.log(val);
         list = Object.keys(suggest2(val)).map(function (e) {
             return {text: e + ":\n" + s, displayText: e  + ' (autocomplete)'};
         }) || [];
     }
+    */
 
-      return {list: list,
-          from: CodeMirror.Pos(cur.line, start),
-            to: CodeMirror.Pos(cur.line, end)
-      };
+    var prevLineText = editor.getLine(cur.line - 1),
+        prevLineTabCount = prevLineText.split('  ').length - 1,
+        currLineTabCount = curLine.split('  ').length - 1;
+
+    function computePath(editor, tabCount, line) {
+        var tabs = editor.getLine(line).split('  '),
+            value = tabs.pop(), result = [];
+
+        if (tabs.length === tabCount) {
+            if (tabCount !== 0) {
+                result = computePath(editor, tabs.length - 1, line - 1);
+            }
+            return result.concat([value.substring(0, value.length - 1)]);
+        } else {
+            return computePath(editor, tabCount, line - 1);
+        }
+
+
+    }
+
+    var val = computePath(editor, currLineTabCount, cur.line);
+    val.pop();
+
+    console.log(val);
+    var s = '  ';
+    for (var i = 0; i < start - 1; i++) {
+        s += '  ';
+    }
+
+    var alternatives = suggest2(val);
+    list = Object.keys(alternatives).map(function (e) {
+        var type = alternatives[e]();
+
+        if (typeof type === 'string') {
+            return {text: e + ": ", displayText: e  + ' (autocomplete)'};
+        } else {
+            return {text: e + ":\n" + s, displayText: e  + ' (autocomplete)'};
+        }
+    }) || [];
+    /*
+     if (currLineTabCount - 1 == prevLineTabCount) {
+
+    }
+    */
+
+    return {list: list, 
+        from: CodeMirror.Pos(cur.line, start), 
+          to: CodeMirror.Pos(cur.line, end)
+    };
   });
 })();
