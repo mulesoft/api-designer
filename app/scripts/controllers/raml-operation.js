@@ -5,20 +5,19 @@ angular.module('ramlConsoleApp')
         };
 
         $scope.changeMethod = function (methodName) {
-            var method = $filter('filter')(this.resource.methods, { method: methodName });
+            var method = this.resource.methods[methodName];
             var uri = ramlHelper.getAbsoluteUri(this.baseUri, this.resource.relativeUri);
-            if (method && method.length) {
-                $scope.operation = method[0];
-                $scope.urlParams = ramlHelper.processUrlPartsNew(uri);
-                $scope.queryParams = ramlHelper.processQueryParts(this.operation.query);
-                $scope.bodyParams = ramlHelper.getRequestData(this.operation);
 
-                eventService.broadcast('event:raml-method-changed', methodName);
+            if (method) {
+                $scope.operation = method;
+                $scope.urlParams = ramlHelper.processUrlPartsNew(uri);
+                $scope.queryParams = this.operation.queryParameters;
+                $scope.contentType = this.operation.supportedTypes[0];
             }
         };
 
         $scope.isMethodActive = function (methodName) {
-            return this.operation && (this.operation.method === methodName)
+            return this.operation && (this.operation.name === methodName);
         };
 
         $scope.toggle = function (member) {
@@ -26,8 +25,8 @@ angular.module('ramlConsoleApp')
         };
 
         $scope.init = function () {
-            if (this.resource.methods.length) {
-                this.changeMethod(this.resource.methods[0].method);
+            if (this.resource.methods !== {}) {
+                this.changeMethod(Object.keys(this.resource.methods)[0]);
             }
         };
 

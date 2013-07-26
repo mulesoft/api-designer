@@ -56,10 +56,14 @@ angular.module('ramlConsoleApp')
                     window.scrollTo(0, partialOffset);
                     partialOffset = (partialOffset === targetOffset) ? -1 : partialOffset;
 
-                    requestAnimationFrame(smoothScroll);
-                };
+                    if (window.requestAnimationFrame) {
+                        window.requestAnimationFrame(smoothScroll);
+                    }
+                }
 
-                requestAnimationFrame(smoothScroll);
+                if (window.requestAnimationFrame) {
+                    window.requestAnimationFrame(smoothScroll);
+                }
             };
             element[0].addEventListener('click', scrollToHandler, false);
         };

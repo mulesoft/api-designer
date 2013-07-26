@@ -294,6 +294,13 @@ module.exports = function (grunt) {
           dest: '<%= yeoman.app %>/scripts/common',
           flatten: true,
           src: '*.js'
+        }, {
+          expand: true,
+          dot: false,
+          cwd: '<%= yeoman.app %>/bower_components/raml-console/angular-app/app/scripts/services',
+          dest: '<%= yeoman.app %>/scripts/services',
+          flatten: true,
+          src: '*.js'
         }]
       }
     },

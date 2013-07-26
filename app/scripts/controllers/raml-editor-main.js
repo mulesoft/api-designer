@@ -1,6 +1,6 @@
 angular.module('ramlConsoleApp')
-  .controller('ramlMain', function ($scope, $rootScope, ramlHelper) {
-    var raml = RAML.Parser;
+  .controller('ramlMain', function ($scope, $rootScope, ramlReader, eventService) {
+    var ramlParser = RAML.Parser;
     var editor;
 
     $scope.sourceUpdated = function () {
@@ -15,12 +15,9 @@ angular.module('ramlConsoleApp')
 
     $rootScope.$on('event:raml-source-updated', function (e, args) {
       var definition = args;
-      raml.load(definition).then(function (result) {
-        angular.forEach(result.resources, function (resource) {
-          ramlHelper.massage(resource);
-        });
-        $rootScope.$emit('event:raml-parsed', result);
-        a = raml.compose(definition);
+      ramlParser.load(definition).then(function (result) {
+        $rootScope.$emit('event:raml-parsed', ramlReader.read(result));
+        a = ramlParser.compose(definition);
       }, function (error) {
         console.log(error);
         $scope.errorMessage = error;
@@ -31,6 +28,7 @@ angular.module('ramlConsoleApp')
     $rootScope.$on('event:raml-parsed', function (e, args) {
         var baseUri = (args.baseUri || '').replace(/\/\/*$/g, '');
         var version = args.version || '';
+        var model = {};
 
         baseUri = baseUri.replace(':0', '\\:0');
         baseUri = baseUri.replace(':1', '\\:1');
@@ -43,10 +41,8 @@ angular.module('ramlConsoleApp')
         baseUri = baseUri.replace(':8', '\\:8');
         baseUri = baseUri.replace(':9', '\\:9');
 
-        $scope.baseUri = baseUri.replace('{version}', version);
-        $scope.resources = args.resources;
-        $scope.documentation = args.documentation;
-        $scope.$apply();
+        args.baseUri = baseUri.replace('{version}', version);
+        eventService.broadcast('event:raml-sidebar-clicked', { isResource: true, data: args });
     });
 
     $scope.init = function () {

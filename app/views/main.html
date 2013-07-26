@@ -1,10 +1,11 @@
 <div role="raml-editor" ng-controller="ramlMain">
   <div role="editor">
     <textarea id="code" name="code" style="display: none;">
-%YAML 1.2
 %TAG ! tag:raml.org,0.1:
 ---
 title: Test
+baseUri: http://www.api.com/{version}/{company}
+version: v1.1
 /tags:
   name: Tags
   get:
@@ -24,5 +25,6 @@ title: Test
     {{baseUri}}
     {{documentation}}
     {{resources}}
+    <ng-include src="'views/raml-operation-list.tmpl.html'"></ng-include>
   </div>
 </div>

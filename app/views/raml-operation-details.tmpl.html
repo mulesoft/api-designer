@@ -2,6 +2,7 @@
   <header>
       <h1>Summary</h1>
       <p>{{operation.summary}}</p>
+      <p ng-if="hasSummary(operation.summary)">No summary.</p>
   </header>
   <div role="details-body">
     <ul role="details-sections">
@@ -14,9 +15,9 @@
         </li>
     </ul>
     <ul role="content-types">
-        <li ng-repeat="bodyParam in bodyParams"
-            ng-click="changeBodyType(bodyParam.name)">
-          {{bodyParam.name}}
+        <li ng-repeat="contenType in operation.supportedTypes"
+            ng-click="changeBodyType(contenType)" ng-class="{active:isTypeActive(contenType)}">
+          {{ parseTypeName(contenType)}}
         </li>
     </ul>
     <ng-include ng-repeat="tab in tabs"

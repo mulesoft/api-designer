@@ -6,11 +6,11 @@
     </hgroup>
     <div role="summary">
       <ul role="traits">
-        <li ng-repeat="trait in resource.use">{{trait}}</li>
+        <li ng-repeat="trait in resource.traits">{{trait}}</li>
       </ul>
       <ul role="operations">
-        <li role="{{op.method}}" ng-repeat="op in resource.methods" ng-class="{active:isMethodActive(op.method)}" ng-click="changeMethod(op.method)" prevent-default>
-          <span>{{op.method}}</span>
+        <li role="{{key}}" ng-repeat="(key, value) in resource.methods" ng-class="{active:isMethodActive(key)}" ng-click="changeMethod(key); $event.stopPropagation()">
+          <span>{{key}}</span>
         </li>
       </ul>
     </div>

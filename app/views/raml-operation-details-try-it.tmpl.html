@@ -16,12 +16,12 @@
                     <ng-include src="'views/raml-query-param.tmpl.html'" ng-repeat="queryParam in queryParams"></ng-include>
                 </div>
                 <div role="params">
-                    <ng-include src="'views/raml-body-param.tmpl.html'" ng-repeat="bodyParam in bodyType.params"></ng-include>
+                    <ng-include src="'views/raml-body-param.tmpl.html'" ng-repeat="bodyParam in operation.request[contentType].formParameters"></ng-include>
                 </div>
             </div>
             <div role="request-body" ng-show="hasRequestBody(operation) && !hasBodyParams(bodyType)">
                 <label>Body
-                    <textarea ng-model="requestBody[operation.method]"></textarea>
+                    <textarea ng-model="requestBody[operation.name]"></textarea>
                 </label>
             </div>
         </div>

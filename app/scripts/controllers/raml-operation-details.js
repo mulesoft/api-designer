@@ -1,5 +1,18 @@
 angular.module('ramlConsoleApp')
-    .controller('ramlOperationDetails', function ($scope, $filter, eventService) {
+    .controller('ramlOperationDetails', function ($scope, eventService) {
+        $scope.parseTypeName = function (value) {
+            var split = value.split('/');
+
+            if (split.length >= 2) {
+                return split[1];
+            } else {
+                return split;
+            }
+        };
+
+        $scope.hasSummary = function (value) {
+            return !(typeof value !== 'undefined' && value !== '');
+        };
 
         $scope.initTabs = function () {
             if (this.tabs) {
@@ -7,21 +20,21 @@ angular.module('ramlConsoleApp')
             }
 
             this.tabs = [];
-            this.tabs.push({
-                name: 'try-it',
-                displayName: 'Try It',
-                view: 'views/raml-operation-details-try-it.tmpl.html',
-                show: function () {
-                    return true;
-                }
-            });
+            // this.tabs.push({
+            //     name: 'try-it',
+            //     displayName: 'Try It',
+            //     view: 'views/raml-operation-details-try-it.tmpl.html',
+            //     show: function () {
+            //         return true;
+            //     }
+            // });
 
             this.tabs.push({
                 name: 'parameters',
                 displayName: 'Parameters',
                 view: 'views/raml-operation-details-parameters.tmpl.html',
                 show: function () {
-                    return $filter('filter')($scope.urlParams, { editable: true }).length || $scope.queryParams.length;
+                    return typeof $scope.operation.queryParameters !== 'undefined';
                 }
             });
 
@@ -30,7 +43,7 @@ angular.module('ramlConsoleApp')
                 displayName: 'Request',
                 view: 'views/raml-operation-details-request.tmpl.html',
                 show: function () {
-                    return $filter('filter')($scope.resource.methods, $scope.requestFilter).length;
+                    return typeof $scope.operation.request !== 'undefined';
                 }
             });
 
@@ -39,7 +52,7 @@ angular.module('ramlConsoleApp')
                 displayName: 'Response',
                 view: 'views/raml-operation-details-response.tmpl.html',
                 show: function () {
-                    return $filter('filter')($scope.resource.methods, $scope.responseFilter).length;
+                    return typeof $scope.operation.responses !== 'undefined';
                 }
             });
 
@@ -54,6 +67,10 @@ angular.module('ramlConsoleApp')
             return tabName === $scope.tabName;
         };
 
+        $scope.isTypeActive = function (mediaType) {
+            return mediaType === $scope.contentType;
+        };
+
         $scope.changeTab = function (tabName) {
             $scope.tabName = tabName;
         };
@@ -62,25 +79,13 @@ angular.module('ramlConsoleApp')
             return el.method === $scope.operation.method && typeof el.body !== 'undefined' && typeof el.body[$scope.bodyType.name] !== 'undefined';
         };
 
-        $scope.init = function () {
-            $scope.bodyType = $scope.bodyParams ? $scope.bodyParams[0] : {
-                name: 'application/json'
-            };
-        }
-
-        $scope.changeBodyType = function (bodyTypeName) {
-            var bodyParam = $filter('filter')(this.bodyParams, {
-                name: bodyTypeName
-            });
-            if (bodyParam && bodyParam.length) {
-                $scope.bodyType = bodyParam[0];
-
-                eventService.broadcast('event:raml-body-type-changed', bodyTypeName);
-            }
+        $scope.changeBodyType = function (mediaType) {
+            $scope.contentType = mediaType;
+            eventService.broadcast('event:raml-body-type-changed', mediaType);
         };
 
         $scope.responseFilter = function (el) {
-            return el.method === $scope.operation.method && typeof el.responses !== 'undefined';
+            return el.name === $scope.operation.name && typeof el.responses !== 'undefined';
         };
 
         $scope.initTabs();

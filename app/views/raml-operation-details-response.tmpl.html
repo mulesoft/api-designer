@@ -1,38 +1,39 @@
 <section role="api-operation-details-section-response" ng-controller="ramlOperationDetailsResponse">
-  <section role="codes-list" ng-repeat="code in statusCodes">
+  <section role="codes-list" ng-repeat="(statusCode, response) in operation.responses">
     <header>
-      <h1>{{code.name}}</h1>
-      <p>{{code.description}}</p>
+      <h1>{{statusCode}}</h1>
+      <p>{{response.description}}</p>
     </header>
-    <table ng-show="code.schema">
+
+    <table ng-show="content.schema" ng-repeat="(contentType, content) in response.body">
       <thead>
         <tr>
-          <th>Schema</th>
+          <th>{{ parseTypeName(contentType) }} Schema</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-        	<td>
-				<pre>{{code.schema}}</pre>
-			</td>
+          <td>
+        <pre>{{content.schema}}</pre>
+      </td>
         </tr>
       </tbody>
     </table>
 
-    <table ng-show="code.example">
+    <table ng-show="content.example" ng-repeat="(contentType, content) in response.body">
       <thead>
         <tr>
-          <th>Example</th>
+          <th>{{ parseTypeName(contentType) }} Example</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-        	<td>
-				<pre>{{code.example}}</pre>
-			</td>
+          <td>
+        <pre>{{content.example}}</pre>
+      </td>
         </tr>
       </tbody>
     </table>
-   
+
   </section>
 </section>
