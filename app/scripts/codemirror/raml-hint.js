@@ -98,12 +98,20 @@ var a;
 
     console.log(val);
     var s = '  ';
-    for (var i = 0; i < start - 1; i++) {
+    for (var i = 0; i < currLineTabCount; i++) {
         s += '  ';
     }
 
     var alternatives = suggest2(val);
-    list = Object.keys(alternatives).map(function (e) {
+    alternativeKeys = Object.keys(alternatives).filter(function (e) {
+        if (e === '<string>') {
+            return false;
+        }
+
+        return true;
+    });
+    list = alternativeKeys.map(function (e) {
+
         var type = alternatives[e]();
 
         if (typeof type === 'string') {
