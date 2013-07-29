@@ -16,63 +16,6 @@ var a;
 
     var d = [];
 
-    /*
-    function extract(root, path) {
-        var startLine, endLine, startCol, endCol, i, j;
-
-        if (root.constructor.name === 'MappingNode') {
-            root.value.forEach(function (e) {
-                extract(e[0], path);
-                path.push(e[0].value);
-                extract(e[1], path);
-                path.pop();
-            });
-        } else if (root.constructor.name === 'ScalarNode') {
-            startLine = root.start_mark.line;
-            endLine = root.end_mark.line;
-            startCol = root.start_mark.column;
-            endCol = root.end_mark.column;
-
-            for (i = startLine; i <= endLine; i++) {
-                d[i] = d[i] || [];
-                console.log(path);
-                d[i].push(path);
-                // for (j = startCol; j <= endCol; j++) {
-                //     d[i][j] = d[i][j] || [];
-                //     d[i][j].push(root.value);
-                // }
-            }
-        } else if (root.constructor.name === 'SequenceNode') {
-            root.value.forEach(function (e) {
-                extract(e, path);
-            });
-        } else {
-            throw 'Invalid state reached';
-        }
-    }
-
-    extract(a, []);
-
-    var val, list = [];
-
-
-    if (d[cur.line - 1]) {
-        val = d[cur.line - 1].filter(function (e) {
-            return e !== 'resources' && e != 'relativeUri';
-        });
-
-        var s = '';
-        for (var i = 0; i < start - 1; i++) {
-            s += '  ';
-        }
-
-        console.log(val);
-        list = Object.keys(suggest2(val)).map(function (e) {
-            return {text: e + ":\n" + s, displayText: e  + ' (autocomplete)'};
-        }) || [];
-    }
-    */
-
     var prevLineText = editor.getLine(cur.line - 1),
         prevLineTabCount = prevLineText.split('  ').length - 1,
         currLineTabCount = curLine.split('  ').length - 1;
@@ -119,12 +62,17 @@ var a;
         } else {
             return {text: e + ":\n" + s, displayText: e  + ' (autocomplete)'};
         }
+    }).filter(function(e) {
+        if (curWord) {
+            if (e && e.text.indexOf(curWord) === 0) {
+                return true;
+            }
+            return false;
+        }
+        return true;
     }) || [];
-    /*
-     if (currLineTabCount - 1 == prevLineTabCount) {
 
-    }
-    */
+    
 
     return {list: list, 
         from: CodeMirror.Pos(cur.line, start), 
