@@ -53,6 +53,14 @@ angular.module('ramlConsoleApp')
       $scope.documentation = '';
       $scope.baseUri = '';
 
+      CodeMirror.keyMap.tabSpace = {
+        Tab: function(cm) {
+          var spaces = Array(cm.getOption('indentUnit') + 1).join(' ');
+          cm.replaceSelection(spaces, 'end', '+input');
+        },
+        fallthrough: ['default']
+      };
+
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         lineNumbers: true,
         mode: 'yaml',
@@ -62,12 +70,14 @@ angular.module('ramlConsoleApp')
         indentUnit: 2,
         indentWithTabs: false,
         tabSize: 2,
-        extraKeys: {"Ctrl-Space": "autocomplete"}
+        extraKeys: {"Ctrl-Space": "autocomplete"},
+        keyMap: 'tabSpace'
       });
 
       CodeMirror.commands.autocomplete = function(cm) {
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
+
 
       editor.setSize(null, '100%');
       editor.on('update', $scope.sourceUpdated.bind($scope));
