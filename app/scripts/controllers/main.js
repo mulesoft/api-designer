@@ -11,11 +11,11 @@ angular.module('editorApp')
         indentWithTabs: false,
         tabSize: 2,
         extraKeys: {"Ctrl-Space": "autocomplete"}
-      });
+    });
 
-      CodeMirror.commands.autocomplete = function(cm) {
-        CodeMirror.showHint(cm, CodeMirror.hint.javascript);
-      };
+    CodeMirror.commands.autocomplete = function(cm) {
+      CodeMirror.showHint(cm, CodeMirror.hint.javascript);
+    };
 
     $scope.raml = {};
     $scope.definition = '';
