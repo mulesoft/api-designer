@@ -1,5 +1,3 @@
-var a;
-
 (function () {
   var WORD = /[\w$]+/;
 
@@ -14,8 +12,6 @@ var a;
       --start;
     }
     var curWord = start !== end && curLine.slice(start, end);
-
-    editor.getLineHandle(cur.line);
 
     var currLineTabCount = curLine.split('  ').length - 1;
 
@@ -36,15 +32,14 @@ var a;
     var val = computePath(editor, currLineTabCount, cur.line);
     val.pop();
 
-    console.log(val);
     var s = '  ';
     for (var i = 0; i < currLineTabCount; i++) {
       s += '  ';
     }
 
-    var alternatives = suggest2(val),
+    var alternatives = suggest(suggestionTree, 0, val),
       alternativeKeys = Object.keys(alternatives).filter(function (e) {
-      if (e === '<string>') {
+      if (e === 'StringNode') {
         return false;
       }
 
