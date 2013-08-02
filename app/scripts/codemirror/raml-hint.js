@@ -37,23 +37,11 @@
       s += '  ';
     }
 
-    var alternatives = suggest(suggestionTree, 0, val),
-      alternativeKeys = Object.keys(alternatives).filter(function (e) {
-      if (e === 'StringNode') {
-        return false;
-      }
+    var alternatives = suggestRAML(val),
+      alternativeKeys = Object.keys(alternatives.suggestions);
 
-      return true;
-    });
     var list = alternativeKeys.map(function (e) {
-
-      var type = alternatives[e]();
-
-      if (typeof type === 'string') {
         return {text: e + ': ', displayText: e  + ' (autocomplete)'};
-        } else {
-            return {text: e + ':\n' + s, displayText: e  + ' (autocomplete)'};
-        }
     }).filter(function(e) {
       if (curWord) {
           if (e && e.text.indexOf(curWord) === 0) {
