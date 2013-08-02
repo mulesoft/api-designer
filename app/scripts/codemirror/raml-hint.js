@@ -1,5 +1,42 @@
 (function () {
   var WORD = /[\w$]+/;
+    
+  function computePath(editor, tabCount, line) {
+    var tabs = editor.getLine(line).split('  '),
+      value = tabs.pop(), result = [];
+
+    if (tabs.length === tabCount) {
+      if (tabCount !== 0) {
+        result = computePath(editor, tabs.length - 1, line - 1);
+      }
+
+      // Removing spaces and :
+      return result.concat([value.replace(/:\s*/g, '')]);
+    } else {
+      return computePath(editor, tabCount, line - 1);
+    }
+  }
+
+  function createIndentation(tabCount) {
+    var s = '  ';
+    for (var i = 0; i < tabCount; i++) {
+      s += '  ';
+    }
+    return s;
+  }
+
+  function getPadding(node, tabCount) {
+    if (!node || !node.constructor || !node.constructor.name) {
+      throw new Error('Can\'t determine padding for node: ' + node);
+    }
+    
+    if ('StringWildcard' === node.constructor.name) {
+      return ' ';
+    } 
+
+    return '\n' + createIndentation(tabCount);
+
+  }
 
   CodeMirror.registerHelper('hint', 'yaml', function(editor, options) {
     var word = options && options.word || WORD;
@@ -12,38 +49,24 @@
       --start;
     }
     var curWord = start !== end && curLine.slice(start, end);
-
     var currLineTabCount = curLine.split('  ').length - 1;
-
-    function computePath(editor, tabCount, line) {
-      var tabs = editor.getLine(line).split('  '),
-        value = tabs.pop(), result = [];
-
-      if (tabs.length === tabCount) {
-        if (tabCount !== 0) {
-          result = computePath(editor, tabs.length - 1, line - 1);
-        }
-
-        // Removing spaces and :
-        return result.concat([value.replace(/:\s*/g, '')]);
-      } else {
-        return computePath(editor, tabCount, line - 1);
-      }
-    }
-
     var val = computePath(editor, currLineTabCount, cur.line);
     val.pop();
 
-    var s = '  ';
-    for (var i = 0; i < currLineTabCount; i++) {
-      s += '  ';
+
+    var alternatives = suggestRAML(val);
+    var alternativeKeys = [];
+
+    if (alternatives && alternatives.suggestions) {
+      alternativeKeys = Object.keys(alternatives.suggestions);
     }
 
-    var alternatives = suggestRAML(val),
-      alternativeKeys = Object.keys(alternatives.suggestions);
-
     var list = alternativeKeys.map(function (e) {
-        return {text: e + ': ', displayText: e  + ' (autocomplete)'};
+      var suggestion = alternatives.suggestions[e],
+        node = suggestion.open && suggestion.open(),
+        padding = getPadding(node, currLineTabCount);
+
+      return {text: e + ':' + padding, displayText: e  + ' (autocomplete)'};
     }).filter(function(e) {
       if (curWord) {
           if (e && e.text.indexOf(curWord) === 0) {
