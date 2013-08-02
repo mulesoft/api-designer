@@ -96,7 +96,7 @@ div[role=shelf] ul[role=sections] > li > ul[role=items] > li:before {
 div[role=shelf] ul[role=sections] > li > ul[role=items] > li {
   list-style-type: none;
   text-transform: capitalize;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: lighter;
   padding-top: 4px;
   cursor: pointer;
