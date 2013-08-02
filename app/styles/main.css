@@ -58,7 +58,7 @@ div[role=shelf] {
 div[role=shelf] ul {
   padding: 0px;
   margin: 0px;
-  padding-left: 15<D-r>px;
+  padding-left: 15px;
 }
 
 div[role=shelf] ul[role=sections] {
@@ -72,8 +72,14 @@ div[role=shelf] ul[role=sections] > li {
   padding-bottom: 10px;
   text-transform: uppercase;
   list-style-type: none;
-  font-size: 10px;
+  font-size: 11px;
+  color: #838383;
+  text-shadow: 1px 1px 1px black;
+  letter-spacing: 0.5px;
   font-weight: bolder;
+  display: inline-block;
+  clear: both;
+  float: left;
 }
 
 div[role=shelf] ul[role=sections] > li > ul[role=items] {
@@ -83,7 +89,7 @@ div[role=shelf] ul[role=sections] > li > ul[role=items] {
 }
 
 div[role=shelf] ul[role=sections] > li > ul[role=items] > li:first-of-type {
-  margin-top: 6px;
+  margin-top: 8px;
 }
 
 div[role=shelf] ul[role=sections] > li > ul[role=items] > li:before {
@@ -94,6 +100,8 @@ div[role=shelf] ul[role=sections] > li > ul[role=items] > li:before {
 }
 
 div[role=shelf] ul[role=sections] > li > ul[role=items] > li {
+  color: gray;
+  text-shadow: 0px 0px;
   list-style-type: none;
   text-transform: capitalize;
   font-size: 12px;
@@ -103,11 +111,18 @@ div[role=shelf] ul[role=sections] > li > ul[role=items] > li {
   padding-bottom: 3px;
   letter-spacing: 0.5px;
   font-family: "Lucida Console", Monaco, monospace; 
+  display: inline-block;
+  clear: both;
+  float: left;
+  padding-right: 10px;
+  
+  
 
 }
 
 div[role=shelf] ul[role=sections] > li > ul[role=items] > li:hover {
-  background-color: rgba(128, 88, 165, 1);
+  background-color: #9b225c;
+  transition: background-color 0.1s;
   border-radius: 25px;
   color: white;
   margin-right: 5px;
