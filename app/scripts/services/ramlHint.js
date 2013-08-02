@@ -70,6 +70,11 @@ angular.module('raml')
         return { name: suggestion.name, category: suggestion.category };
       }) || [];
 
+      if (alternatives.constructor.name === 'OpenSuggestion' &&
+          alternatives.category === 'snippets') {
+        list.push({name: 'New resource', category: alternatives.category});
+      }
+
       return list;
     };
 

@@ -477,9 +477,10 @@ SimpleSuggestion = (function(_super) {
 OpenSuggestion = (function(_super) {
   __extends(OpenSuggestion, _super);
 
-  function OpenSuggestion(suggestions, open) {
+  function OpenSuggestion(suggestions, open, category) {
     this.suggestions = suggestions;
     this.open = open;
+    this.category = category;
   }
 
   return OpenSuggestion;
@@ -565,7 +566,7 @@ TreeMapToSuggestionTree = (function(_super) {
   }
 
   TreeMapToSuggestionTree.alternatives = function(root, alternatives) {
-    var alternative, d, key, open, value, _i, _len, _ref3, _ref4;
+    var alternative, cat, d, key, open, value, _i, _len, _ref3, _ref4;
     d = {};
     for (_i = 0, _len = alternatives.length; _i < _len; _i++) {
       alternative = alternatives[_i];
@@ -584,15 +585,16 @@ TreeMapToSuggestionTree = (function(_super) {
             d[key] = value;
           }
           open = alternative.open;
+          cat = alternative.category;
           break;
         default:
           throw new Error('Invalid type: ' + alternatives);
       }
     }
     if (open != null) {
-      return new OpenSuggestion(d, function() {
+      return new OpenSuggestion(d, (function() {
         return open();
-      });
+      }), 'snippets');
     } else {
       return new SimpleSuggestion(d);
     }
@@ -605,7 +607,7 @@ TreeMapToSuggestionTree = (function(_super) {
   TreeMapToSuggestionTree.tuple = function(root, key, value) {
     var d;
     if (key === stringWilcard) {
-      return new OpenSuggestion({}, functionize(value));
+      return new OpenSuggestion({}, functionize(value), root.category);
     } else {
       d = {};
       d[key] = new SuggestItem(functionize(value), key, root.category);
