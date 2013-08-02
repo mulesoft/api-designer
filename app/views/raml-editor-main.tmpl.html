@@ -1,0 +1,31 @@
+<div role="raml-editor" ng-controller="ramlMain">
+  <div role="editor">
+    <div style="height:inherit"><textarea id="code" name="code" style="display: none;">
+%TAG ! tag:raml.org,0.1:
+---
+title: Test
+baseUri: http://www.api.com/{version}/{company}
+version: v1.1
+/tags:
+  name: Tags
+  get:
+    description: Get a list of recently tagged media
+  post:
+    description: Create a new tag
+  /search:
+    name: Search</textarea></div>
+    <div role="shelf" ng-controller="ramlEditorShelf">
+      <ul role="sections">
+        <li ng-repeat="section in model.sections | orderBy:'name'">
+          {{section.name}}
+          <ul role="items">
+            <li ng-repeat="item in section.items">{{item.name}}</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+  <div role="preview">
+    <ng-include src="'views/raml-operation-list.tmpl.html'"></ng-include>
+  </div>
+</div>

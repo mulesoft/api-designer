@@ -23,36 +23,53 @@ div[role=raml-editor] {
     box-sizing: border-box;
 }
 div[role=editor] {
-    width: 50%;
+    width: 60%;
     height: inherit;
     float: left;
-    padding: 0px 5px 0px 0px;
+    padding: 0px;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
+    position: relative;
 }
 div[role=preview] {
-    width: 50%;
+    width: 40%;
     float: left;
     padding: 0px 0px 0px 15px;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
-div[role=preview] > h1{
-    font-size: 25px;
-    margin: 0px;
+
+div[role=shelf] {
+  position: absolute;
+  background: rgb(19,33,40);
+  color: grey;
+  right: 0px;
+  top: 0px;
+  height: 100%;
+  width: 200px;
+  border: 1px solid black;
+  box-sizing: border-box;
+  padding-left: 15px;
+  font-size: 15px;
 }
-ul[role=resources] {
-    margin-top: 10px;
+
+div[role=shelf] ul {
+  padding: 0px;
+  margin: 0px;
+  padding-left: 15px;
 }
-ul[role=methods] {
-    margin-top: 10px;
+
+div[role=shelf] ul[role=sections] > li {
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 /* Overrides */
 div.CodeMirror {
     font-size: 12px;
+    margin-right: 200px;
 }
 
 /*!
