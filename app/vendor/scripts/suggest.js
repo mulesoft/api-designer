@@ -10,7 +10,7 @@ Tuple = (function() {
   function Tuple(key, value, category) {
     this.key = key;
     this.value = value;
-    this.category = category != null ? category : 'spec';
+    this.category = category != null ? category : 'raml specification';
     if (!this.key instanceof Node && typ3(this.key) !== 'string') {
       throw "Key: '" + (JSON.stringify(key)) + "' of type '" + (typ3(key)) + "' must be an string";
     }
@@ -405,7 +405,7 @@ action = (function(func, args, ctor) {
   _results = [];
   for (_i = 0, _len = _ref8.length; _i < _len; _i++) {
     actionName = _ref8[_i];
-    _results.push(new Tuple(actionName, new Multiple(actionDefinition), 'method'));
+    _results.push(new Tuple(actionName, new Multiple(actionDefinition), 'restful elements'));
   }
   return _results;
 })(), function(){});
@@ -448,7 +448,7 @@ Category = (function() {
 
 
 },{"./utils.coffee":3}],2:[function(require,module,exports){
-var NodeMap, OpenSuggestion, SimpleSuggestion, StringWildcard, SuggestItem, Suggestion, SuggestionNodeMap, TreeMap, TreeMapToSuggestionTree, Tuple, functionize, root, stringWilcard, suggest, suggestRAML, suggestionTree, transverse, transversePrimitive, type, _ref, _ref1, _ref2,
+var NodeMap, OpenSuggestion, SimpleSuggestion, StringWildcard, SuggestItem, Suggestion, SuggestionNodeMap, TreeMap, TreeMapToSuggestionTree, functionize, root, stringWilcard, suggest, suggestRAML, suggestionTree, transverse, transversePrimitive, type, _ref, _ref1, _ref2,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -555,16 +555,6 @@ functionize = function(value) {
     };
   }
 };
-
-Tuple = (function() {
-  function Tuple(key, value) {
-    this.key = key;
-    this.value = value;
-  }
-
-  return Tuple;
-
-})();
 
 TreeMapToSuggestionTree = (function(_super) {
   __extends(TreeMapToSuggestionTree, _super);

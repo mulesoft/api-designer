@@ -51,19 +51,66 @@ div[role=shelf] {
   width: 200px;
   border: 1px solid black;
   box-sizing: border-box;
-  padding-left: 15px;
+  padding-left: 9px;
   font-size: 15px;
 }
 
 div[role=shelf] ul {
   padding: 0px;
   margin: 0px;
-  padding-left: 15px;
+  padding-left: 15<D-r>px;
+}
+
+div[role=shelf] ul[role=sections] {
+  margin-left: 0px;
+  padding-left: 0px;
+  padding-bottom: 0px;
 }
 
 div[role=shelf] ul[role=sections] > li {
   padding-top: 10px;
   padding-bottom: 10px;
+  text-transform: uppercase;
+  list-style-type: none;
+  font-size: 10px;
+  font-weight: bolder;
+}
+
+div[role=shelf] ul[role=sections] > li > ul[role=items] {
+  padding-left: 0px;
+  margin-left: 0px;
+  margin-left: 0px;
+}
+
+div[role=shelf] ul[role=sections] > li > ul[role=items] > li:first-of-type {
+  margin-top: 6px;
+}
+
+div[role=shelf] ul[role=sections] > li > ul[role=items] > li:before {
+  content: '+ ';
+  font-size: 9px;
+  vertical-align: 2px;
+  padding-left: 5px;
+}
+
+div[role=shelf] ul[role=sections] > li > ul[role=items] > li {
+  list-style-type: none;
+  text-transform: capitalize;
+  font-size: 11px;
+  font-weight: lighter;
+  padding-top: 4px;
+  cursor: pointer;
+  padding-bottom: 3px;
+  letter-spacing: 0.5px;
+  font-family: "Lucida Console", Monaco, monospace; 
+
+}
+
+div[role=shelf] ul[role=sections] > li > ul[role=items] > li:hover {
+  background-color: rgba(128, 88, 165, 1);
+  border-radius: 25px;
+  color: white;
+  margin-right: 5px;
 }
 
 /* Overrides */

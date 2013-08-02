@@ -66,7 +66,7 @@
         node = suggestion.open && suggestion.open(),
         padding = getPadding(node, currLineTabCount);
 
-      return {text: e + ':' + padding, displayText: e  + ' (autocomplete)'};
+      return {text: e + ':' + padding, displayText: e  + ' (' + suggestion.category + ')'};
     }).filter(function(e) {
       if (curWord) {
           if (e && e.text.indexOf(curWord) === 0) {
