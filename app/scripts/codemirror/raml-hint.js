@@ -23,7 +23,9 @@
         if (tabCount !== 0) {
           result = computePath(editor, tabs.length - 1, line - 1);
         }
-        return result.concat([value.substring(0, value.length - 1)]);
+
+        // Removing spaces and :
+        return result.concat([value.replace(/:\s+/g, '')]);
       } else {
         return computePath(editor, tabCount, line - 1);
       }

@@ -654,9 +654,7 @@ suggest = function(root, index, path) {
 };
 
 suggestRAML = function(path) {
-  var res;
-  res = suggest(suggestionTree, 0, path);
-  return res;
+  return suggest(suggestionTree, 0, path);
 };
 
 this.suggestRAML = suggestRAML;
