@@ -62,6 +62,12 @@ angular.module('ramlConsoleApp')
           ind + '  summary: <<insert text or markdown here>>\n';
       }
 
+      if (snippetName.toLowerCase() === 'new resource') {
+        return '' +
+          ind + '/newResource:\n' +
+          ind + '  name: resourceName\n';
+      }
+
       if (snippetName.toLowerCase() === 'title') {
         return '' +
           ind + 'title: My API\n';
