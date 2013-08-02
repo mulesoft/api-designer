@@ -26,7 +26,7 @@ div[role=editor] {
     width: 50%;
     height: inherit;
     float: left;
-    padding: 0px 15px 0px 0px;
+    padding: 0px 5px 0px 0px;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
@@ -1266,4 +1266,30 @@ section[role=api-operation].active:hover > api-operation-details {
   aside[role=sidebar] ul > li.active a {
     text-decoration: underline;
   }
+}
+
+/* Overrides */
+
+section[role=api-operation-list] {
+  padding: 0px;
+}
+
+section[role=api-operation-details-section-parameters] {
+  padding-bottom: 0px;
+}
+
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table {
+  margin-bottom: 0px;
+}
+
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > header > h1 {
+  font-size: 14px;
+}
+
+section[role=api-operation-details-section-request] > section[role=codes-list] > header > h1 {
+  font-size: 14px;
+}
+
+section[role=api-operation-details-section-request] {
+  padding-bottom: 0px;
 }
