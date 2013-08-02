@@ -18,6 +18,6 @@ angular.module('ramlConsoleApp')
       }
 
       $scope.model = model;
-      $scope.apply();
+      $scope.$apply();
     });
   });

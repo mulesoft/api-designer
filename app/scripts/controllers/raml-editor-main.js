@@ -10,11 +10,11 @@ angular.module('ramlConsoleApp')
       }
 
       $scope.definition = source;
-      $rootScope.$emit('event:raml-editor-has-changes', editor);
       $rootScope.$emit('event:raml-source-updated', $scope.definition);
     };
 
     $scope.cursorMoved = function () {
+      $rootScope.$emit('event:raml-editor-has-changes', editor);
     };
 
     $rootScope.$on('event:raml-source-updated', function (e, args) {
