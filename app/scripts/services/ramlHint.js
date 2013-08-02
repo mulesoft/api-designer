@@ -23,10 +23,11 @@ angular.module('raml')
 
     hinter.createIndentation = function createIndentation (tabCount) {
       var s = '  ';
+      var result = '';
       for (var i = 0; i < tabCount; i++) {
-        s += '  ';
+        result += s;
       }
-      return s;
+      return result;
     }
 
     hinter.getPadding = function getPadding(node, tabCount) {
