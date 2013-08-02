@@ -41,7 +41,25 @@ angular.module('ramlConsoleApp')
       if (snippetName.toLowerCase() === 'get') {
         return '' +
           ind + 'get:\n' +
-          ind + '  description: <<insert text here>>\n';
+          ind + '  summary: <<insert text or markdown here>>\n';
+      }
+
+      if (snippetName.toLowerCase() === 'post') {
+        return '' +
+          ind + 'post:\n' +
+          ind + '  summary: <<insert text or markdown here>>\n';
+      }
+
+      if (snippetName.toLowerCase() === 'put') {
+        return '' +
+          ind + 'put:\n' +
+          ind + '  summary: <<insert text or markdown here>>\n';
+      }
+
+      if (snippetName.toLowerCase() === 'delete') {
+        return '' +
+          ind + 'delete:\n' +
+          ind + '  summary: <<insert text or markdown here>>\n';
       }
 
       if (snippetName.toLowerCase() === 'title') {
