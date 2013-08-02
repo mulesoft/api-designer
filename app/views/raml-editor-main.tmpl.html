@@ -19,7 +19,7 @@ version: v1.1
         <li ng-repeat="section in model.sections | orderBy:'name'">
           {{section.name}}
           <ul role="items">
-            <li ng-repeat="item in section.items">{{item.name}}</li>
+            <li ng-repeat="item in section.items" ng-click="itemClick(item)">{{item.name}}</li>
           </ul>
         </li>
       </ul>
