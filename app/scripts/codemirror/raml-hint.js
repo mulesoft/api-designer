@@ -25,7 +25,7 @@
         }
 
         // Removing spaces and :
-        return result.concat([value.replace(/:\s+/g, '')]);
+        return result.concat([value.replace(/:\s*/g, '')]);
       } else {
         return computePath(editor, tabCount, line - 1);
       }

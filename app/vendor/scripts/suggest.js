@@ -580,15 +580,6 @@ TreeMapToSuggestionTree = (function(_super) {
     for (_i = 0, _len = alternatives.length; _i < _len; _i++) {
       alternative = alternatives[_i];
       switch (false) {
-        case !(alternative instanceof Tuple):
-          key = alternative.key;
-          value = alternative.value;
-          if (key === stringWilcard) {
-            open = value;
-          } else {
-            d[key] = value;
-          }
-          break;
         case !(alternative instanceof SimpleSuggestion):
           _ref3 = alternative.suggestions;
           for (key in _ref3) {
@@ -610,7 +601,7 @@ TreeMapToSuggestionTree = (function(_super) {
     }
     if (open != null) {
       return new OpenSuggestion(d, function() {
-        return open;
+        return open();
       });
     } else {
       return new SimpleSuggestion(d);
@@ -622,7 +613,14 @@ TreeMapToSuggestionTree = (function(_super) {
   };
 
   TreeMapToSuggestionTree.tuple = function(root, key, value) {
-    return new Tuple(key, new SuggestItem(functionize(value), key, root.category));
+    var d;
+    if (key === stringWilcard) {
+      return new OpenSuggestion({}, functionize(value));
+    } else {
+      d = {};
+      d[key] = new SuggestItem(functionize(value), key, root.category);
+      return new SimpleSuggestion(d);
+    }
   };
 
   TreeMapToSuggestionTree.primitiveAlternatives = function(root, alternatives) {
@@ -649,7 +647,7 @@ suggest = function(root, index, path) {
   if (key == null) {
     return root;
   }
-  val = root.suggestions[key] ? root.suggestions[key].open() : root.open().open();
+  val = root.suggestions[key] != null ? root.suggestions[key].open() : root.open();
   return suggest(val, index + 1, path);
 };
 
