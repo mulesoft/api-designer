@@ -61,6 +61,16 @@ angular.module('ramlConsoleApp')
           var spaces = Array(cm.getOption('indentUnit') + 1).join(' ');
           cm.replaceSelection(spaces, 'end', '+input');
         },
+        Backspace: function (cm) {
+          debugger;
+          var endCursor = cm.getCursor();
+          var startCursor = {line: endCursor.line, ch: endCursor.ch - 2};
+          if ( '  ' === cm.getRange(startCursor, endCursor) ) {
+            cm.deleteH(-2, "char");
+            return;
+          }
+          cm.deleteH(-1, "char");
+        },
         enter: 'newline-and-indent',
         fallthrough: ['default']
       };
