@@ -10,21 +10,31 @@ body {
     margin: 0px;
     padding: 0px;
 }
+body > h1 {
+  height: auto;
+  padding-left: 19px; 
+  padding-top: 1.25%;
+  box-sizing: border-box;
+  font-size: 27px; 
+  margin: 0px;
+  font-weight: normal;
+}
+
 div.container {
-    height: 100%;
+    height: 93%;
     box-sizing: border-box;
-    padding: 20px;
+    padding: 1%;
 }
 div[role=raml-editor] {
     width: 100%;
-    height: inherit;
+    height: 100%;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
 }
 div[role=editor] {
     width: 60%;
-    height: inherit;
+    height: 100%;
     float: left;
     padding: 0px;
     -webkit-box-sizing: border-box;
