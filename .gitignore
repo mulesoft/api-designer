@@ -6,3 +6,4 @@ app/bower_components
 .DS_Store
 *.orig
 *.log
+.vimrc
