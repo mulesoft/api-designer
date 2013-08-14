@@ -230,8 +230,7 @@ module.exports = function (grunt) {
             '*.{ico,png,txt}',
             '.htaccess',
             'images/{,*/}*.{gif,webp,svg}',
-            'styles/fonts/*',
-            'app.yaml'
+            'styles/fonts/*'
           ]
         }, {
           expand: true,
@@ -239,6 +238,13 @@ module.exports = function (grunt) {
           dest: '<%= yeoman.dist %>/images',
           src: [
             'generated/*'
+          ]
+        }, {
+          expand: true,
+          cwd: '<%= yeoman.root %>',
+          dest: '<%= yeoman.dist %>',
+          src: [
+            'app.yaml'
           ]
         }]
       },
@@ -400,6 +406,12 @@ module.exports = function (grunt) {
     'rev',
     'usemin'
   ]);
+  
+  grunt.registerTask('deploy', [
+    'build',
+    'appengine'
+  ]);
+
 
   grunt.registerTask('default', [
     'jshint',
