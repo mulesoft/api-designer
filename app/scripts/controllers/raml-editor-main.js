@@ -62,7 +62,6 @@ angular.module('ramlConsoleApp')
           cm.replaceSelection(spaces, 'end', '+input');
         },
         Backspace: function (cm) {
-          debugger;
           var endCursor = cm.getCursor();
           var startCursor = {line: endCursor.line, ch: endCursor.ch - 2};
           if ( '  ' === cm.getRange(startCursor, endCursor) ) {
