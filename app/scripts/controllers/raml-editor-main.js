@@ -1,7 +1,7 @@
 angular.module('ramlConsoleApp')
   .controller('ramlMain', function ($scope, $rootScope, ramlReader, eventService) {
     var ramlParser = RAML.Parser;
-    var editor;
+    var editor, currentUpdateTimer, UPDATE_RESPONSIVENESS_INTERVAL = 300;
 
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
@@ -91,9 +91,16 @@ angular.module('ramlConsoleApp')
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
 
-
       editor.setSize(null, '100%');
-      editor.on('update', $scope.sourceUpdated.bind($scope));
+      editor.on('update', function (event) {
+        if (currentUpdateTimer) {
+          clearTimeout(currentUpdateTimer);
+        }
+        currentUpdateTimer = setTimeout(function () {
+          $scope.sourceUpdated();
+          currentUpdateTimer = undefined;
+        }, UPDATE_RESPONSIVENESS_INTERVAL);
+      });
       editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
 
       $scope.sourceUpdated();
