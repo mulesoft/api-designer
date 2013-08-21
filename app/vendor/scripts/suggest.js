@@ -1,5 +1,5 @@
 ;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
-var Alternatives, Boolean, Category, ConstantString, Include, Integer, JSONSchema, Markdown, Multiple, Node, NodeMap, PostposedExecution, PrimitiveAlternatives, Regex, StringNode, TreeMap, Tuple, XMLSchema, action, actionDefinition, actionName, baseUri, body, bodySchema, boolean, chapter, d3fault, defaultMediaTypes, description, documentation, enum2, example, excludes, formParameters, header, headers, include, integer, jsonSchema, markdown, maxLength, maximum, mimeType, mimeTypeParameters, minLength, minimum, model, name, notImplemented, parameterProperty, pattern, provides, queryParameterDefinition, queryParameters, regex, required, requires, resource, resourceDefinition, responseCode, responses, root, rootElement, schemas, stringNode, summary, title, trait, traitDefinition, traits, transverse, transversePrimitive, typ3, type, uriParameter, uriParameters, use, version, xmlSchema, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7,
+var Alternatives, Boolean, ConstantString, Include, Integer, JSONSchema, Markdown, Multiple, Node, NodeMap, PostposedExecution, PrimitiveAlternatives, Regex, StringNode, TreeMap, Tuple, XMLSchema, action, actionDefinition, actionName, baseUri, body, bodySchema, boolean, chapter, d3fault, defaultMediaTypes, description, documentation, enum2, example, excludes, formParameters, header, headers, include, integer, jsonSchema, markdown, maxLength, maximum, mimeType, mimeTypeParameters, minLength, minimum, model, name, notImplemented, parameterProperty, pattern, provides, queryParameterDefinition, queryParameters, regex, required, requires, resource, resourceDefinition, responseCode, responses, root, rootElement, schemas, stringNode, summary, title, trait, traitDefinition, traits, transverse, transversePrimitive, typ3, type, uriParameter, uriParameters, use, version, xmlSchema, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7,
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -389,7 +389,7 @@ mimeType = new Alternatives(new Tuple(new ConstantString('application/x-www-form
 
 body = new Tuple(new ConstantString('body'), new Multiple(mimeType));
 
-responseCode = new Tuple(integer, new Multiple(integer), new Multiple(new Alternatives(body, description)));
+responseCode = new Tuple(new Multiple(integer), new Multiple(new Alternatives(body, description)));
 
 responses = new Tuple(new ConstantString('responses'), new Multiple(responseCode));
 
@@ -436,25 +436,17 @@ this.TreeMap = TreeMap;
 
 this.NodeMap = NodeMap;
 
-Category = (function() {
-  function Category(name, elements) {
-    this.name = name;
-    this.elements = elements;
-  }
-
-  return Category;
-
-})();
+this.integer = integer;
 
 
 },{"./utils.coffee":3}],2:[function(require,module,exports){
-var NodeMap, OpenSuggestion, SimpleSuggestion, StringWildcard, SuggestItem, Suggestion, SuggestionNodeMap, TreeMap, TreeMapToSuggestionTree, functionize, root, stringWilcard, suggest, suggestRAML, suggestionTree, transverse, transversePrimitive, type, _ref, _ref1, _ref2,
+var IntegerWildcard, NodeMap, OpenSuggestion, SimpleSuggestion, StringWildcard, SuggestItem, Suggestion, SuggestionNodeMap, TreeMap, TreeMapToSuggestionTree, functionize, integer, integerWildcard, root, stringWilcard, suggest, suggestRAML, suggestionTree, transverse, transversePrimitive, type, _ref, _ref1, _ref2,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 type = require('./utils.coffee').typ3;
 
-_ref = require('./main.coffee'), TreeMap = _ref.TreeMap, NodeMap = _ref.NodeMap, transverse = _ref.transverse, root = _ref.root, transversePrimitive = _ref.transversePrimitive;
+_ref = require('./main.coffee'), TreeMap = _ref.TreeMap, NodeMap = _ref.NodeMap, transverse = _ref.transverse, root = _ref.root, transversePrimitive = _ref.transversePrimitive, integer = _ref.integer;
 
 Suggestion = (function() {
   function Suggestion() {}
@@ -477,9 +469,10 @@ SimpleSuggestion = (function(_super) {
 OpenSuggestion = (function(_super) {
   __extends(OpenSuggestion, _super);
 
-  function OpenSuggestion(suggestions, open) {
+  function OpenSuggestion(suggestions, open, category) {
     this.suggestions = suggestions;
     this.open = open;
+    this.category = category;
   }
 
   return OpenSuggestion;
@@ -506,6 +499,15 @@ StringWildcard = (function() {
 
 stringWilcard = new StringWildcard;
 
+IntegerWildcard = (function() {
+  function IntegerWildcard() {}
+
+  return IntegerWildcard;
+
+})();
+
+integerWildcard = new IntegerWildcard;
+
 SuggestionNodeMap = (function(_super) {
   var name;
 
@@ -528,7 +530,9 @@ SuggestionNodeMap = (function(_super) {
 
   SuggestionNodeMap.regex = name;
 
-  SuggestionNodeMap.integer = name;
+  SuggestionNodeMap.integer = function() {
+    return integerWildcard;
+  };
 
   SuggestionNodeMap.boolean = name;
 
@@ -565,7 +569,7 @@ TreeMapToSuggestionTree = (function(_super) {
   }
 
   TreeMapToSuggestionTree.alternatives = function(root, alternatives) {
-    var alternative, d, key, open, value, _i, _len, _ref3, _ref4;
+    var alternative, cat, d, key, open, value, _i, _len, _ref3, _ref4;
     d = {};
     for (_i = 0, _len = alternatives.length; _i < _len; _i++) {
       alternative = alternatives[_i];
@@ -584,15 +588,16 @@ TreeMapToSuggestionTree = (function(_super) {
             d[key] = value;
           }
           open = alternative.open;
+          cat = alternative.category;
           break;
         default:
           throw new Error('Invalid type: ' + alternatives);
       }
     }
     if (open != null) {
-      return new OpenSuggestion(d, function() {
+      return new OpenSuggestion(d, (function() {
         return open();
-      });
+      }), 'snippets');
     } else {
       return new SimpleSuggestion(d);
     }
@@ -605,7 +610,9 @@ TreeMapToSuggestionTree = (function(_super) {
   TreeMapToSuggestionTree.tuple = function(root, key, value) {
     var d;
     if (key === stringWilcard) {
-      return new OpenSuggestion({}, functionize(value));
+      return new OpenSuggestion({}, functionize(value), root.category);
+    } else if (key === integerWildcard) {
+      return new OpenSuggestion({}, functionize(value), root.category);
     } else {
       d = {};
       d[key] = new SuggestItem(functionize(value), key, root.category);
