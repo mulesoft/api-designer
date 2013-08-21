@@ -34,7 +34,7 @@ angular.module('ramlConsoleApp')
                 displayName: 'Parameters',
                 view: 'views/raml-operation-details-parameters.tmpl.html',
                 show: function () {
-                    return typeof $scope.operation.queryParameters !== 'undefined';
+                    return $scope.operation !== undefined && $scope.operation.queryParameters !== undefined;
                 }
             });
 
@@ -43,7 +43,7 @@ angular.module('ramlConsoleApp')
                 displayName: 'Request',
                 view: 'views/raml-operation-details-request.tmpl.html',
                 show: function () {
-                    return typeof $scope.operation.request !== 'undefined';
+                    return $scope.operation !== undefined && $scope.operation.request !== undefined;
                 }
             });
 
@@ -52,7 +52,7 @@ angular.module('ramlConsoleApp')
                 displayName: 'Response',
                 view: 'views/raml-operation-details-response.tmpl.html',
                 show: function () {
-                    return typeof $scope.operation.responses !== 'undefined';
+                    return $scope.operation !== undefined && $scope.operation.responses !== undefined;
                 }
             });
 

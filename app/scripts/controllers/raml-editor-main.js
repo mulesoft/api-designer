@@ -10,17 +10,17 @@ angular.module('ramlConsoleApp')
       }
 
       $scope.definition = source;
-      $rootScope.$emit('event:raml-source-updated', $scope.definition);
+      eventService.broadcast('event:raml-source-updated', $scope.definition);
     };
 
     $scope.cursorMoved = function () {
-      $rootScope.$emit('event:raml-editor-has-changes', editor);
+      eventService.broadcast('event:raml-editor-has-changes', editor);
     };
 
     $rootScope.$on('event:raml-source-updated', function (e, args) {
       var definition = args;
       ramlParser.load(definition).then(function (result) {
-        $rootScope.$emit('event:raml-parsed', ramlReader.read(result));
+        eventService.broadcast('event:raml-parsed', ramlReader.read(result));
       }, function (error) {
         console.log(error);
         $scope.errorMessage = error;
