@@ -75,16 +75,21 @@ angular.module('ramlConsoleApp')
       };
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-        lineNumbers: true,
         mode: 'yaml',
-        lineWrapping: true,
         theme: 'solarized dark',
+        lineNumbers: true,
+        lineWrapping: true,
         autofocus: true,
-        indentUnit: 2,
         indentWithTabs: false,
+        indentUnit: 2,
         tabSize: 2,
         extraKeys: {"Ctrl-Space": "autocomplete"},
-        keyMap: 'tabSpace'
+        keyMap: 'tabSpace',
+
+        foldGutter: {
+          rangeFinder: CodeMirror.fold.indent
+        },
+        gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"]
       });
 
       CodeMirror.commands.autocomplete = function(cm) {
@@ -92,6 +97,10 @@ angular.module('ramlConsoleApp')
       };
 
       editor.setSize(null, '100%');
+      editor.foldCode(0, {
+        rangeFinder: CodeMirror.fold.indent
+      });
+
       editor.on('update', function (event) {
         if (currentUpdateTimer) {
           clearTimeout(currentUpdateTimer);

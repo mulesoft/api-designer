@@ -144,6 +144,22 @@ div.CodeMirror {
     margin-right: 200px;
 }
 
+.CodeMirror-foldgutter {
+    width: 18px;
+}
+.CodeMirror-foldgutter-open,
+.CodeMirror-foldgutter-folded {
+    color: #555;
+    cursor: pointer;
+}
+.CodeMirror-foldgutter-open:after {
+    content: "\25BE";
+}
+.CodeMirror-foldgutter-folded:after {
+    content: "\25B8";
+}
+
+
 /*!
  * Preboot v2
  *
