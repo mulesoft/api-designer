@@ -66,6 +66,7 @@
         node = suggestion.open && suggestion.open(),
         padding = getPadding(node, currLineTabCount);
 
+      // FIXME Use editor.indentLine to handle the indentation!
       return {text: e + ':' + padding, displayText: e  + ' (' + suggestion.category + ')'};
     }).filter(function(e) {
       if (curWord) {
