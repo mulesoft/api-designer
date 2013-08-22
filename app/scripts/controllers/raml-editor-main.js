@@ -85,7 +85,6 @@ angular.module('ramlConsoleApp')
         tabSize: 2,
         extraKeys: {"Ctrl-Space": "autocomplete"},
         keyMap: 'tabSpace',
-
         foldGutter: {
           rangeFinder: CodeMirror.fold.indent
         },

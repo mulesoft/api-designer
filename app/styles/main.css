@@ -145,7 +145,7 @@ div.CodeMirror {
 }
 
 .CodeMirror-foldgutter {
-    width: 18px;
+    width: 15px;
 }
 .CodeMirror-foldgutter-open,
 .CodeMirror-foldgutter-folded {
