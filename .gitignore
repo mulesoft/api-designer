@@ -7,3 +7,4 @@ app/bower_components
 *.orig
 *.log
 .vimrc
+.idea
