@@ -8,12 +8,16 @@ baseUri: http://www.api.com/{version}/{company}
 version: v1.1
 /tags:
   name: Tags
+  description: This is a description of tags
   get:
     summary: Get a list of recently tagged media
+    description: This is a description of getting tags
   post:
     summary: Create a new tag
+    description: This is a description of posting a tag
   /search:
-    name: Search</textarea></div>
+    name: Search
+    description: this is a description of search</textarea></div>
     <div role="shelf" ng-controller="ramlEditorShelf">
       <ul role="sections">
         <li ng-repeat="section in model.sections | orderBy:'name'">
