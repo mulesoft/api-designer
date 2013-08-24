@@ -52,6 +52,7 @@ angular.module('ramlConsoleApp')
 
       editor = codeMirror.initEditor();
 
+
       editor.on('update', function (event) {
         if (currentUpdateTimer) {
           clearTimeout(currentUpdateTimer);
