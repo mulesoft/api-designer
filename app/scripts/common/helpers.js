@@ -10,6 +10,23 @@ angular.module('helpers', [])
 
                 return result.replace(/\&$/, ';');
             },
+            processBaseUri: function (definition) {
+                var baseUri = (definition.baseUri || '').replace(/\/\/*$/g, '');
+                var version = definition.version || '';
+
+                baseUri = baseUri.replace(':0', '\\:0');
+                baseUri = baseUri.replace(':1', '\\:1');
+                baseUri = baseUri.replace(':2', '\\:2');
+                baseUri = baseUri.replace(':3', '\\:3');
+                baseUri = baseUri.replace(':4', '\\:4');
+                baseUri = baseUri.replace(':5', '\\:5');
+                baseUri = baseUri.replace(':6', '\\:6');
+                baseUri = baseUri.replace(':7', '\\:7');
+                baseUri = baseUri.replace(':8', '\\:8');
+                baseUri = baseUri.replace(':9', '\\:9');
+
+                return baseUri.replace('{version}', version);
+            },
             getUriPath: function (uri) {
                 var tempUri = uri.replate('//', '');
                 var pathStart = tempUri.indexOf('/');
