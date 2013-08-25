@@ -1,6 +1,4 @@
-'use strict';
-
 angular.module('raml')
-    .factory('parser', function () {
+    .factory('ramlParser', function () {
         return RAML.Parser;
     });

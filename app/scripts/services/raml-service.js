@@ -1,5 +1,3 @@
-'use strict';
-
 angular.module('raml', [])
     .factory('ramlReader', function () {
         return {

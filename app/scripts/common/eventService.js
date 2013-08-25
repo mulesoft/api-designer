@@ -1,9 +1,14 @@
-angular.module('helpers').factory('eventService', function ($rootScope) {
-    var sharedService = {};
+angular.module('helpers')
+  .factory('eventService', function ($rootScope) {
+    var service = {};
 
-    sharedService.broadcast = function (eventName, data) {
-        $rootScope.$broadcast(eventName, data);
+    service.broadcast = function (eventName, data) {
+      $rootScope.$broadcast(eventName, data);
     };
 
-    return sharedService;
+    service.on = function (eventName, handler) {
+      $rootScope.$on(eventName, handler);
+    };
+
+    return service;
 });

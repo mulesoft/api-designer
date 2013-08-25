@@ -1,7 +1,4 @@
 angular.module('helpers', [])
-    .factory('ramlPaser', function () {
-        return RAML.Parser;
-    })
     .factory('ramlHelper', function () {
         return {
             toUriParams: function (object) {

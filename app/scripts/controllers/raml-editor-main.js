@@ -1,6 +1,5 @@
 angular.module('ramlConsoleApp')
-  .controller('ramlMain', function ($scope, $rootScope, ramlReader, eventService) {
-    var ramlParser = RAML.Parser;
+  .controller('ramlMain', function ($scope, ramlReader, ramlParser, eventService) {
     var editor, currentUpdateTimer, UPDATE_RESPONSIVENESS_INTERVAL = 300;
 
     $scope.sourceUpdated = function () {
@@ -17,7 +16,7 @@ angular.module('ramlConsoleApp')
       eventService.broadcast('event:raml-editor-has-changes', editor);
     };
 
-    $rootScope.$on('event:raml-source-updated', function (e, args) {
+    eventService.on('event:raml-source-updated', function (e, args) {
       var definition = args;
       ramlParser.load(definition).then(function (result) {
         eventService.broadcast('event:raml-parsed', ramlReader.read(result));
@@ -28,7 +27,7 @@ angular.module('ramlConsoleApp')
       });
     });
 
-    $rootScope.$on('event:raml-parsed', function (e, args) {
+    eventService.on('event:raml-parsed', function (e, args) {
         var baseUri = (args.baseUri || '').replace(/\/\/*$/g, '');
         var version = args.version || '';
         var model = {};
