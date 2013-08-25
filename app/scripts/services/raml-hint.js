@@ -148,16 +148,23 @@ angular.module('raml')
       keysToErase = extractKeyPartFromScopes(scopes.scopesByLine[0]);
     }
 
-      var oldAlternatives = alternatives.suggestions,
-          newAlternatives = {};
+      var oldAlternatives = alternatives,
+          newAlternatives = {}, newAlternativesSuggestions = {};
 
-      Object.keys(oldAlternatives).forEach(function (key) {
+      // TODO Make sure this does not represent a Memory Leak
+      Object.keys(oldAlternatives.suggestions).forEach(function (key) {
         if (keysToErase.indexOf(key) === -1) {
-          newAlternatives[key] = oldAlternatives[key];
+          newAlternativesSuggestions[key] = oldAlternatives.suggestions[key];
         }
       });
 
-      alternatives.suggestions = newAlternatives;
+      Object.keys(oldAlternatives).forEach(function(key) {
+        newAlternatives[key] = oldAlternatives[key];
+      });
+
+      newAlternatives.suggestions = newAlternativesSuggestions;
+
+      alternatives = newAlternatives;
 
       var alternativeKeys = [];
 
