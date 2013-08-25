@@ -1,11 +1,17 @@
 'use strict';
 
+var CodeMirror = window.CodeMirror, suggestRAML = window.suggestRAML;
+
 angular.module('raml')
   .factory('ramlHint', function () {
     var hinter = {};
     var WORD = /[\w$]+/;
 
-    hinter.computePath = function computePath (editor, tabCount, line) {
+    function extractKey(value) {
+      return value.replace(new RegExp(':(.*)$', 'g'), '');
+    }
+
+    function _computePath (editor, line, tabCount) {
       if (line <= 0) {
         return [];
       }
@@ -14,15 +20,22 @@ angular.module('raml')
 
       if (tabs.length === tabCount) {
         if (tabCount !== 0) {
-          result = computePath(editor, tabs.length - 1, line - 1);
+          result = _computePath(editor, line - 1, tabs.length - 1);
         }
 
         // Removing spaces and :
         // TODO Unit tests for exceptions
-        return result.concat([value.replace(/:\s*/g, '')]);
+        return result.concat([extractKey(value)]);
       } else {
-        return computePath(editor, tabCount, line - 1);
+        return _computePath(editor, line - 1, tabCount);
       }
+    }
+
+    hinter.computePath = function (editor, line) {
+      var curLine = editor.getLine(line),
+          currLineTabCount = curLine.split('  ').length - 1;
+
+      return _computePath(editor, line, currLineTabCount);
     };
 
     hinter.createIndentation = function createIndentation (tabCount) {
@@ -46,17 +59,20 @@ angular.module('raml')
       return '\n' + hinter.createIndentation(tabCount);
     };
 
-    hinter.getCurWord = function(editor, options) {
+    hinter.getEditorState = function(editor, options) {
       var word = options && options.word || WORD;
       var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
-      var start = cur.ch, end = start;
+      var startPos = cur.ch, endPos = startPos;
       var currLineTabCount = curLine.split('  ').length - 1;
-      while (end < curLine.length && word.test(curLine.charAt(end))) {
-        ++end;
+      while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
+        ++endPos;
       }
-      while (start && word.test(curLine.charAt(start - 1))) {
-        --start;
+      while (startPos && word.test(curLine.charAt(startPos - 1))) {
+        --startPos;
       }
+
+      var start = CodeMirror.Pos(cur.line, startPos),
+      end = CodeMirror.Pos(cur.line, endPos);
       return {
         curWord: start !== end && curLine.slice(start, end),
         start: start,
@@ -67,22 +83,103 @@ angular.module('raml')
       };
     };
 
-    hinter.getSuggestions = function (editor, callback) {
-      var d = hinter.getCurWord(editor);
-      var currLineTabCount = d.currLineTabCount,
-          cur = d.cur;
-      var val = hinter.computePath(editor, currLineTabCount, cur.line);
+    hinter.getScopes = function (editor) {
+      var total = editor.lineCount(), i, line,
+        zipValues = [], currentIndexes = {}, lineSplitted;
+      for (i = 0; i < total; i++) {
+        line = editor.getLine(i);
+        lineSplitted = line.split('  ');
+        zipValues.push([lineSplitted.length, lineSplitted.join(''), i]);
+      }
+
+      var levelTable = zipValues.reduce(function (x,y) {
+        var currentArray = currentIndexes[y[0] - 2],
+          lastArrayIndex, currentIndex;
+        
+        if (currentArray) {
+          lastArrayIndex = currentArray.length - 1;
+          currentIndex = currentIndexes[y[0] - 2][lastArrayIndex];
+        } else {
+          currentIndex = 0;
+        }
+
+        x[currentIndex] = x[currentIndex] || [];
+        x[currentIndex].push([y[2], y[1]]);
+
+        currentIndexes[y[0] - 1] = currentIndexes[y[0] - 1] || [];
+        currentIndexes[y[0] - 1].push(y[2]);
+        return x;
+      }, {});
+
+      return {scopeLevels: currentIndexes, scopesByLine: levelTable};
+    };
+
+    hinter.getAlternatives = function (editor) {
+      var editorState = hinter.getEditorState(editor),
+        currLineTabCount = editorState.currLineTabCount,
+        cur = editorState.cur;
+      var val = hinter.computePath(editor, cur.line);
       val.pop();
 
       var alternatives = suggestRAML(val);
+
+      var scopes = hinter.getScopes(editor);
+      var keysToErase;
+      var currentScopeLevel = currLineTabCount;
+      function extractKeyPartFromScopes(scopesInfo) {
+        return scopesInfo.map(function (scopeInfo) {
+          return extractKey(scopeInfo[1]);
+        });
+      }
+
+      if (currentScopeLevel !== 0) {
+        var scopesAtLevel = scopes.scopeLevels[currentScopeLevel - 1];
+  
+        // We get the maximal element of the set of less than number of line
+        var numOfLinesOfParentScopes = scopesAtLevel.filter(function (numOfLine) {
+          return numOfLine < cur.line;
+        });
+  
+        var scopeLineInformation =
+          scopes.scopesByLine[
+          numOfLinesOfParentScopes[numOfLinesOfParentScopes.length - 1]];
+      
+      keysToErase = extractKeyPartFromScopes(scopeLineInformation);
+    } else {
+      keysToErase = extractKeyPartFromScopes(scopes.scopesByLine[0]);
+    }
+
+      var oldAlternatives = alternatives.suggestions,
+          newAlternatives = {};
+
+      Object.keys(oldAlternatives).forEach(function (key) {
+        // TODO check if keysToErase in key
+        if (keysToErase.indexOf(key) === -1) {
+          newAlternatives[key] = oldAlternatives[key];
+        }
+
+      });
+
+      alternatives.suggestions = newAlternatives;
+
+      //keysToErase.forEach(function (key) {
+      //  delete alternatives.suggestions[key];
+      //});
+
       var alternativeKeys = [];
 
       if (alternatives && alternatives.suggestions) {
         alternativeKeys = Object.keys(alternatives.suggestions);
       }
 
-      var list = alternativeKeys.map(function (e) {
-        var suggestion = alternatives.suggestions[e];
+      return {values: alternatives, keys: alternativeKeys};
+    };
+
+    hinter.getSuggestions = function (editor) {
+      var alternatives = hinter.getAlternatives(editor);
+
+      var list = alternatives.keys.map(function (e) {
+        var suggestion = alternatives.values.suggestions[e];
         return { name: suggestion.name, category: suggestion.category };
       }) || [];
 
@@ -90,26 +187,19 @@ angular.module('raml')
           alternatives.category === 'snippets') {
         list.push({name: 'New resource', category: alternatives.category});
       }
-
-      return callback ? callback(list) : list;
+      
+      return list;
     };
 
     hinter.autocompleteHelper = function(editor) {
-      var d = hinter.getCurWord(editor);
-      var start = d.start, end = d.end, curWord = d.curWord;
-      var cur = d.cur, currLineTabCount = d.currLineTabCount;
-      var val = hinter.computePath(editor, currLineTabCount, cur.line);
-      val.pop();
+      var editorState = hinter.getEditorState(editor),
+          curWord = editorState.curWord,
+          currLineTabCount = editorState.currLineTabCount,
+          start = editorState.start, end = editorState.end;
+      var alternatives = hinter.getAlternatives(editor);
 
-      var alternatives = suggestRAML(val);
-      var alternativeKeys = [];
-
-      if (alternatives && alternatives.suggestions) {
-        alternativeKeys = Object.keys(alternatives.suggestions);
-      }
-
-      var list = alternativeKeys.map(function (e) {
-        var suggestion = alternatives.suggestions[e],
+      var list = alternatives.keys.map(function (e) {
+        var suggestion = alternatives.values.suggestions[e],
           node = suggestion.open && suggestion.open(),
           padding = hinter.getPadding(node, currLineTabCount);
 
@@ -125,11 +215,8 @@ angular.module('raml')
         return true;
       }) || [];
 
-      return {list: list,
-        from: CodeMirror.Pos(cur.line, start),
-        to: CodeMirror.Pos(cur.line, end)
+        return {list: list, from: start, to: end};
       };
-    };
 
     return hinter;
   });
