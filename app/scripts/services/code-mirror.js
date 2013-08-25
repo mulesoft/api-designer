@@ -1,5 +1,5 @@
-angular.module('codeMirror', ['raml'])
-  .factory('codeMirror', function (ramlHint) {
+angular.module('codeMirror', [])
+  .factory('codeMirror', function () {
     var editor = null,
       service = {
         CodeMirror: CodeMirror,
@@ -27,8 +27,6 @@ angular.module('codeMirror', ['raml'])
       CodeMirror.commands.autocomplete = function (cm) {
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
-      
-      CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         mode: 'yaml',
