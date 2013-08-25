@@ -22,7 +22,6 @@ angular.module('raml')
         if (tabCount !== 0) {
           result = _computePath(editor, line - 1, tabs.length - 1);
         }
-
         // Removing spaces and :
         // TODO Unit tests for exceptions
         return result.concat([extractKey(value)]);
@@ -153,18 +152,12 @@ angular.module('raml')
           newAlternatives = {};
 
       Object.keys(oldAlternatives).forEach(function (key) {
-        // TODO check if keysToErase in key
         if (keysToErase.indexOf(key) === -1) {
           newAlternatives[key] = oldAlternatives[key];
         }
-
       });
 
       alternatives.suggestions = newAlternatives;
-
-      //keysToErase.forEach(function (key) {
-      //  delete alternatives.suggestions[key];
-      //});
 
       var alternativeKeys = [];
 
