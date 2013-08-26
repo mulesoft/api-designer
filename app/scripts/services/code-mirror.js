@@ -10,15 +10,36 @@ angular.module('codeMirror', ['raml'])
       };
 
     service.initEditor = function () {
+
+      function isLineOnlyTabs(line, indentUnit) {
+        var tabRegExp = new RegExp('( ){' + indentUnit + '}', 'g');
+        return line.replace(tabRegExp, '').length === 0;
+      }
+
       CodeMirror.keyMap.tabSpace = {
         Tab: function(cm) {
-          var spaces = new Array(cm.getOption('indentUnit') + 1).join(' ');
+          var cursor = cm.getCursor(), line = cm.getLine(cursor.line),
+              indentUnit = cm.getOption('indentUnit'), spaces, result, unitsToIndent;
+        
+          var tabRegExp = new RegExp('( ){' + indentUnit + '}', 'g');
+          result = line.replace(tabRegExp, '');
+          result = result.length ? result.slice(-1)[0] : '';
+
+            /* If I'm in half/part of a tab, add the necessary spaces to complete the tab */
+          if (result !== '' && result.replace(/ /g, '') === '') {
+            unitsToIndent = indentUnit - result.length;
+            /* If not ident normally */
+          } else {
+            unitsToIndent = indentUnit;
+          }
+          spaces = new Array(unitsToIndent + 1).join(' ');
           cm.replaceSelection(spaces, 'end', '+input');
         },
         Backspace: function (cm) {
-          var endCursor = cm.getCursor();
-          var startCursor = {line: endCursor.line, ch: endCursor.ch - 2};
-          if ( '  ' === cm.getRange(startCursor, endCursor) ) {
+          var cursor = cm.getCursor(), line = cm.getLine(cursor.line);
+          
+          /* Erase in tab chunks only if all things found in the current line are tabs */
+          if ( line !== '' && isLineOnlyTabs(line, cm.getOption('indentUnit')) ) {
             cm.deleteH(-2, 'char');
             return;
           }
