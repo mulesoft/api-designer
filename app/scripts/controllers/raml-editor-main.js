@@ -60,7 +60,7 @@ angular.module('ramlConsoleApp')
       });
       editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
 
-      $scope.sourceUpdated();
+      setTimeout($scope.sourceUpdated, 0);
     }
 
     $scope.init();
