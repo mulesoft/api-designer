@@ -73,7 +73,7 @@ angular.module('raml')
       var start = CodeMirror.Pos(cur.line, startPos),
       end = CodeMirror.Pos(cur.line, endPos);
       return {
-        curWord: start !== end && curLine.slice(start, end),
+        curWord: startPos !== endPos && curLine.slice(startPos, endPos),
         start: start,
         end: end,
         cur: cur,
