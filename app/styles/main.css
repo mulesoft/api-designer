@@ -115,7 +115,7 @@ div[role=shelf] ul[role=sections] > li > ul[role=items] > li {
   color: gray;
   text-shadow: 0px 0px;
   list-style-type: none;
-  text-transform: capitalize;
+  text-transform: lowercase;
   font-size: 12px;
   font-weight: lighter;
   padding-top: 4px;
