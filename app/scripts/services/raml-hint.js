@@ -91,6 +91,8 @@ angular.module('raml')
         list.push({name: 'New resource', category: alternatives.category});
       }
 
+      list.path = val;
+
       return callback ? callback(list) : list;
     };
 

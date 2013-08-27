@@ -1,10 +1,14 @@
 angular.module('ramlConsoleApp')
-  .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint) {
+  .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint, eventService, codeMirror, ramlSnippets) {
     var hinter = ramlHint;
-    var editor;
 
-    $rootScope.$on('event:raml-editor-has-changes', function (e, args) {
-      editor = args;
+    eventService.on('event:raml-editor-initialized', function (e, args) {
+      var editor = codeMirror.getEditor();
+      editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
+    });
+
+    $scope.cursorMoved = function () {
+      var editor = codeMirror.getEditor();
       var suggestions = hinter.getSuggestions(editor);
       var sections = {};
       var model = { sections: [] };
@@ -18,72 +22,34 @@ angular.module('ramlConsoleApp')
         model.sections.push(sections[prop]);
       }
 
+      model.path = suggestions.path;
+
       $scope.model = model;
       $scope.$apply();
-    });
+    };
 
     $scope.itemClick = function (item) {
+      var CodeMirror = codeMirror.CodeMirror;
+      var editor = codeMirror.getEditor();
       var cur = editor.getCursor();
-      var code = $scope.getSnippet(item.name);
+      var code = ramlSnippets.getSnippet(item);
       var line = editor.getLine(cur.line);
-      var count = line.split('  ').length - 1;
+      var count = $scope.model.path.length;
       var padding = ramlHint.createIndentation(count);
+      var rangeLine = cur.line;
+      var rangeEndChar = 0;
 
       if (code) {
         code = code.replace(/\{\{padding\}\}/g, padding);
-        editor.replaceRange(code, {line: cur.line, ch: 0}, {line: cur.line, ch: 0});
+        
+        if (line.replace(/^\s+|\s+$/g, '') === '') {
+          rangeEndChar = line.length;
+          if (code.indexOf('\n') >= 0) {
+            code = code + padding;
+          }
+        }
+        
+        editor.replaceRange(code, {line: rangeLine, ch: 0}, {line: rangeLine, ch: rangeEndChar});
       }
     };
-
-    $scope.getSnippet = function (snippetName) {
-      var ind = '{{padding}}';
-
-      if (snippetName.toLowerCase() === 'get') {
-        return '' +
-          ind + 'get:\n' +
-          ind + '  summary: <<insert text or markdown here>>\n';
-      }
-
-      if (snippetName.toLowerCase() === 'post') {
-        return '' +
-          ind + 'post:\n' +
-          ind + '  summary: <<insert text or markdown here>>\n';
-      }
-
-      if (snippetName.toLowerCase() === 'put') {
-        return '' +
-          ind + 'put:\n' +
-          ind + '  summary: <<insert text or markdown here>>\n';
-      }
-
-      if (snippetName.toLowerCase() === 'delete') {
-        return '' +
-          ind + 'delete:\n' +
-          ind + '  summary: <<insert text or markdown here>>\n';
-      }
-
-      if (snippetName.toLowerCase() === 'new resource') {
-        return '' +
-          ind + '/newResource:\n' +
-          ind + '  name: resourceName\n';
-      }
-
-      if (snippetName.toLowerCase() === 'title') {
-        return '' +
-          ind + 'title: My API\n';
-      }
-
-      if (snippetName.toLowerCase() === 'version') {
-        return '' +
-          ind + 'version: v0.1\n';
-      }
-
-      if (snippetName.toLowerCase() === 'baseuri') {
-        return '' +
-          ind + 'baseUri: http://server/api/{version}\n';
-      }
-
-      return null;
-    }
-
   });
