@@ -1,8 +1,10 @@
+'use strict';
+
 angular.module('ramlConsoleApp')
   .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint, eventService, codeMirror, ramlSnippets) {
     var hinter = ramlHint;
 
-    eventService.on('event:raml-editor-initialized', function (e, args) {
+    eventService.on('event:raml-editor-initialized', function () {
       var editor = codeMirror.getEditor();
       editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
     });
@@ -25,11 +27,14 @@ angular.module('ramlConsoleApp')
       model.path = suggestions.path;
 
       $scope.model = model;
-      $scope.$apply();
+      try {
+        $scope.$apply();
+      } catch (e) {
+        console.error('Apply already happening', e);
+      }
     };
 
     $scope.itemClick = function (item) {
-      var CodeMirror = codeMirror.CodeMirror;
       var editor = codeMirror.getEditor();
       var cur = editor.getCursor();
       var code = ramlSnippets.getSnippet(item);
