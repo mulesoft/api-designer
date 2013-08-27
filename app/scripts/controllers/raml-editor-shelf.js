@@ -9,6 +9,13 @@ angular.module('ramlConsoleApp')
       editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
     });
 
+    $scope.safeApply = function () {
+      var phase = this.$root.$$phase;
+      if (!(phase === '$apply' || phase === '$digest')) {
+        this.$apply();
+      }
+    };
+
     $scope.cursorMoved = function () {
       var editor = codeMirror.getEditor();
       var suggestions = hinter.getSuggestions(editor);
@@ -27,11 +34,8 @@ angular.module('ramlConsoleApp')
       model.path = suggestions.path;
 
       $scope.model = model;
-      try {
-        $scope.$apply();
-      } catch (e) {
-        console.error('Apply already happening', e);
-      }
+      
+      $scope.safeApply();
     };
 
     $scope.itemClick = function (item) {
