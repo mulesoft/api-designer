@@ -1,3 +1,5 @@
+'use strict';
+
 angular.module('ramlConsoleApp')
   .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint) {
     var hinter = ramlHint;
@@ -84,6 +86,6 @@ angular.module('ramlConsoleApp')
       }
 
       return null;
-    }
+    };
 
   });
