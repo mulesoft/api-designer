@@ -3,56 +3,77 @@
 angular.module('codeMirror')
   .factory('codeMirrorErrors', function (codeMirror) {
     var CodeMirror = codeMirror.CodeMirror;
-    var GUTTER_ID = "CodeMirror-lint-markers";
+    var GUTTER_ID = 'CodeMirror-lint-markers';
     var SEVERITIES = /^(?:error|warning)$/;
     var service = {};
 
     function showTooltip (e, content) {
-      var tt = document.createElement("div");
-      tt.className = "CodeMirror-lint-tooltip";
+      var tt = document.createElement('div');
+      tt.className = 'CodeMirror-lint-tooltip';
       tt.appendChild(content.cloneNode(true));
       document.body.appendChild(tt);
 
       function position (e) {
-        if (!tt.parentNode) return CodeMirror.off(document, "mousemove", position);
-        tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + "px";
-        tt.style.left = (e.clientX + 5) + "px";
+        if (!tt.parentNode) {
+          return CodeMirror.off(document, 'mousemove', position);
+        }
+        tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + 'px';
+        tt.style.left = (e.clientX + 5) + 'px';
       }
 
-      CodeMirror.on(document, "mousemove", position);
+      CodeMirror.on(document, 'mousemove', position);
       position(e);
-      if (tt.style.opacity != null) tt.style.opacity = 1;
+      if (tt.style.opacity !== null) {
+        tt.style.opacity = 1;
+      }
       return tt;
     }
 
     function rm (elt) {
-      if (elt.parentNode) elt.parentNode.removeChild(elt);
+      if (elt.parentNode) {
+        elt.parentNode.removeChild(elt);
+      }
     }
 
     function hideTooltip (tt) {
-      if (!tt.parentNode) return;
-      if (tt.style.opacity == null) rm(tt);
+      if (!tt.parentNode) {
+        return;
+      }
+      if (tt.style.opacity === null) {
+        rm(tt);
+      }
       tt.style.opacity = 0;
-      setTimeout(function () { rm(tt); }, 600);
+      setTimeout(function () { rm(tt); }, 200);
     }
 
     function showTooltipFor (e, content, node) {
       var tooltip = showTooltip(e, content);
       
       function hide () {
-        CodeMirror.off(node, "mouseout", hide);
-        if (tooltip) { hideTooltip(tooltip); tooltip = null; }
+        CodeMirror.off(node, 'mouseout', hide);
+        if (tooltip) {
+          hideTooltip(tooltip);
+          tooltip = null;
+        }
       }
 
       var poll = setInterval(function () {
-        if (tooltip) for (var n = node;; n = n.parentNode) {
-          if (n == document.body) return;
-          if (!n) { hide(); break; }
+        if (tooltip) {
+          for (var n = node;; n = n.parentNode) {
+            if (n === document.body) {
+              return;
+            }
+            if (!n) {
+              hide();
+              break;
+            }
+          }
+        } else {
+          return clearInterval(poll);
         }
-        if (!tooltip) return clearInterval(poll);
       }, 400);
 
-      CodeMirror.on(node, "mouseout", hide);
+      CodeMirror.on(node, 'mouseout', hide);
     }
 
     function clearMarks (cm) {
@@ -60,8 +81,7 @@ angular.module('codeMirror')
     }
 
     function getMaxSeverity(a, b) {
-      if (a == "error") return a;
-      else return b;
+      return a === 'error' ? a : b;
     }
 
     function groupByLine (annotations) {
@@ -75,25 +95,27 @@ angular.module('codeMirror')
 
     function annotationTooltip (ann) {
       var severity = ann.severity;
-      if (!SEVERITIES.test(severity)) severity = "error";
-      var tip = document.createElement("div");
-      tip.className = "CodeMirror-lint-message-" + severity;
+      if (!SEVERITIES.test(severity)) {
+        severity = 'error';
+      }
+      var tip = document.createElement('div');
+      tip.className = 'CodeMirror-lint-message-' + severity;
       tip.appendChild(document.createTextNode(ann.message));
       return tip;
     }
 
     function makeMarker (labels, severity, multiple, tooltips) {
-      var marker = document.createElement("div");
+      var marker = document.createElement('div');
       var inner = marker;
       
-      marker.className = "CodeMirror-lint-marker-" + severity;
+      marker.className = 'CodeMirror-lint-marker-' + severity;
       if (multiple) {
-        inner = marker.appendChild(document.createElement("div"));
-        inner.className = "CodeMirror-lint-marker-multiple";
+        inner = marker.appendChild(document.createElement('div'));
+        inner.className = 'CodeMirror-lint-marker-multiple';
       }
 
-      if (tooltips != false) { 
-        CodeMirror.on(inner, "mouseover", function (e) {
+      if (tooltips !== false) {
+        CodeMirror.on(inner, 'mouseover', function (e) {
           showTooltipFor(e, labels, inner);
         });
       }
@@ -104,8 +126,6 @@ angular.module('codeMirror')
     service.displayAnnotations = function (annotationsNotSorted) {
       var editor = codeMirror.getEditor();
       var annotations = groupByLine(annotationsNotSorted);
-
-      //this.clearAnnotations();
 
       for (var line = 0; line < annotations.length; ++line) {
         var anns = annotations[line];
@@ -120,14 +140,13 @@ angular.module('codeMirror')
           var severity = ann.severity;
           
           if (!SEVERITIES.test(severity)) {
-            severity = "error";
+            severity = 'error';
           }
           
           maxSeverity = getMaxSeverity(maxSeverity, severity);
 
           tipLabel.appendChild(annotationTooltip(ann));
         }
-        var info = editor.lineInfo(line - 1);
         editor.setGutterMarker(line - 1, GUTTER_ID, makeMarker(tipLabel, maxSeverity, anns.length > 1, true));
       }
     };
