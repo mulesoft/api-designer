@@ -56,9 +56,14 @@ angular.module('ramlConsoleApp')
           if (code.indexOf('\n') >= 0) {
             code = code + padding;
           }
+        } else {
+          if (code.indexOf('\n') < 0) {
+            code = code + '\n';
+          }          
         }
         
         editor.replaceRange(code, {line: rangeLine, ch: 0}, {line: rangeLine, ch: rangeEndChar});
+        editor.focus();
       }
     };
   });

@@ -1,5 +1,5 @@
 angular.module('ramlConsoleApp')
-  .controller('ramlMain', function ($scope, ramlReader, ramlParser, ramlHelper, eventService, codeMirror) {
+  .controller('ramlMain', function ($scope, ramlReader, ramlParser, ramlHelper, eventService, codeMirror, codeMirrorErrors) {
     var editor, currentUpdateTimer,
         UPDATE_RESPONSIVENESS_INTERVAL = 300;
 
@@ -25,14 +25,17 @@ angular.module('ramlConsoleApp')
 
     eventService.on('event:raml-parsed', function (e, args) {
       var definition = args;
+      codeMirrorErrors.clearAnnotations();
       definition.baseUri = ramlHelper.processBaseUri(definition);
       eventService.broadcast('event:raml-sidebar-clicked', { isResource: true, data: definition });
     });
 
     eventService.on('event:raml-parser-error', function (e, args) {
       var error = args;
-      $scope.errorMessage = error;
-      $scope.$apply();
+      var annotations = [];
+
+      annotations.push({ message: error.message, line: error.problem_mark.line, column: error.problem_mark.column });
+      codeMirrorErrors.displayAnnotations(annotations);
     });
 
     $scope.init = function () {

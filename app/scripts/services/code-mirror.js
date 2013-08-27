@@ -48,7 +48,7 @@ angular.module('codeMirror', ['raml'])
         foldGutter: {
           rangeFinder: CodeMirror.fold.indent
         },
-        gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter']
+        gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter']
       });
 
       editor.setSize(null, '100%');
