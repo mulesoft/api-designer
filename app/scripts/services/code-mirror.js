@@ -86,6 +86,13 @@ angular.module('codeMirror', ['raml'])
         rangeFinder: CodeMirror.fold.indent
       });
 
+      var charWidth = editor.defaultCharWidth(), basePadding = 4;
+      editor.on("renderLine", function(cm, line, elt) {
+        var off = CodeMirror.countColumn(line.text, null, cm.getOption("tabSize")) * charWidth;
+        elt.style.textIndent = "-" + off + "px";
+        elt.style.paddingLeft = (basePadding + off) + "px";
+      });
+
       return editor;
     };
 

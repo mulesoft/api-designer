@@ -13,7 +13,7 @@ CodeMirror.defineMode("yaml", function() {
         stream.skipToEnd(); return "comment";
       }
       if (state.literal && stream.indentation() > state.keyCol) {
-        stream.skipToEnd(); return "string";
+        stream.skipToEnd(); return "none";
       } else if (state.literal) { state.literal = false; }
       if (stream.sol()) {
         state.keyCol = 0;
@@ -27,10 +27,53 @@ CodeMirror.defineMode("yaml", function() {
         if (stream.match(/\s*-\s+/)) { return 'meta'; }
       }
       /* pairs (associative arrays) -> key */
-      if (!state.pair && stream.match(/^\s*([a-z0-9\._-])+(?=\s*:)/i)) {
+      if (!state.pair && stream.match(/^\s*([a-z0-9\?\._-])+(?=\s*:)/i)) {
+        var key = stream.string.replace(/^\s+|\s+$/g, '').split(':')[0];
+        var level = stream.string.split('  ').length - 1;
+        
         state.pair = true;
         state.keyCol = stream.indentation();
-        return "atom";
+
+        if (level <= state.traitLevel) {
+          state.traitLevel = 0;
+          state.insideTraits = false;
+        }
+        if ("traits".indexOf(key) >= 0) {
+          state.traitLevel = level;
+          state.insideTraits = true;
+        }
+
+        if (level <= state.methodLevel) {
+          state.methodLevel = 0;
+          state.insideMethod = false;
+        }
+        if ("get|get?|put|put?|post|post?|patch|patch?|delete|delete?|head|head?|options|options?".indexOf(key) >= 0) {
+          state.methodLevel = level;
+          state.insideMethod = true;
+        }
+
+        if ("get|get?|put|put?|post|post?|patch|patch?|delete|delete?|head|head?|options|options?".indexOf(key) >= 0) {
+          return "method-title";
+        }
+
+        if ("traits".indexOf(key) >= 0) {
+          return "trait-title";
+        }
+
+        if (state.insideMethod) {
+          return "method-content"
+        }
+        if (state.insideTraits) {
+          return "trait-content";
+        }
+        if (stream.string.toLowerCase().indexOf('tag:raml.org') >= 0) {
+          return "raml-tag";
+        }
+        if (key.indexOf('/') === 0) {
+          return "resource";
+        }
+        
+        return "key";
       }
       if (state.pair && stream.match(/^:\s*/)) { state.pairStart = true; return 'meta'; }
 
