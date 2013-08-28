@@ -60,7 +60,7 @@ angular.module('ramlConsoleApp')
       });
 
       angular.element(document).ready(function () {
-        setTimeout($scope.sourceUpdated, 0);
+        setTimeout($scope.sourceUpdated, 250);
         setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
       });
 
