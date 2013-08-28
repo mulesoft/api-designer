@@ -171,11 +171,11 @@ angular.module('raml')
 
       return newAlternatives;
 
-    }
+    };
 
     hinter.getAlternatives = function (editor) {
       var val = hinter.computePath(editor), alternatives,
-        keysToErase, alternativeKeys;
+        keysToErase, alternativeKeys = [];
 
       val.pop();
 
@@ -185,13 +185,11 @@ angular.module('raml')
 
       alternatives = hinter.selectiveCloneAlternatives(alternatives, keysToErase);
 
-      var alternativeKeys = [];
-
       if (alternatives && alternatives.suggestions) {
         alternativeKeys = Object.keys(alternatives.suggestions);
       }
 
-      return {values: alternatives, keys: alternativeKeys};
+      return {values: alternatives, keys: alternativeKeys, path: val};
     };
 
     hinter.getSuggestions = function (editor) {
@@ -207,9 +205,8 @@ angular.module('raml')
         list.push({name: 'New resource', category: alternatives.category});
       }
 
-      list.path = val;
+      list.path = alternatives.path;
 
-      
       return list;
     };
 
