@@ -3,7 +3,7 @@
 var CodeMirror = window.CodeMirror;
 
 angular.module('codeMirror', ['raml'])
-  .factory('codeMirror', function ($rootScope, ramlHint) {
+  .factory('codeMirror', function (ramlHint) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
