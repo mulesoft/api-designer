@@ -49,6 +49,14 @@ http://ethanschoonover.com/solarized/img/solarized-palette.png
 }
 
 
+.cm-s-solarized .cm-method-title { color: #268bd2; }
+.cm-s-solarized .cm-method-content { color: #2aa198; }
+.cm-s-solarized .cm-trait-title { color: #d33682; }
+.cm-s-solarized .cm-trait-content { color: #6c71c4; }
+.cm-s-solarized .cm-raml-tag { color: #859900; }
+.cm-s-solarized .cm-resource { color: #cb4b16; }
+.cm-s-solarized .cm-key { color: #b58900; }
+
 .cm-s-solarized .cm-keyword { color: #cb4b16 }
 .cm-s-solarized .cm-atom { color: #d33682; }
 .cm-s-solarized .cm-number { color: #d33682; }
