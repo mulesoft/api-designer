@@ -39,8 +39,9 @@ describe('RAML Hint Service', function () {
       editor = getEditor(
         'title: hello\n'+
         'version: v1.0\n' +
-        'baseUri: http://example.com/api\n');
-      var res = hinter.computePath(editor, 1);
+        'baseUri: http://example.com/api\n',
+        {line: 1, ch: 4});
+      var res = hinter.computePath(editor);
       expect(res).not.toBe(undefined);
       expect(res.length).toBe(1);
       expect(res[0]).toBe('version');
@@ -53,13 +54,19 @@ describe('RAML Hint Service', function () {
         'baseUri: http://example.com/api\n' +
         '/hello:\n' +
         '  /bye:\n' +
-        '    get:\n');
-      var res = hinter.computePath(editor, 5);
+        '    get:\n',
+        {line: 5, ch: 4});
+
+      var res = hinter.computePath(editor);
       expect(res).not.toBe(undefined);
       expect(res.length).toBe(3);
       expect(res[0]).toBe('/hello');
       expect(res[1]).toBe('/bye');
       expect(res[2]).toBe('get');
+    });
+    
+    it('should handle variable indentUnits', function () {
+      //TODO Add test when decoupling indentUnit
     });
   });
 
@@ -100,7 +107,8 @@ describe('RAML Hint Service', function () {
         '  /bye:\n' +
         '    get: {}\n' +
         '  /ciao:\n' +
-        '    get:\n', {line: 4, ch: 4});
+        '    get:\n',
+        {line: 4, ch: 4});
 
       var editorState = hinter.getEditorState(editor);
       expect(editorState).not.toBe(undefined);
@@ -113,5 +121,142 @@ describe('RAML Hint Service', function () {
       expect(editorState.currLineTabCount).toBe(1);
     });
   });
+
+  describe('getKeysToErase', function () {
+    it('should list the keys at the same level with the same parent', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '/hello:\n' +
+        '  /bye:\n' +
+        '    get: {}\n' +
+        '  /ciao:\n' +
+        '    get:', {line: 2, ch: 5});
+
+      var keysToErase = hinter.getKeysToErase(editor);
+      expect(keysToErase.length).toBe(4);
+      var expected = ['title', 'version', 'baseUri', '/hello'];
+      var i;
+      for (i = 0; i < expected.length; i++) {
+        expect(keysToErase[i]).toBe(expected[i]);
+      }
+      
+    });
+    it('should list third level keys ok', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '/hello:\n' +
+        '  /bye:\n' +
+        '    get: {}\n' +
+        '    post: {}\n' +
+        '    put: {}\n' +
+        '    delete: {}\n' +
+        '  /ciao:\n' +
+        '    get:', {line: 5, ch: 6});
+
+      var keysToErase = hinter.getKeysToErase(editor);
+      expect(keysToErase.length).toBe(4);
+      var expected = ['get', 'post', 'put', 'delete'];
+      var i;
+      for (i = 0; i < expected.length; i++) {
+        expect(keysToErase[i]).toBe(expected[i]);
+      }
+
+    });
+  });
+
+  describe('selectiveCloneAlternatives', function () {
+    it('should clone all the keys in suggestions when keysToErase is empty', function () {
+      var key;
+
+      var suggestions = {x: 1, y: 2};
+      var alternatives = {a: 1, b: 2, c: 3, suggestions: suggestions};
+
+      var newAlternatives = hinter.selectiveCloneAlternatives(alternatives, []);
+
+      expect(alternatives === newAlternatives).toBe(false);
+      expect(alternatives.suggestions === newAlternatives.suggestions).toBe(false);
+
+      for (key in alternatives) {
+        if (key !== 'suggestions') {
+          expect(newAlternatives[key]).toBe(alternatives[key]);
+        }
+      }
+      for (key in alternatives.suggestions) {
+        expect(newAlternatives.suggestions[key]).toBe(alternatives.suggestions[key]);
+      }
+    });
+
+    it('should exclude the keys found in keysToErase', function () {
+      var key;
+
+      var suggestions = {x: 1, y: 2};
+      var alternatives = {a: 1, b: 2, c: 3, suggestions: suggestions};
+
+      var newAlternatives = hinter.selectiveCloneAlternatives(alternatives, ['x']);
+      
+      expect(alternatives === newAlternatives).toBe(false);
+      expect(alternatives.suggestions === newAlternatives.suggestions).toBe(false);
+
+      for (key in alternatives) {
+        if (key !== 'suggestions') {
+          expect(newAlternatives[key]).toBe(alternatives[key]);
+        }
+      }
+      
+      expect(newAlternatives.suggestions.y).toBe(alternatives.suggestions['y']);
+      expect(newAlternatives.suggestions.x).not.toBe(alternatives.suggestions['x']);
+      expect(newAlternatives.suggestions.x).toBe(undefined);
+
+    });
+  });
+
+  describe('getAlternatives', function () {
+    it('should provide suggestRAML alternatives', function () {
+      var key;
+
+      var alternatives = {suggestions: {a: {}, b: {}, c: {}}, category: 'x'};
+      hinter.suggestRAML = function() {
+        return alternatives;
+      };
+      editor = getEditor(
+        'title: hello\n',
+        {line: 1, ch: 0});
+      var newAlternatives = hinter.getAlternatives(editor);
+      
+      for (key in alternatives.suggestions) {
+        expect(alternatives.suggestions[key]).toBe(newAlternatives.values.suggestions[key]);
+      }
+      
+      expect(newAlternatives.keys.length).toBe(3);
+
+    });
+    
+    it('should not provide existing keys', function () {
+      var key;
+
+      var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
+      hinter.suggestRAML = function() {
+        return alternatives;
+      };
+      editor = getEditor(
+        'title: hello\n',
+        {line: 1, ch: 0});
+      var newAlternatives = hinter.getAlternatives(editor);
+
+      expect(newAlternatives.values.title).toBe(undefined);
+      expect(newAlternatives.keys.indexOf('title')).toBe(-1);
+      expect(newAlternatives.keys.length).toBe(3);
+      
+
+    });
+    
+
+  });
+
+
 
 });

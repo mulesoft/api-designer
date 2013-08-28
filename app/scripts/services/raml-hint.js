@@ -6,6 +6,9 @@ angular.module('raml')
   .factory('ramlHint', function () {
     var hinter = {};
     var WORD = /[\w$]+/;
+    // TODO Unhardcode: Can't do neither cm.getOption('indentUnit')
+    // nor editor.getOption('indentUnit') :(
+    var indentUnit = 2;
 
     function extractKey(value) {
       return value.replace(new RegExp(':(.*)$', 'g'), '');
@@ -15,14 +18,14 @@ angular.module('raml')
       if (line <= 0) {
         return [];
       }
-      var tabs = editor.getLine(line).split('  '),
+      var spaces = new Array(indentUnit + 1).join(' ');
+      var tabs = editor.getLine(line).split(spaces),
           value = tabs.pop(), result = [];
 
       if (tabs.length === tabCount) {
         if (tabCount !== 0) {
           result = _computePath(editor, line - 1, tabs.length - 1);
         }
-        // Removing spaces and :
         // TODO Unit tests for exceptions
         return result.concat([extractKey(value)]);
       } else {
@@ -30,15 +33,20 @@ angular.module('raml')
       }
     }
 
-    hinter.computePath = function (editor, line) {
-      var curLine = editor.getLine(line),
-          currLineTabCount = curLine.split('  ').length - 1;
+    hinter.suggestRAML = suggestRAML;
+
+    hinter.computePath = function (editor) {
+      var editorState = hinter.getEditorState(editor),
+          line = editorState.cur.line,
+          curLine = editor.getLine(line),
+          spaces = new Array(indentUnit + 1).join(' '),
+          currLineTabCount = curLine.split(spaces).length - 1;
 
       return _computePath(editor, line, currLineTabCount);
     };
 
     hinter.createIndentation = function createIndentation (tabCount) {
-      var s = '  ';
+      var s = new Array(indentUnit + 1).join(' ');
       var result = '';
       for (var i = 0; i < tabCount; i++) {
         result += s;
@@ -62,7 +70,8 @@ angular.module('raml')
       var word = options && options.word || WORD;
       var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
       var startPos = cur.ch, endPos = startPos;
-      var currLineTabCount = curLine.split('  ').length - 1;
+      var spaces = new Array(indentUnit + 1).join(' ');
+      var currLineTabCount = curLine.split(spaces).length - 1;
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
@@ -84,10 +93,11 @@ angular.module('raml')
 
     hinter.getScopes = function (editor) {
       var total = editor.lineCount(), i, line,
-        zipValues = [], currentIndexes = {}, lineSplitted;
+        zipValues = [], currentIndexes = {}, lineSplitted,
+        spaces = new Array(indentUnit + 1).join(' ');
       for (i = 0; i < total; i++) {
         line = editor.getLine(i);
-        lineSplitted = line.split('  ');
+        lineSplitted = line.split(spaces);
         zipValues.push([lineSplitted.length, lineSplitted.join(''), i]);
       }
 
@@ -112,44 +122,39 @@ angular.module('raml')
 
       return {scopeLevels: currentIndexes, scopesByLine: levelTable};
     };
+      
+    function extractKeyPartFromScopes(scopesInfo) {
+      return scopesInfo.map(function (scopeInfo) {
+        return extractKey(scopeInfo[1]);
+      });
+    }
 
-    hinter.getAlternatives = function (editor) {
+    hinter.getKeysToErase = function (editor) {
       var editorState = hinter.getEditorState(editor),
-        currLineTabCount = editorState.currLineTabCount,
-        cur = editorState.cur;
-      var val = hinter.computePath(editor, cur.line);
-      val.pop();
-
-      var alternatives = suggestRAML(val);
-
-      var scopes = hinter.getScopes(editor);
-      var keysToErase;
-      var currentScopeLevel = currLineTabCount;
-      function extractKeyPartFromScopes(scopesInfo) {
-        return scopesInfo.map(function (scopeInfo) {
-          return extractKey(scopeInfo[1]);
-        });
-      }
+          scopes = hinter.getScopes(editor),
+          currentLineNumber = editorState.cur.line,
+          currentScopeLevel = editorState.currLineTabCount;
 
       if (currentScopeLevel !== 0) {
         var scopesAtLevel = scopes.scopeLevels[currentScopeLevel - 1];
   
         // We get the maximal element of the set of less than number of line
         var numOfLinesOfParentScopes = scopesAtLevel.filter(function (numOfLine) {
-          return numOfLine < cur.line;
+          return numOfLine < currentLineNumber;
         });
   
-        var scopeLineInformation =
-          scopes.scopesByLine[
-          numOfLinesOfParentScopes[numOfLinesOfParentScopes.length - 1]];
+        var scopeLineInformation = scopes.scopesByLine[
+          numOfLinesOfParentScopes[numOfLinesOfParentScopes.length - 1]
+        ];
       
-      keysToErase = extractKeyPartFromScopes(scopeLineInformation);
-    } else {
-      keysToErase = extractKeyPartFromScopes(scopes.scopesByLine[0]);
-    }
+        return extractKeyPartFromScopes(scopeLineInformation);
+      } else {
+        return extractKeyPartFromScopes(scopes.scopesByLine[0]);
+      }
+    };
 
-      var oldAlternatives = alternatives,
-          newAlternatives = {}, newAlternativesSuggestions = {};
+    hinter.selectiveCloneAlternatives = function (oldAlternatives, keysToErase) {
+      var newAlternatives = {}, newAlternativesSuggestions = {};
 
       // TODO Make sure this does not represent a Memory Leak
       Object.keys(oldAlternatives.suggestions).forEach(function (key) {
@@ -164,7 +169,21 @@ angular.module('raml')
 
       newAlternatives.suggestions = newAlternativesSuggestions;
 
-      alternatives = newAlternatives;
+      return newAlternatives;
+
+    }
+
+    hinter.getAlternatives = function (editor) {
+      var val = hinter.computePath(editor), alternatives,
+        keysToErase, alternativeKeys;
+
+      val.pop();
+
+      alternatives = hinter.suggestRAML(val);
+
+      keysToErase = hinter.getKeysToErase(editor);
+
+      alternatives = hinter.selectiveCloneAlternatives(alternatives, keysToErase);
 
       var alternativeKeys = [];
 
