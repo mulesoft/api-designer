@@ -127,6 +127,8 @@ angular.module('codeMirror')
       var editor = codeMirror.getEditor();
       var annotations = groupByLine(annotationsNotSorted);
 
+      this.clearAnnotations();
+
       for (var line = 0; line < annotations.length; ++line) {
         var anns = annotations[line];
         if (!anns) {
