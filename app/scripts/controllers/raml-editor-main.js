@@ -59,10 +59,8 @@ angular.module('ramlConsoleApp')
         }, UPDATE_RESPONSIVENESS_INTERVAL);
       });
 
-      //angular.element(document).ready(function () {
-      setTimeout($scope.sourceUpdated, 500);
       setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
-      //});
+      setTimeout($scope.sourceUpdated, 250);
     };
 
     $scope.init();
