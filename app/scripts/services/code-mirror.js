@@ -9,21 +9,50 @@ angular.module('codeMirror', ['raml'])
         CodeMirror: CodeMirror
       };
 
+    service.removeTabs = function (line, indentUnit) {
+      var tabRegExp = new RegExp('( ){' + indentUnit + '}', 'g');
+      return line.replace(tabRegExp, '');
+    };
+
+    service.isLineOnlyTabs = function (line, indentUnit) {
+      return service.removeTabs(line, indentUnit).length === 0;
+    };
+
+    service.tabKey = function (cm) {
+      var cursor = cm.getCursor(), line = cm.getLine(cursor.line),
+          indentUnit = cm.getOption('indentUnit'), spaces, result, unitsToIndent;
+    
+      result = service.removeTabs(line, indentUnit);
+      result = result.length ? result : '';
+
+        /* If I'm in half/part of a tab, add the necessary spaces to complete the tab */
+      if (result !== '' && result.replace(/ /g, '') === '') {
+        unitsToIndent = indentUnit - result.length;
+        /* If not ident normally */
+      } else {
+        unitsToIndent = indentUnit;
+      }
+      spaces = new Array(unitsToIndent + 1).join(' ');
+      cm.replaceSelection(spaces, 'end', '+input');
+    };
+
+    service.backspaceKey = function (cm) {
+      var cursor = cm.getCursor(), line = cm.getLine(cursor.line),
+          indentUnit = cm.getOption('indentUnit');
+      
+      /* Erase in tab chunks only if all things found in the current line are tabs */
+      if ( line !== '' && service.isLineOnlyTabs(line, indentUnit) ) {
+        cm.deleteH(-indentUnit, 'char');
+        return;
+      }
+      cm.deleteH(-1, 'char');
+    };
+
     service.initEditor = function () {
+
       CodeMirror.keyMap.tabSpace = {
-        Tab: function(cm) {
-          var spaces = new Array(cm.getOption('indentUnit') + 1).join(' ');
-          cm.replaceSelection(spaces, 'end', '+input');
-        },
-        Backspace: function (cm) {
-          var endCursor = cm.getCursor();
-          var startCursor = {line: endCursor.line, ch: endCursor.ch - 2};
-          if ( '  ' === cm.getRange(startCursor, endCursor) ) {
-            cm.deleteH(-2, 'char');
-            return;
-          }
-          cm.deleteH(-1, 'char');
-        },
+        Tab: service.tabKey,
+        Backspace: service.backspaceKey,
         enter: 'newline-and-indent',
         fallthrough: ['default']
       };
