@@ -13,10 +13,6 @@ angular.module('ramlConsoleApp')
       eventService.broadcast('event:raml-source-updated', $scope.definition);
     };
 
-    $scope.cursorMoved = function () {
-      eventService.broadcast('event:raml-editor-has-changes', editor);
-    };
-
     eventService.on('event:raml-source-updated', function (e, args) {
       var definition = args;
       $scope.errorMessage = '';
@@ -61,9 +57,9 @@ angular.module('ramlConsoleApp')
           currentUpdateTimer = undefined;
         }, UPDATE_RESPONSIVENESS_INTERVAL);
       });
-      editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
 
       setTimeout($scope.sourceUpdated, 0);
+      setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
     }
 
     $scope.init();
