@@ -29,14 +29,6 @@ module.exports = function (grunt) {
   grunt.initConfig({
     yeoman: yeomanConfig,
     watch: {
-      coffee: {
-        files: ['<%= yeoman.app %>/scripts/{,*/}*.coffee'],
-        tasks: ['coffee:dist']
-      },
-      coffeeTest: {
-        files: ['test/spec/{,*/}*.coffee'],
-        tasks: ['coffee:test']
-      },
       livereload: {
         options: {
           livereload: LIVERELOAD_PORT
@@ -107,9 +99,6 @@ module.exports = function (grunt) {
         files: [{
           dot: true,
           src: ['<%= yeoman.app %>/vendor/scripts/angular.js',
-            // '<%= yeoman.app %>/vendor/scripts/codemirror.js',
-            // '<%= yeoman.app %>/vendor/scripts/yaml.js',
-            // '<%= yeoman.app %>/vendor/styles/*',
             '<%= yeoman.app %>/vendor/scripts/raml-parser.js'
           ]
         }]
@@ -124,31 +113,6 @@ module.exports = function (grunt) {
         '<%= yeoman.app %>/scripts/{,*/}*.js'
       ]
     },
-    coffee: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '<%= yeoman.app %>/scripts',
-          src: '{,*/}*.coffee',
-          dest: '.tmp/scripts',
-          ext: '.js'
-        }]
-      },
-      test: {
-        files: [{
-          expand: true,
-          cwd: 'test/spec',
-          src: '{,*/}*.coffee',
-          dest: '.tmp/spec',
-          ext: '.js'
-        }]
-      }
-    },
-    // not used since Uglify task does concat,
-    // but still available if needed
-    /*concat: {
-      dist: {}
-    },*/
     rev: {
       dist: {
         files: {
@@ -174,32 +138,8 @@ module.exports = function (grunt) {
         dirs: ['<%= yeoman.dist %>']
       }
     },
-    cssmin: {
-      // By default, your `index.html` <!-- Usemin Block --> will take care of
-      // minification. This option is pre-configured if you do not wish to use
-      // Usemin blocks.
-      // dist: {
-      //   files: {
-      //     '<%= yeoman.dist %>/styles/main.css': [
-      //       '.tmp/styles/{,*/}*.css',
-      //       '<%= yeoman.app %>/styles/{,*/}*.css'
-      //     ]
-      //   }
-      // }
-    },
     htmlmin: {
       dist: {
-        options: {
-          /*removeCommentsFromCDATA: true,
-          // https://github.com/yeoman/grunt-usemin/issues/44
-          //collapseWhitespace: true,
-          collapseBooleanAttributes: true,
-          removeAttributeQuotes: true,
-          removeRedundantAttributes: true,
-          useShortDoctype: true,
-          removeEmptyAttributes: true,
-          removeOptionalTags: true*/
-        },
         files: [{
           expand: true,
           cwd: '<%= yeoman.app %>',
@@ -242,7 +182,7 @@ module.exports = function (grunt) {
         files: [{
           expand: true,
           dot: false,
-          cwd: '<%= yeoman.app %>',
+          cwd: '<%= yeoman.root %>',
           dest: '<%= yeoman.app %>/vendor/scripts',
           flatten: true,
           src: [
@@ -301,27 +241,10 @@ module.exports = function (grunt) {
         }]
       }
     },
-    concurrent: {
-      server: [
-        'coffee:dist'
-      ],
-      test: [
-        'coffee'
-      ],
-      dist: [
-        'coffee',
-        'htmlmin'
-      ]
-    },
     karma: {
       unit: {
         configFile: 'karma.conf.js',
         singleRun: true
-      }
-    },
-    cdnify: {
-      dist: {
-        html: ['<%= yeoman.dist %>/*.html']
       }
     },
     ngmin: {
@@ -363,7 +286,6 @@ module.exports = function (grunt) {
 
     grunt.task.run([
       'clean:server',
-      'concurrent:server',
       'connect:livereload',
       'open',
       'watch'
@@ -372,7 +294,6 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'clean:server',
-    'concurrent:test',
     'connect:test',
     'karma'
   ]);
@@ -385,17 +306,15 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'clean:dist',
     'useminPrepare',
-    'concurrent:dist',
     'concat',
+    'htmlmin',
     'copy:dist',
-    'cdnify',
     'ngmin',
-    'cssmin',
     'uglify',
     'rev',
     'usemin'
   ]);
-  
+
   grunt.registerTask('deploy', [
     'build',
     'appengine'

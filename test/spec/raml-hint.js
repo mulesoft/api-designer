@@ -3,35 +3,14 @@
 var hinter, editor;
 
 var describe = window.describe, beforeEach = window.beforeEach,
-    expect = window.expect, it = window.it;
+  it = window.it;
 
-function getEditor(text, cursor) {
-    var Editor = {
-      getCursor: function () {
-        return this.cursor;
-      },
-      getLine: function (line) {
-        //console.log(line, this.text.split('\n')[line]);
-        return this.text.split('\n')[line];
-      },
-      lineCount: function () {
-        return this.text.split('\n').length;
-      }
-    };
-
-    var editor = Object.create(Editor);
-  
-    editor.text = text;
-    editor.cursor = cursor || { line: 0, ch: 0 };
-
-    return editor;
-}
 
 describe('RAML Hint Service', function () {
   beforeEach(function () {
     var $injector = angular.injector(['raml']);
     hinter = $injector.get('ramlHint');
-    expect(hinter).not.toBe(null);
+    hinter.should.be.ok;
   });
 
   describe('computePath', function () {
@@ -42,9 +21,9 @@ describe('RAML Hint Service', function () {
         'baseUri: http://example.com/api\n',
         {line: 1, ch: 4});
       var res = hinter.computePath(editor);
-      expect(res).not.toBe(undefined);
-      expect(res.length).toBe(1);
-      expect(res[0]).toBe('version');
+      res.should.be.ok;
+      res.length.should.be.equal(1);
+      res[0].should.be.equal('version');
     });
 
     it('should handle second level paths', function () {
@@ -58,13 +37,13 @@ describe('RAML Hint Service', function () {
         {line: 5, ch: 4});
 
       var res = hinter.computePath(editor);
-      expect(res).not.toBe(undefined);
-      expect(res.length).toBe(3);
-      expect(res[0]).toBe('/hello');
-      expect(res[1]).toBe('/bye');
-      expect(res[2]).toBe('get');
+      res.should.be.ok;
+      res.length.should.be.equal(3);
+      res[0].should.be.equal('/hello');
+      res[1].should.be.equal('/bye');
+      res[2].should.be.equal('get');
     });
-    
+
     it('should handle variable indentUnits', function () {
       //TODO Add test when decoupling indentUnit
     });
@@ -81,19 +60,20 @@ describe('RAML Hint Service', function () {
         '    get: {}\n' +
         '  /ciao:\n' +
         '    get:');
-      
+
 
       var scopesByLine = hinter.getScopes(editor).scopesByLine;
-      expect(scopesByLine[0]).not.toBe(undefined);
-      expect(scopesByLine[0].length).toBe(4);
-      expect(scopesByLine[3].length).toBe(2);
-      expect(scopesByLine[4].length).toBe(1);
+      scopesByLine[0].should.be.ok;
+      (scopesByLine[0].length).should.be.equal(4);
+      (scopesByLine[3].length).should.be.equal(2);
+      (scopesByLine[4].length).should.be.equal(1);
 
       var scopeLevels = hinter.getScopes(editor).scopeLevels;
-      expect(scopeLevels[0].length).toBe(4);
-      expect(scopeLevels[1].length).toBe(2);
-      expect(scopeLevels[2].length).toBe(2);
-      expect(scopeLevels[3]).toBe(undefined);
+      (scopeLevels[0].length).should.be.equal(4);
+      (scopeLevels[1].length).should.be.equal(2);
+      (scopeLevels[2].length).should.be.equal(2);
+      // TODO Why scope levels isn't an array?
+      Object.keys(scopeLevels).length.should.be.equal(3);
     });
   });
 
@@ -111,14 +91,14 @@ describe('RAML Hint Service', function () {
         {line: 4, ch: 4});
 
       var editorState = hinter.getEditorState(editor);
-      expect(editorState).not.toBe(undefined);
-      expect(editorState.curWord).toBe('bye');
-      expect(editorState.start.line).toBe(4);
-      expect(editorState.start.ch).toBe(3);
-      expect(editorState.end.line).toBe(4);
-      expect(editorState.end.ch).toBe(6);
-      expect(editorState.curLine).toBe('  /bye:');
-      expect(editorState.currLineTabCount).toBe(1);
+      (editorState).should.be.ok;
+      (editorState.curWord).should.be.equal('bye');
+      (editorState.start.line).should.be.equal(4);
+      (editorState.start.ch).should.be.equal(3);
+      (editorState.end.line).should.be.equal(4);
+      (editorState.end.ch).should.be.equal(6);
+      (editorState.curLine).should.be.equal('  /bye:');
+      (editorState.currLineTabCount).should.be.equal(1);
     });
   });
 
@@ -135,13 +115,13 @@ describe('RAML Hint Service', function () {
         '    get:', {line: 2, ch: 5});
 
       var keysToErase = hinter.getKeysToErase(editor);
-      expect(keysToErase.length).toBe(4);
-      var expected = ['title', 'version', 'baseUri', '/hello'];
+      (keysToErase.length).should.be.equal(4);
+      var ed = ['title', 'version', 'baseUri', '/hello'];
       var i;
-      for (i = 0; i < expected.length; i++) {
-        expect(keysToErase[i]).toBe(expected[i]);
+      for (i = 0; i < ed.length; i++) {
+        (keysToErase[i]).should.be.equal(ed[i]);
       }
-      
+
     });
     it('should list third level keys ok', function () {
       editor = getEditor(
@@ -158,12 +138,7 @@ describe('RAML Hint Service', function () {
         '    get:', {line: 5, ch: 6});
 
       var keysToErase = hinter.getKeysToErase(editor);
-      expect(keysToErase.length).toBe(4);
-      var expected = ['get', 'post', 'put', 'delete'];
-      var i;
-      for (i = 0; i < expected.length; i++) {
-        expect(keysToErase[i]).toBe(expected[i]);
-      }
+      ['get', 'post', 'put', 'delete'].should.be.eql(keysToErase);
 
     });
   });
@@ -177,17 +152,12 @@ describe('RAML Hint Service', function () {
 
       var newAlternatives = hinter.selectiveCloneAlternatives(alternatives, []);
 
-      expect(alternatives === newAlternatives).toBe(false);
-      expect(alternatives.suggestions === newAlternatives.suggestions).toBe(false);
+      alternatives.should.not.equal(newAlternatives);
+      alternatives.suggestions.should.not.equal(newAlternatives.suggestions);
 
-      for (key in alternatives) {
-        if (key !== 'suggestions') {
-          expect(newAlternatives[key]).toBe(alternatives[key]);
-        }
-      }
-      for (key in alternatives.suggestions) {
-        expect(newAlternatives.suggestions[key]).toBe(alternatives.suggestions[key]);
-      }
+      alternatives.should.be.deep.equal(newAlternatives);
+      alternatives.suggestions.should.be.deep.equal(newAlternatives.suggestions);
+
     });
 
     it('should exclude the keys found in keysToErase', function () {
@@ -197,19 +167,15 @@ describe('RAML Hint Service', function () {
       var alternatives = {a: 1, b: 2, c: 3, suggestions: suggestions};
 
       var newAlternatives = hinter.selectiveCloneAlternatives(alternatives, ['x']);
-      
-      expect(alternatives === newAlternatives).toBe(false);
-      expect(alternatives.suggestions === newAlternatives.suggestions).toBe(false);
 
-      for (key in alternatives) {
-        if (key !== 'suggestions') {
-          expect(newAlternatives[key]).toBe(alternatives[key]);
-        }
-      }
-      
-      expect(newAlternatives.suggestions.y).toBe(alternatives.suggestions['y']);
-      expect(newAlternatives.suggestions.x).not.toBe(alternatives.suggestions['x']);
-      expect(newAlternatives.suggestions.x).toBe(undefined);
+      alternatives.should.not.equal(newAlternatives);
+      alternatives.suggestions.should.not.equal(newAlternatives.suggestions);
+
+      alternatives.should.contain.keys(Object.keys(newAlternatives));
+
+      newAlternatives.suggestions.y.should.be.equal(alternatives.suggestions.y);
+      alternatives.suggestions.x.should.not.equal(newAlternatives.suggestions.x)
+      should.not.exist(newAlternatives.suggestions.x);
 
     });
   });
@@ -226,15 +192,13 @@ describe('RAML Hint Service', function () {
         'title: hello\n',
         {line: 1, ch: 0});
       var newAlternatives = hinter.getAlternatives(editor);
-      
-      for (key in alternatives.suggestions) {
-        expect(alternatives.suggestions[key]).toBe(newAlternatives.values.suggestions[key]);
-      }
-      
-      expect(newAlternatives.keys.length).toBe(3);
+
+      alternatives.suggestions.should.be.deep.equal(newAlternatives.values.suggestions);
+
+      newAlternatives.keys.length.should.be.equal(3);
 
     });
-    
+
     it('should not provide existing keys', function () {
       var key;
 
@@ -247,13 +211,13 @@ describe('RAML Hint Service', function () {
         {line: 1, ch: 0});
       var newAlternatives = hinter.getAlternatives(editor);
 
-      expect(newAlternatives.values.title).toBe(undefined);
-      expect(newAlternatives.keys.indexOf('title')).toBe(-1);
-      expect(newAlternatives.keys.length).toBe(3);
-      
+      should.not.exist(newAlternatives.values.title);
+      newAlternatives.keys.should.not.include('title');
+      newAlternatives.keys.length.should.be.equal(3);
+
 
     });
-    
+
 
   });
 

@@ -3,7 +3,7 @@
 var codeMirrorService, editor;
 
 var describe = window.describe, beforeEach = window.beforeEach,
-    expect = window.expect, it = window.it;
+  it = window.it;
 
 window.getEditor = window.getEditor || {};
 
@@ -16,41 +16,8 @@ describe('CodeMirror Service', function () {
   beforeEach(function () {
     var $injector = angular.injector(['codeMirror']);
     codeMirrorService = $injector.get('codeMirror');
-    expect(codeMirrorService).not.toBe(null);
+    codeMirrorService.should.be.ok;
 
-    window.getEditor = function (text, cursor, options) {
-      options = options || {};
-    
-      var Editor = {
-        getCursor: function () {
-          return this.cursor;
-        },
-        getLine: function (line) {
-          //console.log(line, this.text.split('\n')[line]);
-          return this.text.split('\n')[line];
-        },
-        lineCount: function () {
-          return this.text.split('\n').length;
-        },
-        replaceSelection: function (spaces) {
-          this.spacesToInsert = spaces;
-        },
-        getOption: function (key) {
-          return options[key];
-        },
-        deleteH: function (offset, range) {
-          expect(range).toBe('char');
-          this.deleteOffset = offset;
-        }
-      };
-    
-      var editor = Object.create(Editor);
-      
-      editor.text = text;
-      editor.cursor = cursor || { line: 0, ch: 0 };
-    
-      return editor;
-    };
   });
 
   describe('tab key', function () {
@@ -64,7 +31,7 @@ describe('CodeMirror Service', function () {
         {indentUnit: indentUnit});
 
       codeMirrorService.tabKey(editor);
-      expect(editor.spacesToInsert).toBe(sp(indentUnit));
+      editor.spacesToInsert.should.be.equal(sp(indentUnit));
 
     });
 
@@ -79,10 +46,10 @@ describe('CodeMirror Service', function () {
         {indentUnit: indentUnit});
 
       codeMirrorService.tabKey(editor);
-      expect(editor.spacesToInsert).toBe(sp(indentUnit - incompleteIndent));
-      
+      editor.spacesToInsert.should.be.equal(sp(indentUnit - incompleteIndent));
+
     });
-    
+
     it('should tab normally with non-whitespace', function () {
       var indentUnit = 7;
       editor = getEditor(
@@ -92,9 +59,9 @@ describe('CodeMirror Service', function () {
         'lala',
         {line: 3, ch: 0},
         {indentUnit: indentUnit});
-      
+
       codeMirrorService.tabKey(editor);
-      expect(editor.spacesToInsert).toBe(sp(indentUnit));
+      editor.spacesToInsert.should.be.equal(sp(indentUnit));
     });
 
   });
@@ -112,7 +79,7 @@ describe('CodeMirror Service', function () {
         {indentUnit: indentUnit});
 
       codeMirrorService.backspaceKey(editor);
-      expect(editor.deleteOffset).toBe(-1);
+      editor.deleteOffset.should.be.equal(-1);
     });
 
     it('should delete tabs when line is tab only', function () {
@@ -126,9 +93,9 @@ describe('CodeMirror Service', function () {
         {indentUnit: indentUnit});
 
       codeMirrorService.backspaceKey(editor);
-      expect(editor.deleteOffset).toBe(-2);
+      editor.deleteOffset.should.be.equal(-2);
     });
-    
+
     it('should delete tabs with arbitrary tab size', function () {
       var indentUnit = 7;
       editor = getEditor(
@@ -140,7 +107,7 @@ describe('CodeMirror Service', function () {
         {indentUnit: indentUnit});
 
       codeMirrorService.backspaceKey(editor);
-      expect(editor.deleteOffset).toBe(-indentUnit);
+      editor.deleteOffset.should.be.equal(-indentUnit);
     });
   });
 });
