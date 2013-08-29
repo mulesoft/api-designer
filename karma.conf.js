@@ -14,7 +14,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-    'bower_components/sinonjs/sinon.js',
+    'test/lib/sinon.js',
     'app/vendor/scripts/suggest.js',
     'app/vendor/scripts/angular.js',
     'app/vendor/scripts/angular-resource.js',
