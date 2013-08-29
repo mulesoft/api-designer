@@ -138,6 +138,16 @@ module.exports = function (grunt) {
         dirs: ['<%= yeoman.dist %>']
       }
     },
+    htmlmin: {
+      dist: {
+        files: [{
+          expand: true,
+          cwd: '<%= yeoman.app %>',
+          src: ['*.html', 'views/*.html'],
+          dest: '<%= yeoman.dist %>'
+        }]
+      }
+    },
     // Put files not handled in other tasks here
     copy: {
       dist: {
@@ -172,7 +182,7 @@ module.exports = function (grunt) {
         files: [{
           expand: true,
           dot: false,
-          cwd: '<%= yeoman.app %>',
+          cwd: '<%= yeoman.root %>',
           dest: '<%= yeoman.app %>/vendor/scripts',
           flatten: true,
           src: [
@@ -297,9 +307,9 @@ module.exports = function (grunt) {
     'clean:dist',
     'useminPrepare',
     'concat',
+    'htmlmin',
     'copy:dist',
     'ngmin',
-    'cssmin',
     'uglify',
     'rev',
     'usemin'
