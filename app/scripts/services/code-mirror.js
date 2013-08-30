@@ -49,16 +49,14 @@ angular.module('codeMirror', ['raml'])
     };
 
     service.enterKey = function (cm) {
-      var cursor = cm.getCursor();
-      var line = cm.getLine(cursor.line);
+      var editorState = ramlHint.getEditorState(cm);
       var indentUnit = cm.getOption('indentUnit');
 
-      var spaces = new Array(indentUnit + 1).join(' ');
-      var lineTabCount = line.split(spaces).length - 1;
+      var path = ramlHint.computePath(cm);
+      var suggestions = ramlHint.suggestRAML(path);
 
-      var offset = 0;
-
-      cm.replaceSelection(indentUnit * (lineTabCount + offset));
+      var offset = suggestions.isScalar ? 0 : 1;
+      cm.replaceSelection(indentUnit * (editorState.currLineTabCount + offset));
     }
 
     service.initEditor = function () {
