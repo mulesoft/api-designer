@@ -401,7 +401,7 @@ action = (function(func, args, ctor) {
   return Object(result) === result ? result : child;
 })(Alternatives, (function() {
   var _i, _len, _ref8, _results;
-  _ref8 = [new ConstantString('get'), new ConstantString('post'), new ConstantString('put'), new ConstantString('delete'), new ConstantString('head'), new ConstantString('path'), new ConstantString('options')];
+  _ref8 = [new ConstantString('get'), new ConstantString('post'), new ConstantString('put'), new ConstantString('delete'), new ConstantString('head'), new ConstantString('patch'), new ConstantString('options')];
   _results = [];
   for (_i = 0, _len = _ref8.length; _i < _len; _i++) {
     actionName = _ref8[_i];
