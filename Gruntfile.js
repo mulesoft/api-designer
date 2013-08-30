@@ -276,8 +276,8 @@ module.exports = function (grunt) {
     spawn('appcfg.py', ['update', './dist'], PIPE).on(
       'exit', function(status) {
         done(status === 0);
-        }
-      );
+      }
+    );
   });
   grunt.registerTask('server', function (target) {
     if (target === 'dist') {
