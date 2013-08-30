@@ -143,7 +143,7 @@ module.exports = function (grunt) {
         files: [{
           expand: true,
           cwd: '<%= yeoman.app %>',
-          src: ['*.html', 'views/*.html'],
+          src: ['*.html'],
           dest: '<%= yeoman.dist %>'
         }]
       }
@@ -258,6 +258,16 @@ module.exports = function (grunt) {
           ]
         }
       }
+    },
+    ngtemplates: {
+      ramlConsoleApp: {
+        options: {
+          base: 'app',
+          concat: 'dist/scripts/scripts.js'
+        },
+        src: 'app/views/**/*.html',
+        dest: 'dist/templates.js'
+      }
     }
   });
 
@@ -288,6 +298,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'clean:dist',
     'useminPrepare',
+    'ngtemplates',
     'concat',
     'htmlmin',
     'copy:dist',
