@@ -3,7 +3,7 @@
 var hinter, editor;
 
 var describe = window.describe, beforeEach = window.beforeEach,
-  it = window.it;
+  it = window.it, getEditor = window.getEditor, should = window.should;
 
 
 describe('RAML Hint Service', function () {
@@ -145,7 +145,6 @@ describe('RAML Hint Service', function () {
 
   describe('selectiveCloneAlternatives', function () {
     it('should clone all the keys in suggestions when keysToErase is empty', function () {
-      var key;
 
       var suggestions = {x: 1, y: 2};
       var alternatives = {a: 1, b: 2, c: 3, suggestions: suggestions};
@@ -161,7 +160,6 @@ describe('RAML Hint Service', function () {
     });
 
     it('should exclude the keys found in keysToErase', function () {
-      var key;
 
       var suggestions = {x: 1, y: 2};
       var alternatives = {a: 1, b: 2, c: 3, suggestions: suggestions};
@@ -174,7 +172,7 @@ describe('RAML Hint Service', function () {
       alternatives.should.contain.keys(Object.keys(newAlternatives));
 
       newAlternatives.suggestions.y.should.be.equal(alternatives.suggestions.y);
-      alternatives.suggestions.x.should.not.equal(newAlternatives.suggestions.x)
+      alternatives.suggestions.x.should.not.equal(newAlternatives.suggestions.x);
       should.not.exist(newAlternatives.suggestions.x);
 
     });
@@ -182,7 +180,6 @@ describe('RAML Hint Service', function () {
 
   describe('getAlternatives', function () {
     it('should provide suggestRAML alternatives', function () {
-      var key;
 
       var alternatives = {suggestions: {a: {}, b: {}, c: {}}, category: 'x'};
       hinter.suggestRAML = function() {
@@ -200,8 +197,6 @@ describe('RAML Hint Service', function () {
     });
 
     it('should not provide existing keys', function () {
-      var key;
-
       var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
       hinter.suggestRAML = function() {
         return alternatives;
@@ -215,6 +210,100 @@ describe('RAML Hint Service', function () {
       newAlternatives.keys.should.not.include('title');
       newAlternatives.keys.length.should.be.equal(3);
 
+
+    });
+
+    describe('getSuggestions', function () {
+      it('should render the text correctly', function () {
+        var alternatives = {suggestions: {title: {}, a: {category: 'simple'}, b: {category: 'complex'}, c: {category: 'simple'}}, category: 'x'};
+        hinter.suggestRAML = function() {
+          return alternatives;
+        };
+        editor = getEditor(
+          'title: hello\n',
+          {line: 1, ch: 0});
+        var shelfSuggestions = hinter.getSuggestions(editor);
+
+        var titleFound = false;
+
+        /* Check that all the alternatives are rendered correctly */
+        Object.keys(alternatives.suggestions).forEach(function (suggestion) {
+          /* Ignore if the key is title */
+          if (suggestion === 'title') {
+            titleFound = true;
+            return;
+          }
+          shelfSuggestions.filter(function (shelfSuggestion) {
+            return shelfSuggestion.name === suggestion;
+          }).length.should.be.equal(1);
+
+        });
+        
+        titleFound.should.be.true;
+
+      });
+    });
+
+    describe('autocompleteHelper', function () {
+      it('should render the text correctly', function () {
+        var alternatives = {
+          suggestions: {
+            title: {
+              category: 'simple',
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            a: {
+              category: 'simple',
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            b: {
+              category: 'complex',
+              open: function () {
+                return {constructor: {name: 'StringWildcard'}};
+              }
+            },
+            c: {
+              category: 'simple',
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            }
+          },
+          category: 'x'};
+        hinter.suggestRAML = function() {
+          return alternatives;
+        };
+        editor = getEditor(
+          'title: hello\n',
+          {line: 1, ch: 0});
+        var shelfSuggestions = hinter.autocompleteHelper(editor);
+
+        shelfSuggestions.should.be.ok;
+      
+        var titleFound = false;
+      
+        /* Check that all the alternatives are rendered correctly */
+        Object.keys(alternatives.suggestions).forEach(function (suggestion) {
+          /* Ignore if the key is title */
+          if (suggestion === 'title') {
+            titleFound = true;
+            return;
+          }
+          shelfSuggestions.list.filter(function (shelfSuggestion) {
+            var displayTextExpected = suggestion + ' (' +
+              alternatives.suggestions[suggestion].category + ')';
+            return displayTextExpected === shelfSuggestion.displayText;
+          }).length.should.be.equal(1);
+      
+        });
+        
+        titleFound.should.be.true;
+      
+      });
 
     });
 
