@@ -460,6 +460,7 @@ SimpleSuggestion = (function(_super) {
 
   function SimpleSuggestion(suggestions) {
     this.suggestions = suggestions;
+    this.isScalar = false;
   }
 
   return SimpleSuggestion;
@@ -473,6 +474,7 @@ OpenSuggestion = (function(_super) {
     this.suggestions = suggestions;
     this.open = open;
     this.category = category;
+    this.isScalar = false;
   }
 
   return OpenSuggestion;
@@ -484,6 +486,7 @@ SuggestItem = (function() {
     this.open = open;
     this.name = name;
     this.category = category != null ? category : 'spec';
+    this.isScalar = false;
   }
 
   return SuggestItem;
@@ -491,7 +494,9 @@ SuggestItem = (function() {
 })();
 
 StringWildcard = (function() {
-  function StringWildcard() {}
+  function StringWildcard() {
+    this.isScalar = true;
+  }
 
   return StringWildcard;
 
@@ -500,7 +505,9 @@ StringWildcard = (function() {
 stringWilcard = new StringWildcard;
 
 IntegerWildcard = (function() {
-  function IntegerWildcard() {}
+  function IntegerWildcard() {
+    this.isScalar = true;
+  }
 
   return IntegerWildcard;
 
@@ -519,7 +526,10 @@ SuggestionNodeMap = (function(_super) {
   }
 
   name = function(node) {
-    return node.constructor.name;
+    return {
+      isScalar: true,
+      name: node.constructor.name
+    };
   };
 
   SuggestionNodeMap.markdown = name;
@@ -543,7 +553,10 @@ SuggestionNodeMap = (function(_super) {
   };
 
   SuggestionNodeMap.constantString = function(root) {
-    return root.value;
+    return {
+      isScalar: true,
+      name: root.value
+    };
   };
 
   return SuggestionNodeMap;
@@ -615,7 +628,7 @@ TreeMapToSuggestionTree = (function(_super) {
       return new OpenSuggestion({}, functionize(value), root.category);
     } else {
       d = {};
-      d[key] = new SuggestItem(functionize(value), key, root.category);
+      d[key.name] = new SuggestItem(functionize(value), key, root.category);
       return new SimpleSuggestion(d);
     }
   };
