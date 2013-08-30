@@ -48,6 +48,19 @@ angular.module('codeMirror', ['raml'])
       cm.deleteH(-1, 'char');
     };
 
+    service.enterKey = function (cm) {
+      var cursor = cm.getCursor();
+      var line = cm.getLine(cursor.line);
+      var indentUnit = cm.getOption('indentUnit');
+
+      var spaces = new Array(indentUnit + 1).join(' ');
+      var lineTabCount = line.split(spaces).length - 1;
+
+      var offset = 0;
+
+      cm.replaceSelection(indentUnit * (lineTabCount + offset));
+    }
+
     service.initEditor = function () {
 
       CodeMirror.keyMap.tabSpace = {

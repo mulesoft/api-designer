@@ -32,7 +32,6 @@ describe('CodeMirror Service', function () {
 
       codeMirrorService.tabKey(editor);
       editor.spacesToInsert.should.be.equal(sp(indentUnit));
-
     });
 
     it('should complete the indentUnit', function () {
@@ -110,4 +109,37 @@ describe('CodeMirror Service', function () {
       editor.deleteOffset.should.be.equal(-indentUnit);
     });
   });
+
+  describe('enter key', function () {
+    it('should keep the same tab level if the current line is a literal', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: hello\n' +
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '  /tags\n' +
+        '    name: Tags',
+        {line: 4, ch: 13},
+        {indentUnit: indentUnit});
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal(indentUnit * 3);
+    });
+
+    it('should add another tab level if the current line is a scalar', function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: hello\n' +
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '  /tags\n' +
+        '    name: Tags',
+        {line: 3, ch: 6},
+        {indentUnit: indentUnit});
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal(indentUnit * 2);
+    });
+  });
+
 });
