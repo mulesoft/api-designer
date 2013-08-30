@@ -197,7 +197,7 @@ angular.module('raml')
 
       var list = alternatives.keys.map(function (e) {
         var suggestion = alternatives.values.suggestions[e];
-        return { name: suggestion.name, category: suggestion.category };
+        return { name: e, category: suggestion.category };
       }) || [];
 
       if (alternatives.constructor.name === 'OpenSuggestion' &&

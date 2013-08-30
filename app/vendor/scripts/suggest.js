@@ -482,9 +482,9 @@ OpenSuggestion = (function(_super) {
 })(Suggestion);
 
 SuggestItem = (function() {
-  function SuggestItem(open, name, category) {
+  function SuggestItem(open, value, category) {
     this.open = open;
-    this.name = name;
+    this.value = value;
     this.category = category != null ? category : 'spec';
     this.isScalar = false;
   }
