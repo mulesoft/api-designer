@@ -146,15 +146,27 @@ describe('RAML Hint Service', function () {
   describe('selectiveCloneAlternatives', function () {
     it('should clone all the keys in suggestions when keysToErase is empty', function () {
 
-      var suggestions = {x: 1, y: 2};
-      var alternatives = {a: 1, b: 2, c: 3, suggestions: suggestions};
+      function MyCustomClass(obj) {
+        var that = this;
+        if (obj) {
+          Object.keys(obj).forEach(function (key) {
+            var value = obj[key];
+            that[key] = value;
+          });
+        }
+      }
+
+      var suggestions = new MyCustomClass({x: 1, y: 2});
+      var alternatives = new MyCustomClass({a: 1, b: 2, c: 3, suggestions: suggestions});
 
       var newAlternatives = hinter.selectiveCloneAlternatives(alternatives, []);
 
       alternatives.should.not.equal(newAlternatives);
       alternatives.suggestions.should.not.equal(newAlternatives.suggestions);
 
-      alternatives.should.be.deep.equal(newAlternatives);
+      newAlternatives.should.contain.keys(Object.keys(alternatives));
+      newAlternatives.isOpenSuggestion.should.be.equal(alternatives.constructor.name === 'OpenSuggestion');
+
       alternatives.suggestions.should.be.deep.equal(newAlternatives.suggestions);
 
     });
@@ -169,7 +181,8 @@ describe('RAML Hint Service', function () {
       alternatives.should.not.equal(newAlternatives);
       alternatives.suggestions.should.not.equal(newAlternatives.suggestions);
 
-      alternatives.should.contain.keys(Object.keys(newAlternatives));
+      newAlternatives.should.contain.keys(Object.keys(alternatives));
+      newAlternatives.isOpenSuggestion.should.be.equal(alternatives.constructor.name === 'OpenSuggestion');
 
       newAlternatives.suggestions.y.should.be.equal(alternatives.suggestions.y);
       alternatives.suggestions.x.should.not.equal(newAlternatives.suggestions.x);
@@ -215,7 +228,22 @@ describe('RAML Hint Service', function () {
 
     describe('getSuggestions', function () {
       it('should render the text correctly', function () {
-        var alternatives = {suggestions: {title: {}, a: {category: 'simple'}, b: {category: 'complex'}, c: {category: 'simple'}}, category: 'x'};
+        var alternatives = {
+          suggestions: {
+            title: {},
+            a: {
+              category: 'simple',
+            },
+            b: {
+              category: 'complex',
+            },
+            c: {
+              category: 'simple'
+            }
+          },
+          constructor: { name: 'OpenSuggestion' },
+          category: 'snippets'
+        };
         hinter.suggestRAML = function() {
           return alternatives;
         };
@@ -226,6 +254,13 @@ describe('RAML Hint Service', function () {
 
         var titleFound = false;
 
+        var shelfSuggestionKeys = {};
+
+        shelfSuggestions.forEach(function (shelfSuggestion) {
+          shelfSuggestionKeys[shelfSuggestion.name] = shelfSuggestion;
+        });
+
+
         /* Check that all the alternatives are rendered correctly */
         Object.keys(alternatives.suggestions).forEach(function (suggestion) {
           /* Ignore if the key is title */
@@ -233,12 +268,12 @@ describe('RAML Hint Service', function () {
             titleFound = true;
             return;
           }
-          shelfSuggestions.filter(function (shelfSuggestion) {
-            return shelfSuggestion.name === suggestion;
-          }).length.should.be.equal(1);
 
+          shelfSuggestionKeys[suggestion].should.be.ok;
         });
-        
+
+        shelfSuggestionKeys['New resource'].should.be.ok;
+
         titleFound.should.be.true;
 
       });
@@ -280,29 +315,21 @@ describe('RAML Hint Service', function () {
         editor = getEditor(
           'title: hello\n',
           {line: 1, ch: 0});
-        var shelfSuggestions = hinter.autocompleteHelper(editor);
+        var autocompleteSuggestions = hinter.autocompleteHelper(editor);
 
-        shelfSuggestions.should.be.ok;
-      
-        var titleFound = false;
-      
-        /* Check that all the alternatives are rendered correctly */
-        Object.keys(alternatives.suggestions).forEach(function (suggestion) {
-          /* Ignore if the key is title */
-          if (suggestion === 'title') {
-            titleFound = true;
-            return;
-          }
-          shelfSuggestions.list.filter(function (shelfSuggestion) {
-            var displayTextExpected = suggestion + ' (' +
-              alternatives.suggestions[suggestion].category + ')';
-            return displayTextExpected === shelfSuggestion.displayText;
-          }).length.should.be.equal(1);
-      
+        autocompleteSuggestions.should.be.ok;
+
+        var autocompleteSuggestionKeys = {};
+
+        autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
+          var cleanedUpText = autocompleteSuggestion.text.replace(/:(.|\n)*/g, '');
+          autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
         });
-        
-        titleFound.should.be.true;
-      
+
+        alternatives.suggestions.should.include.keys(Object.keys(autocompleteSuggestionKeys));
+
+        Object.keys(autocompleteSuggestionKeys).should.not.include.keys('title');
+
       });
 
     });

@@ -155,8 +155,7 @@ angular.module('raml')
 
     hinter.selectiveCloneAlternatives = function (oldAlternatives, keysToErase) {
       var newAlternatives = {}, newAlternativesSuggestions = {};
-
-      // TODO Make sure this does not represent a Memory Leak
+      
       Object.keys(oldAlternatives.suggestions).forEach(function (key) {
         if (keysToErase.indexOf(key) === -1) {
           newAlternativesSuggestions[key] = oldAlternatives.suggestions[key];
@@ -168,6 +167,8 @@ angular.module('raml')
       });
 
       newAlternatives.suggestions = newAlternativesSuggestions;
+
+      newAlternatives.isOpenSuggestion = oldAlternatives.constructor.name === 'OpenSuggestion';
 
       return newAlternatives;
 
@@ -200,9 +201,8 @@ angular.module('raml')
         return { name: e, category: suggestion.category };
       }) || [];
 
-      if (alternatives.constructor.name === 'OpenSuggestion' &&
-          alternatives.category === 'snippets') {
-        list.push({name: 'New resource', category: alternatives.category});
+      if (alternatives.values.isOpenSuggestion && alternatives.values.category === 'snippets') {
+        list.push({name: 'New resource', category: alternatives.values.category});
       }
 
       list.path = alternatives.path;
