@@ -62,12 +62,25 @@ angular.module('codeMirror', ['raml'])
       cm.deleteH(-1, 'char');
     };
 
+    service.enterKey = function (cm) {
+      var editorState = ramlHint.getEditorState(cm);
+      var indentUnit = cm.getOption('indentUnit');
+
+      var path = ramlHint.computePath(cm);
+      var suggestions = ramlHint.suggestRAML(path);
+
+      var offset = suggestions.isScalar ? 0 : 1;
+
+      var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ');
+      cm.replaceSelection(spaces, "end", "+input");
+    }
+
     service.initEditor = function () {
 
       CodeMirror.keyMap.tabSpace = {
         Tab: service.tabKey,
         Backspace: service.backspaceKey,
-        enter: 'newline-and-indent',
+        Enter: service.enterKey,
         fallthrough: ['default']
       };
 

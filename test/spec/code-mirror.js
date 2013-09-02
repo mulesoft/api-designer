@@ -17,7 +17,6 @@ describe('CodeMirror Service', function () {
     var $injector = angular.injector(['codeMirror']);
     codeMirrorService = $injector.get('codeMirror');
     codeMirrorService.should.be.ok;
-
   });
 
   describe('tab key', function () {
@@ -32,7 +31,6 @@ describe('CodeMirror Service', function () {
 
       codeMirrorService.tabKey(editor);
       editor.spacesToInsert.should.be.equal(sp(indentUnit));
-
     });
 
     it('should complete the indentUnit', function () {
@@ -123,4 +121,56 @@ describe('CodeMirror Service', function () {
     });
 
   });
+
+  describe('enter key', function () {
+    it('should keep the same tab level if the current line is a literal', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: hello\n' +
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '/tags:\n' +
+        '  name: Tags',
+        { line: 4, ch: 13},
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
+    });
+
+    it('should add another tab level if the current line is a scalar', function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: hello\n' +
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '/tags:\n' +
+        '  name: Tags',
+        { line: 3, ch: 6},
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
+    });
+
+    it('should add another tab level for second level scalars', function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 6, ch: 0 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+    });
+  });
+
 });
