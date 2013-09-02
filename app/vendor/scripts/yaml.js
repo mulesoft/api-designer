@@ -27,7 +27,7 @@ CodeMirror.defineMode("yaml", function() {
         if (stream.match(/\s*-\s+/)) { return 'meta'; }
       }
       /* pairs (associative arrays) -> key */
-      if (!state.pair && stream.match(/^\s*([a-z0-9\?\._-])+(?=\s*:)/i)) {
+      if (!state.pair && stream.match(/^\s*([a-z0-9\?\/\{\}\._-])+(?=\s*:)/i)) {
         var key = stream.string.replace(/^\s+|\s+$/g, '').split(':')[0];
         var level = stream.string.split('  ').length - 1;
         
@@ -43,7 +43,7 @@ CodeMirror.defineMode("yaml", function() {
           state.insideTraits = true;
         }
 
-        if (level <= state.methodLevel) {
+        if (level <= state.methodLevel || key.indexOf('/') === 0) {
           state.methodLevel = 0;
           state.insideMethod = false;
         }
