@@ -66,7 +66,7 @@ angular.module('codeMirror', ['raml'])
       CodeMirror.keyMap.tabSpace = {
         Tab: service.tabKey,
         Backspace: service.backspaceKey,
-        Enter: service.enterKey, //'newline-and-indent',
+        Enter: service.enterKey,
         fallthrough: ['default']
       };
 
