@@ -21,7 +21,7 @@ angular.module('codeMirror', ['raml'])
     service.tabKey = function (cm) {
       var cursor = cm.getCursor(), line = cm.getLine(cursor.line),
           indentUnit = cm.getOption('indentUnit'), spaces, result, unitsToIndent;
-    
+
       result = service.removeTabs(line, indentUnit);
       result = result.length ? result : '';
 
@@ -38,11 +38,25 @@ angular.module('codeMirror', ['raml'])
 
     service.backspaceKey = function (cm) {
       var cursor = cm.getCursor(), line = cm.getLine(cursor.line),
-          indentUnit = cm.getOption('indentUnit');
-      
+          indentUnit = cm.getOption('indentUnit'), i;
+
+      line = line.substring(0, cursor.ch + 1);
+
       /* Erase in tab chunks only if all things found in the current line are tabs */
       if ( line !== '' && service.isLineOnlyTabs(line, indentUnit) ) {
-        cm.deleteH(-indentUnit, 'char');
+        for (i = 0; i < indentUnit; i++) {
+          /* 
+           * XXX deleteH should be used this way because if doing
+           *
+           *    cm.deleteH(-indentUnit,'char') 
+           *
+           * it provokes some weird line deletion cases:
+           *
+           * On an empty line (but with tabs after the cursor) it completely erases the
+           * previous line.
+           */
+          cm.deleteH(-1, 'char');
+        }
         return;
       }
       cm.deleteH(-1, 'char');
@@ -60,7 +74,7 @@ angular.module('codeMirror', ['raml'])
       CodeMirror.commands.autocomplete = function (cm) {
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
-      
+
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {

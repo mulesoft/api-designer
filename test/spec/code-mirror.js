@@ -63,9 +63,7 @@ describe('CodeMirror Service', function () {
       codeMirrorService.tabKey(editor);
       editor.spacesToInsert.should.be.equal(sp(indentUnit));
     });
-
   });
-
 
   describe('backspace key', function () {
     it('should delete only one non-whitespace characters', function () {
@@ -89,7 +87,7 @@ describe('CodeMirror Service', function () {
         'version: v1.0\n' +
         'baseUri: http://example.com/api\n' +
         '    ',
-        {line: 3, ch: 0},
+        {line: 3, ch: 3},
         {indentUnit: indentUnit});
 
       codeMirrorService.backspaceKey(editor);
@@ -103,11 +101,26 @@ describe('CodeMirror Service', function () {
         'version: v1.0\n' +
         'baseUri: http://example.com/api\n' +
         sp(indentUnit),
-        {line: 3, ch: 0},
+        {line: 3, ch: indentUnit - 1},
         {indentUnit: indentUnit});
 
       codeMirrorService.backspaceKey(editor);
       editor.deleteOffset.should.be.equal(-indentUnit);
     });
+    
+    it('should delete one char if cursor is on first column (even with tabs after)', function () {
+      var indentUnit = 7;
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        sp(indentUnit),
+        {line: 3, ch: 0},
+        {indentUnit: indentUnit});
+
+      codeMirrorService.backspaceKey(editor);
+      editor.deleteOffset.should.be.equal(-1);
+    });
+
   });
 });
