@@ -122,7 +122,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal(indentUnit);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
     });
 
     it('should add another tab level if the current line is a scalar', function () {
@@ -137,7 +137,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal(indentUnit);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
     });
 
     it('should add another tab level for second level scalars', function () {
@@ -156,7 +156,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal(indentUnit * 2);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
     });
   });
 

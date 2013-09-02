@@ -56,7 +56,9 @@ angular.module('codeMirror', ['raml'])
       var suggestions = ramlHint.suggestRAML(path);
 
       var offset = suggestions.isScalar ? 0 : 1;
-      cm.replaceSelection(indentUnit * (editorState.currLineTabCount + offset));
+
+      var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ');
+      cm.replaceSelection(spaces, "end", "+input");
     }
 
     service.initEditor = function () {
@@ -64,7 +66,7 @@ angular.module('codeMirror', ['raml'])
       CodeMirror.keyMap.tabSpace = {
         Tab: service.tabKey,
         Backspace: service.backspaceKey,
-        enter: 'newline-and-indent',
+        Enter: service.enterKey, //'newline-and-indent',
         fallthrough: ['default']
       };
 
