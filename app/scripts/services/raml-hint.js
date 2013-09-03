@@ -104,7 +104,7 @@ angular.module('raml')
       var levelTable = zipValues.reduce(function (x,y) {
         var currentArray = currentIndexes[y[0] - 2],
           lastArrayIndex, currentIndex;
-        
+
         if (currentArray) {
           lastArrayIndex = currentArray.length - 1;
           currentIndex = currentIndexes[y[0] - 2][lastArrayIndex];
@@ -122,7 +122,7 @@ angular.module('raml')
 
       return {scopeLevels: currentIndexes, scopesByLine: levelTable};
     };
-      
+
     function extractKeyPartFromScopes(scopesInfo) {
       return scopesInfo.map(function (scopeInfo) {
         return extractKey(scopeInfo[1]);
@@ -137,16 +137,16 @@ angular.module('raml')
 
       if (currentScopeLevel !== 0) {
         var scopesAtLevel = scopes.scopeLevels[currentScopeLevel - 1];
-  
+
         // We get the maximal element of the set of less than number of line
         var numOfLinesOfParentScopes = scopesAtLevel.filter(function (numOfLine) {
           return numOfLine < currentLineNumber;
         });
-  
+
         var scopeLineInformation = scopes.scopesByLine[
           numOfLinesOfParentScopes[numOfLinesOfParentScopes.length - 1]
         ];
-      
+
         return extractKeyPartFromScopes(scopeLineInformation);
       } else {
         return extractKeyPartFromScopes(scopes.scopesByLine[0]);
@@ -155,7 +155,7 @@ angular.module('raml')
 
     hinter.selectiveCloneAlternatives = function (oldAlternatives, keysToErase) {
       var newAlternatives = {}, newAlternativesSuggestions = {};
-      
+
       Object.keys(oldAlternatives.suggestions).forEach(function (key) {
         if (keysToErase.indexOf(key) === -1) {
           newAlternativesSuggestions[key] = oldAlternatives.suggestions[key];
@@ -198,11 +198,11 @@ angular.module('raml')
 
       var list = alternatives.keys.map(function (e) {
         var suggestion = alternatives.values.suggestions[e];
-        return { name: e, category: suggestion.category };
+        return { name: e, category: suggestion.metadata.category };
       }) || [];
 
-      if (alternatives.values.isOpenSuggestion && alternatives.values.category === 'snippets') {
-        list.push({name: 'New resource', category: alternatives.values.category});
+      if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
+        list.push({name: 'New resource', category: alternatives.values.metadata.category});
       }
 
       list.path = alternatives.path;
@@ -223,7 +223,7 @@ angular.module('raml')
           padding = hinter.getPadding(node, currLineTabCount);
 
         // FIXME Use editor.indentLine to handle the indentation!
-        return {text: e + ':' + padding, displayText: e  + ' (' + suggestion.category + ')'};
+        return {text: e + ':' + padding, displayText: e  + ' (' + suggestion.metadata.category + ')'};
       }).filter(function(e) {
         if (curWord) {
             if (e && e.text.indexOf(curWord) === 0) {

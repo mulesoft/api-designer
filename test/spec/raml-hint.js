@@ -232,17 +232,26 @@ describe('RAML Hint Service', function () {
           suggestions: {
             title: {},
             a: {
-              category: 'simple',
+              metadata: {
+                category: 'simple'
+              }
             },
             b: {
-              category: 'complex',
+              metadata: {
+                category: 'complex'
+              }
             },
             c: {
-              category: 'simple'
+              metadata: {
+                category: 'simple'
+              }
             }
           },
           constructor: { name: 'OpenSuggestion' },
-          category: 'snippets'
+          metadata: {
+            category: 'snippets',
+            id: 'resource'
+          }
         };
         hinter.suggestRAML = function() {
           return alternatives;
@@ -284,31 +293,43 @@ describe('RAML Hint Service', function () {
         var alternatives = {
           suggestions: {
             title: {
-              category: 'simple',
+              metadata: {
+                category: 'simple'
+              },
               open: function () {
                 return {constructor: {name: 'ConstantString'}};
               }
             },
             a: {
-              category: 'simple',
+              metadata: {
+                category: 'simple'
+              },
               open: function () {
                 return {constructor: {name: 'ConstantString'}};
               }
             },
             b: {
-              category: 'complex',
+              metadata: {
+                category: 'complex'
+              },
               open: function () {
                 return {constructor: {name: 'StringWildcard'}};
               }
             },
             c: {
-              category: 'simple',
+              metadata: {
+                category: 'simple'
+              },
               open: function () {
                 return {constructor: {name: 'ConstantString'}};
               }
             }
           },
-          category: 'x'};
+          metadata: {
+            category: 'snippets',
+            id: 'resource'
+          }
+          };
         hinter.suggestRAML = function() {
           return alternatives;
         };
