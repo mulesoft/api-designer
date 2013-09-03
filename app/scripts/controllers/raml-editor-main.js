@@ -28,14 +28,19 @@ angular.module('ramlConsoleApp')
       codeMirrorErrors.clearAnnotations();
       definition.baseUri = ramlHelper.processBaseUri(definition);
       eventService.broadcast('event:raml-sidebar-clicked', { isResource: true, data: definition });
+      $scope.hasErrors = false;
+      $scope.$apply();
     });
 
     eventService.on('event:raml-parser-error', function (e, args) {
-      var error = args;
-      var annotations = [];
+      var error = args, annotations = [],
+        line = (error && error.problem_mark && error.problem_mark.line) || 1,
+        column = (error && error.problem_mark && error.problem_mark.column) || 1;
 
-      annotations.push({ message: error.message, line: error.problem_mark.line, column: error.problem_mark.column });
+      annotations.push({ message: error.message, line: line, column: column });
       codeMirrorErrors.displayAnnotations(annotations);
+      $scope.hasErrors = true;
+      $scope.$apply();
     });
 
     $scope.init = function () {
@@ -45,6 +50,7 @@ angular.module('ramlConsoleApp')
       $scope.resources = '';
       $scope.documentation = '';
       $scope.baseUri = '';
+      $scope.hasErrors = false;
 
       editor = codeMirror.initEditor();
 
