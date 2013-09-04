@@ -203,15 +203,15 @@ describe('CodeMirror Service', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
-          'baseUri: http://www.api.com/{version}/{company}\n' +
-          'version: v1.1\n' +
-          '/tags:\n' +
-          '   this is rubbish\n' +
-          '  name: Tags\n' +
-          '  description: This is a description of tags\n' +
-          '  get:\n' +
-          '    summary: Get a list of recently tagged media\n' +
-          '    description: This is a description of getting tags',
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '   this is rubbish\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
         { line: 4, ch: 2 },
         { indentUnit: indentUnit });
 
