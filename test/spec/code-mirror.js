@@ -179,7 +179,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
     });
 
-    it('should keep the same indentation level if the current line is all tabs and uneven spaces', function (){
+    it('should keep the same indentation level if the current line is all spaces (not equal to a multiple of indent spaces)', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
