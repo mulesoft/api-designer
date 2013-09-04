@@ -70,7 +70,7 @@ angular.module('codeMirror', ['raml'])
 
       var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ') + extraWhitespace;
       cm.replaceSelection(spaces, "end", "+input");
-    }
+    };
 
     service.initEditor = function () {
 
