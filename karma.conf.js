@@ -19,6 +19,9 @@ module.exports = function(config) {
     'app/vendor/scripts/angular.js',
     'app/vendor/scripts/angular-resource.js',
     'app/vendor/scripts/angular-sanitize.js',
+    
+    'bower_components/angular-mocks/angular-mocks.js',
+
     'app/vendor/scripts/codemirror.js',
     'app/vendor/scripts/foldcode.js',
     'app/vendor/scripts/foldgutter.js',
