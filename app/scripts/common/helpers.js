@@ -1,4 +1,4 @@
-angular.module('helpers', [])
+angular.module('helpers', ['ngResource'])
     .factory('ramlHelper', function () {
         return {
             toUriParams: function (object) {
