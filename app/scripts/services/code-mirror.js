@@ -52,15 +52,23 @@ angular.module('codeMirror', ['raml'])
       var editorState = ramlHint.getEditorState(cm);
       var indentUnit = cm.getOption('indentUnit');
 
+      var curLineWithoutTabs = service.removeTabs(editorState.curLine, indentUnit);
+
       var offset = 0;
-      if(this.removeTabs(editorState.curLine, indentUnit).replace(' ', '').length > 0) {
+      if(curLineWithoutTabs.replace(' ', '').length > 0) {
         var path = ramlHint.computePath(cm);
         var suggestions = ramlHint.suggestRAML(path);
 
         offset = suggestions.isScalar ? 0 : 1;
       }
 
-      var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ');
+      var extraWhitespace = ""
+      var leadingWhitespace = curLineWithoutTabs.match(/^\s+/);
+      if(leadingWhitespace && leadingWhitespace[0] && !offset) {
+        extraWhitespace = leadingWhitespace[0];
+      }
+
+      var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ') + extraWhitespace;
       cm.replaceSelection(spaces, "end", "+input");
     }
 
