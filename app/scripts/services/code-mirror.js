@@ -52,10 +52,13 @@ angular.module('codeMirror', ['raml'])
       var editorState = ramlHint.getEditorState(cm);
       var indentUnit = cm.getOption('indentUnit');
 
-      var path = ramlHint.computePath(cm);
-      var suggestions = ramlHint.suggestRAML(path);
+      var offset = 0;
+      if(this.removeTabs(editorState.curLine, indentUnit).replace(' ', '').length > 0) {
+        var path = ramlHint.computePath(cm);
+        var suggestions = ramlHint.suggestRAML(path);
 
-      var offset = suggestions.isScalar ? 0 : 1;
+        offset = suggestions.isScalar ? 0 : 1;
+      }
 
       var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ');
       cm.replaceSelection(spaces, "end", "+input");
