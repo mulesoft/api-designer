@@ -171,6 +171,67 @@ describe('CodeMirror Service', function () {
       codeMirrorService.enterKey(editor);
       editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
     });
+
+    it('should keep the same indentation level if the current line is all tabs', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  \n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 4, ch: 2 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
+    });
+
+    it('should keep the same indentation level if the current line is all tabs, preserving any extra whitespace', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+          'baseUri: http://www.api.com/{version}/{company}\n' +
+          'version: v1.1\n' +
+          '/tags:\n' +
+          '   \n' +
+          '  name: Tags\n' +
+          '  description: This is a description of tags\n' +
+          '  get:\n' +
+          '    summary: Get a list of recently tagged media\n' +
+          '    description: This is a description of getting tags',
+        { line: 4, ch: 2 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(3));
+    });
+
+    it.skip('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '   this is rubbish\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 4, ch: 2 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(3));
+    });
+
   });
 
 });
