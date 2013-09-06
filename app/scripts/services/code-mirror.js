@@ -75,6 +75,42 @@ angular.module('codeMirror', ['raml'])
       cm.replaceSelection(spaces, "end", "+input");
     }
 
+    service.getFoldRange = function (cm, start) {
+      var indentUnit = cm.getOption('indentUnit');
+
+      var line = cm.getLine(start.line);
+      var nextLine = cm.getLine(start.line + 1);
+      if (!nextLine) {
+        return;
+      }
+
+      var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
+      var nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
+
+      if(nextLineIndent > indent) {
+        for(var i = start.line + 2, end = cm.lineCount(); i < end; ++i) {
+          nextLine = cm.getLine(i);
+          nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1
+
+          if(nextLineIndent <= indent) {
+            nextLine = cm.getLine(i-1);
+            return {
+              from: CodeMirror.Pos(start.line, line.length),
+              to: CodeMirror.Pos(i - 1, nextLine.length)
+            };
+          }
+
+          if (i === end - 1) {
+            nextLine = cm.getLine(end - 1);
+            return {
+              from: CodeMirror.Pos(start.line, line.length),
+              to: CodeMirror.Pos(end - 1, nextLine.length)
+            };
+          }
+        }
+      }
+    };
+
     service.initEditor = function () {
 
       CodeMirror.keyMap.tabSpace = {
@@ -89,6 +125,7 @@ angular.module('codeMirror', ['raml'])
       };
 
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
+      CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         mode: 'yaml',

@@ -36,7 +36,6 @@ module.exports = function(config) {
     'app/scripts/services/raml-hint.js',
     'app/scripts/services/raml-parser.js',
     'app/scripts/services/raml-snippets.js',
-    'app/scripts/codemirror/raml-indent-fold.js',
     'app/scripts/directives/prevent-default.js',
     'app/scripts/directives/raml-console.js',
     'app/scripts/directives/raml-definition.js',
