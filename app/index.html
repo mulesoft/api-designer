@@ -10,12 +10,13 @@
     <link rel="stylesheet" href="vendor/styles/codemirror.css">
     <link rel="stylesheet" href="vendor/styles/solarized.css">
     <link rel="stylesheet" href="vendor/styles/show-hint.css">
+    <link rel="stylesheet" href="vendor/styles/raml-console.css">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/errors.css">
     <!-- endbuild -->
     <style>body { font-family: Ubuntu, sans-serif; }</style>
   </head>
-  <body ng-app="ramlConsoleApp">
+  <body ng-app="ramlEditorApp">
     <h1 style="">RAML<strong>editor</strong></h1>
     <div class="container" ng-include="'views/raml-editor-main.tmpl.html'"></div>
 
@@ -31,30 +32,14 @@
     <script src="vendor/scripts/show-hint.js"></script>
     <script src="vendor/scripts/raml-parser.js"></script>
     <script src="vendor/scripts/showdown.min.js"></script>
-    <script src="scripts/common/helpers.js"></script>
-    <script src="scripts/common/showdown.js"></script>
-    <script src="scripts/common/eventService.js"></script>
+    <script src="vendor/scripts/raml-console.js"></script>
     <!-- endbuild -->
     <!-- build:js({.tmp,app}) scripts/scripts.js -->
     <script src="scripts/app.js"></script>
     <script src="scripts/services/code-mirror.js"></script>
     <script src="scripts/services/code-mirror-errors.js"></script>
-    <script src="scripts/services/raml-service.js"></script>
     <script src="scripts/services/raml-hint.js"></script>
-    <script src="scripts/services/raml-parser.js"></script>
     <script src="scripts/services/raml-snippets.js"></script>
-    <script src="scripts/directives/prevent-default.js"></script>
-    <script src="scripts/directives/raml-console.js"></script>
-    <script src="scripts/directives/raml-definition.js"></script>
-    <script src="scripts/directives/markdown.js"></script>
-    <script src="scripts/controllers/raml-operation.js"></script>
-    <script src="scripts/controllers/raml-operation-list.js"></script>
-    <script src="scripts/controllers/raml-documentation.js"></script>
-    <script src="scripts/controllers/raml-console-sidebar.js"></script>
-    <script src="scripts/controllers/raml-operation-details.js"></script>
-    <script src="scripts/controllers/raml-operation-details-try-it.js"></script>
-    <script src="scripts/controllers/raml-operation-details-response.js"></script>
-    <script src="scripts/controllers/raml-operation-details-request.js"></script>
     <script src="scripts/controllers/raml-editor-main.js"></script>
     <script src="scripts/controllers/raml-editor-shelf.js"></script>
     <!-- endbuild -->

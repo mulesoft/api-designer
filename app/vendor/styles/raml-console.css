@@ -1,0 +1,1240 @@
+/*!
+ * Preboot v2
+ *
+ * Open sourced under MIT license by @mdo.
+ * Some variables and mixins from Bootstrap (Apache 2 license).
+ */
+section,
+aside {
+  font-family: 'Ubuntu', sans-serif;
+}
+a,
+a:visited {
+  color: #07c;
+  text-decoration: none;
+  outline: 0;
+}
+a:hover,
+a:focus {
+  color: #000;
+}
+p a,
+p a:visited {
+  line-height: inherit;
+}
+section[role=api-console] > header > ng-include > header {
+  height: 60px;
+  display: block;
+  color: white;
+  background: #364655;
+  width: 960px;
+}
+section[role=api-console] > header > ng-include > header > h1 {
+  display: inline-block;
+  margin: 0px;
+  height: 100%;
+  width: 145px;
+  font-weight: 200;
+  vertical-align: middle;
+  line-height: 60px;
+  font-size: 22px;
+  background: #273746;
+  padding: 0px 20px;
+  border-right: 1px solid #293137;
+}
+section[role=api-console] > header > ng-include > header > h1 > em {
+  font-style: normal;
+  font-weight: bold;
+}
+section[role=api-console] > header > ng-include > header > span {
+  padding-left: 20px;
+  font-size: 19px;
+  vertical-align: middle;
+}
+aside[role=sidebar] h1 {
+  color: #9fa3a6;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-shadow: 1px 1px white;
+  margin: 0px;
+  padding: 25px 20px 10px 20px;
+}
+aside[role=sidebar] ul {
+  margin: 0px;
+  padding-left: 0px;
+}
+aside[role=sidebar] ul > li {
+  list-style: none;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+aside[role=sidebar] ul > li > a,
+aside[role=sidebar] ul > li > a:visited {
+  color: black;
+}
+aside[role=sidebar] ul > li.active {
+  background: #fbfbfc;
+  border-top: 1px solid #dadcdd;
+  border-bottom: 1px solid #dadcdd;
+}
+aside[role=sidebar] ul > li.active > a,
+aside[role=sidebar] ul > li.active > a:visited {
+  color: #4e89ca;
+}
+section[role=api-console] {
+  width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+}
+aside[role=sidebar] {
+  box-sizing: border-box;
+  width: 186px;
+  background: #eff2f4;
+  border-left: 1px solid #dadcdd;
+  border-right: 1px solid #dadcdd;
+  min-height: 300px;
+}
+section[role=main] {
+  box-sizing: border-box;
+  width: 774px;
+  border-right: 1px solid #dadcdd;
+  background: white;
+  overflow: scroll;
+  min-height: 300px;
+}
+footer {
+  height: 19px;
+  display: block;
+  color: white;
+  background: #364655;
+  width: 960px;
+}
+section[role=api-documentation] h1,
+section[role=api-documentation] h2,
+section[role=api-documentation] h3,
+section[role=api-documentation] h4,
+section[role=api-documentation] h5,
+section[role=api-documentation] h6 {
+  font-weight: 200;
+}
+section[role=api-documentation] > header {
+  height: 75px;
+  width: 100%;
+  border-bottom: 1px solid #dadcdd;
+  padding: 0px;
+  margin: 0px;
+}
+section[role=api-documentation] > header > h1 {
+  font-size: 23px;
+  line-height: 75px;
+  font-weight: 300;
+  padding: 0px;
+  margin: 0px;
+  margin-left: 22px;
+}
+section[role=api-documentation] > div#content {
+  padding: 10px 22px 22px 22px;
+  font-size: 14px;
+}
+section[role=api-operation-details-section-parameters] {
+  background: #fbfbfb;
+  padding-bottom: 40px;
+}
+section[role=api-operation-details-section-parameters] * {
+  font-size: 13px;
+  color: #606468;
+}
+section[role=api-operation-details-section-parameters] .padded-table-cell {
+  padding: 7px 20px;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > header {
+  display: block;
+  background: #fbfbfb;
+  height: 60px;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > header > h1 {
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 60px;
+  margin: 0px;
+  padding: 0px 20px;
+  color: black;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table {
+  border: 1px solid #dadcdd;
+  width: 100%;
+  border-spacing: 0px;
+  border-collapse: collapse;
+  border-right: 0px;
+  border-left: 0px;
+  box-shadow: 0px 3px 6px -4px #dadcdd;
+  margin-bottom: 13px;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > thead > tr > th:first-of-type {
+  border-left: 0px;
+  margin-left: -1px;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > thead > tr > th {
+  padding: 7px 20px;
+  color: #9fa3a6;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin: 0px;
+  border: 1px solid #dadcdd;
+  border-right: 0px;
+  background-color: #f4f6f8;
+  font-weight: lighter;
+  text-align: left;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > tbody > tr:nth-of-type(1) > td {
+  box-shadow: inset 0px 4px 2px -3px #dadcdd;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > tbody > tr {
+  border-bottom: 1px solid #dadcdd;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > tbody > tr:hover {
+  border-left: 1px solid #40cd5d;
+  background-color: #fbfbfb;
+  cursor: pointer;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > tbody > tr > td {
+  padding: 7px 20px;
+  background-color: white;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  line-height: 23px;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > tbody > tr > td:nth-child(1) {
+  color: black;
+  font-style: italic;
+  font-weight: bolder;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > tbody > tr > td:nth-child(2) {
+  font-style: italic;
+}
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table > tbody > tr > td:nth-child(4) > pre {
+  background-color: #fffdf4;
+  border: 1px solid #e3d6b1;
+  display: inline;
+  padding: 3px 5px;
+  font-size: 11px;
+}
+section[role=api-operation-details-section-request] {
+  background: #fbfbfb;
+  padding-bottom: 40px;
+}
+section[role=api-operation-details-section-request] * {
+  font-size: 13px;
+  color: #606468;
+}
+section[role=api-operation-details-section-request] .padded-table-cell {
+  padding: 7px 20px;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > header {
+  display: block;
+  background: #fbfbfb;
+  margin-bottom: 13px;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > header > h1 {
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 30px;
+  margin: 0px;
+  padding: 0px 20px;
+  color: black;
+  padding-top: 11px;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > header > p {
+  font-size: 11px;
+  font-weight: 100;
+  color: #33373b;
+  line-height: 15px;
+  margin: 0px;
+  padding: 0px 20px;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > pre {
+  height: 200px;
+  overflow: scroll;
+  background-color: white;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  border: 1px solid #dadcdd;
+  margin: 15px 20px 20px 20px;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table {
+  border: 1px solid #dadcdd;
+  width: 100%;
+  border-spacing: 0px;
+  border-collapse: collapse;
+  border-right: 0px;
+  border-left: 0px;
+  box-shadow: 0px 3px 6px -4px #dadcdd;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > thead > tr > th:first-of-type {
+  border-left: 0px;
+  margin-left: -1px;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > thead > tr > th {
+  padding: 7px 20px;
+  color: #9fa3a6;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin: 0px;
+  border: 1px solid #dadcdd;
+  border-right: 0px;
+  background-color: #f4f6f8;
+  font-weight: lighter;
+  text-align: left;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr:nth-of-type(1) > td {
+  box-shadow: inset 0px 4px 2px -3px #dadcdd;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr {
+  border-bottom: 1px solid #dadcdd;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr:hover {
+  border-left: 1px solid #40cd5d;
+  background-color: #fbfbfb;
+  cursor: pointer;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr > td {
+  padding: 7px 20px;
+  background-color: white;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  line-height: 23px;
+}
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr > td > pre {
+  background-color: #fffdf4;
+  border: 1px solid #e3d6b1;
+  width: 670px;
+  padding: 3px 5px;
+  font-size: 11px;
+  height: 200px;
+  overflow: scroll;
+}
+section[role=api-operation-details-section-response] {
+  background: #fbfbfb;
+  padding-bottom: 40px;
+}
+section[role=api-operation-details-section-response] * {
+  font-size: 13px;
+  color: #606468;
+}
+section[role=api-operation-details-section-response] .padded-table-cell {
+  padding: 7px 20px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > header {
+  display: block;
+  background: #fbfbfb;
+  margin-bottom: 10px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > header > h1 {
+  font-size: 16px;
+  font-weight: normal;
+  line-height: 30px;
+  margin: 0px;
+  padding: 0px 20px;
+  color: black;
+  padding-top: 11px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > header > h1 > small {
+  font-size: 13px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > header > div.markdown * {
+  font-size: 11px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > header > div.markdown > p {
+  font-weight: 100;
+  color: #33373b;
+  line-height: 15px;
+  margin: 0px;
+  padding: 0px 20px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > pre {
+  height: 200px;
+  overflow: scroll;
+  background-color: white;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  border: 1px solid #dadcdd;
+  margin: 15px 20px 20px 20px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table {
+  border: 1px solid #dadcdd;
+  width: 100%;
+  border-spacing: 0px;
+  border-collapse: collapse;
+  border-right: 0px;
+  border-left: 0px;
+  box-shadow: 0px 3px 6px -4px #dadcdd;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > thead > tr > th:first-of-type {
+  border-left: 0px;
+  margin-left: -1px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > thead > tr > th {
+  padding: 7px 20px;
+  color: #9fa3a6;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin: 0px;
+  border: 1px solid #dadcdd;
+  border-right: 0px;
+  background-color: #f4f6f8;
+  font-weight: lighter;
+  text-align: left;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr:nth-of-type(1) > td {
+  box-shadow: inset 0px 4px 2px -3px #dadcdd;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr {
+  border-bottom: 1px solid #dadcdd;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr:hover {
+  border-left: 1px solid #40cd5d;
+  background-color: #fbfbfb;
+  cursor: pointer;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr > td {
+  padding: 7px 20px;
+  background-color: white;
+  padding-bottom: 10px;
+  padding-top: 10px;
+  line-height: 23px;
+}
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr > td > pre {
+  background-color: #fffdf4;
+  border: 1px solid #e3d6b1;
+  width: 670px;
+  padding: 3px 5px;
+  font-size: 11px;
+  height: 200px;
+  overflow: scroll;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] {
+  background: white;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > header {
+  display: block;
+  background: #fbfbfb;
+  height: 45px;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > header > h1 {
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 45px;
+  margin: 0px;
+  padding: 0px 20px;
+  color: black;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > header > ul {
+  display: none;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > form[role=uri-params],
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] {
+  border-top: 1px solid #dfe3e7;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > form[role=uri-params] > h2,
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > form[role=query-params] > h2 {
+  font-size: 13px;
+  font-weight: 100;
+  color: #33373b;
+  line-height: 30px;
+  margin: 0px;
+  padding: 10px 20px 0px 20px;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > form[role=uri-params] > div[role=uri],
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > form[role=query-params] > div[role=params] {
+  font-size: 13px;
+  font-weight: normal;
+  color: black;
+  line-height: 20px;
+  margin: 0px;
+  padding: 5px 20px 10px 20px;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > form[role=uri-params] > div[role=uri] input {
+  border: 0;
+  border-bottom: 1px solid lightgrey;
+  font-size: 12px;
+  max-width: 105px;
+  text-align: left;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > form[role=uri-params] > div[role=uri] input:focus {
+  outline: 0;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > form[role=query-params] > div[role=params] {
+  padding-bottom: 5px;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > form[role=query-params] > div[role=params] label,
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > div[role=request-body] > label {
+  display: inline-block;
+  margin: 0px 10px 10px 0px;
+  color: #9ea3a6;
+  font-size: 12px;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > form[role=query-params] > div[role=params] label > input,
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > div[role=request-body] > label > textarea {
+  display: block;
+  border: 1px solid #dfe3e7;
+  height: 27px;
+  line-height: auto;
+  font-size: 11px;
+  padding: 0px 10px;
+  margin-left: -1px;
+  border-radius: 3px;
+  width: 110px;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > form[role=query-params] > div[role=params] label > input:focus,
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > div[role=request-body] > label > textarea:focus {
+  outline: 0;
+  border: 1px solid lightgrey;
+  box-shadow: 0px 0px 4px lightgrey;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > div[role=request-body] {
+  padding: 0px 20px 15px 20px;
+  display: block;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > div[role=request-body] > label {
+  display: block;
+  width: 100%;
+  line-height: 22px;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=additional-params] > div[role=request-body] > label textarea {
+  display: block;
+  box-sizing: border-box;
+  height: 100px;
+  width: 100%;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=try-it] {
+  text-align: right;
+  padding: 0px 20px 30px 0px;
+  font-size: 11px;
+  font-weight: bold;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=try-it] > span {
+  color: white;
+  cursor: pointer;
+  background: #7bd15c;
+  border-radius: 3px;
+  border: 1px solid #6cb750;
+  padding: 7px 25px;
+  box-shadow: 0px 0px 4px lightgrey;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=try-it] > span:hover {
+  text-shadow: 0px 0px 5px greenyellow;
+  box-shadow: 0px 0px 5px #7bd15c;
+}
+section[role=api-operation-details-section-try-it] > section[role=request] > div[role=try-it] > span:active {
+  opacity: 0.7;
+  transition: opacity ease-in 0.1s;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] {
+  border-top: 1px solid #dfe3e7;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > header {
+  display: block;
+  background: #fbfbfb;
+  height: 50px;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > header > h1 {
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 50px;
+  margin: 0px;
+  padding: 0px 20px;
+  color: black;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=request-uri],
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-code],
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-headers],
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-body] {
+  background: #f4f6f8;
+  padding-bottom: 12px;
+  overflow: scroll;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=request-uri] > h1,
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-code] > h1,
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-headers] > h1,
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-body] > h1 {
+  color: #9fa3a6;
+  font-size: 10px;
+  text-transform: uppercase;
+  font-weight: bold;
+  text-shadow: 1px 1px white;
+  margin: 0px;
+  padding: 12px 20px 10px 20px;
+  border-top: 1px solid #dfe3e7;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=request-uri] > p,
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-code] > p,
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-headers] > ul[role=headers-list],
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-body] > p {
+  padding: 0px 20px;
+  margin: 0px;
+  font-family: monospace;
+  list-style: none;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-headers] > ul[role=headers-list] > li > span[role=key]:after {
+  content: ':';
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-headers] pre {
+  padding: 3px 20px;
+  font-size: 11px;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-body] {
+  max-height: 300px;
+  max-width: 723px;
+  overflow: scroll;
+}
+section[role=api-operation-details-section-try-it] > section[role=response] > section[role=response-body] pre {
+  padding: 3px 20px;
+  font-size: 11px;
+}
+section[role=api-operation].active section[role=api-operation-details] {
+  display: block;
+  border: 1px solid #3e505a;
+  border-top: 0px;
+  box-shadow: inset 0px 0px 5px #dadcdd;
+}
+section[role=api-operation]:not(.active) section[role=api-operation-details] {
+  display: none;
+}
+section[role=api-operation-details] {
+  background: white;
+}
+section[role=api-operation-details] > header {
+  padding: 10px 20px;
+}
+section[role=api-operation-details] > header > h1 {
+  margin: 5px 0px;
+  font-size: 14px;
+  font-weight: normal;
+  color: #6399d6;
+}
+section[role=api-operation-details] > header > p {
+  margin: 8px 0px;
+  font-size: 12px;
+  font-weight: normal;
+  color: black;
+}
+section[role=api-operation-details] > div[role=details-body] {
+  position: relative;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=content-types] {
+  position: absolute;
+  top: -3px;
+  right: 3px;
+  padding: 0px;
+  vertical-align: middle;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=content-types] > li {
+  cursor: pointer;
+  display: inline;
+  list-style: none;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 11px;
+  font-weight: normal;
+  padding: 6px 11px;
+  text-transform: uppercase;
+  margin-right: 5px;
+  background: #fbfbfb;
+  border-radius: 2px;
+  box-shadow: 0px 0px 5px #dadcdd;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=content-types] > li.active {
+  background-color: #3388cc;
+  color: white;
+  border: 0;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=content-types].open {
+  height: 90px;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] {
+  display: block;
+  width: 100%;
+  background: #f4f6f8;
+  border-top: 1px solid #dfe3e7;
+  border-bottom: 1px solid #dfe3e7;
+  padding: 0px;
+  margin: 0px;
+  font-size: 0px;
+  height: 46px;
+  box-sizing: border-box;
+  box-shadow: inset 1px -1px 1px #eeeeee;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] > li {
+  display: inline-block;
+  list-style: none;
+  text-align: left;
+  vertical-align: middle;
+  line-height: 45px;
+  font-size: 13px;
+  font-weight: bold;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] > li:nth-of-type(n+2) {
+  margin-left: -1px;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] > li > a,
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] > li > span {
+  cursor: pointer;
+  padding: 0px 20px;
+  color: black;
+  border-right: 1px solid #dfe3e7;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] > li.active {
+  background-color: #fbfbfb;
+  border-top: 1px solid #0078ca;
+  border-right: 1px solid #dfe3e7;
+  border-left: 1px solid #dfe3e7;
+  margin-top: -1px;
+  box-shadow: 1px -1px 1px #eeeeee;
+}
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] > li.active > a,
+section[role=api-operation-details] > div[role=details-body] > ul[role=details-sections] > li.active > span {
+  border-right: none;
+  color: #0078ca;
+}
+/*
+header {
+    height: 75px;
+    width: 100%;
+    border-bottom: 1px solid rgb(218,220,221);
+    padding: 0px;
+    margin: 0px;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 23px;
+    line-height: 75px;
+    font-weight: 200;
+    padding: 0px;
+    margin: 0px;
+    margin-left: 22px;
+}
+*/
+section[role=api-operation-list] {
+  padding: 22px;
+}
+section[role=api-operation] {
+  display: block;
+  border: 1px solid #dadcdd;
+  border-top: 0px;
+  max-height: 45px;
+  color: black;
+  background: white;
+  padding: 15px 20px;
+  position: relative;
+  margin: 0px;
+  transition: max-height 0.05s;
+  /* api-operation hover */
+
+  /* api-operation active */
+
+  /*
+    > api-operation-details,
+    &:hover > api-operation-details {
+        display: none;
+    }
+    */
+
+}
+section[role=api-operation].first {
+  border-top: 1px solid #dadcdd;
+}
+section[role=api-operation] > header {
+  height: 73px;
+}
+section[role=api-operation] > header h1 {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0px;
+  padding: 0px;
+  color: black;
+}
+section[role=api-operation] > header h2 {
+  font-size: 12px;
+  font-weight: normal;
+  margin: 0px;
+  padding: 0px;
+  margin-top: 8px;
+  color: #9ea3a6;
+  letter-spacing: 1px;
+}
+section[role=api-operation] > header > div[role=summary] {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  margin-right: 20px;
+  text-align: right;
+  font-size: 0px;
+}
+section[role=api-operation] > header > div[role=summary] > ul {
+  display: block;
+  margin: 0px;
+  cursor: default;
+}
+section[role=api-operation] > header > div[role=summary] > ul > li {
+  display: inline-block;
+  margin-left: 4px;
+  list-style: none;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=traits] {
+  margin-top: 18px;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=traits] > li {
+  color: white;
+  text-transform: uppercase;
+  font-size: 10px;
+  line-height: 12px;
+  vertical-align: middle;
+  text-align: center;
+  background: #cfd3d7;
+  padding: 1px 4px 1px 4px;
+  border-radius: 2px;
+}
+section[role=api-operation] > header > div[role=summary] > ul {
+  display: block;
+  margin: 0px;
+  cursor: default;
+}
+section[role=api-operation] > header > div[role=summary] > ul > li {
+  display: inline-block;
+  margin-left: 4px;
+  list-style: none;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=traits] {
+  margin-top: 18px;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=traits] > li {
+  color: white;
+  text-transform: uppercase;
+  font-size: 10px;
+  line-height: 12px;
+  vertical-align: middle;
+  text-align: center;
+  background: #cfd3d7;
+  padding: 1px 4px 1px 4px;
+  border-radius: 2px;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] {
+  margin-top: 10px;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li {
+  text-transform: uppercase;
+  font-size: 11px;
+  line-height: 13px;
+  vertical-align: middle;
+  text-align: center;
+  padding: 1px 2px 0px 2px;
+  border-radius: 2px;
+  width: auto;
+  height: auto;
+  transition: max-width 0.4s ease-in;
+  position: relative;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li > a {
+  color: inherit;
+  line-height: inherit;
+  vertical-align: inherit;
+  text-align: inherit;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li:after {
+  background: transparent;
+  content: "";
+  height: 4px;
+  width: 2px;
+  position: absolute;
+  top: 50%;
+  right: -2px;
+  margin-top: -2px;
+  display: block;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li:before {
+  background: transparent;
+  content: "";
+  height: 4px;
+  width: 2px;
+  position: absolute;
+  top: 50%;
+  left: -2px;
+  margin-top: -2px;
+  display: block;
+}
+section[role=api-operation]:not(.active) > header > div[role=summary] > ul[role=operations] > li {
+  color: transparent;
+  max-width: 8px;
+}
+section[role=api-operation]:not(.active):hover > header > div[role=summary] > ul[role=operations] > li {
+  color: white;
+  max-width: 80px;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li:before {
+  background: #d3d3d3;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li:before {
+  background: #808080;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=get],
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=get]:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=get]:before {
+  background: #7cbce4;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=get],
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=get]:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=get]:before {
+  background: #0078ca;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=post],
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=post]:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=post]:before {
+  background: #9ee9ab;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=post],
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=post]:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=post]:before {
+  background: #41d25c;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=put],
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=put]:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=put]:before {
+  background: #fdc692;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=put],
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=put]:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=put]:before {
+  background: #dbb51d;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=delete],
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=delete]:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=delete]:before {
+  background: #f78f96;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=delete],
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=delete]:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=delete]:before {
+  background: #f14862;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=patch],
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=patch]:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=patch]:before {
+  background: #aa55aa;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=patch],
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=patch]:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=patch]:before {
+  background: #aa55aa;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=options],
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=options]:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=options]:before {
+  background: #ff8844;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=options],
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=options]:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=options]:before {
+  background: #ff8844;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=head],
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=head]:after,
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li[role=head]:before {
+  background: #ffc6d0;
+}
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=head],
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=head]:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li[role=head]:before {
+  background: #ffc6d0;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li:nth-of-type(1):before,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li:nth-of-type(1):before {
+  background: transparent;
+}
+section[role=api-operation] > header > div[role=summary] > ul[role=operations] > li:last-of-type:after,
+section[role=api-operation]:hover > header > div[role=summary] > ul[role=operations] > li:last-of-type:after {
+  background: transparent;
+}
+section[role=api-operation] > section[role=api-operation-details] {
+  display: none;
+}
+section[role=api-operation]:hover {
+  border-left: 1px solid #40cd5d;
+}
+section[role=api-operation]:hover > header h1 {
+  color: #3289ca;
+}
+section[role=api-operation]:hover > header h2 {
+  color: #33373b;
+}
+section[role=api-operation].active,
+section[role=api-operation].active:hover {
+  border: 1px solid #3e505a;
+  transition: max-height 0.5s;
+  max-height: 2000px;
+}
+section[role=api-operation].active > header,
+section[role=api-operation].active:hover > header {
+  background: #3e505a;
+  transition: background 0.1s;
+}
+section[role=api-operation].active > header h1,
+section[role=api-operation].active:hover > header h1 {
+  color: white;
+}
+section[role=api-operation].active > header h2,
+section[role=api-operation].active:hover > header h2 {
+  color: white;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=traits],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] {
+  display: none;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] {
+  margin-top: 19px;
+  cursor: pointer;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li {
+  margin: 0px;
+  width: auto;
+  padding: 10px 20px;
+  border-radius: 0px;
+  border-top: 1px solid #3b454e;
+  border-bottom: 1px solid #3b454e;
+  border-left: 1px solid #3b454e;
+  color: #cfdcdc;
+  background: #67707a;
+  transition: none;
+  position: relative;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover {
+  transition: all ease-in 0.1s;
+  text-shadow: white 0em 0em 0.2em;
+  border-top: 1px solid white;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover[role=get],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover[role=get] {
+  border-top: 1px solid #7cbce4;
+  text-shadow: #0078ca 0em 0em 0.2em;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover[role=post],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover[role=post] {
+  border-top: 1px solid #9ee9ab;
+  text-shadow: #41d25c 0em 0em 0.2em;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover[role=put],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover[role=put] {
+  border-top: 1px solid #fdc692;
+  text-shadow: #dbb51d 0em 0em 0.2em;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover[role=delete],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover[role=delete] {
+  border-top: 1px solid #f78f96;
+  text-shadow: #f14862 0em 0em 0.2em;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover[role=patch],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover[role=patch] {
+  border-top: 1px solid #aa55aa;
+  text-shadow: #aa55aa 0em 0em 0.2em;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover[role=options],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover[role=options] {
+  border-top: 1px solid #ff8844;
+  text-shadow: #ff8844 0em 0em 0.2em;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:hover[role=head],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:hover[role=head] {
+  border-top: 1px solid #ffc6d0;
+  text-shadow: #ffc6d0 0em 0em 0.2em;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li > a,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li > a {
+  line-height: 0px;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active {
+  color: white;
+  font-weight: bolder;
+  transition: background 0.5s;
+  background: #67707a;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active[role=get],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active[role=get] {
+  background: #7cbce4;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active[role=post],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active[role=post] {
+  background: #9ee9ab;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active[role=put],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active[role=put] {
+  background: #fdc692;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active[role=delete],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active[role=delete] {
+  background: #f78f96;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active[role=patch],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active[role=patch] {
+  background: #aa55aa;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active[role=options],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active[role=options] {
+  background: #ff8844;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active[role=head],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active[role=head] {
+  background: #ffc6d0;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:after,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:after {
+  content: "";
+  display: block;
+  background: white;
+  position: absolute;
+  bottom: -28px;
+  top: auto;
+  right: 50%;
+  width: 12px;
+  height: 8px;
+  margin-right: -13px;
+  border-radius: 12px 0 0 0;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:before,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:before {
+  content: "";
+  display: block;
+  background: white;
+  position: absolute;
+  bottom: -28px;
+  top: auto;
+  left: 50%;
+  width: 12px;
+  height: 8px;
+  margin-left: -12px;
+  border-radius: 0 12px 0 0;
+  z-index: 1;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > a:after,
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > span:after,
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > p:after {
+  content: "";
+  display: block;
+  background: #3e505a;
+  position: absolute;
+  bottom: -28px;
+  right: 50%;
+  width: 20px;
+  height: 14px;
+  margin-right: -10px;
+  z-index: 0;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:nth-of-type(1),
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:nth-of-type(1) {
+  border-radius: 3px 0px 0px 3px;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:last-of-type,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:last-of-type {
+  border-radius: 0px 3px 3px 0px;
+  border-right: 1px solid #3b454e;
+}
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:before,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:before,
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li:after,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li:after {
+  width: 0px;
+  height: 0px;
+}
+section[role=api-operation].active,
+section[role=api-operation].active:hover {
+  padding: 0px;
+}
+section[role=api-operation].active > header > hgroup,
+section[role=api-operation].active:hover > header > hgroup {
+  padding: 15px 20px 0px 20px;
+}
+section[role=api-operation].active > api-operation-details,
+section[role=api-operation].active:hover > api-operation-details {
+  display: block;
+}
+@media (max-width: 750px) {
+  section[role=api-console] > header > ng-include > header {
+    width: 100%;
+  }
+  aside[role=sidebar] {
+    float: left;
+    clear: right;
+    min-height: 0;
+    width: 100%;
+  }
+  section[role=api-operation-list] {
+    padding: 0px;
+  }
+  section[role=main] {
+    float: left;
+    width: 100%;
+    overflow: hidden;
+  }
+  section[role=api-console] {
+    width: 100%;
+  }
+  section[role=api-operation] {
+    display: block;
+    border: 1px solid #dadcdd;
+    max-height: 45px;
+    color: black;
+    background: white;
+    padding: 15px 20px;
+    position: relative;
+    margin: 0px;
+    margin-top: -1px;
+    transition: max-height 0.05s;
+  }
+  aside[role=sidebar] h1 {
+    float: left;
+    display: block;
+    text-transform: none;
+    font: inherit;
+    color: black;
+    text-shadow: 0px 0px 0px;
+    padding: 10px 20px;
+  }
+  aside[role=sidebar] h1:after {
+    content: ':';
+  }
+  aside[role=sidebar] ul > li,
+  aside[role=sidebar] ul > li.active {
+    float: left;
+    display: block;
+    border-bottom: none;
+  }
+  aside[role=sidebar] ul > li a,
+  aside[role=sidebar] ul > li.active a {
+    text-decoration: underline;
+  }
+}
+body {
+  margin: 0px;
+  font-family: 'Ubuntu', sans-serif;
+  background: #f8f8f8;
+}
+input.ng-invalid-required:focus {
+  border: 1px solid #e9322d !important;
+  border-radius: 3px;
+  -webkit-box-shadow: 0 0 6px #f8b9b7;
+  -moz-box-shadow: 0 0 6px #f8b9b7;
+  box-shadow: 0 0 6px #f8b9b7;
+}
+input.ng-invalid-required {
+  border-color: #e9322d !important;
+}

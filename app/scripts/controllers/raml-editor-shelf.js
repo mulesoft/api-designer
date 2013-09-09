@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('ramlConsoleApp')
+angular.module('ramlEditorApp')
   .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint, eventService, codeMirror, ramlSnippets) {
     var hinter = ramlHint;
 
@@ -34,7 +34,7 @@ angular.module('ramlConsoleApp')
       model.path = suggestions.path;
 
       $scope.model = model;
-      
+
       $scope.safeApply();
     };
 
@@ -50,7 +50,7 @@ angular.module('ramlConsoleApp')
 
       if (code) {
         code = code.replace(/\{\{padding\}\}/g, padding);
-        
+
         if (line.replace(/^\s+|\s+$/g, '') === '') {
           rangeEndChar = line.length;
           if (code.indexOf('\n') >= 0) {
@@ -59,9 +59,9 @@ angular.module('ramlConsoleApp')
         } else {
           if (code.indexOf('\n') < 0) {
             code = code + '\n';
-          }          
+          }
         }
-        
+
         editor.replaceRange(code, {line: rangeLine, ch: 0}, {line: rangeLine, ch: rangeEndChar});
         editor.focus();
       }
