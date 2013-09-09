@@ -226,135 +226,134 @@ describe('RAML Hint Service', function () {
 
     });
 
-    describe('getSuggestions', function () {
-      it('should render the text correctly', function () {
-        var alternatives = {
-          suggestions: {
-            title: {},
-            a: {
-              metadata: {
-                category: 'simple'
-              }
-            },
-            b: {
-              metadata: {
-                category: 'complex'
-              }
-            },
-            c: {
-              metadata: {
-                category: 'simple'
-              }
+  });
+
+  describe('getSuggestions', function () {
+    it('should render the text correctly', function () {
+      var alternatives = {
+        suggestions: {
+          title: {},
+          a: {
+            metadata: {
+              category: 'simple'
             }
           },
-          constructor: { name: 'OpenSuggestion' },
-          metadata: {
-            category: 'snippets',
-            id: 'resource'
-          }
-        };
-        hinter.suggestRAML = function() {
-          return alternatives;
-        };
-        editor = getEditor(
-          'title: hello\n',
-          {line: 1, ch: 0});
-        var shelfSuggestions = hinter.getSuggestions(editor);
-
-        var titleFound = false;
-
-        var shelfSuggestionKeys = {};
-
-        shelfSuggestions.forEach(function (shelfSuggestion) {
-          shelfSuggestionKeys[shelfSuggestion.name] = shelfSuggestion;
-        });
-
-
-        /* Check that all the alternatives are rendered correctly */
-        Object.keys(alternatives.suggestions).forEach(function (suggestion) {
-          /* Ignore if the key is title */
-          if (suggestion === 'title') {
-            titleFound = true;
-            return;
-          }
-
-          shelfSuggestionKeys[suggestion].should.be.ok;
-        });
-
-        shelfSuggestionKeys['New resource'].should.be.ok;
-
-        titleFound.should.be.true;
-
-      });
-    });
-
-    describe('autocompleteHelper', function () {
-      it('should render the text correctly', function () {
-        var alternatives = {
-          suggestions: {
-            title: {
-              metadata: {
-                category: 'simple'
-              },
-              open: function () {
-                return {constructor: {name: 'ConstantString'}};
-              }
-            },
-            a: {
-              metadata: {
-                category: 'simple'
-              },
-              open: function () {
-                return {constructor: {name: 'ConstantString'}};
-              }
-            },
-            b: {
-              metadata: {
-                category: 'complex'
-              },
-              open: function () {
-                return {constructor: {name: 'StringWildcard'}};
-              }
-            },
-            c: {
-              metadata: {
-                category: 'simple'
-              },
-              open: function () {
-                return {constructor: {name: 'ConstantString'}};
-              }
+          b: {
+            metadata: {
+              category: 'complex'
             }
           },
-          metadata: {
-            category: 'snippets',
-            id: 'resource'
+          c: {
+            metadata: {
+              category: 'simple'
+            }
           }
-          };
-        hinter.suggestRAML = function() {
-          return alternatives;
-        };
-        editor = getEditor(
-          'title: hello\n',
-          {line: 1, ch: 0});
-        var autocompleteSuggestions = hinter.autocompleteHelper(editor);
+        },
+        constructor: { name: 'OpenSuggestion' },
+        metadata: {
+          category: 'snippets',
+          id: 'resource'
+        }
+      };
+      hinter.suggestRAML = function() {
+        return alternatives;
+      };
+      editor = getEditor(
+        'title: hello\n',
+        {line: 1, ch: 0});
+      var shelfSuggestions = hinter.getSuggestions(editor);
 
-        autocompleteSuggestions.should.be.ok;
+      var titleFound = false;
 
-        var autocompleteSuggestionKeys = {};
+      var shelfSuggestionKeys = {};
 
-        autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
-          var cleanedUpText = autocompleteSuggestion.text.replace(/:(.|\n)*/g, '');
-          autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
-        });
-
-        alternatives.suggestions.should.include.keys(Object.keys(autocompleteSuggestionKeys));
-
-        Object.keys(autocompleteSuggestionKeys).should.not.include.keys('title');
-
+      shelfSuggestions.forEach(function (shelfSuggestion) {
+        shelfSuggestionKeys[shelfSuggestion.name] = shelfSuggestion;
       });
 
-    });
 
+      /* Check that all the alternatives are rendered correctly */
+      Object.keys(alternatives.suggestions).forEach(function (suggestion) {
+        /* Ignore if the key is title */
+        if (suggestion === 'title') {
+          titleFound = true;
+          return;
+        }
+
+        shelfSuggestionKeys[suggestion].should.be.ok;
+      });
+
+      shelfSuggestionKeys['New resource'].should.be.ok;
+
+      titleFound.should.be.true;
+
+    });
+  });
+
+  describe('autocompleteHelper', function () {
+    it('should render the text correctly', function () {
+      var alternatives = {
+        suggestions: {
+          title: {
+            metadata: {
+              category: 'simple'
+            },
+            open: function () {
+              return {constructor: {name: 'ConstantString'}};
+            }
+          },
+          a: {
+            metadata: {
+              category: 'simple'
+            },
+            open: function () {
+              return {constructor: {name: 'ConstantString'}};
+            }
+          },
+          b: {
+            metadata: {
+              category: 'complex'
+            },
+            open: function () {
+              return {constructor: {name: 'StringWildcard'}};
+            }
+          },
+          c: {
+            metadata: {
+              category: 'simple'
+            },
+            open: function () {
+              return {constructor: {name: 'ConstantString'}};
+            }
+          }
+        },
+        metadata: {
+          category: 'snippets',
+          id: 'resource'
+        }
+        };
+      hinter.suggestRAML = function() {
+        return alternatives;
+      };
+      editor = getEditor(
+        'title: hello\n',
+        {line: 1, ch: 0});
+      var autocompleteSuggestions = hinter.autocompleteHelper(editor);
+
+      autocompleteSuggestions.should.be.ok;
+
+      var autocompleteSuggestionKeys = {};
+
+      autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
+        var cleanedUpText = autocompleteSuggestion.text.replace(/:(.|\n)*/g, '');
+        autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
+      });
+
+      alternatives.suggestions.should.include.keys(Object.keys(autocompleteSuggestionKeys));
+
+      Object.keys(autocompleteSuggestionKeys).should.not.include.keys('title');
+
+    });
 
   });
 
