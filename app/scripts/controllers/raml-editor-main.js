@@ -1,7 +1,9 @@
-angular.module('ramlConsoleApp')
-  .controller('ramlMain', function ($scope, ramlReader, ramlParser, ramlHelper, eventService, codeMirror, codeMirrorErrors) {
+angular.module('ramlEditorApp')
+  .controller('ramlMain', function ($scope, ramlReader, ramlParser, eventService, codeMirror, codeMirrorErrors) {
     var editor, currentUpdateTimer,
         UPDATE_RESPONSIVENESS_INTERVAL = 300;
+
+    $scope.consoleSettings = { displayTryIt: false };
 
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
@@ -26,8 +28,11 @@ angular.module('ramlConsoleApp')
     eventService.on('event:raml-parsed', function (e, args) {
       var definition = args;
       codeMirrorErrors.clearAnnotations();
-      definition.baseUri = ramlHelper.processBaseUri(definition);
-      eventService.broadcast('event:raml-sidebar-clicked', { isResource: true, data: definition });
+      definition.baseUri = ramlReader.processBaseUri(definition);
+      $scope.baseUri = definition.baseUri;
+      $scope.title = definition.title;
+      $scope.version = definition.version;
+      eventService.broadcast('event:raml-operation-list-published', definition.resources);
       $scope.hasErrors = false;
       $scope.$apply();
     });
