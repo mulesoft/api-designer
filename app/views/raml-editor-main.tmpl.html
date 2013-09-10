@@ -17,7 +17,48 @@ version: v1.1
     description: This is a description of posting a tag
   /search:
     name: Search
-    description: this is a description of search</textarea></div>
+    description: this is a description of search
+/jobs:
+  displayName: Jobs
+  get:
+    summary: get a Jobs
+    body:
+      application/json:
+        schema: |
+          {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "properties": {
+              "input": {
+                "required": false,
+                "type": "string"
+              }
+            },
+          "required": false,
+          "type": "object"
+          }
+        example: |
+          [
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            }
+          ]</textarea></div>
     <div role="shelf" ng-controller="ramlEditorShelf">
       <ul role="sections">
         <li ng-repeat="section in model.sections | orderBy:'name'">

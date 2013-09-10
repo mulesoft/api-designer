@@ -129,7 +129,7 @@ angular.module('codeMirror', ['raml'])
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-        mode: 'yaml',
+        mode: "raml",
         theme: 'solarized dark',
         lineNumbers: true,
         lineWrapping: true,
