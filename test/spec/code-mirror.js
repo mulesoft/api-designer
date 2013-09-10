@@ -130,7 +130,7 @@ describe('CodeMirror Service', function () {
         'version: v1.0\n' +
         'baseUri: http://example.com/api\n' +
         '/tags:\n' +
-        '  name: Tags',
+        '  displayName: Tags',
         { line: 4, ch: 13},
         { indentUnit: indentUnit });
 
