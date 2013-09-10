@@ -136,7 +136,7 @@ angular.module('raml')
           currentScopeLevel = editorState.currLineTabCount;
 
       if (currentScopeLevel !== 0) {
-        var scopesAtLevel = scopes.scopeLevels[currentScopeLevel - 1];
+        var scopesAtLevel = scopes.scopeLevels[currentScopeLevel - 1] || [];
 
         // We get the maximal element of the set of less than number of line
         var numOfLinesOfParentScopes = scopesAtLevel.filter(function (numOfLine) {
