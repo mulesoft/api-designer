@@ -123,9 +123,6 @@ describe('CodeMirror Service', function () {
   });
 
   describe('enter key', function () {
-    beforeEach(function () {
-
-    });
     it('should keep the same tab level if the current line is a literal', function (){
       var indentUnit = 2;
       editor = getEditor(
@@ -275,8 +272,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal("\n" + sp(3));
     });
 
-    it("should inject", inject(function () {
-      console.log(arguments);
+    it.skip("should use a mocked ramHint service", inject(function () {
     }));
 
     it.skip('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){

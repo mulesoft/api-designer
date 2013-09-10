@@ -167,7 +167,7 @@ angular.module('codeMirror', ['raml'])
       CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-        mode: 'yaml',
+        mode: "raml",
         theme: 'solarized dark',
         lineNumbers: true,
         lineWrapping: true,
