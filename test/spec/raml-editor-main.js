@@ -6,7 +6,7 @@ var describe = window.describe, beforeEach = window.beforeEach,
 
 
 describe('RAML Editor Main Controller', function () {
-  beforeEach(angular.mock.module('ramlConsoleApp'));
+  beforeEach(angular.mock.module('ramlEditorApp'));
 
   beforeEach(
     angular.mock.inject( function ($injector) {
