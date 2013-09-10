@@ -5,37 +5,49 @@ CodeMirror.defineMode("raml", function(config, parserConfig) {
   var jsonMode = CodeMirror.getMode(config, { name: "javascript", json: true });
 
   function yaml(stream, state) {
-    var style = yamlMode.token(stream, state.yamlState);
+    //TODO:refactor this into a dictionary, or something we can iterate
+    if(/text\/xml:/.test(stream.string)) {
+      console.log(">xml", stream.string);
+      state.mode = "xml";
+    }
+    if(/application\/json:/.test(stream.string)) {
+      console.log(">json", stream.string);
+      state.mode = "json";
+    }
 
+    if(/(schema:|example:)(\s?)\|/.test(stream.string)) {
+      state.token = state.mode == "json" ? json : xml;
+      state.localState = state.mode == "json" ? jsonMode.startState() : xmlMode.startState();
+      state.localState.indentation = stream.indentation();
+    }
 
-
-    return style;
+    return yamlMode.token(stream, state.yamlState);
   }
 
+  //TODO: refactor this and json into a function that takes a parameter?
   function xml(stream, state) {
-
+    if(stream.indentation() <= state.localState.indentation){
+      state.token = yaml;
+      state.localState = null;
+      return yaml(stream, state);
+    }
+    return xmlMode.token(stream, state.localState);
   }
 
   function json(stream, state) {
-
-  }
-
-  function maybeBackup(stream, pat, style) {
-    var cur = stream.current();
-    var close = cur.search(pat), m;
-    if (close > -1) stream.backUp(cur.length - close);
-    else if (m = cur.match(/<\/?$/)) {
-      stream.backUp(cur.length);
-      if (!stream.match(pat, false)) stream.match(cur[0]);
+    if(stream.indentation() <= state.localState.indentation){
+      state.token = yaml;
+      state.localState = null;
+      return yaml(stream, state);
     }
-    return style;
+    return jsonMode.token(stream, state.localState);
   }
 
   return {
     startState: function () {
       return {
+        mode: "json",
         token: yaml,
-        localMode: null,
         localState: null,
         yamlState: yamlMode.startState()
       };
