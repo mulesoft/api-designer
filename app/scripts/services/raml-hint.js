@@ -124,7 +124,7 @@ angular.module('raml')
     };
 
     function extractKeyPartFromScopes(scopesInfo) {
-      return scopesInfo.map(function (scopeInfo) {
+      return (scopesInfo || []).map(function (scopeInfo) {
         return extractKey(scopeInfo[1]);
       });
     }

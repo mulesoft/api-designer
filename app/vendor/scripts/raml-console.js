@@ -374,13 +374,13 @@ angular.module('helpers', [])
 
                     if (splitted.length) {
                         urlParts.push({
-                            name: splitted[0],
+                            displayName: splitted[0],
                             editable: false
                         });
                     }
                     if (splitted.length === 2) {
                         urlParts.push({
-                            name: '{' + splitted[1] + '}',
+                            displayName: '{' + splitted[1] + '}',
                             editable: true,
                             memberName: splitted[1]
                         });
@@ -712,7 +712,8 @@ angular.module('ramlConsoleApp')
                 displayName: 'Parameters',
                 view: 'views/raml-operation-details-parameters.tmpl.html',
                 show: function () {
-                    return ($scope.operation.queryParameters && $scope.operation.queryParameters.length) || ($scope.urlParams && $scope.urlParams.length);
+                    var urlParams = ($scope.urlParams || []).filter(function (p) { return p.editable; });
+                    return ($scope.operation.queryParameters && $scope.operation.queryParameters.length) || urlParams.length;
                 }
             });
 
@@ -1044,7 +1045,7 @@ angular.module('ramlConsoleApp')
 angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache) {
 
   $templateCache.put("views/raml-body-param-files.tmpl.html",
-    "<label ng-switch on=\"bodyParam.type\">{{bodyParam.name}}\n" +
+    "<label ng-switch on=\"bodyParam.type\">{{bodyParam.displayName}}\n" +
     "    <span style=\"color: #e9322d;\" ng-show=\"bodyParam.required\">*</span>\n" +
     "\n" +
     "    <input ng-switch-when=\"file\" data-description=\"{{bodyParam.paramName}}\" style=\"width: 533px; padding-top: 9px;\" name=\"file\" type=\"file\" placeholder=\"{{bodyParam.example}}\" ng-model=\"body[operation.name][bodyParam.paramName]\" ng-required=\"{{bodyParam.required}}\" file-upload>\n" +
@@ -1052,7 +1053,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   );
 
   $templateCache.put("views/raml-body-param.tmpl.html",
-    "<label ng-switch on=\"bodyParam.type\" ng-show=\"bodyParam.name\">{{bodyParam.name}}\n" +
+    "<label ng-switch on=\"bodyParam.type\" ng-show=\"bodyParam.displayName\">{{bodyParam.displayName}}\n" +
     "    <span style=\"color: #e9322d;\" ng-show=\"bodyParam.required\">*</span>\n" +
     "\n" +
     "    <input ng-switch-default type=\"text\" placeholder=\"{{bodyParam.example}}\" ng-model=\"body[operation.name][bodyParam.paramName]\" ng-required=\"{{bodyParam.required}}\">\n" +
@@ -1144,7 +1145,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "      </thead>\n" +
     "      <tbody>\n" +
     "        <tr ng-repeat=\"param in urlParams | filter: {editable: true}\">\n" +
-    "          <td>{{param.name}}</td>\n" +
+    "          <td>{{param.displayName}}</td>\n" +
     "          <td>{{param.type}}</td>\n" +
     "          <td class=\"markdown\" ng-model=\"param.description\"></td>\n" +
     "          <td>{{param.example}}</td>\n" +
@@ -1167,7 +1168,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "      </thead>\n" +
     "      <tbody>\n" +
     "        <tr ng-repeat=\"param in queryParams\">\n" +
-    "          <td>{{param.name}}</td>\n" +
+    "          <td>{{param.displayName}}</td>\n" +
     "          <td>{{param.type}}</td>\n" +
     "          <td class=\"markdown\" ng-model=\"param.description\"></td>\n" +
     "          <td>{{param.example}}</td>\n" +
@@ -1227,7 +1228,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "      </thead>\n" +
     "      <tbody>\n" +
     "        <tr ng-repeat=\"param in content.formParameters\">\n" +
-    "          <td>{{param.name}}</td>\n" +
+    "          <td>{{param.displayName}}</td>\n" +
     "          <td>{{param.type}}</td>\n" +
     "          <td class=\"markdown\" ng-model=\"param.description\"></td>\n" +
     "        </tr>\n" +
@@ -1393,12 +1394,12 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "<section role=\"api-operation\" ng-class=\"{active:active, first:$first, last:$last}\" ng-controller=\"ramlOperation\">\n" +
     "  <header id=\"operationHeader\" ng-click=\"headerClick()\">\n" +
     "    <hgroup>\n" +
-    "      <h1>{{resource.name}}</h1>\n" +
+    "      <h1>{{resource.displayName}}</h1>\n" +
     "      <h2>{{resource.relativeUri}}</h2>\n" +
     "    </hgroup>\n" +
     "    <div role=\"summary\">\n" +
     "      <ul role=\"traits\">\n" +
-    "        <li ng-repeat=\"trait in resource.traits\">{{trait.name}}</li>\n" +
+    "        <li ng-repeat=\"trait in resource.traits\">{{trait.displayName}}</li>\n" +
     "      </ul>\n" +
     "      <ul role=\"operations\">\n" +
     "        <li role=\"{{key}}\" ng-repeat=\"(key, value) in resource.methods\" ng-class=\"{active:isMethodActive(key)}\" ng-click=\"changeMethod(key); $event.stopPropagation()\">\n" +
@@ -1412,14 +1413,14 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   );
 
   $templateCache.put("views/raml-query-param.tmpl.html",
-    "<label>{{queryParam.name}}\n" +
+    "<label>{{queryParam.displayName}}\n" +
     "\t<span style=\"color: #e9322d;\" ng-show=\"queryParam.required\">*</span>\n" +
     "    <input type=\"text\" placeholder=\"{{queryParam.example}}\" ng-model=\"query[operation.name][queryParam.paramName]\" ng-required=\"{{queryParam.required}}\">\n" +
     "</label>"
   );
 
   $templateCache.put("views/raml-uri-part.tmpl.html",
-    "<span ng-hide=\"uriPart.editable\" ng-bind-html='uriPart.name | formatUriPart'></span><input type=\"text\" name=\"{{uriPart.memberName}}\" ng-model=\"url[uriPart.memberName]\" ng-show=\"uriPart.editable\" placeholder=\"{{uriPart.name}}\" required></input>"
+    "<span ng-hide=\"uriPart.editable\" ng-bind-html='uriPart.displayName | formatUriPart'></span><input type=\"text\" name=\"{{uriPart.memberName}}\" ng-model=\"url[uriPart.memberName]\" ng-show=\"uriPart.editable\" placeholder=\"{{uriPart.displayName}}\" required></input>"
   );
 
 }]);
