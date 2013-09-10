@@ -270,7 +270,7 @@ TreeMap = (function() {
 
   TreeMap.postponedExecution = notImplemented;
 
-  TreeMap.nodeMap = notImplemented;
+  TreeMap.node = notImplemented;
 
   return TreeMap;
 
@@ -279,13 +279,12 @@ TreeMap = (function() {
 cache = [];
 
 transverse = function(treeMap, root) {
-  var a, alternative, alternatives, b, cachedResult, cachedRoot, cachedTree, elem, element, f, key, m, promise, result, value, _i, _len;
+  var a, alternative, alternatives, b, cachedResult, cachedRoot, cachedTree, element, f, key, m, promise, result, value, _i, _len, _ref9;
   if (root === void 0) {
     throw new Error('Invalid root specified');
   }
   for (_i = 0, _len = cache.length; _i < _len; _i++) {
-    elem = cache[_i];
-    cachedTree = elem.cachedTree, cachedRoot = elem.cachedRoot, cachedResult = elem.cachedResult;
+    _ref9 = cache[_i], cachedTree = _ref9.cachedTree, cachedRoot = _ref9.cachedRoot, cachedResult = _ref9.cachedResult;
     if (cachedTree === treeMap && cachedRoot === root) {
       return cachedResult;
     }
@@ -351,7 +350,7 @@ name = new Tuple(new ConstantString('displayName'), stringNode);
 
 description = new Tuple(new ConstantString('description'), stringNode);
 
-parameterType = new Tuple(new ConstantString('type'), new Alternatives(new ConstantString('string'), new ConstantString('number'), new ConstantString('integer'), new ConstantString('date')));
+parameterType = new Tuple(new ConstantString('type'), new Alternatives(new ConstantString('string'), new ConstantString('number'), new ConstantString('integer'), new ConstantString('date'), new ConstantString('boolean')));
 
 enum2 = new Tuple(new ConstantString('enum'), new Multiple(stringNode));
 
@@ -377,7 +376,7 @@ uriParameters = new Tuple(new ConstantString('uriParameters'), new Multiple(uriP
 
 defaultMediaTypes = new Tuple(new ConstantString('defaultMediaTypes'), new Alternatives(stringNode, new Multiple(stringNode)));
 
-chapter = new Alternatives(new Tuple(new ConstantString('title'), stringNode), new Tuple(new ConstantString('content'), stringNode));
+chapter = new Alternatives(title, new Tuple(new ConstantString('content'), stringNode));
 
 documentation = new Tuple(new ConstantString('documentation'), new Multiple(chapter));
 
@@ -417,7 +416,7 @@ action = (function(func, args, ctor) {
   return Object(result) === result ? result : child;
 })(Alternatives, (function() {
   var _i, _len, _ref9, _results;
-  _ref9 = [new ConstantString('get'), new ConstantString('post'), new ConstantString('put'), new ConstantString('delete'), new ConstantString('head'), new ConstantString('path'), new ConstantString('options')];
+  _ref9 = [new ConstantString('get'), new ConstantString('post'), new ConstantString('put'), new ConstantString('delete'), new ConstantString('head'), new ConstantString('patch'), new ConstantString('options')];
   _results = [];
   for (_i = 0, _len = _ref9.length; _i < _len; _i++) {
     actionName = _ref9[_i];
@@ -673,25 +672,24 @@ TreeMapToSuggestionTree = (function(_super) {
   }
 
   TreeMapToSuggestionTree.alternatives = function(root, alternatives) {
-    var alternative, d, key, metadata, open, suggestions, value, _i, _len;
+    var alternative, constructor, d, key, metadata, open, possibleMetadata, possibleOpen, suggestions, value, _i, _len, _ref3;
     d = {};
     for (_i = 0, _len = alternatives.length; _i < _len; _i++) {
       alternative = alternatives[_i];
-      switch (alternative.constructor) {
+      suggestions = alternative.suggestions, possibleOpen = alternative.open, possibleMetadata = alternative.metadata, constructor = alternative.constructor;
+      switch (constructor) {
         case SimpleSuggestion:
-          suggestions = alternative.suggestions;
           for (key in suggestions) {
             value = suggestions[key];
             d[key] = value;
           }
           break;
         case OpenSuggestion:
-          suggestions = alternative.suggestions;
           for (key in suggestions) {
             value = suggestions[key];
             d[key] = value;
           }
-          open = alternative.open, metadata = alternative.metadata;
+          _ref3 = [possibleOpen, possibleMetadata], open = _ref3[0], metadata = _ref3[1];
           break;
         case SuggestionNode:
         case StringWildcard:
@@ -699,7 +697,7 @@ TreeMapToSuggestionTree = (function(_super) {
           void 0;
           break;
         default:
-          throw new Error("Invalid type: " + alternative + " of type " + alternative.constructor);
+          throw new Error("Invalid type: " + alternative + " of type " + constructor);
       }
     }
     if (open != null) {
