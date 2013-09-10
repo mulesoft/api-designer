@@ -123,6 +123,9 @@ describe('CodeMirror Service', function () {
   });
 
   describe('enter key', function () {
+    beforeEach(function () {
+
+    });
     it('should keep the same tab level if the current line is a literal', function (){
       var indentUnit = 2;
       editor = getEditor(
@@ -172,6 +175,66 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
     });
 
+    it("should add another indentation if the current line has a continuation character ('|') and has one indent", function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  \n' +
+        '  name: Tags\n' +
+        '  description: |\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 6, ch: 15 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+    });
+
+    it("should preserve the whitespace if the current line has a parent with continuation character ('|') and one indent", function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: |\n' +
+        '    Here be dragons\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 6, ch: 18 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+    });
+
+    it("should add another indentation if the current line has a continuation character ('|') and has two indents", function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  \n' +
+        '  name: Tags\n' +
+        '  description: This is the description of the tag\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: |',
+        { line: 9, ch: 17 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 3));
+    });
+
     it('should keep the same indentation level if the current line is all tabs', function (){
       var indentUnit = 2;
       editor = getEditor(
@@ -212,6 +275,10 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal("\n" + sp(3));
     });
 
+    it("should inject", inject(function () {
+      console.log(arguments);
+    }));
+
     it.skip('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
       var indentUnit = 2;
       editor = getEditor(
@@ -231,7 +298,6 @@ describe('CodeMirror Service', function () {
       codeMirrorService.enterKey(editor);
       editor.spacesToInsert.should.be.equal("\n" + sp(3));
     });
-
   });
 
 });
