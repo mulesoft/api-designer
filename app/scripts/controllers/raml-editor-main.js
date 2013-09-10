@@ -1,5 +1,5 @@
 angular.module('ramlEditorApp')
-  .controller('ramlMain', function ($scope, ramlReader, ramlParser, eventService, codeMirror, codeMirrorErrors) {
+  .controller('ramlMain', function ($scope, ramlReader, ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors) {
     var editor, currentUpdateTimer,
         UPDATE_RESPONSIVENESS_INTERVAL = 300;
 
@@ -48,6 +48,12 @@ angular.module('ramlEditorApp')
       $scope.$apply();
     });
 
+    $scope.bootstrap = function () {
+      ramlRepository.bootstrap(function (file) {
+        editor.replaceRange(file.contents, {line: 0, ch: 0}, {line: 0, ch: 0});
+      });
+    };
+
     $scope.init = function () {
       $scope.raml = {};
       $scope.definition = '';
@@ -70,7 +76,7 @@ angular.module('ramlEditorApp')
       });
 
       setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
-      setTimeout($scope.sourceUpdated, 250);
+      setTimeout($scope.bootstrap, 250);
     };
 
     $scope.init();

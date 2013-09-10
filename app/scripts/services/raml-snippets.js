@@ -4,6 +4,10 @@ angular.module('raml')
   .factory('ramlSnippets', function () {
     var service = {};
 
+    service.getEmptyRaml = function () {
+      return '#%RAML 0.2\n---\n';
+    };
+
     service.getSnippet = function (suggestion) {
       var snippetName = suggestion.name;
       var ind = '{{padding}}';
