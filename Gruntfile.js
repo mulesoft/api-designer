@@ -182,55 +182,8 @@ module.exports = function (grunt) {
             'bower_components/angular/angular.js',
             'bower_components/angular/angular-resource.js',
             'bower_components/angular/angular-sanitize.js',
-            // 'bower_components/CodeMirror/lib/*.js',
-            // 'bower_components/CodeMirror/mode/yaml/yaml.js',
             'bower_components/raml-parser/dist/raml-parser.js'
           ]
-        }, {
-          expand: true,
-          dot: false,
-          cwd: '<%= yeoman.app %>',
-          dest: '<%= yeoman.app %>/vendor/styles',
-          flatten: true,
-          src: [
-            // 'bower_components/CodeMirror/lib/*.css',
-            // 'bower_components/CodeMirror/theme/solarized.css'
-          ]
-        }, {
-          expand: true,
-          dot: false,
-          cwd: '<%= yeoman.app %>/bower_components/raml-console/angular-app/app/views',
-          dest: '<%= yeoman.app %>/views',
-          flatten: true,
-          src: '*.html'
-        }, {
-          expand: true,
-          dot: false,
-          cwd: '<%= yeoman.app %>/bower_components/raml-console/angular-app/app/scripts/controllers',
-          dest: '<%= yeoman.app %>/scripts/controllers',
-          flatten: true,
-          src: '*.js'
-        }, {
-          expand: true,
-          dot: false,
-          cwd: '<%= yeoman.app %>/bower_components/raml-console/angular-app/app/scripts/directives',
-          dest: '<%= yeoman.app %>/scripts/directives',
-          flatten: true,
-          src: '*.js'
-        }, {
-          expand: true,
-          dot: false,
-          cwd: '<%= yeoman.app %>/bower_components/raml-console/angular-app/app/scripts/common',
-          dest: '<%= yeoman.app %>/scripts/common',
-          flatten: true,
-          src: '*.js'
-        }, {
-          expand: true,
-          dot: false,
-          cwd: '<%= yeoman.app %>/bower_components/raml-console/angular-app/app/scripts/services',
-          dest: '<%= yeoman.app %>/scripts/services',
-          flatten: true,
-          src: '*.js'
         }]
       }
     },
