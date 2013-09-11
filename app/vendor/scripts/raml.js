@@ -7,11 +7,9 @@ CodeMirror.defineMode("raml", function(config, parserConfig) {
   function yaml(stream, state) {
     //TODO:refactor this into a dictionary, or something we can iterate
     if(/text\/xml:/.test(stream.string)) {
-      console.log(">xml", stream.string);
       state.mode = "xml";
     }
     if(/application\/json:/.test(stream.string)) {
-      console.log(">json", stream.string);
       state.mode = "json";
     }
 
