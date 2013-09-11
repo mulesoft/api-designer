@@ -80,11 +80,11 @@ angular.module('codeMirror', ['raml'])
       var parentLine = cm.getLine(parentLineNumber);
 
       if(curLineWithoutTabs.match(/\|$/)) {
-        _foo(cm, 1, "");
+        _replaceSelection(cm, 1, "");
         return;
       }
       if(parentLine.match(/\|$/)) {
-        _foo (cm, 0, "");
+        _replaceSelection(cm, 0, "");
         return;
       }
 
@@ -102,10 +102,10 @@ angular.module('codeMirror', ['raml'])
         extraWhitespace = leadingWhitespace[0];
       }
 
-      _foo (cm, offset, extraWhitespace);
+      _replaceSelection (cm, offset, extraWhitespace);
     };
 
-    function _foo(editor, offset, whitespace) {
+    function _replaceSelection(editor, offset, whitespace) {
       var indentUnit = editor.getOption('indentUnit');
       var editorState = ramlHint.getEditorState(editor);
 
