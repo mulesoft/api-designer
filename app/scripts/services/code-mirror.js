@@ -163,7 +163,7 @@ angular.module('codeMirror', ['raml'])
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
 
-      CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
+      CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
