@@ -7,10 +7,16 @@ angular.module('ramlEditorApp')
 
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
+      var file = $scope.file;
       if (source === $scope.definition) {
         return;
       }
 
+      if (file && !$scope.firstLoad) {
+        file.dirty = true;
+      }
+
+      $scope.firstLoad = false;
       $scope.definition = source;
       eventService.broadcast('event:raml-source-updated', $scope.definition);
     };
@@ -50,8 +56,23 @@ angular.module('ramlEditorApp')
 
     $scope.bootstrap = function () {
       ramlRepository.bootstrap(function (file) {
+        $scope.file = file;
+        $scope.firstLoad = true;
         editor.replaceRange(file.contents, {line: 0, ch: 0}, {line: 0, ch: 0});
+        editor.setCursor({line: 0, ch: 0});
       });
+    };
+
+    $scope.canSave = function () {
+      return $scope.file && $scope.file.dirty;
+    };
+
+    $scope.save = function () {
+      if ($scope.canSave()) {
+        ramlRepository.saveFile($scope.file, function () {
+          $scope.$apply();
+        });
+      }
     };
 
     $scope.init = function () {
@@ -76,7 +97,7 @@ angular.module('ramlEditorApp')
       });
 
       setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
-      setTimeout($scope.bootstrap, 250);
+      setTimeout($scope.bootstrap, 0);
     };
 
     $scope.init();

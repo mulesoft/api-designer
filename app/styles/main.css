@@ -10,28 +10,64 @@ body {
     margin: 0px;
     padding: 0px;
 }
-body > h1 {
+
+header > h1 {
   height: auto;
-  padding-left: 19px;
-  padding-top: 1.25%;
+  padding: 0px;
+  margin: 5px 0px 10px 0px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
-  font-size: 27px;
+  font-size: 24px;
+  font-weight: normal;
+  position: relative;
+}
+
+div[role=save-button] {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  margin: 5px 15px 0px 0px;
+  padding: 10px 13px;
+  background-color: #40cd5d;
+  color: white;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+div[role=save-button].disabled {
+  background-color: #dadcdd;
+}
+
+div[role=preview] > header > h2 {
+  height: auto;
+  padding: 0px 0px 10px 0px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  font-size: 20px;
   margin: 0px;
   font-weight: normal;
 }
 
 div.container {
-    height: 93%;
-    box-sizing: border-box;
-    padding: 1%;
+  height: 90%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 15px 10px 25px 15px;
 }
+
 div[role=raml-editor] {
     width: 100%;
     height: 100%;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
+    position: relative;
 }
+
 div[role=editor] {
     width: 60%;
     height: 100%;
@@ -42,20 +78,25 @@ div[role=editor] {
     box-sizing: border-box;
     position: relative;
     transition: all 1s ease-in;
+    margin-top: 30px;
+    margin-top: 30px;
 }
+
 div[role=editor].error {
     box-shadow: 0px 0px 5px 1px red;
     transition: all 1s ease-out;
 }
+
 div[role=preview] {
     width: 40%;
     float: left;
-    padding: 0px 0px 0px 15px;
+    padding: 0px 15px 0px 15px;
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
     box-sizing: border-box;
     height: 100%;
     overflow-y: scroll;
+    margin-top: 30px;
 }
 
 div[role=shelf] {
@@ -149,7 +190,7 @@ div[role=shelf] ul[role=sections] > li > ul[role=items] > li:hover {
   margin-right: 5px;
 }
 
-/* Overrides */
+/* CodeMirror Overrides */
 div.CodeMirror {
     font-size: 12px;
     margin-right: 200px;
@@ -168,6 +209,11 @@ div.CodeMirror {
 }
 .CodeMirror-foldgutter-folded:after {
     content: "\25B8";
+}
+
+.cm-s-solarized.CodeMirror,
+.cm-s-solarized .CodeMirror-gutters {
+  background-image: none;
 }
 
 /* Console overrides */
@@ -194,4 +240,56 @@ section[role=api-operation-details-section-request] > section[role=codes-list] >
 
 section[role=api-operation-details-section-request] {
   padding-bottom: 0px;
+}
+
+/* Tabs */
+div[role=tabs] {
+  height:45px;
+  padding: 0 0 0 0;
+  overflow:visible;
+  position: absolute;
+  top: -28px;
+  left: -6px;
+  box-sizing: border-box;
+}
+
+div[role=tab] {
+  min-width:150px;
+  height:28px;
+  overflow:hidden;
+  float:left;
+  margin:0 -10px 0 0;
+  position: relative;
+  box-sizing: border-box;
+  color: #839496;
+  text-shadow: #002b36 0 1px;
+  font-size: 12px;
+  line-height: 30px;
+  padding-left: 21px;
+}
+
+div[role=tab-box] {
+  height:40px;
+  background: #fff;
+  border-radius: 4px;
+  border:1px solid #ccc;
+  margin:0 8px 0;
+  -webkit-transform: perspective(100px) rotateX(20deg);
+  -moz-transform: perspective(100px) rotateX(20deg);
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 141px;
+  box-sizing: border-box;
+  z-index: -1;
+}
+
+div[role=tab].active {
+  position:relative;
+  padding-bottom:1px;
+  z-index: 2;
+}
+
+div[role=tab].active div[role=tab-box]{
+  background-color: #002b36;
 }

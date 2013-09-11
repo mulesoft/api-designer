@@ -462,13 +462,21 @@ angular.module('helpers')
 angular.module('helpers')
   .factory('eventService', function ($rootScope) {
     var service = {};
+    var lastEvents = {};
 
     service.broadcast = function (eventName, data) {
-      $rootScope.$broadcast(eventName, data);
+        lastEvents[eventName] = data;
+        $rootScope.$broadcast(eventName, data);
     };
 
     service.on = function (eventName, handler) {
-      $rootScope.$on(eventName, handler);
+        $rootScope.$on(eventName, handler);
+
+        if (lastEvents[eventName]) {
+            setTimeout(function () {
+                handler({}, lastEvents[eventName]);
+            }, 0);
+        }
     };
 
     return service;

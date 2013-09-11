@@ -1,22 +1,21 @@
 <div role="raml-editor" ng-controller="ramlMain">
+  <header>
+    <h1>RAML<strong>editor</strong></h1>
+    <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
+  </header>
   <div role="editor" ng-class="{error: hasErrors}">
     <div role="browser"></div>
-    <div role="tabs"></div>
-    <div role="actions"></div>
-    <div style="height:inherit"><textarea id="code" name="code" style="display: none;"></textarea></div>
-    <div role="shelf" ng-controller="ramlEditorShelf">
-      <ul role="sections">
-        <li ng-repeat="section in model.sections | orderBy:'name'">
-          {{section.name}}
-          <ul role="items">
-            <li ng-repeat="item in section.items" ng-click="itemClick(item)">{{item.name}}</li>
-          </ul>
-        </li>
-      </ul>
+    <div role="tabs">
+      <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
     </div>
+    <div role="actions"></div>
+    <div role="code" style="height:inherit"><textarea id="code" name="code" style="display: none;"></textarea></div>
+    <div role="shelf" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
   </div>
   <div role="preview">
-    <ng-include src="'views/raml-operation-list.tmpl.html'"></ng-include>
-    <span style='display:none'>{{errorMessage}}</span>
+    <header>
+      <h2 ng-show="title">{{title}}</h2>
+    </header>
+    <div ng-include src="'views/raml-operation-list.tmpl.html'"></div>
   </div>
 </div>
