@@ -253,8 +253,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       var foldRange = codeMirrorService.getFoldRange(editor, { line: 6 });
-      console.log(foldRange);
-      foldRange.should.deep.equal({ from: { line: 6, ch: 5 }, to: { line: 7, ch: 45} });
+      foldRange.should.deep.equal({ from: { line: 6, ch: 6 }, to: { line: 7, ch: 48} });
     });
 
     it('should detect fold range for root nodes', function () {
