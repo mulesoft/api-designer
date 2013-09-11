@@ -235,6 +235,28 @@ describe('CodeMirror Service', function () {
   });
 
   describe('code folding', function () {
+    it("should detect fold ranges of only one line", function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '  post:\n' +
+        '    summary: Create a new tagged media\n' +
+        '    description: This is a description of creating tags',
+        { line: 6, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 6 });
+      console.log(foldRange);
+      foldRange.should.deep.equal({ from: { line: 6, ch: 5 }, to: { line: 7, ch: 45} });
+    });
+
     it('should detect fold range for root nodes', function () {
       var indentUnit = 2;
       editor = getEditor(
