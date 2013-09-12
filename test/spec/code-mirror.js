@@ -302,6 +302,5 @@ describe('CodeMirror Service', function () {
       foldRange = codeMirrorService.getFoldRange(editor, { line: 9 });
       foldRange.should.deep.equal({ from: { line: 9, ch: 7 }, to: { line: 11, ch: 55} });
     });
-
   });
 });
