@@ -65,8 +65,28 @@ angular.module('codeMirror', ['raml'])
     service.enterKey = function (cm) {
       var editorState = ramlHint.getEditorState(cm);
       var indentUnit = cm.getOption('indentUnit');
+      var indent = editorState.curLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
 
       var curLineWithoutTabs = service.removeTabs(editorState.curLine, indentUnit);
+
+      //this overrides everything else, because the '|' explicitly declares the line as a scalar
+      //with a continuation on other lines. This applies to the current line or the parent of the current line
+      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indent > 0 ? indent - 1 : 0];
+
+      var parentLineNumber = potentialParents.filter(function (line) {
+        return line < editorState.start.line;
+      }).pop();
+
+      var parentLine = cm.getLine(parentLineNumber);
+
+      if(curLineWithoutTabs.match(/\|$/)) {
+        _replaceSelection(cm, 1, "");
+        return;
+      }
+      if(parentLine.match(/\|$/)) {
+        _replaceSelection(cm, 0, "");
+        return;
+      }
 
       var offset = 0;
       if(curLineWithoutTabs.replace(' ', '').length > 0) {
@@ -76,15 +96,23 @@ angular.module('codeMirror', ['raml'])
         offset = suggestions.isScalar ? 0 : 1;
       }
 
-      var extraWhitespace = ""
+      var extraWhitespace = "";
       var leadingWhitespace = curLineWithoutTabs.match(/^\s+/);
       if(leadingWhitespace && leadingWhitespace[0] && !offset) {
         extraWhitespace = leadingWhitespace[0];
       }
 
-      var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ') + extraWhitespace;
-      cm.replaceSelection(spaces, "end", "+input");
+      _replaceSelection (cm, offset, extraWhitespace);
     };
+
+    function _replaceSelection(editor, offset, whitespace) {
+      var indentUnit = editor.getOption('indentUnit');
+      var editorState = ramlHint.getEditorState(editor);
+
+      var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ') + whitespace;
+      editor.replaceSelection(spaces, "end", "+input");
+    }
+
 
     service.getFoldRange = function (cm, start) {
       var indentUnit = cm.getOption('indentUnit');
@@ -135,11 +163,11 @@ angular.module('codeMirror', ['raml'])
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
 
-      CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
+      CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-        mode: 'yaml',
+        mode: "raml",
         theme: 'solarized dark',
         lineNumbers: true,
         lineWrapping: true,
