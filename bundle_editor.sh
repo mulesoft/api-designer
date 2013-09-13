@@ -28,4 +28,7 @@ grunt
 echo "copying parser files to editor..."
 cp $RAML_CODE_HOME/javascript-parser/dist/raml-parser.js $RAML_CODE_HOME/javascript-editor/app/vendor/scripts/raml-parser.js
 
+echo "copying parser files to console..."
+cp $RAML_CODE_HOME/javascript-parser/dist/raml-parser.js $RAML_CODE_HOME/console/app/vendor/scripts/raml-parser.js
+
 echo "Done!!!"
