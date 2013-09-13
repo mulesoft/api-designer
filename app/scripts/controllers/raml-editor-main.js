@@ -39,10 +39,10 @@ angular.module('ramlEditorApp')
 
     eventService.on('event:raml-parser-error', function (e, args) {
       var error = args, annotations = [],
-        line = (error && error.problem_mark && error.problem_mark.line) || 1,
-        column = (error && error.problem_mark && error.problem_mark.column) || 1;
+        line = (error && error.problem_mark && error.problem_mark.line) || 0,
+        column = (error && error.problem_mark && error.problem_mark.column) || 0;
 
-      annotations.push({ message: error.message, line: line, column: column });
+      annotations.push({ message: error.message, line: line + 1, column: column + 1});
       codeMirrorErrors.displayAnnotations(annotations);
       $scope.hasErrors = true;
       $scope.$apply();
