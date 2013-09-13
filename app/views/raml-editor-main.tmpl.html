@@ -17,7 +17,60 @@ version: v1.1
     description: This is a description of posting a tag
   /search:
     displayName: Search
-    description: this is a description of search</textarea></div>
+/jobs:
+  displayName: Jobs
+  get:
+    summary: get a Jobs
+    body:
+      text/xml:
+        schema: |
+          <xs:schema attributeFormDefault="unqualified"
+                     elementFormDefault="qualified"
+                     xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:element name="api-request">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element type="xs:string" name="input"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:schema>
+      application/json:
+        schema: |
+          {
+            "$schema": "http://json-schema.org/draft-03/schema",
+            "properties": {
+              "input": {
+                "required": false,
+                "type": "string"
+              }
+            },
+          "required": false,
+          "type": "object"
+          }
+        example: |
+          [
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            },
+            {
+              "name": "job name"
+              "description": "job description"
+            }
+          ]</textarea></div>
     <div role="shelf" ng-controller="ramlEditorShelf">
       <ul role="sections">
         <li ng-repeat="section in model.sections | orderBy:'name'">
