@@ -3,7 +3,7 @@
 var CodeMirror = window.CodeMirror;
 
 angular.module('codeMirror', ['raml'])
-  .factory('codeMirror', function (ramlHint) {
+  .factory('codeMirror', function (ramlHint, codeMirrorHighLight) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
@@ -113,7 +113,6 @@ angular.module('codeMirror', ['raml'])
       editor.replaceSelection(spaces, "end", "+input");
     }
 
-
     service.getFoldRange = function (cm, start) {
       var indentUnit = cm.getOption('indentUnit');
 
@@ -163,6 +162,9 @@ angular.module('codeMirror', ['raml'])
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
 
+      CodeMirror.defineMode("raml", codeMirrorHighLight.highlight, "yaml", "javascript", "xml");
+      CodeMirror.defineMIME("text/x-raml", "raml");
+
       CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
 
@@ -182,9 +184,7 @@ angular.module('codeMirror', ['raml'])
         },
         gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter']
       });
-
       editor.setSize(null, '100%');
-
       editor.foldCode(0, {
         rangeFinder: CodeMirror.fold.indent
       });
