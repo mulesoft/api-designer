@@ -3,6 +3,7 @@ CodeMirror.defineMode("raml", function(config, parserConfig) {
   var yamlMode = CodeMirror.getMode(config, "yaml");
   var xmlMode = CodeMirror.getMode(config, "xml");
   var jsonMode = CodeMirror.getMode(config, { name: "javascript", json: true });
+  var gfmMode = CodeMirror.getMode(config, "gfm");
 
   function yaml(stream, state) {
     //TODO:refactor this into a dictionary, or something we can iterate
