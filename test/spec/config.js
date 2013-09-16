@@ -27,7 +27,7 @@ describe('RAML Config Service', function () {
     config.get('b').should.be.equal(7);
     should.not.exist(config.get('c'));
   });
-  
+
   it('should retrieve a previously stored value correctly', function () {
     config.set('a', 19);
     config.get('a').should.be.equal(19);
@@ -49,7 +49,7 @@ describe('RAML Config Service', function () {
     config.set('t', 87);
     config.set('8', 123);
 
-    config.saveToLocalStorage();
+    config.save();
 
     var currentLocalStorageConfig = JSON.parse(localStorage.config);
 
