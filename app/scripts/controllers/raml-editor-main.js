@@ -1,8 +1,9 @@
 angular.module('ramlEditorApp')
-  .controller('ramlMain', function ($scope, ramlReader, ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors) {
+  .controller('ramlMain', function ($scope, safeApply, ramlReader, ramlParser,
+    ramlRepository, eventService, codeMirror, codeMirrorErrors) {
     var editor, currentUpdateTimer,
         UPDATE_RESPONSIVENESS_INTERVAL = 300;
-
+    
     $scope.consoleSettings = { displayTryIt: false };
 
     $scope.sourceUpdated = function () {
@@ -70,7 +71,7 @@ angular.module('ramlEditorApp')
     $scope.save = function () {
       if ($scope.canSave()) {
         ramlRepository.saveFile($scope.file, function () {
-          $scope.$apply();
+          safeApply();
         });
       }
     };

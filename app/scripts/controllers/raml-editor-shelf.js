@@ -1,20 +1,14 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint, eventService, codeMirror, ramlSnippets) {
+  .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint,
+    eventService, codeMirror, ramlSnippets, safeApply) {
     var hinter = ramlHint;
 
     eventService.on('event:raml-editor-initialized', function () {
       var editor = codeMirror.getEditor();
       editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
     });
-
-    $scope.safeApply = function () {
-      var phase = this.$root.$$phase;
-      if (!(phase === '$apply' || phase === '$digest')) {
-        this.$apply();
-      }
-    };
 
     $scope.cursorMoved = function () {
       var editor = codeMirror.getEditor();
@@ -35,7 +29,7 @@ angular.module('ramlEditorApp')
 
       $scope.model = model;
 
-      $scope.safeApply();
+      safeApply();
     };
 
     $scope.itemClick = function (item) {
