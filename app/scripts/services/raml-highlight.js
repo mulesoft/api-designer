@@ -4,9 +4,6 @@ var CodeMirror = window.CodeMirror;
 
 angular.module('codeMirror')
   .factory('codeMirrorHighLight', function () {
-    //this will be a problem. Highlight modes don't have access
-    //to the codemirror editor...
-    var indentUnit = 2;
     var mode = {};
 
     mode.highlight = function(config) {
@@ -18,8 +15,7 @@ angular.module('codeMirror')
       return {
         startState: function () {
           return {
-            mode: "json",
-            token: yaml,
+            token: mode._yaml,
             localState: null,
             yamlState: mode.yaml.startState()
           };
@@ -30,48 +26,55 @@ angular.module('codeMirror')
       };
     }
 
-    function yaml(stream, state) {
+    mode._yaml = function(stream, state) {
       if(/(documentation:|description:)(\s?)\|/.test(stream.string)) {
-        state.token = markdown;
+        state.token = mode._markdown;
         state.localState = mode.markdown.startState();
         state.localState.indentation = stream.indentation();
       }
 
       if(/application\/json:/.test(stream.string)) {
-        state.token = json;
+        state.token = mode._json;
         state.localState = mode.json.startState();
         state.localState.indentation = stream.indentation();
       }
 
       if(/text\/xml:/.test(stream.string)) {
-        state.token = xml;
+        state.token = mode._xml;
         state.localState = mode.xml.startState();
         state.localState.indentation = stream.indentation();
       }
 
       return mode.yaml.token(stream, state.yamlState);
     }
-    function xml(stream, state) {
+    //TODO: refactor all this duplication
+    mode._xml = function (stream, state) {
       if(stream.indentation() <= state.localState.indentation){
-        state.token = yaml;
+        state.token = mode._yaml;
         state.localState = null;
-        return yaml(stream, state);
+        return mode._yaml(stream, state);
+      }
+      if(/(schema|example):(\s?)\|/.test(stream.string)) {
+        return mode._yaml(stream, state);
       }
       return mode.xml.token(stream, state.localState);
     }
-    function json(stream, state) {
+    mode._json = function (stream, state) {
       if(stream.indentation() <= state.localState.indentation){
-        state.token = yaml;
+        state.token = mode._yaml;
         state.localState = null;
-        return yaml(stream, state);
+        return mode._yaml(stream, state);
+      }
+      if(/(schema|example):(\s?)\|/.test(stream.string)) {
+        return mode._yaml(stream, state);
       }
       return mode.json.token(stream, state.localState);
     }
-    function markdown(stream, state) {
+    mode._markdown = function (stream, state) {
       if(stream.indentation() <= state.localState.indentation) {
-        state.token = yaml;
+        state.token = mode._yaml;
         state.localState = null;
-        return yaml(stream, state);
+        return mode._yaml(stream, state);
       }
       return mode.markdown.token(stream, state.localState);
     }
