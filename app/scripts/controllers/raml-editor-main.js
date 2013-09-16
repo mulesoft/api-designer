@@ -70,6 +70,7 @@ angular.module('ramlEditorApp')
 
     $scope.save = function () {
       if ($scope.canSave()) {
+        $scope.file.contents = editor.getValue();
         ramlRepository.saveFile($scope.file, function () {
           safeApply();
         });
