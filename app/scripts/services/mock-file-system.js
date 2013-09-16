@@ -42,19 +42,19 @@ angular.module('raml')
       }, delay);
     };
 
-    service.delete = function (path, name, callback, errorCallback) {
+    service.remove = function (path, name, callback, errorCallback) {
       var entries = files
         .filter(function (f) {
           return f.path === path && f.name === name;
         });
 
       setTimeout(function () {
-        var deleted = entries[0];
+        var removed = entries[0];
         if (name === 'error') {
           errorCallback('Error reading file');
         } else {
-          if (deleted) {
-            files.splice(files.indexOf(deleted), 1);
+          if (removed) {
+            files.splice(files.indexOf(removed), 1);
             callback();
           }
         }

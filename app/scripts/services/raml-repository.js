@@ -12,7 +12,7 @@ angular.module('raml')
       this.name = name || defaultName;
       this.contents = typeof contents === 'string' ? contents : null;
       this.dirty = !name;
-      this.deleted = false;
+      this.removed = false;
       this.loading = false;
     }
 
@@ -20,8 +20,8 @@ angular.module('raml')
       reload: function () {
         service.loadFile(this);
       },
-      delete: function () {
-        service.deleteFile(this);
+      remove: function () {
+        service.removeFile(this);
       },
       save: function () {
         service.saveFile(this);
@@ -39,7 +39,7 @@ angular.module('raml')
           file.contents = data;
           file.loading = false;
           file.dirty = false;
-          file.deleted = false;
+          file.removed = false;
           if (callback) {
             callback(file);
           }
@@ -48,7 +48,7 @@ angular.module('raml')
           file.error = error;
           file.loading = false;
           file.dirty = false;
-          file.deleted = false;
+          file.removed = false;
           if (errorCallback) {
             errorCallback(error);
           }
@@ -82,14 +82,14 @@ angular.module('raml')
       return entries;
     };
 
-    service.deleteFile = function (file, callback, errorCallback) {
+    service.removeFile = function (file, callback, errorCallback) {
       file.loading = true;
 
-      fileSystem.delete(file.path, file.name,
+      fileSystem.remove(file.path, file.name,
         function () {
           file.loading = false;
           file.dirty = false;
-          file.deleted = true;
+          file.removed = true;
           if (callback) {
             callback(file);
           }
@@ -97,7 +97,7 @@ angular.module('raml')
         function (error) {
           file.error = error;
           file.loading = false;
-          file.deleted = false;
+          file.removed = false;
           if (errorCallback) {
             errorCallback(error);
           }
@@ -115,7 +115,7 @@ angular.module('raml')
         function () {
           file.loading = false;
           file.dirty = false;
-          file.deleted = false;
+          file.removed = false;
           if (callback) {
             callback(file);
           }
