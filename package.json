@@ -25,7 +25,8 @@
     "karma": "~0.10.0",
     "karma-mocha": "~0.1.0",
     "karma-chai": "0.0.1",
-    "karma-spec-reporter": "0.0.4"
+    "karma-spec-reporter": "0.0.4",
+    "grunt-connect-proxy": "~0.1.5"
   },
   "engines": {
     "node": ">=0.8.0"
