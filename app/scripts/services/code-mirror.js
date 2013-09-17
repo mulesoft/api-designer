@@ -117,6 +117,11 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       var indentUnit = cm.getOption('indentUnit');
 
       var line = cm.getLine(start.line);
+
+      if(line.length === 0) {
+        return;
+      }
+
       var nextLine = cm.getLine(start.line + 1);
       if (!nextLine) {
         return;
@@ -125,12 +130,21 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
       var nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
 
+      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indent > 0 ? indent - 1 : 0];
+      var parent = potentialParents.filter(function (line) {
+        return line < start.line;
+      }).pop();
+
+      if(/content:(\s?)\|/.test(cm.getLine(parent))) {
+        return;
+      }
+
       if(nextLineIndent > indent) {
         for(var i = start.line + 2, end = cm.lineCount(); i < end; ++i) {
           nextLine = cm.getLine(i);
           nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1
 
-          if(nextLineIndent <= indent) {
+          if(nextLineIndent <= indent && nextLine.length > 0) {
             nextLine = cm.getLine(i-1);
             return {
               from: CodeMirror.Pos(start.line, line.length),
