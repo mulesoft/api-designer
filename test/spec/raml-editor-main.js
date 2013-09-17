@@ -2,7 +2,7 @@
 
 var describe = window.describe, beforeEach = window.beforeEach,
   it = window.it, $rootScope, $controller, codeMirror,
-  eventService, codeMirrorErrors;
+  eventService, codeMirrorErrors, ramlRepository;
 
 
 describe('RAML Editor Main Controller', function () {
@@ -33,17 +33,20 @@ describe('RAML Editor Main Controller', function () {
         annotationsToDisplay = annotations;
       };
 
+      ramlRepository = sinon.stub();
+
       params = {
         $scope: scope,
         codeMirror: codeMirror,
         codeMirrorErrors: codeMirrorErrors,
-        eventService: eventService
+        eventService: eventService,
+        ramlRepository: ramlRepository
       };
 
       ctrl = $controller('ramlMain', params);
     });
 
-    it('should display errors on first line if no line specified', function () {
+    it('should display errors on first line if no line specified', function (done) {
       // Arrange
       var error = {
         message: 'Error without line or column!'
@@ -60,6 +63,7 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
       scope.hasErrors.should.be.true;
+      done();
     });
   });
 
