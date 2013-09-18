@@ -1,12 +1,12 @@
 angular.module('ramlEditorApp')
-  .constant('AUTOSAVE_INTERVAL', 10000)
+  .constant('AUTOSAVE_INTERVAL', 60000)
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     $scope, safeApply, ramlReader, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors) {
     var editor, currentUpdateTimer, saveTimer;
 
-    
+
     $scope.consoleSettings = { displayTryIt: false };
 
     $scope.sourceUpdated = function () {
