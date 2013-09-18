@@ -16,12 +16,12 @@ angular.module('raml')
       }
     };
 
-    configService.get = function get (key, d3fault) {
+    configService.get = function get (key, defaultValue) {
       if (!key) {
         throw new Error('First argument (key to lookup) is mandatory');
       }
 
-      return config.hasOwnProperty(key) ? config[key] : d3fault;
+      return config.hasOwnProperty(key) ? config[key] : defaultValue;
     };
 
     configService.set = function set (key, value) {
