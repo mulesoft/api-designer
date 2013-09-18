@@ -32,7 +32,7 @@ angular.module('raml')
       config[key] = value;
     };
 
-    configService.saveToLocalStorage = function () {
+    configService.save = function () {
       localStorage.config = JSON.stringify(config);
     };
 

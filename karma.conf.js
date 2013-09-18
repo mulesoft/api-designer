@@ -19,6 +19,7 @@ module.exports = function(config) {
     'app/vendor/scripts/angular.js',
     'app/vendor/scripts/angular-resource.js',
     'app/vendor/scripts/angular-sanitize.js',
+    'app/vendor/scripts/angular-cookies.js',
 
     'app/vendor/scripts/test/angular-mocks.js',
 
@@ -42,6 +43,8 @@ module.exports = function(config) {
     'app/scripts/services/raml-hint.js',
     'app/scripts/services/raml-snippets.js',
     'app/scripts/services/raml-highlight.js',
+    'app/scripts/services/raml-repository.js',
+    'app/scripts/services/remote-file-system.js',
     'app/scripts/controllers/raml-editor-main.js',
     'app/scripts/controllers/raml-editor-shelf.js',
     'test/mocks/**/*.js',

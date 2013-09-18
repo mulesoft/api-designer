@@ -1,9 +1,16 @@
 'use strict';
 
-angular.module('raml')
-  .factory('ramlRepository', function (ramlSnippets, mockFileSystem) {
+angular.module('fs', ['raml', 'utils', 'ngCookies'])
+  .factory('fileSystem', function ($injector, config) {
+    var fsFactory = config.get('fsFactory', 'remoteFileSystem');
+    //var fsFactory = config.get('fsFactory', 'mockFileSystem');
+
+    config.save();
+
+    return $injector.get(fsFactory);
+  })
+  .factory('ramlRepository', function (ramlSnippets, fileSystem) {
     var service = {};
-    var fileSystem = mockFileSystem;
     var defaultPath = '/';
     var defaultName = 'untitled';
 

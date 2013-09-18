@@ -1,4 +1,6 @@
-angular.module('ramlEditorApp', ['ramlConsoleApp', 'helpers', 'raml', 'ngResource', 'ngSanitize', 'codeMirror', 'fs'])
+angular.module('ramlEditorApp', ['ramlConsoleApp', 'helpers', 'raml', 'ngResource', 'ngSanitize', 'codeMirror', 'fs', 'utils']);
+
+angular.module('utils', [])
   .factory('safeApply', function ($rootScope) {
     function safeApply(fn) {
       var phase = this.$root.$$phase;
