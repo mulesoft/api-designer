@@ -1,8 +1,11 @@
 angular.module('ramlEditorApp')
-  .controller('ramlMain', function ($scope, safeApply, ramlReader, ramlParser,
+  .constant('AUTOSAVE_INTERVAL', 10000)
+  .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
+  .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
+    $scope, safeApply, ramlReader, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors) {
-    var editor, currentUpdateTimer,
-        UPDATE_RESPONSIVENESS_INTERVAL = 300;
+    var editor, currentUpdateTimer, saveTimer;
+
     
     $scope.consoleSettings = { displayTryIt: false };
 
@@ -63,6 +66,10 @@ angular.module('ramlEditorApp')
         $scope.file.contents = editor.getValue();
         ramlRepository.saveFile($scope.file, function () {
           safeApply();
+          if (saveTimer) {
+            clearTimeout(saveTimer);
+          }
+          saveTimer = setTimeout($scope.save, AUTOSAVE_INTERVAL);
         });
       }
     };
