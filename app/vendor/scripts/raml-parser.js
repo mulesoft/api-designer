@@ -3082,6 +3082,216 @@ window.RAML = {}
 
 window.RAML.Parser = require('../lib/raml')
 },{"../lib/raml":11}],12:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, events, nodes, raml, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  events = require('./events');
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  raml = require('./raml');
+
+  this.ComposerError = (function(_super) {
+    __extends(ComposerError, _super);
+
+    function ComposerError() {
+      _ref = ComposerError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return ComposerError;
+
+  })(MarkedYAMLError);
+
+  this.Composer = (function() {
+    function Composer() {
+      this.anchors = {};
+    }
+
+    Composer.prototype.check_node = function() {
+      if (this.check_event(events.StreamStartEvent)) {
+        this.get_event();
+      }
+      return !this.check_event(events.StreamEndEvent);
+    };
+
+    /*
+    Get the root node of the next document.
+    */
+
+
+    Composer.prototype.get_node = function() {
+      if (!this.check_event(events.StreamEndEvent)) {
+        return this.compose_document();
+      }
+    };
+
+    Composer.prototype.get_single_node = function(validate, apply, join) {
+      var document, event;
+      if (validate == null) {
+        validate = true;
+      }
+      if (apply == null) {
+        apply = true;
+      }
+      if (join == null) {
+        join = true;
+      }
+      this.get_event();
+      document = null;
+      if (!this.check_event(events.StreamEndEvent)) {
+        document = this.compose_document();
+      }
+      if (!this.check_event(events.StreamEndEvent)) {
+        event = this.get_event();
+        throw new exports.ComposerError('expected a single document in the stream', document.start_mark, 'but found another document', event.start_mark);
+      }
+      this.get_event();
+      if (validate || apply) {
+        this.load_schemas(document);
+        this.load_traits(document);
+        this.load_types(document);
+        this.load_security_schemes(document);
+      }
+      if (validate) {
+        this.validate_document(document);
+      }
+      if (apply) {
+        this.apply_types(document);
+        this.apply_traits(document);
+        this.apply_schemas(document);
+      }
+      if (join) {
+        this.join_resources(document);
+      }
+      return document;
+    };
+
+    Composer.prototype.compose_document = function() {
+      var node;
+      this.get_event();
+      node = this.compose_node();
+      this.get_event();
+      this.anchors = {};
+      return node;
+    };
+
+    Composer.prototype.compose_node = function(parent, index) {
+      var anchor, event, node;
+      if (this.check_event(events.AliasEvent)) {
+        event = this.get_event();
+        anchor = event.anchor;
+        if (!(anchor in this.anchors)) {
+          throw new exports.ComposerError(null, null, "found undefined alias " + anchor, event.start_mark);
+        }
+        return this.anchors[anchor];
+      }
+      event = this.peek_event();
+      anchor = event.anchor;
+      if (anchor !== null && anchor in this.anchors) {
+        throw new exports.ComposerError("found duplicate anchor " + anchor + "; first occurence", this.anchors[anchor].start_mark, 'second occurrence', event.start_mark);
+      }
+      this.descend_resolver(parent, index);
+      if (this.check_event(events.ScalarEvent)) {
+        node = this.compose_scalar_node(anchor);
+      } else if (this.check_event(events.SequenceStartEvent)) {
+        node = this.compose_sequence_node(anchor);
+      } else if (this.check_event(events.MappingStartEvent)) {
+        node = this.compose_mapping_node(anchor);
+      }
+      this.ascend_resolver();
+      return node;
+    };
+
+    Composer.prototype.compose_fixed_scalar_node = function(anchor, value) {
+      var event, node;
+      event = this.get_event();
+      node = new nodes.ScalarNode('tag:yaml.org,2002:str', value, event.start_mark, event.end_mark, event.style);
+      if (anchor !== null) {
+        this.anchors[anchor] = node;
+      }
+      return node;
+    };
+
+    Composer.prototype.compose_scalar_node = function(anchor) {
+      var event, extension, node, tag;
+      event = this.get_event();
+      tag = event.tag;
+      if (tag === null || tag === '!') {
+        tag = this.resolve(nodes.ScalarNode, event.value, event.implicit);
+      }
+      if (event.tag === 'tag:raml.org,0.1:include') {
+        extension = event.value.split(".").pop();
+        if (this.src != null) {
+          event.value = require('url').resolve(this.src, event.value);
+        }
+        if (extension === 'yaml' || extension === 'yml' || extension === 'raml') {
+          return raml.composeFile(event.value, false, false, false);
+        } else {
+          node = new nodes.ScalarNode('tag:yaml.org,2002:str', raml.readFile(event.value), event.start_mark, event.end_mark, event.style);
+        }
+      } else {
+        node = new nodes.ScalarNode(tag, event.value, event.start_mark, event.end_mark, event.style);
+      }
+      if (anchor !== null) {
+        this.anchors[anchor] = node;
+      }
+      return node;
+    };
+
+    Composer.prototype.compose_sequence_node = function(anchor) {
+      var end_event, index, node, start_event, tag;
+      start_event = this.get_event();
+      tag = start_event.tag;
+      if (tag === null || tag === '!') {
+        tag = this.resolve(nodes.SequenceNode, null, start_event.implicit);
+      }
+      node = new nodes.SequenceNode(tag, [], start_event.start_mark, null, start_event.flow_style);
+      if (anchor !== null) {
+        this.anchors[anchor] = node;
+      }
+      index = 0;
+      while (!this.check_event(events.SequenceEndEvent)) {
+        node.value.push(this.compose_node(node, index));
+        index++;
+      }
+      end_event = this.get_event();
+      node.end_mark = end_event.end_mark;
+      return node;
+    };
+
+    Composer.prototype.compose_mapping_node = function(anchor) {
+      var end_event, item_key, item_value, node, start_event, tag;
+      start_event = this.get_event();
+      tag = start_event.tag;
+      if (tag === null || tag === '!') {
+        tag = this.resolve(nodes.MappingNode, null, start_event.implicit);
+      }
+      node = new nodes.MappingNode(tag, [], start_event.start_mark, null, start_event.flow_style);
+      if (anchor !== null) {
+        this.anchors[anchor] = node;
+      }
+      while (!this.check_event(events.MappingEndEvent)) {
+        item_key = this.compose_node(node);
+        item_value = this.compose_node(node, item_key);
+        node.value.push([item_key, item_value]);
+      }
+      end_event = this.get_event();
+      node.end_mark = end_event.end_mark;
+      return node;
+    };
+
+    return Composer;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./events":2,"./nodes":13,"./raml":11,"url":7}],14:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
@@ -6946,7 +7156,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 },{}]},{},[])
 ;;module.exports=require("buffer-browserify")
 
-},{}],13:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function(Buffer){(function() {
   var MarkedYAMLError, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -7581,216 +7791,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 }).call(this);
 
 })(require("__browserify_buffer").Buffer)
-},{"./errors":1,"./nodes":14,"./util":4,"__browserify_buffer":12}],15:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, events, nodes, raml, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  events = require('./events');
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  raml = require('./raml');
-
-  this.ComposerError = (function(_super) {
-    __extends(ComposerError, _super);
-
-    function ComposerError() {
-      _ref = ComposerError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return ComposerError;
-
-  })(MarkedYAMLError);
-
-  this.Composer = (function() {
-    function Composer() {
-      this.anchors = {};
-    }
-
-    Composer.prototype.check_node = function() {
-      if (this.check_event(events.StreamStartEvent)) {
-        this.get_event();
-      }
-      return !this.check_event(events.StreamEndEvent);
-    };
-
-    /*
-    Get the root node of the next document.
-    */
-
-
-    Composer.prototype.get_node = function() {
-      if (!this.check_event(events.StreamEndEvent)) {
-        return this.compose_document();
-      }
-    };
-
-    Composer.prototype.get_single_node = function(validate, apply, join) {
-      var document, event;
-      if (validate == null) {
-        validate = true;
-      }
-      if (apply == null) {
-        apply = true;
-      }
-      if (join == null) {
-        join = true;
-      }
-      this.get_event();
-      document = null;
-      if (!this.check_event(events.StreamEndEvent)) {
-        document = this.compose_document();
-      }
-      if (!this.check_event(events.StreamEndEvent)) {
-        event = this.get_event();
-        throw new exports.ComposerError('expected a single document in the stream', document.start_mark, 'but found another document', event.start_mark);
-      }
-      this.get_event();
-      if (validate || apply) {
-        this.load_schemas(document);
-        this.load_traits(document);
-        this.load_types(document);
-      }
-      if (validate) {
-        this.validate_document(document);
-      }
-      if (apply) {
-        this.apply_types(document);
-        this.apply_traits(document);
-        this.apply_schemas(document);
-      }
-      if (join) {
-        this.join_resources(document);
-      }
-      return document;
-    };
-
-    Composer.prototype.compose_document = function() {
-      var node;
-      this.get_event();
-      node = this.compose_node();
-      this.get_event();
-      this.anchors = {};
-      return node;
-    };
-
-    Composer.prototype.compose_node = function(parent, index) {
-      var anchor, event, node;
-      if (this.check_event(events.AliasEvent)) {
-        event = this.get_event();
-        anchor = event.anchor;
-        if (!(anchor in this.anchors)) {
-          throw new exports.ComposerError(null, null, "found undefined alias " + anchor, event.start_mark);
-        }
-        return this.anchors[anchor];
-      }
-      event = this.peek_event();
-      anchor = event.anchor;
-      if (anchor !== null && anchor in this.anchors) {
-        throw new exports.ComposerError("found duplicate anchor " + anchor + "; first occurence", this.anchors[anchor].start_mark, 'second occurrence', event.start_mark);
-      }
-      this.descend_resolver(parent, index);
-      if (this.check_event(events.ScalarEvent)) {
-        node = this.compose_scalar_node(anchor);
-      } else if (this.check_event(events.SequenceStartEvent)) {
-        node = this.compose_sequence_node(anchor);
-      } else if (this.check_event(events.MappingStartEvent)) {
-        node = this.compose_mapping_node(anchor);
-      }
-      this.ascend_resolver();
-      return node;
-    };
-
-    Composer.prototype.compose_fixed_scalar_node = function(anchor, value) {
-      var event, node;
-      event = this.get_event();
-      node = new nodes.ScalarNode('tag:yaml.org,2002:str', value, event.start_mark, event.end_mark, event.style);
-      if (anchor !== null) {
-        this.anchors[anchor] = node;
-      }
-      return node;
-    };
-
-    Composer.prototype.compose_scalar_node = function(anchor) {
-      var event, extension, node, tag;
-      event = this.get_event();
-      tag = event.tag;
-      if (tag === null || tag === '!') {
-        tag = this.resolve(nodes.ScalarNode, event.value, event.implicit);
-      }
-      if (event.tag === 'tag:raml.org,0.1:include') {
-        extension = event.value.split(".").pop();
-        if (this.src != null) {
-          event.value = require('url').resolve(this.src, event.value);
-        }
-        if (extension === 'yaml' || extension === 'yml' || extension === 'raml') {
-          return raml.composeFile(event.value, false, false, false);
-        } else {
-          node = new nodes.ScalarNode('tag:yaml.org,2002:str', raml.readFile(event.value), event.start_mark, event.end_mark, event.style);
-        }
-      } else {
-        node = new nodes.ScalarNode(tag, event.value, event.start_mark, event.end_mark, event.style);
-      }
-      if (anchor !== null) {
-        this.anchors[anchor] = node;
-      }
-      return node;
-    };
-
-    Composer.prototype.compose_sequence_node = function(anchor) {
-      var end_event, index, node, start_event, tag;
-      start_event = this.get_event();
-      tag = start_event.tag;
-      if (tag === null || tag === '!') {
-        tag = this.resolve(nodes.SequenceNode, null, start_event.implicit);
-      }
-      node = new nodes.SequenceNode(tag, [], start_event.start_mark, null, start_event.flow_style);
-      if (anchor !== null) {
-        this.anchors[anchor] = node;
-      }
-      index = 0;
-      while (!this.check_event(events.SequenceEndEvent)) {
-        node.value.push(this.compose_node(node, index));
-        index++;
-      }
-      end_event = this.get_event();
-      node.end_mark = end_event.end_mark;
-      return node;
-    };
-
-    Composer.prototype.compose_mapping_node = function(anchor) {
-      var end_event, item_key, item_value, node, start_event, tag;
-      start_event = this.get_event();
-      tag = start_event.tag;
-      if (tag === null || tag === '!') {
-        tag = this.resolve(nodes.MappingNode, null, start_event.implicit);
-      }
-      node = new nodes.MappingNode(tag, [], start_event.start_mark, null, start_event.flow_style);
-      if (anchor !== null) {
-        this.anchors[anchor] = node;
-      }
-      while (!this.check_event(events.MappingEndEvent)) {
-        item_key = this.compose_node(node);
-        item_value = this.compose_node(node, item_key);
-        node.value.push([item_key, item_value]);
-      }
-      end_event = this.get_event();
-      node.end_mark = end_event.end_mark;
-      return node;
-    };
-
-    return Composer;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./events":2,"./nodes":14,"./raml":11,"url":7}],16:[function(require,module,exports){
+},{"./errors":1,"./nodes":13,"./util":4,"__browserify_buffer":14}],16:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -7835,14 +7836,14 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       if (node != null ? node.value : void 0) {
         resources = node.value.filter(function(childNode) {
           var _ref1;
-          return (_ref1 = childNode[0]) != null ? _ref1.value.match(/^\//i) : void 0;
+          return (_ref1 = childNode[0]) != null ? _ref1.value.match(/^\//) : void 0;
         });
       }
       resourcesArray = [];
       if (resources.length > 0) {
         if (node != null ? node.value : void 0) {
           node.value = node.value.filter(function(childNode) {
-            return !childNode[0].value.match(/^\//i);
+            return !childNode[0].value.match(/^\//);
           });
         }
         resourcesName = new nodes.ScalarNode('tag:yaml.org,2002:str', 'resources', resources[0][0].start_mark, resources[resources.length - 1][1].end_mark);
@@ -7869,13 +7870,13 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       methods = [];
       if (node && node.value) {
         methods = node.value.filter(function(childNode) {
-          return childNode[0] && childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/i);
+          return childNode[0] && childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/);
         });
       }
       methodsArray = [];
       if (methods.length > 0) {
         node.value = node.value.filter(function(childNode) {
-          return !childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/i);
+          return !childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/);
         });
         methodsName = new nodes.ScalarNode('tag:yaml.org,2002:str', 'methods', methods[0][0].start_mark, methods[methods.length - 1][1].end_mark);
         methods.forEach(function(method) {
@@ -7899,9 +7900,9 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":14}],17:[function(require,module,exports){
+},{"./errors":1,"./nodes":13}],17:[function(require,module,exports){
 (function() {
-  var composer, construct, joiner, parser, reader, resolver, scanner, schemas, traits, types, util, validator;
+  var composer, construct, joiner, parser, reader, resolver, scanner, schemas, securitySchemes, traits, types, util, validator;
 
   util = require('./util');
 
@@ -7927,7 +7928,9 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
   schemas = require('./schemas');
 
-  this.make_loader = function(Reader, Scanner, Parser, Composer, Resolver, Validator, ResourceTypes, Traits, Schemas, Joiner, Constructor) {
+  securitySchemes = require('./securitySchemes');
+
+  this.make_loader = function(Reader, Scanner, Parser, Composer, Resolver, Validator, ResourceTypes, Traits, Schemas, Joiner, SecuritySchemes, Constructor) {
     if (Reader == null) {
       Reader = reader.Reader;
     }
@@ -7958,13 +7961,16 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
     if (Joiner == null) {
       Joiner = joiner.Joiner;
     }
+    if (SecuritySchemes == null) {
+      SecuritySchemes = securitySchemes.SecuritySchemes;
+    }
     if (Constructor == null) {
       Constructor = construct.Constructor;
     }
     return (function() {
       var component, components;
 
-      components = [Reader, Scanner, Parser, Composer, Resolver, Validator, Traits, ResourceTypes, Schemas, Joiner, Constructor];
+      components = [Reader, Scanner, Parser, Composer, Resolver, Validator, Traits, ResourceTypes, Schemas, Joiner, Constructor, SecuritySchemes];
 
       util.extend.apply(util, [_Class.prototype].concat((function() {
         var _i, _len, _results;
@@ -7995,7 +8001,245 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./composer":15,"./construct":13,"./joiner":16,"./parser":20,"./reader":18,"./resolver":21,"./resourceTypes":24,"./scanner":19,"./schemas":25,"./traits":23,"./util":4,"./validator":22}],20:[function(require,module,exports){
+},{"./composer":12,"./construct":15,"./joiner":16,"./parser":20,"./reader":18,"./resolver":21,"./resourceTypes":24,"./scanner":19,"./schemas":25,"./securitySchemes":26,"./traits":23,"./util":4,"./validator":22}],13:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, unique_id, _ref, _ref1, _ref2,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  unique_id = 0;
+
+  this.ApplicationError = (function(_super) {
+    __extends(ApplicationError, _super);
+
+    function ApplicationError() {
+      _ref = ApplicationError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return ApplicationError;
+
+  })(MarkedYAMLError);
+
+  this.Node = (function() {
+    function Node(tag, value, start_mark, end_mark) {
+      this.tag = tag;
+      this.value = value;
+      this.start_mark = start_mark;
+      this.end_mark = end_mark;
+      this.unique_id = "node_" + (unique_id++);
+    }
+
+    Node.prototype.clone = function() {
+      var temp;
+      temp = new this.constructor(this.tag, this.value.clone(), this.start_mark, this.end_mark);
+      return temp;
+    };
+
+    return Node;
+
+  })();
+
+  this.ScalarNode = (function(_super) {
+    __extends(ScalarNode, _super);
+
+    ScalarNode.prototype.id = 'scalar';
+
+    function ScalarNode(tag, value, start_mark, end_mark, style) {
+      this.tag = tag;
+      this.value = value;
+      this.start_mark = start_mark;
+      this.end_mark = end_mark;
+      this.style = style;
+      ScalarNode.__super__.constructor.apply(this, arguments);
+    }
+
+    ScalarNode.prototype.clone = function() {
+      var temp;
+      temp = new this.constructor(this.tag, this.value, this.start_mark, this.end_mark);
+      return temp;
+    };
+
+    ScalarNode.prototype.combine = function(node) {
+      if (this.tag === "tag:yaml.org,2002:null" && node.tag === 'tag:yaml.org,2002:map') {
+        this.value = new exports.MappingNode('tag:yaml.org,2002:map', [], node.start_mark, node.end_mark);
+        return this.value.combine(node);
+      } else if (!(node instanceof ScalarNode)) {
+        throw new exports.ApplicationError('while applying node', null, 'different YAML structures', this.start_mark);
+      }
+      return this.value = node.value;
+    };
+
+    ScalarNode.prototype.remove_question_mark_properties = function() {};
+
+    return ScalarNode;
+
+  })(this.Node);
+
+  this.CollectionNode = (function(_super) {
+    __extends(CollectionNode, _super);
+
+    function CollectionNode(tag, value, start_mark, end_mark, flow_style) {
+      this.tag = tag;
+      this.value = value;
+      this.start_mark = start_mark;
+      this.end_mark = end_mark;
+      this.flow_style = flow_style;
+      CollectionNode.__super__.constructor.apply(this, arguments);
+    }
+
+    return CollectionNode;
+
+  })(this.Node);
+
+  this.SequenceNode = (function(_super) {
+    __extends(SequenceNode, _super);
+
+    function SequenceNode() {
+      _ref1 = SequenceNode.__super__.constructor.apply(this, arguments);
+      return _ref1;
+    }
+
+    SequenceNode.prototype.id = 'sequence';
+
+    SequenceNode.prototype.clone = function() {
+      var items, temp,
+        _this = this;
+      items = [];
+      this.value.forEach(function(item) {
+        var value;
+        value = item.clone();
+        return items.push(value);
+      });
+      temp = new this.constructor(this.tag, items, this.start_mark, this.end_mark, this.flow_style);
+      return temp;
+    };
+
+    SequenceNode.prototype.combine = function(node) {
+      var _this = this;
+      if (!(node instanceof SequenceNode)) {
+        throw new exports.ApplicationError('while applying node', null, 'different YAML structures', this.start_mark);
+      }
+      return node.value.forEach(function(property) {
+        var value;
+        value = property.clone();
+        return _this.value.push(value);
+      });
+    };
+
+    SequenceNode.prototype.remove_question_mark_properties = function() {
+      return this.value.forEach(function(item) {
+        return item.remove_question_mark_properties();
+      });
+    };
+
+    return SequenceNode;
+
+  })(this.CollectionNode);
+
+  this.MappingNode = (function(_super) {
+    __extends(MappingNode, _super);
+
+    function MappingNode() {
+      _ref2 = MappingNode.__super__.constructor.apply(this, arguments);
+      return _ref2;
+    }
+
+    MappingNode.prototype.id = 'mapping';
+
+    MappingNode.prototype.clone = function() {
+      var properties, temp,
+        _this = this;
+      properties = [];
+      this.value.forEach(function(property) {
+        var name, value;
+        name = property[0].clone();
+        value = property[1].clone();
+        return properties.push([name, value]);
+      });
+      temp = new this.constructor(this.tag, properties, this.start_mark, this.end_mark, this.flow_style);
+      return temp;
+    };
+
+    MappingNode.prototype.cloneForTrait = function() {
+      var properties, temp,
+        _this = this;
+      properties = [];
+      this.value.forEach(function(property) {
+        var name, value;
+        name = property[0].clone();
+        value = property[1].clone();
+        if (!name.value.match(/^(displayName|description)$/)) {
+          return properties.push([name, value]);
+        }
+      });
+      temp = new this.constructor(this.tag, properties, this.start_mark, this.end_mark, this.flow_style);
+      return temp;
+    };
+
+    MappingNode.prototype.cloneRemoveIs = function() {
+      var properties, temp,
+        _this = this;
+      properties = [];
+      this.value.forEach(function(property) {
+        var name, value;
+        name = property[0].clone();
+        value = property[1].clone();
+        if (!name.value.match(/^(is|type)$/)) {
+          return properties.push([name, value]);
+        }
+      });
+      temp = new this.constructor(this.tag, properties, this.start_mark, this.end_mark, this.flow_style);
+      return temp;
+    };
+
+    MappingNode.prototype.combine = function(resourceNode) {
+      var _this = this;
+      if (resourceNode.tag === "tag:yaml.org,2002:null") {
+        resourceNode = new MappingNode('tag:yaml.org,2002:map', [], resourceNode.start_mark, resourceNode.end_mark);
+      }
+      if (!(resourceNode instanceof MappingNode)) {
+        throw new exports.ApplicationError('while applying node', null, 'different YAML structures', this.start_mark);
+      }
+      return resourceNode.value.forEach(function(resourceProperty) {
+        var name, node_has_property;
+        name = resourceProperty[0].value;
+        node_has_property = _this.value.some(function(someProperty) {
+          return (someProperty[0].value === name) || ((someProperty[0].value + '?') === name) || (someProperty[0].value === (name + '?'));
+        });
+        if (node_has_property) {
+          return _this.value.forEach(function(ownNodeProperty) {
+            var ownNodePropertyName;
+            ownNodePropertyName = ownNodeProperty[0].value;
+            if ((ownNodePropertyName === name) || ((ownNodePropertyName + '?') === name) || (ownNodePropertyName === (name + '?'))) {
+              ownNodeProperty[1].combine(resourceProperty[1]);
+              return ownNodeProperty[0].value = ownNodeProperty[0].value.replace(/\?$/, '');
+            }
+          });
+        } else {
+          return _this.value.push([resourceProperty[0].clone(), resourceProperty[1].clone()]);
+        }
+      });
+    };
+
+    MappingNode.prototype.remove_question_mark_properties = function() {
+      this.value = this.value.filter(function(property) {
+        return property[0].value.indexOf('?', property[0].value.length - 1) === -1;
+      });
+      return this.value.forEach(function(property) {
+        return property[1].remove_question_mark_properties();
+      });
+    };
+
+    return MappingNode;
+
+  })(this.CollectionNode);
+
+}).call(this);
+
+},{"./errors":1}],20:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, tokens, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -8606,238 +8850,107 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./events":2,"./tokens":3}],14:[function(require,module,exports){
+},{"./errors":1,"./events":2,"./tokens":3}],18:[function(require,module,exports){
 (function() {
-  var MarkedYAMLError, unique_id, _ref, _ref1, _ref2,
+  var Mark, YAMLError, _ref,
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
+  _ref = require('./errors'), Mark = _ref.Mark, YAMLError = _ref.YAMLError;
 
-  unique_id = 0;
+  this.ReaderError = (function(_super) {
+    __extends(ReaderError, _super);
 
-  this.ApplicationError = (function(_super) {
-    __extends(ApplicationError, _super);
-
-    function ApplicationError() {
-      _ref = ApplicationError.__super__.constructor.apply(this, arguments);
-      return _ref;
+    function ReaderError(name, position, character, reason) {
+      this.name = name;
+      this.position = position;
+      this.character = character;
+      this.reason = reason;
+      ReaderError.__super__.constructor.call(this);
     }
 
-    return ApplicationError;
-
-  })(MarkedYAMLError);
-
-  this.Node = (function() {
-    function Node(tag, value, start_mark, end_mark) {
-      this.tag = tag;
-      this.value = value;
-      this.start_mark = start_mark;
-      this.end_mark = end_mark;
-      this.unique_id = "node_" + (unique_id++);
-    }
-
-    Node.prototype.clone = function() {
-      var temp;
-      temp = new this.constructor(this.tag, this.value.clone(), this.start_mark, this.end_mark);
-      return temp;
+    ReaderError.prototype.toString = function() {
+      return "unacceptable character " + (this.character.charCodeAt()) + ": " + this.reason + "\n  in \"" + this.name + "\", position " + this.position;
     };
 
-    return Node;
+    return ReaderError;
+
+  })(YAMLError);
+
+  /*
+  Reader:
+    checks if characters are within the allowed range
+    add '\x00' to the end
+  */
+
+
+  this.Reader = (function() {
+    var NON_PRINTABLE;
+
+    NON_PRINTABLE = /[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\uD7FF\uE000-\uFFFD]/;
+
+    function Reader(string, src) {
+      this.string = string;
+      this.src = src;
+      this.line = 0;
+      this.column = 0;
+      this.index = 0;
+      this.check_printable();
+      this.string += '\x00';
+    }
+
+    Reader.prototype.peek = function(index) {
+      if (index == null) {
+        index = 0;
+      }
+      return this.string[this.index + index];
+    };
+
+    Reader.prototype.prefix = function(length) {
+      if (length == null) {
+        length = 1;
+      }
+      return this.string.slice(this.index, this.index + length);
+    };
+
+    Reader.prototype.forward = function(length) {
+      var char, _results;
+      if (length == null) {
+        length = 1;
+      }
+      _results = [];
+      while (length) {
+        char = this.string[this.index];
+        this.index++;
+        if (__indexOf.call('\n\x85\u2082\u2029', char) >= 0 || (char === '\r' && this.string[this.index] !== '\n')) {
+          this.line++;
+          this.column = 0;
+        } else {
+          this.column++;
+        }
+        _results.push(length--);
+      }
+      return _results;
+    };
+
+    Reader.prototype.get_mark = function() {
+      return new Mark(this.src, this.line, this.column, this.string, this.index);
+    };
+
+    Reader.prototype.check_printable = function() {
+      var character, match, position;
+      match = NON_PRINTABLE.exec(this.string);
+      if (match) {
+        character = match[0];
+        position = (this.string.length - this.index) + match.index;
+        throw new exports.ReaderError(this.name, position, character.charCodeAt(), 'special characters are not allowed');
+      }
+    };
+
+    return Reader;
 
   })();
-
-  this.ScalarNode = (function(_super) {
-    __extends(ScalarNode, _super);
-
-    ScalarNode.prototype.id = 'scalar';
-
-    function ScalarNode(tag, value, start_mark, end_mark, style) {
-      this.tag = tag;
-      this.value = value;
-      this.start_mark = start_mark;
-      this.end_mark = end_mark;
-      this.style = style;
-      ScalarNode.__super__.constructor.apply(this, arguments);
-    }
-
-    ScalarNode.prototype.clone = function() {
-      var temp;
-      temp = new this.constructor(this.tag, this.value, this.start_mark, this.end_mark);
-      return temp;
-    };
-
-    ScalarNode.prototype.combine = function(node) {
-      if (!(node instanceof ScalarNode)) {
-        throw new exports.ApplicationError('while applying node', null, 'different YAML structures', this.start_mark);
-      }
-      return this.value = node.value;
-    };
-
-    ScalarNode.prototype.remove_question_mark_properties = function() {};
-
-    return ScalarNode;
-
-  })(this.Node);
-
-  this.CollectionNode = (function(_super) {
-    __extends(CollectionNode, _super);
-
-    function CollectionNode(tag, value, start_mark, end_mark, flow_style) {
-      this.tag = tag;
-      this.value = value;
-      this.start_mark = start_mark;
-      this.end_mark = end_mark;
-      this.flow_style = flow_style;
-      CollectionNode.__super__.constructor.apply(this, arguments);
-    }
-
-    return CollectionNode;
-
-  })(this.Node);
-
-  this.SequenceNode = (function(_super) {
-    __extends(SequenceNode, _super);
-
-    function SequenceNode() {
-      _ref1 = SequenceNode.__super__.constructor.apply(this, arguments);
-      return _ref1;
-    }
-
-    SequenceNode.prototype.id = 'sequence';
-
-    SequenceNode.prototype.clone = function() {
-      var items, temp,
-        _this = this;
-      items = [];
-      this.value.forEach(function(item) {
-        var value;
-        value = item.clone();
-        return items.push(value);
-      });
-      temp = new this.constructor(this.tag, items, this.start_mark, this.end_mark, this.flow_style);
-      return temp;
-    };
-
-    SequenceNode.prototype.combine = function(node) {
-      var _this = this;
-      if (!(node instanceof SequenceNode)) {
-        throw new exports.ApplicationError('while applying node', null, 'different YAML structures', this.start_mark);
-      }
-      return node.value.forEach(function(property) {
-        var value;
-        value = property.clone();
-        return _this.value.push(value);
-      });
-    };
-
-    SequenceNode.prototype.remove_question_mark_properties = function() {
-      return this.value.forEach(function(item) {
-        return item.remove_question_mark_properties();
-      });
-    };
-
-    return SequenceNode;
-
-  })(this.CollectionNode);
-
-  this.MappingNode = (function(_super) {
-    __extends(MappingNode, _super);
-
-    function MappingNode() {
-      _ref2 = MappingNode.__super__.constructor.apply(this, arguments);
-      return _ref2;
-    }
-
-    MappingNode.prototype.id = 'mapping';
-
-    MappingNode.prototype.clone = function() {
-      var properties, temp,
-        _this = this;
-      properties = [];
-      this.value.forEach(function(property) {
-        var name, value;
-        name = property[0].clone();
-        value = property[1].clone();
-        return properties.push([name, value]);
-      });
-      temp = new this.constructor(this.tag, properties, this.start_mark, this.end_mark, this.flow_style);
-      return temp;
-    };
-
-    MappingNode.prototype.cloneForTrait = function() {
-      var properties, temp,
-        _this = this;
-      properties = [];
-      this.value.forEach(function(property) {
-        var name, value;
-        name = property[0].clone();
-        value = property[1].clone();
-        if (!name.value.match(/^(displayName|description)$/i)) {
-          return properties.push([name, value]);
-        }
-      });
-      temp = new this.constructor(this.tag, properties, this.start_mark, this.end_mark, this.flow_style);
-      return temp;
-    };
-
-    MappingNode.prototype.cloneRemoveIs = function() {
-      var properties, temp,
-        _this = this;
-      properties = [];
-      this.value.forEach(function(property) {
-        var name, value;
-        name = property[0].clone();
-        value = property[1].clone();
-        if (!name.value.match(/^(is|type)$/i)) {
-          return properties.push([name, value]);
-        }
-      });
-      temp = new this.constructor(this.tag, properties, this.start_mark, this.end_mark, this.flow_style);
-      return temp;
-    };
-
-    MappingNode.prototype.combine = function(resourceNode) {
-      var _this = this;
-      if (resourceNode.tag === "tag:yaml.org,2002:null") {
-        resourceNode = new MappingNode('tag:yaml.org,2002:map', [], resourceNode.start_mark, resourceNode.end_mark);
-      }
-      if (!(resourceNode instanceof MappingNode)) {
-        throw new exports.ApplicationError('while applying node', null, 'different YAML structures', this.start_mark);
-      }
-      return resourceNode.value.forEach(function(resourceProperty) {
-        var name, node_has_property;
-        name = resourceProperty[0].value;
-        node_has_property = _this.value.some(function(someProperty) {
-          return (someProperty[0].value === name) || ((someProperty[0].value + '?') === name) || (someProperty[0].value === (name + '?'));
-        });
-        if (node_has_property) {
-          return _this.value.forEach(function(ownNodeProperty) {
-            var ownNodePropertyName;
-            ownNodePropertyName = ownNodeProperty[0].value;
-            if ((ownNodePropertyName === name) || ((ownNodePropertyName + '?') === name) || (ownNodePropertyName === (name + '?'))) {
-              ownNodeProperty[1].combine(resourceProperty[1]);
-              return ownNodeProperty[0].value = ownNodeProperty[0].value.replace(/\?$/, '');
-            }
-          });
-        } else {
-          return _this.value.push([resourceProperty[0].clone(), resourceProperty[1].clone()]);
-        }
-      });
-    };
-
-    MappingNode.prototype.remove_question_mark_properties = function() {
-      this.value = this.value.filter(function(property) {
-        return property[0].value.indexOf('?', property[0].value.length - 1) === -1;
-      });
-      return this.value.forEach(function(property) {
-        return property[1].remove_question_mark_properties();
-      });
-    };
-
-    return MappingNode;
-
-  })(this.CollectionNode);
 
 }).call(this);
 
@@ -9050,278 +9163,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":14,"./util":4}],18:[function(require,module,exports){
-(function() {
-  var Mark, YAMLError, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-  _ref = require('./errors'), Mark = _ref.Mark, YAMLError = _ref.YAMLError;
-
-  this.ReaderError = (function(_super) {
-    __extends(ReaderError, _super);
-
-    function ReaderError(name, position, character, reason) {
-      this.name = name;
-      this.position = position;
-      this.character = character;
-      this.reason = reason;
-      ReaderError.__super__.constructor.call(this);
-    }
-
-    ReaderError.prototype.toString = function() {
-      return "unacceptable character " + (this.character.charCodeAt()) + ": " + this.reason + "\n  in \"" + this.name + "\", position " + this.position;
-    };
-
-    return ReaderError;
-
-  })(YAMLError);
-
-  /*
-  Reader:
-    checks if characters are within the allowed range
-    add '\x00' to the end
-  */
-
-
-  this.Reader = (function() {
-    var NON_PRINTABLE;
-
-    NON_PRINTABLE = /[^\x09\x0A\x0D\x20-\x7E\x85\xA0-\uD7FF\uE000-\uFFFD]/;
-
-    function Reader(string, src) {
-      this.string = string;
-      this.src = src;
-      this.line = 0;
-      this.column = 0;
-      this.index = 0;
-      this.check_printable();
-      this.string += '\x00';
-    }
-
-    Reader.prototype.peek = function(index) {
-      if (index == null) {
-        index = 0;
-      }
-      return this.string[this.index + index];
-    };
-
-    Reader.prototype.prefix = function(length) {
-      if (length == null) {
-        length = 1;
-      }
-      return this.string.slice(this.index, this.index + length);
-    };
-
-    Reader.prototype.forward = function(length) {
-      var char, _results;
-      if (length == null) {
-        length = 1;
-      }
-      _results = [];
-      while (length) {
-        char = this.string[this.index];
-        this.index++;
-        if (__indexOf.call('\n\x85\u2082\u2029', char) >= 0 || (char === '\r' && this.string[this.index] !== '\n')) {
-          this.line++;
-          this.column = 0;
-        } else {
-          this.column++;
-        }
-        _results.push(length--);
-      }
-      return _results;
-    };
-
-    Reader.prototype.get_mark = function() {
-      return new Mark(this.src, this.line, this.column, this.string, this.index);
-    };
-
-    Reader.prototype.check_printable = function() {
-      var character, match, position;
-      match = NON_PRINTABLE.exec(this.string);
-      if (match) {
-        character = match[0];
-        position = (this.string.length - this.index) + match.index;
-        throw new exports.ReaderError(this.name, position, character.charCodeAt(), 'special characters are not allowed');
-      }
-    };
-
-    return Reader;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1}],24:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  /*
-  The ResourceTypes throws these.
-  */
-
-
-  this.ResourceTypeError = (function(_super) {
-    __extends(ResourceTypeError, _super);
-
-    function ResourceTypeError() {
-      _ref = ResourceTypeError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return ResourceTypeError;
-
-  })(MarkedYAMLError);
-
-  /*
-  The ResourceTypes class deals with applying ResourceTypes to resources according to the spec
-  */
-
-
-  this.ResourceTypes = (function() {
-    function ResourceTypes() {
-      this.apply_parameters_to_type = __bind(this.apply_parameters_to_type, this);
-      this.apply_type = __bind(this.apply_type, this);
-      this.apply_types = __bind(this.apply_types, this);
-      this.get_type = __bind(this.get_type, this);
-      this.has_types = __bind(this.has_types, this);
-      this.load_types = __bind(this.load_types, this);
-      this.declaredTypes = {};
-    }
-
-    ResourceTypes.prototype.load_types = function(node) {
-      var allTypes,
-        _this = this;
-      if (this.has_property(node, /^resourceTypes$/i)) {
-        allTypes = this.property_value(node, /^resourceTypes$/i);
-        if (allTypes && typeof allTypes === "object") {
-          return allTypes.forEach(function(type_item) {
-            if (type_item && typeof type_item === "object" && typeof type_item.value === "object") {
-              return type_item.value.forEach(function(type) {
-                return _this.declaredTypes[type[0].value] = type;
-              });
-            }
-          });
-        }
-      }
-    };
-
-    ResourceTypes.prototype.has_types = function(node) {
-      if (Object.keys(this.declaredTypes).length === 0 && this.has_property(node, /^resourceTypes$/i)) {
-        this.load_types(node);
-      }
-      return Object.keys(this.declaredTypes).length > 0;
-    };
-
-    ResourceTypes.prototype.get_type = function(typeName) {
-      return this.declaredTypes[typeName];
-    };
-
-    ResourceTypes.prototype.get_parent_type_name = function(typeName) {
-      var type;
-      type = (this.get_type(typeName))[1];
-      if (type && this.has_property(type, /^type$/i)) {
-        return this.property_value(type, /^type$/i);
-      }
-      return null;
-    };
-
-    ResourceTypes.prototype.apply_types = function(node) {
-      var resources,
-        _this = this;
-      this.check_is_map(node);
-      if (this.has_types(node)) {
-        resources = this.child_resources(node);
-        return resources.forEach(function(resource) {
-          var type;
-          if (_this.has_property(resource[1], /^type$/i)) {
-            type = _this.get_property(resource[1], /^type$/i);
-            _this.apply_type(resource, type);
-          }
-          return _this.apply_types(resource[1]);
-        });
-      }
-    };
-
-    ResourceTypes.prototype.apply_type = function(resource, typeKey) {
-      var tempType;
-      tempType = this.resolve_inheritance_chain(typeKey);
-      tempType.combine(resource[1]);
-      resource[1] = tempType;
-      return resource[1].remove_question_mark_properties();
-    };
-
-    ResourceTypes.prototype.resolve_inheritance_chain = function(typeKey) {
-      var baseType, child_type, child_type_key, compiledTypes, inherits_from, parentTypeMapping, parentTypeName, result, root_type, type, typeName, typesToApply;
-      typeName = this.key_or_value(typeKey);
-      compiledTypes = {};
-      type = this.apply_parameters_to_type(typeName, typeKey);
-      this.apply_traits_to_resource(type, false);
-      compiledTypes[typeName] = type;
-      typesToApply = [typeName];
-      child_type = typeName;
-      parentTypeName = null;
-      while (parentTypeName = this.get_parent_type_name(child_type)) {
-        if (parentTypeName in compiledTypes) {
-          throw new exports.ResourceTypeError('while aplying resourceTypes', null, 'circular reference detected: ' + parentTypeName + "->" + typesToApply, child_type.start_mark);
-        }
-        child_type_key = this.get_property(this.get_type(child_type)[1], /^type$/i);
-        parentTypeMapping = this.apply_parameters_to_type(parentTypeName, child_type_key);
-        compiledTypes[parentTypeName] = parentTypeMapping;
-        this.apply_traits_to_resource(parentTypeMapping[1], false);
-        typesToApply.push(parentTypeName);
-        child_type = parentTypeName;
-      }
-      root_type = typesToApply.pop();
-      baseType = compiledTypes[root_type].cloneRemoveIs();
-      result = baseType;
-      while (inherits_from = typesToApply.pop()) {
-        baseType = compiledTypes[inherits_from].cloneRemoveIs();
-        baseType.combine(result);
-        result = baseType;
-      }
-      return result;
-    };
-
-    ResourceTypes.prototype.apply_parameters_to_type = function(typeName, typeKey) {
-      var parameters, type;
-      type = (this.get_type(typeName))[1].cloneForTrait();
-      parameters = this._get_parameters_from_type_key(typeKey);
-      this.apply_parameters(type, parameters, typeKey);
-      return type;
-    };
-
-    ResourceTypes.prototype._get_parameters_from_type_key = function(typeKey) {
-      var parameters, result;
-      parameters = this.value_or_undefined(typeKey);
-      result = {};
-      if (parameters && parameters[0] && parameters[0][1] && parameters[0][1].value) {
-        parameters[0][1].value.forEach(function(parameter) {
-          if (parameter[1].tag !== 'tag:yaml.org,2002:str') {
-            throw new exports.ResourceTypeError('while aplying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
-          }
-          return result[parameter[0].value] = parameter[1].value;
-        });
-      }
-      return result;
-    };
-
-    return ResourceTypes;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":14}],19:[function(require,module,exports){
+},{"./errors":1,"./nodes":13,"./util":4}],19:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, SimpleKey, tokens, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -10804,7 +10646,256 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./tokens":3,"./util":4}],25:[function(require,module,exports){
+},{"./errors":1,"./tokens":3,"./util":4}],24:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  /*
+  The ResourceTypes throws these.
+  */
+
+
+  this.ResourceTypeError = (function(_super) {
+    __extends(ResourceTypeError, _super);
+
+    function ResourceTypeError() {
+      _ref = ResourceTypeError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return ResourceTypeError;
+
+  })(MarkedYAMLError);
+
+  /*
+  The ResourceTypes class deals with applying ResourceTypes to resources according to the spec
+  */
+
+
+  this.ResourceTypes = (function() {
+    function ResourceTypes() {
+      this.apply_parameters_to_type = __bind(this.apply_parameters_to_type, this);
+      this.apply_type = __bind(this.apply_type, this);
+      this.apply_types = __bind(this.apply_types, this);
+      this.get_type = __bind(this.get_type, this);
+      this.has_types = __bind(this.has_types, this);
+      this.load_types = __bind(this.load_types, this);
+      this.declaredTypes = {};
+    }
+
+    ResourceTypes.prototype.load_types = function(node) {
+      var allTypes,
+        _this = this;
+      if (this.has_property(node, /^resourceTypes$/)) {
+        allTypes = this.property_value(node, /^resourceTypes$/);
+        if (allTypes && typeof allTypes === "object") {
+          return allTypes.forEach(function(type_item) {
+            if (type_item && typeof type_item === "object" && typeof type_item.value === "object") {
+              return type_item.value.forEach(function(type) {
+                return _this.declaredTypes[type[0].value] = type;
+              });
+            }
+          });
+        }
+      }
+    };
+
+    ResourceTypes.prototype.has_types = function(node) {
+      if (Object.keys(this.declaredTypes).length === 0 && this.has_property(node, /^resourceTypes$/)) {
+        this.load_types(node);
+      }
+      return Object.keys(this.declaredTypes).length > 0;
+    };
+
+    ResourceTypes.prototype.get_type = function(typeName) {
+      return this.declaredTypes[typeName];
+    };
+
+    ResourceTypes.prototype.get_parent_type_name = function(typeName) {
+      var type;
+      type = (this.get_type(typeName))[1];
+      if (type && this.has_property(type, /^type$/)) {
+        return this.property_value(type, /^type$/);
+      }
+      return null;
+    };
+
+    ResourceTypes.prototype.apply_types = function(node) {
+      var resources,
+        _this = this;
+      if (!this.isMapping(node)) {
+        return;
+      }
+      if (this.has_types(node)) {
+        resources = this.child_resources(node);
+        return resources.forEach(function(resource) {
+          var type;
+          if (_this.has_property(resource[1], /^type$/)) {
+            type = _this.get_property(resource[1], /^type$/);
+            _this.apply_type(resource, type);
+          }
+          return _this.apply_types(resource[1]);
+        });
+      }
+    };
+
+    ResourceTypes.prototype.apply_type = function(resource, typeKey) {
+      var tempType;
+      tempType = this.resolve_inheritance_chain(typeKey);
+      tempType.combine(resource[1]);
+      resource[1] = tempType;
+      return resource[1].remove_question_mark_properties();
+    };
+
+    ResourceTypes.prototype.resolve_inheritance_chain = function(typeKey) {
+      var baseType, child_type, child_type_key, compiledTypes, inherits_from, parentTypeMapping, parentTypeName, result, root_type, type, typeName, typesToApply;
+      typeName = this.key_or_value(typeKey);
+      compiledTypes = {};
+      type = this.apply_parameters_to_type(typeName, typeKey);
+      this.apply_traits_to_resource(type, false);
+      compiledTypes[typeName] = type;
+      typesToApply = [typeName];
+      child_type = typeName;
+      parentTypeName = null;
+      while (parentTypeName = this.get_parent_type_name(child_type)) {
+        if (parentTypeName in compiledTypes) {
+          throw new exports.ResourceTypeError('while aplying resourceTypes', null, 'circular reference detected: ' + parentTypeName + "->" + typesToApply, child_type.start_mark);
+        }
+        child_type_key = this.get_property(this.get_type(child_type)[1], /^type$/);
+        parentTypeMapping = this.apply_parameters_to_type(parentTypeName, child_type_key);
+        compiledTypes[parentTypeName] = parentTypeMapping;
+        this.apply_traits_to_resource(parentTypeMapping[1], false);
+        typesToApply.push(parentTypeName);
+        child_type = parentTypeName;
+      }
+      root_type = typesToApply.pop();
+      baseType = compiledTypes[root_type].cloneRemoveIs();
+      result = baseType;
+      while (inherits_from = typesToApply.pop()) {
+        baseType = compiledTypes[inherits_from].cloneRemoveIs();
+        baseType.combine(result);
+        result = baseType;
+      }
+      return result;
+    };
+
+    ResourceTypes.prototype.apply_parameters_to_type = function(typeName, typeKey) {
+      var parameters, type;
+      type = (this.get_type(typeName))[1].cloneForTrait();
+      parameters = this._get_parameters_from_type_key(typeKey);
+      this.apply_parameters(type, parameters, typeKey);
+      return type;
+    };
+
+    ResourceTypes.prototype._get_parameters_from_type_key = function(typeKey) {
+      var parameters, result;
+      parameters = this.value_or_undefined(typeKey);
+      result = {};
+      if (parameters && parameters[0] && parameters[0][1] && parameters[0][1].value) {
+        parameters[0][1].value.forEach(function(parameter) {
+          if (parameter[1].tag !== 'tag:yaml.org,2002:str') {
+            throw new exports.ResourceTypeError('while aplying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
+          }
+          return result[parameter[0].value] = parameter[1].value;
+        });
+      }
+      return result;
+    };
+
+    return ResourceTypes;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":13}],26:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  /*
+  The Schemas throws these.
+  */
+
+
+  this.SecuritySchemeError = (function(_super) {
+    __extends(SecuritySchemeError, _super);
+
+    /*
+      The Schemas class deals with applying schemas to resources according to the spec
+    */
+
+
+    function SecuritySchemeError() {
+      _ref = SecuritySchemeError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return SecuritySchemeError;
+
+  })(MarkedYAMLError);
+
+  this.SecuritySchemes = (function() {
+    function SecuritySchemes() {
+      this.get_security_scheme = __bind(this.get_security_scheme, this);
+      this.get_all_schemes = __bind(this.get_all_schemes, this);
+      this.has_schemes = __bind(this.has_schemes, this);
+      this.load_security_schemes = __bind(this.load_security_schemes, this);
+      this.declaredSchemes = {};
+    }
+
+    SecuritySchemes.prototype.load_security_schemes = function(node) {
+      var allschemes,
+        _this = this;
+      if (this.has_property(node, /^securitySchemes$/)) {
+        allschemes = this.property_value(node, /^securitySchemes$/);
+        if (allschemes && typeof allschemes === "object") {
+          return allschemes.forEach(function(scheme_entry) {
+            if (scheme_entry.tag === 'tag:yaml.org,2002:map') {
+              return scheme_entry.value.forEach(function(scheme) {
+                return _this.declaredSchemes[scheme[0].value] = scheme[1].value;
+              });
+            }
+          });
+        }
+      }
+    };
+
+    SecuritySchemes.prototype.has_schemes = function(node) {
+      if (this.declaredSchemes.length === 0 && this.has_property(node, /^schemes$/)) {
+        this.load_schemes(node);
+      }
+      return Object.keys(this.declaredSchemes).length > 0;
+    };
+
+    SecuritySchemes.prototype.get_all_schemes = function() {
+      return this.declaredSchemes;
+    };
+
+    SecuritySchemes.prototype.get_security_scheme = function(schemaName) {
+      return this.declaredSchemes[schemaName];
+    };
+
+    return SecuritySchemes;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":13}],25:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -10850,18 +10941,22 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
     Schemas.prototype.load_schemas = function(node) {
       var allSchemas,
         _this = this;
-      if (this.has_property(node, /^schemas$/i)) {
-        allSchemas = this.property_value(node, /^schemas$/i);
+      if (this.has_property(node, /^schemas$/)) {
+        allSchemas = this.property_value(node, /^schemas$/);
         if (allSchemas && typeof allSchemas === "object") {
-          return allSchemas.forEach(function(schema) {
-            return _this.declaredSchemas[schema[0].value] = schema;
+          return allSchemas.forEach(function(schema_entry) {
+            if (schema_entry && typeof schema_entry === "object" && typeof schema_entry.value === "object") {
+              return schema_entry.value.forEach(function(schema) {
+                return _this.declaredSchemas[schema[0].value] = schema;
+              });
+            }
           });
         }
       }
     };
 
     Schemas.prototype.has_schemas = function(node) {
-      if (this.declaredSchemas.length === 0 && this.has_property(node, /^schemas$/i)) {
+      if (this.declaredSchemas.length === 0 && this.has_property(node, /^schemas$/)) {
         this.load_schemas(node);
       }
       return Object.keys(this.declaredSchemas).length > 0;
@@ -10889,7 +10984,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       schemas = [];
       resources.forEach(function(resource) {
         var properties;
-        properties = _this.get_properties(resource[1], /^schema$/i);
+        properties = _this.get_properties(resource[1], /^schema$/);
         return schemas = schemas.concat(properties);
       });
       return schemas;
@@ -10901,7 +10996,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":14}],23:[function(require,module,exports){
+},{"./errors":1,"./nodes":13}],23:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -10941,8 +11036,8 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
     Traits.prototype.load_traits = function(node) {
       var allTraits,
         _this = this;
-      if (this.has_property(node, /^traits$/i)) {
-        allTraits = this.property_value(node, /^traits$/i);
+      if (this.has_property(node, /^traits$/)) {
+        allTraits = this.property_value(node, /^traits$/);
         if (allTraits && typeof allTraits === "object") {
           return allTraits.forEach(function(trait_item) {
             if (trait_item && typeof trait_item === "object" && typeof trait_item.value === "object") {
@@ -10956,7 +11051,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
     };
 
     Traits.prototype.has_traits = function(node) {
-      if (this.declaredTraits.length === 0 && this.has_property(node, /^traits$/i)) {
+      if (this.declaredTraits.length === 0 && this.has_property(node, /^traits$/)) {
         this.load_traits(node);
       }
       return Object.keys(this.declaredTraits).length > 0;
@@ -10975,7 +11070,9 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       if (removeQs == null) {
         removeQs = true;
       }
-      this.check_is_map(node);
+      if (!this.isMapping(node)) {
+        return;
+      }
       if (this.has_traits(node)) {
         resources = this.child_resources(node);
         return resources.forEach(function(resource) {
@@ -10991,8 +11088,8 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         return;
       }
       methods = this.child_methods(resource);
-      if (this.has_property(resource, /^is$/i)) {
-        uses = this.property_value(resource, /^is$/i);
+      if (this.has_property(resource, /^is$/)) {
+        uses = this.property_value(resource, /^is$/);
         uses.forEach(function(use) {
           return methods.forEach(function(method) {
             return _this.apply_trait(method, use);
@@ -11000,8 +11097,8 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         });
       }
       methods.forEach(function(method) {
-        if (_this.has_property(method[1], /^is$/i)) {
-          uses = _this.property_value(method[1], /^is$/i);
+        if (_this.has_property(method[1], /^is$/)) {
+          uses = _this.property_value(method[1], /^is$/);
           return uses.forEach(function(use) {
             return _this.apply_trait(method, use);
           });
@@ -11075,7 +11172,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":14}],8:[function(require,module,exports){
+},{"./errors":1,"./nodes":13}],8:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -11394,7 +11491,1056 @@ function decode(str) {
   }
 }
 
-},{}],11:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, traits, uritemplate, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  traits = require('./traits');
+
+  uritemplate = require('uritemplate');
+
+  /*
+  The Validator throws these.
+  */
+
+
+  this.ValidationError = (function(_super) {
+    __extends(ValidationError, _super);
+
+    function ValidationError() {
+      _ref = ValidationError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return ValidationError;
+
+  })(MarkedYAMLError);
+
+  /*
+  A collection of multiple validation errors
+  */
+
+
+  this.ValidationErrors = (function(_super) {
+    __extends(ValidationErrors, _super);
+
+    function ValidationErrors(validation_errors) {
+      this.validation_errors = validation_errors;
+    }
+
+    ValidationErrors.prototype.get_validation_errors = function() {
+      return this.validation_errors;
+    };
+
+    return ValidationErrors;
+
+  })(MarkedYAMLError);
+
+  /*
+  The Validator class deals with validating a YAML file according to the spec
+  */
+
+
+  this.Validator = (function() {
+    function Validator() {
+      this.get_properties = __bind(this.get_properties, this);
+      this.validations = [this.is_map, this.validate_base_uri_parameters, this.valid_root_properties, this.valid_absolute_uris];
+    }
+
+    Validator.prototype.validate_document = function(node) {
+      var _this = this;
+      this.validations.forEach(function(validation) {
+        return validation.call(_this, node);
+      });
+      return true;
+    };
+
+    Validator.prototype.validate_security_schemes = function(schemesProperty) {
+      var _this = this;
+      if (!this.isSequence(schemesProperty)) {
+        throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security schemes property, it must be an array', schemesProperty.start_mark);
+      }
+      return schemesProperty.value.forEach(function(scheme_entry) {
+        if (!_this.isMapping(scheme_entry)) {
+          throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme_entry.start_mark);
+        }
+        return scheme_entry.value.forEach(function(scheme) {
+          if (!_this.isMapping(scheme[1])) {
+            throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme.start_mark);
+          }
+          return _this.validate_security_scheme(scheme[1]);
+        });
+      });
+    };
+
+    Validator.prototype.isMapping = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:map";
+    };
+
+    Validator.prototype.isNull = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:null";
+    };
+
+    Validator.prototype.isSequence = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:seq";
+    };
+
+    Validator.prototype.isString = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:str";
+    };
+
+    Validator.prototype.isInteger = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:int";
+    };
+
+    Validator.prototype.isNullableMapping = function(node) {
+      return this.isMapping(node) || this.isNull(node);
+    };
+
+    Validator.prototype.isNullableString = function(node) {
+      return this.isString(node) || this.isNull(node);
+    };
+
+    Validator.prototype.isNullableSequence = function(node) {
+      return this.isSequence(node) || this.isNull(node);
+    };
+
+    Validator.prototype.validate_security_scheme = function(scheme) {
+      var settings, type,
+        _this = this;
+      type = null;
+      settings = null;
+      scheme.value.forEach(function(property) {
+        switch (property[0].value) {
+          case "description":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'schemes description must be a string', property[1].start_mark);
+            }
+            break;
+          case "type":
+            type = property[1].value;
+            if (!(_this.isString(property[1]) && type.match(/^(OAuth 1.0|OAuth 2.0|Basic Authentication|Digest Authentication|x-.+)$/))) {
+              throw new exports.ValidationError('while validating security scheme', null, 'schemes type must be any of: "OAuth 1.0", "OAuth 2.0", "Basic Authentication", "Digest Authentication", "x-\{.+\}"', property[1].start_mark);
+            }
+            break;
+          case "describedBy":
+            return _this.validate_method(property, true);
+          case "settings":
+            settings = property;
+            if (!_this.isNullableMapping(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'schemes settings must be a map', property[1].start_mark);
+            }
+            break;
+          default:
+            throw new exports.ValidationError('while validating security scheme', null, "property: '" + property[0].value + "' is invalid in a security scheme", property[0].start_mark);
+        }
+      });
+      if (!type) {
+        throw new exports.ValidationError('while validating security scheme', null, 'schemes type must be any of: "OAuth 1.0", "OAuth 2.0", "Basic Authentication", "Digest Authentication", "x-\{.+\}"', scheme.start_mark);
+      } else if (type === "OAuth 2.0") {
+        if (!settings) {
+          throw new exports.ValidationError('while validating security scheme', null, 'for OAuth 2.0 settings must be a map', scheme.start_mark);
+        }
+        return this.validate_oauth2_settings(settings);
+      } else if (type === "OAuth 1.0") {
+        if (!settings) {
+          throw new exports.ValidationError('while validating security scheme', null, 'for OAuth 1.0 settings must be a map', scheme.start_mark);
+        }
+        return this.validate_oauth1_settings(settings);
+      }
+    };
+
+    Validator.prototype.validate_oauth2_settings = function(settings) {
+      var accessTokenUrl, authorizationUrl,
+        _this = this;
+      authorizationUrl = false;
+      accessTokenUrl = false;
+      settings[1].value.forEach(function(property) {
+        switch (property[0].value) {
+          case "authorizationUrl":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', property[0].start_mark);
+            }
+            return authorizationUrl = true;
+          case "accessTokenUrl":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', property[0].start_mark);
+            }
+            return accessTokenUrl = true;
+        }
+      });
+      if (!accessTokenUrl) {
+        throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', settings.start_mark);
+      }
+      if (!authorizationUrl) {
+        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', settings.start_mark);
+      }
+    };
+
+    Validator.prototype.validate_oauth1_settings = function(settings) {
+      var authorizationUri, requestTokenUri, tokenCredentialsUri,
+        _this = this;
+      requestTokenUri = false;
+      authorizationUri = false;
+      tokenCredentialsUri = false;
+      settings[1].value.forEach(function(property) {
+        switch (property[0].value) {
+          case "requestTokenUri":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', property[0].start_mark);
+            }
+            return requestTokenUri = true;
+          case "authorizationUri":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', property[0].start_mark);
+            }
+            return authorizationUri = true;
+          case "tokenCredentialsUri":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', property[0].start_mark);
+            }
+            return tokenCredentialsUri = true;
+        }
+      });
+      if (!requestTokenUri) {
+        throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', settings.start_mark);
+      }
+      if (!authorizationUri) {
+        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', settings.start_mark);
+      }
+      if (!tokenCredentialsUri) {
+        throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', settings.start_mark);
+      }
+    };
+
+    Validator.prototype.validate_root_schemas = function(schemas) {
+      var schema, schemaList, schemaName, _results;
+      if (!this.isSequence(schemas)) {
+        throw new exports.ValidationError('while validating schemas', null, 'schemas property must be an array', schemas.start_mark);
+      }
+      schemaList = this.get_all_schemas();
+      _results = [];
+      for (schemaName in schemaList) {
+        schema = schemaList[schemaName];
+        if (!(schema[1].tag && this.isString(schema[1]))) {
+          throw new exports.ValidationError('while validating schemas', null, 'schema ' + schemaName + ' must be a string', schema[0].start_mark);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Validator.prototype.is_map = function(node) {
+      if (!(node || this.isNull(node))) {
+        throw new exports.ValidationError('while validating root', null, 'empty document', 0);
+      }
+      if (!this.isMapping(node)) {
+        throw new exports.ValidationError('while validating root', null, 'document must be a mapping', 0);
+      }
+    };
+
+    Validator.prototype.validate_base_uri_parameters = function(node) {
+      var baseUriProperty;
+      baseUriProperty = this.get_property(node, "baseUri");
+      this.baseUri = baseUriProperty.value;
+      if (this.has_property(node, "baseUriParameters")) {
+        if (!this.has_property(node, "baseUri")) {
+          throw new exports.ValidationError('while validating uri parameters', null, 'uri parameters defined when there is no baseUri', node.start_mark);
+        }
+        return this.validate_uri_parameters(this.baseUri, this.get_property(node, "baseUriParameters"), ["version"]);
+      }
+    };
+
+    Validator.prototype.validate_uri_parameters = function(uri, uriProperty, reservedNames) {
+      var err, expressions, template,
+        _this = this;
+      if (reservedNames == null) {
+        reservedNames = [];
+      }
+      try {
+        template = uritemplate.parse(uri);
+      } catch (_error) {
+        err = _error;
+        throw new exports.ValidationError('while validating uri parameters', null, err.options.message, uriProperty.start_mark);
+      }
+      expressions = template.expressions.filter(function(expr) {
+        return "templateText" in expr;
+      }).map(function(expression) {
+        return expression.templateText;
+      });
+      if (typeof uriProperty.value === "object") {
+        return uriProperty.value.forEach(function(uriParameter) {
+          var _ref1, _ref2;
+          if (_ref1 = uriParameter[0].value, __indexOf.call(reservedNames, _ref1) >= 0) {
+            throw new exports.ValidationError('while validating baseUri', null, 'version parameter not allowed here', uriParameter[0].start_mark);
+          }
+          if (!_this.isNullableMapping(uriParameter[1])) {
+            throw new exports.ValidationError('while validating baseUri', null, 'parameter must be a mapping', uriParameter[0].start_mark);
+          }
+          if (!_this.isNull(uriParameter[1])) {
+            _this.valid_common_parameter_properties(uriParameter[1]);
+          }
+          if (_ref2 = uriParameter[0].value, __indexOf.call(expressions, _ref2) < 0) {
+            throw new exports.ValidationError('while validating baseUri', null, uriParameter[0].value + ' uri parameter unused', uriParameter[0].start_mark);
+          }
+        });
+      }
+    };
+
+    Validator.prototype.validate_types = function(typeProperty) {
+      var types,
+        _this = this;
+      types = typeProperty.value;
+      if (!this.isSequence(typeProperty)) {
+        throw new exports.ValidationError('while validating resource types', null, 'invalid resourceTypes definition, it must be an array', typeProperty.start_mark);
+      }
+      return types.forEach(function(type_entry) {
+        if (!_this.isMapping(type_entry)) {
+          throw new exports.ValidationError('while validating resource types', null, 'invalid resourceType definition, it must be a mapping', type_entry.start_mark);
+        }
+        return type_entry.value.forEach(function(type) {
+          if (!_this.isMapping(type[1])) {
+            throw new exports.ValidationError('while validating resource types', null, 'invalid resourceType definition, it must be a mapping', type_entry.start_mark);
+          }
+        });
+      });
+    };
+
+    Validator.prototype.validate_traits = function(node) {
+      var traitsList,
+        _this = this;
+      traitsList = node[1].value;
+      if (typeof traitsList !== "object") {
+        throw new exports.ValidationError('while validating trait properties', null, 'invalid traits definition, it must be an array', traitsList.start_mark);
+      }
+      return traitsList.forEach(function(trait_entry) {
+        if (!(trait_entry && trait_entry.value)) {
+          throw new exports.ValidationError('while validating trait properties', null, 'invalid traits definition, it must be an array', trait_entry.start_mark);
+        }
+      });
+    };
+
+    Validator.prototype.valid_traits_properties = function(node) {
+      var invalid;
+      if (!node.value) {
+        return;
+      }
+      invalid = node.value.filter(function(childNode) {
+        return childNode[0].value === "is" || childNode[0].value === "type";
+      });
+      if (invalid.length > 0) {
+        throw new exports.ValidationError('while validating trait properties', null, "invalid property '" + invalid[0][0].value + "'", invalid[0][0].start_mark);
+      }
+    };
+
+    Validator.prototype.valid_common_parameter_properties = function(node) {
+      var _this = this;
+      if (!node.value) {
+        return;
+      }
+      return node.value.forEach(function(childNode) {
+        var booleanValues, propertyName, propertyValue, validTypes;
+        propertyName = childNode[0].value;
+        propertyValue = childNode[1].value;
+        booleanValues = ["true", "false"];
+        switch (propertyName) {
+          case "displayName":
+            if (_this.isSequence(childNode[1]) || _this.isMapping(childNode[0])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of displayName must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "pattern":
+            if (_this.isSequence(childNode[1]) || _this.isMapping(childNode[0])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of pattern must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "default":
+            if (_this.isSequence(childNode[1]) || _this.isMapping(childNode[0])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of default must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "enum":
+            if (!_this.isSequence(childNode[1])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of displayName must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "description":
+            if (_this.isSequence(childNode[1]) || _this.isMapping(childNode[0])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of description must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "example":
+            if (_this.isSequence(childNode[1]) || _this.isMapping(childNode[0])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of example must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "minLength":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of minLength must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "maxLength":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of maxLength must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "minimum":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of minimum must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "maximum":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of maximum must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "type":
+            validTypes = ['string', 'number', 'integer', 'date', 'boolean', 'file'];
+            if (__indexOf.call(validTypes, propertyValue) < 0) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'type can either be: string, number, integer or date', childNode[1].start_mark);
+            }
+            break;
+          case "required":
+            if (__indexOf.call(booleanValues, propertyValue) < 0) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'required can be any either true or false', childNode[1].start_mark);
+            }
+            break;
+          case "repeat":
+            if (__indexOf.call(booleanValues, propertyValue) < 0) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'repeat can be any either true or false', childNode[1].start_mark);
+            }
+            break;
+          default:
+            throw new exports.ValidationError('while validating parameter properties', null, 'unknown property ' + propertyName, childNode[0].start_mark);
+        }
+      });
+    };
+
+    Validator.prototype.valid_root_properties = function(node) {
+      var checkVersion, hasTitle, hasVersion,
+        _this = this;
+      hasTitle = false;
+      checkVersion = false;
+      hasVersion = false;
+      if (node != null ? node.value : void 0) {
+        node.value.forEach(function(property) {
+          if (!_this.isString(property[0])) {
+            throw new exports.ValidationError('while validating root properties', null, 'keys can only be strings', property[0].start_mark);
+          }
+          switch (property[0].value) {
+            case "title":
+              hasTitle = true;
+              if (_this.isSequence(property[1]) || _this.isMapping(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'title must be a string', property[0].start_mark);
+              }
+              break;
+            case "baseUri":
+              if (!_this.isNullableString(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'baseUri must be a string', property[0].start_mark);
+              }
+              return checkVersion = _this.validate_base_uri(property[1]);
+            case "securitySchemes":
+              return _this.validate_security_schemes(property[1]);
+            case "schemas":
+              return _this.validate_root_schemas(property[1]);
+            case "version":
+              hasVersion = true;
+              if (_this.isSequence(property[1]) || _this.isMapping(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'version must be a string', property[0].start_mark);
+              }
+              break;
+            case "traits":
+              return _this.validate_traits(property);
+            case "documentation":
+              if (!_this.isSequence(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'documentation must be an array', property[0].start_mark);
+              }
+              return _this.validate_documentation(property[1]);
+            case "baseUriParameters":
+              return _this.is_map(node);
+            case "resourceTypes":
+              return _this.validate_types(property[1]);
+            case "securedBy":
+              return _this.validate_secured_by(property);
+            default:
+              if (property[0].value.match(/^\//)) {
+                return _this.validate_resource(property);
+              } else {
+                throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + property[0].value, property[0].start_mark);
+              }
+          }
+        });
+      }
+      if (!hasTitle) {
+        throw new exports.ValidationError('while validating root properties', null, 'missing title', node.start_mark);
+      }
+      if (checkVersion && !hasVersion) {
+        throw new exports.ValidationError('while validating version', null, 'missing version', node.start_mark);
+      }
+    };
+
+    Validator.prototype.validate_documentation = function(documentation_property) {
+      var _this = this;
+      return documentation_property.value.forEach(function(docSection) {
+        return _this.validate_doc_section(docSection);
+      });
+    };
+
+    Validator.prototype.validate_doc_section = function(docSection) {
+      var hasContent, hasTitle,
+        _this = this;
+      if (!this.isMapping(docSection)) {
+        throw new exports.ValidationError('while validating documentation section', null, 'each documentation section must be a mapping', docSection.start_mark);
+      }
+      hasTitle = false;
+      hasContent = false;
+      docSection.value.forEach(function(property) {
+        if (_this.isMapping([0]) || _this.isSequence(property[0])) {
+          throw new exports.ValidationError('while validating documentation section', null, 'keys can only be strings', property[0].start_mark);
+        }
+        switch (property[0].value) {
+          case "title":
+            if (!_this.isNullableString(property[1])) {
+              throw new exports.ValidationError('while validating documentation section', null, 'title must be a string', property[0].start_mark);
+            }
+            return hasTitle = true;
+          case "content":
+            if (!_this.isNullableString(property[1])) {
+              throw new exports.ValidationError('while validating documentation section', null, 'content must be a string', property[0].start_mark);
+            }
+            return hasContent = true;
+          default:
+            throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + property[0].value, property[0].start_mark);
+        }
+      });
+      if (!hasContent) {
+        throw new exports.ValidationError('while validating documentation section', null, 'a documentation entry must have content property', docSection.start_mark);
+      }
+      if (!hasTitle) {
+        throw new exports.ValidationError('while validating documentation section', null, 'a documentation entry must have title property', docSection.start_mark);
+      }
+    };
+
+    Validator.prototype.child_resources = function(node) {
+      if (node && this.isMapping(node)) {
+        return node.value.filter(function(childNode) {
+          return childNode[0].value.match(/^\//);
+        });
+      }
+      return [];
+    };
+
+    Validator.prototype.validate_resource = function(resource, allowParameterKeys) {
+      var _this = this;
+      if (allowParameterKeys == null) {
+        allowParameterKeys = false;
+      }
+      if (!(resource[1] && this.isNullableMapping(resource[1]))) {
+        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', resource[1].start_mark);
+      }
+      if (resource[1].value) {
+        return resource[1].value.forEach(function(property) {
+          if (!_this.validate_common_properties(property, allowParameterKeys)) {
+            if (property[0].value.match(/^\//)) {
+              if (allowParameterKeys) {
+                throw new exports.ValidationError('while validating trait properties', null, 'resource type cannot define child resources', property[0].start_mark);
+              }
+              return _this.validate_resource(property, allowParameterKeys);
+            } else if (property[0].value.match(/^(get|post|put|delete|head|patch|options)$/)) {
+              return _this.validate_method(property, allowParameterKeys);
+            } else {
+              switch (property[0].value) {
+                case "type":
+                  return _this.validate_type_property(property, allowParameterKeys);
+                case "uriParameters":
+                  return _this.validate_uri_parameters(resource[0].value, property[1]);
+                case "baseUriParameters":
+                  if (!_this.baseUri) {
+                    throw new exports.ValidationError('while validating uri parameters', null, 'base uri parameters defined when there is no baseUri', property[0].start_mark);
+                  }
+                  return _this.validate_uri_parameters(_this.baseUri, property[1]);
+                case "securedBy":
+                  return _this.validate_secured_by(property);
+                default:
+                  throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
+              }
+            }
+          }
+        });
+      }
+    };
+
+    Validator.prototype.validate_secured_by = function(property) {
+      var _this = this;
+      if (!this.isSequence(property[1])) {
+        throw new exports.ValidationError('while validating securityScheme', null, "property 'securedBy' must be a list", property[0].start_mark);
+      }
+      return property[1].value.forEach(function(secScheme) {
+        var securitySchemeName;
+        if (_this.isSequence(secScheme)) {
+          throw new exports.ValidationError('while validating securityScheme consumption', null, 'securityScheme reference cannot be a list', secScheme.start_mark);
+        }
+        if (!_this.isNull(secScheme)) {
+          securitySchemeName = _this.key_or_value(secScheme);
+          if (!_this.get_security_scheme(securitySchemeName)) {
+            throw new exports.ValidationError('while validating securityScheme consumption', null, 'there is no securityScheme named ' + securitySchemeName, secScheme.start_mark);
+          }
+        }
+      });
+    };
+
+    Validator.prototype.validate_type_property = function(property, allowParameterKeys) {
+      var typeName;
+      typeName = this.key_or_value(property[1]);
+      if (!(this.isMapping(property[1]) || this.isString(property[1]))) {
+        throw new exports.ValidationError('while validating resources', null, "property 'type' must be a string or a mapping", property[0].start_mark);
+      }
+      if (!this.get_type(typeName)) {
+        throw new exports.ValidationError('while validating trait consumption', null, 'there is no type named ' + typeName, property[1].start_mark);
+      }
+    };
+
+    Validator.prototype.validate_method = function(method, allowParameterKeys) {
+      var _this = this;
+      if (this.isNull(method[1])) {
+        return;
+      }
+      if (!this.isMapping(method[1])) {
+        throw new exports.ValidationError('while validating methods', null, "method must be a mapping", method[0].start_mark);
+      }
+      return method[1].value.forEach(function(property) {
+        if (!_this.validate_common_properties(property, allowParameterKeys)) {
+          switch (property[0].value) {
+            case "headers":
+              return _this.validate_headers(property, allowParameterKeys);
+            case "queryParameters":
+              return _this.validate_query_params(property, allowParameterKeys);
+            case "body":
+              return _this.validate_body(property, allowParameterKeys);
+            case "responses":
+              return _this.validate_responses(property, allowParameterKeys);
+            case "securedBy":
+              return _this.validate_secured_by(property);
+            default:
+              throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a method", property[0].start_mark);
+          }
+        }
+      });
+    };
+
+    Validator.prototype.validate_responses = function(responses, allowParameterKeys) {
+      var _this = this;
+      if (this.isNull(responses[1])) {
+        return;
+      }
+      if (!this.isMapping(responses[1])) {
+        throw new exports.ValidationError('while validating query parameters', null, "property: 'responses' must be a mapping", responses[0].start_mark);
+      }
+      return responses[1].value.forEach(function(response) {
+        if (!_this.isNullableMapping(response[1])) {
+          throw new exports.ValidationError('while validating query parameters', null, "each response must be a mapping", response[1].start_mark);
+        }
+        return _this.validate_response(response, allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_query_params = function(property, allowParameterKeys) {
+      var _this = this;
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating query parameters', null, "property: 'queryParameters' must be a mapping", property[0].start_mark);
+      }
+      return property[1].value.forEach(function(param) {
+        if (!_this.isNullableMapping(param[1])) {
+          throw new exports.ValidationError('while validating query parameters', null, "each query parameter must be a mapping", param[1].start_mark);
+        }
+        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_form_params = function(property, allowParameterKeys) {
+      var _this = this;
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating query parameters', null, "property: 'formParameters' must be a mapping", property[0].start_mark);
+      }
+      return property[1].value.forEach(function(param) {
+        if (!_this.isNullableMapping(param[1])) {
+          throw new exports.ValidationError('while validating query parameters', null, "each form parameter must be a mapping", param[1].start_mark);
+        }
+        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_headers = function(property, allowParameterKeys) {
+      var _this = this;
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating headers', null, "property: 'headers' must be a mapping", property[0].start_mark);
+      }
+      return property[1].value.forEach(function(param) {
+        if (!_this.isNullableMapping(param[1])) {
+          throw new exports.ValidationError('while validating query parameters', null, "each header must be a mapping", param[1].start_mark);
+        }
+        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_response = function(response, allowParameterKeys) {
+      var _this = this;
+      if (this.isSequence(response[0])) {
+        if (!response[0].value.length) {
+          throw new exports.ValidationError('while validating responses', null, "there must be at least one response code", response[0].start_mark);
+        }
+        response[0].value.forEach(function(responseCode) {
+          if (!_this.isInteger(responseCode)) {
+            throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", responseCode.start_mark);
+          }
+        });
+      } else if (!this.isInteger(response[0])) {
+        throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", response[0].start_mark);
+      }
+      if (!this.isNullableMapping(response[1])) {
+        throw new exports.ValidationError('while validating responses', null, "each response property must be a mapping", response[0].start_mark);
+      }
+      if (this.isMapping(response[1])) {
+        return response[1].value.forEach(function(property) {
+          switch (property[0].value) {
+            case "body":
+              return _this.validate_body(property, allowParameterKeys);
+            case "description":
+              if (!_this.isNullableString(property[1])) {
+                throw new exports.ValidationError('while validating responses', null, "property description must be a string", response[0].start_mark);
+              }
+              break;
+            case "summary":
+              if (!_this.isString(property[1])) {
+                throw new exports.ValidationError('while validating resources', null, "property 'summary' must be a string", property[0].start_mark);
+              }
+              break;
+            default:
+              throw new exports.ValidationError('while validating response', null, "property: '" + property[0].value + "' is invalid in a response", property[0].start_mark);
+          }
+        });
+      }
+    };
+
+    Validator.prototype.validate_body = function(property, allowParameterKeys, bodyMode) {
+      var _ref1,
+        _this = this;
+      if (bodyMode == null) {
+        bodyMode = null;
+      }
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating body', null, "property: body specification must be a mapping", property[0].start_mark);
+      }
+      return (_ref1 = property[1].value) != null ? _ref1.forEach(function(bodyProperty) {
+        if (bodyProperty[0].value.match(/<<([^>]+)>>/)) {
+          if (!allowParameterKeys) {
+            throw new exports.ValidationError('while validating body', null, "property '" + bodyProperty[0].value + "' is invalid in a resource", bodyProperty[0].start_mark);
+          }
+        } else if (bodyProperty[0].value.match(/^[^\/]+\/[^\/]+$/)) {
+          if (bodyMode && bodyMode !== "explicit") {
+            throw new exports.ValidationError('while validating body', null, "not compatible with implicit default Media Type", bodyProperty[0].start_mark);
+          }
+          bodyMode = "explicit";
+          return _this.validate_body(bodyProperty, allowParameterKeys, "implicit");
+        } else {
+          switch (bodyProperty[0].value) {
+            case "formParameters":
+              if (bodyMode && bodyMode !== "implicit") {
+                throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
+              }
+              bodyMode = "implicit";
+              return _this.validate_form_params(bodyProperty, allowParameterKeys);
+            case "example":
+              if (bodyMode && bodyMode !== "implicit") {
+                throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
+              }
+              bodyMode = "implicit";
+              if (_this.isMapping(bodyProperty[1] || _this.isSequence(bodyProperty[1]))) {
+                throw new exports.ValidationError('while validating body', null, "example must be a string", bodyProperty[0].start_mark);
+              }
+              break;
+            case "schema":
+              if (bodyMode && bodyMode !== "implicit") {
+                throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
+              }
+              bodyMode = "implicit";
+              if (_this.isMapping(bodyProperty[1]) || _this.isSequence(bodyProperty[1])) {
+                throw new exports.ValidationError('while validating body', null, "schema must be a string", bodyProperty[0].start_mark);
+              }
+              break;
+            default:
+              throw new exports.ValidationError('while validating body', null, "property: '" + bodyProperty[0].value + "' is invalid in a body", bodyProperty[0].start_mark);
+          }
+        }
+      }) : void 0;
+    };
+
+    Validator.prototype.validate_common_properties = function(property, allowParameterKeys) {
+      var _this = this;
+      if (property[0].value.match(/<<([^>]+)>>/)) {
+        if (!allowParameterKeys) {
+          throw new exports.ValidationError('while validating resources', null, "property '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
+        }
+        return true;
+      } else {
+        switch (property[0].value) {
+          case "displayName":
+            if (!this.isString(property[1])) {
+              throw new exports.ValidationError('while validating resources', null, "property 'displayName' must be a string", property[0].start_mark);
+            }
+            return true;
+          case "summary":
+            if (!this.isString(property[1])) {
+              throw new exports.ValidationError('while validating resources', null, "property 'summary' must be a string", property[0].start_mark);
+            }
+            return true;
+          case "description":
+            if (!this.isString(property[1])) {
+              throw new exports.ValidationError('while validating resources', null, "property 'description' must be a string", property[0].start_mark);
+            }
+            return true;
+          case "is":
+            if (!this.isSequence(property[1])) {
+              throw new exports.ValidationError('while validating resources', null, "property 'is' must be a list", property[0].start_mark);
+            }
+            if (!(property[1].value instanceof Array)) {
+              throw new exports.ValidationError('while validating trait consumption', null, 'is property must be an array', property[0].start_mark);
+            }
+            property[1].value.forEach(function(use) {
+              var traitName;
+              traitName = _this.key_or_value(use);
+              if (!_this.get_trait(traitName)) {
+                throw new exports.ValidationError('while validating trait consumption', null, 'there is no trait named ' + traitName, use.start_mark);
+              }
+            });
+            return true;
+        }
+      }
+      return false;
+    };
+
+    Validator.prototype.child_methods = function(node) {
+      if (!(node && this.isMapping(node))) {
+        return [];
+      }
+      return node.value.filter(function(childNode) {
+        return childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/);
+      });
+    };
+
+    Validator.prototype.has_property = function(node, property) {
+      if (node && this.isMapping(node)) {
+        return node.value.some(function(childNode) {
+          return childNode[0].value && typeof childNode[0].value !== "object" && childNode[0].value.match(property);
+        });
+      }
+      return false;
+    };
+
+    Validator.prototype.property_value = function(node, property) {
+      var filteredNodes;
+      filteredNodes = node.value.filter(function(childNode) {
+        return typeof childNode[0].value !== "object" && childNode[0].value.match(property);
+      });
+      return filteredNodes[0][1].value;
+    };
+
+    Validator.prototype.get_property = function(node, property) {
+      var filteredNodes,
+        _this = this;
+      if (node && this.isMapping(node)) {
+        filteredNodes = node.value.filter(function(childNode) {
+          return _this.isString(childNode[0]) && childNode[0].value.match(property);
+        });
+        if (filteredNodes.length > 0) {
+          if (filteredNodes[0].length > 0) {
+            return filteredNodes[0][1];
+          }
+        }
+      }
+      return [];
+    };
+
+    Validator.prototype.get_properties = function(node, property) {
+      var properties,
+        _this = this;
+      properties = [];
+      if (node && this.isMapping(node)) {
+        node.value.forEach(function(prop) {
+          if (_this.isString(prop[0]) && prop[0].value.match(property)) {
+            return properties.push(prop);
+          } else {
+            return properties = properties.concat(_this.get_properties(prop[1], property));
+          }
+        });
+      }
+      return properties;
+    };
+
+    Validator.prototype.resources = function(node, parentPath) {
+      var child_resources, response,
+        _this = this;
+      if (node == null) {
+        node = this.get_single_node(true, true, false);
+      }
+      response = [];
+      child_resources = this.child_resources(node);
+      child_resources.forEach(function(childResource) {
+        var resourceResponse;
+        resourceResponse = {};
+        resourceResponse.methods = [];
+        if (parentPath != null) {
+          resourceResponse.uri = parentPath + childResource[0].value;
+        } else {
+          resourceResponse.uri = childResource[0].value;
+        }
+        if (_this.has_property(childResource[1], "displayName")) {
+          resourceResponse.displayName = _this.property_value(childResource[1], "displayName");
+        }
+        if (_this.has_property(childResource[1], "get")) {
+          resourceResponse.methods.push('get');
+        }
+        if (_this.has_property(childResource[1], "post")) {
+          resourceResponse.methods.push('post');
+        }
+        if (_this.has_property(childResource[1], "put")) {
+          resourceResponse.methods.push('put');
+        }
+        if (_this.has_property(childResource[1], "patch")) {
+          resourceResponse.methods.push('patch');
+        }
+        if (_this.has_property(childResource[1], "delete")) {
+          resourceResponse.methods.push('delete');
+        }
+        if (_this.has_property(childResource[1], "head")) {
+          resourceResponse.methods.push('head');
+        }
+        if (_this.has_property(childResource[1], "options")) {
+          resourceResponse.methods.push('options');
+        }
+        resourceResponse.line = childResource[0].start_mark.line + 1;
+        resourceResponse.column = childResource[0].start_mark.column + 1;
+        if (childResource[0].start_mark.name != null) {
+          resourceResponse.src = childResource[0].start_mark.name;
+        }
+        response.push(resourceResponse);
+        return response = response.concat(_this.resources(childResource[1], resourceResponse.uri));
+      });
+      return response;
+    };
+
+    Validator.prototype.valid_absolute_uris = function(node) {
+      var i, sorted_uris, uris, _i, _ref1, _results;
+      uris = this.get_absolute_uris(node);
+      sorted_uris = uris.sort();
+      if (sorted_uris.length > 1) {
+        _results = [];
+        for (i = _i = 0, _ref1 = sorted_uris.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+          if (sorted_uris[i + 1] === sorted_uris[i]) {
+            throw new exports.ValidationError('while validating trait consumption', null, 'two resources share same URI ' + sorted_uris[i], null);
+          } else {
+            _results.push(void 0);
+          }
+        }
+        return _results;
+      }
+    };
+
+    Validator.prototype.get_absolute_uris = function(node, parentPath) {
+      var child_resources, response,
+        _this = this;
+      if (node == null) {
+        node = this.get_single_node(true, true, false);
+      }
+      response = [];
+      if (!this.isNullableMapping(node)) {
+        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', node.start_mark);
+      }
+      child_resources = this.child_resources(node);
+      child_resources.forEach(function(childResource) {
+        var uri;
+        if (parentPath != null) {
+          uri = parentPath + childResource[0].value;
+        } else {
+          uri = childResource[0].value;
+        }
+        response.push(uri);
+        return response = response.concat(_this.get_absolute_uris(childResource[1], uri));
+      });
+      return response;
+    };
+
+    Validator.prototype.key_or_value = function(node) {
+      if (node instanceof nodes.ScalarNode) {
+        return node.value;
+      }
+      if (node instanceof nodes.MappingNode) {
+        return node.value[0][0].value;
+      }
+    };
+
+    Validator.prototype.value_or_undefined = function(node) {
+      if (node instanceof nodes.MappingNode) {
+        return node.value;
+      }
+      return void 0;
+    };
+
+    Validator.prototype.validate_base_uri = function(baseUriNode) {
+      var baseUri, err, expressions, template;
+      baseUri = baseUriNode.value;
+      try {
+        template = uritemplate.parse(baseUri);
+      } catch (_error) {
+        err = _error;
+        throw new exports.ValidationError('while validating baseUri', null, err.options.message, baseUriNode.start_mark);
+      }
+      expressions = template.expressions.filter(function(expr) {
+        return 'templateText' in expr;
+      }).map(function(expression) {
+        return expression.templateText;
+      });
+      if (__indexOf.call(expressions, 'version') >= 0) {
+        return true;
+      }
+    };
+
+    Validator.prototype.get_validation_errors = function() {
+      return this.validation_errors;
+    };
+
+    Validator.prototype.is_valid = function() {
+      return this.validation_errors.length === 0;
+    };
+
+    return Validator;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":13,"./traits":23,"uritemplate":27}],11:[function(require,module,exports){
 (function() {
   var _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11636,837 +12782,7 @@ function decode(str) {
 
 }).call(this);
 
-},{"./composer":15,"./construct":13,"./errors":1,"./events":2,"./loader":17,"./nodes":14,"./parser":20,"./reader":18,"./resolver":21,"./scanner":19,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":26}],22:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, traits, uritemplate, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  traits = require('./traits');
-
-  uritemplate = require('uritemplate');
-
-  /*
-  The Validator throws these.
-  */
-
-
-  this.ValidationError = (function(_super) {
-    __extends(ValidationError, _super);
-
-    function ValidationError() {
-      _ref = ValidationError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return ValidationError;
-
-  })(MarkedYAMLError);
-
-  /*
-  A collection of multiple validation errors
-  */
-
-
-  this.ValidationErrors = (function(_super) {
-    __extends(ValidationErrors, _super);
-
-    function ValidationErrors(validation_errors) {
-      this.validation_errors = validation_errors;
-    }
-
-    ValidationErrors.prototype.get_validation_errors = function() {
-      return this.validation_errors;
-    };
-
-    return ValidationErrors;
-
-  })(MarkedYAMLError);
-
-  /*
-  The Validator class deals with validating a YAML file according to the spec
-  */
-
-
-  this.Validator = (function() {
-    function Validator() {
-      this.get_properties = __bind(this.get_properties, this);
-      this.validations = [this.is_map, this.has_title, this.valid_base_uri, this.validate_base_uri_parameters, this.valid_root_properties, this.validate_traits, this.validate_resources, this.validate_traits, this.validate_types, this.validate_root_schemas, this.valid_absolute_uris, this.valid_trait_consumption, this.valid_type_consumption];
-    }
-
-    Validator.prototype.validate_document = function(node) {
-      var _this = this;
-      this.validations.forEach(function(validation) {
-        return validation.call(_this, node);
-      });
-      return true;
-    };
-
-    Validator.prototype.validate_root_schemas = function(node) {
-      var schema, schemaList, schemaName, schemas, _results;
-      if (this.has_property(node, /^schemas$/i)) {
-        schemas = this.get_property(node, /^schemas$/i);
-        if ((schemas != null ? schemas.tag : void 0) === "tag:yaml.org,2002:str" || (schemas != null ? schemas.tag : void 0) === "tag:yaml.org,2002:seq") {
-          throw new exports.ValidationError('while validating schemas', null, 'schemas property must be a mapping', schemas.start_mark);
-        }
-        schemaList = this.get_all_schemas(node);
-        _results = [];
-        for (schemaName in schemaList) {
-          schema = schemaList[schemaName];
-          if (!(schema[1].tag && schema[1].tag === "tag:yaml.org,2002:str")) {
-            throw new exports.ValidationError('while validating schemas', null, 'schema ' + schemaName + ' must be a string', schema[0].start_mark);
-          } else {
-            _results.push(void 0);
-          }
-        }
-        return _results;
-      }
-    };
-
-    Validator.prototype.is_map = function(node) {
-      if (!node) {
-        throw new exports.ValidationError('while validating root', null, 'empty document', 0);
-      }
-      return this.check_is_map(node);
-    };
-
-    Validator.prototype.validate_base_uri_parameters = function(node) {
-      var baseUri;
-      this.check_is_map(node);
-      if (this.has_property(node, /^uriParameters$/i)) {
-        if (!this.has_property(node, /^baseUri$/i)) {
-          throw new exports.ValidationError('while validating uri parameters', null, 'uri parameters defined when there is no baseUri', node.start_mark);
-        }
-        baseUri = this.property_value(node, /^baseUri$/i);
-        return this.validate_uri_parameters(baseUri, this.get_property(node, /^uriParameters$/i));
-      }
-    };
-
-    Validator.prototype.validate_uri_parameters = function(uri, uriProperty) {
-      var err, expressions, template,
-        _this = this;
-      try {
-        template = uritemplate.parse(uri);
-      } catch (_error) {
-        err = _error;
-        throw new exports.ValidationError('while validating uri parameters', null, err.options.message, uriProperty.start_mark);
-      }
-      expressions = template.expressions.filter(function(expr) {
-        return "templateText" in expr;
-      }).map(function(expression) {
-        return expression.templateText;
-      });
-      if (typeof uriProperty.value === "object") {
-        return uriProperty.value.forEach(function(uriParameter) {
-          var _ref1;
-          _this.valid_common_parameter_properties(uriParameter[1]);
-          if (_ref1 = uriParameter[0].value, __indexOf.call(expressions, _ref1) < 0) {
-            throw new exports.ValidationError('while validating baseUri', null, uriParameter[0].value + ' uri parameter unused', uriParameter[0].start_mark);
-          }
-        });
-      }
-    };
-
-    Validator.prototype.validate_types = function(node) {
-      var types,
-        _this = this;
-      this.check_is_map(node);
-      if (this.has_property(node, /^resourceTypes$/i)) {
-        types = this.property_value(node, /^resourceTypes$/i);
-        if (typeof types !== "object") {
-          throw new exports.ValidationError('while validating trait properties', null, 'invalid resourceTypes definition, it must be an array', types.start_mark);
-        }
-        return types.forEach(function(type_entry) {
-          if (!type_entry.value) {
-            throw new exports.ValidationError('while validating trait properties', null, 'invalid resourceTypes definition, it must be an array', types.start_mark);
-          }
-          if (!(type_entry.tag === "tag:yaml.org,2002:map" || type_entry.tag === "tag:yaml.org,2002:null")) {
-            throw new exports.ValidationError('while validating trait properties', null, 'invalid resourceType definition, it must be a mapping', type_entry.start_mark);
-          }
-          return type_entry.value.forEach(function(type) {
-            var resources;
-            resources = _this.child_resources(type[1]);
-            if (resources.length) {
-              throw new exports.ValidationError('while validating trait properties', null, 'resource type cannot define child resources', node.start_mark);
-            }
-          });
-        });
-      }
-    };
-
-    Validator.prototype.valid_type_consumption = function(node, types, check_types) {
-      var _this = this;
-      if (types == null) {
-        types = void 0;
-      }
-      if (check_types == null) {
-        check_types = true;
-      }
-      if ((types == null) && this.has_property(node, /^resourceTypes$/i)) {
-        types = this.property_value(node, /^resourceTypes$/i);
-      }
-      if (types && check_types) {
-        return types.forEach(function(type_entry) {
-          return type_entry.value.forEach(function(type) {
-            var inheritsFrom, typeProperty;
-            if (_this.has_property(type[1], /^type$/i)) {
-              typeProperty = (type[1].value.filter(function(childNode) {
-                return !(childNode[0].value === "object") && childNode[0].value.match(/^type$/);
-              }))[0][1];
-              inheritsFrom = _this.key_or_value(typeProperty);
-              if (!_this.get_type(inheritsFrom)) {
-                throw new exports.ValidationError('while validating trait consumption', null, 'there is no type named ' + inheritsFrom, typeProperty.start_mark);
-              }
-            }
-          });
-        });
-      }
-    };
-
-    Validator.prototype.validate_traits = function(node) {
-      var traitsList,
-        _this = this;
-      this.check_is_map(node);
-      if (this.has_property(node, /^traits$/i)) {
-        traitsList = this.property_value(node, /^traits$/i);
-        if (typeof traitsList !== "object") {
-          throw new exports.ValidationError('while validating trait properties', null, 'invalid traits definition, it must be an array', traitsList.start_mark);
-        }
-        return traitsList.forEach(function(trait_entry) {
-          if (!(trait_entry && trait_entry.value)) {
-            throw new exports.ValidationError('while validating trait properties', null, 'invalid traits definition, it must be an array', trait_entry.start_mark);
-          }
-        });
-      }
-    };
-
-    Validator.prototype.valid_traits_properties = function(node) {
-      var invalid;
-      this.check_is_map(node);
-      if (!node.value) {
-        return;
-      }
-      invalid = node.value.filter(function(childNode) {
-        return childNode[0].value.match(/^is$/i) || childNode[0].value.match(/^type$/i);
-      });
-      if (invalid.length > 0) {
-        throw new exports.ValidationError('while validating trait properties', null, "invalid property '" + invalid[0][0].value + "'", invalid[0][0].start_mark);
-      }
-    };
-
-    Validator.prototype.valid_common_parameter_properties = function(node) {
-      var _this = this;
-      this.check_is_map(node);
-      if (!node.value) {
-        return;
-      }
-      return node.value.forEach(function(childNode) {
-        var propertyName, propertyValue;
-        if (typeof childNode[0].value === "object") {
-          return true;
-        }
-        if (!_this.is_valid_parameter_property_name(childNode[0].value)) {
-          throw new exports.ValidationError('while validating parameter properties', null, 'unknown property ' + childNode[0].value, childNode[0].start_mark);
-        }
-        propertyName = childNode[0].value;
-        propertyValue = childNode[1].value;
-        if (propertyName.match(/^minLength$/i)) {
-          if (isNaN(propertyValue)) {
-            throw new exports.ValidationError('while validating parameter properties', null, 'the value of minLength must be a number', childNode[1].start_mark);
-          }
-        } else if (propertyName.match(/^maxLength$/i)) {
-          if (isNaN(propertyValue)) {
-            throw new exports.ValidationError('while validating parameter properties', null, 'the value of maxLength must be a number', childNode[1].start_mark);
-          }
-        } else if (propertyName.match(/^minimum$/i)) {
-          if (isNaN(propertyValue)) {
-            throw new exports.ValidationError('while validating parameter properties', null, 'the value of minimum must be a number', childNode[1].start_mark);
-          }
-        } else if (propertyName.match(/^maximum$/i)) {
-          if (isNaN(propertyValue)) {
-            throw new exports.ValidationError('while validating parameter properties', null, 'the value of maximum must be a number', childNode[1].start_mark);
-          }
-        } else if (propertyName.match(/^type$/i)) {
-          if (propertyValue !== 'string' && propertyValue !== 'number' && propertyValue !== 'integer' && propertyValue !== 'date') {
-            throw new exports.ValidationError('while validating parameter properties', null, 'type can either be: string, number, integer or date', childNode[1].start_mark);
-          }
-        } else if (propertyName.match(/^required$/i)) {
-          if (!propertyValue.match(/^(true|false)$/)) {
-            throw new exports.ValidationError('while validating parameter properties', null, '"' + required + '"' + 'required can be any either true or false', childNode[1].start_mark);
-          }
-        } else if (propertyName.match(/^repeat$/i)) {
-          if (!propertyValue.match(/^(true|false)$/)) {
-            throw new exports.ValidationError('while validating parameter properties', null, '"' + repeat + '"' + 'repeat can be any either true or false', childNode[1].start_mark);
-          }
-        }
-      });
-    };
-
-    Validator.prototype.valid_root_properties = function(node) {
-      var invalid,
-        _this = this;
-      this.check_is_map(node);
-      invalid = node.value.filter(function(childNode) {
-        if (childNode[0].tag === "tag:yaml.org,2002:seq") {
-          return true;
-        }
-        return !_this.is_valid_root_property_name(childNode[0]);
-      });
-      if (invalid.length > 0) {
-        throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + invalid[0][0].value, invalid[0][0].start_mark);
-      }
-    };
-
-    Validator.prototype.is_valid_parameter_property_name = function(propertyName) {
-      return propertyName.match(/^displayName$/i) || propertyName.match(/^description$/i) || propertyName.match(/^type$/i) || propertyName.match(/^enum$/i) || propertyName.match(/^pattern$/i) || propertyName.match(/^minLength$/i) || propertyName.match(/^maxLength$/i) || propertyName.match(/^minimum$/i) || propertyName.match(/^maximum$/i) || propertyName.match(/^required$/i) || propertyName.match(/^repeat$/i) || propertyName.match(/^default$/i);
-    };
-
-    Validator.prototype.is_valid_root_property_name = function(propertyName) {
-      return propertyName.value.match(/^title$/i) || propertyName.value.match(/^baseUri$/i) || propertyName.value.match(/^schemas$/i) || propertyName.value.match(/^version$/i) || propertyName.value.match(/^traits$/i) || propertyName.value.match(/^documentation$/i) || propertyName.value.match(/^uriParameters$/i) || propertyName.value.match(/^resourceTypes$/i) || propertyName.value.match(/^\//i);
-    };
-
-    Validator.prototype.child_resources = function(node) {
-      if ((node != null ? node.tag : void 0) === "tag:yaml.org,2002:map") {
-        return node.value.filter(function(childNode) {
-          return childNode[0].value.match(/^\//i);
-        });
-      }
-      return [];
-    };
-
-    Validator.prototype.validate_resources = function(node) {
-      var resources,
-        _this = this;
-      resources = this.child_resources(node);
-      return resources.forEach(function(resource) {
-        return _this.validate_resource(resource);
-      });
-    };
-
-    Validator.prototype.validate_resource = function(resource, allowParameterKeys) {
-      var _ref1, _ref2,
-        _this = this;
-      if (allowParameterKeys == null) {
-        allowParameterKeys = false;
-      }
-      if (!(((_ref1 = resource[1]) != null ? _ref1.tag : void 0) === "tag:yaml.org,2002:map" || ((_ref2 = resource[1]) != null ? _ref2.tag : void 0) === "tag:yaml.org,2002:null")) {
-        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', resource[1].start_mark);
-      }
-      if (resource[1].value) {
-        return resource[1].value.forEach(function(property) {
-          if (!_this.validate_common_properties(property, allowParameterKeys)) {
-            if (property[0].value.match(/^\//)) {
-              return _this.validate_resource(property, allowParameterKeys);
-            } else if (property[0].value.match(/^type$/)) {
-              return _this.validate_type_property(property, allowParameterKeys);
-            } else if (property[0].value.match(/^uriParameters$/)) {
-              return _this.validate_uri_parameters(resource[0].value, property[1]);
-            } else if (property[0].value.match(/^(get|post|put|delete|head|patch|options)$/)) {
-              return _this.validate_method(property, allowParameterKeys);
-            } else {
-              throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
-            }
-          }
-        });
-      }
-    };
-
-    Validator.prototype.validate_type_property = function(property, allowParameterKeys) {
-      var typeName;
-      typeName = this.key_or_value(property[1]);
-      if (!(property[1].tag === "tag:yaml.org,2002:map" || property[1].tag === "tag:yaml.org,2002:str")) {
-        throw new exports.ValidationError('while validating resources', null, "property 'type' must be a string or a mapping", property[0].start_mark);
-      }
-      if (!this.get_type(typeName)) {
-        throw new exports.ValidationError('while validating trait consumption', null, 'there is no type named ' + typeName, property[1].start_mark);
-      }
-    };
-
-    Validator.prototype.validate_method = function(method, allowParameterKeys) {
-      var _this = this;
-      if (method[1].tag === "tag:yaml.org,2002:null") {
-        return;
-      }
-      if (method[1].tag !== "tag:yaml.org,2002:map") {
-        throw new exports.ValidationError('while validating methods', null, "method must be a mapping", method[0].start_mark);
-      }
-      return method[1].value.forEach(function(property) {
-        if (!_this.validate_common_properties(property, allowParameterKeys)) {
-          if (property[0].value.match(/^headers$/)) {
-            return _this.validate_headers(property, allowParameterKeys);
-          } else if (property[0].value.match(/^queryParameters$/)) {
-            return _this.validate_query_params(property, allowParameterKeys);
-          } else if (property[0].value.match(/^body$/)) {
-            return _this.validate_body(property, allowParameterKeys);
-          } else if (property[0].value.match(/^responses$/)) {
-            return _this.validate_responses(property, allowParameterKeys);
-          } else {
-            throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a method", property[0].start_mark);
-          }
-        }
-      });
-    };
-
-    Validator.prototype.validate_responses = function(responses, allowParameterKeys) {
-      var _this = this;
-      if (responses[1].tag === "tag:yaml.org,2002:null") {
-        return;
-      }
-      if (responses[1].tag !== "tag:yaml.org,2002:map") {
-        throw new exports.ValidationError('while validating query parameters', null, "property: 'responses' must be a mapping", responses[0].start_mark);
-      }
-      return responses[1].value.forEach(function(response) {
-        if (!(response[1].tag === "tag:yaml.org,2002:map" || response[1].tag === "tag:yaml.org,2002:null")) {
-          throw new exports.ValidationError('while validating query parameters', null, "each response must be a mapping", response[1].start_mark);
-        }
-        return _this.validate_response(response, allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_query_params = function(property, allowParameterKeys) {
-      var _this = this;
-      if (property[1].tag === "tag:yaml.org,2002:null") {
-        return;
-      }
-      if (property[1].tag !== "tag:yaml.org,2002:map") {
-        throw new exports.ValidationError('while validating query parameters', null, "property: 'queryParameters' must be a mapping", property[0].start_mark);
-      }
-      return property[1].value.forEach(function(param) {
-        if (!(param[1].tag === "tag:yaml.org,2002:map" || param[1].tag === "tag:yaml.org,2002:null")) {
-          throw new exports.ValidationError('while validating query parameters', null, "each query parameter must be a mapping", param[1].start_mark);
-        }
-        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_form_params = function(property, allowParameterKeys) {
-      var _this = this;
-      if (property[1].tag === "tag:yaml.org,2002:null") {
-        return;
-      }
-      if (property[1].tag !== "tag:yaml.org,2002:map") {
-        throw new exports.ValidationError('while validating query parameters', null, "property: 'formParameters' must be a mapping", property[0].start_mark);
-      }
-      return property[1].value.forEach(function(param) {
-        if (!(param[1].tag === "tag:yaml.org,2002:map" || param[1].tag === "tag:yaml.org,2002:null")) {
-          throw new exports.ValidationError('while validating query parameters', null, "each form parameter must be a mapping", param[1].start_mark);
-        }
-        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_headers = function(property, allowParameterKeys) {
-      var _this = this;
-      if (property[1].tag === "tag:yaml.org,2002:null") {
-        return;
-      }
-      if (property[1].tag !== "tag:yaml.org,2002:map") {
-        throw new exports.ValidationError('while validating headers', null, "property: 'headers' must be a mapping", property[0].start_mark);
-      }
-      return property[1].value.forEach(function(param) {
-        if (!(param[1].tag === "tag:yaml.org,2002:map" || param[1].tag === "tag:yaml.org,2002:null")) {
-          throw new exports.ValidationError('while validating query parameters', null, "each header must be a mapping", param[1].start_mark);
-        }
-        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_response = function(response, allowParameterKeys) {
-      var _this = this;
-      if (response[0].tag === "tag:yaml.org,2002:seq") {
-        if (!response[0].value.length) {
-          throw new exports.ValidationError('while validating responses', null, "there must be at least one response code", responseCode.start_mark);
-        }
-        response[0].value.forEach(function(responseCode) {
-          if (responseCode.tag !== "tag:yaml.org,2002:int") {
-            throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", responseCode.start_mark);
-          }
-        });
-      } else if (response[0].tag !== "tag:yaml.org,2002:int") {
-        throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", response[0].start_mark);
-      }
-      if (response[1].tag !== "tag:yaml.org,2002:map") {
-        throw new exports.ValidationError('while validating responses', null, "each response property must be a mapping", response[0].start_mark);
-      }
-      return response[1].value.forEach(function(property) {
-        if (property[0].value.match(/^body$/)) {
-          return _this.validate_body(property, allowParameterKeys);
-        } else if (property[0].value.match(/^description$/)) {
-          if (!(property[0].tag === "tag:yaml.org,2002:null" || property[0].tag === "tag:yaml.org,2002:str")) {
-            throw new exports.ValidationError('while validating responses', null, "property description must be a string", response[0].start_mark);
-          }
-        } else {
-          throw new exports.ValidationError('while validating response', null, "property: '" + property[0].value + "' is invalid in a response", property[0].start_mark);
-        }
-      });
-    };
-
-    Validator.prototype.validate_body = function(property, allowParameterKeys, bodyMode) {
-      var _ref1,
-        _this = this;
-      if (bodyMode == null) {
-        bodyMode = null;
-      }
-      if (property[1].tag === "tag:yaml.org,2002:null") {
-        return;
-      }
-      if (property[1].tag !== "tag:yaml.org,2002:map") {
-        throw new exports.ValidationError('while validating body', null, "property: body specification must be a mapping", property[0].start_mark);
-      }
-      return (_ref1 = property[1].value) != null ? _ref1.forEach(function(bodyProperty) {
-        if (bodyProperty[0].value.match(/<<([^>]+)>>/)) {
-          if (!allowParameterKeys) {
-            throw new exports.ValidationError('while validating body', null, "property '" + bodyProperty[0].value + "' is invalid in a resource", bodyProperty[0].start_mark);
-          }
-        } else if (bodyProperty[0].value.match(/^[^\/]+\/[^\/]+$/)) {
-          if (bodyMode && bodyMode !== "explicit") {
-            throw new exports.ValidationError('while validating body', null, "not compatible with implicit default Media Type", bodyProperty[0].start_mark);
-          }
-          bodyMode = "explicit";
-          return _this.validate_body(bodyProperty, allowParameterKeys, "implicit");
-        } else if (bodyProperty[0].value.match(/^formParameters$/)) {
-          if (bodyMode && bodyMode !== "implicit") {
-            throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
-          }
-          bodyMode = "implicit";
-          return _this.validate_form_params(bodyProperty, allowParameterKeys);
-        } else if (bodyProperty[0].value.match(/^example$/)) {
-          if (bodyMode && bodyMode !== "implicit") {
-            throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
-          }
-          bodyMode = "implicit";
-          if (bodyProperty[1].tag === "tag:yaml.org,2002:map" || bodyProperty[1].tag === "tag:yaml.org,2002:seq") {
-            throw new exports.ValidationError('while validating body', null, "example must be a string", bodyProperty[0].start_mark);
-          }
-        } else if (bodyProperty[0].value.match(/^schema$/)) {
-          if (bodyMode && bodyMode !== "implicit") {
-            throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
-          }
-          bodyMode = "implicit";
-          if (bodyProperty[1].tag === "tag:yaml.org,2002:map" || bodyProperty[1].tag === "tag:yaml.org,2002:seq") {
-            throw new exports.ValidationError('while validating body', null, "schema must be a string", bodyProperty[0].start_mark);
-          }
-        } else {
-          throw new exports.ValidationError('while validating body', null, "property: '" + bodyProperty[0].value + "' is invalid in a body", bodyProperty[0].start_mark);
-        }
-      }) : void 0;
-    };
-
-    Validator.prototype.validate_common_properties = function(property, allowParameterKeys) {
-      var _this = this;
-      if (property[0].value.match(/<<([^>]+)>>/)) {
-        if (!allowParameterKeys) {
-          throw new exports.ValidationError('while validating resources', null, "property '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
-        }
-        return true;
-      } else if (property[0].value.match(/^displayName$/)) {
-        if (property[1].tag !== "tag:yaml.org,2002:str") {
-          throw new exports.ValidationError('while validating resources', null, "property 'displayName' must be a string", property[0].start_mark);
-        }
-        return true;
-      } else if (property[0].value.match(/^summary$/)) {
-        if (property[1].tag !== "tag:yaml.org,2002:str") {
-          throw new exports.ValidationError('while validating resources', null, "property 'summary' must be a string", property[0].start_mark);
-        }
-        return true;
-      } else if (property[0].value.match(/^description$/)) {
-        if (property[1].tag !== "tag:yaml.org,2002:str") {
-          throw new exports.ValidationError('while validating resources', null, "property 'description' must be a string", property[0].start_mark);
-        }
-        return true;
-      } else if (property[0].value.match(/^is$/)) {
-        if (property[1].tag !== "tag:yaml.org,2002:seq") {
-          throw new exports.ValidationError('while validating resources', null, "property 'is' must be a list", property[0].start_mark);
-        }
-        if (!(property[1].value instanceof Array)) {
-          throw new exports.ValidationError('while validating trait consumption', null, 'is property must be an array', property[0].start_mark);
-        }
-        property[1].value.forEach(function(use) {
-          var traitName;
-          traitName = _this.key_or_value(use);
-          if (!_this.get_trait(traitName)) {
-            throw new exports.ValidationError('while validating trait consumption', null, 'there is no trait named ' + traitName, use.start_mark);
-          }
-        });
-        return true;
-      }
-      return false;
-    };
-
-    Validator.prototype.child_methods = function(node) {
-      if ((node != null ? node.tag : void 0) !== "tag:yaml.org,2002:map") {
-        return [];
-      }
-      return node.value.filter(function(childNode) {
-        return childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/);
-      });
-    };
-
-    Validator.prototype.has_property = function(node, property) {
-      if ((node != null ? node.tag : void 0) === "tag:yaml.org,2002:map") {
-        return node.value.some(function(childNode) {
-          return childNode[0].value && typeof childNode[0].value !== "object" && childNode[0].value.match(property);
-        });
-      }
-      return false;
-    };
-
-    Validator.prototype.property_value = function(node, property) {
-      var filteredNodes;
-      filteredNodes = node.value.filter(function(childNode) {
-        return typeof childNode[0].value !== "object" && childNode[0].value.match(property);
-      });
-      return filteredNodes[0][1].value;
-    };
-
-    Validator.prototype.get_property = function(node, property) {
-      var filteredNodes;
-      if ((node != null ? node.tag : void 0) === "tag:yaml.org,2002:map") {
-        filteredNodes = node.value.filter(function(childNode) {
-          return childNode[0].tag === "tag:yaml.org,2002:str" && childNode[0].value.match(property);
-        });
-        if (filteredNodes.length > 0) {
-          if (filteredNodes[0].length > 0) {
-            return filteredNodes[0][1];
-          }
-        }
-      }
-      return [];
-    };
-
-    Validator.prototype.get_properties = function(node, property) {
-      var properties,
-        _this = this;
-      properties = [];
-      if ((node != null ? node.tag : void 0) === "tag:yaml.org,2002:map") {
-        node.value.forEach(function(prop) {
-          if (prop[0].tag === "tag:yaml.org,2002:str" && prop[0].value.match(property)) {
-            return properties.push(prop);
-          } else {
-            return properties = properties.concat(_this.get_properties(prop[1], property));
-          }
-        });
-      }
-      return properties;
-    };
-
-    Validator.prototype.check_is_map = function(node) {
-      if (!node instanceof nodes.MappingNode) {
-        throw new exports.ValidationError('while validating node', null, 'must be a map', node.start_mark);
-      }
-    };
-
-    Validator.prototype.resources = function(node, parentPath) {
-      var child_resources, response,
-        _this = this;
-      if (node == null) {
-        node = this.get_single_node(true, true, false);
-      }
-      this.check_is_map(node);
-      response = [];
-      child_resources = this.child_resources(node);
-      child_resources.forEach(function(childResource) {
-        var resourceResponse;
-        resourceResponse = {};
-        resourceResponse.methods = [];
-        if (parentPath != null) {
-          resourceResponse.uri = parentPath + childResource[0].value;
-        } else {
-          resourceResponse.uri = childResource[0].value;
-        }
-        if (_this.has_property(childResource[1], /^displayName$/i)) {
-          resourceResponse.displayName = _this.property_value(childResource[1], /^displayName$/i);
-        }
-        if (_this.has_property(childResource[1], /^get$/i)) {
-          resourceResponse.methods.push('get');
-        }
-        if (_this.has_property(childResource[1], /^post$/i)) {
-          resourceResponse.methods.push('post');
-        }
-        if (_this.has_property(childResource[1], /^put$/i)) {
-          resourceResponse.methods.push('put');
-        }
-        if (_this.has_property(childResource[1], /^patch$/i)) {
-          resourceResponse.methods.push('patch');
-        }
-        if (_this.has_property(childResource[1], /^delete$/i)) {
-          resourceResponse.methods.push('delete');
-        }
-        if (_this.has_property(childResource[1], /^head$/i)) {
-          resourceResponse.methods.push('head');
-        }
-        if (_this.has_property(childResource[1], /^options$/i)) {
-          resourceResponse.methods.push('options');
-        }
-        resourceResponse.line = childResource[0].start_mark.line + 1;
-        resourceResponse.column = childResource[0].start_mark.column + 1;
-        if (childResource[0].start_mark.name != null) {
-          resourceResponse.src = childResource[0].start_mark.name;
-        }
-        response.push(resourceResponse);
-        return response = response.concat(_this.resources(childResource[1], resourceResponse.uri));
-      });
-      return response;
-    };
-
-    Validator.prototype.valid_absolute_uris = function(node) {
-      var i, sorted_uris, uris, _i, _ref1, _results;
-      uris = this.get_absolute_uris(node);
-      sorted_uris = uris.sort();
-      if (sorted_uris.length > 1) {
-        _results = [];
-        for (i = _i = 0, _ref1 = sorted_uris.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-          if (sorted_uris[i + 1] === sorted_uris[i]) {
-            throw new exports.ValidationError('while validating trait consumption', null, 'two resources share same URI ' + sorted_uris[i], null);
-          } else {
-            _results.push(void 0);
-          }
-        }
-        return _results;
-      }
-    };
-
-    Validator.prototype.get_absolute_uris = function(node, parentPath) {
-      var child_resources, response,
-        _this = this;
-      if (node == null) {
-        node = this.get_single_node(true, true, false);
-      }
-      this.check_is_map(node);
-      response = [];
-      if (!((node != null ? node.tag : void 0) === "tag:yaml.org,2002:map" || (node != null ? node.tag : void 0) === "tag:yaml.org,2002:null")) {
-        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', node.start_mark);
-      }
-      child_resources = this.child_resources(node);
-      child_resources.forEach(function(childResource) {
-        var uri;
-        if (parentPath != null) {
-          uri = parentPath + childResource[0].value;
-        } else {
-          uri = childResource[0].value;
-        }
-        response.push(uri);
-        return response = response.concat(_this.get_absolute_uris(childResource[1], uri));
-      });
-      return response;
-    };
-
-    Validator.prototype.key_or_value = function(node) {
-      if (node instanceof nodes.ScalarNode) {
-        return node.value;
-      }
-      if (node instanceof nodes.MappingNode) {
-        return node.value[0][0].value;
-      }
-    };
-
-    Validator.prototype.value_or_undefined = function(node) {
-      if (node instanceof nodes.MappingNode) {
-        return node.value;
-      }
-      return void 0;
-    };
-
-    Validator.prototype.valid_trait_consumption = function(node, traits) {
-      var resources,
-        _this = this;
-      if (traits == null) {
-        traits = void 0;
-      }
-      this.check_is_map(node);
-      resources = this.child_resources(node);
-      return resources.forEach(function(resource) {
-        var methods, uses;
-        if (_this.has_property(resource[1], /^is$/i)) {
-          uses = _this.property_value(resource[1], /^is$/i);
-          uses.forEach(function(use) {
-            if (!_this.get_trait(_this.key_or_value(use))) {
-              throw new exports.ValidationError('while validating trait consumption', null, 'there is no trait named ' + _this.key_or_value(use), use.start_mark);
-            }
-          });
-        }
-        methods = _this.child_methods(resource[1]);
-        methods.forEach(function(method) {
-          if (_this.has_property(method[1], /^is$/i)) {
-            uses = _this.property_value(method[1], /^is$/i);
-            return uses.forEach(function(use) {
-              if (!_this.get_trait(_this.key_or_value(use))) {
-                throw new exports.ValidationError('while validating trait consumption', null, 'there is no trait named ' + _this.key_or_value(use), use.start_mark);
-              }
-            });
-          }
-        });
-        return _this.valid_trait_consumption(resource[1], traits);
-      });
-    };
-
-    Validator.prototype.has_title = function(node) {
-      var title;
-      this.check_is_map(node);
-      if (!this.has_property(node, /^title$/i)) {
-        throw new exports.ValidationError('while validating title', null, 'missing title', node.start_mark);
-      }
-      title = this.get_property(node, "title");
-      if (!(typeof title.value === 'string' || typeof title.value === 'number')) {
-        throw new exports.ValidationError('while validating title', null, 'not a scalar', title.start_mark);
-      }
-    };
-
-    Validator.prototype.has_version = function(node) {
-      this.check_is_map(node);
-      if (!this.has_property(node, /^version$/i)) {
-        throw new exports.ValidationError('while validating version', null, 'missing version', node.start_mark);
-      }
-    };
-
-    Validator.prototype.valid_base_uri = function(node) {
-      var baeUriNode, baseUri, err, expression, expressions, template, _i, _len, _results;
-      if (this.has_property(node, /^baseUri$/i)) {
-        baeUriNode = this.get_property(node, /^baseUri$/i);
-        baseUri = this.property_value(node, /^baseUri$/i);
-        try {
-          template = uritemplate.parse(baseUri);
-        } catch (_error) {
-          err = _error;
-          throw new exports.ValidationError('while validating baseUri', null, err.options.message, baeUriNode.start_mark);
-        }
-        expressions = template.expressions.filter(function(expr) {
-          return expr.hasOwnProperty('templateText');
-        });
-        _results = [];
-        for (_i = 0, _len = expressions.length; _i < _len; _i++) {
-          expression = expressions[_i];
-          if (expression.templateText === 'version') {
-            _results.push(this.has_version(node));
-          } else {
-            _results.push(void 0);
-          }
-        }
-        return _results;
-      }
-    };
-
-    Validator.prototype.get_validation_errors = function() {
-      return this.validation_errors;
-    };
-
-    Validator.prototype.is_valid = function() {
-      return this.validation_errors.length === 0;
-    };
-
-    return Validator;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":14,"./traits":23,"uritemplate":27}],26:[function(require,module,exports){
+},{"./composer":12,"./construct":15,"./errors":1,"./events":2,"./loader":17,"./nodes":13,"./parser":20,"./reader":18,"./resolver":21,"./scanner":19,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":28}],28:[function(require,module,exports){
 (function(process,Buffer){/**
  * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
  *
@@ -13032,7 +13348,7 @@ exports.XMLHttpRequest = function() {
 };
 
 })(require("__browserify_process"),require("__browserify_buffer").Buffer)
-},{"__browserify_buffer":12,"__browserify_process":5,"child_process":28,"fs":9,"http":29,"https":30,"url":7}],27:[function(require,module,exports){
+},{"__browserify_buffer":14,"__browserify_process":5,"child_process":29,"fs":9,"http":30,"https":31,"url":7}],27:[function(require,module,exports){
 (function(global){/*global unescape, module, define, window, global*/
 
 /*
@@ -13920,11 +14236,11 @@ var UriTemplate = (function () {
 ));
 
 })(window)
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 exports.spawn = function () {};
 exports.exec = function () {};
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 var http = require('http');
 
 var https = module.exports;
@@ -13938,7 +14254,7 @@ https.request = function (params, cb) {
     params.scheme = 'https';
     return http.request.call(this, params, cb);
 }
-},{"http":29}],31:[function(require,module,exports){
+},{"http":30}],32:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -14135,7 +14451,7 @@ EventEmitter.listenerCount = function(emitter, type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":5}],29:[function(require,module,exports){
+},{"__browserify_process":5}],30:[function(require,module,exports){
 var http = module.exports;
 var EventEmitter = require('events').EventEmitter;
 var Request = require('./lib/request');
@@ -14197,7 +14513,7 @@ var xhrHttp = (function () {
     }
 })();
 
-},{"./lib/request":32,"events":31}],33:[function(require,module,exports){
+},{"./lib/request":33,"events":32}],34:[function(require,module,exports){
 var events = require('events');
 var util = require('util');
 
@@ -14318,7 +14634,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":31,"util":34}],34:[function(require,module,exports){
+},{"events":32,"util":35}],35:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -14665,7 +14981,7 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":31}],35:[function(require,module,exports){
+},{"events":32}],36:[function(require,module,exports){
 var Stream = require('stream');
 
 var Response = module.exports = function (res) {
@@ -14786,7 +15102,7 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":33}],32:[function(require,module,exports){
+},{"stream":34}],33:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream');
@@ -14919,7 +15235,7 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":35,"Base64":36,"concat-stream":37,"stream":33}],36:[function(require,module,exports){
+},{"./response":36,"Base64":38,"concat-stream":37,"stream":34}],38:[function(require,module,exports){
 ;(function () {
 
   var
@@ -15027,7 +15343,7 @@ module.exports = function(cb) {
 
 module.exports.ConcatStream = ConcatStream
 
-},{"bops":38,"stream":33,"util":34}],38:[function(require,module,exports){
+},{"bops":39,"stream":34,"util":35}],39:[function(require,module,exports){
 var proto = {}
 module.exports = proto
 
@@ -15048,20 +15364,20 @@ function mix(from, into) {
   }
 }
 
-},{"./copy.js":44,"./create.js":45,"./from.js":39,"./is.js":41,"./join.js":43,"./read.js":46,"./subarray.js":42,"./to.js":40,"./write.js":47}],41:[function(require,module,exports){
-
-module.exports = function(buffer) {
-  return buffer instanceof Uint8Array;
-}
-
-},{}],42:[function(require,module,exports){
+},{"./copy.js":45,"./create.js":46,"./from.js":40,"./is.js":42,"./join.js":44,"./read.js":47,"./subarray.js":43,"./to.js":41,"./write.js":48}],43:[function(require,module,exports){
 module.exports = subarray
 
 function subarray(buf, from, to) {
   return buf.subarray(from || 0, to || buf.length)
 }
 
-},{}],43:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
+
+module.exports = function(buffer) {
+  return buffer instanceof Uint8Array;
+}
+
+},{}],44:[function(require,module,exports){
 module.exports = join
 
 function join(targets, hint) {
@@ -15099,7 +15415,12 @@ function get_length(targets) {
   return size
 }
 
-},{}],44:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
+module.exports = function(size) {
+  return new Uint8Array(size)
+}
+
+},{}],45:[function(require,module,exports){
 module.exports = copy
 
 var slice = [].slice
@@ -15153,100 +15474,7 @@ function slow_copy(from, to, j, i, jend) {
   }
 }
 
-},{}],45:[function(require,module,exports){
-module.exports = function(size) {
-  return new Uint8Array(size)
-}
-
 },{}],47:[function(require,module,exports){
-module.exports = {
-    writeUInt8:      write_uint8
-  , writeInt8:       write_int8
-  , writeUInt16LE:   write_uint16_le
-  , writeUInt32LE:   write_uint32_le
-  , writeInt16LE:    write_int16_le
-  , writeInt32LE:    write_int32_le
-  , writeFloatLE:    write_float_le
-  , writeDoubleLE:   write_double_le
-  , writeUInt16BE:   write_uint16_be
-  , writeUInt32BE:   write_uint32_be
-  , writeInt16BE:    write_int16_be
-  , writeInt32BE:    write_int32_be
-  , writeFloatBE:    write_float_be
-  , writeDoubleBE:   write_double_be
-}
-
-var map = require('./mapped.js')
-
-function write_uint8(target, value, at) {
-  return target[at] = value
-}
-
-function write_int8(target, value, at) {
-  return target[at] = value < 0 ? value + 0x100 : value
-}
-
-function write_uint16_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint16(at + target.byteOffset, value, true)
-}
-
-function write_uint32_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint32(at + target.byteOffset, value, true)
-}
-
-function write_int16_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt16(at + target.byteOffset, value, true)
-}
-
-function write_int32_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt32(at + target.byteOffset, value, true)
-}
-
-function write_float_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat32(at + target.byteOffset, value, true)
-}
-
-function write_double_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat64(at + target.byteOffset, value, true)
-}
-
-function write_uint16_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint16(at + target.byteOffset, value, false)
-}
-
-function write_uint32_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint32(at + target.byteOffset, value, false)
-}
-
-function write_int16_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt16(at + target.byteOffset, value, false)
-}
-
-function write_int32_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt32(at + target.byteOffset, value, false)
-}
-
-function write_float_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat32(at + target.byteOffset, value, false)
-}
-
-function write_double_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat64(at + target.byteOffset, value, false)
-}
-
-},{"./mapped.js":48}],46:[function(require,module,exports){
 module.exports = {
     readUInt8:      read_uint8
   , readInt8:       read_int8
@@ -15335,7 +15563,95 @@ function read_double_be(target, at) {
   return dv.getFloat64(at + target.byteOffset, false)
 }
 
-},{"./mapped.js":48}],48:[function(require,module,exports){
+},{"./mapped.js":49}],48:[function(require,module,exports){
+module.exports = {
+    writeUInt8:      write_uint8
+  , writeInt8:       write_int8
+  , writeUInt16LE:   write_uint16_le
+  , writeUInt32LE:   write_uint32_le
+  , writeInt16LE:    write_int16_le
+  , writeInt32LE:    write_int32_le
+  , writeFloatLE:    write_float_le
+  , writeDoubleLE:   write_double_le
+  , writeUInt16BE:   write_uint16_be
+  , writeUInt32BE:   write_uint32_be
+  , writeInt16BE:    write_int16_be
+  , writeInt32BE:    write_int32_be
+  , writeFloatBE:    write_float_be
+  , writeDoubleBE:   write_double_be
+}
+
+var map = require('./mapped.js')
+
+function write_uint8(target, value, at) {
+  return target[at] = value
+}
+
+function write_int8(target, value, at) {
+  return target[at] = value < 0 ? value + 0x100 : value
+}
+
+function write_uint16_le(target, value, at) {
+  var dv = map.get(target);
+  return dv.setUint16(at + target.byteOffset, value, true)
+}
+
+function write_uint32_le(target, value, at) {
+  var dv = map.get(target);
+  return dv.setUint32(at + target.byteOffset, value, true)
+}
+
+function write_int16_le(target, value, at) {
+  var dv = map.get(target);
+  return dv.setInt16(at + target.byteOffset, value, true)
+}
+
+function write_int32_le(target, value, at) {
+  var dv = map.get(target);
+  return dv.setInt32(at + target.byteOffset, value, true)
+}
+
+function write_float_le(target, value, at) {
+  var dv = map.get(target);
+  return dv.setFloat32(at + target.byteOffset, value, true)
+}
+
+function write_double_le(target, value, at) {
+  var dv = map.get(target);
+  return dv.setFloat64(at + target.byteOffset, value, true)
+}
+
+function write_uint16_be(target, value, at) {
+  var dv = map.get(target);
+  return dv.setUint16(at + target.byteOffset, value, false)
+}
+
+function write_uint32_be(target, value, at) {
+  var dv = map.get(target);
+  return dv.setUint32(at + target.byteOffset, value, false)
+}
+
+function write_int16_be(target, value, at) {
+  var dv = map.get(target);
+  return dv.setInt16(at + target.byteOffset, value, false)
+}
+
+function write_int32_be(target, value, at) {
+  var dv = map.get(target);
+  return dv.setInt32(at + target.byteOffset, value, false)
+}
+
+function write_float_be(target, value, at) {
+  var dv = map.get(target);
+  return dv.setFloat32(at + target.byteOffset, value, false)
+}
+
+function write_double_be(target, value, at) {
+  var dv = map.get(target);
+  return dv.setFloat64(at + target.byteOffset, value, false)
+}
+
+},{"./mapped.js":49}],49:[function(require,module,exports){
 var proto
   , map
 
@@ -15357,7 +15673,45 @@ function get(target) {
   return out
 }
 
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
+module.exports = to
+
+var base64 = require('base64-js')
+  , toutf8 = require('to-utf8')
+
+var encoders = {
+    hex: to_hex
+  , utf8: to_utf
+  , base64: to_base64
+}
+
+function to(buf, encoding) {
+  return encoders[encoding || 'utf8'](buf)
+}
+
+function to_hex(buf) {
+  var str = ''
+    , byt
+
+  for(var i = 0, len = buf.length; i < len; ++i) {
+    byt = buf[i]
+    str += ((byt & 0xF0) >>> 4).toString(16)
+    str += (byt & 0x0F).toString(16)
+  }
+
+  return str
+}
+
+function to_utf(buf) {
+  return toutf8(buf)
+}
+
+function to_base64(buf) {
+  return base64.fromByteArray(buf)
+}
+
+
+},{"base64-js":51,"to-utf8":50}],40:[function(require,module,exports){
 module.exports = from
 
 var base64 = require('base64-js')
@@ -15417,45 +15771,82 @@ function from_base64(str) {
   return new Uint8Array(base64.toByteArray(str)) 
 }
 
-},{"base64-js":49}],40:[function(require,module,exports){
-module.exports = to
+},{"base64-js":51}],50:[function(require,module,exports){
+module.exports = to_utf8
 
-var base64 = require('base64-js')
-  , toutf8 = require('to-utf8')
+var out = []
+  , col = []
+  , fcc = String.fromCharCode
+  , mask = [0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]
+  , unmask = [
+      0x00
+    , 0x01
+    , 0x02 | 0x01
+    , 0x04 | 0x02 | 0x01
+    , 0x08 | 0x04 | 0x02 | 0x01
+    , 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+    , 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+    , 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+  ]
 
-var encoders = {
-    hex: to_hex
-  , utf8: to_utf
-  , base64: to_base64
-}
+function to_utf8(bytes, start, end) {
+  start = start === undefined ? 0 : start
+  end = end === undefined ? bytes.length : end
 
-function to(buf, encoding) {
-  return encoders[encoding || 'utf8'](buf)
-}
+  var idx = 0
+    , hi = 0x80
+    , collecting = 0
+    , pos
+    , by
 
-function to_hex(buf) {
-  var str = ''
-    , byt
+  col.length =
+  out.length = 0
 
-  for(var i = 0, len = buf.length; i < len; ++i) {
-    byt = buf[i]
-    str += ((byt & 0xF0) >>> 4).toString(16)
-    str += (byt & 0x0F).toString(16)
+  while(idx < bytes.length) {
+    by = bytes[idx]
+    if(!collecting && by & hi) {
+      pos = find_pad_position(by)
+      collecting += pos
+      if(pos < 8) {
+        col[col.length] = by & unmask[6 - pos]
+      }
+    } else if(collecting) {
+      col[col.length] = by & unmask[6]
+      --collecting
+      if(!collecting && col.length) {
+        out[out.length] = fcc(reduced(col, pos))
+        col.length = 0
+      }
+    } else { 
+      out[out.length] = fcc(by)
+    }
+    ++idx
   }
-
-  return str
+  if(col.length && !collecting) {
+    out[out.length] = fcc(reduced(col, pos))
+    col.length = 0
+  }
+  return out.join('')
 }
 
-function to_utf(buf) {
-  return toutf8(buf)
+function find_pad_position(byt) {
+  for(var i = 0; i < 7; ++i) {
+    if(!(byt & mask[i])) {
+      break
+    }
+  }
+  return i
 }
 
-function to_base64(buf) {
-  return base64.fromByteArray(buf)
+function reduced(list) {
+  var out = 0
+  for(var i = 0, len = list.length; i < len; ++i) {
+    out |= list[i] << ((len - i - 1) * 6)
+  }
+  return out
 }
 
-
-},{"base64-js":49,"to-utf8":50}],49:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -15541,80 +15932,5 @@ function to_base64(buf) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}],50:[function(require,module,exports){
-module.exports = to_utf8
-
-var out = []
-  , col = []
-  , fcc = String.fromCharCode
-  , mask = [0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]
-  , unmask = [
-      0x00
-    , 0x01
-    , 0x02 | 0x01
-    , 0x04 | 0x02 | 0x01
-    , 0x08 | 0x04 | 0x02 | 0x01
-    , 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-  ]
-
-function to_utf8(bytes, start, end) {
-  start = start === undefined ? 0 : start
-  end = end === undefined ? bytes.length : end
-
-  var idx = 0
-    , hi = 0x80
-    , collecting = 0
-    , pos
-    , by
-
-  col.length =
-  out.length = 0
-
-  while(idx < bytes.length) {
-    by = bytes[idx]
-    if(!collecting && by & hi) {
-      pos = find_pad_position(by)
-      collecting += pos
-      if(pos < 8) {
-        col[col.length] = by & unmask[6 - pos]
-      }
-    } else if(collecting) {
-      col[col.length] = by & unmask[6]
-      --collecting
-      if(!collecting && col.length) {
-        out[out.length] = fcc(reduced(col, pos))
-        col.length = 0
-      }
-    } else { 
-      out[out.length] = fcc(by)
-    }
-    ++idx
-  }
-  if(col.length && !collecting) {
-    out[out.length] = fcc(reduced(col, pos))
-    col.length = 0
-  }
-  return out.join('')
-}
-
-function find_pad_position(byt) {
-  for(var i = 0; i < 7; ++i) {
-    if(!(byt & mask[i])) {
-      break
-    }
-  }
-  return i
-}
-
-function reduced(list) {
-  var out = 0
-  for(var i = 0, len = list.length; i < len; ++i) {
-    out |= list[i] << ((len - i - 1) * 6)
-  }
-  return out
-}
-
-},{}]},{},[10,15,13,1,2,16,17,14,20,11,18,21,24,19,25,3,23,4,22,6])
+},{}]},{},[10,12,15,1,2,17,16,13,20,11,18,21,24,19,26,25,3,23,4,22,6])
 ;

@@ -26,22 +26,11 @@ angular.module('ramlEditorApp')
       var definition = args;
       $scope.errorMessage = '';
       ramlParser.load(definition).then(function (result) {
-        eventService.broadcast('event:raml-parsed', ramlReader.read(result));
+        codeMirrorErrors.clearAnnotations();
+        eventService.broadcast('event:raml-parsed', result);
       }, function (error) {
         eventService.broadcast('event:raml-parser-error', error);
       });
-    });
-
-    eventService.on('event:raml-parsed', function (e, args) {
-      var definition = args;
-      codeMirrorErrors.clearAnnotations();
-      definition.baseUri = ramlReader.processBaseUri(definition);
-      $scope.baseUri = definition.baseUri;
-      $scope.title = definition.title;
-      $scope.version = definition.version;
-      eventService.broadcast('event:raml-operation-list-published', definition.resources);
-      $scope.hasErrors = false;
-      $scope.$apply();
     });
 
     eventService.on('event:raml-parser-error', function (e, args) {

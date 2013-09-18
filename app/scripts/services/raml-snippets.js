@@ -39,7 +39,7 @@ angular.module('raml')
       if (snippetName.toLowerCase() === 'new resource') {
         return '' +
           ind + '/newResource:\n' +
-          ind + '  name: resourceName\n';
+          ind + '  displayName: resourceName\n';
       }
 
       if (snippetName.toLowerCase() === 'title') {
