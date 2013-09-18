@@ -56,6 +56,7 @@ angular.module('ramlEditorApp')
     $scope.canSave = function () {
       return $scope.file && $scope.file.dirty;
     };
+    
 
     $scope.save = function () {
       if ($scope.canSave()) {
@@ -65,6 +66,10 @@ angular.module('ramlEditorApp')
         });
       }
     };
+    
+    eventService.on('event:save', function (e, args) {
+      $scope.save();
+    });
 
     $scope.init = function () {
       $scope.raml = {};
