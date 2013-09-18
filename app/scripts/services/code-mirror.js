@@ -71,13 +71,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
 
       //this overrides everything else, because the '|' explicitly declares the line as a scalar
       //with a continuation on other lines. This applies to the current line or the parent of the current line
-      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indent > 0 ? indent - 1 : 0];
-
-      var parentLineNumber = potentialParents.filter(function (line) {
-        return line < editorState.start.line;
-      }).pop();
-
-      var parentLine = cm.getLine(parentLineNumber);
+      var parentLine = _getParentLine(cm, editorState.start.line, indent);
 
       if(curLineWithoutTabs.match(/\|$/)) {
         _replaceSelection(cm, 1, "");
@@ -113,6 +107,19 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       editor.replaceSelection(spaces, "end", "+input");
     }
 
+    function _getParentLineNumber (cm, lineNumber, indentLevel) {
+      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? indentLevel - 1 : 0];
+      var parent = potentialParents.filter(function (line) {
+        return line < lineNumber;
+      }).pop();
+
+      return parent;
+    }
+
+    function _getParentLine (cm, lineNumber, indentLevel) {
+      return cm.getLine(_getParentLineNumber(cm, lineNumber, indentLevel));
+    }
+
     service.getFoldRange = function (cm, start) {
       var indentUnit = cm.getOption('indentUnit');
 
@@ -126,16 +133,10 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       if (!nextLine) {
         return;
       }
-
       var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
       var nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
 
-      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indent > 0 ? indent - 1 : 0];
-      var parent = potentialParents.filter(function (line) {
-        return line < start.line;
-      }).pop();
-
-      if(/content:(\s?)\|/.test(cm.getLine(parent))) {
+      if(/(content|schema|example):(\s?)\|/.test(_getParentLine(cm, start.line, indent))) {
         return;
       }
 
