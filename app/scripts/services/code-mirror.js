@@ -2,8 +2,8 @@
 
 var CodeMirror = window.CodeMirror;
 
-angular.module('codeMirror', ['raml'])
-  .factory('codeMirror', function (ramlHint, codeMirrorHighLight) {
+angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
+  .factory('codeMirror', function (ramlHint, codeMirrorHighLight, eventService) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
@@ -45,10 +45,10 @@ angular.module('codeMirror', ['raml'])
       /* Erase in tab chunks only if all things found in the current line are tabs */
       if ( line !== '' && service.isLineOnlyTabs(line, indentUnit) ) {
         for (i = 0; i < indentUnit; i++) {
-          /* 
+          /*
            * XXX deleteH should be used this way because if doing
            *
-           *    cm.deleteH(-indentUnit,'char') 
+           *    cm.deleteH(-indentUnit,'char')
            *
            * it provokes some weird line deletion cases:
            *
@@ -158,6 +158,10 @@ angular.module('codeMirror', ['raml'])
         fallthrough: ['default']
       };
 
+      CodeMirror.commands.save = function (cm) {
+        eventService.broadcast('event:save');
+      };
+
       CodeMirror.commands.autocomplete = function (cm) {
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
@@ -177,7 +181,11 @@ angular.module('codeMirror', ['raml'])
         indentWithTabs: false,
         indentUnit: 2,
         tabSize: 2,
-        extraKeys: {'Ctrl-Space': 'autocomplete'},
+        extraKeys: {
+          'Ctrl-Space': 'autocomplete',
+          'Cmd-s': 'save',
+          'Ctrl-s': 'save'
+        },
         keyMap: 'tabSpace',
         foldGutter: {
           rangeFinder: CodeMirror.fold.indent
