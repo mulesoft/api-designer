@@ -156,7 +156,7 @@ angular.module('raml')
     hinter.selectiveCloneAlternatives = function (oldAlternatives, keysToErase) {
       var newAlternatives = {}, newAlternativesSuggestions = {};
 
-      Object.keys(oldAlternatives.suggestions).forEach(function (key) {
+      Object.keys(oldAlternatives.suggestions || []).forEach(function (key) {
         if (keysToErase.indexOf(key) === -1) {
           newAlternativesSuggestions[key] = oldAlternatives.suggestions[key];
         }
