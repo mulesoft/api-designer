@@ -229,7 +229,7 @@ describe('RAML Hint Service', function () {
   });
 
   describe('getSuggestions', function () {
-    it('should render the text correctly', function () {
+    it.skip('should render the text correctly', function () {
       var alternatives = {
         suggestions: {
           title: {},
