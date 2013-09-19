@@ -84,7 +84,7 @@ describe('RAML Highlight Service', function (){
 
   it('should call yaml token on documentation key, and set markdown as next token', function (){
     var stream = new CodeMirror.StringStream(
-      "documentation: |",
+      "content: |",
       2);
 
     sinon.spy(codeMirrorHighLight.yaml, "token");

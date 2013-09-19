@@ -27,29 +27,30 @@ angular.module('codeMirror')
     }
 
     mode._yaml = function(stream, state) {
-      if(/(documentation:|description:)(\s?)\|/.test(stream.string)) {
+      if(/(content|description):(\s?)\|/.test(stream.string)) {
         state.token = mode._markdown;
         state.localState = mode.markdown.startState();
-        state.localState.indentation = stream.indentation();
+        state.localState.parentIndentation = stream.indentation();
+        state.localState.base.parentIndentation = state.localState.parentIndentation;
       }
 
       if(/application\/json:/.test(stream.string)) {
         state.token = mode._json;
         state.localState = mode.json.startState();
-        state.localState.indentation = stream.indentation();
+        state.localState.parentIndentation = stream.indentation();
       }
 
       if(/text\/xml:/.test(stream.string)) {
         state.token = mode._xml;
         state.localState = mode.xml.startState();
-        state.localState.indentation = stream.indentation();
+        state.localState.parentIndentation = stream.indentation();
       }
 
       return mode.yaml.token(stream, state.yamlState);
     }
     //TODO: refactor all this duplication
     mode._xml = function (stream, state) {
-      if(stream.indentation() <= state.localState.indentation){
+      if(stream.indentation() <= state.localState.parentIndentation){
         state.token = mode._yaml;
         state.localState = null;
         return mode._yaml(stream, state);
@@ -60,7 +61,7 @@ angular.module('codeMirror')
       return mode.xml.token(stream, state.localState);
     }
     mode._json = function (stream, state) {
-      if(stream.indentation() <= state.localState.indentation){
+      if(stream.indentation() <= state.localState.parentIndentation){
         state.token = mode._yaml;
         state.localState = null;
         return mode._yaml(stream, state);
@@ -71,11 +72,12 @@ angular.module('codeMirror')
       return mode.json.token(stream, state.localState);
     }
     mode._markdown = function (stream, state) {
-      if(stream.indentation() <= state.localState.indentation) {
+      if(stream.indentation() <= state.localState.parentIndentation) {
         state.token = mode._yaml;
         state.localState = null;
         return mode._yaml(stream, state);
       }
+
       return mode.markdown.token(stream, state.localState);
     }
 

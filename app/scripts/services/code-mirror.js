@@ -120,6 +120,23 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       return cm.getLine(_getParentLineNumber(cm, lineNumber, indentLevel));
     }
 
+    function _hasParent(pattern, cm, lineNumber) {
+      if(lineNumber === 0) {
+        return false;
+      }
+
+      var line = cm.getLine(lineNumber);
+      var indentUnit = cm.getOption('indentUnit');
+      var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
+
+      var parentLine = _getParentLine(cm, lineNumber, indent);
+      if (pattern.test(parentLine)) {
+        return true;
+      } else {
+        return _hasParent (pattern, cm, lineNumber -1);
+      }
+    }
+
     service.getFoldRange = function (cm, start) {
       var indentUnit = cm.getOption('indentUnit');
 
@@ -138,6 +155,10 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
 
       if(/(content|schema|example):(\s?)\|/.test(_getParentLine(cm, start.line, indent))) {
         return;
+      }
+
+      if(_hasParent(/(content|schema|example):(\s?)\|/, cm, start.line)){
+        //return;
       }
 
       if(nextLineIndent > indent) {
