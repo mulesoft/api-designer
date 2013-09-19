@@ -102,7 +102,7 @@ angular.module('ramlEditorApp')
       setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
       setTimeout($scope.bootstrap, 0);
       
-      window.editor = editor;
+      //window.editor = editor;
     };
 
     $scope.init();
