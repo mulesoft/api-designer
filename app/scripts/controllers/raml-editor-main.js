@@ -1,9 +1,10 @@
 angular.module('ramlEditorApp')
   .constant('AUTOSAVE_INTERVAL', 60000)
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
+  .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     $scope, safeApply, ramlReader, ramlParser,
-    ramlRepository, eventService, codeMirror, codeMirrorErrors) {
+    ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap) {
     var editor, currentUpdateTimer, saveTimer;
 
 
@@ -100,7 +101,10 @@ angular.module('ramlEditorApp')
       });
 
       setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
-      setTimeout($scope.bootstrap, 0);
+      setTimeout(function () {
+        $scope.bootstrap();
+        afterBootstrap();
+      }, 0);
       
       //window.editor = editor;
     };

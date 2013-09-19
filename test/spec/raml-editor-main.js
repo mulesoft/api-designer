@@ -33,21 +33,25 @@ describe('RAML Editor Main Controller', function () {
         annotationsToDisplay = annotations;
       };
 
-      ramlRepository = sinon.stub();
+      ramlRepository = { bootstrap: function () {} };
 
       params = {
         $scope: scope,
         codeMirror: codeMirror,
         codeMirrorErrors: codeMirrorErrors,
         eventService: eventService,
-        ramlRepository: ramlRepository
+        ramlRepository: ramlRepository,
+        afterBootstrap: function () { }
       };
 
-      ctrl = $controller('ramlMain', params);
     });
-
+    
     it('should display errors on first line if no line specified', function (done) {
       // Arrange
+      params.afterBootstrap = function () {
+        done();
+      };
+      ctrl = $controller('ramlMain', params);
       var error = {
         message: 'Error without line or column!'
       };
@@ -63,7 +67,6 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
       scope.hasErrors.should.be.true;
-      done();
     });
   });
 
