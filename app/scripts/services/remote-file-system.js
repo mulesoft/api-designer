@@ -42,7 +42,11 @@ angular.module('fs')
 
   })
   /* Request Builder */
-  .value('host', 'http://localhost:9000')
+  .factory('host', function ($injector, config) {
+    var host = config.get('host', '');
+
+    return host;
+  })
   .value('method', 'GET')
   .value('path', 'files')
   .factory('requestBuilder', function (config, host, method, path,
@@ -111,19 +115,17 @@ angular.module('fs')
     };
   })
   .constant('TOKEN_COOKIE_KEY', 'raml_token')
+  .value('shouldAutoRunInit', true)
   .factory('requestTokenBuilder', function (config, $cookies, requestBuilder,
-    TOKEN_COOKIE_KEY) {
+    TOKEN_COOKIE_KEY, shouldAutoRunInit) {
     
     var token, tokenProcessed = false;
-
-    // Retrieve the token
-    token = config.get('token');
 
     function shouldExecute(request) {
       if (tokenProcessed) {
         return true;
       } else {
-        if (request.path === 'token') {
+        if (request && request.path === 'token') {
           return true;
         } else {
           // Ignore this request and wait to be processed after the token
@@ -132,25 +134,34 @@ angular.module('fs')
       }
     }
 
-    if (!token) {
-      $cookies[TOKEN_COOKIE_KEY] = undefined;
-      requestBuilder(shouldExecute)
-        .method('POST')
-        .path('token')
-        .success(function (data) {
-          tokenProcessed = true;
-          $cookies[TOKEN_COOKIE_KEY]= data;
-          token = data;
-          config.set('token', token);
-          config.save();
-        })
-        .error(function () {
-          throw {type: 'TokenError', message: 'Token could not be created'};
-        })
-        .call();
-    } else {
-      $cookies[TOKEN_COOKIE_KEY] = token;
-      tokenProcessed = true;
+    function init() {
+      // Retrieve the token
+      token = config.get('token');
+
+      if (!token) {
+        $cookies[TOKEN_COOKIE_KEY] = undefined;
+        requestBuilder(shouldExecute)
+          .method('POST')
+          .path('token')
+          .success(function (data) {
+            tokenProcessed = true;
+            $cookies[TOKEN_COOKIE_KEY] = data;
+            token = data;
+            config.set('token', token);
+            config.save();
+          })
+          .error(function () {
+            throw 'Token could not be created';
+          })
+          .call();
+      } else {
+        $cookies[TOKEN_COOKIE_KEY] = token;
+        tokenProcessed = true;
+      }
+    }
+
+    if (shouldAutoRunInit) {
+      init();
     }
 
     var result = function () {
@@ -158,6 +169,7 @@ angular.module('fs')
     };
 
     result.shouldExecute = shouldExecute;
+    result.init = init;
 
     return result;
   })
@@ -199,14 +211,21 @@ angular.module('fs')
         .call();
     };
 
-
     service.remove = function (path, name, callback, errorCallback) {
       var fullPath = removeInitialSlash(path + name);
+
+      if (!files[fullPath]) {
+        errorCallback();
+        return;
+      }
 
       requestTokenBuilder()
         .method('DELETE')
         .path('files', files[fullPath].id)
-        .success(callback)
+        .success(function () {
+          files[fullPath] = undefined;
+          callback();
+        })
         .error(errorCallback)
         .call();
     };
@@ -232,8 +251,6 @@ angular.module('fs')
           .data({entry: fullPath, content: content})
           .path('files')
           .success(function (data) {
-            // TODO what happens if a request to save enters before saving
-            // the file? does it alter the content?
             var id = JSON.parse(data);
             files[fullPath] = {entry: fullPath, content: content, id: id};
             callback();
