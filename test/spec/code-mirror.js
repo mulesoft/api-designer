@@ -499,53 +499,10 @@ describe('CodeMirror Service', function () {
       var foldRange = codeMirrorService.getFoldRange(editor, { line: 9 });
       should.equal(foldRange, undefined);
 
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 21 });
-      should.equal(foldRange, undefined);
-    });
-
-    it('should not detect ranges inside schema or examples', function (){
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        '/tags:\n' +
-        '  displayName: Tags\n' +
-        '  get:\n' +
-        '    body:\n' +
-        '      application/json:\n' +
-        '        schema: |\n' +
-        '          {\n' +
-        '            "$schema": "http://json-schema.org/draft-03/schema",\n' +
-        '            "properties": {\n' +
-        '            "input": {\n' +
-        '              "required": false,\n' +
-        '              "type": "string"\n' +
-        '            }\n' +
-        '          },\n' +
-        '            "required": false,\n' +
-        '            "type": "object"\n' +
-        '          }\n' +
-        '        example: |\n' +
-        '          [\n' +
-        '            {\n' +
-        '              "name": "job name"\n' +
-        '              "description": "job description"\n' +
-        '            },\n' +
-        '            {\n' +
-        '              "name": "job name"\n' +
-        '              "description": "job description"\n' +
-        '            }\n' +
-        '          ]\n',
-        { line: 0, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 12 });
+      foldRange = codeMirrorService.getFoldRange(editor, { line: 12 });
       should.equal(foldRange, undefined);
 
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 21 });
+      foldRange = codeMirrorService.getFoldRange(editor, { line: 21 });
       should.equal(foldRange, undefined);
     });
   });

@@ -129,11 +129,12 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       var indentUnit = cm.getOption('indentUnit');
       var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
 
-      var parentLine = _getParentLine(cm, lineNumber, indent);
-      if (pattern.test(parentLine)) {
+      var parentLineNumber = _getParentLineNumber(cm, lineNumber, indent);
+
+      if (pattern.test(cm.getLine(parentLineNumber))) {
         return true;
       } else {
-        return _hasParent (pattern, cm, lineNumber -1);
+        return _hasParent (pattern, cm, parentLineNumber);
       }
     }
 
@@ -158,7 +159,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       }
 
       if(_hasParent(/(content|schema|example):(\s?)\|/, cm, start.line)){
-        //return;
+        return;
       }
 
       if(nextLineIndent > indent) {

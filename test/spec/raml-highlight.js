@@ -207,7 +207,7 @@ describe('RAML Highlight Service', function (){
     var state = mode.startState();
     state.token = codeMirrorHighLight._xml;
     state.localState = codeMirrorHighLight.xml.startState();
-    state.localState.indentation = 2;
+    state.localState.parentIndentation = 2;
 
     sinon.spy(codeMirrorHighLight.yaml, "token");
     mode.token(stream, state);
@@ -226,7 +226,7 @@ describe('RAML Highlight Service', function (){
     var state = mode.startState();
     state.token = codeMirrorHighLight._json;
     state.localState = codeMirrorHighLight.json.startState();
-    state.localState.indentation = 2;
+    state.localState.parentIndentation = 2;
 
     sinon.spy(codeMirrorHighLight.yaml, "token");
     mode.token(stream, state);
@@ -245,7 +245,7 @@ describe('RAML Highlight Service', function (){
     var state = mode.startState();
     state.token = codeMirrorHighLight._markdown;
     state.localState = codeMirrorHighLight.markdown.startState();
-    state.localState.indentation = 2;
+    state.localState.parentIndentation = 2;
 
     sinon.spy(codeMirrorHighLight.yaml, "token");
     mode.token(stream, state);
