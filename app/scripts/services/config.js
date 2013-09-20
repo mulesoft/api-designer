@@ -6,12 +6,15 @@ angular.module('raml')
     var configService = {}, config = {};
 
     configService.loadFromLocalStorage = function loadFromLocalStorage () {
-      if (window && window.localStorage && window.localStorage.config) {
-        try {
-          config = JSON.parse(localStorage.config);
-        } catch (e) {
-          config = {};
-          localStorage.config = JSON.stringify({});
+      var i, key;
+
+      if (window && window.localStorage) {
+        for (i = 0; i < localStorage.length; i++){
+          key = localStorage.key(i);
+
+          if (key.indexOf('config.') === 0) {
+            config[key.substring('config.'.length)] = localStorage.getItem(key);
+          }
         }
       }
     };
@@ -33,7 +36,12 @@ angular.module('raml')
     };
 
     configService.save = function () {
-      localStorage.config = JSON.stringify(config);
+      var key, value;
+      for (key in config) {
+        value = config[key];
+
+        localStorage['config.' + key] = value;
+      }
     };
 
     configService.loadFromLocalStorage();

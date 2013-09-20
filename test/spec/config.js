@@ -11,6 +11,8 @@ describe('RAML Config Service', function () {
 
   beforeEach(function () {
 
+    localStorage.clear();
+
     inject(function ($injector) {
       config = $injector.get('config');
       delete localStorage.config;
@@ -19,12 +21,13 @@ describe('RAML Config Service', function () {
   });
 
   it('should obtain value from localStorage', function () {
-    localStorage.config = JSON.stringify({a: 5, b: 7});
+    localStorage['config.a'] = '5';
+    localStorage['config.b'] = '7';
 
     config.loadFromLocalStorage();
 
-    config.get('a').should.be.equal(5);
-    config.get('b').should.be.equal(7);
+    config.get('a').should.be.equal('5');
+    config.get('b').should.be.equal('7');
     should.not.exist(config.get('c'));
   });
 
@@ -43,18 +46,16 @@ describe('RAML Config Service', function () {
   });
 
   it('should correctly persist the configuration to localStorage', function () {
-    var previousLocalStorageConfig = localStorage.config;
-    should.not.exist(previousLocalStorageConfig);
+    should.not.exist(localStorage['config.t']);
+    should.not.exist(localStorage['config.8']);
 
-    config.set('t', 87);
-    config.set('8', 123);
+    config.set('t', '87');
+    config.set('8', '123');
 
     config.save();
 
-    var currentLocalStorageConfig = JSON.parse(localStorage.config);
-
-    currentLocalStorageConfig.t.should.be.equal(87);
-    currentLocalStorageConfig[8].should.be.equal(123);
+    localStorage['config.t'].should.be.equal('87');
+    localStorage['config.8'].should.be.equal('123');
   });
 
 });
