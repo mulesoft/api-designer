@@ -364,5 +364,146 @@ describe('CodeMirror Service', function () {
       foldRange = codeMirrorService.getFoldRange(editor, { line: 9 });
       foldRange.should.deep.equal({ from: { line: 9, ch: 7 }, to: { line: 11, ch: 55} });
     });
+
+    it('should not detect ranges for empty lines', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        'documentation:\n' +
+        ' - title: this is the title\n' +
+        '   content: |\n' +
+        '     this is some content\n' +
+        '     with multiple lines\n' +
+        '     with the same indentations\n' +
+        '     that should be ignored\n' +
+        '\n' +
+        '       empty lines to\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags\n' +
+        '  post:\n' +
+        '    summary: Create a new tagged media\n' +
+        '    description: This is a description of creating tags',
+        { line: 0, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 10 });
+      should.equal(foldRange, undefined);
+    });
+
+    it('should not detect ranges inside content blocks', function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        'documentation:\n' +
+        ' - title: this is the title\n' +
+        '   content: |\n' +
+        '     this is some content\n' +
+        '     with multiple lines\n' +
+        '     with the same indentation\n' +
+        '     that should be ignored\n' +
+        '     \n' +
+        '     empty lines to\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags\n' +
+        '  post:\n' +
+        '    summary: Create a new tagged media\n' +
+        '    description: This is a description of creating tags',
+        { line: 0, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 7 });
+      should.equal(foldRange, undefined);
+    });
+
+    it('should ignore empty lines inside content blocks', function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        'documentation:\n' +
+        ' - title: this is the title\n' +
+        '   content: |\n' +
+        '     this is some content\n' +
+        '     with multiple lines\n' +
+        '     with the same indentations\n' +
+        '     that should be ignored\n' +
+        '\n' +
+        '     empty lines to\n' +
+        '     as long as they are inside a content element\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags\n' +
+        '  post:\n' +
+        '    summary: Create a new tagged media\n' +
+        '    description: This is a description of creating tags',
+        { line: 0, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 5 });
+      foldRange.should.deep.equal({ from: { line: 5, ch: 13 }, to: { line: 12, ch: 49} });
+    });
+
+    it('should not detect ranges inside schema or examples', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  displayName: Tags\n' +
+        '  get:\n' +
+        '    body:\n' +
+        '      application/json:\n' +
+        '        schema: |\n' +
+        '          {\n' +
+        '            "$schema": "http://json-schema.org/draft-03/schema",\n' +
+        '            "properties": {\n' +
+        '            "input": {\n' +
+        '              "required": false,\n' +
+        '                "type": "string"\n' +
+        '            }\n' +
+        '          },\n' +
+        '            "required": false,\n' +
+        '            "type": "object"\n' +
+        '          }\n' +
+        '        example: |\n' +
+        '          [\n' +
+        '            {\n' +
+        '              "name": "job name"\n' +
+        '              "description": "job description"\n' +
+        '            },\n' +
+        '            {\n' +
+        '              "name": "job name"\n' +
+        '              "description": "job description"\n' +
+        '            }\n' +
+        '          ]\n',
+        { line: 0, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 9 });
+      should.equal(foldRange, undefined);
+
+      foldRange = codeMirrorService.getFoldRange(editor, { line: 12 });
+      should.equal(foldRange, undefined);
+
+      foldRange = codeMirrorService.getFoldRange(editor, { line: 21 });
+      should.equal(foldRange, undefined);
+    });
   });
 });

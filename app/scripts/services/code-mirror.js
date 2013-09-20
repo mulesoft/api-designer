@@ -71,13 +71,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
 
       //this overrides everything else, because the '|' explicitly declares the line as a scalar
       //with a continuation on other lines. This applies to the current line or the parent of the current line
-      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indent > 0 ? indent - 1 : 0];
-
-      var parentLineNumber = potentialParents.filter(function (line) {
-        return line < editorState.start.line;
-      }).pop();
-
-      var parentLine = cm.getLine(parentLineNumber);
+      var parentLine = _getParentLine(cm, editorState.start.line, indent);
 
       if(curLineWithoutTabs.match(/\|$/)) {
         _replaceSelection(cm, 1, "");
@@ -113,24 +107,67 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       editor.replaceSelection(spaces, "end", "+input");
     }
 
+    function _getParentLineNumber (cm, lineNumber, indentLevel) {
+      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? indentLevel - 1 : 0];
+      var parent = potentialParents.filter(function (line) {
+        return line < lineNumber;
+      }).pop();
+
+      return parent;
+    }
+
+    function _getParentLine (cm, lineNumber, indentLevel) {
+      return cm.getLine(_getParentLineNumber(cm, lineNumber, indentLevel));
+    }
+
+    function _hasParent(pattern, cm, lineNumber) {
+      if(lineNumber === 0) {
+        return false;
+      }
+
+      var line = cm.getLine(lineNumber);
+      var indentUnit = cm.getOption('indentUnit');
+      var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
+
+      var parentLineNumber = _getParentLineNumber(cm, lineNumber, indent);
+
+      if (pattern.test(cm.getLine(parentLineNumber))) {
+        return true;
+      } else {
+        return _hasParent (pattern, cm, parentLineNumber);
+      }
+    }
+
     service.getFoldRange = function (cm, start) {
       var indentUnit = cm.getOption('indentUnit');
 
       var line = cm.getLine(start.line);
+
+      if(line.length === 0) {
+        return;
+      }
+
       var nextLine = cm.getLine(start.line + 1);
       if (!nextLine) {
         return;
       }
-
       var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
       var nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
+
+      if(/(content|schema|example):(\s?)\|/.test(_getParentLine(cm, start.line, indent))) {
+        return;
+      }
+
+      if(_hasParent(/(content|schema|example):(\s?)\|/, cm, start.line)){
+        return;
+      }
 
       if(nextLineIndent > indent) {
         for(var i = start.line + 2, end = cm.lineCount(); i < end; ++i) {
           nextLine = cm.getLine(i);
           nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1
 
-          if(nextLineIndent <= indent) {
+          if(nextLineIndent <= indent && nextLine.length > 0) {
             nextLine = cm.getLine(i-1);
             return {
               from: CodeMirror.Pos(start.line, line.length),

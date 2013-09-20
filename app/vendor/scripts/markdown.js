@@ -112,7 +112,6 @@ CodeMirror.defineMode("markdown", function(cmCfg, modeCfg) {
   }
 
   function blockNormal(stream, state) {
-
     var prevLineIsList = (state.list !== false);
     if (state.list !== false && state.indentationDiff >= 0) { // Continued list
       if (state.indentationDiff < 4) { // Only adjust indentation if *not* a code block
@@ -472,7 +471,8 @@ CodeMirror.defineMode("markdown", function(cmCfg, modeCfg) {
         listDepth: 0,
         quote: 0,
         trailingSpace: 0,
-        trailingSpaceNewLine: false
+        trailingSpaceNewLine: false,
+        parentIndentation: 0
       };
     },
 
@@ -502,6 +502,9 @@ CodeMirror.defineMode("markdown", function(cmCfg, modeCfg) {
         quote: s.quote,
         trailingSpace: s.trailingSpace,
         trailingSpaceNewLine: s.trailingSpaceNewLine,
+
+        parentIndentation: s.parentIndentation,
+
         md_inside: s.md_inside
       };
     },
@@ -530,11 +533,11 @@ CodeMirror.defineMode("markdown", function(cmCfg, modeCfg) {
         state.trailingSpaceNewLine = false;
 
         state.f = state.block;
-        var indentation = stream.match(/^\s*/, true)[0].replace(/\t/g, '    ').length;
-        var difference = Math.floor((indentation - state.indentation) / 4) * 4;
+        var indentation = stream.match(/^\s*/, true)[0].replace(/\t/g, '    ').length - state.parentIndentation;
+        var difference = Math.floor((indentation - state.indentation - state.parentIndentation) / 4) * 4;
         if (difference > 4) difference = 4;
-        var adjustedIndentation = state.indentation + difference;
-        state.indentationDiff = adjustedIndentation - state.indentation;
+        var adjustedIndentation = state.indentation + difference - state.parentIndentation;
+        state.indentationDiff = adjustedIndentation - state.indentation - state.parentIndentation;
         state.indentation = adjustedIndentation;
         if (indentation > 0) return null;
       }
