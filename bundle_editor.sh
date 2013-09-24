@@ -19,6 +19,7 @@ grunt raml-console-embedded-debug
 echo "copying console files to editor..."
 cp $RAML_CODE_HOME/console/dist/app.css $RAML_CODE_HOME/javascript-editor/app/vendor/styles/raml-console.css
 cp $RAML_CODE_HOME/console/dist/app.js  $RAML_CODE_HOME/javascript-editor/app/vendor/scripts/raml-console.js
+cp -r $RAML_CODE_HOME/console/dist/font  $RAML_CODE_HOME/javascript-editor/app/vendor/
 
 echo "building parser..."
 cd $RAML_CODE_HOME/javascript-parser
