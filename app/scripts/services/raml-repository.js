@@ -2,10 +2,10 @@
 
 angular.module('fs', ['raml', 'utils', 'ngCookies'])
   .factory('fileSystem', function ($injector, config) {
-    var fsFactory = config.get('fsFactory', 'remoteFileSystem');
-    //var fsFactory = config.get('fsFactory', 'mockFileSystem');
+    //var fsFactory = config.get('fsFactory', 'remoteFileSystem');
+    var fsFactory = config.get('fsFactory', 'mockFileSystem');
 
-    //config.save();
+    config.save();
 
     return $injector.get(fsFactory);
   })
