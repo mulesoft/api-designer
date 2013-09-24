@@ -3,7 +3,7 @@ angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
-    $scope, safeApply, ramlParser,
+    $scope, safeApply, ramlReader, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap) {
     var editor, currentUpdateTimer, saveTimer;
 
@@ -60,7 +60,7 @@ angular.module('ramlEditorApp')
     $scope.canSave = function () {
       return $scope.file && $scope.file.dirty;
     };
-
+    
 
     $scope.save = function () {
       if ($scope.canSave()) {
@@ -74,7 +74,7 @@ angular.module('ramlEditorApp')
         });
       }
     };
-
+    
     eventService.on('event:save', function (e, args) {
       $scope.save();
     });
@@ -105,7 +105,7 @@ angular.module('ramlEditorApp')
         $scope.bootstrap();
         afterBootstrap();
       }, 0);
-
+      
       //window.editor = editor;
     };
 
