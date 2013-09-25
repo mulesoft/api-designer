@@ -32,9 +32,10 @@ angular.module('raml', [])
 
                 if (typeof raml.baseUri !== 'undefined') {
                     result.baseUri = raml.baseUri;
-                } else {
-                    throw new Error('baseUri is not defined');
                 }
+                // } else {
+                //     throw new Error('baseUri is not defined');
+                // }
 
 
                 if (typeof raml.version !== 'undefined') {

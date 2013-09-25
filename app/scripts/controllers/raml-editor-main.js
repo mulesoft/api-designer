@@ -32,6 +32,8 @@ angular.module('ramlEditorApp')
       ramlParser.load(definition).then(function (result) {
         codeMirrorErrors.clearAnnotations();
         eventService.broadcast('event:raml-parsed', result);
+        $scope.hasErrors = false;
+        safeApply();
       }, function (error) {
         eventService.broadcast('event:raml-parser-error', error);
       });
@@ -45,7 +47,7 @@ angular.module('ramlEditorApp')
       annotations.push({ message: error.message, line: line + 1, column: column + 1});
       codeMirrorErrors.displayAnnotations(annotations);
       $scope.hasErrors = true;
-      $scope.$apply();
+      safeApply();
     });
 
     $scope.bootstrap = function () {
@@ -60,7 +62,7 @@ angular.module('ramlEditorApp')
     $scope.canSave = function () {
       return $scope.file && $scope.file.dirty;
     };
-    
+
 
     $scope.save = function () {
       if ($scope.canSave()) {
@@ -74,7 +76,7 @@ angular.module('ramlEditorApp')
         });
       }
     };
-    
+
     eventService.on('event:save', function (e, args) {
       $scope.save();
     });
@@ -105,7 +107,7 @@ angular.module('ramlEditorApp')
         $scope.bootstrap();
         afterBootstrap();
       }, 0);
-      
+
       //window.editor = editor;
     };
 
