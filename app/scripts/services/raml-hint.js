@@ -70,8 +70,13 @@ angular.module('raml')
       var word = options && options.word || WORD;
       var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
       var startPos = cur.ch, endPos = startPos;
-      var spaces = new Array(indentUnit + 1).join(' ');
-      var currLineTabCount = curLine.split(spaces).length - 1;
+
+      var currLineTabCount = 0;
+      var curLineSpaces = curLine.match(/^\s+/);
+      if(curLineSpaces) {
+        currLineTabCount = Math.floor(curLineSpaces[0].length / indentUnit);
+      }
+
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }

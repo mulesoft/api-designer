@@ -256,20 +256,104 @@ describe('CodeMirror Service', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
-          'baseUri: http://www.api.com/{version}/{company}\n' +
-          'version: v1.1\n' +
-          '/tags:\n' +
-          '   \n' +
-          '  name: Tags\n' +
-          '  description: This is a description of tags\n' +
-          '  get:\n' +
-          '    summary: Get a list of recently tagged media\n' +
-          '    description: This is a description of getting tags',
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '   \n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
         { line: 4, ch: 2 },
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
       editor.spacesToInsert.should.be.equal("\n" + sp(3));
+    });
+
+    it('should keep the same indentation level if the cursor is in the middle of a sentence.', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags      with spaces in it\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 5, ch: 43 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+    });
+
+    it('should keep the same indentation level if the cursor is in the middle of a sentence.', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+          'baseUri: http://www.api.com/{version}/{company}\n' +
+          'version: v1.1\n' +
+          '/tags:\n' +
+          '  name: Tags\n' +
+          '  description: This is a description of tags      with spaces in it\n' +
+          '  get:\n' +
+          '    summary: Get a list of recently tagged media\n' +
+          '    description: This is a description of getting tags',
+        { line: 5, ch: 43 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+    });
+
+    it('should keep the same indentation level if the cursor is in the middle of a sentence, but not on the first line.', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags with spaces in it\n' +
+        '    but no in the first        line\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 6, ch: 22 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      console.log(">>>>", editor.spacesToInsert.length);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+    });
+
+    it('should detect traits and add an extra indentation level', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        'traits:\n' +
+        '  - trait-one:\n' +
+        '  - trait-two:\n' +
+        '    trait-three:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 4, ch: 13 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 3));
+
+      editor.setCursor(6, 15);
+      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 3));
     });
 
     it.skip("should use a mocked ramHint service", inject(function () {
