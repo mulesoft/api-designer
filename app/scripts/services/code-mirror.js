@@ -73,7 +73,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       //with a continuation on other lines. This applies to the current line or the parent of the current line
       var parentLine = _getParentLine(cm, editorState.start.line, indent);
 
-      if(curLineWithoutTabs.match(/\|$/)) {
+      if(curLineWithoutTabs && curLineWithoutTabs.match(/\|$/)) {
         _replaceSelection(cm, 1, "");
         return;
       }
@@ -143,7 +143,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
     }
 
     function _hasParent(pattern, cm, lineNumber) {
-      if(lineNumber === 0) {
+      if(lineNumber === 0 || !lineNumber) {
         return false;
       }
 
