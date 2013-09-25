@@ -12,6 +12,10 @@
     getCursor: function () {
       return this.cursor;
     },
+    setCursor: function (line, character) {
+      this.cursor.line = line;
+      this.cursor.ch = character;
+    },
     getLine: function (line) {
       //console.log(line, this.text.split('\n')[line]);
       return this.text.split('\n')[line];

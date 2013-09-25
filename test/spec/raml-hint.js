@@ -100,6 +100,30 @@ describe('RAML Hint Service', function () {
       (editorState.curLine).should.be.equal('  /bye:');
       (editorState.currLineTabCount).should.be.equal(1);
     });
+
+    it('curr line tab count should count only the leading spaces', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '/hello:\n' +
+        '  /bye:\n' +
+        '    get: {}\n' +
+        '      description: this is a text     with spaces\n' +
+        '  /ciao:\n' +
+        '    get:\n',
+        {line: 6, ch: 6});
+
+      var editorState = hinter.getEditorState(editor);
+      (editorState).should.be.ok;
+      (editorState.curWord).should.be.equal('description');
+      (editorState.start.line).should.be.equal(6);
+      (editorState.start.ch).should.be.equal(6);
+      (editorState.end.line).should.be.equal(6);
+      (editorState.end.ch).should.be.equal(17);
+      (editorState.curLine).should.be.equal('      description: this is a text     with spaces');
+      (editorState.currLineTabCount).should.be.equal(3);
+    });
   });
 
   describe('getKeysToErase', function () {
