@@ -2,8 +2,11 @@
 
 angular.module('fs', ['raml', 'utils', 'ngCookies'])
   .factory('fileSystem', function ($injector, config) {
-    //var fsFactory = config.get('fsFactory', 'remoteFileSystem');
     var fsFactory = config.get('fsFactory', 'mockFileSystem');
+
+    if (window.location.origin === 'https://j0hn.mulesoft.org') {
+      fsFactory = 'remoteFileSystem';
+    }
 
     config.save();
 
