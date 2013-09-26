@@ -1,10 +1,19 @@
 'use strict';
 
 angular.module('raml')
-  .factory('mockFileSystem', function () {
+  .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
+  .factory('mockFileSystem', function (LOCAL_PERSISTENCE_KEY) {
     var service = {};
     var files = [];
     var delay = 500;
+
+    if (localStorage[LOCAL_PERSISTENCE_KEY]) {
+      try {
+        files = JSON.parse(localStorage[LOCAL_PERSISTENCE_KEY]);
+      } catch (e) {
+        files = [];
+      }
+    }
 
     service.directory = function (path, callback, errorCallback) {
       var entries = files
@@ -74,52 +83,55 @@ angular.module('raml')
         } else {
           if (found) {
             found.contents = contents;
+            localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
             callback();
           }
         }
       }, delay);
     };
 
-    files.push({
-      path: '/',
-      name: 'traits.yaml',
-      contents: '' +
-        '#%RAML 0.2\n' +
-        '---\n' +
-        'title: Example API\n' +
-        'baseUri: http://localhost:3000/api/{company}/\n' +
-        'version: 1.0\n' +
-        'traits:\n' +
-        '  - secured:\n' +
-        '      displayName: Secured\n' +
-        '      queryParameters:\n' +
-        '        q:\n' +
-        '          displayName: q\n' +
-        '          type: string\n' +
-        '          required: true\n' +
-        '          description: filters the users collection\n' +
-        '          example: name=John Doe\n' +
-        '  - collection:\n' +
-        '      displayName: Collection\n' +
-        '      summary: Collection of <<item>>\n' +
-        '/users:\n' +
-        '  displayName: Users Collection\n' +
-        '  is: [ secured, collection: { item: Users } ]\n' +
-        '  get:\n' +
-        '    responses:\n' +
-        '      200:\n' +
-        '        summary: OK\n' +
-        '        description: |\n' +
-        '          This operation returns a collection of **users**\n' +
-        '      403:\n' +
-        '        summary: Unauthorized\n' +
-        '        description: |\n' +
-        '          The user doesn\'t have enough permissions to invoke this operation\n' +
-        '  /{userId}:\n' +
-        '    displayName: Single User\n' +
-        '    get:\n' +
-        '      summary: Returns a single user\n'
-    });
+    if (files.length === 0) {
+      files.push({
+        path: '/',
+        name: 'traits.yaml',
+        contents: '' +
+          '#%RAML 0.2\n' +
+          '---\n' +
+          'title: Example API\n' +
+          'baseUri: http://localhost:3000/api/{company}/\n' +
+          'version: 1.0\n' +
+          'traits:\n' +
+          '  - secured:\n' +
+          '      displayName: Secured\n' +
+          '      queryParameters:\n' +
+          '        q:\n' +
+          '          displayName: q\n' +
+          '          type: string\n' +
+          '          required: true\n' +
+          '          description: filters the users collection\n' +
+          '          example: name=John Doe\n' +
+          '  - collection:\n' +
+          '      displayName: Collection\n' +
+          '      summary: Collection of <<item>>\n' +
+          '/users:\n' +
+          '  displayName: Users Collection\n' +
+          '  is: [ secured, collection: { item: Users } ]\n' +
+          '  get:\n' +
+          '    responses:\n' +
+          '      200:\n' +
+          '        summary: OK\n' +
+          '        description: |\n' +
+          '          This operation returns a collection of **users**\n' +
+          '      403:\n' +
+          '        summary: Unauthorized\n' +
+          '        description: |\n' +
+          '          The user doesn\'t have enough permissions to invoke this operation\n' +
+          '  /{userId}:\n' +
+          '    displayName: Single User\n' +
+          '    get:\n' +
+          '      summary: Returns a single user\n'
+      });
+    }
 
     return service;
   });
