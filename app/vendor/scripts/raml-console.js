@@ -33,10 +33,6 @@ angular.module('raml', [])
                 if (typeof raml.baseUri !== 'undefined') {
                     result.baseUri = raml.baseUri;
                 }
-                // } else {
-                //     throw new Error('baseUri is not defined');
-                // }
-
 
                 if (typeof raml.version !== 'undefined') {
                     result.version = raml.version;
@@ -72,8 +68,8 @@ angular.module('raml', [])
                     result.name = methodDescriptor.method;
                 }
 
-                if (typeof methodDescriptor.summary !== 'undefined') {
-                    result.summary = methodDescriptor.summary;
+                if (typeof methodDescriptor.description !== 'undefined') {
+                    result.description = methodDescriptor.description;
                 }
 
                 if (typeof methodDescriptor.responses !== 'undefined') {
@@ -192,6 +188,10 @@ angular.module('raml', [])
                     result.name = result.relativeUri;
                 }
 
+                if (result.type) {
+                    result.resourceType = this.readResourceType(result, raml.resourceTypes);
+                }
+
                 if (typeof result.relativeUri === 'undefined') {
                     throw new Error('relativeUri is not defined');
                 }
@@ -215,6 +215,19 @@ angular.module('raml', [])
                 result.absoluteUri = raml.baseUri + result.relativeUri;
 
                 return result;
+            },
+            readResourceType: function (resource, resourceTypeDetails) {
+                var resourceTypeName;
+
+                for (var prop in resource.type) {
+                    resourceTypeName = prop;
+                }
+
+                if (!resourceTypeName) {
+                    return null;
+                } else {
+                    return resourceTypeName;
+                }
             },
             readTraitsDeep: function (resource, traitsDetails) {
                 var traits = [];
@@ -294,6 +307,9 @@ angular.module('raml', [])
                         temp = JSON.parse(JSON.stringify(el));
 
                         delete temp.resources;
+
+                        temp.parentUri = uriPart;
+                        temp.localUri = temp.relativeUri;
 
                         temp.relativeUri = uriPart + temp.relativeUri;
                         el.relativeUri = temp.relativeUri;
@@ -461,15 +477,22 @@ angular.module('helpers')
 'use strict';
 
 angular.module('helpers')
-  .factory('eventService', function ($rootScope) {
+  .factory('eventService', function ($rootScope, $timeout) {
     var service = {};
+    var lastEvents = {};
 
     service.broadcast = function (eventName, data) {
       $rootScope.$broadcast(eventName, data);
+      lastEvents[eventName] = { data: data };
     };
 
     service.on = function (eventName, handler) {
       $rootScope.$on(eventName, handler);
+      if (lastEvents[eventName] && handler) {
+        $timeout(function () {
+          handler({}, lastEvents[eventName].data);
+        });
+      }
     };
 
     return service;
@@ -490,7 +513,7 @@ angular.module('ramlConsoleApp')
 'use strict';
 
 angular.module('ramlConsoleApp')
-    .directive('ramlConsole', function (ramlReader) {
+    .directive('ramlConsole', function ($rootScope, ramlReader) {
         return {
             restrict: 'E',
             templateUrl: 'views/raml-console.tmpl.html',
@@ -500,30 +523,19 @@ angular.module('ramlConsoleApp')
                 'id': '@',
                 'definition': '@'
             },
-
             link: function ($scope) {
                 $scope.resources = [];
                 $scope.consoleSettings = { displayTryIt: true };
 
-                $scope.$on('event:raml-parsed', function (e, args) {
-                    var definition = ramlReader.read(args)
-                    $scope.baseUri = ramlReader.processBaseUri(definition);
-                    $scope.resources = definition.resources;
-                    $scope.documentation = definition.documentation;
+                $rootScope.$on('event:raml-parsed', function (e, args) {
+                    $scope.baseUri = ramlReader.processBaseUri(args);
+                    $scope.resources = args.resources;
+                    $scope.documentation = args.documentation;
                     $scope.$apply();
                 });
             }
         };
     });
-
-angular.module("ramlConsoleApp").run(["$rootScope", "eventService", "ramlReader", function($rootScope, eventService, ramlReader) {
-  $rootScope.$on('event:raml-parsed', function (e, args) {
-      var definition = ramlReader.read(args)
-      eventService.broadcast('event:raml-operation-list-published', definition.resources);
-      $rootScope.$apply();
-  });
-}]);
-
 'use strict';
 
 angular.module('ramlConsoleApp')
@@ -697,19 +709,19 @@ angular.module('ramlConsoleApp')
             }
         };
 
-        $scope.hasSummary = function (value) {
+        $scope.hasDescription = function (value) {
             return !(typeof value !== 'undefined' && value !== '');
         };
 
         $scope.initTabs = function () {
-            if (this.tabs) {
+            if ($scope.tabs) {
                 return;
             }
 
-            this.tabs = [];
+            $scope.tabs = [];
 
             if ($scope.consoleSettings && $scope.consoleSettings.displayTryIt){
-                this.tabs.push({
+                $scope.tabs.push({
                     name: 'try-it',
                     displayName: 'Try It',
                     view: 'views/raml-operation-details-try-it.tmpl.html',
@@ -719,7 +731,7 @@ angular.module('ramlConsoleApp')
                 });
             }
 
-            this.tabs.push({
+            $scope.tabs.push({
                 name: 'parameters',
                 displayName: 'Parameters',
                 view: 'views/raml-operation-details-parameters.tmpl.html',
@@ -729,7 +741,7 @@ angular.module('ramlConsoleApp')
                 }
             });
 
-            this.tabs.push({
+            $scope.tabs.push({
                 name: 'requests',
                 displayName: 'Request',
                 view: 'views/raml-operation-details-request.tmpl.html',
@@ -738,7 +750,7 @@ angular.module('ramlConsoleApp')
                 }
             });
 
-            this.tabs.push({
+            $scope.tabs.push({
                 name: 'response',
                 displayName: 'Response',
                 view: 'views/raml-operation-details-response.tmpl.html',
@@ -747,10 +759,20 @@ angular.module('ramlConsoleApp')
                 }
             });
 
-            this.tabName = this.tabs[0].name;
+            $scope.initSelectedTab();
+        };
+
+        $scope.initSelectedTab = function () {
+            $scope.tabName = null;
+            $scope.tabs.forEach(function (tab) {
+                if (!$scope.tabName && tab.show()) {
+                    $scope.tabName = tab.name;
+                }
+            });
         };
 
         $scope.$on('event:raml-method-changed', function () {
+            $scope.initSelectedTab();
             if ($scope.operation.supportedTypes && $scope.operation.supportedTypes.length) {
                 eventService.broadcast('event:raml-body-type-changed', $scope.operation.supportedTypes[0]);
             } else {
@@ -1366,9 +1388,9 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   $templateCache.put("views/raml-operation-details.tmpl.html",
     "<section role=\"api-operation-details\" ng-show=\"operation\" ng-controller=\"ramlOperationDetails\">\n" +
     "  <header>\n" +
-    "      <h1>Summary</h1>\n" +
-    "      <p>{{operation.summary}}</p>\n" +
-    "      <p ng-if=\"hasSummary(operation.summary)\">No summary.</p>\n" +
+    "      <h1>Description</h1>\n" +
+    "      <p ng-show=\"operation.description\">{{operation.description}}</p>\n" +
+    "      <p ng-hide=\"operation.description\">No description.</p>\n" +
     "  </header>\n" +
     "  <div role=\"details-body\">\n" +
     "    <ul role=\"details-sections\">\n" +
@@ -1406,8 +1428,8 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "<section role=\"api-operation\" ng-class=\"{active:active, first:$first, last:$last}\" ng-controller=\"ramlOperation\">\n" +
     "  <header id=\"operationHeader\" ng-click=\"headerClick()\">\n" +
     "    <hgroup>\n" +
-    "      <h1>{{resource.displayName}}</h1>\n" +
-    "      <h2>{{resource.relativeUri}}</h2>\n" +
+    "      <h2><span ng-show=\"resource.parentUri\">{{resource.parentUri}}&nbsp;</span><strong>{{resource.localUri || resource.relativeUri}}</strong></h2>\n" +
+    "      <h1 ng-show=\"resource.resourceType\">Type: <strong>{{resource.resourceType}}</strong></h1>\n" +
     "    </hgroup>\n" +
     "    <div role=\"summary\">\n" +
     "      <ul role=\"traits\">\n" +
