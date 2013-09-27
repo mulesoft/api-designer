@@ -375,6 +375,39 @@ div.CodeMirror {
   background: rgb(20,21,25);
 }
 
+.CodeMirror-hints {
+  background: rgba(19,33,40,1);
+  border-radius: 0px;
+  transition: ease-in 0.1s;
+}
+
+.CodeMirror-hint {
+  max-width: 100%;
+  background: rgb(19,33,40,0.8);
+  color: gray;
+  border-radius: 0px;
+
+}
+
+.CodeMirror-hint-active {
+  background-color: #9b225c;
+  transition: background-color 0.1s;
+  border-radius: 25px;
+  color: white;
+  border-radius: 0px;
+}
+
+
+.CodeMirror-hint div {
+  float: left;
+}
+
+.CodeMirror-hint div.category {
+  font-size: 10px;
+  float: right;
+  padding-left: 10px;
+}
+
 div[role=code] {
   border-top: 1px solid rgb(42,44,51);
 }
