@@ -327,7 +327,6 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      console.log(">>>>", editor.spacesToInsert.length);
       editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
     });
 
@@ -449,6 +448,25 @@ describe('CodeMirror Service', function () {
       foldRange.should.deep.equal({ from: { line: 9, ch: 7 }, to: { line: 11, ch: 55} });
     });
 
+    it('should detect fold ranges for elements with children with more than one indentation level (traits, resourceTypes, etc)', function () {
+      var indentUnit = 2;
+      editor = getEditor(
+        '#%RAML 0.2\n' +
+        '---\n' +
+        'title: Example API\n' +
+        'baseUri: http://localhost:3000/api/{company}/\n' +
+        'version: 1.0\n' +
+        'traits:\n' +
+        '  - secured:\n' +
+        '      displayName: Secured\n' +
+        '      securitySchemes:',
+        { line: 7, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 6 });
+      foldRange.should.deep.equal({ from: { line: 6, ch: 12 }, to: { line: 8, ch: 22} });
+    });
+
     it('should not detect ranges for empty lines', function (){
       var indentUnit = 2;
       editor = getEditor(
@@ -505,6 +523,25 @@ describe('CodeMirror Service', function () {
         '    summary: Create a new tagged media\n' +
         '    description: This is a description of creating tags',
         { line: 0, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 7 });
+      should.equal(foldRange, undefined);
+    });
+
+    it('should not detect ranges for items with more than one indentation level and no children (traits, resourceTypes, etc)', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        '#%RAML 0.2\n' +
+        '---\n' +
+        'title: Example API\n' +
+        'baseUri: http://localhost:3000/api/{company}/\n' +
+        'version: 1.0\n' +
+        'traits:\n' +
+        '  - secured:\n' +
+        '      displayName: Secured\n' +
+        '      securitySchemes:',
+        { line: 7, ch: 0 },
         { indentUnit: indentUnit });
 
       var foldRange = codeMirrorService.getFoldRange(editor, { line: 7 });
