@@ -112,24 +112,23 @@ angular.module('raml')
           '          example: name=John Doe\n' +
           '  - collection:\n' +
           '      displayName: Collection\n' +
-          '      summary: Collection of <<item>>\n' +
+          '      description: Collection of <<item>>\n' +
           '/users:\n' +
           '  displayName: Users Collection\n' +
           '  is: [ secured, collection: { item: Users } ]\n' +
           '  get:\n' +
           '    responses:\n' +
           '      200:\n' +
-          '        summary: OK\n' +
           '        description: |\n' +
           '          This operation returns a collection of **users**\n' +
           '      403:\n' +
-          '        summary: Unauthorized\n' +
           '        description: |\n' +
           '          The user doesn\'t have enough permissions to invoke this operation\n' +
           '  /{userId}:\n' +
           '    displayName: Single User\n' +
           '    get:\n' +
-          '      summary: Returns a single user\n'
+          '      is: [ secured ]\n' +
+          '      description: Returns a single user\n'
       });
     }
 

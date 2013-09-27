@@ -751,20 +751,27 @@ section[role=api-operation] > header {
   height: 73px;
 }
 section[role=api-operation] > header h1 {
-  font-size: 13px;
-  font-weight: bold;
+  font-size: 11px;
+  font-weight: normal;
   margin: 0px;
   padding: 0px;
-  color: black;
+  padding-top: 12px;
+  color: #9ea3a6;
+}
+section[role=api-operation] > header h1 strong {
+  color: #666;
 }
 section[role=api-operation] > header h2 {
   font-size: 12px;
   font-weight: normal;
   margin: 0px;
   padding: 0px;
-  margin-top: 8px;
+  padding-top: 1px;
   color: #9ea3a6;
   letter-spacing: 1px;
+}
+section[role=api-operation] > header h2 strong {
+  color: #3f98c9;
 }
 section[role=api-operation] > header > div[role=summary] {
   position: absolute;
@@ -986,11 +993,15 @@ section[role=api-operation].active:hover > header {
   transition: background 0.1s;
 }
 section[role=api-operation].active > header h1,
-section[role=api-operation].active:hover > header h1 {
+section[role=api-operation].active:hover > header h1,
+section[role=api-operation].active > header h1 strong,
+section[role=api-operation].active:hover > header h1 strong {
   color: white;
 }
 section[role=api-operation].active > header h2,
-section[role=api-operation].active:hover > header h2 {
+section[role=api-operation].active:hover > header h2,
+section[role=api-operation].active > header h2 strong,
+section[role=api-operation].active:hover > header h2 strong {
   color: white;
 }
 section[role=api-operation].active > header > div[role=summary] > ul[role=traits],
