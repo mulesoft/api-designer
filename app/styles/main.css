@@ -381,6 +381,12 @@ div.CodeMirror {
   transition: ease-in 0.1s;
 }
 
+.CodeMirror-hints {
+  background: rgba(19,33,40,1);
+  border-radius: 0px;
+  transition: ease-in 0.1s;
+}
+
 .CodeMirror-hint {
   max-width: 100%;
   background: rgb(19,33,40,0.8);
