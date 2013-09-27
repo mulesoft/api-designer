@@ -2469,6 +2469,619 @@ return Q;
 
 })(require("__browserify_process"))
 },{"__browserify_process":5}],7:[function(require,module,exports){
+var punycode = { encode : function (s) { return s } };
+
+exports.parse = urlParse;
+exports.resolve = urlResolve;
+exports.resolveObject = urlResolveObject;
+exports.format = urlFormat;
+
+function arrayIndexOf(array, subject) {
+    for (var i = 0, j = array.length; i < j; i++) {
+        if(array[i] == subject) return i;
+    }
+    return -1;
+}
+
+var objectKeys = Object.keys || function objectKeys(object) {
+    if (object !== Object(object)) throw new TypeError('Invalid object');
+    var keys = [];
+    for (var key in object) if (object.hasOwnProperty(key)) keys[keys.length] = key;
+    return keys;
+}
+
+// Reference: RFC 3986, RFC 1808, RFC 2396
+
+// define these here so at least they only have to be
+// compiled once on the first module load.
+var protocolPattern = /^([a-z0-9.+-]+:)/i,
+    portPattern = /:[0-9]+$/,
+    // RFC 2396: characters reserved for delimiting URLs.
+    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
+    // RFC 2396: characters not allowed for various reasons.
+    unwise = ['{', '}', '|', '\\', '^', '~', '[', ']', '`'].concat(delims),
+    // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
+    autoEscape = ['\''],
+    // Characters that are never ever allowed in a hostname.
+    // Note that any invalid chars are also handled, but these
+    // are the ones that are *expected* to be seen, so we fast-path
+    // them.
+    nonHostChars = ['%', '/', '?', ';', '#']
+      .concat(unwise).concat(autoEscape),
+    nonAuthChars = ['/', '@', '?', '#'].concat(delims),
+    hostnameMaxLen = 255,
+    hostnamePartPattern = /^[a-zA-Z0-9][a-z0-9A-Z_-]{0,62}$/,
+    hostnamePartStart = /^([a-zA-Z0-9][a-z0-9A-Z_-]{0,62})(.*)$/,
+    // protocols that can allow "unsafe" and "unwise" chars.
+    unsafeProtocol = {
+      'javascript': true,
+      'javascript:': true
+    },
+    // protocols that never have a hostname.
+    hostlessProtocol = {
+      'javascript': true,
+      'javascript:': true
+    },
+    // protocols that always have a path component.
+    pathedProtocol = {
+      'http': true,
+      'https': true,
+      'ftp': true,
+      'gopher': true,
+      'file': true,
+      'http:': true,
+      'ftp:': true,
+      'gopher:': true,
+      'file:': true
+    },
+    // protocols that always contain a // bit.
+    slashedProtocol = {
+      'http': true,
+      'https': true,
+      'ftp': true,
+      'gopher': true,
+      'file': true,
+      'http:': true,
+      'https:': true,
+      'ftp:': true,
+      'gopher:': true,
+      'file:': true
+    },
+    querystring = require('querystring');
+
+function urlParse(url, parseQueryString, slashesDenoteHost) {
+  if (url && typeof(url) === 'object' && url.href) return url;
+
+  if (typeof url !== 'string') {
+    throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
+  }
+
+  var out = {},
+      rest = url;
+
+  // cut off any delimiters.
+  // This is to support parse stuff like "<http://foo.com>"
+  for (var i = 0, l = rest.length; i < l; i++) {
+    if (arrayIndexOf(delims, rest.charAt(i)) === -1) break;
+  }
+  if (i !== 0) rest = rest.substr(i);
+
+
+  var proto = protocolPattern.exec(rest);
+  if (proto) {
+    proto = proto[0];
+    var lowerProto = proto.toLowerCase();
+    out.protocol = lowerProto;
+    rest = rest.substr(proto.length);
+  }
+
+  // figure out if it's got a host
+  // user@server is *always* interpreted as a hostname, and url
+  // resolution will treat //foo/bar as host=foo,path=bar because that's
+  // how the browser resolves relative URLs.
+  if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
+    var slashes = rest.substr(0, 2) === '//';
+    if (slashes && !(proto && hostlessProtocol[proto])) {
+      rest = rest.substr(2);
+      out.slashes = true;
+    }
+  }
+
+  if (!hostlessProtocol[proto] &&
+      (slashes || (proto && !slashedProtocol[proto]))) {
+    // there's a hostname.
+    // the first instance of /, ?, ;, or # ends the host.
+    // don't enforce full RFC correctness, just be unstupid about it.
+
+    // If there is an @ in the hostname, then non-host chars *are* allowed
+    // to the left of the first @ sign, unless some non-auth character
+    // comes *before* the @-sign.
+    // URLs are obnoxious.
+    var atSign = arrayIndexOf(rest, '@');
+    if (atSign !== -1) {
+      // there *may be* an auth
+      var hasAuth = true;
+      for (var i = 0, l = nonAuthChars.length; i < l; i++) {
+        var index = arrayIndexOf(rest, nonAuthChars[i]);
+        if (index !== -1 && index < atSign) {
+          // not a valid auth.  Something like http://foo.com/bar@baz/
+          hasAuth = false;
+          break;
+        }
+      }
+      if (hasAuth) {
+        // pluck off the auth portion.
+        out.auth = rest.substr(0, atSign);
+        rest = rest.substr(atSign + 1);
+      }
+    }
+
+    var firstNonHost = -1;
+    for (var i = 0, l = nonHostChars.length; i < l; i++) {
+      var index = arrayIndexOf(rest, nonHostChars[i]);
+      if (index !== -1 &&
+          (firstNonHost < 0 || index < firstNonHost)) firstNonHost = index;
+    }
+
+    if (firstNonHost !== -1) {
+      out.host = rest.substr(0, firstNonHost);
+      rest = rest.substr(firstNonHost);
+    } else {
+      out.host = rest;
+      rest = '';
+    }
+
+    // pull out port.
+    var p = parseHost(out.host);
+    var keys = objectKeys(p);
+    for (var i = 0, l = keys.length; i < l; i++) {
+      var key = keys[i];
+      out[key] = p[key];
+    }
+
+    // we've indicated that there is a hostname,
+    // so even if it's empty, it has to be present.
+    out.hostname = out.hostname || '';
+
+    // validate a little.
+    if (out.hostname.length > hostnameMaxLen) {
+      out.hostname = '';
+    } else {
+      var hostparts = out.hostname.split(/\./);
+      for (var i = 0, l = hostparts.length; i < l; i++) {
+        var part = hostparts[i];
+        if (!part) continue;
+        if (!part.match(hostnamePartPattern)) {
+          var newpart = '';
+          for (var j = 0, k = part.length; j < k; j++) {
+            if (part.charCodeAt(j) > 127) {
+              // we replace non-ASCII char with a temporary placeholder
+              // we need this to make sure size of hostname is not
+              // broken by replacing non-ASCII by nothing
+              newpart += 'x';
+            } else {
+              newpart += part[j];
+            }
+          }
+          // we test again with ASCII char only
+          if (!newpart.match(hostnamePartPattern)) {
+            var validParts = hostparts.slice(0, i);
+            var notHost = hostparts.slice(i + 1);
+            var bit = part.match(hostnamePartStart);
+            if (bit) {
+              validParts.push(bit[1]);
+              notHost.unshift(bit[2]);
+            }
+            if (notHost.length) {
+              rest = '/' + notHost.join('.') + rest;
+            }
+            out.hostname = validParts.join('.');
+            break;
+          }
+        }
+      }
+    }
+
+    // hostnames are always lower case.
+    out.hostname = out.hostname.toLowerCase();
+
+    // IDNA Support: Returns a puny coded representation of "domain".
+    // It only converts the part of the domain name that
+    // has non ASCII characters. I.e. it dosent matter if
+    // you call it with a domain that already is in ASCII.
+    var domainArray = out.hostname.split('.');
+    var newOut = [];
+    for (var i = 0; i < domainArray.length; ++i) {
+      var s = domainArray[i];
+      newOut.push(s.match(/[^A-Za-z0-9_-]/) ?
+          'xn--' + punycode.encode(s) : s);
+    }
+    out.hostname = newOut.join('.');
+
+    out.host = (out.hostname || '') +
+        ((out.port) ? ':' + out.port : '');
+    out.href += out.host;
+  }
+
+  // now rest is set to the post-host stuff.
+  // chop off any delim chars.
+  if (!unsafeProtocol[lowerProto]) {
+
+    // First, make 100% sure that any "autoEscape" chars get
+    // escaped, even if encodeURIComponent doesn't think they
+    // need to be.
+    for (var i = 0, l = autoEscape.length; i < l; i++) {
+      var ae = autoEscape[i];
+      var esc = encodeURIComponent(ae);
+      if (esc === ae) {
+        esc = escape(ae);
+      }
+      rest = rest.split(ae).join(esc);
+    }
+
+    // Now make sure that delims never appear in a url.
+    var chop = rest.length;
+    for (var i = 0, l = delims.length; i < l; i++) {
+      var c = arrayIndexOf(rest, delims[i]);
+      if (c !== -1) {
+        chop = Math.min(c, chop);
+      }
+    }
+    rest = rest.substr(0, chop);
+  }
+
+
+  // chop off from the tail first.
+  var hash = arrayIndexOf(rest, '#');
+  if (hash !== -1) {
+    // got a fragment string.
+    out.hash = rest.substr(hash);
+    rest = rest.slice(0, hash);
+  }
+  var qm = arrayIndexOf(rest, '?');
+  if (qm !== -1) {
+    out.search = rest.substr(qm);
+    out.query = rest.substr(qm + 1);
+    if (parseQueryString) {
+      out.query = querystring.parse(out.query);
+    }
+    rest = rest.slice(0, qm);
+  } else if (parseQueryString) {
+    // no query string, but parseQueryString still requested
+    out.search = '';
+    out.query = {};
+  }
+  if (rest) out.pathname = rest;
+  if (slashedProtocol[proto] &&
+      out.hostname && !out.pathname) {
+    out.pathname = '/';
+  }
+
+  //to support http.request
+  if (out.pathname || out.search) {
+    out.path = (out.pathname ? out.pathname : '') +
+               (out.search ? out.search : '');
+  }
+
+  // finally, reconstruct the href based on what has been validated.
+  out.href = urlFormat(out);
+  return out;
+}
+
+// format a parsed object into a url string
+function urlFormat(obj) {
+  // ensure it's an object, and not a string url.
+  // If it's an obj, this is a no-op.
+  // this way, you can call url_format() on strings
+  // to clean up potentially wonky urls.
+  if (typeof(obj) === 'string') obj = urlParse(obj);
+
+  var auth = obj.auth || '';
+  if (auth) {
+    auth = auth.split('@').join('%40');
+    for (var i = 0, l = nonAuthChars.length; i < l; i++) {
+      var nAC = nonAuthChars[i];
+      auth = auth.split(nAC).join(encodeURIComponent(nAC));
+    }
+    auth += '@';
+  }
+
+  var protocol = obj.protocol || '',
+      host = (obj.host !== undefined) ? auth + obj.host :
+          obj.hostname !== undefined ? (
+              auth + obj.hostname +
+              (obj.port ? ':' + obj.port : '')
+          ) :
+          false,
+      pathname = obj.pathname || '',
+      query = obj.query &&
+              ((typeof obj.query === 'object' &&
+                objectKeys(obj.query).length) ?
+                 querystring.stringify(obj.query) :
+                 '') || '',
+      search = obj.search || (query && ('?' + query)) || '',
+      hash = obj.hash || '';
+
+  if (protocol && protocol.substr(-1) !== ':') protocol += ':';
+
+  // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
+  // unless they had them to begin with.
+  if (obj.slashes ||
+      (!protocol || slashedProtocol[protocol]) && host !== false) {
+    host = '//' + (host || '');
+    if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
+  } else if (!host) {
+    host = '';
+  }
+
+  if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
+  if (search && search.charAt(0) !== '?') search = '?' + search;
+
+  return protocol + host + pathname + search + hash;
+}
+
+function urlResolve(source, relative) {
+  return urlFormat(urlResolveObject(source, relative));
+}
+
+function urlResolveObject(source, relative) {
+  if (!source) return relative;
+
+  source = urlParse(urlFormat(source), false, true);
+  relative = urlParse(urlFormat(relative), false, true);
+
+  // hash is always overridden, no matter what.
+  source.hash = relative.hash;
+
+  if (relative.href === '') {
+    source.href = urlFormat(source);
+    return source;
+  }
+
+  // hrefs like //foo/bar always cut to the protocol.
+  if (relative.slashes && !relative.protocol) {
+    relative.protocol = source.protocol;
+    //urlParse appends trailing / to urls like http://www.example.com
+    if (slashedProtocol[relative.protocol] &&
+        relative.hostname && !relative.pathname) {
+      relative.path = relative.pathname = '/';
+    }
+    relative.href = urlFormat(relative);
+    return relative;
+  }
+
+  if (relative.protocol && relative.protocol !== source.protocol) {
+    // if it's a known url protocol, then changing
+    // the protocol does weird things
+    // first, if it's not file:, then we MUST have a host,
+    // and if there was a path
+    // to begin with, then we MUST have a path.
+    // if it is file:, then the host is dropped,
+    // because that's known to be hostless.
+    // anything else is assumed to be absolute.
+    if (!slashedProtocol[relative.protocol]) {
+      relative.href = urlFormat(relative);
+      return relative;
+    }
+    source.protocol = relative.protocol;
+    if (!relative.host && !hostlessProtocol[relative.protocol]) {
+      var relPath = (relative.pathname || '').split('/');
+      while (relPath.length && !(relative.host = relPath.shift()));
+      if (!relative.host) relative.host = '';
+      if (!relative.hostname) relative.hostname = '';
+      if (relPath[0] !== '') relPath.unshift('');
+      if (relPath.length < 2) relPath.unshift('');
+      relative.pathname = relPath.join('/');
+    }
+    source.pathname = relative.pathname;
+    source.search = relative.search;
+    source.query = relative.query;
+    source.host = relative.host || '';
+    source.auth = relative.auth;
+    source.hostname = relative.hostname || relative.host;
+    source.port = relative.port;
+    //to support http.request
+    if (source.pathname !== undefined || source.search !== undefined) {
+      source.path = (source.pathname ? source.pathname : '') +
+                    (source.search ? source.search : '');
+    }
+    source.slashes = source.slashes || relative.slashes;
+    source.href = urlFormat(source);
+    return source;
+  }
+
+  var isSourceAbs = (source.pathname && source.pathname.charAt(0) === '/'),
+      isRelAbs = (
+          relative.host !== undefined ||
+          relative.pathname && relative.pathname.charAt(0) === '/'
+      ),
+      mustEndAbs = (isRelAbs || isSourceAbs ||
+                    (source.host && relative.pathname)),
+      removeAllDots = mustEndAbs,
+      srcPath = source.pathname && source.pathname.split('/') || [],
+      relPath = relative.pathname && relative.pathname.split('/') || [],
+      psychotic = source.protocol &&
+          !slashedProtocol[source.protocol];
+
+  // if the url is a non-slashed url, then relative
+  // links like ../.. should be able
+  // to crawl up to the hostname, as well.  This is strange.
+  // source.protocol has already been set by now.
+  // Later on, put the first path part into the host field.
+  if (psychotic) {
+
+    delete source.hostname;
+    delete source.port;
+    if (source.host) {
+      if (srcPath[0] === '') srcPath[0] = source.host;
+      else srcPath.unshift(source.host);
+    }
+    delete source.host;
+    if (relative.protocol) {
+      delete relative.hostname;
+      delete relative.port;
+      if (relative.host) {
+        if (relPath[0] === '') relPath[0] = relative.host;
+        else relPath.unshift(relative.host);
+      }
+      delete relative.host;
+    }
+    mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
+  }
+
+  if (isRelAbs) {
+    // it's absolute.
+    source.host = (relative.host || relative.host === '') ?
+                      relative.host : source.host;
+    source.hostname = (relative.hostname || relative.hostname === '') ?
+                      relative.hostname : source.hostname;
+    source.search = relative.search;
+    source.query = relative.query;
+    srcPath = relPath;
+    // fall through to the dot-handling below.
+  } else if (relPath.length) {
+    // it's relative
+    // throw away the existing file, and take the new path instead.
+    if (!srcPath) srcPath = [];
+    srcPath.pop();
+    srcPath = srcPath.concat(relPath);
+    source.search = relative.search;
+    source.query = relative.query;
+  } else if ('search' in relative) {
+    // just pull out the search.
+    // like href='?foo'.
+    // Put this after the other two cases because it simplifies the booleans
+    if (psychotic) {
+      source.hostname = source.host = srcPath.shift();
+      //occationaly the auth can get stuck only in host
+      //this especialy happens in cases like
+      //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+      var authInHost = source.host && arrayIndexOf(source.host, '@') > 0 ?
+                       source.host.split('@') : false;
+      if (authInHost) {
+        source.auth = authInHost.shift();
+        source.host = source.hostname = authInHost.shift();
+      }
+    }
+    source.search = relative.search;
+    source.query = relative.query;
+    //to support http.request
+    if (source.pathname !== undefined || source.search !== undefined) {
+      source.path = (source.pathname ? source.pathname : '') +
+                    (source.search ? source.search : '');
+    }
+    source.href = urlFormat(source);
+    return source;
+  }
+  if (!srcPath.length) {
+    // no path at all.  easy.
+    // we've already handled the other stuff above.
+    delete source.pathname;
+    //to support http.request
+    if (!source.search) {
+      source.path = '/' + source.search;
+    } else {
+      delete source.path;
+    }
+    source.href = urlFormat(source);
+    return source;
+  }
+  // if a url ENDs in . or .., then it must get a trailing slash.
+  // however, if it ends in anything else non-slashy,
+  // then it must NOT get a trailing slash.
+  var last = srcPath.slice(-1)[0];
+  var hasTrailingSlash = (
+      (source.host || relative.host) && (last === '.' || last === '..') ||
+      last === '');
+
+  // strip single dots, resolve double dots to parent dir
+  // if the path tries to go above the root, `up` ends up > 0
+  var up = 0;
+  for (var i = srcPath.length; i >= 0; i--) {
+    last = srcPath[i];
+    if (last == '.') {
+      srcPath.splice(i, 1);
+    } else if (last === '..') {
+      srcPath.splice(i, 1);
+      up++;
+    } else if (up) {
+      srcPath.splice(i, 1);
+      up--;
+    }
+  }
+
+  // if the path is allowed to go above the root, restore leading ..s
+  if (!mustEndAbs && !removeAllDots) {
+    for (; up--; up) {
+      srcPath.unshift('..');
+    }
+  }
+
+  if (mustEndAbs && srcPath[0] !== '' &&
+      (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
+    srcPath.unshift('');
+  }
+
+  if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
+    srcPath.push('');
+  }
+
+  var isAbsolute = srcPath[0] === '' ||
+      (srcPath[0] && srcPath[0].charAt(0) === '/');
+
+  // put the host back
+  if (psychotic) {
+    source.hostname = source.host = isAbsolute ? '' :
+                                    srcPath.length ? srcPath.shift() : '';
+    //occationaly the auth can get stuck only in host
+    //this especialy happens in cases like
+    //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
+    var authInHost = source.host && arrayIndexOf(source.host, '@') > 0 ?
+                     source.host.split('@') : false;
+    if (authInHost) {
+      source.auth = authInHost.shift();
+      source.host = source.hostname = authInHost.shift();
+    }
+  }
+
+  mustEndAbs = mustEndAbs || (source.host && srcPath.length);
+
+  if (mustEndAbs && !isAbsolute) {
+    srcPath.unshift('');
+  }
+
+  source.pathname = srcPath.join('/');
+  //to support request.http
+  if (source.pathname !== undefined || source.search !== undefined) {
+    source.path = (source.pathname ? source.pathname : '') +
+                  (source.search ? source.search : '');
+  }
+  source.auth = relative.auth || source.auth;
+  source.slashes = source.slashes || relative.slashes;
+  source.href = urlFormat(source);
+  return source;
+}
+
+function parseHost(host) {
+  var out = {};
+  var port = portPattern.exec(host);
+  if (port) {
+    port = port[0];
+    out.port = port.substr(1);
+    host = host.substr(0, host.length - port.length);
+  }
+  if (host) out.hostname = host;
+  return out;
+}
+
+},{"querystring":8}],9:[function(require,module,exports){
+// nothing to see here... no file methods for the browser
+
+},{}],10:[function(require,module,exports){
+window.RAML = {}
+
+window.RAML.Parser = require('../lib/raml')
+},{"../lib/raml":11}],12:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, nodes, raml, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -2612,17 +3225,19 @@ return Q;
         tag = this.resolve(nodes.ScalarNode, event.value, event.implicit);
       }
       if (event.tag === '!include') {
-        extension = event.value.split(".").pop();
         if (this.src != null) {
           event.value = require('url').resolve(this.src, event.value);
         }
+        if (this.isInIncludeTagsStack(event.value)) {
+          throw new exports.ComposerError('while composing scalar out of !include', null, "detected circular !include of " + event.value, event.start_mark);
+        }
+        extension = event.value.split(".").pop();
         if (extension === 'yaml' || extension === 'yml' || extension === 'raml') {
           raml.start_mark = event.start_mark;
-          return raml.composeFile(event.value, false, false, false);
-        } else {
-          raml.start_mark = event.start_mark;
-          node = new nodes.ScalarNode('tag:yaml.org,2002:str', raml.readFile(event.value), event.start_mark, event.end_mark, event.style);
+          return raml.composeFile(event.value, false, false, false, this);
         }
+        raml.start_mark = event.start_mark;
+        node = new nodes.ScalarNode('tag:yaml.org,2002:str', raml.readFile(event.value), event.start_mark, event.end_mark, event.style);
       } else {
         node = new nodes.ScalarNode(tag, event.value, event.start_mark, event.end_mark, event.style);
       }
@@ -2674,13 +3289,24 @@ return Q;
       return node;
     };
 
+    Composer.prototype.isInIncludeTagsStack = function(include) {
+      var parent;
+      parent = this;
+      while (parent = parent.parent) {
+        if (parent.src === include) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     return Composer;
 
   })();
 
 }).call(this);
 
-},{"./errors":1,"./events":2,"./nodes":9,"./raml":10,"url":8}],11:[function(require,module,exports){
+},{"./errors":1,"./events":2,"./nodes":13,"./raml":11,"url":7}],14:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
@@ -6545,7 +7171,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 },{}]},{},[])
 ;;module.exports=require("buffer-browserify")
 
-},{}],12:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function(Buffer){(function() {
   var MarkedYAMLError, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -7158,7 +7784,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 }).call(this);
 
 })(require("__browserify_buffer").Buffer)
-},{"./errors":1,"./nodes":9,"./util":4,"__browserify_buffer":11}],13:[function(require,module,exports){
+},{"./errors":1,"./nodes":13,"./util":4,"__browserify_buffer":14}],16:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -7267,7 +7893,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":9}],14:[function(require,module,exports){
+},{"./errors":1,"./nodes":13}],17:[function(require,module,exports){
 (function() {
   var composer, construct, joiner, parser, reader, resolver, scanner, schemas, securitySchemes, traits, transformations, types, util, validator;
 
@@ -7354,8 +7980,9 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         return _results;
       })()));
 
-      function _Class(stream, location, validate) {
+      function _Class(stream, location, validate, parent) {
         var _i, _len, _ref;
+        this.parent = parent;
         components[0].call(this, stream, location);
         components[1].call(this, validate);
         _ref = components.slice(2);
@@ -7374,7 +8001,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./composer":7,"./construct":12,"./joiner":13,"./parser":17,"./reader":15,"./resolver":18,"./resourceTypes":21,"./scanner":16,"./schemas":22,"./securitySchemes":23,"./traits":20,"./transformations":24,"./util":4,"./validator":19}],9:[function(require,module,exports){
+},{"./composer":12,"./construct":15,"./joiner":16,"./parser":20,"./reader":19,"./resolver":21,"./resourceTypes":24,"./scanner":18,"./schemas":25,"./securitySchemes":26,"./traits":23,"./transformations":27,"./util":4,"./validator":22}],13:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, unique_id, _ref, _ref1, _ref2,
     __hasProp = {}.hasOwnProperty,
@@ -7637,7 +8264,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1}],17:[function(require,module,exports){
+},{"./errors":1}],20:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, tokens, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -8248,7 +8875,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./events":2,"./tokens":3}],15:[function(require,module,exports){
+},{"./errors":1,"./events":2,"./tokens":3}],19:[function(require,module,exports){
 (function() {
   var Mark, YAMLError, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -8363,195 +8990,6 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 }).call(this);
 
 },{"./errors":1}],21:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  /*
-  The ResourceTypes throws these.
-  */
-
-
-  this.ResourceTypeError = (function(_super) {
-    __extends(ResourceTypeError, _super);
-
-    function ResourceTypeError() {
-      _ref = ResourceTypeError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return ResourceTypeError;
-
-  })(MarkedYAMLError);
-
-  /*
-  The ResourceTypes class deals with applying ResourceTypes to resources according to the spec
-  */
-
-
-  this.ResourceTypes = (function() {
-    function ResourceTypes() {
-      this.apply_parameters_to_type = __bind(this.apply_parameters_to_type, this);
-      this.apply_type = __bind(this.apply_type, this);
-      this.apply_types = __bind(this.apply_types, this);
-      this.get_type = __bind(this.get_type, this);
-      this.has_types = __bind(this.has_types, this);
-      this.load_types = __bind(this.load_types, this);
-      this.declaredTypes = {};
-    }
-
-    ResourceTypes.prototype.load_types = function(node) {
-      var allTypes,
-        _this = this;
-      this.load_default_media_type(node);
-      if (this.has_property(node, "resourceTypes")) {
-        allTypes = this.property_value(node, "resourceTypes");
-        if (allTypes && typeof allTypes === "object") {
-          return allTypes.forEach(function(type_item) {
-            if (type_item && typeof type_item === "object" && typeof type_item.value === "object") {
-              return type_item.value.forEach(function(type) {
-                return _this.declaredTypes[type[0].value] = type;
-              });
-            }
-          });
-        }
-      }
-    };
-
-    ResourceTypes.prototype.has_types = function(node) {
-      if (Object.keys(this.declaredTypes).length === 0 && this.has_property(node, "resourceTypes")) {
-        this.load_types(node);
-      }
-      return Object.keys(this.declaredTypes).length > 0;
-    };
-
-    ResourceTypes.prototype.get_type = function(typeName) {
-      return this.declaredTypes[typeName];
-    };
-
-    ResourceTypes.prototype.get_parent_type_name = function(typeName) {
-      var type;
-      type = (this.get_type(typeName))[1];
-      if (type && this.has_property(type, "type")) {
-        return this.property_value(type, "type");
-      }
-      return null;
-    };
-
-    ResourceTypes.prototype.apply_types = function(node, resourceUri) {
-      var resources,
-        _this = this;
-      if (resourceUri == null) {
-        resourceUri = "";
-      }
-      if (!this.isMapping(node)) {
-        return;
-      }
-      if (this.has_types(node)) {
-        resources = this.child_resources(node);
-        return resources.forEach(function(resource) {
-          var type;
-          _this.apply_default_media_type_to_resource(resource[1]);
-          if (_this.has_property(resource[1], "type")) {
-            type = _this.get_property(resource[1], "type");
-            _this.apply_type(resourceUri + resource[0].value, resource, type);
-          }
-          return _this.apply_types(resource[1], resourceUri + resource[0].value);
-        });
-      } else {
-        resources = this.child_resources(node);
-        return resources.forEach(function(resource) {
-          return _this.apply_default_media_type_to_resource(resource[1]);
-        });
-      }
-    };
-
-    ResourceTypes.prototype.apply_type = function(resourceUri, resource, typeKey) {
-      var tempType;
-      tempType = this.resolve_inheritance_chain(resourceUri, typeKey);
-      tempType.combine(resource[1]);
-      resource[1] = tempType;
-      return resource[1].remove_question_mark_properties();
-    };
-
-    ResourceTypes.prototype.resolve_inheritance_chain = function(resourceUri, typeKey) {
-      var baseType, child_type, child_type_key, compiledTypes, inherits_from, parentTypeMapping, parentTypeName, result, root_type, type, typeName, typesToApply;
-      typeName = this.key_or_value(typeKey);
-      compiledTypes = {};
-      type = this.apply_parameters_to_type(resourceUri, typeName, typeKey);
-      this.apply_default_media_type_to_resource(type);
-      this.apply_traits_to_resource(resourceUri, type, false);
-      compiledTypes[typeName] = type;
-      typesToApply = [typeName];
-      child_type = typeName;
-      parentTypeName = null;
-      while (parentTypeName = this.get_parent_type_name(child_type)) {
-        if (parentTypeName in compiledTypes) {
-          throw new exports.ResourceTypeError('while aplying resourceTypes', null, 'circular reference detected: ' + parentTypeName + "-> [" + typesToApply.reverse + "]", child_type.start_mark);
-        }
-        child_type_key = this.get_property(this.get_type(child_type)[1], "type");
-        parentTypeMapping = this.apply_parameters_to_type(resourceUri, parentTypeName, child_type_key);
-        compiledTypes[parentTypeName] = parentTypeMapping;
-        this.apply_default_media_type_to_resource(parentTypeMapping);
-        this.apply_traits_to_resource(resourceUri, parentTypeMapping, false);
-        typesToApply.push(parentTypeName);
-        child_type = parentTypeName;
-      }
-      root_type = typesToApply.pop();
-      baseType = compiledTypes[root_type].cloneForResourceType();
-      result = baseType;
-      while (inherits_from = typesToApply.pop()) {
-        baseType = compiledTypes[inherits_from].cloneForResourceType();
-        result.combine(baseType);
-      }
-      return result;
-    };
-
-    ResourceTypes.prototype.apply_parameters_to_type = function(resourceUri, typeName, typeKey) {
-      var parameters, type;
-      type = (this.get_type(typeName))[1].clone();
-      parameters = this._get_parameters_from_type_key(resourceUri, typeKey);
-      this.apply_parameters(type, parameters, typeKey);
-      return type;
-    };
-
-    ResourceTypes.prototype._get_parameters_from_type_key = function(resourceUri, typeKey) {
-      var parameters, result;
-      result = {
-        resourcePath: resourceUri.replace(/\/\/*/g, '/')
-      };
-      if (!this.isMapping(typeKey)) {
-        return result;
-      }
-      parameters = this.value_or_undefined(typeKey);
-      if (!this.isNull(parameters[0][1])) {
-        parameters[0][1].value.forEach(function(parameter) {
-          var _ref1;
-          if (parameter[1].tag !== 'tag:yaml.org,2002:str') {
-            throw new exports.ResourceTypeError('while aplying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
-          }
-          if ((_ref1 = parameter[1].value) === "methodName" || _ref1 === "resourcePath" || _ref1 === "resourcePathName") {
-            throw new exports.ResourceTypeError('while aplying parameters', null, 'invalid parameter name "methodName", "resourcePath" are reserved parameter names "resourcePathName"', parameter[1].start_mark);
-          }
-          return result[parameter[0].value] = parameter[1].value;
-        });
-      }
-      return result;
-    };
-
-    return ResourceTypes;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":9}],18:[function(require,module,exports){
 (function() {
   var YAMLError, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -8760,7 +9198,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":9,"./util":4}],22:[function(require,module,exports){
+},{"./errors":1,"./nodes":13,"./util":4}],24:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -8772,47 +9210,49 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
   nodes = require('./nodes');
 
   /*
-  The Schemas throws these.
+  The ResourceTypes throws these.
   */
 
 
-  this.SchemaError = (function(_super) {
-    __extends(SchemaError, _super);
+  this.ResourceTypeError = (function(_super) {
+    __extends(ResourceTypeError, _super);
 
-    function SchemaError() {
-      _ref = SchemaError.__super__.constructor.apply(this, arguments);
+    function ResourceTypeError() {
+      _ref = ResourceTypeError.__super__.constructor.apply(this, arguments);
       return _ref;
     }
 
-    return SchemaError;
+    return ResourceTypeError;
 
   })(MarkedYAMLError);
 
   /*
-    The Schemas class deals with applying schemas to resources according to the spec
+  The ResourceTypes class deals with applying ResourceTypes to resources according to the spec
   */
 
 
-  this.Schemas = (function() {
-    function Schemas() {
-      this.get_schemas_used = __bind(this.get_schemas_used, this);
-      this.apply_schemas = __bind(this.apply_schemas, this);
-      this.get_all_schemas = __bind(this.get_all_schemas, this);
-      this.has_schemas = __bind(this.has_schemas, this);
-      this.load_schemas = __bind(this.load_schemas, this);
-      this.declaredSchemas = {};
+  this.ResourceTypes = (function() {
+    function ResourceTypes() {
+      this.apply_parameters_to_type = __bind(this.apply_parameters_to_type, this);
+      this.apply_type = __bind(this.apply_type, this);
+      this.apply_types = __bind(this.apply_types, this);
+      this.get_type = __bind(this.get_type, this);
+      this.has_types = __bind(this.has_types, this);
+      this.load_types = __bind(this.load_types, this);
+      this.declaredTypes = {};
     }
 
-    Schemas.prototype.load_schemas = function(node) {
-      var allSchemas,
+    ResourceTypes.prototype.load_types = function(node) {
+      var allTypes,
         _this = this;
-      if (this.has_property(node, "schemas")) {
-        allSchemas = this.property_value(node, "schemas");
-        if (allSchemas && typeof allSchemas === "object") {
-          return allSchemas.forEach(function(schema_entry) {
-            if (schema_entry && typeof schema_entry === "object" && typeof schema_entry.value === "object") {
-              return schema_entry.value.forEach(function(schema) {
-                return _this.declaredSchemas[schema[0].value] = schema;
+      this.load_default_media_type(node);
+      if (this.has_property(node, "resourceTypes")) {
+        allTypes = this.property_value(node, "resourceTypes");
+        if (allTypes && typeof allTypes === "object") {
+          return allTypes.forEach(function(type_item) {
+            if (type_item && typeof type_item === "object" && typeof type_item.value === "object") {
+              return type_item.value.forEach(function(type) {
+                return _this.declaredTypes[type[0].value] = type;
               });
             }
           });
@@ -8820,48 +9260,134 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       }
     };
 
-    Schemas.prototype.has_schemas = function(node) {
-      if (this.declaredSchemas.length === 0 && this.has_property(node, "schemas")) {
-        this.load_schemas(node);
+    ResourceTypes.prototype.has_types = function(node) {
+      if (Object.keys(this.declaredTypes).length === 0 && this.has_property(node, "resourceTypes")) {
+        this.load_types(node);
       }
-      return Object.keys(this.declaredSchemas).length > 0;
+      return Object.keys(this.declaredTypes).length > 0;
     };
 
-    Schemas.prototype.get_all_schemas = function() {
-      return this.declaredSchemas;
+    ResourceTypes.prototype.get_type = function(typeName) {
+      return this.declaredTypes[typeName];
     };
 
-    Schemas.prototype.apply_schemas = function(node) {
-      var resources, schemas,
+    ResourceTypes.prototype.get_parent_type_name = function(typeName) {
+      var type;
+      type = (this.get_type(typeName))[1];
+      if (type && this.has_property(type, "type")) {
+        return this.property_value(type, "type");
+      }
+      return null;
+    };
+
+    ResourceTypes.prototype.apply_types = function(node, resourceUri) {
+      var resources,
         _this = this;
-      resources = this.child_resources(node);
-      schemas = this.get_schemas_used(resources);
-      return schemas.forEach(function(schema) {
-        if (schema[1].value in _this.declaredSchemas) {
-          return schema[1].value = _this.declaredSchemas[schema[1].value][1].value;
+      if (resourceUri == null) {
+        resourceUri = "";
+      }
+      if (!this.isMapping(node)) {
+        return;
+      }
+      if (this.has_types(node)) {
+        resources = this.child_resources(node);
+        return resources.forEach(function(resource) {
+          var type;
+          _this.apply_default_media_type_to_resource(resource[1]);
+          if (_this.has_property(resource[1], "type")) {
+            type = _this.get_property(resource[1], "type");
+            _this.apply_type(resourceUri + resource[0].value, resource, type);
+          }
+          return _this.apply_types(resource[1], resourceUri + resource[0].value);
+        });
+      } else {
+        resources = this.child_resources(node);
+        return resources.forEach(function(resource) {
+          return _this.apply_default_media_type_to_resource(resource[1]);
+        });
+      }
+    };
+
+    ResourceTypes.prototype.apply_type = function(resourceUri, resource, typeKey) {
+      var tempType;
+      tempType = this.resolve_inheritance_chain(resourceUri, typeKey);
+      tempType.combine(resource[1]);
+      resource[1] = tempType;
+      return resource[1].remove_question_mark_properties();
+    };
+
+    ResourceTypes.prototype.resolve_inheritance_chain = function(resourceUri, typeKey) {
+      var baseType, child_type, child_type_key, compiledTypes, inherits_from, parentTypeMapping, parentTypeName, result, root_type, type, typeName, typesToApply;
+      typeName = this.key_or_value(typeKey);
+      compiledTypes = {};
+      type = this.apply_parameters_to_type(resourceUri, typeName, typeKey);
+      this.apply_default_media_type_to_resource(type);
+      this.apply_traits_to_resource(resourceUri, type, false);
+      compiledTypes[typeName] = type;
+      typesToApply = [typeName];
+      child_type = typeName;
+      parentTypeName = null;
+      while (parentTypeName = this.get_parent_type_name(child_type)) {
+        if (parentTypeName in compiledTypes) {
+          throw new exports.ResourceTypeError('while aplying resourceTypes', null, 'circular reference detected: ' + parentTypeName + "-> [" + typesToApply.reverse + "]", child_type.start_mark);
         }
-      });
+        child_type_key = this.get_property(this.get_type(child_type)[1], "type");
+        parentTypeMapping = this.apply_parameters_to_type(resourceUri, parentTypeName, child_type_key);
+        compiledTypes[parentTypeName] = parentTypeMapping;
+        this.apply_default_media_type_to_resource(parentTypeMapping);
+        this.apply_traits_to_resource(resourceUri, parentTypeMapping, false);
+        typesToApply.push(parentTypeName);
+        child_type = parentTypeName;
+      }
+      root_type = typesToApply.pop();
+      baseType = compiledTypes[root_type].cloneForResourceType();
+      result = baseType;
+      while (inherits_from = typesToApply.pop()) {
+        baseType = compiledTypes[inherits_from].cloneForResourceType();
+        result.combine(baseType);
+      }
+      return result;
     };
 
-    Schemas.prototype.get_schemas_used = function(resources) {
-      var schemas,
-        _this = this;
-      schemas = [];
-      resources.forEach(function(resource) {
-        var properties;
-        properties = _this.get_properties(resource[1], "schema");
-        return schemas = schemas.concat(properties);
-      });
-      return schemas;
+    ResourceTypes.prototype.apply_parameters_to_type = function(resourceUri, typeName, typeKey) {
+      var parameters, type;
+      type = (this.get_type(typeName))[1].clone();
+      parameters = this._get_parameters_from_type_key(resourceUri, typeKey);
+      this.apply_parameters(type, parameters, typeKey);
+      return type;
     };
 
-    return Schemas;
+    ResourceTypes.prototype._get_parameters_from_type_key = function(resourceUri, typeKey) {
+      var parameters, result;
+      result = {
+        resourcePath: resourceUri.replace(/\/\/*/g, '/')
+      };
+      if (!this.isMapping(typeKey)) {
+        return result;
+      }
+      parameters = this.value_or_undefined(typeKey);
+      if (!this.isNull(parameters[0][1])) {
+        parameters[0][1].value.forEach(function(parameter) {
+          var _ref1;
+          if (parameter[1].tag !== 'tag:yaml.org,2002:str') {
+            throw new exports.ResourceTypeError('while aplying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
+          }
+          if ((_ref1 = parameter[1].value) === "methodName" || _ref1 === "resourcePath" || _ref1 === "resourcePathName") {
+            throw new exports.ResourceTypeError('while aplying parameters', null, 'invalid parameter name "methodName", "resourcePath" are reserved parameter names "resourcePathName"', parameter[1].start_mark);
+          }
+          return result[parameter[0].value] = parameter[1].value;
+        });
+      }
+      return result;
+    };
+
+    return ResourceTypes;
 
   })();
 
 }).call(this);
 
-},{"./errors":1,"./nodes":9}],16:[function(require,module,exports){
+},{"./errors":1,"./nodes":13}],18:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, SimpleKey, tokens, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -10367,7 +10893,108 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./tokens":3,"./util":4}],23:[function(require,module,exports){
+},{"./errors":1,"./tokens":3,"./util":4}],25:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  /*
+  The Schemas throws these.
+  */
+
+
+  this.SchemaError = (function(_super) {
+    __extends(SchemaError, _super);
+
+    function SchemaError() {
+      _ref = SchemaError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return SchemaError;
+
+  })(MarkedYAMLError);
+
+  /*
+    The Schemas class deals with applying schemas to resources according to the spec
+  */
+
+
+  this.Schemas = (function() {
+    function Schemas() {
+      this.get_schemas_used = __bind(this.get_schemas_used, this);
+      this.apply_schemas = __bind(this.apply_schemas, this);
+      this.get_all_schemas = __bind(this.get_all_schemas, this);
+      this.has_schemas = __bind(this.has_schemas, this);
+      this.load_schemas = __bind(this.load_schemas, this);
+      this.declaredSchemas = {};
+    }
+
+    Schemas.prototype.load_schemas = function(node) {
+      var allSchemas,
+        _this = this;
+      if (this.has_property(node, "schemas")) {
+        allSchemas = this.property_value(node, "schemas");
+        if (allSchemas && typeof allSchemas === "object") {
+          return allSchemas.forEach(function(schema_entry) {
+            if (schema_entry && typeof schema_entry === "object" && typeof schema_entry.value === "object") {
+              return schema_entry.value.forEach(function(schema) {
+                return _this.declaredSchemas[schema[0].value] = schema;
+              });
+            }
+          });
+        }
+      }
+    };
+
+    Schemas.prototype.has_schemas = function(node) {
+      if (this.declaredSchemas.length === 0 && this.has_property(node, "schemas")) {
+        this.load_schemas(node);
+      }
+      return Object.keys(this.declaredSchemas).length > 0;
+    };
+
+    Schemas.prototype.get_all_schemas = function() {
+      return this.declaredSchemas;
+    };
+
+    Schemas.prototype.apply_schemas = function(node) {
+      var resources, schemas,
+        _this = this;
+      resources = this.child_resources(node);
+      schemas = this.get_schemas_used(resources);
+      return schemas.forEach(function(schema) {
+        if (schema[1].value in _this.declaredSchemas) {
+          return schema[1].value = _this.declaredSchemas[schema[1].value][1].value;
+        }
+      });
+    };
+
+    Schemas.prototype.get_schemas_used = function(resources) {
+      var schemas,
+        _this = this;
+      schemas = [];
+      resources.forEach(function(resource) {
+        var properties;
+        properties = _this.get_properties(resource[1], "schema");
+        return schemas = schemas.concat(properties);
+      });
+      return schemas;
+    };
+
+    return Schemas;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":13}],26:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -10447,620 +11074,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":9}],25:[function(require,module,exports){
-window.RAML = {}
-
-window.RAML.Parser = require('../lib/raml')
-},{"../lib/raml":10}],8:[function(require,module,exports){
-var punycode = { encode : function (s) { return s } };
-
-exports.parse = urlParse;
-exports.resolve = urlResolve;
-exports.resolveObject = urlResolveObject;
-exports.format = urlFormat;
-
-function arrayIndexOf(array, subject) {
-    for (var i = 0, j = array.length; i < j; i++) {
-        if(array[i] == subject) return i;
-    }
-    return -1;
-}
-
-var objectKeys = Object.keys || function objectKeys(object) {
-    if (object !== Object(object)) throw new TypeError('Invalid object');
-    var keys = [];
-    for (var key in object) if (object.hasOwnProperty(key)) keys[keys.length] = key;
-    return keys;
-}
-
-// Reference: RFC 3986, RFC 1808, RFC 2396
-
-// define these here so at least they only have to be
-// compiled once on the first module load.
-var protocolPattern = /^([a-z0-9.+-]+:)/i,
-    portPattern = /:[0-9]+$/,
-    // RFC 2396: characters reserved for delimiting URLs.
-    delims = ['<', '>', '"', '`', ' ', '\r', '\n', '\t'],
-    // RFC 2396: characters not allowed for various reasons.
-    unwise = ['{', '}', '|', '\\', '^', '~', '[', ']', '`'].concat(delims),
-    // Allowed by RFCs, but cause of XSS attacks.  Always escape these.
-    autoEscape = ['\''],
-    // Characters that are never ever allowed in a hostname.
-    // Note that any invalid chars are also handled, but these
-    // are the ones that are *expected* to be seen, so we fast-path
-    // them.
-    nonHostChars = ['%', '/', '?', ';', '#']
-      .concat(unwise).concat(autoEscape),
-    nonAuthChars = ['/', '@', '?', '#'].concat(delims),
-    hostnameMaxLen = 255,
-    hostnamePartPattern = /^[a-zA-Z0-9][a-z0-9A-Z_-]{0,62}$/,
-    hostnamePartStart = /^([a-zA-Z0-9][a-z0-9A-Z_-]{0,62})(.*)$/,
-    // protocols that can allow "unsafe" and "unwise" chars.
-    unsafeProtocol = {
-      'javascript': true,
-      'javascript:': true
-    },
-    // protocols that never have a hostname.
-    hostlessProtocol = {
-      'javascript': true,
-      'javascript:': true
-    },
-    // protocols that always have a path component.
-    pathedProtocol = {
-      'http': true,
-      'https': true,
-      'ftp': true,
-      'gopher': true,
-      'file': true,
-      'http:': true,
-      'ftp:': true,
-      'gopher:': true,
-      'file:': true
-    },
-    // protocols that always contain a // bit.
-    slashedProtocol = {
-      'http': true,
-      'https': true,
-      'ftp': true,
-      'gopher': true,
-      'file': true,
-      'http:': true,
-      'https:': true,
-      'ftp:': true,
-      'gopher:': true,
-      'file:': true
-    },
-    querystring = require('querystring');
-
-function urlParse(url, parseQueryString, slashesDenoteHost) {
-  if (url && typeof(url) === 'object' && url.href) return url;
-
-  if (typeof url !== 'string') {
-    throw new TypeError("Parameter 'url' must be a string, not " + typeof url);
-  }
-
-  var out = {},
-      rest = url;
-
-  // cut off any delimiters.
-  // This is to support parse stuff like "<http://foo.com>"
-  for (var i = 0, l = rest.length; i < l; i++) {
-    if (arrayIndexOf(delims, rest.charAt(i)) === -1) break;
-  }
-  if (i !== 0) rest = rest.substr(i);
-
-
-  var proto = protocolPattern.exec(rest);
-  if (proto) {
-    proto = proto[0];
-    var lowerProto = proto.toLowerCase();
-    out.protocol = lowerProto;
-    rest = rest.substr(proto.length);
-  }
-
-  // figure out if it's got a host
-  // user@server is *always* interpreted as a hostname, and url
-  // resolution will treat //foo/bar as host=foo,path=bar because that's
-  // how the browser resolves relative URLs.
-  if (slashesDenoteHost || proto || rest.match(/^\/\/[^@\/]+@[^@\/]+/)) {
-    var slashes = rest.substr(0, 2) === '//';
-    if (slashes && !(proto && hostlessProtocol[proto])) {
-      rest = rest.substr(2);
-      out.slashes = true;
-    }
-  }
-
-  if (!hostlessProtocol[proto] &&
-      (slashes || (proto && !slashedProtocol[proto]))) {
-    // there's a hostname.
-    // the first instance of /, ?, ;, or # ends the host.
-    // don't enforce full RFC correctness, just be unstupid about it.
-
-    // If there is an @ in the hostname, then non-host chars *are* allowed
-    // to the left of the first @ sign, unless some non-auth character
-    // comes *before* the @-sign.
-    // URLs are obnoxious.
-    var atSign = arrayIndexOf(rest, '@');
-    if (atSign !== -1) {
-      // there *may be* an auth
-      var hasAuth = true;
-      for (var i = 0, l = nonAuthChars.length; i < l; i++) {
-        var index = arrayIndexOf(rest, nonAuthChars[i]);
-        if (index !== -1 && index < atSign) {
-          // not a valid auth.  Something like http://foo.com/bar@baz/
-          hasAuth = false;
-          break;
-        }
-      }
-      if (hasAuth) {
-        // pluck off the auth portion.
-        out.auth = rest.substr(0, atSign);
-        rest = rest.substr(atSign + 1);
-      }
-    }
-
-    var firstNonHost = -1;
-    for (var i = 0, l = nonHostChars.length; i < l; i++) {
-      var index = arrayIndexOf(rest, nonHostChars[i]);
-      if (index !== -1 &&
-          (firstNonHost < 0 || index < firstNonHost)) firstNonHost = index;
-    }
-
-    if (firstNonHost !== -1) {
-      out.host = rest.substr(0, firstNonHost);
-      rest = rest.substr(firstNonHost);
-    } else {
-      out.host = rest;
-      rest = '';
-    }
-
-    // pull out port.
-    var p = parseHost(out.host);
-    var keys = objectKeys(p);
-    for (var i = 0, l = keys.length; i < l; i++) {
-      var key = keys[i];
-      out[key] = p[key];
-    }
-
-    // we've indicated that there is a hostname,
-    // so even if it's empty, it has to be present.
-    out.hostname = out.hostname || '';
-
-    // validate a little.
-    if (out.hostname.length > hostnameMaxLen) {
-      out.hostname = '';
-    } else {
-      var hostparts = out.hostname.split(/\./);
-      for (var i = 0, l = hostparts.length; i < l; i++) {
-        var part = hostparts[i];
-        if (!part) continue;
-        if (!part.match(hostnamePartPattern)) {
-          var newpart = '';
-          for (var j = 0, k = part.length; j < k; j++) {
-            if (part.charCodeAt(j) > 127) {
-              // we replace non-ASCII char with a temporary placeholder
-              // we need this to make sure size of hostname is not
-              // broken by replacing non-ASCII by nothing
-              newpart += 'x';
-            } else {
-              newpart += part[j];
-            }
-          }
-          // we test again with ASCII char only
-          if (!newpart.match(hostnamePartPattern)) {
-            var validParts = hostparts.slice(0, i);
-            var notHost = hostparts.slice(i + 1);
-            var bit = part.match(hostnamePartStart);
-            if (bit) {
-              validParts.push(bit[1]);
-              notHost.unshift(bit[2]);
-            }
-            if (notHost.length) {
-              rest = '/' + notHost.join('.') + rest;
-            }
-            out.hostname = validParts.join('.');
-            break;
-          }
-        }
-      }
-    }
-
-    // hostnames are always lower case.
-    out.hostname = out.hostname.toLowerCase();
-
-    // IDNA Support: Returns a puny coded representation of "domain".
-    // It only converts the part of the domain name that
-    // has non ASCII characters. I.e. it dosent matter if
-    // you call it with a domain that already is in ASCII.
-    var domainArray = out.hostname.split('.');
-    var newOut = [];
-    for (var i = 0; i < domainArray.length; ++i) {
-      var s = domainArray[i];
-      newOut.push(s.match(/[^A-Za-z0-9_-]/) ?
-          'xn--' + punycode.encode(s) : s);
-    }
-    out.hostname = newOut.join('.');
-
-    out.host = (out.hostname || '') +
-        ((out.port) ? ':' + out.port : '');
-    out.href += out.host;
-  }
-
-  // now rest is set to the post-host stuff.
-  // chop off any delim chars.
-  if (!unsafeProtocol[lowerProto]) {
-
-    // First, make 100% sure that any "autoEscape" chars get
-    // escaped, even if encodeURIComponent doesn't think they
-    // need to be.
-    for (var i = 0, l = autoEscape.length; i < l; i++) {
-      var ae = autoEscape[i];
-      var esc = encodeURIComponent(ae);
-      if (esc === ae) {
-        esc = escape(ae);
-      }
-      rest = rest.split(ae).join(esc);
-    }
-
-    // Now make sure that delims never appear in a url.
-    var chop = rest.length;
-    for (var i = 0, l = delims.length; i < l; i++) {
-      var c = arrayIndexOf(rest, delims[i]);
-      if (c !== -1) {
-        chop = Math.min(c, chop);
-      }
-    }
-    rest = rest.substr(0, chop);
-  }
-
-
-  // chop off from the tail first.
-  var hash = arrayIndexOf(rest, '#');
-  if (hash !== -1) {
-    // got a fragment string.
-    out.hash = rest.substr(hash);
-    rest = rest.slice(0, hash);
-  }
-  var qm = arrayIndexOf(rest, '?');
-  if (qm !== -1) {
-    out.search = rest.substr(qm);
-    out.query = rest.substr(qm + 1);
-    if (parseQueryString) {
-      out.query = querystring.parse(out.query);
-    }
-    rest = rest.slice(0, qm);
-  } else if (parseQueryString) {
-    // no query string, but parseQueryString still requested
-    out.search = '';
-    out.query = {};
-  }
-  if (rest) out.pathname = rest;
-  if (slashedProtocol[proto] &&
-      out.hostname && !out.pathname) {
-    out.pathname = '/';
-  }
-
-  //to support http.request
-  if (out.pathname || out.search) {
-    out.path = (out.pathname ? out.pathname : '') +
-               (out.search ? out.search : '');
-  }
-
-  // finally, reconstruct the href based on what has been validated.
-  out.href = urlFormat(out);
-  return out;
-}
-
-// format a parsed object into a url string
-function urlFormat(obj) {
-  // ensure it's an object, and not a string url.
-  // If it's an obj, this is a no-op.
-  // this way, you can call url_format() on strings
-  // to clean up potentially wonky urls.
-  if (typeof(obj) === 'string') obj = urlParse(obj);
-
-  var auth = obj.auth || '';
-  if (auth) {
-    auth = auth.split('@').join('%40');
-    for (var i = 0, l = nonAuthChars.length; i < l; i++) {
-      var nAC = nonAuthChars[i];
-      auth = auth.split(nAC).join(encodeURIComponent(nAC));
-    }
-    auth += '@';
-  }
-
-  var protocol = obj.protocol || '',
-      host = (obj.host !== undefined) ? auth + obj.host :
-          obj.hostname !== undefined ? (
-              auth + obj.hostname +
-              (obj.port ? ':' + obj.port : '')
-          ) :
-          false,
-      pathname = obj.pathname || '',
-      query = obj.query &&
-              ((typeof obj.query === 'object' &&
-                objectKeys(obj.query).length) ?
-                 querystring.stringify(obj.query) :
-                 '') || '',
-      search = obj.search || (query && ('?' + query)) || '',
-      hash = obj.hash || '';
-
-  if (protocol && protocol.substr(-1) !== ':') protocol += ':';
-
-  // only the slashedProtocols get the //.  Not mailto:, xmpp:, etc.
-  // unless they had them to begin with.
-  if (obj.slashes ||
-      (!protocol || slashedProtocol[protocol]) && host !== false) {
-    host = '//' + (host || '');
-    if (pathname && pathname.charAt(0) !== '/') pathname = '/' + pathname;
-  } else if (!host) {
-    host = '';
-  }
-
-  if (hash && hash.charAt(0) !== '#') hash = '#' + hash;
-  if (search && search.charAt(0) !== '?') search = '?' + search;
-
-  return protocol + host + pathname + search + hash;
-}
-
-function urlResolve(source, relative) {
-  return urlFormat(urlResolveObject(source, relative));
-}
-
-function urlResolveObject(source, relative) {
-  if (!source) return relative;
-
-  source = urlParse(urlFormat(source), false, true);
-  relative = urlParse(urlFormat(relative), false, true);
-
-  // hash is always overridden, no matter what.
-  source.hash = relative.hash;
-
-  if (relative.href === '') {
-    source.href = urlFormat(source);
-    return source;
-  }
-
-  // hrefs like //foo/bar always cut to the protocol.
-  if (relative.slashes && !relative.protocol) {
-    relative.protocol = source.protocol;
-    //urlParse appends trailing / to urls like http://www.example.com
-    if (slashedProtocol[relative.protocol] &&
-        relative.hostname && !relative.pathname) {
-      relative.path = relative.pathname = '/';
-    }
-    relative.href = urlFormat(relative);
-    return relative;
-  }
-
-  if (relative.protocol && relative.protocol !== source.protocol) {
-    // if it's a known url protocol, then changing
-    // the protocol does weird things
-    // first, if it's not file:, then we MUST have a host,
-    // and if there was a path
-    // to begin with, then we MUST have a path.
-    // if it is file:, then the host is dropped,
-    // because that's known to be hostless.
-    // anything else is assumed to be absolute.
-    if (!slashedProtocol[relative.protocol]) {
-      relative.href = urlFormat(relative);
-      return relative;
-    }
-    source.protocol = relative.protocol;
-    if (!relative.host && !hostlessProtocol[relative.protocol]) {
-      var relPath = (relative.pathname || '').split('/');
-      while (relPath.length && !(relative.host = relPath.shift()));
-      if (!relative.host) relative.host = '';
-      if (!relative.hostname) relative.hostname = '';
-      if (relPath[0] !== '') relPath.unshift('');
-      if (relPath.length < 2) relPath.unshift('');
-      relative.pathname = relPath.join('/');
-    }
-    source.pathname = relative.pathname;
-    source.search = relative.search;
-    source.query = relative.query;
-    source.host = relative.host || '';
-    source.auth = relative.auth;
-    source.hostname = relative.hostname || relative.host;
-    source.port = relative.port;
-    //to support http.request
-    if (source.pathname !== undefined || source.search !== undefined) {
-      source.path = (source.pathname ? source.pathname : '') +
-                    (source.search ? source.search : '');
-    }
-    source.slashes = source.slashes || relative.slashes;
-    source.href = urlFormat(source);
-    return source;
-  }
-
-  var isSourceAbs = (source.pathname && source.pathname.charAt(0) === '/'),
-      isRelAbs = (
-          relative.host !== undefined ||
-          relative.pathname && relative.pathname.charAt(0) === '/'
-      ),
-      mustEndAbs = (isRelAbs || isSourceAbs ||
-                    (source.host && relative.pathname)),
-      removeAllDots = mustEndAbs,
-      srcPath = source.pathname && source.pathname.split('/') || [],
-      relPath = relative.pathname && relative.pathname.split('/') || [],
-      psychotic = source.protocol &&
-          !slashedProtocol[source.protocol];
-
-  // if the url is a non-slashed url, then relative
-  // links like ../.. should be able
-  // to crawl up to the hostname, as well.  This is strange.
-  // source.protocol has already been set by now.
-  // Later on, put the first path part into the host field.
-  if (psychotic) {
-
-    delete source.hostname;
-    delete source.port;
-    if (source.host) {
-      if (srcPath[0] === '') srcPath[0] = source.host;
-      else srcPath.unshift(source.host);
-    }
-    delete source.host;
-    if (relative.protocol) {
-      delete relative.hostname;
-      delete relative.port;
-      if (relative.host) {
-        if (relPath[0] === '') relPath[0] = relative.host;
-        else relPath.unshift(relative.host);
-      }
-      delete relative.host;
-    }
-    mustEndAbs = mustEndAbs && (relPath[0] === '' || srcPath[0] === '');
-  }
-
-  if (isRelAbs) {
-    // it's absolute.
-    source.host = (relative.host || relative.host === '') ?
-                      relative.host : source.host;
-    source.hostname = (relative.hostname || relative.hostname === '') ?
-                      relative.hostname : source.hostname;
-    source.search = relative.search;
-    source.query = relative.query;
-    srcPath = relPath;
-    // fall through to the dot-handling below.
-  } else if (relPath.length) {
-    // it's relative
-    // throw away the existing file, and take the new path instead.
-    if (!srcPath) srcPath = [];
-    srcPath.pop();
-    srcPath = srcPath.concat(relPath);
-    source.search = relative.search;
-    source.query = relative.query;
-  } else if ('search' in relative) {
-    // just pull out the search.
-    // like href='?foo'.
-    // Put this after the other two cases because it simplifies the booleans
-    if (psychotic) {
-      source.hostname = source.host = srcPath.shift();
-      //occationaly the auth can get stuck only in host
-      //this especialy happens in cases like
-      //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
-      var authInHost = source.host && arrayIndexOf(source.host, '@') > 0 ?
-                       source.host.split('@') : false;
-      if (authInHost) {
-        source.auth = authInHost.shift();
-        source.host = source.hostname = authInHost.shift();
-      }
-    }
-    source.search = relative.search;
-    source.query = relative.query;
-    //to support http.request
-    if (source.pathname !== undefined || source.search !== undefined) {
-      source.path = (source.pathname ? source.pathname : '') +
-                    (source.search ? source.search : '');
-    }
-    source.href = urlFormat(source);
-    return source;
-  }
-  if (!srcPath.length) {
-    // no path at all.  easy.
-    // we've already handled the other stuff above.
-    delete source.pathname;
-    //to support http.request
-    if (!source.search) {
-      source.path = '/' + source.search;
-    } else {
-      delete source.path;
-    }
-    source.href = urlFormat(source);
-    return source;
-  }
-  // if a url ENDs in . or .., then it must get a trailing slash.
-  // however, if it ends in anything else non-slashy,
-  // then it must NOT get a trailing slash.
-  var last = srcPath.slice(-1)[0];
-  var hasTrailingSlash = (
-      (source.host || relative.host) && (last === '.' || last === '..') ||
-      last === '');
-
-  // strip single dots, resolve double dots to parent dir
-  // if the path tries to go above the root, `up` ends up > 0
-  var up = 0;
-  for (var i = srcPath.length; i >= 0; i--) {
-    last = srcPath[i];
-    if (last == '.') {
-      srcPath.splice(i, 1);
-    } else if (last === '..') {
-      srcPath.splice(i, 1);
-      up++;
-    } else if (up) {
-      srcPath.splice(i, 1);
-      up--;
-    }
-  }
-
-  // if the path is allowed to go above the root, restore leading ..s
-  if (!mustEndAbs && !removeAllDots) {
-    for (; up--; up) {
-      srcPath.unshift('..');
-    }
-  }
-
-  if (mustEndAbs && srcPath[0] !== '' &&
-      (!srcPath[0] || srcPath[0].charAt(0) !== '/')) {
-    srcPath.unshift('');
-  }
-
-  if (hasTrailingSlash && (srcPath.join('/').substr(-1) !== '/')) {
-    srcPath.push('');
-  }
-
-  var isAbsolute = srcPath[0] === '' ||
-      (srcPath[0] && srcPath[0].charAt(0) === '/');
-
-  // put the host back
-  if (psychotic) {
-    source.hostname = source.host = isAbsolute ? '' :
-                                    srcPath.length ? srcPath.shift() : '';
-    //occationaly the auth can get stuck only in host
-    //this especialy happens in cases like
-    //url.resolveObject('mailto:local1@domain1', 'local2@domain2')
-    var authInHost = source.host && arrayIndexOf(source.host, '@') > 0 ?
-                     source.host.split('@') : false;
-    if (authInHost) {
-      source.auth = authInHost.shift();
-      source.host = source.hostname = authInHost.shift();
-    }
-  }
-
-  mustEndAbs = mustEndAbs || (source.host && srcPath.length);
-
-  if (mustEndAbs && !isAbsolute) {
-    srcPath.unshift('');
-  }
-
-  source.pathname = srcPath.join('/');
-  //to support request.http
-  if (source.pathname !== undefined || source.search !== undefined) {
-    source.path = (source.pathname ? source.pathname : '') +
-                  (source.search ? source.search : '');
-  }
-  source.auth = relative.auth || source.auth;
-  source.slashes = source.slashes || relative.slashes;
-  source.href = urlFormat(source);
-  return source;
-}
-
-function parseHost(host) {
-  var out = {};
-  var port = portPattern.exec(host);
-  if (port) {
-    port = port[0];
-    out.port = port.substr(1);
-    host = host.substr(0, host.length - port.length);
-  }
-  if (host) out.hostname = host;
-  return out;
-}
-
-},{"querystring":26}],27:[function(require,module,exports){
-// nothing to see here... no file methods for the browser
-
-},{}],26:[function(require,module,exports){
+},{"./errors":1,"./nodes":13}],8:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -11379,7 +11393,7 @@ function decode(str) {
   }
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function() {
   var _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11457,7 +11471,7 @@ function decode(str) {
   */
 
 
-  this.compose = function(stream, validate, apply, join, location) {
+  this.compose = function(stream, validate, apply, join, location, parent) {
     var loader;
     if (validate == null) {
       validate = true;
@@ -11468,7 +11482,7 @@ function decode(str) {
     if (join == null) {
       join = true;
     }
-    loader = new exports.loader.Loader(stream, location, validate);
+    loader = new exports.loader.Loader(stream, location, validate, parent);
     return loader.get_single_node(validate, apply, join);
   };
 
@@ -11539,7 +11553,7 @@ function decode(str) {
   */
 
 
-  this.composeFile = function(file, validate, apply, join) {
+  this.composeFile = function(file, validate, apply, join, parent) {
     var stream;
     if (validate == null) {
       validate = true;
@@ -11551,7 +11565,7 @@ function decode(str) {
       join = true;
     }
     stream = this.readFile(file);
-    return this.compose(stream, validate, apply, join, file);
+    return this.compose(stream, validate, apply, join, file, parent);
   };
 
   /*
@@ -11621,7 +11635,1807 @@ function decode(str) {
 
 }).call(this);
 
-},{"./composer":7,"./construct":12,"./errors":1,"./events":2,"./loader":14,"./nodes":9,"./parser":17,"./reader":15,"./resolver":18,"./scanner":16,"./tokens":3,"fs":27,"q":6,"url":8,"xmlhttprequest":28}],20:[function(require,module,exports){
+},{"./composer":12,"./construct":15,"./errors":1,"./events":2,"./loader":17,"./nodes":13,"./parser":20,"./reader":19,"./resolver":21,"./scanner":18,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":28}],27:[function(require,module,exports){
+(function() {
+  var nodes, uritemplate,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  nodes = require('./nodes');
+
+  uritemplate = require('uritemplate');
+
+  /*
+     Applies transformations to the RAML
+  */
+
+
+  this.Transformations = (function() {
+    function Transformations() {
+      this.isContentTypeString = __bind(this.isContentTypeString, this);
+      this.add_key_value_to_node = __bind(this.add_key_value_to_node, this);
+      this.apply_default_media_type_to_resource = __bind(this.apply_default_media_type_to_resource, this);
+      this.get_media_type = __bind(this.get_media_type, this);
+      this.load_default_media_type = __bind(this.load_default_media_type, this);
+      this.applyAstTransformations = __bind(this.applyAstTransformations, this);
+      this.applyTransformations = __bind(this.applyTransformations, this);
+      this.declaredSchemas = {};
+    }
+
+    Transformations.prototype.applyTransformations = function(rootObject) {
+      return this.findAndInsertUriParameters(rootObject);
+    };
+
+    Transformations.prototype.applyAstTransformations = function(document) {
+      return this.transform_document(document);
+    };
+
+    Transformations.prototype.load_default_media_type = function(node) {
+      if (!this.isMapping(node || (node != null ? node.value : void 0))) {
+        return;
+      }
+      return this.mediaType = this.property_value(node, "mediaType");
+    };
+
+    Transformations.prototype.get_media_type = function() {
+      return this.mediaType;
+    };
+
+    Transformations.prototype.findAndInsertUriParameters = function(rootObject) {
+      var resources;
+      this.findAndInsertMissingBaseUriParameters(rootObject);
+      resources = rootObject.resources;
+      return this.findAndInsertMissinngBaseUriParameters(resources);
+    };
+
+    Transformations.prototype.findAndInsertMissingBaseUriParameters = function(rootObject) {
+      var expressions, template;
+      if (rootObject.baseUri) {
+        template = uritemplate.parse(rootObject.baseUri);
+        expressions = template.expressions.filter(function(expr) {
+          return 'templateText' in expr;
+        }).map(function(expression) {
+          return expression.templateText;
+        });
+        if (expressions.length) {
+          if (!rootObject.baseUriParameters) {
+            rootObject.baseUriParameters = {};
+          }
+        }
+        return expressions.forEach(function(parameterName) {
+          if (!(parameterName in rootObject.baseUriParameters)) {
+            rootObject.baseUriParameters[parameterName] = {
+              type: "string",
+              required: true,
+              displayName: parameterName
+            };
+            if (parameterName === "version") {
+              return rootObject.baseUriParameters[parameterName]["enum"] = [rootObject.version];
+            }
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.findAndInsertMissinngBaseUriParameters = function(resources) {
+      var _this = this;
+      if (resources != null ? resources.length : void 0) {
+        return resources.forEach(function(resource) {
+          var expressions, template;
+          template = uritemplate.parse(resource.relativeUri);
+          expressions = template.expressions.filter(function(expr) {
+            return 'templateText' in expr;
+          }).map(function(expression) {
+            return expression.templateText;
+          });
+          if (expressions.length) {
+            if (!resource.uriParameters) {
+              resource.uriParameters = {};
+            }
+          }
+          expressions.forEach(function(parameterName) {
+            if (!(parameterName in resource.uriParameters)) {
+              return resource.uriParameters[parameterName] = {
+                type: "string",
+                required: true,
+                displayName: parameterName
+              };
+            }
+          });
+          return _this.findAndInsertMissinngBaseUriParameters(resource.resources);
+        });
+      }
+    };
+
+    /*
+    Media Type pivot when using default mediaType property
+    */
+
+
+    Transformations.prototype.apply_default_media_type_to_resource = function(resource) {
+      var methods,
+        _this = this;
+      if (!this.mediaType) {
+        return;
+      }
+      if (!this.isMapping(resource)) {
+        return;
+      }
+      methods = this.child_methods(resource);
+      return methods.forEach(function(method) {
+        return _this.apply_default_media_type_to_method(method[1]);
+      });
+    };
+
+    Transformations.prototype.apply_default_media_type_to_method = function(method) {
+      var responses,
+        _this = this;
+      if (!this.mediaType) {
+        return;
+      }
+      if (!this.isMapping(method)) {
+        return;
+      }
+      if (this.has_property(method, "body")) {
+        this.apply_default_media_type_to_body(this.get_property(method, "body"));
+      }
+      if (this.has_property(method, "responses")) {
+        responses = this.get_property(method, "responses");
+        return responses.value.forEach(function(response) {
+          if (_this.has_property(response[1], "body")) {
+            return _this.apply_default_media_type_to_body(_this.get_property(response[1], "body"));
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.apply_default_media_type_to_body = function(body) {
+      var key, responseType, responseTypeKey, _ref, _ref1, _ref2;
+      if (!this.isMapping(body)) {
+        return;
+      }
+      if (body != null ? (_ref = body.value) != null ? (_ref1 = _ref[0]) != null ? (_ref2 = _ref1[0]) != null ? _ref2.value : void 0 : void 0 : void 0 : void 0) {
+        key = body.value[0][0].value;
+        if (!key.match(/\//)) {
+          responseType = new nodes.MappingNode('tag:yaml.org,2002:map', [], body.start_mark, body.end_mark);
+          responseTypeKey = new nodes.ScalarNode('tag:yaml.org,2002:str', this.mediaType, body.start_mark, body.end_mark);
+          responseType.value.push([responseTypeKey, body.clone()]);
+          return body.value = responseType.value;
+        }
+      }
+    };
+
+    Transformations.prototype.noop = function() {};
+
+    Transformations.prototype.transform_types = function(typeProperty) {
+      var types,
+        _this = this;
+      types = typeProperty.value;
+      return types.forEach(function(type_entry) {
+        return type_entry.value.forEach(function(type) {
+          return _this.transform_resource(type, true);
+        });
+      });
+    };
+
+    Transformations.prototype.transform_traits = function(traitProperty) {
+      var traits,
+        _this = this;
+      traits = traitProperty.value;
+      return traits.forEach(function(trait_entry) {
+        return trait_entry.value.forEach(function(trait) {
+          return _this.transform_method(trait[1], true);
+        });
+      });
+    };
+
+    Transformations.prototype.transform_named_params = function(property, allowParameterKeys, requiredByDefault) {
+      var _this = this;
+      if (requiredByDefault == null) {
+        requiredByDefault = true;
+      }
+      if (this.isNull(property[1])) {
+        return;
+      }
+      return property[1].value.forEach(function(param) {
+        return _this.transform_common_parameter_properties(param[0].value, param[1], allowParameterKeys, requiredByDefault);
+      });
+    };
+
+    Transformations.prototype.transform_common_parameter_properties = function(parameterName, node, allowParameterKeys, requiredByDefault) {
+      var _this = this;
+      if (!node.value) {
+        return;
+      }
+      if (this.isSequence(node)) {
+        return node.value.forEach(function(parameter) {
+          return _this.transform_named_parameter(parameterName, parameter, allowParameterKeys, requiredByDefault);
+        });
+      } else {
+        return this.transform_named_parameter(parameterName, node, allowParameterKeys, requiredByDefault);
+      }
+    };
+
+    Transformations.prototype.transform_named_parameter = function(parameterName, node, allowParameterKeys, requiredByDefault) {
+      var hasDisplayName, hasRequired, hasType,
+        _this = this;
+      hasDisplayName = false;
+      hasRequired = false;
+      hasType = false;
+      node.value.forEach(function(childNode) {
+        var canonicalPropertyName;
+        if (allowParameterKeys && _this.isParameterKey(childNode)) {
+          return;
+        }
+        canonicalPropertyName = _this.canonicalizePropertyName(childNode[0].value, allowParameterKeys);
+        switch (canonicalPropertyName) {
+          case "pattern":
+            return _this.noop();
+          case "default":
+            return _this.noop();
+          case "enum":
+            return _this.noop();
+          case "description":
+            return _this.noop();
+          case "example":
+            return _this.noop();
+          case "minLength":
+            return _this.noop();
+          case "maxLength":
+            return _this.noop();
+          case "minimum":
+            return _this.noop();
+          case "maximum":
+            return _this.noop();
+          case "repeat":
+            return _this.noop();
+          case "displayName":
+            return hasDisplayName = true;
+          case "type":
+            return hasType = true;
+          case "required":
+            return hasRequired = true;
+          default:
+            return _this.noop();
+        }
+      });
+      if (!hasDisplayName) {
+        this.add_key_value_to_node(node, 'displayName', 'tag:yaml.org,2002:str', this.canonicalizePropertyName(parameterName, allowParameterKeys));
+      }
+      if (!hasRequired) {
+        if (requiredByDefault) {
+          this.add_key_value_to_node(node, 'required', 'tag:yaml.org,2002:bool', 'true');
+        }
+      }
+      if (!hasType) {
+        return this.add_key_value_to_node(node, 'type', 'tag:yaml.org,2002:str', 'string');
+      }
+    };
+
+    Transformations.prototype.add_key_value_to_node = function(node, keyName, valueTag, value) {
+      var propertyName, propertyValue;
+      propertyName = new nodes.ScalarNode('tag:yaml.org,2002:str', keyName, node.start_mark, node.end_mark);
+      propertyValue = new nodes.ScalarNode(valueTag, value, node.start_mark, node.end_mark);
+      return node.value.push([propertyName, propertyValue]);
+    };
+
+    Transformations.prototype.transform_document = function(node) {
+      var _this = this;
+      if (node != null ? node.value : void 0) {
+        return node.value.forEach(function(property) {
+          var _ref;
+          switch (property[0].value) {
+            case "title":
+              return _this.noop();
+            case "securitySchemes":
+              return _this.noop();
+            case "schemas":
+              return _this.noop();
+            case "version":
+              return _this.noop();
+            case "documentation":
+              return _this.noop();
+            case "mediaType":
+              return _this.noop();
+            case "securedBy":
+              return _this.noop();
+            case "baseUri":
+              return _this.noop();
+            case "traits":
+              return _this.transform_traits(property[1]);
+            case "baseUriParameters":
+              return _this.transform_named_params(property, false);
+            case "resourceTypes":
+              return _this.transform_types(property[1]);
+            case "resources":
+              return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
+                return _this.transform_resource(resource);
+              }) : void 0;
+            default:
+              return _this.noop();
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.transform_resource = function(resource, allowParameterKeys) {
+      var _this = this;
+      if (allowParameterKeys == null) {
+        allowParameterKeys = false;
+      }
+      if (resource.value) {
+        return resource.value.forEach(function(property) {
+          var canonicalKey, isKnownCommonProperty, _ref, _ref1;
+          isKnownCommonProperty = _this.transform_common_properties(property, allowParameterKeys);
+          if (!isKnownCommonProperty) {
+            if (property[0].value.match(new RegExp("^(get|post|put|delete|head|patch|options)" + (allowParameterKeys ? '\\??' : '') + "$"))) {
+              return _this.transform_method(property[1], allowParameterKeys);
+            } else {
+              canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+              switch (canonicalKey) {
+                case "type":
+                  return _this.noop();
+                case "usage":
+                  return _this.noop();
+                case "securedBy":
+                  return _this.noop();
+                case "uriParameters":
+                  return _this.transform_named_params(property, allowParameterKeys);
+                case "baseUriParameters":
+                  return _this.transform_named_params(property, allowParameterKeys);
+                case "resources":
+                  return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
+                    return _this.transform_resource(resource);
+                  }) : void 0;
+                case "methods":
+                  return (_ref1 = property[1]) != null ? _ref1.value.forEach(function(method) {
+                    return _this.transform_method(method, allowParameterKeys);
+                  }) : void 0;
+                default:
+                  return _this.noop();
+              }
+            }
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.transform_method = function(method, allowParameterKeys) {
+      var _this = this;
+      if (this.isNull(method)) {
+        return;
+      }
+      return method.value.forEach(function(property) {
+        var canonicalKey;
+        if (_this.transform_common_properties(property, allowParameterKeys)) {
+          return;
+        }
+        canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+        switch (canonicalKey) {
+          case "securedBy":
+            return _this.noop();
+          case "usage":
+            return _this.noop();
+          case "headers":
+            return _this.transform_named_params(property, allowParameterKeys);
+          case "queryParameters":
+            return _this.transform_named_params(property, allowParameterKeys, false);
+          case "body":
+            return _this.transform_body(property, allowParameterKeys);
+          case "responses":
+            return _this.transform_responses(property, allowParameterKeys);
+          default:
+            return _this.noop();
+        }
+      });
+    };
+
+    Transformations.prototype.transform_responses = function(responses, allowParameterKeys) {
+      var _this = this;
+      if (this.isNull(responses[1])) {
+        return;
+      }
+      return responses[1].value.forEach(function(response) {
+        return _this.transform_response(response, allowParameterKeys);
+      });
+    };
+
+    Transformations.prototype.transform_response = function(response, allowParameterKeys) {
+      var _this = this;
+      if (this.isMapping(response[1])) {
+        return response[1].value.forEach(function(property) {
+          var canonicalKey;
+          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+          switch (canonicalKey) {
+            case "description":
+              return _this.noop();
+            case "body":
+              return _this.transform_body(property, allowParameterKeys);
+            case "headers":
+              return _this.transform_named_params(property, allowParameterKeys);
+            default:
+              return _this.noop();
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.isContentTypeString = function(value) {
+      return value != null ? value.match(/^[^\/]+\/[^\/]+$/) : void 0;
+    };
+
+    Transformations.prototype.transform_body = function(property, allowParameterKeys) {
+      var _ref,
+        _this = this;
+      if (this.isNull(property[1])) {
+        return;
+      }
+      return (_ref = property[1].value) != null ? _ref.forEach(function(bodyProperty) {
+        var canonicalProperty;
+        if (_this.isParameterKey(bodyProperty)) {
+          return _this.noop();
+        } else if (_this.isContentTypeString(bodyProperty[0].value)) {
+          return _this.transform_body(bodyProperty, allowParameterKeys);
+        } else {
+          canonicalProperty = _this.canonicalizePropertyName(bodyProperty[0].value, allowParameterKeys);
+          switch (canonicalProperty) {
+            case "example":
+              return _this.noop();
+            case "schema":
+              return _this.noop();
+            case "formParameters":
+              return _this.transform_named_params(bodyProperty, allowParameterKeys, false);
+            default:
+              return _this.noop();
+          }
+        }
+      }) : void 0;
+    };
+
+    Transformations.prototype.transform_common_properties = function(property, allowParameterKeys) {
+      var canonicalProperty;
+      if (this.isParameterKey(property)) {
+        return true;
+      } else {
+        canonicalProperty = this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+        switch (canonicalProperty) {
+          case "displayName":
+            return true;
+          case "description":
+            return true;
+          case "is":
+            return true;
+          default:
+            this.noop();
+        }
+      }
+      return false;
+    };
+
+    return Transformations;
+
+  })();
+
+}).call(this);
+
+},{"./nodes":13,"uritemplate":29}],22:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, traits, uritemplate, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  traits = require('./traits');
+
+  uritemplate = require('uritemplate');
+
+  /*
+  The Validator throws these.
+  */
+
+
+  this.ValidationError = (function(_super) {
+    __extends(ValidationError, _super);
+
+    function ValidationError() {
+      _ref = ValidationError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return ValidationError;
+
+  })(MarkedYAMLError);
+
+  /*
+  A collection of multiple validation errors
+  */
+
+
+  this.ValidationErrors = (function(_super) {
+    __extends(ValidationErrors, _super);
+
+    function ValidationErrors(validation_errors) {
+      this.validation_errors = validation_errors;
+    }
+
+    ValidationErrors.prototype.get_validation_errors = function() {
+      return this.validation_errors;
+    };
+
+    return ValidationErrors;
+
+  })(MarkedYAMLError);
+
+  /*
+  The Validator class deals with validating a YAML file according to the spec
+  */
+
+
+  this.Validator = (function() {
+    function Validator() {
+      this.get_properties = __bind(this.get_properties, this);
+      this.get_list_values = __bind(this.get_list_values, this);
+      this.validations = [this.is_map, this.valid_root_properties, this.validate_base_uri_parameters, this.valid_absolute_uris];
+    }
+
+    Validator.prototype.validate_document = function(node) {
+      var _this = this;
+      this.validations.forEach(function(validation) {
+        return validation.call(_this, node);
+      });
+      return true;
+    };
+
+    Validator.prototype.validate_security_schemes = function(schemesProperty) {
+      var schemeNamesTrack,
+        _this = this;
+      if (!this.isSequence(schemesProperty)) {
+        throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security schemes property, it must be an array', schemesProperty.start_mark);
+      }
+      schemeNamesTrack = {};
+      return schemesProperty.value.forEach(function(scheme_entry) {
+        if (!_this.isMapping(scheme_entry)) {
+          throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme_entry.start_mark);
+        }
+        return scheme_entry.value.forEach(function(scheme) {
+          if (!_this.isMapping(scheme[1])) {
+            throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme.start_mark);
+          }
+          return _this.validate_security_scheme(scheme[1]);
+        });
+      });
+    };
+
+    Validator.prototype.trackRepeatedProperties = function(properties, property, mark, section, errorMessage) {
+      if (section == null) {
+        section = "RAML";
+      }
+      if (errorMessage == null) {
+        errorMessage = "Property with the same name already exists";
+      }
+      if (property in properties) {
+        throw new exports.ValidationError("while validating " + section, null, errorMessage + (": '" + property + "'"), mark);
+      }
+      return properties[property] = true;
+    };
+
+    Validator.prototype.isMapping = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:map";
+    };
+
+    Validator.prototype.isNull = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:null";
+    };
+
+    Validator.prototype.isSequence = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:seq";
+    };
+
+    Validator.prototype.isString = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:str";
+    };
+
+    Validator.prototype.isInteger = function(node) {
+      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:int";
+    };
+
+    Validator.prototype.isNullableMapping = function(node) {
+      return this.isMapping(node) || this.isNull(node);
+    };
+
+    Validator.prototype.isNullableString = function(node) {
+      return this.isString(node) || this.isNull(node);
+    };
+
+    Validator.prototype.isNullableSequence = function(node) {
+      return this.isSequence(node) || this.isNull(node);
+    };
+
+    Validator.prototype.isScalar = function(node) {
+      return (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:null' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:bool' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:int' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:float' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:binary' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:timestamp' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:str';
+    };
+
+    Validator.prototype.isCollection = function(node) {
+      return (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:omap' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:pairs' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:set' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:seq' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:map';
+    };
+
+    Validator.prototype.validate_security_scheme = function(scheme) {
+      var schemeProperties, settings, type,
+        _this = this;
+      type = null;
+      settings = null;
+      schemeProperties = {};
+      scheme.value.forEach(function(property) {
+        _this.trackRepeatedProperties(schemeProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "property already used in security scheme");
+        switch (property[0].value) {
+          case "description":
+            if (!_this.isScalar(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'schemes description must be a string', property[1].start_mark);
+            }
+            break;
+          case "type":
+            type = property[1].value;
+            if (!(_this.isString(property[1]) && type.match(/^(OAuth 1.0|OAuth 2.0|Basic Authentication|Digest Authentication|x-.+)$/))) {
+              throw new exports.ValidationError('while validating security scheme', null, 'schemes type must be any of: "OAuth 1.0", "OAuth 2.0", "Basic Authentication", "Digest Authentication", "x-\{.+\}"', property[1].start_mark);
+            }
+            break;
+          case "describedBy":
+            return _this.validate_method(property, true, "security scheme");
+          case "settings":
+            settings = property;
+            if (!_this.isNullableMapping(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'schemes settings must be a map', property[1].start_mark);
+            }
+            break;
+          default:
+            throw new exports.ValidationError('while validating security scheme', null, "property: '" + property[0].value + "' is invalid in a security scheme", property[0].start_mark);
+        }
+      });
+      if (!type) {
+        throw new exports.ValidationError('while validating security scheme', null, 'schemes type must be any of: "OAuth 1.0", "OAuth 2.0", "Basic Authentication", "Digest Authentication", "x-\{.+\}"', scheme.start_mark);
+      } else if (type === "OAuth 2.0") {
+        if (!settings) {
+          throw new exports.ValidationError('while validating security scheme', null, 'for OAuth 2.0 settings must be a map', scheme.start_mark);
+        }
+        return this.validate_oauth2_settings(settings);
+      } else if (type === "OAuth 1.0") {
+        if (!settings) {
+          throw new exports.ValidationError('while validating security scheme', null, 'for OAuth 1.0 settings must be a map', scheme.start_mark);
+        }
+        return this.validate_oauth1_settings(settings);
+      }
+    };
+
+    Validator.prototype.validate_oauth2_settings = function(settings) {
+      var accessTokenUrl, authorizationUrl, settingProperties,
+        _this = this;
+      authorizationUrl = false;
+      accessTokenUrl = false;
+      settingProperties = {};
+      settings[1].value.forEach(function(property) {
+        _this.trackRepeatedProperties(settingProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "setting with the same name already exists");
+        switch (property[0].value) {
+          case "authorizationUrl":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', property[0].start_mark);
+            }
+            break;
+          case "accessTokenUrl":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', property[0].start_mark);
+            }
+        }
+      });
+      if (!("accessTokenUrl" in settingProperties)) {
+        throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', settings.start_mark);
+      }
+      if (!("authorizationUrl" in settingProperties)) {
+        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', settings.start_mark);
+      }
+    };
+
+    Validator.prototype.validate_oauth1_settings = function(settings) {
+      var authorizationUri, requestTokenUri, settingProperties, tokenCredentialsUri,
+        _this = this;
+      requestTokenUri = false;
+      authorizationUri = false;
+      tokenCredentialsUri = false;
+      settingProperties = {};
+      settings[1].value.forEach(function(property) {
+        _this.trackRepeatedProperties(settingProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "setting with the same name already exists");
+        switch (property[0].value) {
+          case "requestTokenUri":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', property[0].start_mark);
+            }
+            return requestTokenUri = true;
+          case "authorizationUri":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', property[0].start_mark);
+            }
+            return authorizationUri = true;
+          case "tokenCredentialsUri":
+            if (!_this.isString(property[1])) {
+              throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', property[0].start_mark);
+            }
+            return tokenCredentialsUri = true;
+        }
+      });
+      if (!("requestTokenUri" in settingProperties)) {
+        throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', settings.start_mark);
+      }
+      if (!("authorizationUri" in settingProperties)) {
+        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', settings.start_mark);
+      }
+      if (!("tokenCredentialsUri" in settingProperties)) {
+        throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', settings.start_mark);
+      }
+    };
+
+    Validator.prototype.validate_root_schemas = function(schemas) {
+      var schema, schemaList, schemaName, _results;
+      if (!this.isSequence(schemas)) {
+        throw new exports.ValidationError('while validating schemas', null, 'schemas property must be an array', schemas.start_mark);
+      }
+      schemaList = this.get_all_schemas();
+      _results = [];
+      for (schemaName in schemaList) {
+        schema = schemaList[schemaName];
+        if (!(schema[1].tag && this.isString(schema[1]))) {
+          throw new exports.ValidationError('while validating schemas', null, 'schema ' + schemaName + ' must be a string', schema[0].start_mark);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Validator.prototype.is_map = function(node) {
+      var baseUriProperty;
+      baseUriProperty = this.get_property(node, "baseUri");
+      this.baseUri = baseUriProperty.value;
+      if (!(node || this.isNull(node))) {
+        throw new exports.ValidationError('while validating root', null, 'empty document', 0);
+      }
+      if (!this.isMapping(node)) {
+        throw new exports.ValidationError('while validating root', null, 'document must be a mapping', 0);
+      }
+    };
+
+    Validator.prototype.validate_base_uri_parameters = function(node) {
+      var baseUriProperty, property;
+      baseUriProperty = this.get_property(node, "baseUri");
+      this.baseUri = baseUriProperty.value;
+      if (this.has_property(node, "baseUriParameters")) {
+        if (!this.isScalar(baseUriProperty)) {
+          throw new exports.ValidationError('while validating uri parameters', null, 'uri parameters defined when there is no baseUri', node.start_mark);
+        }
+        property = this.get_property(node, "baseUriParameters");
+        if (!this.isNullableMapping(property)) {
+          throw new exports.ValidationError('while validating uri parameters', null, 'base uri parameters must be a mapping', node.start_mark);
+        }
+        return this.validate_uri_parameters(this.baseUri, property, false, false, ["version"]);
+      }
+    };
+
+    Validator.prototype.validate_uri_parameters = function(uri, uriProperty, allowParameterKeys, skipParameterUseCheck, reservedNames) {
+      var err, expressions, template, uriParameters, _ref1,
+        _this = this;
+      if (reservedNames == null) {
+        reservedNames = [];
+      }
+      try {
+        template = uritemplate.parse(uri);
+      } catch (_error) {
+        err = _error;
+        throw new exports.ValidationError('while validating uri parameters', null, err != null ? (_ref1 = err.options) != null ? _ref1.message : void 0 : void 0, uriProperty.start_mark);
+      }
+      expressions = template.expressions.filter(function(expr) {
+        return "templateText" in expr;
+      }).map(function(expression) {
+        return expression.templateText;
+      });
+      uriParameters = {};
+      if (typeof uriProperty.value === "object") {
+        return uriProperty.value.forEach(function(uriParameter) {
+          var parameterName;
+          parameterName = _this.canonicalizePropertyName(uriParameter[0].value, allowParameterKeys);
+          _this.trackRepeatedProperties(uriParameters, parameterName, uriProperty.start_mark, 'while validating URI parameters', "URI parameter with the same name already exists");
+          if (__indexOf.call(reservedNames, parameterName) >= 0) {
+            throw new exports.ValidationError('while validating baseUri', null, uriParameter[0].value + ' parameter not allowed here', uriParameter[0].start_mark);
+          }
+          if (!(_this.isNullableMapping(uriParameter[1], allowParameterKeys) || _this.isNullableSequence(uriParameter[1], allowParameterKeys))) {
+            throw new exports.ValidationError('while validating baseUri', null, 'URI parameter must be a mapping', uriParameter[0].start_mark);
+          }
+          if (!_this.isNull(uriParameter[1])) {
+            _this.valid_common_parameter_properties(uriParameter[1], allowParameterKeys);
+          }
+          if (!(skipParameterUseCheck || _this.isParameterKey(uriParameter) || __indexOf.call(expressions, parameterName) >= 0)) {
+            throw new exports.ValidationError('while validating baseUri', null, uriParameter[0].value + ' uri parameter unused', uriParameter[0].start_mark);
+          }
+        });
+      }
+    };
+
+    Validator.prototype.validate_types = function(typeProperty) {
+      var types, typesNamesTrack,
+        _this = this;
+      types = typeProperty.value;
+      typesNamesTrack = {};
+      if (!this.isSequence(typeProperty)) {
+        throw new exports.ValidationError('while validating resource types', null, 'invalid resourceTypes definition, it must be an array', typeProperty.start_mark);
+      }
+      return types.forEach(function(type_entry) {
+        if (!_this.isMapping(type_entry)) {
+          throw new exports.ValidationError('while validating resource types', null, 'invalid resourceType definition, it must be a mapping', type_entry.start_mark);
+        }
+        return type_entry.value.forEach(function(type) {
+          if (!_this.isMapping(type[1])) {
+            throw new exports.ValidationError('while validating resource types', null, 'invalid resourceType definition, it must be a mapping', type_entry.start_mark);
+          }
+          return _this.validate_resource(type, true, 'resource type');
+        });
+      });
+    };
+
+    Validator.prototype.validate_traits = function(traitProperty) {
+      var traitNamesTrack,
+        _this = this;
+      traits = traitProperty.value;
+      traitNamesTrack = {};
+      if (!Array.isArray(traits)) {
+        throw new exports.ValidationError('while validating traits', null, 'invalid traits definition, it must be an array', traitProperty.start_mark);
+      }
+      return traits.forEach(function(trait_entry) {
+        if (!Array.isArray(trait_entry.value)) {
+          throw new exports.ValidationError('while validating traits', null, 'invalid traits definition, it must be an array', traitProperty.start_mark);
+        }
+        return trait_entry.value.forEach(function(trait) {
+          if (!_this.isMapping(trait[1])) {
+            throw new exports.ValidationError('while validating traits', null, 'invalid trait definition, it must be a mapping', trait[1].start_mark);
+          }
+          return _this.valid_traits_properties(trait);
+        });
+      });
+    };
+
+    Validator.prototype.valid_traits_properties = function(node) {
+      var invalid;
+      if (!node[1].value) {
+        return;
+      }
+      if (!this.isMapping(node[1])) {
+        return;
+      }
+      invalid = node[1].value.filter(function(childNode) {
+        return childNode[0].value === "is" || childNode[0].value === "type";
+      });
+      if (invalid.length > 0) {
+        throw new exports.ValidationError('while validating trait properties', null, "property: '" + invalid[0][0].value + "' is invalid in a trait", invalid[0][0].start_mark);
+      }
+      return this.validate_method(node, true, 'trait');
+    };
+
+    Validator.prototype.canonicalizePropertyName = function(propertyName, mustRemoveQuestionMark) {
+      if (mustRemoveQuestionMark && propertyName.slice(-1) === '?') {
+        return propertyName.slice(0, -1);
+      }
+      return propertyName;
+    };
+
+    Validator.prototype.valid_common_parameter_properties = function(node, allowParameterKeys) {
+      var _this = this;
+      if (!node.value) {
+        return;
+      }
+      if (this.isSequence(node)) {
+        if (node.value.length === 0) {
+          throw new exports.ValidationError('while validating parameter properties', null, 'named parameter needs at least one type', node.start_mark);
+        }
+        if (!(node.value.length > 1)) {
+          throw new exports.ValidationError('while validating parameter properties', null, 'single type for variably typed parameter', node.start_mark);
+        }
+        return node.value.forEach(function(parameter) {
+          return _this.validate_named_parameter(parameter, allowParameterKeys);
+        });
+      } else {
+        return this.validate_named_parameter(node, allowParameterKeys);
+      }
+    };
+
+    Validator.prototype.validate_named_parameter = function(node, allowParameterKeys) {
+      var parameterProperties,
+        _this = this;
+      parameterProperties = {};
+      return node.value.forEach(function(childNode) {
+        var booleanValues, canonicalPropertyName, enumValues, propertyName, propertyValue, validTypes;
+        propertyName = childNode[0].value;
+        propertyValue = childNode[1].value;
+        _this.trackRepeatedProperties(parameterProperties, _this.canonicalizePropertyName(childNode[0].value, true), childNode[0].start_mark, 'while validating parameter properties', "parameter property already used");
+        booleanValues = ["true", "false"];
+        if (allowParameterKeys && _this.isParameterKey(childNode)) {
+          return;
+        }
+        canonicalPropertyName = _this.canonicalizePropertyName(propertyName, allowParameterKeys);
+        switch (canonicalPropertyName) {
+          case "displayName":
+            if (!_this.isScalar(childNode[1])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of displayName must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "pattern":
+            if (!_this.isScalar(childNode[1])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of pattern must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "default":
+            if (!_this.isScalar(childNode[1])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of default must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "enum":
+            if (!_this.isNullableSequence(childNode[1])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of enum must be an array', childNode[1].start_mark);
+            }
+            if (!childNode[1].value.length) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'enum is empty', childNode[1].start_mark);
+            }
+            enumValues = _this.get_list_values(childNode[1].value);
+            if (enumValues.hasDuplicates()) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'enum contains duplicated values', childNode[1].start_mark);
+            }
+            break;
+          case "description":
+            if (!_this.isScalar(childNode[1])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of description must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "example":
+            if (!_this.isScalar(childNode[1])) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of example must be a scalar', childNode[1].start_mark);
+            }
+            break;
+          case "minLength":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of minLength must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "maxLength":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of maxLength must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "minimum":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of minimum must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "maximum":
+            if (isNaN(propertyValue)) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'the value of maximum must be a number', childNode[1].start_mark);
+            }
+            break;
+          case "type":
+            validTypes = ['string', 'number', 'integer', 'date', 'boolean', 'file'];
+            if (__indexOf.call(validTypes, propertyValue) < 0) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'type can be either of: string, number, integer, file, date or boolean ', childNode[1].start_mark);
+            }
+            break;
+          case "required":
+            if (__indexOf.call(booleanValues, propertyValue) < 0) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'required can be any either true or false', childNode[1].start_mark);
+            }
+            break;
+          case "repeat":
+            if (__indexOf.call(booleanValues, propertyValue) < 0) {
+              throw new exports.ValidationError('while validating parameter properties', null, 'repeat can be any either true or false', childNode[1].start_mark);
+            }
+            break;
+          default:
+            throw new exports.ValidationError('while validating parameter properties', null, 'unknown property ' + propertyName, childNode[0].start_mark);
+        }
+      });
+    };
+
+    Validator.prototype.get_list_values = function(node) {
+      var _this = this;
+      return node.map(function(item) {
+        return item.value;
+      });
+    };
+
+    Validator.prototype.valid_root_properties = function(node) {
+      var checkVersion, rootProperties,
+        _this = this;
+      checkVersion = false;
+      rootProperties = {};
+      if (node != null ? node.value : void 0) {
+        node.value.forEach(function(property) {
+          if (!_this.isString(property[0])) {
+            throw new exports.ValidationError('while validating root properties', null, 'keys can only be strings', property[0].start_mark);
+          }
+          if (property[0].value.match(/^\//)) {
+            _this.trackRepeatedProperties(rootProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating root properties', "resource already declared");
+          } else {
+            _this.trackRepeatedProperties(rootProperties, property[0].value, property[0].start_mark, 'while validating root properties', "root property already used");
+          }
+          switch (property[0].value) {
+            case "title":
+              if (!_this.isScalar(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'title must be a string', property[0].start_mark);
+              }
+              break;
+            case "baseUri":
+              if (!_this.isScalar(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'baseUri must be a string', property[0].start_mark);
+              }
+              return checkVersion = _this.validate_base_uri(property[1]);
+            case "securitySchemes":
+              return _this.validate_security_schemes(property[1]);
+            case "schemas":
+              return _this.validate_root_schemas(property[1]);
+            case "version":
+              if (!_this.isScalar(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'version must be a string', property[0].start_mark);
+              }
+              break;
+            case "traits":
+              return _this.validate_traits(property[1]);
+            case "documentation":
+              if (!_this.isSequence(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'documentation must be an array', property[0].start_mark);
+              }
+              return _this.validate_documentation(property[1]);
+            case "mediaType":
+              if (!_this.isString(property[1])) {
+                throw new exports.ValidationError('while validating root properties', null, 'mediaType must be a scalar', property[0].start_mark);
+              }
+              break;
+            case "baseUriParameters":
+              return _this.is_map(node);
+            case "resourceTypes":
+              return _this.validate_types(property[1]);
+            case "securedBy":
+              return _this.validate_secured_by(property);
+            default:
+              if (property[0].value.match(/^\//)) {
+                return _this.validate_resource(property);
+              } else {
+                throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + property[0].value, property[0].start_mark);
+              }
+          }
+        });
+      }
+      if (!("title" in rootProperties)) {
+        throw new exports.ValidationError('while validating root properties', null, 'missing title', node.start_mark);
+      }
+      if (checkVersion && !("version" in rootProperties)) {
+        throw new exports.ValidationError('while validating version', null, 'missing version', node.start_mark);
+      }
+    };
+
+    Validator.prototype.validate_documentation = function(documentation_property) {
+      var _this = this;
+      if (!documentation_property.value.length) {
+        throw new exports.ValidationError('while validating documentation section', null, 'there must be at least one document in the documentation section', documentation_property.start_mark);
+      }
+      return documentation_property.value.forEach(function(docSection) {
+        return _this.validate_doc_section(docSection);
+      });
+    };
+
+    Validator.prototype.validate_doc_section = function(docSection) {
+      var docProperties,
+        _this = this;
+      if (!this.isMapping(docSection)) {
+        throw new exports.ValidationError('while validating documentation section', null, 'each documentation section must be a mapping', docSection.start_mark);
+      }
+      docProperties = {};
+      docSection.value.forEach(function(property) {
+        var hasContent, hasTitle;
+        _this.trackRepeatedProperties(docProperties, property[0].value, property[0].start_mark, 'while validating documentation section', "property already used");
+        if (!_this.isScalar(property[0])) {
+          throw new exports.ValidationError('while validating documentation section', null, 'keys can only be strings', property[0].start_mark);
+        }
+        switch (property[0].value) {
+          case "title":
+            if (!(_this.isScalar(property[1]) && !_this.isNull(property[1]))) {
+              throw new exports.ValidationError('while validating documentation section', null, 'title must be a string', property[0].start_mark);
+            }
+            return hasTitle = true;
+          case "content":
+            if (!(_this.isScalar(property[1]) && !_this.isNull(property[1]))) {
+              throw new exports.ValidationError('while validating documentation section', null, 'content must be a string', property[0].start_mark);
+            }
+            return hasContent = true;
+          default:
+            throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + property[0].value, property[0].start_mark);
+        }
+      });
+      if (!("content" in docProperties)) {
+        throw new exports.ValidationError('while validating documentation section', null, 'a documentation entry must have content property', docSection.start_mark);
+      }
+      if (!("title" in docProperties)) {
+        throw new exports.ValidationError('while validating documentation section', null, 'a documentation entry must have title property', docSection.start_mark);
+      }
+    };
+
+    Validator.prototype.child_resources = function(node) {
+      if (node && this.isMapping(node)) {
+        return node.value.filter(function(childNode) {
+          return childNode[0].value.match(/^\//);
+        });
+      }
+      return [];
+    };
+
+    Validator.prototype.validate_resource = function(resource, allowParameterKeys, context) {
+      var err, resourceProperties, template, _ref1,
+        _this = this;
+      if (allowParameterKeys == null) {
+        allowParameterKeys = false;
+      }
+      if (context == null) {
+        context = "resource";
+      }
+      if (!(resource[1] && this.isNullableMapping(resource[1]))) {
+        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', resource[1].start_mark);
+      }
+      if (resource[0].value) {
+        try {
+          template = uritemplate.parse(resource[0].value);
+        } catch (_error) {
+          err = _error;
+          throw new exports.ValidationError('while validating resource', null, "Resource name is invalid: " + (err != null ? (_ref1 = err.options) != null ? _ref1.message : void 0 : void 0), resource[0].start_mark);
+        }
+      }
+      if (this.isNull(resource[1])) {
+        return;
+      }
+      if (resource[1].value) {
+        resourceProperties = {};
+        return resource[1].value.forEach(function(property) {
+          var canonicalKey, key, valid;
+          if (property[0].value.match(/^\//)) {
+            _this.trackRepeatedProperties(resourceProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating resource', "resource already declared");
+          } else if (property[0].value.match(/^(get|post|put|delete|head|patch|options)\??$/)) {
+            _this.trackRepeatedProperties(resourceProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating resource', "method already declared");
+          } else {
+            _this.trackRepeatedProperties(resourceProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating resource', "property already used");
+          }
+          if (!_this.validate_common_properties(property, allowParameterKeys)) {
+            if (property[0].value.match(/^\//)) {
+              if (allowParameterKeys) {
+                throw new exports.ValidationError('while validating trait properties', null, 'resource type cannot define child resources', property[0].start_mark);
+              }
+              return _this.validate_resource(property, allowParameterKeys);
+            } else if (property[0].value.match(new RegExp("^(get|post|put|delete|head|patch|options)" + (allowParameterKeys ? '\\??' : '') + "$"))) {
+              return _this.validate_method(property, allowParameterKeys, 'method');
+            } else {
+              key = property[0].value;
+              canonicalKey = _this.canonicalizePropertyName(key, allowParameterKeys);
+              valid = true;
+              switch (canonicalKey) {
+                case "uriParameters":
+                  if (!_this.isNullableMapping(property[1])) {
+                    throw new exports.ValidationError('while validating uri parameters', null, 'uri parameters must be a mapping', property[0].start_mark);
+                  }
+                  _this.validate_uri_parameters(resource[0].value, property[1], allowParameterKeys, allowParameterKeys);
+                  break;
+                case "baseUriParameters":
+                  if (!_this.baseUri) {
+                    throw new exports.ValidationError('while validating uri parameters', null, 'base uri parameters defined when there is no baseUri', property[0].start_mark);
+                  }
+                  if (!_this.isNullableMapping(property[1])) {
+                    throw new exports.ValidationError('while validating uri parameters', null, 'base uri parameters must be a mapping', property[0].start_mark);
+                  }
+                  _this.validate_uri_parameters(_this.baseUri, property[1], allowParameterKeys);
+                  break;
+                default:
+                  valid = false;
+              }
+              switch (key) {
+                case "type":
+                  return _this.validate_type_property(property, allowParameterKeys);
+                case "usage":
+                  if (!allowParameterKeys) {
+                    throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
+                  }
+                  break;
+                case "securedBy":
+                  return _this.validate_secured_by(property);
+                default:
+                  if (!valid) {
+                    throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + ("' is invalid in a " + context), property[0].start_mark);
+                  }
+              }
+            }
+          }
+        });
+      }
+    };
+
+    Validator.prototype.validate_secured_by = function(property) {
+      var secSchemes,
+        _this = this;
+      if (!this.isSequence(property[1])) {
+        throw new exports.ValidationError('while validating securityScheme', null, "property 'securedBy' must be a list", property[0].start_mark);
+      }
+      secSchemes = this.get_list_values(property[1].value);
+      if (secSchemes.hasDuplicates()) {
+        throw new exports.ValidationError('while validating securityScheme consumption', null, 'securitySchemes can only be referenced once in a securedBy property', property[0].start_mark);
+      }
+      return property[1].value.forEach(function(secScheme) {
+        var securitySchemeName;
+        if (_this.isSequence(secScheme)) {
+          throw new exports.ValidationError('while validating securityScheme consumption', null, 'securityScheme reference cannot be a list', secScheme.start_mark);
+        }
+        if (!_this.isNull(secScheme)) {
+          securitySchemeName = _this.key_or_value(secScheme);
+          if (!_this.get_security_scheme(securitySchemeName)) {
+            throw new exports.ValidationError('while validating securityScheme consumption', null, 'there is no securityScheme named ' + securitySchemeName, secScheme.start_mark);
+          }
+        }
+      });
+    };
+
+    Validator.prototype.validate_type_property = function(property, allowParameterKeys) {
+      var typeName,
+        _this = this;
+      if (!(this.isMapping(property[1]) || this.isString(property[1]))) {
+        throw new exports.ValidationError('while validating resources', null, "property 'type' must be a string or a mapping", property[0].start_mark);
+      }
+      if (this.isMapping(property[1])) {
+        if (property[1].value.length > 1) {
+          throw new exports.ValidationError('while validating resources', null, "a resource or resourceType can inherit from a single resourceType", property[0].start_mark);
+        }
+      }
+      typeName = this.key_or_value(property[1]);
+      if (!typeName) {
+        throw new exports.ValidationError('while validating resource consumption', null, 'missing type name in type property', property[1].start_mark);
+      }
+      if (!this.get_type(typeName)) {
+        throw new exports.ValidationError('while validating resource consumption', null, 'there is no type named ' + typeName, property[1].start_mark);
+      }
+      if (this.isMapping(property[1])) {
+        return property[1].value.forEach(function(parameter) {
+          if (!(_this.isNull(parameter[1]) || _this.isMapping(parameter[1]))) {
+            throw new exports.ValidationError('while validating resource consumption', null, 'type parameters must be in a mapping', parameter[1].start_mark);
+          }
+        });
+      }
+    };
+
+    Validator.prototype.validate_method = function(method, allowParameterKeys, context) {
+      var methodProperties,
+        _this = this;
+      if (context == null) {
+        context = 'method';
+      }
+      if (this.isNull(method[1])) {
+        return;
+      }
+      if (!this.isMapping(method[1])) {
+        throw new exports.ValidationError('while validating methods', null, "method must be a mapping", method[0].start_mark);
+      }
+      methodProperties = {};
+      return method[1].value.forEach(function(property) {
+        var canonicalKey, key, valid;
+        _this.trackRepeatedProperties(methodProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating method', "property already used");
+        if (_this.validate_common_properties(property, allowParameterKeys)) {
+          return;
+        }
+        key = property[0].value;
+        canonicalKey = _this.canonicalizePropertyName(key, allowParameterKeys);
+        valid = true;
+        switch (canonicalKey) {
+          case "headers":
+            _this.validate_headers(property, allowParameterKeys);
+            break;
+          case "queryParameters":
+            _this.validate_query_params(property, allowParameterKeys);
+            break;
+          case "body":
+            _this.validate_body(property, allowParameterKeys);
+            break;
+          case "responses":
+            _this.validate_responses(property, allowParameterKeys);
+            break;
+          default:
+            valid = false;
+        }
+        switch (key) {
+          case "securedBy":
+            return _this.validate_secured_by(property);
+          case "usage":
+            if (!allowParameterKeys) {
+              throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
+            }
+            break;
+          default:
+            if (!valid) {
+              throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + ("' is invalid in a " + context), property[0].start_mark);
+            }
+        }
+      });
+    };
+
+    Validator.prototype.validate_responses = function(responses, allowParameterKeys) {
+      var responseValues,
+        _this = this;
+      if (this.isNull(responses[1])) {
+        return;
+      }
+      if (!this.isMapping(responses[1])) {
+        throw new exports.ValidationError('while validating responses', null, "property: 'responses' must be a mapping", responses[0].start_mark);
+      }
+      responseValues = {};
+      return responses[1].value.forEach(function(response) {
+        if (!_this.isNullableMapping(response[1])) {
+          throw new exports.ValidationError('while validating responses', null, "each response must be a mapping", response[1].start_mark);
+        }
+        _this.trackRepeatedProperties(responseValues, _this.canonicalizePropertyName(response[0].value, true), response[0].start_mark, 'while validating responses', "response code already used");
+        return _this.validate_response(response, allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_query_params = function(property, allowParameterKeys) {
+      var queryParameters,
+        _this = this;
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating query parameters', null, "property: 'queryParameters' must be a mapping", property[0].start_mark);
+      }
+      queryParameters = {};
+      return property[1].value.forEach(function(param) {
+        if (!(_this.isNullableMapping(param[1]) || _this.isNullableSequence(param[1]))) {
+          throw new exports.ValidationError('while validating query parameters', null, "each query parameter must be a mapping", param[1].start_mark);
+        }
+        _this.trackRepeatedProperties(queryParameters, _this.canonicalizePropertyName(param[0].value, true), param[0].start_mark, 'while validating query parameter', "parameter name already used");
+        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_form_params = function(property, allowParameterKeys) {
+      var formParameters,
+        _this = this;
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating query parameters', null, "property: 'formParameters' must be a mapping", property[0].start_mark);
+      }
+      formParameters = {};
+      return property[1].value.forEach(function(param) {
+        if (!(_this.isNullableMapping(param[1]) || _this.isNullableSequence(param[1]))) {
+          throw new exports.ValidationError('while validating query parameters', null, "each form parameter must be a mapping", param[1].start_mark);
+        }
+        _this.trackRepeatedProperties(formParameters, _this.canonicalizePropertyName(param[0].value, true), param[0].start_mark, 'while validating form parameter', "parameter name already used");
+        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_headers = function(property, allowParameterKeys) {
+      var headerNames,
+        _this = this;
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating headers', null, "property: 'headers' must be a mapping", property[0].start_mark);
+      }
+      headerNames = {};
+      return property[1].value.forEach(function(param) {
+        if (!(_this.isNullableMapping(param[1]) || _this.isNullableSequence(param[1]))) {
+          throw new exports.ValidationError('while validating query parameters', null, "each header must be a mapping", param[1].start_mark);
+        }
+        _this.trackRepeatedProperties(headerNames, _this.canonicalizePropertyName(param[0].value, true), param[0].start_mark, 'while validating headers', "header name already used");
+        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
+      });
+    };
+
+    Validator.prototype.validate_response = function(response, allowParameterKeys) {
+      var responseProperties,
+        _this = this;
+      if (this.isSequence(response[0])) {
+        if (!response[0].value.length) {
+          throw new exports.ValidationError('while validating responses', null, "there must be at least one response code", response[0].start_mark);
+        }
+        response[0].value.forEach(function(responseCode) {
+          if (!(_this.isParameterKey(responseCode) || _this.isInteger(responseCode) || !isNaN(_this.canonicalizePropertyName(responseCode, allowParameterKeys)))) {
+            throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", responseCode.start_mark);
+          }
+        });
+      } else if (!(this.isParameterKey(response) || this.isInteger(response[0]) || !isNaN(this.canonicalizePropertyName(response[0].value, allowParameterKeys)))) {
+        throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", response[0].start_mark);
+      }
+      if (!this.isNullableMapping(response[1])) {
+        throw new exports.ValidationError('while validating responses', null, "each response property must be a mapping", response[0].start_mark);
+      }
+      if (this.isMapping(response[1])) {
+        responseProperties = {};
+        return response[1].value.forEach(function(property) {
+          var canonicalKey;
+          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+          _this.trackRepeatedProperties(responseProperties, canonicalKey, property[0].start_mark, 'while validating responses', "property already used");
+          if (!_this.isParameterKey(property)) {
+            switch (canonicalKey) {
+              case "body":
+                return _this.validate_body(property, allowParameterKeys);
+              case "description":
+                if (!_this.isScalar(property[1])) {
+                  throw new exports.ValidationError('while validating responses', null, "property description must be a string", response[0].start_mark);
+                }
+                break;
+              case "headers":
+                if (!_this.isNullableMapping(property[1])) {
+                  throw new exports.ValidationError('while validating resources', null, "property 'headers' must be a mapping", property[0].start_mark);
+                }
+                return _this.validate_headers(property);
+              default:
+                throw new exports.ValidationError('while validating response', null, "property: '" + property[0].value + "' is invalid in a response", property[0].start_mark);
+            }
+          }
+        });
+      }
+    };
+
+    Validator.prototype.isParameterKey = function(property) {
+      if (!this.isScalar(property[0])) {
+        return false;
+      }
+      if (property[0].value.match(/<<\s*([^\|\s>]+)\s*>>/g) || property[0].value.match(/<<\s*([^\|\s>]+)\s*(\|\s*\!\s*(singularize|pluralize))?\s*>>/g)) {
+        return true;
+      } else if (property[0].value.match(/<<\s*([^\|\s>]+)\s*\|.*\s*>>/g)) {
+        throw new exports.ValidationError('while validating parameter', null, "unknown function applied to property name", property[0].start_mark);
+      }
+      return false;
+    };
+
+    Validator.prototype.validate_body = function(property, allowParameterKeys, bodyMode) {
+      var bodyProperties, implicitMode, _ref1,
+        _this = this;
+      if (bodyMode == null) {
+        bodyMode = null;
+      }
+      if (this.isNull(property[1])) {
+        return;
+      }
+      if (!this.isMapping(property[1])) {
+        throw new exports.ValidationError('while validating body', null, "property: body specification must be a mapping", property[0].start_mark);
+      }
+      implicitMode = ["implicit", "forcedImplicit"];
+      bodyProperties = {};
+      if ((_ref1 = property[1].value) != null) {
+        _ref1.forEach(function(bodyProperty) {
+          var canonicalProperty, key;
+          _this.trackRepeatedProperties(bodyProperties, _this.canonicalizePropertyName(bodyProperty[0].value, true), bodyProperty[0].start_mark, 'while validating body', "property already used");
+          if (_this.isParameterKey(bodyProperty)) {
+            if (!allowParameterKeys) {
+              throw new exports.ValidationError('while validating body', null, "property '" + bodyProperty[0].value + "' is invalid in a resource", bodyProperty[0].start_mark);
+            }
+          } else if (bodyProperty[0].value.match(/^[^\/]+\/[^\/]+$/)) {
+            if (bodyMode && bodyMode !== "explicit") {
+              throw new exports.ValidationError('while validating body', null, "not compatible with implicit default Media Type", bodyProperty[0].start_mark);
+            }
+            bodyMode = "explicit";
+            return _this.validate_body(bodyProperty, allowParameterKeys, "forcedImplicit");
+          } else {
+            key = bodyProperty[0].value;
+            canonicalProperty = _this.canonicalizePropertyName(key, allowParameterKeys);
+            switch (canonicalProperty) {
+              case "formParameters":
+                if (bodyMode && __indexOf.call(implicitMode, bodyMode) < 0) {
+                  throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
+                }
+                if (bodyMode == null) {
+                  bodyMode = "implicit";
+                }
+                return _this.validate_form_params(bodyProperty, allowParameterKeys);
+              case "example":
+                if (bodyMode && __indexOf.call(implicitMode, bodyMode) < 0) {
+                  throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
+                }
+                if (bodyMode == null) {
+                  bodyMode = "implicit";
+                }
+                if (!_this.isScalar(bodyProperty[1])) {
+                  throw new exports.ValidationError('while validating body', null, "example must be a string", bodyProperty[0].start_mark);
+                }
+                break;
+              case "schema":
+                if (bodyMode && __indexOf.call(implicitMode, bodyMode) < 0) {
+                  throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
+                }
+                if (bodyMode == null) {
+                  bodyMode = "implicit";
+                }
+                if (!_this.isScalar(bodyProperty[1])) {
+                  throw new exports.ValidationError('while validating body', null, "schema must be a string", bodyProperty[0].start_mark);
+                }
+                break;
+              default:
+                throw new exports.ValidationError('while validating body', null, "property: '" + bodyProperty[0].value + "' is invalid in a body", bodyProperty[0].start_mark);
+            }
+          }
+        });
+      }
+      if (bodyMode === "implicit") {
+        if (!this.get_media_type()) {
+          throw new exports.ValidationError('while validating body', null, "body tries to use default Media Type, but mediaType is null", property[0].start_mark);
+        }
+      }
+    };
+
+    Validator.prototype.validate_common_properties = function(property, allowParameterKeys) {
+      var canonicalProperty, key,
+        _this = this;
+      if (this.isParameterKey(property)) {
+        if (!allowParameterKeys) {
+          throw new exports.ValidationError('while validating resources', null, "property '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
+        }
+        return true;
+      } else {
+        key = property[0].value;
+        canonicalProperty = this.canonicalizePropertyName(key, allowParameterKeys);
+        switch (canonicalProperty) {
+          case "displayName":
+            if (!this.isScalar(property[1])) {
+              throw new exports.ValidationError('while validating resources', null, "property 'displayName' must be a string", property[0].start_mark);
+            }
+            return true;
+          case "description":
+            if (!this.isScalar(property[1])) {
+              throw new exports.ValidationError('while validating resources', null, "property 'description' must be a string", property[0].start_mark);
+            }
+            return true;
+        }
+        switch (key) {
+          case "is":
+            if (!this.isSequence(property[1])) {
+              throw new exports.ValidationError('while validating resources', null, "property 'is' must be a list", property[0].start_mark);
+            }
+            if (!(property[1].value instanceof Array)) {
+              throw new exports.ValidationError('while validating trait consumption', null, 'is property must be an array', property[0].start_mark);
+            }
+            property[1].value.forEach(function(use) {
+              var traitName;
+              traitName = _this.key_or_value(use);
+              if (!_this.get_trait(traitName)) {
+                throw new exports.ValidationError('while validating trait consumption', null, 'there is no trait named ' + traitName, use.start_mark);
+              }
+              if (_this.isMapping(use[1])) {
+                return property[1].value.forEach(function(parameter) {
+                  if (!(_this.isNull(parameter[1]) || _this.isMapping(parameter[1]))) {
+                    throw new exports.ValidationError('while validating resource consumption', null, 'type parameters must be in a mapping', parameter[1].start_mark);
+                  }
+                });
+              }
+            });
+            return true;
+        }
+      }
+      return false;
+    };
+
+    Validator.prototype.child_methods = function(node) {
+      if (!(node && this.isMapping(node))) {
+        return [];
+      }
+      return node.value.filter(function(childNode) {
+        return childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/);
+      });
+    };
+
+    Validator.prototype.has_property = function(node, property) {
+      if (node && this.isMapping(node)) {
+        return node.value.some(function(childNode) {
+          return childNode[0].value && typeof childNode[0].value !== "object" && childNode[0].value.match(property);
+        });
+      }
+      return false;
+    };
+
+    Validator.prototype.property_value = function(node, property) {
+      var filteredNodes;
+      filteredNodes = node.value.filter(function(childNode) {
+        return typeof childNode[0].value !== "object" && childNode[0].value.match(property);
+      });
+      if (filteredNodes.length) {
+        return filteredNodes[0][1].value;
+      }
+    };
+
+    Validator.prototype.get_property = function(node, property) {
+      var filteredNodes,
+        _this = this;
+      if (node && this.isMapping(node)) {
+        filteredNodes = node.value.filter(function(childNode) {
+          return _this.isString(childNode[0]) && childNode[0].value.match(property);
+        });
+        if (filteredNodes.length > 0) {
+          if (filteredNodes[0].length > 0) {
+            return filteredNodes[0][1];
+          }
+        }
+      }
+      return [];
+    };
+
+    Validator.prototype.get_properties = function(node, property) {
+      var properties,
+        _this = this;
+      properties = [];
+      if (node && this.isMapping(node)) {
+        node.value.forEach(function(prop) {
+          var _ref1;
+          if (_this.isString(prop[0]) && ((_ref1 = prop[0].value) != null ? _ref1.match(property) : void 0)) {
+            return properties.push(prop);
+          } else {
+            return properties = properties.concat(_this.get_properties(prop[1], property));
+          }
+        });
+      }
+      return properties;
+    };
+
+    Validator.prototype.resources = function(node, parentPath) {
+      var child_resources, response,
+        _this = this;
+      if (node == null) {
+        node = this.get_single_node(true, true, false);
+      }
+      response = [];
+      child_resources = this.child_resources(node);
+      child_resources.forEach(function(childResource) {
+        var resourceResponse;
+        resourceResponse = {};
+        resourceResponse.methods = [];
+        if (parentPath != null) {
+          resourceResponse.uri = parentPath + childResource[0].value;
+        } else {
+          resourceResponse.uri = childResource[0].value;
+        }
+        if (_this.has_property(childResource[1], "displayName")) {
+          resourceResponse.displayName = _this.property_value(childResource[1], "displayName");
+        }
+        if (_this.has_property(childResource[1], "get")) {
+          resourceResponse.methods.push('get');
+        }
+        if (_this.has_property(childResource[1], "post")) {
+          resourceResponse.methods.push('post');
+        }
+        if (_this.has_property(childResource[1], "put")) {
+          resourceResponse.methods.push('put');
+        }
+        if (_this.has_property(childResource[1], "patch")) {
+          resourceResponse.methods.push('patch');
+        }
+        if (_this.has_property(childResource[1], "delete")) {
+          resourceResponse.methods.push('delete');
+        }
+        if (_this.has_property(childResource[1], "head")) {
+          resourceResponse.methods.push('head');
+        }
+        if (_this.has_property(childResource[1], "options")) {
+          resourceResponse.methods.push('options');
+        }
+        resourceResponse.line = childResource[0].start_mark.line + 1;
+        resourceResponse.column = childResource[0].start_mark.column + 1;
+        if (childResource[0].start_mark.name != null) {
+          resourceResponse.src = childResource[0].start_mark.name;
+        }
+        response.push(resourceResponse);
+        return response = response.concat(_this.resources(childResource[1], resourceResponse.uri));
+      });
+      return response;
+    };
+
+    Validator.prototype.valid_absolute_uris = function(node) {
+      var repeatedUri, uris;
+      uris = this.get_absolute_uris(node);
+      if (repeatedUri = uris.hasDuplicates()) {
+        throw new exports.ValidationError('while validating trait consumption', null, 'two resources share same URI ' + repeatedUri, null);
+      }
+    };
+
+    Validator.prototype.get_absolute_uris = function(node, parentPath) {
+      var child_resources, response,
+        _this = this;
+      if (node == null) {
+        node = this.get_single_node(true, true, false);
+      }
+      response = [];
+      if (!this.isNullableMapping(node)) {
+        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', node.start_mark);
+      }
+      child_resources = this.child_resources(node);
+      child_resources.forEach(function(childResource) {
+        var uri;
+        if (parentPath != null) {
+          uri = parentPath + childResource[0].value;
+        } else {
+          uri = childResource[0].value;
+        }
+        response.push(uri);
+        return response = response.concat(_this.get_absolute_uris(childResource[1], uri));
+      });
+      return response;
+    };
+
+    Validator.prototype.key_or_value = function(node) {
+      var possibleKeyName, _ref1, _ref2, _ref3;
+      if (node instanceof nodes.ScalarNode) {
+        return node.value;
+      }
+      if (node instanceof nodes.MappingNode) {
+        possibleKeyName = node != null ? (_ref1 = node.value) != null ? (_ref2 = _ref1[0]) != null ? (_ref3 = _ref2[0]) != null ? _ref3.value : void 0 : void 0 : void 0 : void 0;
+        if (possibleKeyName) {
+          return possibleKeyName;
+        }
+      }
+      return null;
+    };
+
+    Validator.prototype.value_or_undefined = function(node) {
+      if (node instanceof nodes.MappingNode) {
+        return node.value;
+      }
+      return void 0;
+    };
+
+    Validator.prototype.validate_base_uri = function(baseUriNode) {
+      var baseUri, err, expressions, template, _ref1;
+      baseUri = baseUriNode.value;
+      try {
+        template = uritemplate.parse(baseUri);
+      } catch (_error) {
+        err = _error;
+        throw new exports.ValidationError('while validating baseUri', null, err != null ? (_ref1 = err.options) != null ? _ref1.message : void 0 : void 0, baseUriNode.start_mark);
+      }
+      expressions = template.expressions.filter(function(expr) {
+        return 'templateText' in expr;
+      }).map(function(expression) {
+        return expression.templateText;
+      });
+      if (__indexOf.call(expressions, 'version') >= 0) {
+        return true;
+      }
+    };
+
+    Validator.prototype.get_validation_errors = function() {
+      return this.validation_errors;
+    };
+
+    Validator.prototype.is_valid = function() {
+      return this.validation_errors.length === 0;
+    };
+
+    Array.prototype.hasDuplicates = function() {
+      var key, output, _i, _ref1;
+      output = {};
+      for (key = _i = 0, _ref1 = this.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; key = 0 <= _ref1 ? ++_i : --_i) {
+        if (this[key] in output) {
+          return this[key];
+        }
+        output[this[key]] = true;
+      }
+      return false;
+    };
+
+    return Validator;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":13,"./traits":23,"uritemplate":29}],23:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, inflection, nodes, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -11839,546 +13653,7 @@ function decode(str) {
 
 }).call(this);
 
-},{"./errors":1,"./nodes":9,"inflection":29}],29:[function(require,module,exports){
-module.exports = require( './lib/inflection' );
-},{"./lib/inflection":30}],30:[function(require,module,exports){
-/*!
- * inflection
- * Copyright(c) 2011 Ben Lin <ben@dreamerslab.com>
- * MIT Licensed
- *
- * @fileoverview
- * A port of inflection-js to node.js module
- */
-
-/**
- * @description This is a list of nouns that use the same form for both singular and plural.
- *              This list should remain entirely in lower case to correctly match Strings.
- * @private
- */
-var uncountable_words = [
-  'equipment', 'information', 'rice', 'money', 'species',
-  'series', 'fish', 'sheep', 'moose', 'deer', 'news'
-];
-
-/**
- * @description These rules translate from the singular form of a noun to its plural form.
- * @private
- */
-var plural_rules = [
-  [ new RegExp( '(m)an$', 'gi' ),                 '$1en' ],
-  [ new RegExp( '(pe)rson$', 'gi' ),              '$1ople' ],
-  [ new RegExp( '(child)$', 'gi' ),               '$1ren' ],
-  [ new RegExp( '^(ox)$', 'gi' ),                 '$1en' ],
-  [ new RegExp( '(ax|test)is$', 'gi' ),           '$1es' ],
-  [ new RegExp( '(octop|vir)us$', 'gi' ),         '$1i' ],
-  [ new RegExp( '(alias|status)$', 'gi' ),        '$1es' ],
-  [ new RegExp( '(bu)s$', 'gi' ),                 '$1ses' ],
-  [ new RegExp( '(buffal|tomat|potat)o$', 'gi' ), '$1oes' ],
-  [ new RegExp( '([ti])um$', 'gi' ),              '$1a' ],
-  [ new RegExp( 'sis$', 'gi' ),                   'ses' ],
-  [ new RegExp( '(?:([^f])fe|([lr])f)$', 'gi' ),  '$1$2ves' ],
-  [ new RegExp( '(hive)$', 'gi' ),                '$1s' ],
-  [ new RegExp( '([^aeiouy]|qu)y$', 'gi' ),       '$1ies' ],
-  [ new RegExp( '(x|ch|ss|sh)$', 'gi' ),          '$1es' ],
-  [ new RegExp( '(matr|vert|ind)ix|ex$', 'gi' ),  '$1ices' ],
-  [ new RegExp( '([m|l])ouse$', 'gi' ),           '$1ice' ],
-  [ new RegExp( '(quiz)$', 'gi' ),                '$1zes' ],
-  [ new RegExp( 's$', 'gi' ),                     's' ],
-  [ new RegExp( '$', 'gi' ),                      's' ]
-];
-
-/**
- * @description These rules translate from the plural form of a noun to its singular form.
- * @private
- */
-var singular_rules = [
-  [ new RegExp( '(m)en$', 'gi' ),                                                       '$1an' ],
-  [ new RegExp( '(pe)ople$', 'gi' ),                                                    '$1rson' ],
-  [ new RegExp( '(child)ren$', 'gi' ),                                                  '$1' ],
-  [ new RegExp( '([ti])a$', 'gi' ),                                                     '$1um' ],
-  [ new RegExp( '((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$','gi' ), '$1$2sis' ],
-  [ new RegExp( '(hive)s$', 'gi' ),                                                     '$1' ],
-  [ new RegExp( '(tive)s$', 'gi' ),                                                     '$1' ],
-  [ new RegExp( '(curve)s$', 'gi' ),                                                    '$1' ],
-  [ new RegExp( '([lr])ves$', 'gi' ),                                                   '$1f' ],
-  [ new RegExp( '([^fo])ves$', 'gi' ),                                                  '$1fe' ],
-  [ new RegExp( '([^aeiouy]|qu)ies$', 'gi' ),                                           '$1y' ],
-  [ new RegExp( '(s)eries$', 'gi' ),                                                    '$1eries' ],
-  [ new RegExp( '(m)ovies$', 'gi' ),                                                    '$1ovie' ],
-  [ new RegExp( '(x|ch|ss|sh)es$', 'gi' ),                                              '$1' ],
-  [ new RegExp( '([m|l])ice$', 'gi' ),                                                  '$1ouse' ],
-  [ new RegExp( '(bus)es$', 'gi' ),                                                     '$1' ],
-  [ new RegExp( '(o)es$', 'gi' ),                                                       '$1' ],
-  [ new RegExp( '(shoe)s$', 'gi' ),                                                     '$1' ],
-  [ new RegExp( '(cris|ax|test)es$', 'gi' ),                                            '$1is' ],
-  [ new RegExp( '(octop|vir)i$', 'gi' ),                                                '$1us' ],
-  [ new RegExp( '(alias|status)es$', 'gi' ),                                            '$1' ],
-  [ new RegExp( '^(ox)en', 'gi' ),                                                      '$1' ],
-  [ new RegExp( '(vert|ind)ices$', 'gi' ),                                              '$1ex' ],
-  [ new RegExp( '(matr)ices$', 'gi' ),                                                  '$1ix' ],
-  [ new RegExp( '(quiz)zes$', 'gi' ),                                                   '$1' ],
-  [ new RegExp( 's$', 'gi' ),                                                           '' ]
-];
-
-/**
- * @description This is a list of words that should not be capitalized for title case.
- * @private
- */
-var non_titlecased_words = [
-  'and', 'or', 'nor', 'a', 'an', 'the', 'so', 'but', 'to', 'of', 'at','by',
-  'from', 'into', 'on', 'onto', 'off', 'out', 'in', 'over', 'with', 'for'
-];
-
-/**
- * @description These are regular expressions used for converting between String formats.
- * @private
- */
-var id_suffix         = new RegExp( '(_ids|_id)$', 'g' );
-var underbar          = new RegExp( '_', 'g' );
-var space_or_underbar = new RegExp( '[\ _]', 'g' );
-var uppercase         = new RegExp( '([A-Z])', 'g' );
-var underbar_prefix   = new RegExp( '^_' );
-
-
-
-module.exports = {
-
-/**
- * @public
- * @version 0.0.1
- */
-  version : '0.0.1',
-
-
-
-/**
- * A helper method that applies rules based replacement to a String.
- * @private
- * @function
- * @param {String} str String to modify and return based on the passed rules.
- * @param {Array: [RegExp, String]} rules Regexp to match paired with String to use for replacement
- * @param {Array: [String]} skip Strings to skip if they match
- * @param {String} override String to return as though this method succeeded (used to conform to APIs)
- * @return {String} Return passed String modified by passed rules.
- * @example
- *
- *     this._apply_rules( 'cows', singular_rules ); // === 'cow'
- */
-  _apply_rules : function( str, rules, skip, override ){
-      if( override ){
-        str = override;
-      }else{
-        var ignore = ( this.indexOf( skip, str.toLowerCase()) > -1 );
-
-        if( !ignore ){
-          var i = 0;
-          var j = rules.length;
-
-          for( ; i < j; i++ ){
-            if( str.match( rules[ i ][ 0 ])){
-              str = str.replace( rules[ i ][ 0 ], rules[ i ][ 1 ]);
-              break;
-            }
-          }
-        }
-      }
-
-      return str;
-  },
-
-
-
-/**
- * This lets us detect if an Array contains a given element.
- * @public
- * @function
- * @param {Array} arr The subject array.
- * @param {Object} item Object to locate in the Array.
- * @param {Number} fromIndex Starts checking from this position in the Array.(optional)
- * @param {Function} compareFunc Function used to compare Array item vs passed item.(optional)
- * @return {Number} Return index position in the Array of the passed item.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.indexOf([ 'hi','there' ], 'guys' ); // === -1
- *     inflection.indexOf([ 'hi','there' ], 'hi' ); // === 0
- */
-  indexOf : function( arr, item, fromIndex, compareFunc ){
-    if( !fromIndex ){
-      fromIndex = -1;
-    }
-
-    var index = -1;
-    var i     = fromIndex;
-    var j     = arr.length;
-
-    for( ; i < j; i++ ){
-      if( arr[ i ]  === item || compareFunc && compareFunc( arr[ i ], item )){
-        index = i;
-        break;
-      }
-    }
-
-    return index;
-  },
-
-
-
-/**
- * This function adds pluralization support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @param {String} plural Overrides normal output with said String.(optional)
- * @return {String} Singular English language nouns are returned in plural form.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.pluralize( 'person' ); // === 'people'
- *     inflection.pluralize( 'octopus' ); // === "octopi"
- *     inflection.pluralize( 'Hat' ); // === 'Hats'
- *     inflection.pluralize( 'person', 'guys' ); // === 'guys'
- */
-  pluralize : function ( str, plural ){
-    return this._apply_rules( str, plural_rules, uncountable_words, plural );
-  },
-
-
-
-/**
- * This function adds singularization support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @param {String} singular Overrides normal output with said String.(optional)
- * @return {String} Plural English language nouns are returned in singular form.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.singularize( 'people' ); // === 'person'
- *     inflection.singularize( 'octopi' ); // === "octopus"
- *     inflection.singularize( 'Hats' ); // === 'Hat'
- *     inflection.singularize( 'guys', 'person' ); // === 'person'
- */
-  singularize : function ( str, singular ){
-    return this._apply_rules( str, singular_rules, uncountable_words, singular );
-  },
-
-
-
-/**
- * This function adds camelization support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @param {Boolean} lowFirstLetter Default is to capitalize the first letter of the results.(optional)
- *                                 Passing true will lowercase it.
- * @return {String} Lower case underscored words will be returned in camel case.
- *                  additionally '/' is translated to '::'
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.camelize( 'message_properties' ); // === 'MessageProperties'
- *     inflection.camelize( 'message_properties', true ); // === 'messageProperties'
- */
-  camelize : function ( str, lowFirstLetter ){
-    var str_path = str.toLowerCase().split( '/' );
-    var i        = 0;
-    var j        = str_path.length;
-
-    for( ; i < j; i++ ){
-      var str_arr = str_path[ i ].split( '_' );
-      var initX   = (( lowFirstLetter && i + 1 === j ) ? ( 1 ) : ( 0 ));
-      var k       = initX;
-      var l       = str_arr.length;
-
-      for( ; k < l; k++ ){
-        str_arr[ k ] = str_arr[ k ].charAt( 0 ).toUpperCase() + str_arr[ k ].substring( 1 );
-      }
-
-      str_path[ i ] = str_arr.join( '' );
-    }
-
-    return str_path.join( '::' );
-  },
-
-
-
-/**
- * This function adds underscore support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} Camel cased words are returned as lower cased and underscored.
- *                  additionally '::' is translated to '/'.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.underscore( 'MessageProperties' ); // === 'message_properties'
- *     inflection.underscore( 'messageProperties' ); // === 'message_properties'
- */
-  underscore : function ( str ){
-    var str_path = str.split( '::' );
-    var i        = 0;
-    var j        = str_path.length;
-
-    for( ; i < j; i++ ){
-      str_path[ i ] = str_path[ i ].replace( uppercase, '_$1' );
-      str_path[ i ] = str_path[ i ].replace( underbar_prefix, '' );
-    }
-
-    return str_path.join( '/' ).toLowerCase();
-  },
-
-
-
-/**
- * This function adds humanize support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @param {Boolean} lowFirstLetter Default is to capitalize the first letter of the results.(optional)
- *                                 Passing true will lowercase it.
- * @return {String} Lower case underscored words will be returned in humanized form.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.humanize( 'message_properties' ); // === 'Message properties'
- *     inflection.humanize( 'message_properties', true ); // === 'message properties'
- */
-  humanize : function( str, lowFirstLetter ){
-    str = str.toLowerCase();
-    str = str.replace( id_suffix, '' );
-    str = str.replace( underbar, ' ' );
-
-    if( !lowFirstLetter ){
-      str = this.capitalize( str );
-    }
-
-    return str;
-  },
-
-
-
-/**
- * This function adds capitalization support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} All characters will be lower case and the first will be upper.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.capitalize( 'message_properties' ); // === 'Message_properties'
- *     inflection.capitalize( 'message properties', true ); // === 'Message properties'
- */
-  capitalize : function ( str ){
-    str = str.toLowerCase();
-
-    return str.substring( 0, 1 ).
-                toUpperCase() + str.substring( 1 );
-  },
-
-
-
-/**
- * This function adds dasherization support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} Replaces all spaces or underbars with dashes.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.dasherize( 'message_properties' ); // === 'message-properties'
- *     inflection.dasherize( 'Message Properties' ); // === 'Message-Properties'
- */
-  dasherize : function ( str ){
-    return str.replace( space_or_underbar, '-' );
-  },
-
-
-
-/**
- * This function adds titleize support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} Capitalizes words as you would for a book title.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.titleize( 'message_properties' ); // === 'Message Properties'
- *     inflection.titleize( 'message properties to keep' ); // === 'Message Properties to Keep'
- */
-  titleize : function ( str ){
-    str         = str.toLowerCase().replace( underbar, ' ');
-    var str_arr = str.split(' ');
-    var i       = 0;
-    var j       = str_arr.length;
-
-    for( ; i < j; i++ ){
-      var d = str_arr[ i ].split( '-' );
-      var k = 0;
-      var l = d.length;
-
-      for( ; k < l; k++){
-        if( this.indexOf( non_titlecased_words, d[ k ].toLowerCase()) < 0 ){
-          d[ k ] = this.capitalize( d[ k ]);
-        }
-      }
-
-      str_arr[ i ] = d.join( '-' );
-    }
-
-    str = str_arr.join( ' ' );
-    str = str.substring( 0, 1 ).toUpperCase() + str.substring( 1 );
-
-    return str;
-  },
-
-
-
-/**
- * This function adds demodulize support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} Removes module names leaving only class names.(Ruby style)
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.demodulize( 'Message::Bus::Properties' ); // === 'Properties'
- */
-  demodulize : function ( str ){
-    var str_arr = str.split( '::' );
-
-    return str_arr[ str_arr.length - 1 ];
-  },
-
-
-
-/**
- * This function adds tableize support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} Return camel cased words into their underscored plural form.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.tableize( 'MessageBusProperty' ); // === 'message_bus_properties'
- */
-  tableize : function ( str ){
-    str = this.underscore( str );
-    str = this.pluralize( str );
-
-    return str;
-  },
-
-
-
-/**
- * This function adds classification support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} Underscored plural nouns become the camel cased singular form.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.classify( 'message_bus_properties' ); // === 'MessageBusProperty'
- */
-  classify : function ( str ){
-    str = this.camelize( str );
-    str = this.singularize( str );
-
-    return str;
-  },
-
-
-
-/**
- * This function adds foreign key support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @param {Boolean} dropIdUbar Default is to seperate id with an underbar at the end of the class name,
-                               you can pass true to skip it.(optional)
- * @return {String} Underscored plural nouns become the camel cased singular form.
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.foreign_key( 'MessageBusProperty' ); // === 'message_bus_property_id'
- *     inflection.foreign_key( 'MessageBusProperty', true ); // === 'message_bus_propertyid'
- */
-  foreign_key : function( str, dropIdUbar ){
-    str = this.demodulize( str );
-    str = this.underscore( str ) + (( dropIdUbar ) ? ( '' ) : ( '_' )) + 'id';
-
-    return str;
-  },
-
-
-
-/**
- * This function adds ordinalize support to every String object.
- * @public
- * @function
- * @param {String} str The subject string.
- * @return {String} Return all found numbers their sequence like "22nd".
- * @example
- *
- *     var inflection = require( 'inflection' );
- *
- *     inflection.ordinalize( 'the 1 pitch' ); // === 'the 1st pitch'
- */
-  ordinalize : function ( str ){
-    var str_arr = str.split(' ');
-    var i       = 0;
-    var j       = str_arr.length;
-
-    for( ; i < j; i++ ){
-      var k = parseInt( str_arr[ i ], 10 );
-
-      if( !isNaN( k )){
-        var ltd = str_arr[ i ].substring( str_arr[ i ].length - 2 );
-        var ld  = str_arr[ i ].substring( str_arr[ i ].length - 1 );
-        var suf = 'th';
-
-        if( ltd != '11' && ltd != '12' && ltd != '13' ){
-          if( ld === '1' ){
-            suf = 'st';
-          }else if( ld === '2' ){
-            suf = 'nd';
-          }else if( ld === '3' ){
-            suf = 'rd';
-          }
-        }
-
-        str_arr[ i ] += suf;
-      }
-    }
-
-    return str_arr.join( ' ' );
-  }
-};
-
-},{}],28:[function(require,module,exports){
+},{"./errors":1,"./nodes":13,"inflection":30}],28:[function(require,module,exports){
 (function(process,Buffer){/**
  * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
  *
@@ -12944,1755 +14219,7 @@ exports.XMLHttpRequest = function() {
 };
 
 })(require("__browserify_process"),require("__browserify_buffer").Buffer)
-},{"__browserify_buffer":11,"__browserify_process":5,"child_process":31,"fs":27,"http":32,"https":33,"url":8}],24:[function(require,module,exports){
-(function() {
-  var nodes, uritemplate,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  nodes = require('./nodes');
-
-  uritemplate = require('uritemplate');
-
-  /*
-     Applies transformations to the RAML
-  */
-
-
-  this.Transformations = (function() {
-    function Transformations() {
-      this.isContentTypeString = __bind(this.isContentTypeString, this);
-      this.add_key_value_to_node = __bind(this.add_key_value_to_node, this);
-      this.apply_default_media_type_to_resource = __bind(this.apply_default_media_type_to_resource, this);
-      this.get_media_type = __bind(this.get_media_type, this);
-      this.load_default_media_type = __bind(this.load_default_media_type, this);
-      this.applyAstTransformations = __bind(this.applyAstTransformations, this);
-      this.applyTransformations = __bind(this.applyTransformations, this);
-      this.declaredSchemas = {};
-    }
-
-    Transformations.prototype.applyTransformations = function(rootObject) {
-      return this.findAndInsertUriParameters(rootObject);
-    };
-
-    Transformations.prototype.applyAstTransformations = function(document) {
-      return this.transform_document(document);
-    };
-
-    Transformations.prototype.load_default_media_type = function(node) {
-      if (!this.isMapping(node || (node != null ? node.value : void 0))) {
-        return;
-      }
-      return this.mediaType = this.property_value(node, "mediaType");
-    };
-
-    Transformations.prototype.get_media_type = function() {
-      return this.mediaType;
-    };
-
-    Transformations.prototype.findAndInsertUriParameters = function(rootObject) {
-      var resources;
-      this.findAndInsertMissingBaseUriParameters(rootObject);
-      resources = rootObject.resources;
-      return this.findAndInsertMissinngBaseUriParameters(resources);
-    };
-
-    Transformations.prototype.findAndInsertMissingBaseUriParameters = function(rootObject) {
-      var expressions, template;
-      if (rootObject.baseUri) {
-        template = uritemplate.parse(rootObject.baseUri);
-        expressions = template.expressions.filter(function(expr) {
-          return 'templateText' in expr;
-        }).map(function(expression) {
-          return expression.templateText;
-        });
-        if (expressions.length) {
-          if (!rootObject.baseUriParameters) {
-            rootObject.baseUriParameters = {};
-          }
-        }
-        return expressions.forEach(function(parameterName) {
-          if (!(parameterName in rootObject.baseUriParameters)) {
-            rootObject.baseUriParameters[parameterName] = {
-              type: "string",
-              required: true,
-              displayName: parameterName
-            };
-            if (parameterName === "version") {
-              return rootObject.baseUriParameters[parameterName]["enum"] = [rootObject.version];
-            }
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.findAndInsertMissinngBaseUriParameters = function(resources) {
-      var _this = this;
-      if (resources != null ? resources.length : void 0) {
-        return resources.forEach(function(resource) {
-          var expressions, template;
-          template = uritemplate.parse(resource.relativeUri);
-          expressions = template.expressions.filter(function(expr) {
-            return 'templateText' in expr;
-          }).map(function(expression) {
-            return expression.templateText;
-          });
-          if (expressions.length) {
-            if (!resource.uriParameters) {
-              resource.uriParameters = {};
-            }
-          }
-          expressions.forEach(function(parameterName) {
-            if (!(parameterName in resource.uriParameters)) {
-              return resource.uriParameters[parameterName] = {
-                type: "string",
-                required: true,
-                displayName: parameterName
-              };
-            }
-          });
-          return _this.findAndInsertMissinngBaseUriParameters(resource.resources);
-        });
-      }
-    };
-
-    /*
-    Media Type pivot when using default mediaType property
-    */
-
-
-    Transformations.prototype.apply_default_media_type_to_resource = function(resource) {
-      var methods,
-        _this = this;
-      if (!this.mediaType) {
-        return;
-      }
-      if (!this.isMapping(resource)) {
-        return;
-      }
-      methods = this.child_methods(resource);
-      return methods.forEach(function(method) {
-        return _this.apply_default_media_type_to_method(method[1]);
-      });
-    };
-
-    Transformations.prototype.apply_default_media_type_to_method = function(method) {
-      var responses,
-        _this = this;
-      if (!this.mediaType) {
-        return;
-      }
-      if (!this.isMapping(method)) {
-        return;
-      }
-      if (this.has_property(method, "body")) {
-        this.apply_default_media_type_to_body(this.get_property(method, "body"));
-      }
-      if (this.has_property(method, "responses")) {
-        responses = this.get_property(method, "responses");
-        return responses.value.forEach(function(response) {
-          if (_this.has_property(response[1], "body")) {
-            return _this.apply_default_media_type_to_body(_this.get_property(response[1], "body"));
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.apply_default_media_type_to_body = function(body) {
-      var key, responseType, responseTypeKey, _ref, _ref1, _ref2;
-      if (!this.isMapping(body)) {
-        return;
-      }
-      if (body != null ? (_ref = body.value) != null ? (_ref1 = _ref[0]) != null ? (_ref2 = _ref1[0]) != null ? _ref2.value : void 0 : void 0 : void 0 : void 0) {
-        key = body.value[0][0].value;
-        if (!key.match(/\//)) {
-          responseType = new nodes.MappingNode('tag:yaml.org,2002:map', [], body.start_mark, body.end_mark);
-          responseTypeKey = new nodes.ScalarNode('tag:yaml.org,2002:str', this.mediaType, body.start_mark, body.end_mark);
-          responseType.value.push([responseTypeKey, body.clone()]);
-          return body.value = responseType.value;
-        }
-      }
-    };
-
-    Transformations.prototype.noop = function() {};
-
-    Transformations.prototype.transform_types = function(typeProperty) {
-      var types,
-        _this = this;
-      types = typeProperty.value;
-      return types.forEach(function(type_entry) {
-        return type_entry.value.forEach(function(type) {
-          return _this.transform_resource(type, true);
-        });
-      });
-    };
-
-    Transformations.prototype.transform_traits = function(traitProperty) {
-      var traits,
-        _this = this;
-      traits = traitProperty.value;
-      return traits.forEach(function(trait_entry) {
-        return trait_entry.value.forEach(function(trait) {
-          return _this.transform_method(trait[1], true);
-        });
-      });
-    };
-
-    Transformations.prototype.transform_named_params = function(property, allowParameterKeys, requiredByDefault) {
-      var _this = this;
-      if (requiredByDefault == null) {
-        requiredByDefault = true;
-      }
-      if (this.isNull(property[1])) {
-        return;
-      }
-      return property[1].value.forEach(function(param) {
-        return _this.transform_common_parameter_properties(param[0].value, param[1], allowParameterKeys, requiredByDefault);
-      });
-    };
-
-    Transformations.prototype.transform_common_parameter_properties = function(parameterName, node, allowParameterKeys, requiredByDefault) {
-      var _this = this;
-      if (!node.value) {
-        return;
-      }
-      if (this.isSequence(node)) {
-        return node.value.forEach(function(parameter) {
-          return _this.transform_named_parameter(parameterName, parameter, allowParameterKeys, requiredByDefault);
-        });
-      } else {
-        return this.transform_named_parameter(parameterName, node, allowParameterKeys, requiredByDefault);
-      }
-    };
-
-    Transformations.prototype.transform_named_parameter = function(parameterName, node, allowParameterKeys, requiredByDefault) {
-      var hasDisplayName, hasRequired, hasType,
-        _this = this;
-      hasDisplayName = false;
-      hasRequired = false;
-      hasType = false;
-      node.value.forEach(function(childNode) {
-        var canonicalPropertyName;
-        if (allowParameterKeys && _this.isParameterKey(childNode)) {
-          return;
-        }
-        canonicalPropertyName = _this.canonicalizePropertyName(childNode[0].value, allowParameterKeys);
-        switch (canonicalPropertyName) {
-          case "pattern":
-            return _this.noop();
-          case "default":
-            return _this.noop();
-          case "enum":
-            return _this.noop();
-          case "description":
-            return _this.noop();
-          case "example":
-            return _this.noop();
-          case "minLength":
-            return _this.noop();
-          case "maxLength":
-            return _this.noop();
-          case "minimum":
-            return _this.noop();
-          case "maximum":
-            return _this.noop();
-          case "repeat":
-            return _this.noop();
-          case "displayName":
-            return hasDisplayName = true;
-          case "type":
-            return hasType = true;
-          case "required":
-            return hasRequired = true;
-          default:
-            return _this.noop();
-        }
-      });
-      if (!hasDisplayName) {
-        this.add_key_value_to_node(node, 'displayName', 'tag:yaml.org,2002:str', this.canonicalizePropertyName(parameterName, allowParameterKeys));
-      }
-      if (!hasRequired) {
-        if (requiredByDefault) {
-          this.add_key_value_to_node(node, 'required', 'tag:yaml.org,2002:bool', 'true');
-        }
-      }
-      if (!hasType) {
-        return this.add_key_value_to_node(node, 'type', 'tag:yaml.org,2002:str', 'string');
-      }
-    };
-
-    Transformations.prototype.add_key_value_to_node = function(node, keyName, valueTag, value) {
-      var propertyName, propertyValue;
-      propertyName = new nodes.ScalarNode('tag:yaml.org,2002:str', keyName, node.start_mark, node.end_mark);
-      propertyValue = new nodes.ScalarNode(valueTag, value, node.start_mark, node.end_mark);
-      return node.value.push([propertyName, propertyValue]);
-    };
-
-    Transformations.prototype.transform_document = function(node) {
-      var _this = this;
-      if (node != null ? node.value : void 0) {
-        return node.value.forEach(function(property) {
-          var _ref;
-          switch (property[0].value) {
-            case "title":
-              return _this.noop();
-            case "securitySchemes":
-              return _this.noop();
-            case "schemas":
-              return _this.noop();
-            case "version":
-              return _this.noop();
-            case "documentation":
-              return _this.noop();
-            case "mediaType":
-              return _this.noop();
-            case "securedBy":
-              return _this.noop();
-            case "baseUri":
-              return _this.noop();
-            case "traits":
-              return _this.transform_traits(property[1]);
-            case "baseUriParameters":
-              return _this.transform_named_params(property, false);
-            case "resourceTypes":
-              return _this.transform_types(property[1]);
-            case "resources":
-              return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
-                return _this.transform_resource(resource);
-              }) : void 0;
-            default:
-              return _this.noop();
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.transform_resource = function(resource, allowParameterKeys) {
-      var _this = this;
-      if (allowParameterKeys == null) {
-        allowParameterKeys = false;
-      }
-      if (resource.value) {
-        return resource.value.forEach(function(property) {
-          var canonicalKey, isKnownCommonProperty, _ref, _ref1;
-          isKnownCommonProperty = _this.transform_common_properties(property, allowParameterKeys);
-          if (!isKnownCommonProperty) {
-            if (property[0].value.match(new RegExp("^(get|post|put|delete|head|patch|options)" + (allowParameterKeys ? '\\??' : '') + "$"))) {
-              return _this.transform_method(property[1], allowParameterKeys);
-            } else {
-              canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-              switch (canonicalKey) {
-                case "type":
-                  return _this.noop();
-                case "usage":
-                  return _this.noop();
-                case "securedBy":
-                  return _this.noop();
-                case "uriParameters":
-                  return _this.transform_named_params(property, allowParameterKeys);
-                case "baseUriParameters":
-                  return _this.transform_named_params(property, allowParameterKeys);
-                case "resources":
-                  return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
-                    return _this.transform_resource(resource);
-                  }) : void 0;
-                case "methods":
-                  return (_ref1 = property[1]) != null ? _ref1.value.forEach(function(method) {
-                    return _this.transform_method(method, allowParameterKeys);
-                  }) : void 0;
-                default:
-                  return _this.noop();
-              }
-            }
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.transform_method = function(method, allowParameterKeys) {
-      var _this = this;
-      if (this.isNull(method)) {
-        return;
-      }
-      return method.value.forEach(function(property) {
-        var canonicalKey;
-        if (_this.transform_common_properties(property, allowParameterKeys)) {
-          return;
-        }
-        canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-        switch (canonicalKey) {
-          case "securedBy":
-            return _this.noop();
-          case "usage":
-            return _this.noop();
-          case "headers":
-            return _this.transform_named_params(property, allowParameterKeys);
-          case "queryParameters":
-            return _this.transform_named_params(property, allowParameterKeys, false);
-          case "body":
-            return _this.transform_body(property, allowParameterKeys);
-          case "responses":
-            return _this.transform_responses(property, allowParameterKeys);
-          default:
-            return _this.noop();
-        }
-      });
-    };
-
-    Transformations.prototype.transform_responses = function(responses, allowParameterKeys) {
-      var _this = this;
-      if (this.isNull(responses[1])) {
-        return;
-      }
-      return responses[1].value.forEach(function(response) {
-        return _this.transform_response(response, allowParameterKeys);
-      });
-    };
-
-    Transformations.prototype.transform_response = function(response, allowParameterKeys) {
-      var _this = this;
-      if (this.isMapping(response[1])) {
-        return response[1].value.forEach(function(property) {
-          var canonicalKey;
-          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-          switch (canonicalKey) {
-            case "description":
-              return _this.noop();
-            case "body":
-              return _this.transform_body(property, allowParameterKeys);
-            case "headers":
-              return _this.transform_named_params(property, allowParameterKeys);
-            default:
-              return _this.noop();
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.isContentTypeString = function(value) {
-      return value != null ? value.match(/^[^\/]+\/[^\/]+$/) : void 0;
-    };
-
-    Transformations.prototype.transform_body = function(property, allowParameterKeys) {
-      var _ref,
-        _this = this;
-      if (this.isNull(property[1])) {
-        return;
-      }
-      return (_ref = property[1].value) != null ? _ref.forEach(function(bodyProperty) {
-        var canonicalProperty;
-        if (_this.isParameterKey(bodyProperty)) {
-          return _this.noop();
-        } else if (_this.isContentTypeString(bodyProperty[0].value)) {
-          return _this.transform_body(bodyProperty, allowParameterKeys);
-        } else {
-          canonicalProperty = _this.canonicalizePropertyName(bodyProperty[0].value, allowParameterKeys);
-          switch (canonicalProperty) {
-            case "example":
-              return _this.noop();
-            case "schema":
-              return _this.noop();
-            case "formParameters":
-              return _this.transform_named_params(bodyProperty, allowParameterKeys);
-            default:
-              return _this.noop();
-          }
-        }
-      }) : void 0;
-    };
-
-    Transformations.prototype.transform_common_properties = function(property, allowParameterKeys) {
-      var canonicalProperty;
-      if (this.isParameterKey(property)) {
-        return true;
-      } else {
-        canonicalProperty = this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-        switch (canonicalProperty) {
-          case "displayName":
-            return true;
-          case "description":
-            return true;
-          case "is":
-            return true;
-          default:
-            this.noop();
-        }
-      }
-      return false;
-    };
-
-    return Transformations;
-
-  })();
-
-}).call(this);
-
-},{"./nodes":9,"uritemplate":34}],19:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, traits, uritemplate, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  traits = require('./traits');
-
-  uritemplate = require('uritemplate');
-
-  /*
-  The Validator throws these.
-  */
-
-
-  this.ValidationError = (function(_super) {
-    __extends(ValidationError, _super);
-
-    function ValidationError() {
-      _ref = ValidationError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return ValidationError;
-
-  })(MarkedYAMLError);
-
-  /*
-  A collection of multiple validation errors
-  */
-
-
-  this.ValidationErrors = (function(_super) {
-    __extends(ValidationErrors, _super);
-
-    function ValidationErrors(validation_errors) {
-      this.validation_errors = validation_errors;
-    }
-
-    ValidationErrors.prototype.get_validation_errors = function() {
-      return this.validation_errors;
-    };
-
-    return ValidationErrors;
-
-  })(MarkedYAMLError);
-
-  /*
-  The Validator class deals with validating a YAML file according to the spec
-  */
-
-
-  this.Validator = (function() {
-    function Validator() {
-      this.get_properties = __bind(this.get_properties, this);
-      this.get_enum_values = __bind(this.get_enum_values, this);
-      this.validations = [this.is_map, this.valid_root_properties, this.validate_base_uri_parameters, this.valid_absolute_uris];
-    }
-
-    Validator.prototype.validate_document = function(node) {
-      var _this = this;
-      this.validations.forEach(function(validation) {
-        return validation.call(_this, node);
-      });
-      return true;
-    };
-
-    Validator.prototype.validate_security_schemes = function(schemesProperty) {
-      var _this = this;
-      if (!this.isSequence(schemesProperty)) {
-        throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security schemes property, it must be an array', schemesProperty.start_mark);
-      }
-      return schemesProperty.value.forEach(function(scheme_entry) {
-        if (!_this.isMapping(scheme_entry)) {
-          throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme_entry.start_mark);
-        }
-        return scheme_entry.value.forEach(function(scheme) {
-          if (!_this.isMapping(scheme[1])) {
-            throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme.start_mark);
-          }
-          return _this.validate_security_scheme(scheme[1]);
-        });
-      });
-    };
-
-    Validator.prototype.isMapping = function(node) {
-      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:map";
-    };
-
-    Validator.prototype.isNull = function(node) {
-      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:null";
-    };
-
-    Validator.prototype.isSequence = function(node) {
-      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:seq";
-    };
-
-    Validator.prototype.isString = function(node) {
-      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:str";
-    };
-
-    Validator.prototype.isInteger = function(node) {
-      return (node != null ? node.tag : void 0) === "tag:yaml.org,2002:int";
-    };
-
-    Validator.prototype.isNullableMapping = function(node) {
-      return this.isMapping(node) || this.isNull(node);
-    };
-
-    Validator.prototype.isNullableString = function(node) {
-      return this.isString(node) || this.isNull(node);
-    };
-
-    Validator.prototype.isNullableSequence = function(node) {
-      return this.isSequence(node) || this.isNull(node);
-    };
-
-    Validator.prototype.isScalar = function(node) {
-      return (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:null' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:bool' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:int' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:float' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:binary' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:timestamp' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:str';
-    };
-
-    Validator.prototype.isCollection = function(node) {
-      return (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:omap' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:pairs' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:set' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:seq' || (node != null ? node.tag : void 0) === 'tag:yaml.org,2002:map';
-    };
-
-    Validator.prototype.validate_security_scheme = function(scheme) {
-      var settings, type,
-        _this = this;
-      type = null;
-      settings = null;
-      scheme.value.forEach(function(property) {
-        switch (property[0].value) {
-          case "description":
-            if (!_this.isScalar(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'schemes description must be a string', property[1].start_mark);
-            }
-            break;
-          case "type":
-            type = property[1].value;
-            if (!(_this.isString(property[1]) && type.match(/^(OAuth 1.0|OAuth 2.0|Basic Authentication|Digest Authentication|x-.+)$/))) {
-              throw new exports.ValidationError('while validating security scheme', null, 'schemes type must be any of: "OAuth 1.0", "OAuth 2.0", "Basic Authentication", "Digest Authentication", "x-\{.+\}"', property[1].start_mark);
-            }
-            break;
-          case "describedBy":
-            return _this.validate_method(property, true, "security scheme");
-          case "settings":
-            settings = property;
-            if (!_this.isNullableMapping(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'schemes settings must be a map', property[1].start_mark);
-            }
-            break;
-          default:
-            throw new exports.ValidationError('while validating security scheme', null, "property: '" + property[0].value + "' is invalid in a security scheme", property[0].start_mark);
-        }
-      });
-      if (!type) {
-        throw new exports.ValidationError('while validating security scheme', null, 'schemes type must be any of: "OAuth 1.0", "OAuth 2.0", "Basic Authentication", "Digest Authentication", "x-\{.+\}"', scheme.start_mark);
-      } else if (type === "OAuth 2.0") {
-        if (!settings) {
-          throw new exports.ValidationError('while validating security scheme', null, 'for OAuth 2.0 settings must be a map', scheme.start_mark);
-        }
-        return this.validate_oauth2_settings(settings);
-      } else if (type === "OAuth 1.0") {
-        if (!settings) {
-          throw new exports.ValidationError('while validating security scheme', null, 'for OAuth 1.0 settings must be a map', scheme.start_mark);
-        }
-        return this.validate_oauth1_settings(settings);
-      }
-    };
-
-    Validator.prototype.validate_oauth2_settings = function(settings) {
-      var accessTokenUrl, authorizationUrl,
-        _this = this;
-      authorizationUrl = false;
-      accessTokenUrl = false;
-      settings[1].value.forEach(function(property) {
-        switch (property[0].value) {
-          case "authorizationUrl":
-            if (!_this.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', property[0].start_mark);
-            }
-            return authorizationUrl = true;
-          case "accessTokenUrl":
-            if (!_this.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', property[0].start_mark);
-            }
-            return accessTokenUrl = true;
-        }
-      });
-      if (!accessTokenUrl) {
-        throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', settings.start_mark);
-      }
-      if (!authorizationUrl) {
-        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', settings.start_mark);
-      }
-    };
-
-    Validator.prototype.validate_oauth1_settings = function(settings) {
-      var authorizationUri, requestTokenUri, tokenCredentialsUri,
-        _this = this;
-      requestTokenUri = false;
-      authorizationUri = false;
-      tokenCredentialsUri = false;
-      settings[1].value.forEach(function(property) {
-        switch (property[0].value) {
-          case "requestTokenUri":
-            if (!_this.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', property[0].start_mark);
-            }
-            return requestTokenUri = true;
-          case "authorizationUri":
-            if (!_this.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', property[0].start_mark);
-            }
-            return authorizationUri = true;
-          case "tokenCredentialsUri":
-            if (!_this.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', property[0].start_mark);
-            }
-            return tokenCredentialsUri = true;
-        }
-      });
-      if (!requestTokenUri) {
-        throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', settings.start_mark);
-      }
-      if (!authorizationUri) {
-        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', settings.start_mark);
-      }
-      if (!tokenCredentialsUri) {
-        throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', settings.start_mark);
-      }
-    };
-
-    Validator.prototype.validate_root_schemas = function(schemas) {
-      var schema, schemaList, schemaName, _results;
-      if (!this.isSequence(schemas)) {
-        throw new exports.ValidationError('while validating schemas', null, 'schemas property must be an array', schemas.start_mark);
-      }
-      schemaList = this.get_all_schemas();
-      _results = [];
-      for (schemaName in schemaList) {
-        schema = schemaList[schemaName];
-        if (!(schema[1].tag && this.isString(schema[1]))) {
-          throw new exports.ValidationError('while validating schemas', null, 'schema ' + schemaName + ' must be a string', schema[0].start_mark);
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-
-    Validator.prototype.is_map = function(node) {
-      var baseUriProperty;
-      baseUriProperty = this.get_property(node, "baseUri");
-      this.baseUri = baseUriProperty.value;
-      if (!(node || this.isNull(node))) {
-        throw new exports.ValidationError('while validating root', null, 'empty document', 0);
-      }
-      if (!this.isMapping(node)) {
-        throw new exports.ValidationError('while validating root', null, 'document must be a mapping', 0);
-      }
-    };
-
-    Validator.prototype.validate_base_uri_parameters = function(node) {
-      var baseUriProperty;
-      baseUriProperty = this.get_property(node, "baseUri");
-      this.baseUri = baseUriProperty.value;
-      if (this.has_property(node, "baseUriParameters")) {
-        if (!this.isScalar(baseUriProperty)) {
-          throw new exports.ValidationError('while validating uri parameters', null, 'uri parameters defined when there is no baseUri', node.start_mark);
-        }
-        return this.validate_uri_parameters(this.baseUri, this.get_property(node, "baseUriParameters"), false, false, ["version"]);
-      }
-    };
-
-    Validator.prototype.validate_uri_parameters = function(uri, uriProperty, allowParameterKeys, skipParameterUseCheck, reservedNames) {
-      var err, expressions, template, _ref1,
-        _this = this;
-      if (reservedNames == null) {
-        reservedNames = [];
-      }
-      try {
-        template = uritemplate.parse(uri);
-      } catch (_error) {
-        err = _error;
-        throw new exports.ValidationError('while validating uri parameters', null, err != null ? (_ref1 = err.options) != null ? _ref1.message : void 0 : void 0, uriProperty.start_mark);
-      }
-      expressions = template.expressions.filter(function(expr) {
-        return "templateText" in expr;
-      }).map(function(expression) {
-        return expression.templateText;
-      });
-      if (typeof uriProperty.value === "object") {
-        return uriProperty.value.forEach(function(uriParameter) {
-          var parameterName;
-          parameterName = _this.canonicalizePropertyName(uriParameter[0].value, allowParameterKeys);
-          if (__indexOf.call(reservedNames, parameterName) >= 0) {
-            throw new exports.ValidationError('while validating baseUri', null, uriParameter[0].value + ' parameter not allowed here', uriParameter[0].start_mark);
-          }
-          if (!(_this.isNullableMapping(uriParameter[1], allowParameterKeys) || _this.isNullableSequence(uriParameter[1], allowParameterKeys))) {
-            throw new exports.ValidationError('while validating baseUri', null, 'URI parameter must be a mapping', uriParameter[0].start_mark);
-          }
-          if (!_this.isNull(uriParameter[1])) {
-            _this.valid_common_parameter_properties(uriParameter[1], allowParameterKeys);
-          }
-          if (!(skipParameterUseCheck || _this.isParameterKey(uriParameter) || __indexOf.call(expressions, parameterName) >= 0)) {
-            throw new exports.ValidationError('while validating baseUri', null, uriParameter[0].value + ' uri parameter unused', uriParameter[0].start_mark);
-          }
-        });
-      }
-    };
-
-    Validator.prototype.validate_types = function(typeProperty) {
-      var types,
-        _this = this;
-      types = typeProperty.value;
-      if (!this.isSequence(typeProperty)) {
-        throw new exports.ValidationError('while validating resource types', null, 'invalid resourceTypes definition, it must be an array', typeProperty.start_mark);
-      }
-      return types.forEach(function(type_entry) {
-        if (!_this.isMapping(type_entry)) {
-          throw new exports.ValidationError('while validating resource types', null, 'invalid resourceType definition, it must be a mapping', type_entry.start_mark);
-        }
-        return type_entry.value.forEach(function(type) {
-          if (!_this.isMapping(type[1])) {
-            throw new exports.ValidationError('while validating resource types', null, 'invalid resourceType definition, it must be a mapping', type_entry.start_mark);
-          }
-          return _this.validate_resource(type, true, 'resource type');
-        });
-      });
-    };
-
-    Validator.prototype.validate_traits = function(traitProperty) {
-      var _this = this;
-      traits = traitProperty.value;
-      if (!Array.isArray(traits)) {
-        throw new exports.ValidationError('while validating traits', null, 'invalid traits definition, it must be an array', traitProperty.start_mark);
-      }
-      return traits.forEach(function(trait_entry) {
-        if (!Array.isArray(trait_entry.value)) {
-          throw new exports.ValidationError('while validating traits', null, 'invalid traits definition, it must be an array', traitProperty.start_mark);
-        }
-        return trait_entry.value.forEach(function(trait) {
-          if (!_this.isMapping(trait[1])) {
-            throw new exports.ValidationError('while validating traits', null, 'invalid trait definition, it must be a mapping', trait[1].start_mark);
-          }
-          return _this.valid_traits_properties(trait);
-        });
-      });
-    };
-
-    Validator.prototype.valid_traits_properties = function(node) {
-      var invalid;
-      if (!node[1].value) {
-        return;
-      }
-      if (!this.isMapping(node[1])) {
-        return;
-      }
-      invalid = node[1].value.filter(function(childNode) {
-        return childNode[0].value === "is" || childNode[0].value === "type";
-      });
-      if (invalid.length > 0) {
-        throw new exports.ValidationError('while validating trait properties', null, "property: '" + invalid[0][0].value + "' is invalid in a trait", invalid[0][0].start_mark);
-      }
-      return this.validate_method(node, true, 'trait');
-    };
-
-    Validator.prototype.canonicalizePropertyName = function(propertyName, mustRemoveQuestionMark) {
-      if (mustRemoveQuestionMark && propertyName.slice(-1) === '?') {
-        return propertyName.slice(0, -1);
-      }
-      return propertyName;
-    };
-
-    Validator.prototype.valid_common_parameter_properties = function(node, allowParameterKeys) {
-      var _this = this;
-      if (!node.value) {
-        return;
-      }
-      if (this.isSequence(node)) {
-        if (node.value.length === 0) {
-          throw new exports.ValidationError('while validating parameter properties', null, 'named parameter needs at least one type', node.start_mark);
-        }
-        if (!(node.value.length > 1)) {
-          throw new exports.ValidationError('while validating parameter properties', null, 'single type for variably typed parameter', node.start_mark);
-        }
-        return node.value.forEach(function(parameter) {
-          return _this.validate_named_parameter(parameter, allowParameterKeys);
-        });
-      } else {
-        return this.validate_named_parameter(node, allowParameterKeys);
-      }
-    };
-
-    Validator.prototype.validate_named_parameter = function(node, allowParameterKeys) {
-      var _this = this;
-      return node.value.forEach(function(childNode) {
-        var booleanValues, canonicalPropertyName, enumValues, propertyName, propertyValue, validTypes;
-        propertyName = childNode[0].value;
-        propertyValue = childNode[1].value;
-        booleanValues = ["true", "false"];
-        if (allowParameterKeys && _this.isParameterKey(childNode)) {
-          return;
-        }
-        canonicalPropertyName = _this.canonicalizePropertyName(propertyName, allowParameterKeys);
-        switch (canonicalPropertyName) {
-          case "displayName":
-            if (!_this.isScalar(childNode[1])) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of displayName must be a scalar', childNode[1].start_mark);
-            }
-            break;
-          case "pattern":
-            if (!_this.isScalar(childNode[1])) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of pattern must be a scalar', childNode[1].start_mark);
-            }
-            break;
-          case "default":
-            if (!_this.isScalar(childNode[1])) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of default must be a scalar', childNode[1].start_mark);
-            }
-            break;
-          case "enum":
-            if (!_this.isNullableSequence(childNode[1])) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of enum must be an array', childNode[1].start_mark);
-            }
-            if (!childNode[1].value.length) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'enum is empty', childNode[1].start_mark);
-            }
-            enumValues = _this.get_enum_values(childNode[1].value);
-            if (enumValues.hasDuplicates()) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'enum contains duplicated values', childNode[1].start_mark);
-            }
-            break;
-          case "description":
-            if (!_this.isScalar(childNode[1])) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of description must be a scalar', childNode[1].start_mark);
-            }
-            break;
-          case "example":
-            if (!_this.isScalar(childNode[1])) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of example must be a scalar', childNode[1].start_mark);
-            }
-            break;
-          case "minLength":
-            if (isNaN(propertyValue)) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of minLength must be a number', childNode[1].start_mark);
-            }
-            break;
-          case "maxLength":
-            if (isNaN(propertyValue)) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of maxLength must be a number', childNode[1].start_mark);
-            }
-            break;
-          case "minimum":
-            if (isNaN(propertyValue)) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of minimum must be a number', childNode[1].start_mark);
-            }
-            break;
-          case "maximum":
-            if (isNaN(propertyValue)) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'the value of maximum must be a number', childNode[1].start_mark);
-            }
-            break;
-          case "type":
-            validTypes = ['string', 'number', 'integer', 'date', 'boolean', 'file'];
-            if (__indexOf.call(validTypes, propertyValue) < 0) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'type can be either of: string, number, integer, file, date or boolean ', childNode[1].start_mark);
-            }
-            break;
-          case "required":
-            if (__indexOf.call(booleanValues, propertyValue) < 0) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'required can be any either true or false', childNode[1].start_mark);
-            }
-            break;
-          case "repeat":
-            if (__indexOf.call(booleanValues, propertyValue) < 0) {
-              throw new exports.ValidationError('while validating parameter properties', null, 'repeat can be any either true or false', childNode[1].start_mark);
-            }
-            break;
-          default:
-            throw new exports.ValidationError('while validating parameter properties', null, 'unknown property ' + propertyName, childNode[0].start_mark);
-        }
-      });
-    };
-
-    Validator.prototype.get_enum_values = function(node) {
-      var _this = this;
-      return node.map(function(item) {
-        return item.value;
-      });
-    };
-
-    Validator.prototype.valid_root_properties = function(node) {
-      var checkVersion, hasTitle, hasVersion,
-        _this = this;
-      hasTitle = false;
-      checkVersion = false;
-      hasVersion = false;
-      if (node != null ? node.value : void 0) {
-        node.value.forEach(function(property) {
-          if (!_this.isString(property[0])) {
-            throw new exports.ValidationError('while validating root properties', null, 'keys can only be strings', property[0].start_mark);
-          }
-          switch (property[0].value) {
-            case "title":
-              hasTitle = true;
-              if (!_this.isScalar(property[1])) {
-                throw new exports.ValidationError('while validating root properties', null, 'title must be a string', property[0].start_mark);
-              }
-              break;
-            case "baseUri":
-              if (!_this.isScalar(property[1])) {
-                throw new exports.ValidationError('while validating root properties', null, 'baseUri must be a string', property[0].start_mark);
-              }
-              return checkVersion = _this.validate_base_uri(property[1]);
-            case "securitySchemes":
-              return _this.validate_security_schemes(property[1]);
-            case "schemas":
-              return _this.validate_root_schemas(property[1]);
-            case "version":
-              hasVersion = true;
-              if (!_this.isScalar(property[1])) {
-                throw new exports.ValidationError('while validating root properties', null, 'version must be a string', property[0].start_mark);
-              }
-              break;
-            case "traits":
-              return _this.validate_traits(property[1]);
-            case "documentation":
-              if (!_this.isSequence(property[1])) {
-                throw new exports.ValidationError('while validating root properties', null, 'documentation must be an array', property[0].start_mark);
-              }
-              return _this.validate_documentation(property[1]);
-            case "mediaType":
-              if (!_this.isString(property[1])) {
-                throw new exports.ValidationError('while validating root properties', null, 'mediaType must be a scalar', property[0].start_mark);
-              }
-              break;
-            case "baseUriParameters":
-              return _this.is_map(node);
-            case "resourceTypes":
-              return _this.validate_types(property[1]);
-            case "securedBy":
-              return _this.validate_secured_by(property);
-            default:
-              if (property[0].value.match(/^\//)) {
-                return _this.validate_resource(property);
-              } else {
-                throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + property[0].value, property[0].start_mark);
-              }
-          }
-        });
-      }
-      if (!hasTitle) {
-        throw new exports.ValidationError('while validating root properties', null, 'missing title', node.start_mark);
-      }
-      if (checkVersion && !hasVersion) {
-        throw new exports.ValidationError('while validating version', null, 'missing version', node.start_mark);
-      }
-    };
-
-    Validator.prototype.validate_documentation = function(documentation_property) {
-      var _this = this;
-      if (!documentation_property.value.length) {
-        throw new exports.ValidationError('while validating documentation section', null, 'there must be at least one document in the documentation section', documentation_property.start_mark);
-      }
-      return documentation_property.value.forEach(function(docSection) {
-        return _this.validate_doc_section(docSection);
-      });
-    };
-
-    Validator.prototype.validate_doc_section = function(docSection) {
-      var hasContent, hasTitle,
-        _this = this;
-      if (!this.isMapping(docSection)) {
-        throw new exports.ValidationError('while validating documentation section', null, 'each documentation section must be a mapping', docSection.start_mark);
-      }
-      hasTitle = false;
-      hasContent = false;
-      docSection.value.forEach(function(property) {
-        if (!_this.isScalar(property[0])) {
-          throw new exports.ValidationError('while validating documentation section', null, 'keys can only be strings', property[0].start_mark);
-        }
-        switch (property[0].value) {
-          case "title":
-            if (!(_this.isScalar(property[1]) && !_this.isNull(property[1]))) {
-              throw new exports.ValidationError('while validating documentation section', null, 'title must be a string', property[0].start_mark);
-            }
-            return hasTitle = true;
-          case "content":
-            if (!(_this.isScalar(property[1]) && !_this.isNull(property[1]))) {
-              throw new exports.ValidationError('while validating documentation section', null, 'content must be a string', property[0].start_mark);
-            }
-            return hasContent = true;
-          default:
-            throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + property[0].value, property[0].start_mark);
-        }
-      });
-      if (!hasContent) {
-        throw new exports.ValidationError('while validating documentation section', null, 'a documentation entry must have content property', docSection.start_mark);
-      }
-      if (!hasTitle) {
-        throw new exports.ValidationError('while validating documentation section', null, 'a documentation entry must have title property', docSection.start_mark);
-      }
-    };
-
-    Validator.prototype.child_resources = function(node) {
-      if (node && this.isMapping(node)) {
-        return node.value.filter(function(childNode) {
-          return childNode[0].value.match(/^\//);
-        });
-      }
-      return [];
-    };
-
-    Validator.prototype.validate_resource = function(resource, allowParameterKeys, context) {
-      var err, template, _ref1,
-        _this = this;
-      if (allowParameterKeys == null) {
-        allowParameterKeys = false;
-      }
-      if (context == null) {
-        context = "resource";
-      }
-      if (!(resource[1] && this.isNullableMapping(resource[1]))) {
-        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', resource[1].start_mark);
-      }
-      if (resource[0].value) {
-        try {
-          template = uritemplate.parse(resource[0].value);
-        } catch (_error) {
-          err = _error;
-          throw new exports.ValidationError('while validating resource', null, "Resource name is invalid: " + (err != null ? (_ref1 = err.options) != null ? _ref1.message : void 0 : void 0), resource[0].start_mark);
-        }
-      }
-      if (this.isNull(resource[1])) {
-        return;
-      }
-      if (resource[1].value) {
-        return resource[1].value.forEach(function(property) {
-          var canonicalKey, key, valid;
-          if (!_this.validate_common_properties(property, allowParameterKeys)) {
-            if (property[0].value.match(/^\//)) {
-              if (allowParameterKeys) {
-                throw new exports.ValidationError('while validating trait properties', null, 'resource type cannot define child resources', property[0].start_mark);
-              }
-              return _this.validate_resource(property, allowParameterKeys);
-            } else if (property[0].value.match(new RegExp("^(get|post|put|delete|head|patch|options)" + (allowParameterKeys ? '\\??' : '') + "$"))) {
-              return _this.validate_method(property, allowParameterKeys, 'method');
-            } else {
-              key = property[0].value;
-              canonicalKey = _this.canonicalizePropertyName(key, allowParameterKeys);
-              valid = true;
-              switch (canonicalKey) {
-                case "uriParameters":
-                  _this.validate_uri_parameters(resource[0].value, property[1], allowParameterKeys, allowParameterKeys);
-                  break;
-                case "baseUriParameters":
-                  if (!_this.baseUri) {
-                    throw new exports.ValidationError('while validating uri parameters', null, 'base uri parameters defined when there is no baseUri', property[0].start_mark);
-                  }
-                  _this.validate_uri_parameters(_this.baseUri, property[1], allowParameterKeys);
-                  break;
-                default:
-                  valid = false;
-              }
-              switch (key) {
-                case "type":
-                  return _this.validate_type_property(property, allowParameterKeys);
-                case "usage":
-                  if (!allowParameterKeys) {
-                    throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
-                  }
-                  break;
-                case "securedBy":
-                  return _this.validate_secured_by(property);
-                default:
-                  if (!valid) {
-                    throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + ("' is invalid in a " + context), property[0].start_mark);
-                  }
-              }
-            }
-          }
-        });
-      }
-    };
-
-    Validator.prototype.validate_secured_by = function(property) {
-      var _this = this;
-      if (!this.isSequence(property[1])) {
-        throw new exports.ValidationError('while validating securityScheme', null, "property 'securedBy' must be a list", property[0].start_mark);
-      }
-      return property[1].value.forEach(function(secScheme) {
-        var securitySchemeName;
-        if (_this.isSequence(secScheme)) {
-          throw new exports.ValidationError('while validating securityScheme consumption', null, 'securityScheme reference cannot be a list', secScheme.start_mark);
-        }
-        if (!_this.isNull(secScheme)) {
-          securitySchemeName = _this.key_or_value(secScheme);
-          if (!_this.get_security_scheme(securitySchemeName)) {
-            throw new exports.ValidationError('while validating securityScheme consumption', null, 'there is no securityScheme named ' + securitySchemeName, secScheme.start_mark);
-          }
-        }
-      });
-    };
-
-    Validator.prototype.validate_type_property = function(property, allowParameterKeys) {
-      var typeName,
-        _this = this;
-      if (!(this.isMapping(property[1]) || this.isString(property[1]))) {
-        throw new exports.ValidationError('while validating resources', null, "property 'type' must be a string or a mapping", property[0].start_mark);
-      }
-      if (this.isMapping(property[1])) {
-        if (property[1].value.length > 1) {
-          throw new exports.ValidationError('while validating resources', null, "a resource or resourceType can inherit from a single resourceType", property[0].start_mark);
-        }
-      }
-      typeName = this.key_or_value(property[1]);
-      if (!typeName) {
-        throw new exports.ValidationError('while validating resource consumption', null, 'missing type name in type property', property[1].start_mark);
-      }
-      if (!this.get_type(typeName)) {
-        throw new exports.ValidationError('while validating resource consumption', null, 'there is no type named ' + typeName, property[1].start_mark);
-      }
-      if (this.isMapping(property[1])) {
-        return property[1].value.forEach(function(parameter) {
-          if (!(_this.isNull(parameter[1]) || _this.isMapping(parameter[1]))) {
-            throw new exports.ValidationError('while validating resource consumption', null, 'type parameters must be in a mapping', parameter[1].start_mark);
-          }
-        });
-      }
-    };
-
-    Validator.prototype.validate_method = function(method, allowParameterKeys, context) {
-      var _this = this;
-      if (context == null) {
-        context = 'method';
-      }
-      if (this.isNull(method[1])) {
-        return;
-      }
-      if (!this.isMapping(method[1])) {
-        throw new exports.ValidationError('while validating methods', null, "method must be a mapping", method[0].start_mark);
-      }
-      return method[1].value.forEach(function(property) {
-        var canonicalKey, key, valid;
-        if (_this.validate_common_properties(property, allowParameterKeys)) {
-          return;
-        }
-        key = property[0].value;
-        canonicalKey = _this.canonicalizePropertyName(key, allowParameterKeys);
-        valid = true;
-        switch (canonicalKey) {
-          case "headers":
-            _this.validate_headers(property, allowParameterKeys);
-            break;
-          case "queryParameters":
-            _this.validate_query_params(property, allowParameterKeys);
-            break;
-          case "body":
-            _this.validate_body(property, allowParameterKeys);
-            break;
-          case "responses":
-            _this.validate_responses(property, allowParameterKeys);
-            break;
-          default:
-            valid = false;
-        }
-        switch (key) {
-          case "securedBy":
-            return _this.validate_secured_by(property);
-          case "usage":
-            if (!allowParameterKeys) {
-              throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
-            }
-            break;
-          default:
-            if (!valid) {
-              throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + ("' is invalid in a " + context), property[0].start_mark);
-            }
-        }
-      });
-    };
-
-    Validator.prototype.validate_responses = function(responses, allowParameterKeys) {
-      var _this = this;
-      if (this.isNull(responses[1])) {
-        return;
-      }
-      if (!this.isMapping(responses[1])) {
-        throw new exports.ValidationError('while validating query parameters', null, "property: 'responses' must be a mapping", responses[0].start_mark);
-      }
-      return responses[1].value.forEach(function(response) {
-        if (!_this.isNullableMapping(response[1])) {
-          throw new exports.ValidationError('while validating query parameters', null, "each response must be a mapping", response[1].start_mark);
-        }
-        return _this.validate_response(response, allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_query_params = function(property, allowParameterKeys) {
-      var _this = this;
-      if (this.isNull(property[1])) {
-        return;
-      }
-      if (!this.isMapping(property[1])) {
-        throw new exports.ValidationError('while validating query parameters', null, "property: 'queryParameters' must be a mapping", property[0].start_mark);
-      }
-      return property[1].value.forEach(function(param) {
-        if (!(_this.isNullableMapping(param[1]) || _this.isNullableSequence(param[1]))) {
-          throw new exports.ValidationError('while validating query parameters', null, "each query parameter must be a mapping", param[1].start_mark);
-        }
-        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_form_params = function(property, allowParameterKeys) {
-      var _this = this;
-      if (this.isNull(property[1])) {
-        return;
-      }
-      if (!this.isMapping(property[1])) {
-        throw new exports.ValidationError('while validating query parameters', null, "property: 'formParameters' must be a mapping", property[0].start_mark);
-      }
-      return property[1].value.forEach(function(param) {
-        if (!(_this.isNullableMapping(param[1]) || _this.isNullableSequence(param[1]))) {
-          throw new exports.ValidationError('while validating query parameters', null, "each form parameter must be a mapping", param[1].start_mark);
-        }
-        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_headers = function(property, allowParameterKeys) {
-      var _this = this;
-      if (this.isNull(property[1])) {
-        return;
-      }
-      if (!this.isMapping(property[1])) {
-        throw new exports.ValidationError('while validating headers', null, "property: 'headers' must be a mapping", property[0].start_mark);
-      }
-      return property[1].value.forEach(function(param) {
-        if (!(_this.isNullableMapping(param[1]) || _this.isNullableSequence(param[1]))) {
-          throw new exports.ValidationError('while validating query parameters', null, "each header must be a mapping", param[1].start_mark);
-        }
-        return _this.valid_common_parameter_properties(param[1], allowParameterKeys);
-      });
-    };
-
-    Validator.prototype.validate_response = function(response, allowParameterKeys) {
-      var _this = this;
-      if (this.isSequence(response[0])) {
-        if (!response[0].value.length) {
-          throw new exports.ValidationError('while validating responses', null, "there must be at least one response code", response[0].start_mark);
-        }
-        response[0].value.forEach(function(responseCode) {
-          if (!_this.isInteger(responseCode)) {
-            throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", responseCode.start_mark);
-          }
-        });
-      } else if (!this.isInteger(response[0])) {
-        throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", response[0].start_mark);
-      }
-      if (!this.isNullableMapping(response[1])) {
-        throw new exports.ValidationError('while validating responses', null, "each response property must be a mapping", response[0].start_mark);
-      }
-      if (this.isMapping(response[1])) {
-        return response[1].value.forEach(function(property) {
-          var canonicalKey;
-          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-          switch (canonicalKey) {
-            case "body":
-              return _this.validate_body(property, allowParameterKeys);
-            case "description":
-              if (!_this.isScalar(property[1])) {
-                throw new exports.ValidationError('while validating responses', null, "property description must be a string", response[0].start_mark);
-              }
-              break;
-            case "headers":
-              if (!_this.isNullableMapping(property[1])) {
-                throw new exports.ValidationError('while validating resources', null, "property 'headers' must be a mapping", property[0].start_mark);
-              }
-              return _this.validate_headers(property);
-            default:
-              throw new exports.ValidationError('while validating response', null, "property: '" + property[0].value + "' is invalid in a response", property[0].start_mark);
-          }
-        });
-      }
-    };
-
-    Validator.prototype.isParameterKey = function(property) {
-      if (property[0].value.match(/<<\s*([^\|\s>]+)\s*>>/g) || property[0].value.match(/<<\s*([^\|\s>]+)\s*(\|\s*\!\s*(singularize|pluralize))?\s*>>/g)) {
-        return true;
-      } else if (property[0].value.match(/<<\s*([^\|\s>]+)\s*\|.*\s*>>/g)) {
-        throw new exports.ValidationError('while validating parameter', null, "unknown function applied to property name", property[0].start_mark);
-      }
-      return false;
-    };
-
-    Validator.prototype.validate_body = function(property, allowParameterKeys, bodyMode) {
-      var implicitMode, _ref1,
-        _this = this;
-      if (bodyMode == null) {
-        bodyMode = null;
-      }
-      if (this.isNull(property[1])) {
-        return;
-      }
-      if (!this.isMapping(property[1])) {
-        throw new exports.ValidationError('while validating body', null, "property: body specification must be a mapping", property[0].start_mark);
-      }
-      implicitMode = ["implicit", "forcedImplicit"];
-      if ((_ref1 = property[1].value) != null) {
-        _ref1.forEach(function(bodyProperty) {
-          var canonicalProperty, key;
-          if (_this.isParameterKey(bodyProperty)) {
-            if (!allowParameterKeys) {
-              throw new exports.ValidationError('while validating body', null, "property '" + bodyProperty[0].value + "' is invalid in a resource", bodyProperty[0].start_mark);
-            }
-          } else if (bodyProperty[0].value.match(/^[^\/]+\/[^\/]+$/)) {
-            if (bodyMode && bodyMode !== "explicit") {
-              throw new exports.ValidationError('while validating body', null, "not compatible with implicit default Media Type", bodyProperty[0].start_mark);
-            }
-            bodyMode = "explicit";
-            return _this.validate_body(bodyProperty, allowParameterKeys, "forcedImplicit");
-          } else {
-            key = bodyProperty[0].value;
-            canonicalProperty = _this.canonicalizePropertyName(key, allowParameterKeys);
-            switch (canonicalProperty) {
-              case "formParameters":
-                if (bodyMode && __indexOf.call(implicitMode, bodyMode) < 0) {
-                  throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
-                }
-                if (bodyMode == null) {
-                  bodyMode = "implicit";
-                }
-                return _this.validate_form_params(bodyProperty, allowParameterKeys);
-              case "example":
-                if (bodyMode && __indexOf.call(implicitMode, bodyMode) < 0) {
-                  throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
-                }
-                if (bodyMode == null) {
-                  bodyMode = "implicit";
-                }
-                if (!_this.isScalar(bodyProperty[1])) {
-                  throw new exports.ValidationError('while validating body', null, "example must be a string", bodyProperty[0].start_mark);
-                }
-                break;
-              case "schema":
-                if (bodyMode && __indexOf.call(implicitMode, bodyMode) < 0) {
-                  throw new exports.ValidationError('while validating body', null, "not compatible with explicit default Media Type", bodyProperty[0].start_mark);
-                }
-                if (bodyMode == null) {
-                  bodyMode = "implicit";
-                }
-                if (!_this.isScalar(bodyProperty[1])) {
-                  throw new exports.ValidationError('while validating body', null, "schema must be a string", bodyProperty[0].start_mark);
-                }
-                break;
-              default:
-                throw new exports.ValidationError('while validating body', null, "property: '" + bodyProperty[0].value + "' is invalid in a body", bodyProperty[0].start_mark);
-            }
-          }
-        });
-      }
-      if (bodyMode === "implicit") {
-        if (!this.get_media_type()) {
-          throw new exports.ValidationError('while validating body', null, "body tries to use default Media Type, but mediaType is null", property[0].start_mark);
-        }
-      }
-    };
-
-    Validator.prototype.validate_common_properties = function(property, allowParameterKeys) {
-      var canonicalProperty, key,
-        _this = this;
-      if (this.isParameterKey(property)) {
-        if (!allowParameterKeys) {
-          throw new exports.ValidationError('while validating resources', null, "property '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
-        }
-        return true;
-      } else {
-        key = property[0].value;
-        canonicalProperty = this.canonicalizePropertyName(key, allowParameterKeys);
-        switch (canonicalProperty) {
-          case "displayName":
-            if (!this.isScalar(property[1])) {
-              throw new exports.ValidationError('while validating resources', null, "property 'displayName' must be a string", property[0].start_mark);
-            }
-            return true;
-          case "description":
-            if (!this.isScalar(property[1])) {
-              throw new exports.ValidationError('while validating resources', null, "property 'description' must be a string", property[0].start_mark);
-            }
-            return true;
-        }
-        switch (key) {
-          case "is":
-            if (!this.isSequence(property[1])) {
-              throw new exports.ValidationError('while validating resources', null, "property 'is' must be a list", property[0].start_mark);
-            }
-            if (!(property[1].value instanceof Array)) {
-              throw new exports.ValidationError('while validating trait consumption', null, 'is property must be an array', property[0].start_mark);
-            }
-            property[1].value.forEach(function(use) {
-              var traitName;
-              traitName = _this.key_or_value(use);
-              if (!_this.get_trait(traitName)) {
-                throw new exports.ValidationError('while validating trait consumption', null, 'there is no trait named ' + traitName, use.start_mark);
-              }
-              if (_this.isMapping(use[1])) {
-                return property[1].value.forEach(function(parameter) {
-                  if (!(_this.isNull(parameter[1]) || _this.isMapping(parameter[1]))) {
-                    throw new exports.ValidationError('while validating resource consumption', null, 'type parameters must be in a mapping', parameter[1].start_mark);
-                  }
-                });
-              }
-            });
-            return true;
-        }
-      }
-      return false;
-    };
-
-    Validator.prototype.child_methods = function(node) {
-      if (!(node && this.isMapping(node))) {
-        return [];
-      }
-      return node.value.filter(function(childNode) {
-        return childNode[0].value.match(/^(get|post|put|delete|head|patch|options)$/);
-      });
-    };
-
-    Validator.prototype.has_property = function(node, property) {
-      if (node && this.isMapping(node)) {
-        return node.value.some(function(childNode) {
-          return childNode[0].value && typeof childNode[0].value !== "object" && childNode[0].value.match(property);
-        });
-      }
-      return false;
-    };
-
-    Validator.prototype.property_value = function(node, property) {
-      var filteredNodes;
-      filteredNodes = node.value.filter(function(childNode) {
-        return typeof childNode[0].value !== "object" && childNode[0].value.match(property);
-      });
-      if (filteredNodes.length) {
-        return filteredNodes[0][1].value;
-      }
-    };
-
-    Validator.prototype.get_property = function(node, property) {
-      var filteredNodes,
-        _this = this;
-      if (node && this.isMapping(node)) {
-        filteredNodes = node.value.filter(function(childNode) {
-          return _this.isString(childNode[0]) && childNode[0].value.match(property);
-        });
-        if (filteredNodes.length > 0) {
-          if (filteredNodes[0].length > 0) {
-            return filteredNodes[0][1];
-          }
-        }
-      }
-      return [];
-    };
-
-    Validator.prototype.get_properties = function(node, property) {
-      var properties,
-        _this = this;
-      properties = [];
-      if (node && this.isMapping(node)) {
-        node.value.forEach(function(prop) {
-          var _ref1;
-          if (_this.isString(prop[0]) && ((_ref1 = prop[0].value) != null ? _ref1.match(property) : void 0)) {
-            return properties.push(prop);
-          } else {
-            return properties = properties.concat(_this.get_properties(prop[1], property));
-          }
-        });
-      }
-      return properties;
-    };
-
-    Validator.prototype.resources = function(node, parentPath) {
-      var child_resources, response,
-        _this = this;
-      if (node == null) {
-        node = this.get_single_node(true, true, false);
-      }
-      response = [];
-      child_resources = this.child_resources(node);
-      child_resources.forEach(function(childResource) {
-        var resourceResponse;
-        resourceResponse = {};
-        resourceResponse.methods = [];
-        if (parentPath != null) {
-          resourceResponse.uri = parentPath + childResource[0].value;
-        } else {
-          resourceResponse.uri = childResource[0].value;
-        }
-        if (_this.has_property(childResource[1], "displayName")) {
-          resourceResponse.displayName = _this.property_value(childResource[1], "displayName");
-        }
-        if (_this.has_property(childResource[1], "get")) {
-          resourceResponse.methods.push('get');
-        }
-        if (_this.has_property(childResource[1], "post")) {
-          resourceResponse.methods.push('post');
-        }
-        if (_this.has_property(childResource[1], "put")) {
-          resourceResponse.methods.push('put');
-        }
-        if (_this.has_property(childResource[1], "patch")) {
-          resourceResponse.methods.push('patch');
-        }
-        if (_this.has_property(childResource[1], "delete")) {
-          resourceResponse.methods.push('delete');
-        }
-        if (_this.has_property(childResource[1], "head")) {
-          resourceResponse.methods.push('head');
-        }
-        if (_this.has_property(childResource[1], "options")) {
-          resourceResponse.methods.push('options');
-        }
-        resourceResponse.line = childResource[0].start_mark.line + 1;
-        resourceResponse.column = childResource[0].start_mark.column + 1;
-        if (childResource[0].start_mark.name != null) {
-          resourceResponse.src = childResource[0].start_mark.name;
-        }
-        response.push(resourceResponse);
-        return response = response.concat(_this.resources(childResource[1], resourceResponse.uri));
-      });
-      return response;
-    };
-
-    Validator.prototype.valid_absolute_uris = function(node) {
-      var i, sorted_uris, uris, _i, _ref1, _results;
-      uris = this.get_absolute_uris(node);
-      sorted_uris = uris.sort();
-      if (sorted_uris.length > 1) {
-        _results = [];
-        for (i = _i = 0, _ref1 = sorted_uris.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-          if (sorted_uris[i + 1] === sorted_uris[i]) {
-            throw new exports.ValidationError('while validating trait consumption', null, 'two resources share same URI ' + sorted_uris[i], null);
-          } else {
-            _results.push(void 0);
-          }
-        }
-        return _results;
-      }
-    };
-
-    Validator.prototype.get_absolute_uris = function(node, parentPath) {
-      var child_resources, response,
-        _this = this;
-      if (node == null) {
-        node = this.get_single_node(true, true, false);
-      }
-      response = [];
-      if (!this.isNullableMapping(node)) {
-        throw new exports.ValidationError('while validating resources', null, 'resource is not a mapping', node.start_mark);
-      }
-      child_resources = this.child_resources(node);
-      child_resources.forEach(function(childResource) {
-        var uri;
-        if (parentPath != null) {
-          uri = parentPath + childResource[0].value;
-        } else {
-          uri = childResource[0].value;
-        }
-        response.push(uri);
-        return response = response.concat(_this.get_absolute_uris(childResource[1], uri));
-      });
-      return response;
-    };
-
-    Validator.prototype.key_or_value = function(node) {
-      var possibleKeyName, _ref1, _ref2, _ref3;
-      if (node instanceof nodes.ScalarNode) {
-        return node.value;
-      }
-      if (node instanceof nodes.MappingNode) {
-        possibleKeyName = node != null ? (_ref1 = node.value) != null ? (_ref2 = _ref1[0]) != null ? (_ref3 = _ref2[0]) != null ? _ref3.value : void 0 : void 0 : void 0 : void 0;
-        if (possibleKeyName) {
-          return possibleKeyName;
-        }
-      }
-      return null;
-    };
-
-    Validator.prototype.value_or_undefined = function(node) {
-      if (node instanceof nodes.MappingNode) {
-        return node.value;
-      }
-      return void 0;
-    };
-
-    Validator.prototype.validate_base_uri = function(baseUriNode) {
-      var baseUri, err, expressions, template, _ref1;
-      baseUri = baseUriNode.value;
-      try {
-        template = uritemplate.parse(baseUri);
-      } catch (_error) {
-        err = _error;
-        throw new exports.ValidationError('while validating baseUri', null, err != null ? (_ref1 = err.options) != null ? _ref1.message : void 0 : void 0, baseUriNode.start_mark);
-      }
-      expressions = template.expressions.filter(function(expr) {
-        return 'templateText' in expr;
-      }).map(function(expression) {
-        return expression.templateText;
-      });
-      if (__indexOf.call(expressions, 'version') >= 0) {
-        return true;
-      }
-    };
-
-    Validator.prototype.get_validation_errors = function() {
-      return this.validation_errors;
-    };
-
-    Validator.prototype.is_valid = function() {
-      return this.validation_errors.length === 0;
-    };
-
-    Array.prototype.hasDuplicates = function() {
-      var key, output, _i, _ref1;
-      output = {};
-      for (key = _i = 0, _ref1 = this.length; 0 <= _ref1 ? _i < _ref1 : _i > _ref1; key = 0 <= _ref1 ? ++_i : --_i) {
-        if (this[key] in output) {
-          return true;
-        }
-        output[this[key]] = true;
-      }
-      return false;
-    };
-
-    return Validator;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":9,"./traits":20,"uritemplate":34}],31:[function(require,module,exports){
-exports.spawn = function () {};
-exports.exec = function () {};
-
-},{}],33:[function(require,module,exports){
-var http = require('http');
-
-var https = module.exports;
-
-for (var key in http) {
-    if (http.hasOwnProperty(key)) https[key] = http[key];
-};
-
-https.request = function (params, cb) {
-    if (!params) params = {};
-    params.scheme = 'https';
-    return http.request.call(this, params, cb);
-}
-},{"http":32}],34:[function(require,module,exports){
+},{"__browserify_buffer":14,"__browserify_process":5,"child_process":31,"fs":9,"http":32,"https":33,"url":7}],29:[function(require,module,exports){
 (function(global){/*global unescape, module, define, window, global*/
 
 /*
@@ -15580,7 +15107,27 @@ var UriTemplate = (function () {
 ));
 
 })(window)
-},{}],35:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
+exports.spawn = function () {};
+exports.exec = function () {};
+
+},{}],33:[function(require,module,exports){
+var http = require('http');
+
+var https = module.exports;
+
+for (var key in http) {
+    if (http.hasOwnProperty(key)) https[key] = http[key];
+};
+
+https.request = function (params, cb) {
+    if (!params) params = {};
+    params.scheme = 'https';
+    return http.request.call(this, params, cb);
+}
+},{"http":32}],30:[function(require,module,exports){
+module.exports = require( './lib/inflection' );
+},{"./lib/inflection":34}],35:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -15839,7 +15386,544 @@ var xhrHttp = (function () {
     }
 })();
 
-},{"./lib/request":36,"events":35}],37:[function(require,module,exports){
+},{"./lib/request":36,"events":35}],34:[function(require,module,exports){
+/*!
+ * inflection
+ * Copyright(c) 2011 Ben Lin <ben@dreamerslab.com>
+ * MIT Licensed
+ *
+ * @fileoverview
+ * A port of inflection-js to node.js module
+ */
+
+/**
+ * @description This is a list of nouns that use the same form for both singular and plural.
+ *              This list should remain entirely in lower case to correctly match Strings.
+ * @private
+ */
+var uncountable_words = [
+  'equipment', 'information', 'rice', 'money', 'species',
+  'series', 'fish', 'sheep', 'moose', 'deer', 'news'
+];
+
+/**
+ * @description These rules translate from the singular form of a noun to its plural form.
+ * @private
+ */
+var plural_rules = [
+  [ new RegExp( '(m)an$', 'gi' ),                 '$1en' ],
+  [ new RegExp( '(pe)rson$', 'gi' ),              '$1ople' ],
+  [ new RegExp( '(child)$', 'gi' ),               '$1ren' ],
+  [ new RegExp( '^(ox)$', 'gi' ),                 '$1en' ],
+  [ new RegExp( '(ax|test)is$', 'gi' ),           '$1es' ],
+  [ new RegExp( '(octop|vir)us$', 'gi' ),         '$1i' ],
+  [ new RegExp( '(alias|status)$', 'gi' ),        '$1es' ],
+  [ new RegExp( '(bu)s$', 'gi' ),                 '$1ses' ],
+  [ new RegExp( '(buffal|tomat|potat)o$', 'gi' ), '$1oes' ],
+  [ new RegExp( '([ti])um$', 'gi' ),              '$1a' ],
+  [ new RegExp( 'sis$', 'gi' ),                   'ses' ],
+  [ new RegExp( '(?:([^f])fe|([lr])f)$', 'gi' ),  '$1$2ves' ],
+  [ new RegExp( '(hive)$', 'gi' ),                '$1s' ],
+  [ new RegExp( '([^aeiouy]|qu)y$', 'gi' ),       '$1ies' ],
+  [ new RegExp( '(x|ch|ss|sh)$', 'gi' ),          '$1es' ],
+  [ new RegExp( '(matr|vert|ind)ix|ex$', 'gi' ),  '$1ices' ],
+  [ new RegExp( '([m|l])ouse$', 'gi' ),           '$1ice' ],
+  [ new RegExp( '(quiz)$', 'gi' ),                '$1zes' ],
+  [ new RegExp( 's$', 'gi' ),                     's' ],
+  [ new RegExp( '$', 'gi' ),                      's' ]
+];
+
+/**
+ * @description These rules translate from the plural form of a noun to its singular form.
+ * @private
+ */
+var singular_rules = [
+  [ new RegExp( '(m)en$', 'gi' ),                                                       '$1an' ],
+  [ new RegExp( '(pe)ople$', 'gi' ),                                                    '$1rson' ],
+  [ new RegExp( '(child)ren$', 'gi' ),                                                  '$1' ],
+  [ new RegExp( '([ti])a$', 'gi' ),                                                     '$1um' ],
+  [ new RegExp( '((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$','gi' ), '$1$2sis' ],
+  [ new RegExp( '(hive)s$', 'gi' ),                                                     '$1' ],
+  [ new RegExp( '(tive)s$', 'gi' ),                                                     '$1' ],
+  [ new RegExp( '(curve)s$', 'gi' ),                                                    '$1' ],
+  [ new RegExp( '([lr])ves$', 'gi' ),                                                   '$1f' ],
+  [ new RegExp( '([^fo])ves$', 'gi' ),                                                  '$1fe' ],
+  [ new RegExp( '([^aeiouy]|qu)ies$', 'gi' ),                                           '$1y' ],
+  [ new RegExp( '(s)eries$', 'gi' ),                                                    '$1eries' ],
+  [ new RegExp( '(m)ovies$', 'gi' ),                                                    '$1ovie' ],
+  [ new RegExp( '(x|ch|ss|sh)es$', 'gi' ),                                              '$1' ],
+  [ new RegExp( '([m|l])ice$', 'gi' ),                                                  '$1ouse' ],
+  [ new RegExp( '(bus)es$', 'gi' ),                                                     '$1' ],
+  [ new RegExp( '(o)es$', 'gi' ),                                                       '$1' ],
+  [ new RegExp( '(shoe)s$', 'gi' ),                                                     '$1' ],
+  [ new RegExp( '(cris|ax|test)es$', 'gi' ),                                            '$1is' ],
+  [ new RegExp( '(octop|vir)i$', 'gi' ),                                                '$1us' ],
+  [ new RegExp( '(alias|status)es$', 'gi' ),                                            '$1' ],
+  [ new RegExp( '^(ox)en', 'gi' ),                                                      '$1' ],
+  [ new RegExp( '(vert|ind)ices$', 'gi' ),                                              '$1ex' ],
+  [ new RegExp( '(matr)ices$', 'gi' ),                                                  '$1ix' ],
+  [ new RegExp( '(quiz)zes$', 'gi' ),                                                   '$1' ],
+  [ new RegExp( 's$', 'gi' ),                                                           '' ]
+];
+
+/**
+ * @description This is a list of words that should not be capitalized for title case.
+ * @private
+ */
+var non_titlecased_words = [
+  'and', 'or', 'nor', 'a', 'an', 'the', 'so', 'but', 'to', 'of', 'at','by',
+  'from', 'into', 'on', 'onto', 'off', 'out', 'in', 'over', 'with', 'for'
+];
+
+/**
+ * @description These are regular expressions used for converting between String formats.
+ * @private
+ */
+var id_suffix         = new RegExp( '(_ids|_id)$', 'g' );
+var underbar          = new RegExp( '_', 'g' );
+var space_or_underbar = new RegExp( '[\ _]', 'g' );
+var uppercase         = new RegExp( '([A-Z])', 'g' );
+var underbar_prefix   = new RegExp( '^_' );
+
+
+
+module.exports = {
+
+/**
+ * @public
+ * @version 0.0.1
+ */
+  version : '0.0.1',
+
+
+
+/**
+ * A helper method that applies rules based replacement to a String.
+ * @private
+ * @function
+ * @param {String} str String to modify and return based on the passed rules.
+ * @param {Array: [RegExp, String]} rules Regexp to match paired with String to use for replacement
+ * @param {Array: [String]} skip Strings to skip if they match
+ * @param {String} override String to return as though this method succeeded (used to conform to APIs)
+ * @return {String} Return passed String modified by passed rules.
+ * @example
+ *
+ *     this._apply_rules( 'cows', singular_rules ); // === 'cow'
+ */
+  _apply_rules : function( str, rules, skip, override ){
+      if( override ){
+        str = override;
+      }else{
+        var ignore = ( this.indexOf( skip, str.toLowerCase()) > -1 );
+
+        if( !ignore ){
+          var i = 0;
+          var j = rules.length;
+
+          for( ; i < j; i++ ){
+            if( str.match( rules[ i ][ 0 ])){
+              str = str.replace( rules[ i ][ 0 ], rules[ i ][ 1 ]);
+              break;
+            }
+          }
+        }
+      }
+
+      return str;
+  },
+
+
+
+/**
+ * This lets us detect if an Array contains a given element.
+ * @public
+ * @function
+ * @param {Array} arr The subject array.
+ * @param {Object} item Object to locate in the Array.
+ * @param {Number} fromIndex Starts checking from this position in the Array.(optional)
+ * @param {Function} compareFunc Function used to compare Array item vs passed item.(optional)
+ * @return {Number} Return index position in the Array of the passed item.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.indexOf([ 'hi','there' ], 'guys' ); // === -1
+ *     inflection.indexOf([ 'hi','there' ], 'hi' ); // === 0
+ */
+  indexOf : function( arr, item, fromIndex, compareFunc ){
+    if( !fromIndex ){
+      fromIndex = -1;
+    }
+
+    var index = -1;
+    var i     = fromIndex;
+    var j     = arr.length;
+
+    for( ; i < j; i++ ){
+      if( arr[ i ]  === item || compareFunc && compareFunc( arr[ i ], item )){
+        index = i;
+        break;
+      }
+    }
+
+    return index;
+  },
+
+
+
+/**
+ * This function adds pluralization support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @param {String} plural Overrides normal output with said String.(optional)
+ * @return {String} Singular English language nouns are returned in plural form.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.pluralize( 'person' ); // === 'people'
+ *     inflection.pluralize( 'octopus' ); // === "octopi"
+ *     inflection.pluralize( 'Hat' ); // === 'Hats'
+ *     inflection.pluralize( 'person', 'guys' ); // === 'guys'
+ */
+  pluralize : function ( str, plural ){
+    return this._apply_rules( str, plural_rules, uncountable_words, plural );
+  },
+
+
+
+/**
+ * This function adds singularization support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @param {String} singular Overrides normal output with said String.(optional)
+ * @return {String} Plural English language nouns are returned in singular form.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.singularize( 'people' ); // === 'person'
+ *     inflection.singularize( 'octopi' ); // === "octopus"
+ *     inflection.singularize( 'Hats' ); // === 'Hat'
+ *     inflection.singularize( 'guys', 'person' ); // === 'person'
+ */
+  singularize : function ( str, singular ){
+    return this._apply_rules( str, singular_rules, uncountable_words, singular );
+  },
+
+
+
+/**
+ * This function adds camelization support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @param {Boolean} lowFirstLetter Default is to capitalize the first letter of the results.(optional)
+ *                                 Passing true will lowercase it.
+ * @return {String} Lower case underscored words will be returned in camel case.
+ *                  additionally '/' is translated to '::'
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.camelize( 'message_properties' ); // === 'MessageProperties'
+ *     inflection.camelize( 'message_properties', true ); // === 'messageProperties'
+ */
+  camelize : function ( str, lowFirstLetter ){
+    var str_path = str.toLowerCase().split( '/' );
+    var i        = 0;
+    var j        = str_path.length;
+
+    for( ; i < j; i++ ){
+      var str_arr = str_path[ i ].split( '_' );
+      var initX   = (( lowFirstLetter && i + 1 === j ) ? ( 1 ) : ( 0 ));
+      var k       = initX;
+      var l       = str_arr.length;
+
+      for( ; k < l; k++ ){
+        str_arr[ k ] = str_arr[ k ].charAt( 0 ).toUpperCase() + str_arr[ k ].substring( 1 );
+      }
+
+      str_path[ i ] = str_arr.join( '' );
+    }
+
+    return str_path.join( '::' );
+  },
+
+
+
+/**
+ * This function adds underscore support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} Camel cased words are returned as lower cased and underscored.
+ *                  additionally '::' is translated to '/'.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.underscore( 'MessageProperties' ); // === 'message_properties'
+ *     inflection.underscore( 'messageProperties' ); // === 'message_properties'
+ */
+  underscore : function ( str ){
+    var str_path = str.split( '::' );
+    var i        = 0;
+    var j        = str_path.length;
+
+    for( ; i < j; i++ ){
+      str_path[ i ] = str_path[ i ].replace( uppercase, '_$1' );
+      str_path[ i ] = str_path[ i ].replace( underbar_prefix, '' );
+    }
+
+    return str_path.join( '/' ).toLowerCase();
+  },
+
+
+
+/**
+ * This function adds humanize support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @param {Boolean} lowFirstLetter Default is to capitalize the first letter of the results.(optional)
+ *                                 Passing true will lowercase it.
+ * @return {String} Lower case underscored words will be returned in humanized form.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.humanize( 'message_properties' ); // === 'Message properties'
+ *     inflection.humanize( 'message_properties', true ); // === 'message properties'
+ */
+  humanize : function( str, lowFirstLetter ){
+    str = str.toLowerCase();
+    str = str.replace( id_suffix, '' );
+    str = str.replace( underbar, ' ' );
+
+    if( !lowFirstLetter ){
+      str = this.capitalize( str );
+    }
+
+    return str;
+  },
+
+
+
+/**
+ * This function adds capitalization support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} All characters will be lower case and the first will be upper.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.capitalize( 'message_properties' ); // === 'Message_properties'
+ *     inflection.capitalize( 'message properties', true ); // === 'Message properties'
+ */
+  capitalize : function ( str ){
+    str = str.toLowerCase();
+
+    return str.substring( 0, 1 ).
+                toUpperCase() + str.substring( 1 );
+  },
+
+
+
+/**
+ * This function adds dasherization support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} Replaces all spaces or underbars with dashes.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.dasherize( 'message_properties' ); // === 'message-properties'
+ *     inflection.dasherize( 'Message Properties' ); // === 'Message-Properties'
+ */
+  dasherize : function ( str ){
+    return str.replace( space_or_underbar, '-' );
+  },
+
+
+
+/**
+ * This function adds titleize support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} Capitalizes words as you would for a book title.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.titleize( 'message_properties' ); // === 'Message Properties'
+ *     inflection.titleize( 'message properties to keep' ); // === 'Message Properties to Keep'
+ */
+  titleize : function ( str ){
+    str         = str.toLowerCase().replace( underbar, ' ');
+    var str_arr = str.split(' ');
+    var i       = 0;
+    var j       = str_arr.length;
+
+    for( ; i < j; i++ ){
+      var d = str_arr[ i ].split( '-' );
+      var k = 0;
+      var l = d.length;
+
+      for( ; k < l; k++){
+        if( this.indexOf( non_titlecased_words, d[ k ].toLowerCase()) < 0 ){
+          d[ k ] = this.capitalize( d[ k ]);
+        }
+      }
+
+      str_arr[ i ] = d.join( '-' );
+    }
+
+    str = str_arr.join( ' ' );
+    str = str.substring( 0, 1 ).toUpperCase() + str.substring( 1 );
+
+    return str;
+  },
+
+
+
+/**
+ * This function adds demodulize support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} Removes module names leaving only class names.(Ruby style)
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.demodulize( 'Message::Bus::Properties' ); // === 'Properties'
+ */
+  demodulize : function ( str ){
+    var str_arr = str.split( '::' );
+
+    return str_arr[ str_arr.length - 1 ];
+  },
+
+
+
+/**
+ * This function adds tableize support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} Return camel cased words into their underscored plural form.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.tableize( 'MessageBusProperty' ); // === 'message_bus_properties'
+ */
+  tableize : function ( str ){
+    str = this.underscore( str );
+    str = this.pluralize( str );
+
+    return str;
+  },
+
+
+
+/**
+ * This function adds classification support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} Underscored plural nouns become the camel cased singular form.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.classify( 'message_bus_properties' ); // === 'MessageBusProperty'
+ */
+  classify : function ( str ){
+    str = this.camelize( str );
+    str = this.singularize( str );
+
+    return str;
+  },
+
+
+
+/**
+ * This function adds foreign key support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @param {Boolean} dropIdUbar Default is to seperate id with an underbar at the end of the class name,
+                               you can pass true to skip it.(optional)
+ * @return {String} Underscored plural nouns become the camel cased singular form.
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.foreign_key( 'MessageBusProperty' ); // === 'message_bus_property_id'
+ *     inflection.foreign_key( 'MessageBusProperty', true ); // === 'message_bus_propertyid'
+ */
+  foreign_key : function( str, dropIdUbar ){
+    str = this.demodulize( str );
+    str = this.underscore( str ) + (( dropIdUbar ) ? ( '' ) : ( '_' )) + 'id';
+
+    return str;
+  },
+
+
+
+/**
+ * This function adds ordinalize support to every String object.
+ * @public
+ * @function
+ * @param {String} str The subject string.
+ * @return {String} Return all found numbers their sequence like "22nd".
+ * @example
+ *
+ *     var inflection = require( 'inflection' );
+ *
+ *     inflection.ordinalize( 'the 1 pitch' ); // === 'the 1st pitch'
+ */
+  ordinalize : function ( str ){
+    var str_arr = str.split(' ');
+    var i       = 0;
+    var j       = str_arr.length;
+
+    for( ; i < j; i++ ){
+      var k = parseInt( str_arr[ i ], 10 );
+
+      if( !isNaN( k )){
+        var ltd = str_arr[ i ].substring( str_arr[ i ].length - 2 );
+        var ld  = str_arr[ i ].substring( str_arr[ i ].length - 1 );
+        var suf = 'th';
+
+        if( ltd != '11' && ltd != '12' && ltd != '13' ){
+          if( ld === '1' ){
+            suf = 'st';
+          }else if( ld === '2' ){
+            suf = 'nd';
+          }else if( ld === '3' ){
+            suf = 'rd';
+          }
+        }
+
+        str_arr[ i ] += suf;
+      }
+    }
+
+    return str_arr.join( ' ' );
+  }
+};
+
+},{}],37:[function(require,module,exports){
 var events = require('events');
 var util = require('util');
 
@@ -16308,6 +16392,321 @@ exports.format = function(f) {
 };
 
 },{"events":35}],39:[function(require,module,exports){
+(function(){// UTILITY
+var util = require('util');
+var Buffer = require("buffer").Buffer;
+var pSlice = Array.prototype.slice;
+
+function objectKeys(object) {
+  if (Object.keys) return Object.keys(object);
+  var result = [];
+  for (var name in object) {
+    if (Object.prototype.hasOwnProperty.call(object, name)) {
+      result.push(name);
+    }
+  }
+  return result;
+}
+
+// 1. The assert module provides functions that throw
+// AssertionError's when particular conditions are not met. The
+// assert module must conform to the following interface.
+
+var assert = module.exports = ok;
+
+// 2. The AssertionError is defined in assert.
+// new assert.AssertionError({ message: message,
+//                             actual: actual,
+//                             expected: expected })
+
+assert.AssertionError = function AssertionError(options) {
+  this.name = 'AssertionError';
+  this.message = options.message;
+  this.actual = options.actual;
+  this.expected = options.expected;
+  this.operator = options.operator;
+  var stackStartFunction = options.stackStartFunction || fail;
+
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(this, stackStartFunction);
+  }
+};
+
+// assert.AssertionError instanceof Error
+util.inherits(assert.AssertionError, Error);
+
+function replacer(key, value) {
+  if (value === undefined) {
+    return '' + value;
+  }
+  if (typeof value === 'number' && (isNaN(value) || !isFinite(value))) {
+    return value.toString();
+  }
+  if (typeof value === 'function' || value instanceof RegExp) {
+    return value.toString();
+  }
+  return value;
+}
+
+function truncate(s, n) {
+  if (typeof s == 'string') {
+    return s.length < n ? s : s.slice(0, n);
+  } else {
+    return s;
+  }
+}
+
+assert.AssertionError.prototype.toString = function() {
+  if (this.message) {
+    return [this.name + ':', this.message].join(' ');
+  } else {
+    return [
+      this.name + ':',
+      truncate(JSON.stringify(this.actual, replacer), 128),
+      this.operator,
+      truncate(JSON.stringify(this.expected, replacer), 128)
+    ].join(' ');
+  }
+};
+
+// At present only the three keys mentioned above are used and
+// understood by the spec. Implementations or sub modules can pass
+// other keys to the AssertionError's constructor - they will be
+// ignored.
+
+// 3. All of the following functions must throw an AssertionError
+// when a corresponding condition is not met, with a message that
+// may be undefined if not provided.  All assertion methods provide
+// both the actual and expected values to the assertion error for
+// display purposes.
+
+function fail(actual, expected, message, operator, stackStartFunction) {
+  throw new assert.AssertionError({
+    message: message,
+    actual: actual,
+    expected: expected,
+    operator: operator,
+    stackStartFunction: stackStartFunction
+  });
+}
+
+// EXTENSION! allows for well behaved errors defined elsewhere.
+assert.fail = fail;
+
+// 4. Pure assertion tests whether a value is truthy, as determined
+// by !!guard.
+// assert.ok(guard, message_opt);
+// This statement is equivalent to assert.equal(true, guard,
+// message_opt);. To test strictly for the value true, use
+// assert.strictEqual(true, guard, message_opt);.
+
+function ok(value, message) {
+  if (!!!value) fail(value, true, message, '==', assert.ok);
+}
+assert.ok = ok;
+
+// 5. The equality assertion tests shallow, coercive equality with
+// ==.
+// assert.equal(actual, expected, message_opt);
+
+assert.equal = function equal(actual, expected, message) {
+  if (actual != expected) fail(actual, expected, message, '==', assert.equal);
+};
+
+// 6. The non-equality assertion tests for whether two objects are not equal
+// with != assert.notEqual(actual, expected, message_opt);
+
+assert.notEqual = function notEqual(actual, expected, message) {
+  if (actual == expected) {
+    fail(actual, expected, message, '!=', assert.notEqual);
+  }
+};
+
+// 7. The equivalence assertion tests a deep equality relation.
+// assert.deepEqual(actual, expected, message_opt);
+
+assert.deepEqual = function deepEqual(actual, expected, message) {
+  if (!_deepEqual(actual, expected)) {
+    fail(actual, expected, message, 'deepEqual', assert.deepEqual);
+  }
+};
+
+function _deepEqual(actual, expected) {
+  // 7.1. All identical values are equivalent, as determined by ===.
+  if (actual === expected) {
+    return true;
+
+  } else if (Buffer.isBuffer(actual) && Buffer.isBuffer(expected)) {
+    if (actual.length != expected.length) return false;
+
+    for (var i = 0; i < actual.length; i++) {
+      if (actual[i] !== expected[i]) return false;
+    }
+
+    return true;
+
+  // 7.2. If the expected value is a Date object, the actual value is
+  // equivalent if it is also a Date object that refers to the same time.
+  } else if (actual instanceof Date && expected instanceof Date) {
+    return actual.getTime() === expected.getTime();
+
+  // 7.3. Other pairs that do not both pass typeof value == 'object',
+  // equivalence is determined by ==.
+  } else if (typeof actual != 'object' && typeof expected != 'object') {
+    return actual == expected;
+
+  // 7.4. For all other Object pairs, including Array objects, equivalence is
+  // determined by having the same number of owned properties (as verified
+  // with Object.prototype.hasOwnProperty.call), the same set of keys
+  // (although not necessarily the same order), equivalent values for every
+  // corresponding key, and an identical 'prototype' property. Note: this
+  // accounts for both named and indexed properties on Arrays.
+  } else {
+    return objEquiv(actual, expected);
+  }
+}
+
+function isUndefinedOrNull(value) {
+  return value === null || value === undefined;
+}
+
+function isArguments(object) {
+  return Object.prototype.toString.call(object) == '[object Arguments]';
+}
+
+function objEquiv(a, b) {
+  if (isUndefinedOrNull(a) || isUndefinedOrNull(b))
+    return false;
+  // an identical 'prototype' property.
+  if (a.prototype !== b.prototype) return false;
+  //~~~I've managed to break Object.keys through screwy arguments passing.
+  //   Converting to array solves the problem.
+  if (isArguments(a)) {
+    if (!isArguments(b)) {
+      return false;
+    }
+    a = pSlice.call(a);
+    b = pSlice.call(b);
+    return _deepEqual(a, b);
+  }
+  try {
+    var ka = objectKeys(a),
+        kb = objectKeys(b),
+        key, i;
+  } catch (e) {//happens when one is a string literal and the other isn't
+    return false;
+  }
+  // having the same number of owned properties (keys incorporates
+  // hasOwnProperty)
+  if (ka.length != kb.length)
+    return false;
+  //the same set of keys (although not necessarily the same order),
+  ka.sort();
+  kb.sort();
+  //~~~cheap key test
+  for (i = ka.length - 1; i >= 0; i--) {
+    if (ka[i] != kb[i])
+      return false;
+  }
+  //equivalent values for every corresponding key, and
+  //~~~possibly expensive deep test
+  for (i = ka.length - 1; i >= 0; i--) {
+    key = ka[i];
+    if (!_deepEqual(a[key], b[key])) return false;
+  }
+  return true;
+}
+
+// 8. The non-equivalence assertion tests for any deep inequality.
+// assert.notDeepEqual(actual, expected, message_opt);
+
+assert.notDeepEqual = function notDeepEqual(actual, expected, message) {
+  if (_deepEqual(actual, expected)) {
+    fail(actual, expected, message, 'notDeepEqual', assert.notDeepEqual);
+  }
+};
+
+// 9. The strict equality assertion tests strict equality, as determined by ===.
+// assert.strictEqual(actual, expected, message_opt);
+
+assert.strictEqual = function strictEqual(actual, expected, message) {
+  if (actual !== expected) {
+    fail(actual, expected, message, '===', assert.strictEqual);
+  }
+};
+
+// 10. The strict non-equality assertion tests for strict inequality, as
+// determined by !==.  assert.notStrictEqual(actual, expected, message_opt);
+
+assert.notStrictEqual = function notStrictEqual(actual, expected, message) {
+  if (actual === expected) {
+    fail(actual, expected, message, '!==', assert.notStrictEqual);
+  }
+};
+
+function expectedException(actual, expected) {
+  if (!actual || !expected) {
+    return false;
+  }
+
+  if (expected instanceof RegExp) {
+    return expected.test(actual);
+  } else if (actual instanceof expected) {
+    return true;
+  } else if (expected.call({}, actual) === true) {
+    return true;
+  }
+
+  return false;
+}
+
+function _throws(shouldThrow, block, expected, message) {
+  var actual;
+
+  if (typeof expected === 'string') {
+    message = expected;
+    expected = null;
+  }
+
+  try {
+    block();
+  } catch (e) {
+    actual = e;
+  }
+
+  message = (expected && expected.name ? ' (' + expected.name + ').' : '.') +
+            (message ? ' ' + message : '.');
+
+  if (shouldThrow && !actual) {
+    fail('Missing expected exception' + message);
+  }
+
+  if (!shouldThrow && expectedException(actual, expected)) {
+    fail('Got unwanted exception' + message);
+  }
+
+  if ((shouldThrow && actual && expected &&
+      !expectedException(actual, expected)) || (!shouldThrow && actual)) {
+    throw actual;
+  }
+}
+
+// 11. Expected to throw an error:
+// assert.throws(block, Error_opt, message_opt);
+
+assert.throws = function(block, /*optional*/error, /*optional*/message) {
+  _throws.apply(this, [true].concat(pSlice.call(arguments)));
+};
+
+// EXTENSION! This is annoying to write outside this module.
+assert.doesNotThrow = function(block, /*optional*/error, /*optional*/message) {
+  _throws.apply(this, [false].concat(pSlice.call(arguments)));
+};
+
+assert.ifError = function(err) { if (err) {throw err;}};
+
+})()
+},{"buffer":40,"util":38}],41:[function(require,module,exports){
 var Stream = require('stream');
 
 var Response = module.exports = function (res) {
@@ -16428,11 +16827,1181 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":37}],36:[function(require,module,exports){
-var Stream = require('stream');
+},{"stream":37}],42:[function(require,module,exports){
+exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
+  var e, m,
+      eLen = nBytes * 8 - mLen - 1,
+      eMax = (1 << eLen) - 1,
+      eBias = eMax >> 1,
+      nBits = -7,
+      i = isBE ? 0 : (nBytes - 1),
+      d = isBE ? 1 : -1,
+      s = buffer[offset + i];
+
+  i += d;
+
+  e = s & ((1 << (-nBits)) - 1);
+  s >>= (-nBits);
+  nBits += eLen;
+  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8);
+
+  m = e & ((1 << (-nBits)) - 1);
+  e >>= (-nBits);
+  nBits += mLen;
+  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8);
+
+  if (e === 0) {
+    e = 1 - eBias;
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity);
+  } else {
+    m = m + Math.pow(2, mLen);
+    e = e - eBias;
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
+};
+
+exports.writeIEEE754 = function(buffer, value, offset, isBE, mLen, nBytes) {
+  var e, m, c,
+      eLen = nBytes * 8 - mLen - 1,
+      eMax = (1 << eLen) - 1,
+      eBias = eMax >> 1,
+      rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0),
+      i = isBE ? (nBytes - 1) : 0,
+      d = isBE ? -1 : 1,
+      s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
+
+  value = Math.abs(value);
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0;
+    e = eMax;
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2);
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--;
+      c *= 2;
+    }
+    if (e + eBias >= 1) {
+      value += rt / c;
+    } else {
+      value += rt * Math.pow(2, 1 - eBias);
+    }
+    if (value * c >= 2) {
+      e++;
+      c /= 2;
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0;
+      e = eMax;
+    } else if (e + eBias >= 1) {
+      m = (value * c - 1) * Math.pow(2, mLen);
+      e = e + eBias;
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
+      e = 0;
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8);
+
+  e = (e << mLen) | m;
+  eLen += mLen;
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
+
+  buffer[offset + i - d] |= s * 128;
+};
+
+},{}],40:[function(require,module,exports){
+(function(){var assert = require('assert');
+exports.Buffer = Buffer;
+exports.SlowBuffer = Buffer;
+Buffer.poolSize = 8192;
+exports.INSPECT_MAX_BYTES = 50;
+
+function Buffer(subject, encoding, offset) {
+  if (!(this instanceof Buffer)) {
+    return new Buffer(subject, encoding, offset);
+  }
+  this.parent = this;
+  this.offset = 0;
+
+  var type;
+
+  // Are we slicing?
+  if (typeof offset === 'number') {
+    this.length = coerce(encoding);
+    this.offset = offset;
+  } else {
+    // Find the length
+    switch (type = typeof subject) {
+      case 'number':
+        this.length = coerce(subject);
+        break;
+
+      case 'string':
+        this.length = Buffer.byteLength(subject, encoding);
+        break;
+
+      case 'object': // Assume object is an array
+        this.length = coerce(subject.length);
+        break;
+
+      default:
+        throw new Error('First argument needs to be a number, ' +
+                        'array or string.');
+    }
+
+    // Treat array-ish objects as a byte array.
+    if (isArrayIsh(subject)) {
+      for (var i = 0; i < this.length; i++) {
+        if (subject instanceof Buffer) {
+          this[i] = subject.readUInt8(i);
+        }
+        else {
+          this[i] = subject[i];
+        }
+      }
+    } else if (type == 'string') {
+      // We are a string
+      this.length = this.write(subject, 0, encoding);
+    } else if (type === 'number') {
+      for (var i = 0; i < this.length; i++) {
+        this[i] = 0;
+      }
+    }
+  }
+}
+
+Buffer.prototype.get = function get(i) {
+  if (i < 0 || i >= this.length) throw new Error('oob');
+  return this[i];
+};
+
+Buffer.prototype.set = function set(i, v) {
+  if (i < 0 || i >= this.length) throw new Error('oob');
+  return this[i] = v;
+};
+
+Buffer.byteLength = function (str, encoding) {
+  switch (encoding || "utf8") {
+    case 'hex':
+      return str.length / 2;
+
+    case 'utf8':
+    case 'utf-8':
+      return utf8ToBytes(str).length;
+
+    case 'ascii':
+    case 'binary':
+      return str.length;
+
+    case 'base64':
+      return base64ToBytes(str).length;
+
+    default:
+      throw new Error('Unknown encoding');
+  }
+};
+
+Buffer.prototype.utf8Write = function (string, offset, length) {
+  var bytes, pos;
+  return Buffer._charsWritten =  blitBuffer(utf8ToBytes(string), this, offset, length);
+};
+
+Buffer.prototype.asciiWrite = function (string, offset, length) {
+  var bytes, pos;
+  return Buffer._charsWritten =  blitBuffer(asciiToBytes(string), this, offset, length);
+};
+
+Buffer.prototype.binaryWrite = Buffer.prototype.asciiWrite;
+
+Buffer.prototype.base64Write = function (string, offset, length) {
+  var bytes, pos;
+  return Buffer._charsWritten = blitBuffer(base64ToBytes(string), this, offset, length);
+};
+
+Buffer.prototype.base64Slice = function (start, end) {
+  var bytes = Array.prototype.slice.apply(this, arguments)
+  return require("base64-js").fromByteArray(bytes);
+};
+
+Buffer.prototype.utf8Slice = function () {
+  var bytes = Array.prototype.slice.apply(this, arguments);
+  var res = "";
+  var tmp = "";
+  var i = 0;
+  while (i < bytes.length) {
+    if (bytes[i] <= 0x7F) {
+      res += decodeUtf8Char(tmp) + String.fromCharCode(bytes[i]);
+      tmp = "";
+    } else
+      tmp += "%" + bytes[i].toString(16);
+
+    i++;
+  }
+
+  return res + decodeUtf8Char(tmp);
+}
+
+Buffer.prototype.asciiSlice = function () {
+  var bytes = Array.prototype.slice.apply(this, arguments);
+  var ret = "";
+  for (var i = 0; i < bytes.length; i++)
+    ret += String.fromCharCode(bytes[i]);
+  return ret;
+}
+
+Buffer.prototype.binarySlice = Buffer.prototype.asciiSlice;
+
+Buffer.prototype.inspect = function() {
+  var out = [],
+      len = this.length;
+  for (var i = 0; i < len; i++) {
+    out[i] = toHex(this[i]);
+    if (i == exports.INSPECT_MAX_BYTES) {
+      out[i + 1] = '...';
+      break;
+    }
+  }
+  return '<Buffer ' + out.join(' ') + '>';
+};
+
+
+Buffer.prototype.hexSlice = function(start, end) {
+  var len = this.length;
+
+  if (!start || start < 0) start = 0;
+  if (!end || end < 0 || end > len) end = len;
+
+  var out = '';
+  for (var i = start; i < end; i++) {
+    out += toHex(this[i]);
+  }
+  return out;
+};
+
+
+Buffer.prototype.toString = function(encoding, start, end) {
+  encoding = String(encoding || 'utf8').toLowerCase();
+  start = +start || 0;
+  if (typeof end == 'undefined') end = this.length;
+
+  // Fastpath empty strings
+  if (+end == start) {
+    return '';
+  }
+
+  switch (encoding) {
+    case 'hex':
+      return this.hexSlice(start, end);
+
+    case 'utf8':
+    case 'utf-8':
+      return this.utf8Slice(start, end);
+
+    case 'ascii':
+      return this.asciiSlice(start, end);
+
+    case 'binary':
+      return this.binarySlice(start, end);
+
+    case 'base64':
+      return this.base64Slice(start, end);
+
+    case 'ucs2':
+    case 'ucs-2':
+      return this.ucs2Slice(start, end);
+
+    default:
+      throw new Error('Unknown encoding');
+  }
+};
+
+
+Buffer.prototype.hexWrite = function(string, offset, length) {
+  offset = +offset || 0;
+  var remaining = this.length - offset;
+  if (!length) {
+    length = remaining;
+  } else {
+    length = +length;
+    if (length > remaining) {
+      length = remaining;
+    }
+  }
+
+  // must be an even number of digits
+  var strLen = string.length;
+  if (strLen % 2) {
+    throw new Error('Invalid hex string');
+  }
+  if (length > strLen / 2) {
+    length = strLen / 2;
+  }
+  for (var i = 0; i < length; i++) {
+    var byte = parseInt(string.substr(i * 2, 2), 16);
+    if (isNaN(byte)) throw new Error('Invalid hex string');
+    this[offset + i] = byte;
+  }
+  Buffer._charsWritten = i * 2;
+  return i;
+};
+
+
+Buffer.prototype.write = function(string, offset, length, encoding) {
+  // Support both (string, offset, length, encoding)
+  // and the legacy (string, encoding, offset, length)
+  if (isFinite(offset)) {
+    if (!isFinite(length)) {
+      encoding = length;
+      length = undefined;
+    }
+  } else {  // legacy
+    var swap = encoding;
+    encoding = offset;
+    offset = length;
+    length = swap;
+  }
+
+  offset = +offset || 0;
+  var remaining = this.length - offset;
+  if (!length) {
+    length = remaining;
+  } else {
+    length = +length;
+    if (length > remaining) {
+      length = remaining;
+    }
+  }
+  encoding = String(encoding || 'utf8').toLowerCase();
+
+  switch (encoding) {
+    case 'hex':
+      return this.hexWrite(string, offset, length);
+
+    case 'utf8':
+    case 'utf-8':
+      return this.utf8Write(string, offset, length);
+
+    case 'ascii':
+      return this.asciiWrite(string, offset, length);
+
+    case 'binary':
+      return this.binaryWrite(string, offset, length);
+
+    case 'base64':
+      return this.base64Write(string, offset, length);
+
+    case 'ucs2':
+    case 'ucs-2':
+      return this.ucs2Write(string, offset, length);
+
+    default:
+      throw new Error('Unknown encoding');
+  }
+};
+
+
+// slice(start, end)
+Buffer.prototype.slice = function(start, end) {
+  if (end === undefined) end = this.length;
+
+  if (end > this.length) {
+    throw new Error('oob');
+  }
+  if (start > end) {
+    throw new Error('oob');
+  }
+
+  return new Buffer(this, end - start, +start);
+};
+
+// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+Buffer.prototype.copy = function(target, target_start, start, end) {
+  var source = this;
+  start || (start = 0);
+  if (end === undefined || isNaN(end)) {
+    end = this.length;
+  }
+  target_start || (target_start = 0);
+
+  if (end < start) throw new Error('sourceEnd < sourceStart');
+
+  // Copy 0 bytes; we're done
+  if (end === start) return 0;
+  if (target.length == 0 || source.length == 0) return 0;
+
+  if (target_start < 0 || target_start >= target.length) {
+    throw new Error('targetStart out of bounds');
+  }
+
+  if (start < 0 || start >= source.length) {
+    throw new Error('sourceStart out of bounds');
+  }
+
+  if (end < 0 || end > source.length) {
+    throw new Error('sourceEnd out of bounds');
+  }
+
+  // Are we oob?
+  if (end > this.length) {
+    end = this.length;
+  }
+
+  if (target.length - target_start < end - start) {
+    end = target.length - target_start + start;
+  }
+
+  var temp = [];
+  for (var i=start; i<end; i++) {
+    assert.ok(typeof this[i] !== 'undefined', "copying undefined buffer bytes!");
+    temp.push(this[i]);
+  }
+
+  for (var i=target_start; i<target_start+temp.length; i++) {
+    target[i] = temp[i-target_start];
+  }
+};
+
+// fill(value, start=0, end=buffer.length)
+Buffer.prototype.fill = function fill(value, start, end) {
+  value || (value = 0);
+  start || (start = 0);
+  end || (end = this.length);
+
+  if (typeof value === 'string') {
+    value = value.charCodeAt(0);
+  }
+  if (!(typeof value === 'number') || isNaN(value)) {
+    throw new Error('value is not a number');
+  }
+
+  if (end < start) throw new Error('end < start');
+
+  // Fill 0 bytes; we're done
+  if (end === start) return 0;
+  if (this.length == 0) return 0;
+
+  if (start < 0 || start >= this.length) {
+    throw new Error('start out of bounds');
+  }
+
+  if (end < 0 || end > this.length) {
+    throw new Error('end out of bounds');
+  }
+
+  for (var i = start; i < end; i++) {
+    this[i] = value;
+  }
+}
+
+// Static methods
+Buffer.isBuffer = function isBuffer(b) {
+  return b instanceof Buffer || b instanceof Buffer;
+};
+
+Buffer.concat = function (list, totalLength) {
+  if (!isArray(list)) {
+    throw new Error("Usage: Buffer.concat(list, [totalLength])\n \
+      list should be an Array.");
+  }
+
+  if (list.length === 0) {
+    return new Buffer(0);
+  } else if (list.length === 1) {
+    return list[0];
+  }
+
+  if (typeof totalLength !== 'number') {
+    totalLength = 0;
+    for (var i = 0; i < list.length; i++) {
+      var buf = list[i];
+      totalLength += buf.length;
+    }
+  }
+
+  var buffer = new Buffer(totalLength);
+  var pos = 0;
+  for (var i = 0; i < list.length; i++) {
+    var buf = list[i];
+    buf.copy(buffer, pos);
+    pos += buf.length;
+  }
+  return buffer;
+};
+
+// helpers
+
+function coerce(length) {
+  // Coerce length to a number (possibly NaN), round up
+  // in case it's fractional (e.g. 123.456) then do a
+  // double negate to coerce a NaN to 0. Easy, right?
+  length = ~~Math.ceil(+length);
+  return length < 0 ? 0 : length;
+}
+
+function isArray(subject) {
+  return (Array.isArray ||
+    function(subject){
+      return {}.toString.apply(subject) == '[object Array]'
+    })
+    (subject)
+}
+
+function isArrayIsh(subject) {
+  return isArray(subject) || Buffer.isBuffer(subject) ||
+         subject && typeof subject === 'object' &&
+         typeof subject.length === 'number';
+}
+
+function toHex(n) {
+  if (n < 16) return '0' + n.toString(16);
+  return n.toString(16);
+}
+
+function utf8ToBytes(str) {
+  var byteArray = [];
+  for (var i = 0; i < str.length; i++)
+    if (str.charCodeAt(i) <= 0x7F)
+      byteArray.push(str.charCodeAt(i));
+    else {
+      var h = encodeURIComponent(str.charAt(i)).substr(1).split('%');
+      for (var j = 0; j < h.length; j++)
+        byteArray.push(parseInt(h[j], 16));
+    }
+
+  return byteArray;
+}
+
+function asciiToBytes(str) {
+  var byteArray = []
+  for (var i = 0; i < str.length; i++ )
+    // Node's code seems to be doing this and not & 0x7F..
+    byteArray.push( str.charCodeAt(i) & 0xFF );
+
+  return byteArray;
+}
+
+function base64ToBytes(str) {
+  return require("base64-js").toByteArray(str);
+}
+
+function blitBuffer(src, dst, offset, length) {
+  var pos, i = 0;
+  while (i < length) {
+    if ((i+offset >= dst.length) || (i >= src.length))
+      break;
+
+    dst[i + offset] = src[i];
+    i++;
+  }
+  return i;
+}
+
+function decodeUtf8Char(str) {
+  try {
+    return decodeURIComponent(str);
+  } catch (err) {
+    return String.fromCharCode(0xFFFD); // UTF 8 invalid char
+  }
+}
+
+// read/write bit-twiddling
+
+Buffer.prototype.readUInt8 = function(offset, noAssert) {
+  var buffer = this;
+
+  if (!noAssert) {
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  if (offset >= buffer.length) return;
+
+  return buffer[offset];
+};
+
+function readUInt16(buffer, offset, isBigEndian, noAssert) {
+  var val = 0;
+
+
+  if (!noAssert) {
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 1 < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  if (offset >= buffer.length) return 0;
+
+  if (isBigEndian) {
+    val = buffer[offset] << 8;
+    if (offset + 1 < buffer.length) {
+      val |= buffer[offset + 1];
+    }
+  } else {
+    val = buffer[offset];
+    if (offset + 1 < buffer.length) {
+      val |= buffer[offset + 1] << 8;
+    }
+  }
+
+  return val;
+}
+
+Buffer.prototype.readUInt16LE = function(offset, noAssert) {
+  return readUInt16(this, offset, false, noAssert);
+};
+
+Buffer.prototype.readUInt16BE = function(offset, noAssert) {
+  return readUInt16(this, offset, true, noAssert);
+};
+
+function readUInt32(buffer, offset, isBigEndian, noAssert) {
+  var val = 0;
+
+  if (!noAssert) {
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 3 < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  if (offset >= buffer.length) return 0;
+
+  if (isBigEndian) {
+    if (offset + 1 < buffer.length)
+      val = buffer[offset + 1] << 16;
+    if (offset + 2 < buffer.length)
+      val |= buffer[offset + 2] << 8;
+    if (offset + 3 < buffer.length)
+      val |= buffer[offset + 3];
+    val = val + (buffer[offset] << 24 >>> 0);
+  } else {
+    if (offset + 2 < buffer.length)
+      val = buffer[offset + 2] << 16;
+    if (offset + 1 < buffer.length)
+      val |= buffer[offset + 1] << 8;
+    val |= buffer[offset];
+    if (offset + 3 < buffer.length)
+      val = val + (buffer[offset + 3] << 24 >>> 0);
+  }
+
+  return val;
+}
+
+Buffer.prototype.readUInt32LE = function(offset, noAssert) {
+  return readUInt32(this, offset, false, noAssert);
+};
+
+Buffer.prototype.readUInt32BE = function(offset, noAssert) {
+  return readUInt32(this, offset, true, noAssert);
+};
+
+
+/*
+ * Signed integer types, yay team! A reminder on how two's complement actually
+ * works. The first bit is the signed bit, i.e. tells us whether or not the
+ * number should be positive or negative. If the two's complement value is
+ * positive, then we're done, as it's equivalent to the unsigned representation.
+ *
+ * Now if the number is positive, you're pretty much done, you can just leverage
+ * the unsigned translations and return those. Unfortunately, negative numbers
+ * aren't quite that straightforward.
+ *
+ * At first glance, one might be inclined to use the traditional formula to
+ * translate binary numbers between the positive and negative values in two's
+ * complement. (Though it doesn't quite work for the most negative value)
+ * Mainly:
+ *  - invert all the bits
+ *  - add one to the result
+ *
+ * Of course, this doesn't quite work in Javascript. Take for example the value
+ * of -128. This could be represented in 16 bits (big-endian) as 0xff80. But of
+ * course, Javascript will do the following:
+ *
+ * > ~0xff80
+ * -65409
+ *
+ * Whoh there, Javascript, that's not quite right. But wait, according to
+ * Javascript that's perfectly correct. When Javascript ends up seeing the
+ * constant 0xff80, it has no notion that it is actually a signed number. It
+ * assumes that we've input the unsigned value 0xff80. Thus, when it does the
+ * binary negation, it casts it into a signed value, (positive 0xff80). Then
+ * when you perform binary negation on that, it turns it into a negative number.
+ *
+ * Instead, we're going to have to use the following general formula, that works
+ * in a rather Javascript friendly way. I'm glad we don't support this kind of
+ * weird numbering scheme in the kernel.
+ *
+ * (BIT-MAX - (unsigned)val + 1) * -1
+ *
+ * The astute observer, may think that this doesn't make sense for 8-bit numbers
+ * (really it isn't necessary for them). However, when you get 16-bit numbers,
+ * you do. Let's go back to our prior example and see how this will look:
+ *
+ * (0xffff - 0xff80 + 1) * -1
+ * (0x007f + 1) * -1
+ * (0x0080) * -1
+ */
+Buffer.prototype.readInt8 = function(offset, noAssert) {
+  var buffer = this;
+  var neg;
+
+  if (!noAssert) {
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  if (offset >= buffer.length) return;
+
+  neg = buffer[offset] & 0x80;
+  if (!neg) {
+    return (buffer[offset]);
+  }
+
+  return ((0xff - buffer[offset] + 1) * -1);
+};
+
+function readInt16(buffer, offset, isBigEndian, noAssert) {
+  var neg, val;
+
+  if (!noAssert) {
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 1 < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  val = readUInt16(buffer, offset, isBigEndian, noAssert);
+  neg = val & 0x8000;
+  if (!neg) {
+    return val;
+  }
+
+  return (0xffff - val + 1) * -1;
+}
+
+Buffer.prototype.readInt16LE = function(offset, noAssert) {
+  return readInt16(this, offset, false, noAssert);
+};
+
+Buffer.prototype.readInt16BE = function(offset, noAssert) {
+  return readInt16(this, offset, true, noAssert);
+};
+
+function readInt32(buffer, offset, isBigEndian, noAssert) {
+  var neg, val;
+
+  if (!noAssert) {
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 3 < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  val = readUInt32(buffer, offset, isBigEndian, noAssert);
+  neg = val & 0x80000000;
+  if (!neg) {
+    return (val);
+  }
+
+  return (0xffffffff - val + 1) * -1;
+}
+
+Buffer.prototype.readInt32LE = function(offset, noAssert) {
+  return readInt32(this, offset, false, noAssert);
+};
+
+Buffer.prototype.readInt32BE = function(offset, noAssert) {
+  return readInt32(this, offset, true, noAssert);
+};
+
+function readFloat(buffer, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset + 3 < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  return require('./buffer_ieee754').readIEEE754(buffer, offset, isBigEndian,
+      23, 4);
+}
+
+Buffer.prototype.readFloatLE = function(offset, noAssert) {
+  return readFloat(this, offset, false, noAssert);
+};
+
+Buffer.prototype.readFloatBE = function(offset, noAssert) {
+  return readFloat(this, offset, true, noAssert);
+};
+
+function readDouble(buffer, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset + 7 < buffer.length,
+        'Trying to read beyond buffer length');
+  }
+
+  return require('./buffer_ieee754').readIEEE754(buffer, offset, isBigEndian,
+      52, 8);
+}
+
+Buffer.prototype.readDoubleLE = function(offset, noAssert) {
+  return readDouble(this, offset, false, noAssert);
+};
+
+Buffer.prototype.readDoubleBE = function(offset, noAssert) {
+  return readDouble(this, offset, true, noAssert);
+};
+
+
+/*
+ * We have to make sure that the value is a valid integer. This means that it is
+ * non-negative. It has no fractional component and that it does not exceed the
+ * maximum allowed value.
+ *
+ *      value           The number to check for validity
+ *
+ *      max             The maximum value
+ */
+function verifuint(value, max) {
+  assert.ok(typeof (value) == 'number',
+      'cannot write a non-number as a number');
+
+  assert.ok(value >= 0,
+      'specified a negative value for writing an unsigned value');
+
+  assert.ok(value <= max, 'value is larger than maximum value for type');
+
+  assert.ok(Math.floor(value) === value, 'value has a fractional component');
+}
+
+Buffer.prototype.writeUInt8 = function(value, offset, noAssert) {
+  var buffer = this;
+
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset < buffer.length,
+        'trying to write beyond buffer length');
+
+    verifuint(value, 0xff);
+  }
+
+  if (offset < buffer.length) {
+    buffer[offset] = value;
+  }
+};
+
+function writeUInt16(buffer, value, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 1 < buffer.length,
+        'trying to write beyond buffer length');
+
+    verifuint(value, 0xffff);
+  }
+
+  for (var i = 0; i < Math.min(buffer.length - offset, 2); i++) {
+    buffer[offset + i] =
+        (value & (0xff << (8 * (isBigEndian ? 1 - i : i)))) >>>
+            (isBigEndian ? 1 - i : i) * 8;
+  }
+
+}
+
+Buffer.prototype.writeUInt16LE = function(value, offset, noAssert) {
+  writeUInt16(this, value, offset, false, noAssert);
+};
+
+Buffer.prototype.writeUInt16BE = function(value, offset, noAssert) {
+  writeUInt16(this, value, offset, true, noAssert);
+};
+
+function writeUInt32(buffer, value, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 3 < buffer.length,
+        'trying to write beyond buffer length');
+
+    verifuint(value, 0xffffffff);
+  }
+
+  for (var i = 0; i < Math.min(buffer.length - offset, 4); i++) {
+    buffer[offset + i] =
+        (value >>> (isBigEndian ? 3 - i : i) * 8) & 0xff;
+  }
+}
+
+Buffer.prototype.writeUInt32LE = function(value, offset, noAssert) {
+  writeUInt32(this, value, offset, false, noAssert);
+};
+
+Buffer.prototype.writeUInt32BE = function(value, offset, noAssert) {
+  writeUInt32(this, value, offset, true, noAssert);
+};
+
+
+/*
+ * We now move onto our friends in the signed number category. Unlike unsigned
+ * numbers, we're going to have to worry a bit more about how we put values into
+ * arrays. Since we are only worrying about signed 32-bit values, we're in
+ * slightly better shape. Unfortunately, we really can't do our favorite binary
+ * & in this system. It really seems to do the wrong thing. For example:
+ *
+ * > -32 & 0xff
+ * 224
+ *
+ * What's happening above is really: 0xe0 & 0xff = 0xe0. However, the results of
+ * this aren't treated as a signed number. Ultimately a bad thing.
+ *
+ * What we're going to want to do is basically create the unsigned equivalent of
+ * our representation and pass that off to the wuint* functions. To do that
+ * we're going to do the following:
+ *
+ *  - if the value is positive
+ *      we can pass it directly off to the equivalent wuint
+ *  - if the value is negative
+ *      we do the following computation:
+ *         mb + val + 1, where
+ *         mb   is the maximum unsigned value in that byte size
+ *         val  is the Javascript negative integer
+ *
+ *
+ * As a concrete value, take -128. In signed 16 bits this would be 0xff80. If
+ * you do out the computations:
+ *
+ * 0xffff - 128 + 1
+ * 0xffff - 127
+ * 0xff80
+ *
+ * You can then encode this value as the signed version. This is really rather
+ * hacky, but it should work and get the job done which is our goal here.
+ */
+
+/*
+ * A series of checks to make sure we actually have a signed 32-bit number
+ */
+function verifsint(value, max, min) {
+  assert.ok(typeof (value) == 'number',
+      'cannot write a non-number as a number');
+
+  assert.ok(value <= max, 'value larger than maximum allowed value');
+
+  assert.ok(value >= min, 'value smaller than minimum allowed value');
+
+  assert.ok(Math.floor(value) === value, 'value has a fractional component');
+}
+
+function verifIEEE754(value, max, min) {
+  assert.ok(typeof (value) == 'number',
+      'cannot write a non-number as a number');
+
+  assert.ok(value <= max, 'value larger than maximum allowed value');
+
+  assert.ok(value >= min, 'value smaller than minimum allowed value');
+}
+
+Buffer.prototype.writeInt8 = function(value, offset, noAssert) {
+  var buffer = this;
+
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset < buffer.length,
+        'Trying to write beyond buffer length');
+
+    verifsint(value, 0x7f, -0x80);
+  }
+
+  if (value >= 0) {
+    buffer.writeUInt8(value, offset, noAssert);
+  } else {
+    buffer.writeUInt8(0xff + value + 1, offset, noAssert);
+  }
+};
+
+function writeInt16(buffer, value, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 1 < buffer.length,
+        'Trying to write beyond buffer length');
+
+    verifsint(value, 0x7fff, -0x8000);
+  }
+
+  if (value >= 0) {
+    writeUInt16(buffer, value, offset, isBigEndian, noAssert);
+  } else {
+    writeUInt16(buffer, 0xffff + value + 1, offset, isBigEndian, noAssert);
+  }
+}
+
+Buffer.prototype.writeInt16LE = function(value, offset, noAssert) {
+  writeInt16(this, value, offset, false, noAssert);
+};
+
+Buffer.prototype.writeInt16BE = function(value, offset, noAssert) {
+  writeInt16(this, value, offset, true, noAssert);
+};
+
+function writeInt32(buffer, value, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 3 < buffer.length,
+        'Trying to write beyond buffer length');
+
+    verifsint(value, 0x7fffffff, -0x80000000);
+  }
+
+  if (value >= 0) {
+    writeUInt32(buffer, value, offset, isBigEndian, noAssert);
+  } else {
+    writeUInt32(buffer, 0xffffffff + value + 1, offset, isBigEndian, noAssert);
+  }
+}
+
+Buffer.prototype.writeInt32LE = function(value, offset, noAssert) {
+  writeInt32(this, value, offset, false, noAssert);
+};
+
+Buffer.prototype.writeInt32BE = function(value, offset, noAssert) {
+  writeInt32(this, value, offset, true, noAssert);
+};
+
+function writeFloat(buffer, value, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 3 < buffer.length,
+        'Trying to write beyond buffer length');
+
+    verifIEEE754(value, 3.4028234663852886e+38, -3.4028234663852886e+38);
+  }
+
+  require('./buffer_ieee754').writeIEEE754(buffer, value, offset, isBigEndian,
+      23, 4);
+}
+
+Buffer.prototype.writeFloatLE = function(value, offset, noAssert) {
+  writeFloat(this, value, offset, false, noAssert);
+};
+
+Buffer.prototype.writeFloatBE = function(value, offset, noAssert) {
+  writeFloat(this, value, offset, true, noAssert);
+};
+
+function writeDouble(buffer, value, offset, isBigEndian, noAssert) {
+  if (!noAssert) {
+    assert.ok(value !== undefined && value !== null,
+        'missing value');
+
+    assert.ok(typeof (isBigEndian) === 'boolean',
+        'missing or invalid endian');
+
+    assert.ok(offset !== undefined && offset !== null,
+        'missing offset');
+
+    assert.ok(offset + 7 < buffer.length,
+        'Trying to write beyond buffer length');
+
+    verifIEEE754(value, 1.7976931348623157E+308, -1.7976931348623157E+308);
+  }
+
+  require('./buffer_ieee754').writeIEEE754(buffer, value, offset, isBigEndian,
+      52, 8);
+}
+
+Buffer.prototype.writeDoubleLE = function(value, offset, noAssert) {
+  writeDouble(this, value, offset, false, noAssert);
+};
+
+Buffer.prototype.writeDoubleBE = function(value, offset, noAssert) {
+  writeDouble(this, value, offset, true, noAssert);
+};
+
+})()
+},{"./buffer_ieee754":42,"assert":39,"base64-js":43}],36:[function(require,module,exports){
+(function(){var Stream = require('stream');
 var Response = require('./response');
-var concatStream = require('concat-stream');
-var Base64 = require('Base64');
+var concatStream = require('concat-stream')
+var Buffer = require('buffer')
 
 var Request = module.exports = function (xhr, params) {
     var self = this;
@@ -16468,7 +18037,7 @@ var Request = module.exports = function (xhr, params) {
     
     if (params.auth) {
         //basic auth
-        this.setHeader('Authorization', 'Basic ' + Base64.btoa(params.auth));
+        this.setHeader('Authorization', 'Basic ' + new Buffer(params.auth).toString('base64'));
     }
 
     var res = new Response;
@@ -16561,618 +18130,8 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":39,"Base64":41,"concat-stream":40,"stream":37}],41:[function(require,module,exports){
-;(function () {
-
-  var
-    object = typeof window != 'undefined' ? window : exports,
-    chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
-    INVALID_CHARACTER_ERR = (function () {
-      // fabricate a suitable error object
-      try { document.createElement('$'); }
-      catch (error) { return error; }}());
-
-  // encoder
-  // [https://gist.github.com/999166] by [https://github.com/nignag]
-  object.btoa || (
-  object.btoa = function (input) {
-    for (
-      // initialize result and counter
-      var block, charCode, idx = 0, map = chars, output = '';
-      // if the next input index does not exist:
-      //   change the mapping table to "="
-      //   check if d has no fractional digits
-      input.charAt(idx | 0) || (map = '=', idx % 1);
-      // "8 - idx % 1 * 8" generates the sequence 2, 4, 6, 8
-      output += map.charAt(63 & block >> 8 - idx % 1 * 8)
-    ) {
-      charCode = input.charCodeAt(idx += 3/4);
-      if (charCode > 0xFF) throw INVALID_CHARACTER_ERR;
-      block = block << 8 | charCode;
-    }
-    return output;
-  });
-
-  // decoder
-  // [https://gist.github.com/1020396] by [https://github.com/atk]
-  object.atob || (
-  object.atob = function (input) {
-    input = input.replace(/=+$/, '')
-    if (input.length % 4 == 1) throw INVALID_CHARACTER_ERR;
-    for (
-      // initialize result and counters
-      var bc = 0, bs, buffer, idx = 0, output = '';
-      // get next character
-      buffer = input.charAt(idx++);
-      // character found in table? initialize bit storage and add its ascii value;
-      ~buffer && (bs = bc % 4 ? bs * 64 + buffer : buffer,
-        // and if not first of each 4 characters,
-        // convert the first 8 bits to one ascii character
-        bc++ % 4) ? output += String.fromCharCode(255 & bs >> (-2 * bc & 6)) : 0
-    ) {
-      // try to find character in table (0-63, not found => -1)
-      buffer = chars.indexOf(buffer);
-    }
-    return output;
-  });
-
-}());
-
-},{}],40:[function(require,module,exports){
-var stream = require('stream')
-var bops = require('bops')
-var util = require('util')
-
-function ConcatStream(cb) {
-  stream.Stream.call(this)
-  this.writable = true
-  if (cb) this.cb = cb
-  this.body = []
-  this.on('error', function(err) {
-    // no-op
-  })
-}
-
-util.inherits(ConcatStream, stream.Stream)
-
-ConcatStream.prototype.write = function(chunk) {
-  this.body.push(chunk)
-}
-
-ConcatStream.prototype.destroy = function() {}
-
-ConcatStream.prototype.arrayConcat = function(arrs) {
-  if (arrs.length === 0) return []
-  if (arrs.length === 1) return arrs[0]
-  return arrs.reduce(function (a, b) { return a.concat(b) })
-}
-
-ConcatStream.prototype.isArray = function(arr) {
-  return Array.isArray(arr)
-}
-
-ConcatStream.prototype.getBody = function () {
-  if (this.body.length === 0) return
-  if (typeof(this.body[0]) === "string") return this.body.join('')
-  if (this.isArray(this.body[0])) return this.arrayConcat(this.body)
-  if (bops.is(this.body[0])) return bops.join(this.body)
-  return this.body
-}
-
-ConcatStream.prototype.end = function() {
-  if (this.cb) this.cb(this.getBody())
-}
-
-module.exports = function(cb) {
-  return new ConcatStream(cb)
-}
-
-module.exports.ConcatStream = ConcatStream
-
-},{"bops":42,"stream":37,"util":38}],42:[function(require,module,exports){
-var proto = {}
-module.exports = proto
-
-proto.from = require('./from.js')
-proto.to = require('./to.js')
-proto.is = require('./is.js')
-proto.subarray = require('./subarray.js')
-proto.join = require('./join.js')
-proto.copy = require('./copy.js')
-proto.create = require('./create.js')
-
-mix(require('./read.js'), proto)
-mix(require('./write.js'), proto)
-
-function mix(from, into) {
-  for(var key in from) {
-    into[key] = from[key]
-  }
-}
-
-},{"./copy.js":48,"./create.js":49,"./from.js":43,"./is.js":45,"./join.js":47,"./read.js":50,"./subarray.js":46,"./to.js":44,"./write.js":51}],45:[function(require,module,exports){
-
-module.exports = function(buffer) {
-  return buffer instanceof Uint8Array;
-}
-
-},{}],46:[function(require,module,exports){
-module.exports = subarray
-
-function subarray(buf, from, to) {
-  return buf.subarray(from || 0, to || buf.length)
-}
-
-},{}],47:[function(require,module,exports){
-module.exports = join
-
-function join(targets, hint) {
-  if(!targets.length) {
-    return new Uint8Array(0)
-  }
-
-  var len = hint !== undefined ? hint : get_length(targets)
-    , out = new Uint8Array(len)
-    , cur = targets[0]
-    , curlen = cur.length
-    , curidx = 0
-    , curoff = 0
-    , i = 0
-
-  while(i < len) {
-    if(curoff === curlen) {
-      curoff = 0
-      ++curidx
-      cur = targets[curidx]
-      curlen = cur && cur.length
-      continue
-    }
-    out[i++] = cur[curoff++] 
-  }
-
-  return out
-}
-
-function get_length(targets) {
-  var size = 0
-  for(var i = 0, len = targets.length; i < len; ++i) {
-    size += targets[i].byteLength
-  }
-  return size
-}
-
-},{}],48:[function(require,module,exports){
-module.exports = copy
-
-var slice = [].slice
-
-function copy(source, target, target_start, source_start, source_end) {
-  target_start = arguments.length < 3 ? 0 : target_start
-  source_start = arguments.length < 4 ? 0 : source_start
-  source_end = arguments.length < 5 ? source.length : source_end
-
-  if(source_end === source_start) {
-    return
-  }
-
-  if(target.length === 0 || source.length === 0) {
-    return
-  }
-
-  if(source_end > source.length) {
-    source_end = source.length
-  }
-
-  if(target.length - target_start < source_end - source_start) {
-    source_end = target.length - target_start + start
-  }
-
-  if(source.buffer !== target.buffer) {
-    return fast_copy(source, target, target_start, source_start, source_end)
-  }
-  return slow_copy(source, target, target_start, source_start, source_end)
-}
-
-function fast_copy(source, target, target_start, source_start, source_end) {
-  var len = (source_end - source_start) + target_start
-
-  for(var i = target_start, j = source_start;
-      i < len;
-      ++i,
-      ++j) {
-    target[i] = source[j]
-  }
-}
-
-function slow_copy(from, to, j, i, jend) {
-  // the buffers could overlap.
-  var iend = jend + i
-    , tmp = new Uint8Array(slice.call(from, i, iend))
-    , x = 0
-
-  for(; i < iend; ++i, ++x) {
-    to[j++] = tmp[x]
-  }
-}
-
-},{}],49:[function(require,module,exports){
-module.exports = function(size) {
-  return new Uint8Array(size)
-}
-
-},{}],50:[function(require,module,exports){
-module.exports = {
-    readUInt8:      read_uint8
-  , readInt8:       read_int8
-  , readUInt16LE:   read_uint16_le
-  , readUInt32LE:   read_uint32_le
-  , readInt16LE:    read_int16_le
-  , readInt32LE:    read_int32_le
-  , readFloatLE:    read_float_le
-  , readDoubleLE:   read_double_le
-  , readUInt16BE:   read_uint16_be
-  , readUInt32BE:   read_uint32_be
-  , readInt16BE:    read_int16_be
-  , readInt32BE:    read_int32_be
-  , readFloatBE:    read_float_be
-  , readDoubleBE:   read_double_be
-}
-
-var map = require('./mapped.js')
-
-function read_uint8(target, at) {
-  return target[at]
-}
-
-function read_int8(target, at) {
-  var v = target[at];
-  return v < 0x80 ? v : v - 0x100
-}
-
-function read_uint16_le(target, at) {
-  var dv = map.get(target);
-  return dv.getUint16(at + target.byteOffset, true)
-}
-
-function read_uint32_le(target, at) {
-  var dv = map.get(target);
-  return dv.getUint32(at + target.byteOffset, true)
-}
-
-function read_int16_le(target, at) {
-  var dv = map.get(target);
-  return dv.getInt16(at + target.byteOffset, true)
-}
-
-function read_int32_le(target, at) {
-  var dv = map.get(target);
-  return dv.getInt32(at + target.byteOffset, true)
-}
-
-function read_float_le(target, at) {
-  var dv = map.get(target);
-  return dv.getFloat32(at + target.byteOffset, true)
-}
-
-function read_double_le(target, at) {
-  var dv = map.get(target);
-  return dv.getFloat64(at + target.byteOffset, true)
-}
-
-function read_uint16_be(target, at) {
-  var dv = map.get(target);
-  return dv.getUint16(at + target.byteOffset, false)
-}
-
-function read_uint32_be(target, at) {
-  var dv = map.get(target);
-  return dv.getUint32(at + target.byteOffset, false)
-}
-
-function read_int16_be(target, at) {
-  var dv = map.get(target);
-  return dv.getInt16(at + target.byteOffset, false)
-}
-
-function read_int32_be(target, at) {
-  var dv = map.get(target);
-  return dv.getInt32(at + target.byteOffset, false)
-}
-
-function read_float_be(target, at) {
-  var dv = map.get(target);
-  return dv.getFloat32(at + target.byteOffset, false)
-}
-
-function read_double_be(target, at) {
-  var dv = map.get(target);
-  return dv.getFloat64(at + target.byteOffset, false)
-}
-
-},{"./mapped.js":52}],51:[function(require,module,exports){
-module.exports = {
-    writeUInt8:      write_uint8
-  , writeInt8:       write_int8
-  , writeUInt16LE:   write_uint16_le
-  , writeUInt32LE:   write_uint32_le
-  , writeInt16LE:    write_int16_le
-  , writeInt32LE:    write_int32_le
-  , writeFloatLE:    write_float_le
-  , writeDoubleLE:   write_double_le
-  , writeUInt16BE:   write_uint16_be
-  , writeUInt32BE:   write_uint32_be
-  , writeInt16BE:    write_int16_be
-  , writeInt32BE:    write_int32_be
-  , writeFloatBE:    write_float_be
-  , writeDoubleBE:   write_double_be
-}
-
-var map = require('./mapped.js')
-
-function write_uint8(target, value, at) {
-  return target[at] = value
-}
-
-function write_int8(target, value, at) {
-  return target[at] = value < 0 ? value + 0x100 : value
-}
-
-function write_uint16_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint16(at + target.byteOffset, value, true)
-}
-
-function write_uint32_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint32(at + target.byteOffset, value, true)
-}
-
-function write_int16_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt16(at + target.byteOffset, value, true)
-}
-
-function write_int32_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt32(at + target.byteOffset, value, true)
-}
-
-function write_float_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat32(at + target.byteOffset, value, true)
-}
-
-function write_double_le(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat64(at + target.byteOffset, value, true)
-}
-
-function write_uint16_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint16(at + target.byteOffset, value, false)
-}
-
-function write_uint32_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setUint32(at + target.byteOffset, value, false)
-}
-
-function write_int16_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt16(at + target.byteOffset, value, false)
-}
-
-function write_int32_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setInt32(at + target.byteOffset, value, false)
-}
-
-function write_float_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat32(at + target.byteOffset, value, false)
-}
-
-function write_double_be(target, value, at) {
-  var dv = map.get(target);
-  return dv.setFloat64(at + target.byteOffset, value, false)
-}
-
-},{"./mapped.js":52}],52:[function(require,module,exports){
-var proto
-  , map
-
-module.exports = proto = {}
-
-map = typeof WeakMap === 'undefined' ? null : new WeakMap
-
-proto.get = !map ? no_weakmap_get : get
-
-function no_weakmap_get(target) {
-  return new DataView(target.buffer, 0)
-}
-
-function get(target) {
-  var out = map.get(target.buffer)
-  if(!out) {
-    map.set(target.buffer, out = new DataView(target.buffer, 0))
-  }
-  return out
-}
-
-},{}],43:[function(require,module,exports){
-module.exports = from
-
-var base64 = require('base64-js')
-
-var decoders = {
-    hex: from_hex
-  , utf8: from_utf
-  , base64: from_base64
-}
-
-function from(source, encoding) {
-  if(Array.isArray(source)) {
-    return new Uint8Array(source)
-  }
-
-  return decoders[encoding || 'utf8'](source)
-}
-
-function from_hex(str) {
-  var size = str.length / 2
-    , buf = new Uint8Array(size)
-    , character = ''
-
-  for(var i = 0, len = str.length; i < len; ++i) {
-    character += str.charAt(i)
-
-    if(i > 0 && (i % 2) === 1) {
-      buf[i>>>1] = parseInt(character, 16)
-      character = '' 
-    }
-  }
-
-  return buf 
-}
-
-function from_utf(str) {
-  var bytes = []
-    , tmp
-    , ch
-
-  for(var i = 0, len = str.length; i < len; ++i) {
-    ch = str.charCodeAt(i)
-    if(ch & 0x80) {
-      tmp = encodeURIComponent(str.charAt(i)).substr(1).split('%')
-      for(var j = 0, jlen = tmp.length; j < jlen; ++j) {
-        bytes[bytes.length] = parseInt(tmp[j], 16)
-      }
-    } else {
-      bytes[bytes.length] = ch 
-    }
-  }
-
-  return new Uint8Array(bytes)
-}
-
-function from_base64(str) {
-  return new Uint8Array(base64.toByteArray(str)) 
-}
-
-},{"base64-js":53}],44:[function(require,module,exports){
-module.exports = to
-
-var base64 = require('base64-js')
-  , toutf8 = require('to-utf8')
-
-var encoders = {
-    hex: to_hex
-  , utf8: to_utf
-  , base64: to_base64
-}
-
-function to(buf, encoding) {
-  return encoders[encoding || 'utf8'](buf)
-}
-
-function to_hex(buf) {
-  var str = ''
-    , byt
-
-  for(var i = 0, len = buf.length; i < len; ++i) {
-    byt = buf[i]
-    str += ((byt & 0xF0) >>> 4).toString(16)
-    str += (byt & 0x0F).toString(16)
-  }
-
-  return str
-}
-
-function to_utf(buf) {
-  return toutf8(buf)
-}
-
-function to_base64(buf) {
-  return base64.fromByteArray(buf)
-}
-
-
-},{"base64-js":53,"to-utf8":54}],54:[function(require,module,exports){
-module.exports = to_utf8
-
-var out = []
-  , col = []
-  , fcc = String.fromCharCode
-  , mask = [0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]
-  , unmask = [
-      0x00
-    , 0x01
-    , 0x02 | 0x01
-    , 0x04 | 0x02 | 0x01
-    , 0x08 | 0x04 | 0x02 | 0x01
-    , 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-  ]
-
-function to_utf8(bytes, start, end) {
-  start = start === undefined ? 0 : start
-  end = end === undefined ? bytes.length : end
-
-  var idx = 0
-    , hi = 0x80
-    , collecting = 0
-    , pos
-    , by
-
-  col.length =
-  out.length = 0
-
-  while(idx < bytes.length) {
-    by = bytes[idx]
-    if(!collecting && by & hi) {
-      pos = find_pad_position(by)
-      collecting += pos
-      if(pos < 8) {
-        col[col.length] = by & unmask[6 - pos]
-      }
-    } else if(collecting) {
-      col[col.length] = by & unmask[6]
-      --collecting
-      if(!collecting && col.length) {
-        out[out.length] = fcc(reduced(col, pos))
-        col.length = 0
-      }
-    } else { 
-      out[out.length] = fcc(by)
-    }
-    ++idx
-  }
-  if(col.length && !collecting) {
-    out[out.length] = fcc(reduced(col, pos))
-    col.length = 0
-  }
-  return out.join('')
-}
-
-function find_pad_position(byt) {
-  for(var i = 0; i < 7; ++i) {
-    if(!(byt & mask[i])) {
-      break
-    }
-  }
-  return i
-}
-
-function reduced(list) {
-  var out = 0
-  for(var i = 0, len = list.length; i < len; ++i) {
-    out |= list[i] << ((len - i - 1) * 6)
-  }
-  return out
-}
-
-},{}],53:[function(require,module,exports){
+})()
+},{"./response":41,"buffer":40,"concat-stream":44,"stream":37}],43:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -17258,5 +18217,56 @@ function reduced(list) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}]},{},[25,7,12,1,2,13,14,9,17,10,15,18,21,16,22,23,3,20,24,4,19,6])
+},{}],44:[function(require,module,exports){
+(function(Buffer){var stream = require('stream')
+var util = require('util')
+
+function ConcatStream(cb) {
+  stream.Stream.call(this)
+  this.writable = true
+  if (cb) this.cb = cb
+  this.body = []
+  if (this.cb) this.on('error', cb)
+}
+
+util.inherits(ConcatStream, stream.Stream)
+
+ConcatStream.prototype.write = function(chunk) {
+  this.body.push(chunk)
+}
+
+ConcatStream.prototype.arrayConcat = function(arrs) {
+  if (arrs.length === 0) return []
+  if (arrs.length === 1) return arrs[0]
+  return arrs.reduce(function (a, b) { return a.concat(b) })
+}
+
+ConcatStream.prototype.isArray = function(arr) {
+  var isArray = Array.isArray(arr)
+  var isTypedArray = arr.toString().match(/Array/)
+  return isArray || isTypedArray
+}
+
+ConcatStream.prototype.getBody = function () {
+  if (this.body.length === 0) return
+  if (typeof(this.body[0]) === "string") return this.body.join('')
+  if (this.isArray(this.body[0])) return this.arrayConcat(this.body)
+  if (typeof(Buffer) !== "undefined" && Buffer.isBuffer(this.body[0])) {
+    return Buffer.concat(this.body)
+  }
+  return this.body
+}
+
+ConcatStream.prototype.end = function() {
+  if (this.cb) this.cb(false, this.getBody())
+}
+
+module.exports = function(cb) {
+  return new ConcatStream(cb)
+}
+
+module.exports.ConcatStream = ConcatStream
+
+})(require("__browserify_buffer").Buffer)
+},{"__browserify_buffer":14,"stream":37,"util":38}]},{},[10,12,15,1,2,16,17,13,20,11,19,21,24,18,25,26,3,23,27,4,22,6])
 ;
