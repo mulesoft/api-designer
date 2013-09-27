@@ -263,6 +263,9 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
         elt.style.paddingLeft = (basePadding + off) + "px";
       });
 
+      // For testing automation purposes
+      window.editor = editor;
+
       return editor;
     };
 
