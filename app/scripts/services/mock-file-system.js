@@ -93,7 +93,7 @@ angular.module('raml')
     if (files.length === 0) {
       files.push({
         path: '/',
-        name: 'traits.yaml',
+        name: 'api.raml',
         contents: '' +
           '#%RAML 0.2\n' +
           '---\n' +

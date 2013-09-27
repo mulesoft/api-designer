@@ -77,7 +77,7 @@ div[role=raml-editor] > header > div[role=save-button] {
   right: 0px;
   margin: -19px 15px 0px 0px;
   padding: 10px 13px;
-  background-color: #40cd5d;
+  background-color: rgb(87,152,202);
   color: white;
   border-radius: 2px;
   font-size: 13px;
@@ -467,12 +467,12 @@ section[role=api-operation].active > header > div[role=summary] > ul[role=operat
 
 section[role=api-operation].active > header > div[role=summary] > ul[role=operations],
 section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] {
-  margin-top: 10px;
+  margin-top: 42px;
 }
 
 section[role=api-operation].active > header > div[role=summary] > ul[role=traits],
 section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] {
-  display: block;
+  /*display: block;*/
 }
 
 section[role=api-operation].active > header > div[role=summary] > ul[role=traits] > li,
