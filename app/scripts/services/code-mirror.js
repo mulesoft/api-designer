@@ -65,7 +65,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
     service.enterKey = function (cm) {
       var editorState = ramlHint.getEditorState(cm);
       var indentUnit = cm.getOption('indentUnit');
-      var indent = editorState.curLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
+      var indent = editorState.currLineTabCount;
 
       var curLineWithoutTabs = service.removeTabs(editorState.curLine, indentUnit);
 
@@ -78,6 +78,25 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
         return;
       }
       if(parentLine && parentLine.match(/\|$/)) {
+        _replaceSelection(cm, 0, "");
+        return;
+      }
+
+      //it it's an array value, if should add another indentation.
+      if(curLineWithoutTabs.match(/^-/)){
+        _replaceSelection(cm, 2, "");
+        return;
+      }
+
+      //if current line or parent line begins with: description, content, example or schema
+      //one indentation level should be added or the same level should be kept if
+      //the cursor is not on the first line
+      if(/^(description|content|example|schema):/.test(curLineWithoutTabs)) {
+        _replaceSelection(cm, 1, "");
+        return;
+      }
+
+      if(parentLine && /^(\s+)?(description|content|example|schema):/.test(parentLine)) {
         _replaceSelection(cm, 0, "");
         return;
       }
@@ -109,9 +128,12 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
 
     function _getParentLineNumber (cm, lineNumber, indentLevel) {
       var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? indentLevel - 1 : 0];
-      var parent = potentialParents.filter(function (line) {
-        return line < lineNumber;
-      }).pop();
+
+      if(potentialParents) {
+        var parent = potentialParents.filter(function (line) {
+          return line < lineNumber;
+        }).pop();
+      }
 
       return parent;
     }

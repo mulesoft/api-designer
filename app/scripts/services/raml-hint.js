@@ -70,8 +70,13 @@ angular.module('raml')
       var word = options && options.word || WORD;
       var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
       var startPos = cur.ch, endPos = startPos;
-      var spaces = new Array(indentUnit + 1).join(' ');
-      var currLineTabCount = curLine.split(spaces).length - 1;
+
+      var currLineTabCount = 0;
+      var curLineSpaces = curLine.match(/^\s+/);
+      if(curLineSpaces) {
+        currLineTabCount = Math.floor(curLineSpaces[0].length / indentUnit);
+      }
+
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
@@ -223,7 +228,14 @@ angular.module('raml')
           padding = hinter.getPadding(node, currLineTabCount);
 
         // FIXME Use editor.indentLine to handle the indentation!
-        return {text: e + ':' + padding, displayText: e  + ' (' + suggestion.metadata.category + ')'};
+        return {text: e + ':' + padding,
+                displayText: e,
+                category: suggestion.metadata.category,
+                render: function (element, self, data) {
+                  element.innerHTML = '<div>' + data.displayText +
+                  '</div><div class="category">' +
+                    data.category + '</div>';
+                }};
       }).filter(function(e) {
         if (curWord) {
             if (e && e.text.indexOf(curWord) === 0) {
