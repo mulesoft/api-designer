@@ -30,13 +30,23 @@ angular.module('ramlEditorApp')
       var definition = args;
       $scope.errorMessage = '';
       ramlParser.load(definition).then(function (result) {
-        codeMirrorErrors.clearAnnotations();
-        eventService.broadcast('event:raml-parsed', result);
-        $scope.hasErrors = false;
-        safeApply();
+        var readData = ramlReader.read(result);
+        eventService.broadcast('event:raml-parsed', readData);
       }, function (error) {
         eventService.broadcast('event:raml-parser-error', error);
       });
+    });
+
+    eventService.on('event:raml-parsed', function (e, args) {
+      var definition = args;
+      codeMirrorErrors.clearAnnotations();
+      definition.baseUri = ramlReader.processBaseUri(definition);
+      $scope.baseUri = definition.baseUri;
+      $scope.title = definition.title;
+      $scope.version = definition.version;
+      eventService.broadcast('event:raml-operation-list-published', definition.resources);
+      $scope.hasErrors = false;
+      safeApply();
     });
 
     eventService.on('event:raml-parser-error', function (e, args) {
@@ -77,6 +87,14 @@ angular.module('ramlEditorApp')
       }
     };
 
+    $scope.isShelfCollapsed = function () {
+      return $scope.shelf.collapsed;
+    };
+
+    $scope.toggleShelf = function () {
+      $scope.shelf.collapsed = !$scope.shelf.collapsed;
+    };
+
     eventService.on('event:save', function (e, args) {
       $scope.save();
     });
@@ -89,6 +107,7 @@ angular.module('ramlEditorApp')
       $scope.documentation = '';
       $scope.baseUri = '';
       $scope.hasErrors = false;
+      $scope.shelf = { collapsed: false };
 
       editor = codeMirror.initEditor();
 

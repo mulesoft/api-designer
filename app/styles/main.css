@@ -1,43 +1,187 @@
 html {
     height: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
 }
+
 body {
     background: #fafafa;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: #333;
     height: 100%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
     box-sizing: border-box;
     margin: 0px;
-    padding: 0px;
+    padding-bottom: 0px;
 }
 
-header > h1 {
-  height: auto;
+div.container {
+  height: inherit;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+div[role=raml-editor] {
+    width: 100%;
+    height: 100%;
+    padding-top: 35px;
+    padding-left: 10px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    position: relative;
+    background: rgb(52,52,54);
+    position: relative;
+}
+
+div[role=raml-editor] > header {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  position: absolute;
+  top: 0px;
+  left: 60%;
+  margin-left: 4px;
+  padding-top: 12px;
+  padding-left: 18px;
+  right: 0px;
+  background: rgb(87,88,90);
+  height: 68px;
+  border-radius: 5px 0px 0px 0px;
+}
+
+div[role=raml-editor] > header > h1 {
   padding: 0px;
   margin: 5px 0px 10px 0px;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   font-size: 24px;
-  font-weight: normal;
+  font-weight: lighter;
+  text-shadow: -1px 0px 4px #222;
+  color: white;
+  letter-spacing: 1px;
   position: relative;
 }
 
-div[role=save-button] {
+div[role=raml-editor] > header > h1 > strong {
+  font-weight: bold;
+}
+
+div[role=raml-editor] > header > div[role=save-button] {
   position: absolute;
-  top: 0px;
+  top: 50%;
   right: 0px;
-  margin: 5px 15px 0px 0px;
+  margin: -19px 15px 0px 0px;
   padding: 10px 13px;
   background-color: #40cd5d;
   color: white;
-  border-radius: 4px;
+  border-radius: 2px;
   font-size: 13px;
   cursor: pointer;
 }
 
-div[role=save-button].disabled {
-  background-color: #dadcdd;
+div[role=raml-editor] > header > div[role=save-button].disabled {
+  background-color: #999;
+  cursor: default;
+}
+
+div[role=editor] {
+  width: 60%;
+  height: 100%;
+  float: left;
+  padding: 0px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  position: relative;
+  transition: padding-bottom .1s ease-in;
+  padding-top: 32px;
+  padding-bottom: 41px;
+  background: rgb(11,11,13);
+  border-radius: 5px 0px 0px 0px;
+}
+
+div[role=editor].collapsed {
+  padding-bottom: 161px;
+}
+
+div[role=editor].error {
+  box-shadow: 0px 0px 5px 1px red;
+  transition: all .5s ease-out;
+}
+
+/* Tabs */
+
+div[role=tabs] {
+  padding: 0 0 0 0;
+  overflow:visible;
+  position: absolute;
+  top: 3px;
+  left: 20px;
+  box-sizing: border-box;
+}
+
+div[role=tab] {
+  min-width:150px;
+  height:30px;
+  overflow:hidden;
+  float:left;
+  margin:0 -10px 0 0;
+  position: relative;
+  box-sizing: border-box;
+  color: #839496;
+  text-shadow: #002b36 0 1px;
+  font-size: 12px;
+  line-height: 32px;
+  padding-left: 21px;
+  border-bottom: 1px solid transparent;
+}
+
+div[role=tab-box] {
+  height:40px;
+  background: rgb(34,36,41);
+  border-radius: 4px;
+  border:1px solid rgb(42,44,51);
+  border-top-width: 2px;
+  margin:0 8px 0;
+  -webkit-transform: perspective(100px) rotateX(20deg);
+  -moz-transform: perspective(100px) rotateX(20deg);
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 140px;
+  box-sizing: border-box;
+  z-index: -1;
+}
+
+div[role=tab].active {
+  position:relative;
+  padding-bottom:1px;
+  z-index: 2;
+  border-bottom: 1px;
+}
+
+div[role=tab].active div[role=tab-box]{
+  background-color: rgb(24,25,29);
+}
+
+/* Preview - Console */
+
+div[role=preview] {
+    width: 40%;
+    float: left;
+    padding: 0px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    height: 100%;
+    padding-top: 30px;
+    overflow: hidden;
+    background: rgb(230,231,235);
 }
 
 div[role=preview] > header > h2 {
@@ -51,65 +195,38 @@ div[role=preview] > header > h2 {
   font-weight: normal;
 }
 
-div.container {
+div[role=preview] > div[role=title] {
+  height: 60px;
+  font-size: 18px;
+  line-height: 60px;
+  color: rgb(36,39,42);
+  padding-left: 17px;
+}
+
+div[role=preview] > div[role=console] {
+  padding-left: 12px;
+  padding-right: 13px;
+  overflow-y: scroll;
+  overflow-x: hidden;
   height: 90%;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  padding: 15px 10px 25px 15px;
 }
 
-div[role=raml-editor] {
-    width: 100%;
-    height: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    position: relative;
-}
-
-div[role=editor] {
-    width: 60%;
-    height: 100%;
-    float: left;
-    padding: 0px;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    position: relative;
-    transition: all 1s ease-in;
-    margin-top: 30px;
-    margin-top: 30px;
-}
-
-div[role=editor].error {
-    box-shadow: 0px 0px 5px 1px red;
-    transition: all 1s ease-out;
-}
-
-div[role=preview] {
-    width: 40%;
-    float: left;
-    padding: 0px 15px 0px 15px;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    height: 100%;
-    overflow-y: scroll;
-    margin-top: 30px;
-}
+/* Shelf */
 
 div[role=shelf] {
   position: absolute;
-  background: rgb(19,33,40);
+  background: rgb(26,32,43);
   color: grey;
+  left: -10px;
   right: 0px;
-  top: 0px;
-  height: 100%;
-  width: 200px;
-  border: 1px solid black;
+  height: 40px;
+  bottom: 0px;
+  border-top: 1px solid rgb(48,83,110);
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
-  padding-left: 9px;
+  padding-left: 18px;
+  padding-top: 6px;
   font-size: 15px;
   /* TODO Create a less function to make this easier */
   -webkit-touch-callout: none;
@@ -118,6 +235,31 @@ div[role=shelf] {
   -moz-user-select: -moz-none;
   -ms-user-select: none;
   user-select: none;
+  transition: height .1s ease-in;
+}
+
+div[role=shelf].expanded {
+  height: 160px;
+}
+
+div[role=shelf] div[role=shelf-container] {
+  overflow: auto;
+  height: 100%;
+}
+
+div[role=shelf] > div[role=shelf-tab] {
+  position: absolute;
+  right: 0px;
+  width: 50px;
+  height: 26px;
+  display: block;
+  background: rgb(26,32,43);
+  top: -27px;
+  z-index: 100;
+  border-top: 1px solid rgb(48,83,110);
+  border-left: 1px solid rgb(48,83,110);
+  border-radius: 2px 0px 0px 0px;
+  cursor: pointer;
 }
 
 div[role=shelf] ul {
@@ -132,39 +274,44 @@ div[role=shelf] ul[role=sections] {
   padding-bottom: 0px;
 }
 
-div[role=shelf] ul[role=sections] > li {
-  padding-top: 10px;
+div[role=shelf] ul[role=sections] > li[role=section] {
+  padding-top: 8px;
   padding-bottom: 10px;
+  margin-right: 20px;
   text-transform: uppercase;
   list-style-type: none;
   font-size: 11px;
-  color: #838383;
+  color: #ddd;
   text-shadow: 1px 1px 1px black;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   font-weight: bolder;
   display: inline-block;
-  clear: both;
   float: left;
 }
 
-div[role=shelf] ul[role=sections] > li > ul[role=items] {
+div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] {
   padding-left: 0px;
   margin-left: 0px;
-  margin-left: 0px;
+  margin-top: 13px;
 }
 
-div[role=shelf] ul[role=sections] > li > ul[role=items] > li:first-of-type {
-  margin-top: 8px;
+div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:nth-of-type(2n+1) {
+  clear: both;
 }
 
-div[role=shelf] ul[role=sections] > li > ul[role=items] > li:before {
-  content: '+ ';
-  font-size: 9px;
-  vertical-align: 2px;
+
+div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:before {
+  content: '+';
+  font-size: 10px;
+  vertical-align: 1px;
   padding-left: 5px;
+  padding-right: 4px;
+  display: inline-block;
+  color: #ddd;
+  font-weight: bold;
 }
 
-div[role=shelf] ul[role=sections] > li > ul[role=items] > li {
+div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
   color: gray;
   text-shadow: 0px 0px;
   list-style-type: none;
@@ -176,24 +323,28 @@ div[role=shelf] ul[role=sections] > li > ul[role=items] > li {
   padding-bottom: 3px;
   letter-spacing: 0.5px;
   font-family: "Lucida Console", Monaco, monospace;
-  display: inline-block;
-  clear: both;
+  /*clear: both;*/
   float: left;
   padding-right: 10px;
-}
+  min-width: 100px;
 
-div[role=shelf] ul[role=sections] > li > ul[role=items] > li:hover {
-  background-color: #9b225c;
+  background-color: rgb(15,18,23);
   transition: background-color 0.1s;
   border-radius: 25px;
-  color: white;
+  /*color: white;*/
   margin-right: 5px;
+  margin-top: 2px;
+  margin-bottom: 3px;
 }
+
+div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:hover {
+  color: white;
+}
+
 
 /* CodeMirror Overrides */
 div.CodeMirror {
     font-size: 12px;
-    margin-right: 200px;
 }
 
 .CodeMirror-foldgutter {
@@ -216,10 +367,22 @@ div.CodeMirror {
   background-image: none;
 }
 
+.cm-s-solarized.cm-s-dark {
+  background: rgb(24,25,29);
+}
+
+.cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+  background: rgb(20,21,25);
+}
+
+div[role=code] {
+  border-top: 1px solid rgb(42,44,51);
+}
 /* Console overrides */
 
 section[role=api-operation-list] {
   padding: 0px;
+  margin-bottom: 7px;
 }
 
 section[role=api-operation-details-section-parameters] {
@@ -242,54 +405,44 @@ section[role=api-operation-details-section-request] {
   padding-bottom: 0px;
 }
 
-/* Tabs */
-div[role=tabs] {
-  height:45px;
-  padding: 0 0 0 0;
-  overflow:visible;
-  position: absolute;
-  top: -28px;
-  left: -6px;
-  box-sizing: border-box;
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li {
+  padding: 4px 12px;
 }
 
-div[role=tab] {
-  min-width:150px;
-  height:28px;
-  overflow:hidden;
-  float:left;
-  margin:0 -10px 0 0;
-  position: relative;
-  box-sizing: border-box;
-  color: #839496;
-  text-shadow: #002b36 0 1px;
-  font-size: 12px;
-  line-height: 30px;
-  padding-left: 21px;
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:before,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:before {
+  bottom: -17px;
 }
 
-div[role=tab-box] {
-  height:40px;
-  background: #fff;
-  border-radius: 4px;
-  border:1px solid #ccc;
-  margin:0 8px 0;
-  -webkit-transform: perspective(100px) rotateX(20deg);
-  -moz-transform: perspective(100px) rotateX(20deg);
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 141px;
-  box-sizing: border-box;
-  z-index: -1;
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:after,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:after {
+  bottom: -17px;
 }
 
-div[role=tab].active {
-  position:relative;
-  padding-bottom:1px;
-  z-index: 2;
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > a:after,
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > span:after,
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > p:after {
+  bottom: -17px;
 }
 
-div[role=tab].active div[role=tab-box]{
-  background-color: #002b36;
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] {
+  margin-top: 10px;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=traits],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] {
+  display: block;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=traits] > li,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] > li {
+  color: #555;
+}
+
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr > td > pre,
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr > td > pre {
+  width: 100%;
+  padding: 3px 0px;
 }
