@@ -225,14 +225,14 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
         CodeMirror.showHint(cm, CodeMirror.hint.javascript);
       };
 
-      CodeMirror.defineMode("raml", codeMirrorHighLight.highlight, "yaml", "javascript", "xml");
-      CodeMirror.defineMIME("text/x-raml", "raml");
+      CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
+      CodeMirror.defineMIME('text/x-raml', 'raml');
 
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-        mode: "raml",
+        mode: 'raml',
         theme: 'solarized dark',
         lineNumbers: true,
         lineWrapping: true,
