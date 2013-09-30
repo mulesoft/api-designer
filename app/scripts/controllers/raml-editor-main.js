@@ -110,9 +110,10 @@ angular.module('ramlEditorApp')
       $scope.documentation = '';
       $scope.baseUri = '';
       $scope.hasErrors = false;
-      $scope.shelf = {
-        collapsed: config.get('shelf.collapsed', false)
-      };
+      $scope.shelf = {};
+      $scope.shelf.collapsed =
+        JSON.parse(config.get('shelf.collapsed', false));
+
 
       editor = codeMirror.initEditor();
 
