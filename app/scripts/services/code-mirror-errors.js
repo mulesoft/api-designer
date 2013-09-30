@@ -48,7 +48,7 @@ angular.module('codeMirror')
 
     function showTooltipFor (e, content, node) {
       var tooltip = showTooltip(e, content);
-      
+
       function hide () {
         CodeMirror.off(node, 'mouseout', hide);
         if (tooltip) {
@@ -104,11 +104,12 @@ angular.module('codeMirror')
       return tip;
     }
 
-    function makeMarker (labels, severity, multiple, tooltips) {
+    function makeMarker (labels, severity, multiple, tooltips, annotations) {
       var marker = document.createElement('div');
       var inner = marker;
-      
+
       marker.className = 'CodeMirror-lint-marker-' + severity;
+
       if (multiple) {
         inner = marker.appendChild(document.createElement('div'));
         inner.className = 'CodeMirror-lint-marker-multiple';
@@ -119,6 +120,10 @@ angular.module('codeMirror')
           showTooltipFor(e, labels, inner);
         });
       }
+
+      //For testing automation purposes
+      marker.setAttribute('data-marker-line', annotations[0].line);
+      marker.setAttribute('data-marker-message', annotations[0].message);
 
       return marker;
     }
@@ -140,16 +145,16 @@ angular.module('codeMirror')
         for (var i = 0; i < anns.length; ++i) {
           var ann = anns[i];
           var severity = ann.severity;
-          
+
           if (!SEVERITIES.test(severity)) {
             severity = 'error';
           }
-          
+
           maxSeverity = getMaxSeverity(maxSeverity, severity);
 
           tipLabel.appendChild(annotationTooltip(ann));
         }
-        editor.setGutterMarker(line - 1, GUTTER_ID, makeMarker(tipLabel, maxSeverity, anns.length > 1, true));
+        editor.setGutterMarker(line - 1, GUTTER_ID, makeMarker(tipLabel, maxSeverity, anns.length > 1, true, anns));
       }
     };
 
