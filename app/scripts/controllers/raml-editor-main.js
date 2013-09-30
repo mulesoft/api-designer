@@ -4,7 +4,8 @@ angular.module('ramlEditorApp')
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     $scope, safeApply, ramlReader, ramlParser,
-    ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap) {
+    ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
+    config) {
     var editor, currentUpdateTimer, saveTimer;
 
 
@@ -93,6 +94,8 @@ angular.module('ramlEditorApp')
 
     $scope.toggleShelf = function () {
       $scope.shelf.collapsed = !$scope.shelf.collapsed;
+      config.set('shelf.collapsed', $scope.shelf.collapsed);
+      config.save();
     };
 
     eventService.on('event:save', function (e, args) {
@@ -107,7 +110,9 @@ angular.module('ramlEditorApp')
       $scope.documentation = '';
       $scope.baseUri = '';
       $scope.hasErrors = false;
-      $scope.shelf = { collapsed: false };
+      $scope.shelf = {
+        collapsed: config.get('shelf.collapsed', false)
+      };
 
       editor = codeMirror.initEditor();
 
