@@ -341,6 +341,32 @@ div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:hover
   color: white;
 }
 
+div[role=raml-editor].light {
+  background: rgb(128,128,132);
+}
+
+div[role=raml-editor].light div[role=editor] {
+  background: rgb(103,103,106);
+}
+
+div[role=raml-editor].light div[role=shelf] {
+  background: rgb(202,204,212);
+}
+
+div[role=raml-editor].light div[role=shelf] > div[role=shelf-tab] {
+  background: rgb(202,204,212);
+}
+
+div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
+  background-color: rgb(174,176,190);
+  color: rgb(72,74,89);
+  text-shadow: 1px 1px 1px #ddd;
+}
+
+div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section] {
+  color: #444;
+  text-shadow: 1px 1px 1px #ddd;
+}
 
 /* CodeMirror Overrides */
 div.CodeMirror {
@@ -373,6 +399,43 @@ div.CodeMirror {
 
 .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
   background: rgb(20,21,25);
+}
+
+div[role=raml-editor].light div.cm-s-solarized.cm-s-dark {
+  background: white;
+  text-shadow: #fefefe 0 1px;
+}
+
+div[role=raml-editor].light .cm-s-solarized.CodeMirror {
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+div[role=raml-editor].light div[role=tab-box] {
+  background: white;
+  border: 1px solid #555;
+}
+
+div[role=raml-editor].light div[role=tab].active {
+  text-shadow: #eee 0 1px;
+}
+
+div[role=raml-editor].light div[role=code] {
+  border-top: 1px solid #555;
+}
+
+div[role=raml-editor].light div.cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+  background: rgb(241, 241, 241);
+  border-right: 1px solid #999;
+}
+
+div[role=raml-editor].light .cm-s-solarized.cm-s-dark .CodeMirror-linenumber {
+  text-shadow: #fefefe 0 1px;
+}
+
+div[role=raml-editor].light .cm-s-solarized.cm-s-dark .CodeMirror-selected {
+  background: #ddd;
 }
 
 .CodeMirror-hints {

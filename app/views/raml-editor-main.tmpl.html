@@ -1,10 +1,10 @@
-<div role="raml-editor" ng-controller="ramlMain">
+<div role="raml-editor" class="{{theme}}" ng-controller="ramlMain">
   <header>
     <h1><strong>RAML</strong>editor</h1>
     <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
   </header>
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
-    <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
+    <div role="shelf" class="light" ng-class="{expanded: !shelf.collapsed}">
       <div role="shelf-tab" ng-click="toggleShelf()"></div>
       <div role="shelf-container" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
