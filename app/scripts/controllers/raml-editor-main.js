@@ -10,6 +10,13 @@ angular.module('ramlEditorApp')
 
     $scope.consoleSettings = { displayTryIt: false };
 
+    $scope.setTheme = function (theme) {
+      $scope.theme = theme;
+      safeApply();
+    };
+
+    window.setTheme = $scope.setTheme;
+
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
       var file = $scope.file;
@@ -107,6 +114,7 @@ angular.module('ramlEditorApp')
       $scope.documentation = '';
       $scope.baseUri = '';
       $scope.hasErrors = false;
+      $scope.theme = '';
       $scope.shelf = { collapsed: false };
 
       editor = codeMirror.initEditor();
@@ -126,8 +134,6 @@ angular.module('ramlEditorApp')
         $scope.bootstrap();
         afterBootstrap();
       }, 0);
-
-      //window.editor = editor;
     };
 
     $scope.init();
