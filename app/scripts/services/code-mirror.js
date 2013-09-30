@@ -228,11 +228,11 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       CodeMirror.defineMode("raml", codeMirrorHighLight.highlight, "yaml", "javascript", "xml");
       CodeMirror.defineMIME("text/x-raml", "raml");
 
-      CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
+      CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-        mode: "yaml",
+        mode: "raml",
         theme: 'solarized dark',
         lineNumbers: true,
         lineWrapping: true,
