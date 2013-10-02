@@ -219,8 +219,12 @@ angular.module('raml', [])
             readResourceType: function (resource, resourceTypeDetails) {
                 var resourceTypeName;
 
-                for (var prop in resource.type) {
-                    resourceTypeName = prop;
+                if (typeof(resource.type) === 'string') {
+                    resourceTypeName = resource.type;
+                } else {
+                    for (var prop in resource.type) {
+                        resourceTypeName = prop;
+                    }
                 }
 
                 if (!resourceTypeName) {
