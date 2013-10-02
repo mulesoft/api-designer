@@ -7,6 +7,27 @@ CodeMirror.defineMode('yaml', function () {
   var cons = ['true', 'false'];
   var keywordRegex = new RegExp('\\b((' + cons.join(')|(') + '))$', 'i');
 
+  // Using one level of nesting nest (ie. [name + '.level']) instead of
+  // [name].level to use default copy state function.
+  function highlightRootElement(name, titleClass, contentClass, state, level, key) {
+
+    if (level <= state[name + '.level']) {
+      state[name + '.level'] = 0;
+      state[name + '.inside'] = false;
+    }
+    if (name.indexOf(key) >= 0) {
+      state[name + '.level'] = level;
+      state[name + '.inside'] = true;
+      return titleClass;
+    }
+    if (state[name + '.inside']) {
+      return contentClass;
+    }
+
+    return false;
+
+  }
+
   return {
     token: function(stream, state) {
       var ch = stream.peek();
@@ -72,36 +93,16 @@ CodeMirror.defineMode('yaml', function () {
         if (state.insideMethod) {
           return 'method-content';
         }
-        /* traits */
-        if (level <= state.traitLevel) {
-          state.traitLevel = 0;
-          state.insideTraits = false;
-        }
-        if ('traits'.indexOf(key) >= 0) {
-          state.traitLevel = level;
-          state.insideTraits = true;
-        }
-        if ('traits'.indexOf(key) >= 0) {
-          return 'trait-title';
-        }
-        if (state.insideTraits) {
-          return 'trait-content';
-        }
 
-        /* resource types */
-        if (level <= state.resourceTypeLevel) {
-          state.resourceTypeLevel = 0;
-          state.insideresourceTypes = false;
-        }
-        if ('resourceTypes'.indexOf(key) >= 0) {
-          state.resourceTypeLevel = level;
-          state.insideresourceTypes = true;
-        }
-        if ('resourceTypes'.indexOf(key) >= 0) {
-          return 'resource-type-title';
-        }
-        if (state.insideresourceTypes) {
-          return 'resource-type-content';
+        
+        var rootElements =
+          highlightRootElement('traits', 'trait-title', 'trait-content', state, level, key) ||
+          highlightRootElement('resourceTypes', 'resource-type-title', 'resource-type-content', state, level, key) ||
+          highlightRootElement('schemas', 'schema-title', 'schema-content', state, level, key) ||
+          highlightRootElement('securitySchemes', 'security-scheme-title', 'security-scheme-content', state, level, key);
+      
+        if (rootElements) {
+          return rootElements;
         }
 
         /* resources */
