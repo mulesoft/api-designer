@@ -21,6 +21,7 @@ angular.module('ramlEditorApp')
       ramlParser.load(definition).then(function (result) {
         codeMirrorErrors.clearAnnotations();
         eventService.broadcast('event:raml-parsed', result);
+        $scope.$digest();
       }, function (error) {
         eventService.broadcast('event:raml-parser-error', error);
       });
