@@ -21,13 +21,23 @@ angular.module('raml')
       var spaces = new Array(indentUnit + 1).join(' ');
       var tabs = editor.getLine(line).split(spaces),
           value = tabs.pop(), result = [];
-
+      
+      // If this happens tabulation is wrong (tabCount can never be
+      // bigger than tabs.length)
+      if (tabCount > tabs.length) {
+        return undefined;
+      }
       if (tabs.length === tabCount) {
         if (tabCount !== 0) {
           result = _computePath(editor, line - 1, tabs.length - 1);
         }
-        // TODO Unit tests for exceptions
-        return result.concat([extractKey(value)]);
+        
+        if (result) {
+          return result.concat([extractKey(value)]);
+        }
+
+        // If invalid tabulation return undefined
+        return undefined;
       } else {
         return _computePath(editor, line - 1, tabCount);
       }
@@ -182,6 +192,11 @@ angular.module('raml')
     hinter.getAlternatives = function (editor) {
       var val = hinter.computePath(editor), alternatives,
         keysToErase, alternativeKeys = [];
+
+      // Invalid tabulation detected :)
+      if ( !val ) {
+        return {values: {}, keys: [], path: []};
+      }
 
       val.pop();
 
