@@ -3,7 +3,7 @@ angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
-    $scope, safeApply, ramlReader, ramlParser,
+    $scope, safeApply, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
     config) {
     var editor, currentUpdateTimer, saveTimer;
@@ -40,8 +40,9 @@ angular.module('ramlEditorApp')
       var definition = args;
       $scope.errorMessage = '';
       ramlParser.load(definition).then(function (result) {
-        var readData = ramlReader.read(result);
-        eventService.broadcast('event:raml-parsed', readData);
+        codeMirrorErrors.clearAnnotations();
+        eventService.broadcast('event:raml-parsed', result);
+        $scope.$digest();
       }, function (error) {
         eventService.broadcast('event:raml-parser-error', error);
       });
@@ -50,11 +51,9 @@ angular.module('ramlEditorApp')
     eventService.on('event:raml-parsed', function (e, args) {
       var definition = args;
       codeMirrorErrors.clearAnnotations();
-      definition.baseUri = ramlReader.processBaseUri(definition);
-      $scope.baseUri = definition.baseUri;
       $scope.title = definition.title;
       $scope.version = definition.version;
-      eventService.broadcast('event:raml-operation-list-published', definition.resources);
+      eventService.broadcast('event:raml-operation-list-published', definition);
       $scope.hasErrors = false;
       safeApply();
     });
