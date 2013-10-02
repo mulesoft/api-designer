@@ -44,7 +44,22 @@ describe('RAML Hint Service', function () {
       res[2].should.be.equal('get');
     });
 
-    it('should handle variable indentUnits', function () {
+    it('should inform when tab levels are invalid', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        '/hello:\n' +
+        '  /bye:\n' +
+        '    /foo:\n' +
+        '              ',
+        {line: 6, ch: 14});
+      var res = hinter.computePath(editor);
+      should.not.exist(res);
+
+    });
+
+    it.skip('should handle variable indentUnits', function () {
       //TODO Add test when decoupling indentUnit
     });
   });
@@ -246,8 +261,26 @@ describe('RAML Hint Service', function () {
       should.not.exist(newAlternatives.values.title);
       newAlternatives.keys.should.not.include('title');
       newAlternatives.keys.length.should.be.equal(3);
+    });
 
+    it('should return empty list when using empty alternatives', function () {
+      var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
+      hinter.suggestRAML = function() {
+        return alternatives;
+      };
+      sinon.stub(hinter, 'computePath').returns(undefined);
 
+      editor = getEditor(
+        'title: hello\n' +
+        '      ',
+        {line: 1, ch: 6});
+
+      var newAlternatives = hinter.getAlternatives(editor);
+      newAlternatives.keys.should.be.deep.equal([]);
+      newAlternatives.values.should.be.deep.equal({});
+      newAlternatives.path.should.be.deep.equal([]);
+
+      hinter.computePath.restore();
     });
 
   });
