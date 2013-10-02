@@ -87,6 +87,23 @@ CodeMirror.defineMode('yaml', function () {
         if (state.insideTraits) {
           return 'trait-content';
         }
+
+        /* resource types */
+        if (level <= state.resourceTypeLevel) {
+          state.resourceTypeLevel = 0;
+          state.insideresourceTypes = false;
+        }
+        if ('resourceTypes'.indexOf(key) >= 0) {
+          state.resourceTypeLevel = level;
+          state.insideresourceTypes = true;
+        }
+        if ('resourceTypes'.indexOf(key) >= 0) {
+          return 'resource-type-title';
+        }
+        if (state.insideresourceTypes) {
+          return 'resource-type-content';
+        }
+
         /* resources */
         if (key.indexOf('/') === 0) {
           return 'resource';
