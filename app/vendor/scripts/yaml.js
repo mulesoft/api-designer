@@ -35,7 +35,7 @@ CodeMirror.defineMode('yaml', function () {
       state.escaped = false;
 
       /* RAML tag */
-      if (ch === '#' && stream.string.replace(/^\s+|\s+$/g, '').toUpperCase() === '#%RAML 0.2') {
+      if (ch === '#' && stream.string.replace(/^\s+|\s+$/g, '').toUpperCase() === '#%RAML 0.8') {
         stream.skipToEnd();
         return 'raml-tag';
       }
@@ -94,13 +94,13 @@ CodeMirror.defineMode('yaml', function () {
           return 'method-content';
         }
 
-        
+
         var rootElements =
           highlightRootElement('traits', 'trait-title', 'trait-content', state, level, key) ||
           highlightRootElement('resourceTypes', 'resource-type-title', 'resource-type-content', state, level, key) ||
           highlightRootElement('schemas', 'schema-title', 'schema-content', state, level, key) ||
           highlightRootElement('securitySchemes', 'security-scheme-title', 'security-scheme-content', state, level, key);
-      
+
         if (rootElements) {
           return rootElements;
         }
