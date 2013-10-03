@@ -1,14 +1,23 @@
-angular.module('helpers')
-  .factory('eventService', function ($rootScope) {
-    var service = {};
+(function() {
+  var module;
 
-    service.broadcast = function (eventName, data) {
-      $rootScope.$broadcast(eventName, data);
-    };
+  try {
+    module = angular.module('helpers');
+  } catch (e) {
+    module = angular.module('helpers', []);
+  }
 
-    service.on = function (eventName, handler) {
-      $rootScope.$on(eventName, handler);
-    };
+  module.factory('eventService', function ($rootScope) {
+      var service = {};
 
-    return service;
-});
+      service.broadcast = function (eventName, data) {
+        $rootScope.$broadcast(eventName, data);
+      };
+
+      service.on = function (eventName, handler) {
+        $rootScope.$on(eventName, handler);
+      };
+
+      return service;
+  });
+})();
