@@ -532,14 +532,16 @@ angular.module('ramlConsoleApp')
                 $scope.consoleSettings = { displayTryIt: true };
 
                 $rootScope.$on('event:raml-parsed', function (e, args) {
+                    var definition = ramlReader.read(args);
                     $scope.baseUri = ramlReader.processBaseUri(args);
-                    $scope.resources = args.resources;
+                    $scope.resources = definition.resources;
                     $scope.documentation = args.documentation;
                     $scope.$apply();
                 });
             }
         };
     });
+
 'use strict';
 
 angular.module('ramlConsoleApp')
@@ -553,16 +555,15 @@ angular.module('ramlConsoleApp')
                 'id': '@',
                 'src': '@'
             },
-            controller: function ($scope, $element, $attrs, ramlParser, ramlReader) {
+            controller: function ($scope, $element, $attrs, ramlParser) {
                 ramlParser.loadFile($attrs.src)
                     .done(function (result) {
-                        var readData = ramlReader.read(result);
-                        console.log(readData);
-                        $rootScope.$emit('event:raml-parsed', readData);
+                        $rootScope.$emit('event:raml-parsed', result);
                     });
             }
         };
     });
+
 'use strict';
 
 angular.module('ramlConsoleApp')
@@ -627,11 +628,11 @@ angular.module('ramlConsoleApp')
         $scope.init();
     });
 angular.module('ramlConsoleApp')
-    .controller('ramlOperationList', function ($scope) {
+    .controller('ramlOperationList', function ($scope, ramlReader) {
         $scope.model = null;
 
         $scope.$on('event:raml-operation-list-published', function (e, eventData) {
-            $scope.resources = eventData;
+            $scope.resources = ramlReader.read(eventData).resources;
         });
 
         $scope.$on('event:raml-sidebar-clicked', function (e, eventData) {
@@ -642,6 +643,7 @@ angular.module('ramlConsoleApp')
             }
         });
     });
+
 angular.module('ramlConsoleApp')
     .controller('ramlDocumentation', function ($scope) {
         $scope.model = null;
