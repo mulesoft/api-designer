@@ -44,6 +44,8 @@ module.exports = function(config) {
     'app/scripts/services/raml-snippets.js',
     'app/scripts/services/raml-highlight.js',
     'app/scripts/services/raml-repository.js',
+    'app/scripts/services/request-executor.js',
+    'app/scripts/services/request-builder.js',
     'app/scripts/services/remote-file-system.js',
     'app/scripts/controllers/raml-editor-main.js',
     'app/scripts/controllers/raml-editor-shelf.js',
