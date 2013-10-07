@@ -1,9 +1,6 @@
 'use strict';
 
-
-var describe = window.describe, beforeEach = window.beforeEach, it = window.it,
-  inject = window.inject, should = window.should, config;
-
+var config;
 
 describe('RAML Config Service', function () {
 

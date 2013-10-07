@@ -7,10 +7,10 @@ angular.module('codeMirror')
     var mode = {};
 
     mode.highlight = function(config) {
-      mode.yaml = CodeMirror.getMode(config, "yaml");
-      mode.xml = CodeMirror.getMode(config, "xml");
-      mode.json = CodeMirror.getMode(config, { name: "javascript", json: true });
-      mode.markdown = CodeMirror.getMode(config, "gfm");
+      mode.yaml = CodeMirror.getMode(config, 'yaml');
+      mode.xml = CodeMirror.getMode(config, 'xml');
+      mode.json = CodeMirror.getMode(config, { name: 'javascript', json: true });
+      mode.markdown = CodeMirror.getMode(config, 'gfm');
 
       return {
         startState: function () {
@@ -22,8 +22,9 @@ angular.module('codeMirror')
           };
         },
         copyState: function(state) {
+          var local;
           if (state.localState){
-            var local = CodeMirror.copyState(state.localMode, state.localState);
+            local = CodeMirror.copyState(state.localMode, state.localState);
 
             if(!local.parentIndentation) {
               local.parentIndentation = state.localState.parentIndentation;
@@ -47,42 +48,42 @@ angular.module('codeMirror')
           return state.token(stream, state);
         }
       };
-    }
+    };
 
     mode._yaml = function(stream, state) {
       if(/(content|description):(\s?)\|/.test(stream.string)) {
-        mode._setMode("markdown", stream, state);
+        mode._setMode('markdown', stream, state);
       }
 
       if(/application\/json:/.test(stream.string)) {
-        mode._setMode("json", stream, state);
+        mode._setMode('json', stream, state);
       }
 
       if(/text\/xml:/.test(stream.string)) {
-        mode._setMode("xml", stream, state);
+        mode._setMode('xml', stream, state);
       }
 
       return mode.yaml.token(stream, state.yamlState);
-    }
+    };
     mode._xml = function (stream, state) {
-      return mode._applyMode("xml", stream, state);
-    }
+      return mode._applyMode('xml', stream, state);
+    };
     mode._json = function (stream, state) {
-      return mode._applyMode("json", stream, state);
-    }
+      return mode._applyMode('json', stream, state);
+    };
     mode._markdown = function (stream, state) {
-      return mode._applyMode("markdown", stream, state);
-    }
+      return mode._applyMode('markdown', stream, state);
+    };
     mode._setMode = function(modeName, stream, state) {
-      state.token = mode["_" + modeName];
+      state.token = mode['_' + modeName];
       state.localMode = mode[modeName];
       state.localState = mode[modeName].startState();
       state.localState.parentIndentation = stream.indentation();
 
-      if(modeName === "markdown") {
+      if(modeName === 'markdown') {
         state.localState.base.parentIndentation = state.localState.parentIndentation;
       }
-    }
+    };
     mode._applyMode = function (modeName, stream, state) {
       if(stream.indentation() <= state.localState.parentIndentation) {
         state.token = mode._yaml;
@@ -95,7 +96,7 @@ angular.module('codeMirror')
       }
 
       return mode[modeName].token(stream, state.localState);
-    }
+    };
 
     return mode;
   });

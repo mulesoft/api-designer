@@ -1,3 +1,7 @@
+'use strict';
+
+/* exported getEditor */
+
 /* Generator of mock editor */
 (function () {
   function Editor (text, cursor, options) {

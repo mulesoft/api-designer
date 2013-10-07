@@ -74,17 +74,17 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       var parentLine = _getParentLine(cm, editorState.start.line, indent);
 
       if(curLineWithoutTabs && curLineWithoutTabs.match(/\|$/)) {
-        _replaceSelection(cm, 1, "");
+        _replaceSelection(cm, 1, '');
         return;
       }
       if(parentLine && parentLine.match(/\|$/)) {
-        _replaceSelection(cm, 0, "");
+        _replaceSelection(cm, 0, '');
         return;
       }
 
       //it it's an array value, if should add another indentation.
       if(curLineWithoutTabs.match(/^-/)){
-        _replaceSelection(cm, 2, "");
+        _replaceSelection(cm, 2, '');
         return;
       }
 
@@ -92,12 +92,12 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       //one indentation level should be added or the same level should be kept if
       //the cursor is not on the first line
       if(/^(description|content|example|schema):/.test(curLineWithoutTabs)) {
-        _replaceSelection(cm, 1, "");
+        _replaceSelection(cm, 1, '');
         return;
       }
 
       if(parentLine && /^(\s+)?(description|content|example|schema):/.test(parentLine)) {
-        _replaceSelection(cm, 0, "");
+        _replaceSelection(cm, 0, '');
         return;
       }
 
@@ -109,7 +109,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
         offset = suggestions.isScalar ? 0 : 1;
       }
 
-      var extraWhitespace = "";
+      var extraWhitespace = '';
       var leadingWhitespace = curLineWithoutTabs.match(/^\s+/);
       if(leadingWhitespace && leadingWhitespace[0] && !offset) {
         extraWhitespace = leadingWhitespace[0];
@@ -122,15 +122,15 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       var indentUnit = editor.getOption('indentUnit');
       var editorState = ramlHint.getEditorState(editor);
 
-      var spaces = "\n" + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ') + whitespace;
-      editor.replaceSelection(spaces, "end", "+input");
+      var spaces = '\n' + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ') + whitespace;
+      editor.replaceSelection(spaces, 'end', '+input');
     }
 
     function _getParentLineNumber (cm, lineNumber, indentLevel) {
-      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? indentLevel - 1 : 0];
+      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? indentLevel - 1 : 0], parent;
 
       if(potentialParents) {
-        var parent = potentialParents.filter(function (line) {
+        parent = potentialParents.filter(function (line) {
           return line < lineNumber;
         }).pop();
       }
@@ -187,7 +187,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       if(nextLineIndent > indent) {
         for(var i = start.line + 2, end = cm.lineCount(); i < end; ++i) {
           nextLine = cm.getLine(i);
-          nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1
+          nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
 
           if(nextLineIndent <= indent && nextLine.length > 0) {
             nextLine = cm.getLine(i-1);
@@ -217,7 +217,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
         fallthrough: ['default']
       };
 
-      CodeMirror.commands.save = function (cm) {
+      CodeMirror.commands.save = function () {
         eventService.broadcast('event:save');
       };
 
@@ -229,7 +229,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       CodeMirror.defineMIME('text/x-raml', 'raml');
 
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
-      CodeMirror.registerHelper("fold", "indent", service.getFoldRange);
+      CodeMirror.registerHelper('fold', 'indent', service.getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         mode: 'raml',
@@ -257,10 +257,10 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       });
 
       var charWidth = editor.defaultCharWidth(), basePadding = 4;
-      editor.on("renderLine", function(cm, line, elt) {
-        var off = CodeMirror.countColumn(line.text, null, cm.getOption("tabSize")) * charWidth;
-        elt.style.textIndent = "-" + off + "px";
-        elt.style.paddingLeft = (basePadding + off) + "px";
+      editor.on('renderLine', function(cm, line, elt) {
+        var off = CodeMirror.countColumn(line.text, null, cm.getOption('tabSize')) * charWidth;
+        elt.style.textIndent = '-' + off + 'px';
+        elt.style.paddingLeft = (basePadding + off) + 'px';
       });
 
       // For testing automation purposes

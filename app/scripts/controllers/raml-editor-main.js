@@ -1,3 +1,5 @@
+'use strict';
+
 angular.module('ramlEditorApp')
   .constant('AUTOSAVE_INTERVAL', 60000)
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
@@ -59,9 +61,9 @@ angular.module('ramlEditorApp')
     });
 
     eventService.on('event:raml-parser-error', function (e, args) {
-      var error = args, annotations = [],
-        line = (error && error.problem_mark && error.problem_mark.line) || 0,
-        column = (error && error.problem_mark && error.problem_mark.column) || 0;
+      var error = args, annotations = [], PROBLEM_MARK = 'problem_mark',
+        line = (error && error[PROBLEM_MARK] && error[PROBLEM_MARK].line) || 0,
+        column = (error && error[PROBLEM_MARK] && error[PROBLEM_MARK].column) || 0;
 
       annotations.push({ message: error.message, line: line + 1, column: column + 1});
       codeMirrorErrors.displayAnnotations(annotations);
@@ -106,7 +108,7 @@ angular.module('ramlEditorApp')
       config.save();
     };
 
-    eventService.on('event:save', function (e, args) {
+    eventService.on('event:save', function () {
       $scope.save();
     });
 
@@ -126,7 +128,7 @@ angular.module('ramlEditorApp')
 
       editor = codeMirror.initEditor();
 
-      editor.on('update', function (event) {
+      editor.on('update', function () {
         if (currentUpdateTimer) {
           clearTimeout(currentUpdateTimer);
         }

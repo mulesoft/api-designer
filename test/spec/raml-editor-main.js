@@ -1,8 +1,7 @@
 'use strict';
 
-var describe = window.describe, beforeEach = window.beforeEach,
-  it = window.it, $rootScope, $controller, codeMirror,
-  eventService, codeMirrorErrors, ramlRepository;
+var codeMirror, eventService, codeMirrorErrors, ramlRepository,
+  $rootScope, $controller;
 
 
 describe('RAML Editor Main Controller', function () {
@@ -55,7 +54,7 @@ describe('RAML Editor Main Controller', function () {
       var error = {
         message: 'Error without line or column!'
       };
-      scope.hasErrors.should.be.false;
+      scope.hasErrors.should.be.equal(false);
 
       // Act
       eventService.broadcast('event:raml-parser-error', error);
@@ -66,7 +65,7 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].line.should.be.equal(1);
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
-      scope.hasErrors.should.be.true;
+      scope.hasErrors.should.be.equal(true);
     });
   });
 

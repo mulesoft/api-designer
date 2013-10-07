@@ -1,3 +1,3 @@
-angular.module('ramlEditorApp')
-  .controller('ramlDialog', function () {
-  });
+angular
+.module('ramlEditorApp')
+.controller('ramlDialog', function () { });

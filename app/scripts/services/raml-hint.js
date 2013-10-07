@@ -21,7 +21,7 @@ angular.module('raml')
       var spaces = new Array(indentUnit + 1).join(' ');
       var tabs = editor.getLine(line).split(spaces),
           value = tabs.pop(), result = [];
-      
+
       // If this happens tabulation is wrong (tabCount can never be
       // bigger than tabs.length)
       if (tabCount > tabs.length) {
@@ -31,7 +31,7 @@ angular.module('raml')
         if (tabCount !== 0) {
           result = _computePath(editor, line - 1, tabs.length - 1);
         }
-        
+
         if (result) {
           return result.concat([extractKey(value)]);
         }
@@ -253,16 +253,13 @@ angular.module('raml')
                 }};
       }).filter(function(e) {
         if (curWord) {
-            if (e && e.text.indexOf(curWord) === 0) {
-                return true;
-            }
-            return false;
+          return e && e.text.indexOf(curWord) === 0;
         }
         return true;
       }) || [];
 
-        return {list: list, from: start, to: end};
-      };
+      return {list: list, from: start, to: end};
+    };
 
     return hinter;
   });

@@ -252,6 +252,7 @@ module.exports = function (grunt) {
   grunt.registerTask('test', [
     'clean:server',
     'connect:test',
+    'jshint',
     'karma'
   ]);
 
@@ -262,6 +263,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('build', [
     'clean:dist',
+    'jshint',
     'useminPrepare',
     'ngtemplates',
     'concat',
@@ -273,13 +275,7 @@ module.exports = function (grunt) {
     'usemin'
   ]);
 
-  grunt.registerTask('deploy', [
-    'build'
-  ]);
-
-
   grunt.registerTask('default', [
-    'jshint',
     'test',
     'build'
   ]);

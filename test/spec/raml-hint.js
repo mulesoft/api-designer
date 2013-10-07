@@ -2,10 +2,6 @@
 
 var hinter, editor;
 
-var describe = window.describe, beforeEach = window.beforeEach,
-  it = window.it, getEditor = window.getEditor, should = window.should;
-
-
 describe('RAML Hint Service', function () {
   beforeEach(function () {
     var $injector = angular.injector(['raml']);
@@ -342,7 +338,7 @@ describe('RAML Hint Service', function () {
 
       shelfSuggestionKeys['New resource'].should.be.ok;
 
-      titleFound.should.be.true;
+      titleFound.should.be.equal(true);
 
     });
   });
@@ -402,7 +398,7 @@ describe('RAML Hint Service', function () {
       var autocompleteSuggestionKeys = {};
 
       autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
-        var cleanedUpText = autocompleteSuggestion.text.replace(/:(.|\n)*/g, '');
+        var cleanedUpText = autocompleteSuggestion.text.replace(/:(\w|\n|\s)*/g, '');
         autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
       });
 
