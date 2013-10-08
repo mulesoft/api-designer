@@ -2,12 +2,6 @@
 
 var codeMirrorService, editor;
 
-var describe = window.describe, beforeEach = window.beforeEach,
-  it = window.it;
-
-window.getEditor = window.getEditor || {};
-
-
 function sp (i) {
   return new Array(i + 1).join(' ');
 }
@@ -105,7 +99,7 @@ describe('CodeMirror Service', function () {
       codeMirrorService.backspaceKey(editor);
       editor.deleteOffset.should.be.equal(-indentUnit);
     });
-    
+
     it('should delete one char if cursor is on first column (even with tabs after)', function () {
       var indentUnit = 7;
       editor = getEditor(
@@ -135,7 +129,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
     });
 
     it('should add another tab level if the current line is a scalar', function () {
@@ -150,7 +144,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
     });
 
     it('should add another tab level for second level scalars', function () {
@@ -169,10 +163,10 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it("should add another indentation if the current line has a continuation character ('|') and has one indent", function () {
+    it('should add another indentation if the current line has a continuation character ("|") and has one indent', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -189,10 +183,10 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it("should preserve the whitespace if the current line has a parent with continuation character ('|') and one indent", function () {
+    it('should preserve the whitespace if the current line has a parent with continuation character ("|") and one indent', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -209,10 +203,10 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it("should add another indentation if the current line has a continuation character ('|') and has two indents", function () {
+    it('should add another indentation if the current line has a continuation character ("|") and has two indents', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -229,7 +223,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 3));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
     it('should keep the same indentation level if the current line is all tabs', function (){
@@ -249,7 +243,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
     });
 
     it('should keep the same indentation level if the current line is all tabs, preserving any extra whitespace', function (){
@@ -269,7 +263,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(3));
+      editor.spacesToInsert.should.be.equal('\n' + sp(3));
     });
 
     it('should keep the same indentation level if the cursor is in the middle of a sentence.', function (){
@@ -288,7 +282,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
     it('should keep the same indentation level if the cursor is in the middle of a sentence.', function (){
@@ -307,7 +301,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
     it('should keep the same indentation level if the cursor is in the middle of a sentence, but not on the first line.', function (){
@@ -327,7 +321,7 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 2));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
     it('should detect traits and add an extra indentation level', function (){
@@ -349,13 +343,13 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 3));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
 
       editor.setCursor(6, 15);
-      editor.spacesToInsert.should.be.equal("\n" + sp(indentUnit * 3));
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
-    it.skip("should use a mocked ramHint service", inject(function () {
+    it.skip('should use a mocked ramHint service', inject(function () {
     }));
 
     it.skip('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
@@ -375,12 +369,12 @@ describe('CodeMirror Service', function () {
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal("\n" + sp(3));
+      editor.spacesToInsert.should.be.equal('\n' + sp(3));
     });
   });
 
   describe('code folding', function () {
-    it("should detect fold ranges of only one line", function (){
+    it('should detect fold ranges of only one line', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +

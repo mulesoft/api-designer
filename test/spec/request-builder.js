@@ -1,7 +1,56 @@
 'use strict';
 
-var describe = window.describe, beforeEach = window.beforeEach, it = window.it,
-  inject = window.inject, should = window.should, sinon = window.sinon;
+describe('Request Builder', function () {
+  var requestBuilder, mockRequestExecutor, mockShouldProcess;
+
+  beforeEach(module('fs'));
+  beforeEach(module(function ($provide) {
+    $provide.decorator('requestExecutor', function () {
+      return {
+        add: sinon.stub(),
+        process: sinon.stub()
+      };
+    });
+  }));
+
+  beforeEach(inject(function (_requestBuilder_, _requestExecutor_) {
+    mockShouldProcess = sinon.stub().returns(true);
+    requestBuilder = _requestBuilder_(mockShouldProcess);
+    mockRequestExecutor = _requestExecutor_;
+  }));
+
+  it('should correctly set the data into values dictionary', function () {
+    var dataToSet = {
+      host: 'http://somehost',
+      method: 'PATCH',
+      path: '/my/crazy/path',
+      data: 'payload',
+      withCredentials: true,
+      success: sinon.stub(),
+      error: sinon.stub()
+    }, dataToSetKeys = Object.keys(dataToSet);
+
+    dataToSetKeys.forEach(function (key) {
+      var value = dataToSet[key];
+
+      requestBuilder[key](value);
+    });
+
+    mockShouldProcess.called.should.be.equal(false);
+
+    mockRequestExecutor.add.called.should.be.equal(false);
+    mockRequestExecutor.process.called.should.be.equal(false);
+
+    requestBuilder.call();
+    
+    mockShouldProcess.calledOnce.should.be.equal(true);
+
+    mockRequestExecutor.add.calledOnce.should.be.equal(true);
+    mockRequestExecutor.add.getCall(0).args[0].should.be.deep.equal(dataToSet);
+    mockRequestExecutor.process.calledOnce.should.be.equal(true);
+  });
+
+});
 
 describe('Request Token Builder', function () {
   var requestBuilderMock = {}, config, requestTokenBuilder,
@@ -13,7 +62,7 @@ describe('Request Token Builder', function () {
     module(function ($provide) {
       $provide.decorator('requestBuilder', function ($delegate) {
         var requestBuilderInstance = $delegate(), key;
-        
+
         requestBuilderMock = sinon.mock($delegate);
 
         for (key in requestBuilderInstance) {
@@ -56,12 +105,12 @@ describe('Request Token Builder', function () {
 
       done();
     });
-    
+
     it('should create token if not found', function (done) {
       config.get = sinon.stub().returns(undefined);
-      
+
       requestTokenBuilder.init();
-      
+
       should.not.exist($cookies[TOKEN_COOKIE_KEY]);
 
       requestBuilderEntryPoint.calledOnce.should.be.equal(true);
@@ -74,9 +123,9 @@ describe('Request Token Builder', function () {
       requestBuilderMock.path.calledWith('token').should.be.equal(true);
 
       requestBuilderMock.success.calledOnce.should.be.equal(true);
-      
+
       requestBuilderMock.error.calledOnce.should.be.equal(true);
-      
+
       requestBuilderMock.call.calledOnce.should.be.equal(true);
 
       done();
@@ -89,9 +138,9 @@ describe('Request Token Builder', function () {
       config.get = sinon.stub().returns(undefined);
       config.set = sinon.stub();
       config.save = sinon.stub();
-      
+
       requestTokenBuilder.init();
-      
+
       requestBuilderMock.success.calledOnce.should.be.equal(true);
       success = requestBuilderMock.success.getCall(0).args[0];
 
@@ -106,16 +155,16 @@ describe('Request Token Builder', function () {
 
       done();
     });
-    
+
     it('should execute error callback on error', function (done) {
       var error, newToken = 'newToken:)';
 
       config.get = sinon.stub().returns(undefined);
       config.set = sinon.stub();
       config.save = sinon.stub();
-      
+
       requestTokenBuilder.init();
-      
+
       requestBuilderMock.error.calledOnce.should.be.equal(true);
       error = sinon.spy(requestBuilderMock.error.getCall(0).args[0]);
 
@@ -144,13 +193,13 @@ describe('Request Token Builder', function () {
 
       done();
     });
-    
+
     it('should not block token requests', function (done) {
       requestTokenBuilder.shouldExecute({path: 'token', method: 'POST'}).should.be.equal(true);
 
       done();
     });
-    
+
     it('should allow requests after token was retrieved', function (done) {
       var fakeToken = 'thisisthetoken';
       config.get = sinon.stub().returns(fakeToken);

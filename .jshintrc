@@ -18,7 +18,17 @@
   "strict": true,
   "trailing": true,
   "smarttabs": true,
+  "expr": true,
   "globals": {
-    "angular": false
+    "angular": false,
+    "describe": false,
+    "should": false,
+    "it": false,
+    "beforeEach": false,
+    "inject": false,
+    "mock": false,
+    "sinon": false,
+    "getEditor": false
+
   }
 }

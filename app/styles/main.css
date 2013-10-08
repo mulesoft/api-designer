@@ -98,7 +98,7 @@ div[role=editor] {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   position: relative;
-  transition: padding-bottom .1s ease-in;
+  transition: padding-bottom .05s ease-in;
   padding-top: 32px;
   padding-bottom: 41px;
   background: rgb(11,11,13);

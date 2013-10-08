@@ -33,7 +33,17 @@ angular.module('ramlEditorApp')
     };
 
     $scope.orderSections = function (section) {
-      var index = ['root', 'docs', 'methods', 'traits and resourcetypes', 'parameters', 'responses', 'resources', 'security'].indexOf(section.name);
+      var index = [
+          'root',
+          'docs',
+          'methods',
+          'parameters',
+          'responses',
+          'security',
+          'resources',
+          'traits and resourcetypes'
+        ].indexOf(section.name.toLowerCase());
+
       return (index === -1) ? index.length : index;
     };
 

@@ -1,3 +1,5 @@
+'use strict';
+
 (function() {
   var module;
 
@@ -8,16 +10,16 @@
   }
 
   module.factory('eventService', function ($rootScope) {
-      var service = {};
+    var service = {};
 
-      service.broadcast = function (eventName, data) {
-        $rootScope.$broadcast(eventName, data);
-      };
+    service.broadcast = function (eventName, data) {
+      $rootScope.$broadcast(eventName, data);
+    };
 
-      service.on = function (eventName, handler) {
-        $rootScope.$on(eventName, handler);
-      };
+    service.on = function (eventName, handler) {
+      $rootScope.$on(eventName, handler);
+    };
 
-      return service;
+    return service;
   });
 })();

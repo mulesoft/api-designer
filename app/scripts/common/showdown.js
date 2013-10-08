@@ -1,5 +1,9 @@
-angular.module('helpers').factory('showdown', function ($rootScope) {
-    var showdown = new Showdown.converter();
+'use strict';
 
-    return showdown;
+var Showdown = window.Showdown;
+
+angular.module('helpers').factory('showdown', function () {
+  var showdown = new Showdown.converter();
+
+  return showdown;
 });
