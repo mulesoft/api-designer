@@ -298,6 +298,14 @@ div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] {
   overflow: auto;
 }
 
+div[role=shelf]:not(.expanded) ul[role=sections] > li[role=section] > ul[role=items] {
+  display: none;
+}
+
+div[role=shelf]:not(.expanded) ul[role=sections] > li[role=section] {
+  padding-right: 20px;
+}
+
 div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
   clear: both;
 }
