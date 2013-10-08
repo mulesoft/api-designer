@@ -98,7 +98,7 @@ div[role=editor] {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   position: relative;
-  transition: padding-bottom .1s ease-in;
+  transition: padding-bottom .05s ease-in;
   padding-top: 32px;
   padding-bottom: 41px;
   background: rgb(11,11,13);
@@ -277,7 +277,7 @@ div[role=shelf] ul[role=sections] {
 div[role=shelf] ul[role=sections] > li[role=section] {
   padding-top: 8px;
   padding-bottom: 10px;
-  margin-right: 20px;
+  margin-right: 10px;
   text-transform: uppercase;
   list-style-type: none;
   font-size: 11px;
@@ -285,7 +285,7 @@ div[role=shelf] ul[role=sections] > li[role=section] {
   text-shadow: 1px 1px 1px black;
   letter-spacing: 1px;
   font-weight: bolder;
-  display: inline-block;
+  /*display: inline-block;*/
   float: left;
 }
 
@@ -293,12 +293,30 @@ div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] {
   padding-left: 0px;
   margin-left: 0px;
   margin-top: 13px;
+  padding-right: 10px;
+  height: 107px;
+  overflow: auto;
 }
 
-div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:nth-of-type(2n+1) {
+div[role=shelf]:not(.expanded) ul[role=sections] > li[role=section] > ul[role=items] {
+  display: none;
+}
+
+div[role=shelf]:not(.expanded) ul[role=sections] > li[role=section] {
+  padding-right: 20px;
+}
+
+div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
   clear: both;
 }
 
+div[role=shelf] ul[role=sections] > li[role=section].methods > ul[role=items] > li {
+  clear: none;
+}
+
+div[role=shelf] ul[role=sections] > li[role=section].methods > ul[role=items] > li:nth-of-type(2n+1) {
+  clear: both;
+}
 
 div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:before {
   content: '+';
@@ -321,13 +339,12 @@ div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
   padding-top: 4px;
   cursor: pointer;
   padding-bottom: 3px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   font-family: "Lucida Console", Monaco, monospace;
   /*clear: both;*/
   float: left;
   padding-right: 10px;
-  min-width: 100px;
-
+  /*min-width: 100px;*/
   background-color: rgb(15,18,23);
   transition: background-color 0.1s;
   border-radius: 25px;
