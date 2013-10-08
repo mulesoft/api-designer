@@ -45,9 +45,6 @@ angular.module('codeMirror')
           };
         },
         token: function(stream, state) {
-          if(stream.string.trim().length === 0) {
-            return;
-          }
           return state.token(stream, state);
         }
       };
@@ -88,7 +85,9 @@ angular.module('codeMirror')
       }
     };
     mode._applyMode = function (modeName, stream, state) {
-      if(stream.indentation() <= state.localState.parentIndentation) {
+      if(stream.string.trim().length > 0 &&
+         stream.indentation() <= state.localState.parentIndentation) {
+
         state.token = mode._yaml;
         state.localState = state.localMode = null;
         return mode._yaml(stream, state);

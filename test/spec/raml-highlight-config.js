@@ -281,7 +281,7 @@ describe('RAML Highlight Config', function (){
     var state = mode.startState();
     state.token = codeMirrorHighLight._markdown;
     state.localState = codeMirrorHighLight.markdown.startState();
-    state.localState.parentIndentation = 2;
+    state.localState.parentIndentation = 4;
 
     mode.token(stream, state);
 
