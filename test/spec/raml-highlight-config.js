@@ -255,4 +255,36 @@ describe('RAML Highlight Config', function (){
 
     state.token.should.equal(codeMirrorHighLight._yaml);
   });
+
+  it('should preserve highlight mode when encountering an empty line' +
+     'or an all spaces line', function() {
+
+    var stream = new CodeMirror.StringStream(
+      '',
+      2);
+
+    var state = mode.startState();
+    state.token = codeMirrorHighLight._markdown;
+    state.localState = codeMirrorHighLight.markdown.startState();
+    state.localState.parentIndentation = 2;
+
+    mode.token(stream, state);
+
+    state.token.should.equal(codeMirrorHighLight._markdown);
+  });
+
+  it('should preserve highlight mode when encountering a line with just spaces', function() {
+    var stream = new CodeMirror.StringStream(
+      '  ',
+      2);
+
+    var state = mode.startState();
+    state.token = codeMirrorHighLight._markdown;
+    state.localState = codeMirrorHighLight.markdown.startState();
+    state.localState.parentIndentation = 2;
+
+    mode.token(stream, state);
+
+    state.token.should.equal(codeMirrorHighLight._markdown);
+  });
 });

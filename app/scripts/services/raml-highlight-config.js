@@ -45,6 +45,9 @@ angular.module('codeMirror')
           };
         },
         token: function(stream, state) {
+          if(stream.string.trim().length === 0) {
+            return;
+          }
           return state.token(stream, state);
         }
       };

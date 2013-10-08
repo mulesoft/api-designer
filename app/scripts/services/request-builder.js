@@ -132,4 +132,4 @@ angular.module('fs')
     result.init = init;
 
     return result;
-  })
+  });
