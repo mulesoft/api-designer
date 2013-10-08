@@ -9,8 +9,7 @@ angular.module('fs')
   })
   .value('method', 'GET')
   .value('path', 'files')
-  .factory('requestBuilder', function (config, host, method, path,
-    requestExecutor) {
+  .factory('requestBuilder', function (host, method, path, requestExecutor) {
 
     function RequestBuilder(shouldProcess) {
       this.values = {};
