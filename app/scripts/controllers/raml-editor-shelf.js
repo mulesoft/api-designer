@@ -32,6 +32,21 @@ angular.module('ramlEditorApp')
       safeApply();
     };
 
+    $scope.orderSections = function (section) {
+      var index = [
+          'root',
+          'docs',
+          'methods',
+          'parameters',
+          'responses',
+          'security',
+          'resources',
+          'traits and resourcetypes'
+        ].indexOf(section.name.toLowerCase());
+
+      return (index === -1) ? index.length : index;
+    };
+
     $scope.itemClick = function (item) {
       var editor = codeMirror.getEditor();
       var cur = editor.getCursor();
