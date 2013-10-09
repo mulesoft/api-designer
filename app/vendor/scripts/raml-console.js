@@ -19,20 +19,11 @@ RAML.Inspector = (function() {
     return resources;
   };
 
-  exports.methodOverviewSource = function(method) {
-    return {
-      verb: method.method,
-      description: method.description,
-      queryParameters: method.queryParameters,
-      body: method.body
-    }
-  };
-
   exports.resourceOverviewSource = function(pathSegments, resource) {
     return {
       pathSegments: pathSegments,
       name: resource.displayName,
-      methods: (resource.methods || []).map(exports.methodOverviewSource),
+      methods: (resource.methods || []),
       traits: resource.is,
       resourceType: resource.type,
       uriParameters: resource.uriParameters
@@ -40,12 +31,8 @@ RAML.Inspector = (function() {
   };
 
   exports.create = function(api) {
-    var resources = extractResources([], api)
-    return {
-      title: api.title,
-      resources: resources,
-      baseUri: api.baseUri
-    }
+    api.resources = extractResources([], api);
+    return api;
   };
 
   return exports;
@@ -108,52 +95,296 @@ RAML.Inspector = (function() {
 })();
 
 (function() {
+
+  var controller = function($scope) {
+    this.tabs = $scope.tabs = [];
+    $scope.tabset = this;
+  };
+
+  controller.prototype.select = function(tab) {
+    if (tab.disabled) {
+      return;
+    }
+    this.tabs.forEach(function(tab) {
+      tab.active = false;
+    });
+    tab.active = true;
+  };
+
+  controller.prototype.addTab = function(tab) {
+    if (this.tabs.every(function(tab) { return tab.disabled }) || tab.active) {
+      this.select(tab);
+    }
+    this.tabs.push(tab);
+  };
+
+  RAML.Controllers.tabset = controller;
+
+})();
+
+(function() {
+  var FORM_URLENCODED = 'application/x-www-form-urlencoded';
+  var FORM_DATA = 'multipart/form-data';
+
   function isEmpty(object) {
     return Object.keys(object || {}).length == 0;
   }
 
   TryIt = function($scope, $http) {
-    this.baseUri = $scope.api.baseUri || "";
+    this.baseUri = $scope.api.baseUri || '';
     this.pathBuilder = $scope.method.pathBuilder;
-    this.method = $scope.method;
 
-    this.httpMethod = $http[$scope.method.verb];
+    this.http = $http;
+    this.httpMethod = $scope.method.method;
+    this.headers = {};
     this.queryParameters = {};
-    this.supportsMediaType = !isEmpty($scope.method.body);
+    this.formParameters = {};
+    this.supportsCustomBody = this.supportsFormUrlencoded = this.supportsFormData = false;
+    for (mediaType in $scope.method.body) {
+      this.supportsMediaType = true;
+
+      if (mediaType == FORM_URLENCODED) {
+        this.supportsFormUrlencoded = true;
+      } else if (mediaType == FORM_DATA) {
+        this.supportsFormData = true;
+      } else {
+        this.supportsCustomBody = true;
+      }
+    }
 
     $scope.apiClient = this;
   };
 
-  TryIt.prototype.hasQueryParameters = function() {
-    return this.method.queryParameters && Object.keys(this.method.queryParameters).length > 0;
-  };
+  TryIt.prototype.showBody = function() {
+    return this.supportsCustomBody && !this.showUrlencodedForm() && !this.showMultipartForm();
+  }
+
+  TryIt.prototype.showUrlencodedForm = function() {
+    if (this.mediaType) {
+      return this.mediaType == FORM_URLENCODED;
+    } else {
+      return (!this.supportsCustomBody && this.supportsFormUrlencoded);
+    }
+  }
+
+  TryIt.prototype.showMultipartForm = function() {
+    if (this.mediaType) {
+      return this.mediaType == FORM_DATA
+    } else  {
+      return (!this.suppoprtsCustomBody && !this.supportsFormUrlencoded && this.supportsFormData);
+    }
+  }
 
   TryIt.prototype.execute = function() {
     var url = this.baseUri + this.pathBuilder(this.pathBuilder);
     var response = this.response = {};
-    var requestOptions = {};
+    var requestOptions = { url: url, method: this.httpMethod }
 
     if (!isEmpty(this.queryParameters)) {
       requestOptions.params = this.queryParameters;
     }
 
+    if (!isEmpty(this.formParameters)) {
+      requestOptions.data = this.formParameters;
+    }
+
+    if (!isEmpty(this.headers)) {
+      requestOptions.headers = this.headers;
+    }
+
     if (this.mediaType) {
-      requestOptions.headers = { 'Content-Type': this.mediaType };
+      requestOptions.headers = requestOptions || {};
+      requestOptions.headers['Content-Type'] = this.mediaType;
       requestOptions.data = this.body;
     }
 
-    this.httpMethod(url, requestOptions).then(function(httpResponse) {
-      response.body = httpResponse.data,
+    this.http(requestOptions).then(function(httpResponse) {
+      response.body = httpResponse.data;
+      response.requestUrl = url,
       response.status = httpResponse.status,
-      response.headers = httpResponse.headers()
+      response.headers = httpResponse.headers();
+      if (response.headers['content-type']) {
+        response.contentType = response.headers['content-type'].split(';')[0];
+      }
     });
   };
 
-  RAML.Controllers.TryIt = TryIt;
+  RAML.Controllers.tryIt = TryIt;
 })();
 
 (function() {
   RAML.Directives = {};
+})();
+
+(function() {
+  'use strict';
+
+  var formatters = {
+    "application/json" : function(code) {
+      return vkbeautify.json(code);
+    },
+    "text/xml" : function(code) {
+      return vkbeautify.xml(code);
+    },
+    "default" : function(code) {
+      return code;
+    }
+  };
+
+  function sanitize(options) {
+    var code = options.code || '',
+        formatter = formatters[options.mode] || formatters.default;
+
+    try {
+      options.code = formatter(code);
+    } catch(e) {}
+  }
+
+  var Controller = function($scope, $element) {
+    sanitize($scope);
+
+    this.editor = CodeMirror($element[0], {
+      mode: $scope.mode,
+      readOnly: "nocursor",
+      value: $scope.code,
+      lineNumbers: true,
+      indentUnit: 4
+    });
+
+    this.editor.setSize("100%", "100%");
+  };
+
+  Controller.prototype.refresh = function(options) {
+    sanitize(options);
+    this.editor.setOption("mode", options.mode);
+    this.editor.setValue(options.code);
+
+    this.editor.refresh();
+  };
+
+  var link = function(scope, element, attrs, editor) {
+    scope.$watch('visible', function(visible) {
+      if (visible) {
+        editor.refresh(scope);
+      }
+    });
+  };
+
+  RAML.Directives.codeMirror = function() {
+    return {
+      link: link,
+      restrict: 'A',
+      replace: true,
+      controller: Controller,
+      scope: {
+        code: "=codeMirror",
+        visible: "=",
+        mode: "@?"
+      }
+    }
+  }
+
+  RAML.Directives.codeMirror.Controller = Controller;
+})();
+
+(function() {
+  'use strict';
+
+  // NOTE: This directive relies on the collapsible content
+  // and collapsible toggle to live in the same scope.
+
+  var Controller = function() {};
+
+  RAML.Directives.collapsible = function() {
+    return {
+      controller: Controller,
+      restrict: 'EA',
+      scope: true,
+      link: {
+        pre: function(scope, element, attrs) {
+          if (attrs.hasOwnProperty('collapsed')) {
+            scope.collapsed = true;
+          }
+        }
+      }
+    }
+  };
+
+  RAML.Directives.collapsibleToggle = function() {
+    return {
+      require: '^collapsible',
+      restrict: 'EA',
+      link: function(scope, element, attrs, controller) {
+        element.bind('click', function() {
+          scope.$apply(function() {
+            scope.collapsed = !scope.collapsed;
+          });
+        });
+      }
+    }
+  };
+
+  RAML.Directives.collapsibleContent = function() {
+    return {
+      require: '^collapsible',
+      restrict: 'EA',
+      link: function(scope, element, attrs) {
+        scope.$watch('collapsed', function(collapsed) {
+          element.css("display", collapsed ? "none" : "block");
+          element.parent().removeClass("collapsed expanded");
+          element.parent().addClass(collapsed ? "collapsed" : "expanded");
+        });
+      }
+    }
+  };
+
+})();
+
+(function() {
+  'use strict';
+
+  function isEmpty(object) {
+    return Object.keys(object || {}).length == 0;
+  }
+
+  var controller = function($scope) {
+    $scope.documentation = this;
+
+    this.hasParameterDocumentation = $scope.resource.uriParameters || $scope.method.queryParameters || $scope.method.headers;
+    this.hasRequestDocumentation = !isEmpty($scope.method.body);
+    this.hasResponseDocumentation = !isEmpty($scope.method.responses);
+  };
+
+  RAML.Directives.documentation = function() {
+    return {
+      controller: controller,
+      restrict: 'E',
+      templateUrl: 'views/documentation.tmpl.html',
+      replace: true
+    }
+  }
+})();
+
+(function() {
+  'use strict';
+
+  RAML.Directives.markdown = function($sanitize) {
+    var converter = new Showdown.converter();
+
+    var link = function($scope, $element, $attrs) {
+      var result = converter.makeHtml($scope.markdown || '');
+
+      $element.html($sanitize(result));
+    };
+
+    return {
+      restrict: 'A',
+      link: link,
+      scope: {
+        markdown: '='
+      }
+    }
+  };
 })();
 
 (function() {
@@ -181,6 +412,22 @@ RAML.Inspector = (function() {
       restrict: 'E',
       templateUrl: 'views/method.tmpl.html',
       replace: true
+    }
+  }
+})();
+
+(function() {
+  RAML.Directives.namedParameters = function() {
+    return {
+      restrict: 'E',
+      link: function() {},
+      templateUrl: 'views/named_parameters.tmpl.html',
+      replace: true,
+      scope: {
+        heading: '@',
+        parameters: '=',
+        requestData: '='
+      }
     }
   }
 })();
@@ -230,38 +477,49 @@ RAML.Inspector = (function() {
 (function() {
   'use strict';
 
-  RAML.Directives.ramlConsole = function(ramlParser) {
-    var importAndParseRaml = function(src) {
-      return ramlParser.loadFile(src).then(function (raml) {
-        return raml;
-      });
+  var Controller = function($scope, $attrs, ramlParser) {
+    $scope.ramlConsole = this;
+
+    if ($attrs.hasOwnProperty('withRootDocumentation')) {
+      this.withRootDocumentation = true;
     }
 
-    var link = function ($scope, $el, $attrs) {
-      var success = function(raml) {
-        $scope.api = RAML.Inspector.create(raml);
-        $scope.$apply();
-      }
+    var success = function(raml) {
+      $scope.api = this.api = RAML.Inspector.create(raml);
+      $scope.$apply();
+    }
 
-      var error = function(error) {
-        $scope.parseError = error;
-        $scope.$apply();
-      }
+    var error = function(error) {
+      $scope.parseError = error;
+      $scope.$apply();
+    }
 
-      // FIXME: move to a controller
-      if ($scope.src) {
-        importAndParseRaml($scope.src).then(success, error);
-      }
+    if ($scope.src) {
+      ramlParser.loadFile($scope.src).then(success.bind(this), error);
+    }
+  };
 
+  Controller.prototype.gotoView = function(view) {
+    this.view = view;
+  };
+
+  Controller.prototype.showRootDocumentation = function() {
+    return this.withRootDocumentation && this.api && this.api.documentation && this.api.documentation.length > 0;
+  };
+
+  RAML.Directives.ramlConsole = function(ramlParser) {
+
+    var link = function ($scope, $el, $attrs, controller) {
       // FIXME: move this to the app on module('ramlConsoleApp').run...
       $scope.$on('event:raml-parsed', function(e, raml) {
-        $scope.api = RAML.Inspector.create(raml);
+        $scope.api = controller.api = RAML.Inspector.create(raml);
       });
     }
 
     return {
       restrict: 'E',
       templateUrl: 'views/raml-console.tmpl.html',
+      controller: Controller,
       scope: {
         src: '@'
       },
@@ -322,12 +580,56 @@ RAML.Inspector = (function() {
 (function() {
   'use strict';
 
+  ////////////
+  // tabset
+  ////////////
+
+  RAML.Directives.tabset = function() {
+    return {
+      restrict: 'E',
+      replace: true,
+      transclude: true,
+      controller: RAML.Controllers.tabset,
+      templateUrl: 'views/tabset.tmpl.html'
+    }
+  };
+
+  ////////////////
+  // tabs
+  ///////////////
+
+  var link = function($scope, $element, $attrs, tabsetCtrl) {
+    tabsetCtrl.addTab($scope)
+  };
+
+  RAML.Directives.tab = function() {
+
+    return {
+      restrict: 'E',
+      require: '^tabset',
+      replace: true,
+      transclude: true,
+      link: link,
+      templateUrl: 'views/tab.tmpl.html',
+      scope: {
+        heading: '@',
+        active: '=?',
+        disabled: '=?'
+      }
+    }
+
+  };
+})();
+
+(function() {
+  'use strict';
+
   RAML.Directives.tryIt = function() {
     return {
       restrict: 'E',
       templateUrl: 'views/try_it.tmpl.html',
       replace: true,
-      controller: RAML.Controllers.TryIt
+      controller: RAML.Controllers.tryIt
     }
   }
 })();
@@ -350,27 +652,111 @@ angular.module('raml', []).factory('ramlParser', function () {
   return RAML.Parser;
 });
 
-var module = angular.module('ramlConsoleApp', ['raml']);
+var module = angular.module('ramlConsoleApp', ['raml', 'ngSanitize']);
 
+module.directive('codeMirror', RAML.Directives.codeMirror);
+module.directive('collapsible', RAML.Directives.collapsible);
+module.directive('collapsibleContent', RAML.Directives.collapsibleContent);
+module.directive('collapsibleToggle', RAML.Directives.collapsibleToggle);
+module.directive('documentation', RAML.Directives.documentation);
+module.directive('markdown', RAML.Directives.markdown);
 module.directive('method', RAML.Directives.method);
+module.directive('namedParameters', RAML.Directives.namedParameters);
 module.directive('parameterTable', RAML.Directives.parameterTable);
 module.directive('pathBuilder', RAML.Directives.pathBuilder);
 module.directive('ramlConsole', RAML.Directives.ramlConsole);
 module.directive('ramlConsoleInitializer', RAML.Directives.ramlConsoleInitializer);
 module.directive('resourceSummary', RAML.Directives.resourceSummary);
+module.directive('tab', RAML.Directives.tab);
+module.directive('tabset', RAML.Directives.tabset);
 module.directive('tryIt', RAML.Directives.tryIt);
 
-module.controller('TryItController', RAML.Controllers.TryIt);
+module.controller('TryItController', RAML.Controllers.tryIt);
 
 module.filter('yesNo', RAML.Filters.yesNo);
 
 angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache) {
 
+  $templateCache.put("views/api_resources.tmpl.html",
+    "<div class='accordion' role=\"resources\">\n" +
+    "  <div ng-class=\"{expanded: resource.isOpen}\" class='accordion-group' role=\"resource\" ng-repeat=\"resource in api.resources\">\n" +
+    "    <resource-summary class='accordion-heading accordion-toggle' ng-click='resource.isOpen = !resource.isOpen'></resource-summary>\n" +
+    "    <div class='accordion-body' ng-show='resource.isOpen'>\n" +
+    "      <div class='accordion-inner'>\n" +
+    "        <div class='accordion' role=\"methods\">\n" +
+    "          <method ng-repeat=\"method in resource.methods\"></method>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "</div>\n"
+  );
+
+  $templateCache.put("views/documentation.tmpl.html",
+    "<section role='documentation'>\n" +
+    "  <p ng-show=\"method.description\">Description: {{method.description}}</p>\n" +
+    "\n" +
+    "  <tabset>\n" +
+    "    <tab role='documentation-parameters' heading=\"Parameters\" disabled=\"!documentation.hasParameterDocumentation\">\n" +
+    "      <parameter-table heading='Headers' role='headers' parameters='method.headers'></parameter-table>\n" +
+    "      <parameter-table heading='URI Parameters' role='uri-parameters' parameters='resource.uriParameters'></parameter-table>\n" +
+    "      <parameter-table heading='Query Parameters' role='query-parameters' parameters='method.queryParameters'></parameter-table>\n" +
+    "      <parameter-table heading='Form Parameters' role='form-parameters' parameters='method.body[\"application/x-www-form-urlencoded\"].formParameters'></parameter-table>\n" +
+    "      <parameter-table heading='Multipart Form Parameters' role='multipart-form-parameters' parameters='method.body[\"multipart/form-data\"].formParameters'></parameter-table>\n" +
+    "\n" +
+    "    </tab>\n" +
+    "    <tab role='documentation-requests' heading=\"Requests\" active='documentation.requestsActive' disabled=\"!documentation.hasRequestDocumentation\">\n" +
+    "      <div ng-repeat=\"(mediaType, definition) in method.body track by mediaType\">\n" +
+    "        <h2>{{mediaType}}</h2>\n" +
+    "        <div ng-if=\"definition.schema\">\n" +
+    "          <h3>Request Schema</h3>\n" +
+    "          <div class=\"code\" code-mirror=\"definition.schema\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
+    "        </div>\n" +
+    "        <div ng-if=\"definition.example\">\n" +
+    "          <h3>Example Request</h3>\n" +
+    "          <div class=\"code\" code-mirror=\"definition.example\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "    </tab>\n" +
+    "    <tab role='documentation-responses' heading=\"Responses\" active='documentation.responsesActive' disabled='!documentation.hasResponseDocumentation'>\n" +
+    "      <h2>Responses</h2>\n" +
+    "      <div ng-repeat='(responseCode, response) in method.responses'>\n" +
+    "        <div collapsible>\n" +
+    "          <div collapsible-toggle>\n" +
+    "            <h3>\n" +
+    "              <a href=\"\">\n" +
+    "                <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
+    "                {{responseCode}}\n" +
+    "              </a>\n" +
+    "            </h3>\n" +
+    "          </div>\n" +
+    "        <div collapsible-content>\n" +
+    "          <section role='response'>\n" +
+    "            <p markdown='response.description'></p>\n" +
+    "            <div ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
+    "              <h2>{{mediaType}}</h2>\n" +
+    "              <div ng-if=\"definition.schema\">\n" +
+    "                <h3>Response Schema</h3>\n" +
+    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "              </div>\n" +
+    "              <div ng-if=\"definition.example\">\n" +
+    "                <h3>Example Response</h3>\n" +
+    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "              </div>\n" +
+    "            </div>\n" +
+    "          </section>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "    </tab>\n" +
+    "  </tabset>\n" +
+    "</section>\n"
+  );
+
   $templateCache.put("views/method.tmpl.html",
     "<div class='accordion-group' role=\"method\">\n" +
     "  <div class='accordion-heading accordion-toggle' role=\"methodSummary\" ng-class=\"{expanded: methodView.expanded}\" ng-click='methodView.toggleExpansion()'>\n" +
     "    <i ng-class=\"{'icon-caret-right': !methodView.expanded, 'icon-caret-down': methodView.expanded}\"></i>\n" +
-    "    <span role=\"verb\">{{method.verb}}:</span>\n" +
+    "    <span role=\"verb\">{{method.method}}:</span>\n" +
     "    <path-builder></path-builder>\n" +
     "    <div class=\"pull-right actions\">\n" +
     "      <button role=\"try-it-tab\" class=\"btn\" ng-click=\"methodView.openTab('tryIt', $event)\">Try It</button>\n" +
@@ -379,17 +765,22 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "  </div>\n" +
     "  <div class='accordion-body' ng-show='methodView.expanded'>\n" +
     "    <div class='accordion-inner'>\n" +
-    "      <section role='documentation' ng-show=\"methodView.currentTab == 'documentation'\">\n" +
-    "        <p ng-show=\"method.description\">Description: {{method.description}}</p>\n" +
-    "\n" +
-    "        <parameter-table heading='URI Parameters' role='uri-parameters' parameters='resource.uriParameters'></parameter-table>\n" +
-    "        <parameter-table heading='Query Parameters' role='query-parameters' parameters='method.queryParameters'></parameter-table>\n" +
-    "      </section>\n" +
+    "      <documentation ng-show=\"methodView.currentTab == 'documentation'\"></documentation>\n" +
     "\n" +
     "      <try-it ng-show=\"methodView.currentTab == 'tryIt'\"></try-it>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
+  );
+
+  $templateCache.put("views/named_parameters.tmpl.html",
+    "<fieldset class='labelled-inline' ng-show=\"parameters\">\n" +
+    "  <legend>{{heading}}</legend>\n" +
+    "  <div class=\"control-group\" ng-repeat=\"(parameterName, parameter) in parameters track by parameterName\">\n" +
+    "    <label for=\"{{paremeterName}}\">{{parameter.displayName}}</label>\n" +
+    "    <input type=\"text\" name=\"{{parameterName}}\" ng-model='requestData[parameterName]'/>\n" +
+    "  </div>\n" +
+    "</fieldset>\n"
   );
 
   $templateCache.put("views/parameter_table.tmpl.html",
@@ -449,19 +840,16 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    {{parseError}}\n" +
     "  </section>\n" +
     "\n" +
-    "  <h1>{{api.title}}</h1>\n" +
+    "  <h1 id=\"api-title\">{{api.title}}</h1>\n" +
     "\n" +
-    "  <div class='accordion' role=\"resources\">\n" +
-    "    <div ng-class=\"{expanded: resource.isOpen}\" class='accordion-group' role=\"resource\" ng-repeat=\"resource in api.resources\">\n" +
-    "      <resource-summary class='accordion-heading accordion-toggle' ng-click='resource.isOpen = !resource.isOpen'></resource-summary>\n" +
-    "      <div class='accordion-body' ng-show='resource.isOpen'>\n" +
-    "        <div class='accordion-inner'>\n" +
-    "          <div class='accordion' role=\"methods\">\n" +
-    "            <method ng-repeat=\"method in resource.methods\"></method>\n" +
-    "          </div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
+    "  <nav id=\"main-nav\" ng-if='ramlConsole.showRootDocumentation()' ng-switch='ramlConsole.view'>\n" +
+    "    <a class=\"btn inverted\" ng-switch-when='rootDocumentation' role=\"view-api-reference\" ng-click='ramlConsole.gotoView(\"apiReference\")'>&larr; API Reference</a>\n" +
+    "    <a class=\"btn inverted\" ng-switch-default role=\"view-root-documentation\" ng-click='ramlConsole.gotoView(\"rootDocumentation\")'>Documentation &rarr;</a>\n" +
+    "  </nav>\n" +
+    "\n" +
+    "  <div id=\"content\" ng-switch='ramlConsole.view'>\n" +
+    "    <ng-include ng-switch-when='rootDocumentation' src=\"'views/root_documentation.tmpl.html'\"></ng-include>\n" +
+    "    <ng-include ng-switch-default src=\"'views/api_resources.tmpl.html'\"></ng-include>\n" +
     "  </div>\n" +
     "</article>\n"
   );
@@ -485,8 +873,37 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "  </ul>\n" +
     "\n" +
     "  <ul role=\"methods\" ng-class=\"{hidden: resource.isOpen}\">\n" +
-    "    <li role=\"{{method}}\" ng-repeat=\"method in resource.methods\">{{method.verb}}</li>\n" +
+    "    <li role=\"{{method}}\" ng-repeat=\"method in resource.methods\">{{method.method}}</li>\n" +
     "  </ul>\n" +
+    "</div>\n"
+  );
+
+  $templateCache.put("views/root_documentation.tmpl.html",
+    "<div role=\"root-documentation\">\n" +
+    "  <section collapsible collapsed ng-repeat=\"document in api.documentation\">\n" +
+    "    <h2 collapsible-toggle>{{document.title}}</h2>\n" +
+    "    <div collapsible-content class=\"content\">\n" +
+    "      <div markdown='document.content'></div>\n" +
+    "    </div>\n" +
+    "  </section>\n" +
+    "</div>\n"
+  );
+
+  $templateCache.put("views/tab.tmpl.html",
+    "<div class=\"tab-pane\" ng-class=\"{active: active, disabled: disabled}\" ng-show=\"active\" ng-transclude>\n" +
+    "\n" +
+    "</div>\n"
+  );
+
+  $templateCache.put("views/tabset.tmpl.html",
+    "<div class=\"tabbable\">\n" +
+    "  <ul class=\"nav nav-tabs\">\n" +
+    "    <li ng-repeat=\"tab in tabs\" ng-class=\"{active: tab.active, disabled: tab.disabled}\">\n" +
+    "      <a ng-click=\"tabset.select(tab)\">{{tab.heading}}</a>\n" +
+    "    </li>\n" +
+    "  </ul>\n" +
+    "\n" +
+    "  <div class=\"tab-content\" ng-transclude></div>\n" +
     "</div>\n"
   );
 
@@ -494,25 +911,24 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "<section class=\"try-it\">\n" +
     "\n" +
     "  <form>\n" +
-    "    <fieldset class='labelled-inline'>\n" +
-    "      <legend ng-show='apiClient.hasQueryParameters()'>Query Parameters</legend>\n" +
-    "      <div class=\"control-group\" ng-repeat=\"(paramName,paramParameters) in method.queryParameters track by paramName\">\n" +
-    "        <label for=\"{{paramName}}\">{{paramParameters.displayName}}</label>\n" +
-    "        <input type=\"text\" name=\"{{paramName}}\" ng-model='apiClient.queryParameters[paramName]'/>\n" +
-    "      </div>\n" +
-    "    </fieldset>\n" +
+    "    <named-parameters heading=\"Headers\" parameters=\"method.headers\" request-data=\"apiClient.headers\"></named-parameters>\n" +
+    "    <named-parameters heading=\"Query Parameters\" parameters=\"method.queryParameters\" request-data=\"apiClient.queryParameters\"></named-parameters>\n" +
     "\n" +
-    "    <fieldset>\n" +
-    "      <legend>Body</legend>\n" +
-    "      <fieldset class=\"media-types\" ng-show=\"apiClient.supportsMediaType\">\n" +
-    "        <span class=\"radio-group-label\">Content Type</span>\n" +
-    "        <label class=\"radio\" ng-repeat=\"(mediaType, _) in method.body track by mediaType\">\n" +
-    "          <input type=\"radio\" name=\"media-type\" value=\"{{mediaType}}\" ng-model=\"apiClient.mediaType\">\n" +
-    "          {{mediaType}}\n" +
-    "        </label>\n" +
-    "      </fieldset>\n" +
-    "      <textarea name=\"body\" ng-model='apiClient.body' ng-model=\"apiClient.body\"></textarea>\n" +
+    "    <fieldset class=\"media-types\" ng-show=\"apiClient.supportsMediaType\">\n" +
+    "      <span class=\"radio-group-label\">Content Type</span>\n" +
+    "      <label class=\"radio\" ng-repeat=\"(mediaType, _) in method.body track by mediaType\">\n" +
+    "        <input type=\"radio\" name=\"media-type\" value=\"{{mediaType}}\" ng-model=\"apiClient.mediaType\">\n" +
+    "        {{mediaType}}\n" +
+    "      </label>\n" +
     "    </fieldset>\n" +
+    "    <div class=\"request-body\" ng-show=\"method.body\">\n" +
+    "      <fieldset ng-show=\"apiClient.showBody()\">\n" +
+    "        <legend>Body</legend>\n" +
+    "        <textarea name=\"body\" ng-model='apiClient.body' ng-model=\"apiClient.body\"></textarea>\n" +
+    "      </fieldset>\n" +
+    "      <named-parameters heading='Form Parameters' parameters='method.body[\"application/x-www-form-urlencoded\"].formParameters' request-data=\"apiClient.formParameters\" ng-if=\"apiClient.showUrlencodedForm()\"></named-parameters>\n" +
+    "      <named-parameters heading='Form Parameters' parameters='method.body[\"multipart/form-data\"].formParameters' request-data=\"apiClient.formParameters\" ng-if=\"apiClient.showMultipartForm()\"></named-parameters>\n" +
+    "    </div>\n" +
     "\n" +
     "    <div class=\"form-actions\">\n" +
     "      <button role=\"try-it\" class=\"btn inverted\" ng-click=\"apiClient.execute()\">\n" +
@@ -521,8 +937,13 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    </div>\n" +
     "  </form>\n" +
     "\n" +
-    "  <div class=\"response\" ng-show=\"apiClient.response\">\n" +
+    "  <div class=\"response\" ng-if=\"apiClient.response\">\n" +
     "    <h3>Response</h3>\n" +
+    "    <div class=\"request-url\">\n" +
+    "      <h4>Request URL</h4>\n" +
+    "      <span class=\"response-value\">{{apiClient.response.requestUrl}}</span>\n" +
+    "    </div>\n" +
+    "\n" +
     "    <div class=\"status\">\n" +
     "      <h4>Status</h4>\n" +
     "      <span class=\"response-value\">{{apiClient.response.status}}</span>\n" +
@@ -539,7 +960,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    <div class=\"body\">\n" +
     "      <h4>Body</h4>\n" +
     "      <div class=\"response-value\">\n" +
-    "        {{apiClient.response.body}}\n" +
+    "        <div class=\"code\" mode='{{apiClient.response.contentType}}' code-mirror=\"apiClient.response.body\" visible=\"apiClient.response.body\"></div>\n" +
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
