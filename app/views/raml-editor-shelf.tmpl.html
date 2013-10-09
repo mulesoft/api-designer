@@ -1,5 +1,5 @@
 <ul role="sections" ng-controller="ramlEditorShelf">
-  <li role="section" ng-repeat="section in model.sections | orderBy:'name'">
+  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">
     {{section.name}}&nbsp;({{section.items.length}})
     <ul role="items">
       <li ng-repeat="item in section.items" ng-click="itemClick(item)">{{item.name}}</li>
