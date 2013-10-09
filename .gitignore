@@ -10,3 +10,4 @@ bower_components
 .idea
 coverage
 selenium
+editor-functional-tests/test/config.js
