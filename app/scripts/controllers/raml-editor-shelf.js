@@ -41,7 +41,7 @@ angular.module('ramlEditorApp')
           'responses',
           'security',
           'resources',
-          'traits and resourcetypes'
+          'traits and types'
         ].indexOf(section.name.toLowerCase());
 
       return (index === -1) ? index.length : index;

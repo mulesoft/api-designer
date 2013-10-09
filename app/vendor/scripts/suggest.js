@@ -369,7 +369,7 @@ securityCategory = {
 };
 
 traitsAndResourceTypesCategory = {
-  category: 'traits and resourceTypes'
+  category: 'traits and types'
 };
 
 resourcesCategory = {
@@ -526,13 +526,9 @@ settingAlternative = settingAlternative.concat([
   })
 ]);
 
-securityType = new Tuple(new ConstantString('type'), new Alternatives(new ConstantString('OAuth 1.0'), new ConstantString('OAuth 2.0'), new ConstantString('Basic Authentication'), new ConstantString('Digest Authentication'), stringNode), {
-  category: 'security'
-});
+securityType = new Tuple(new ConstantString('type'), new Alternatives(new ConstantString('OAuth 1.0'), new ConstantString('OAuth 2.0'), new ConstantString('Basic Authentication'), new ConstantString('Digest Authentication'), stringNode), securityCategory);
 
-describedBy = new Tuple(new ConstantString('describedBy'), new Alternatives(headers, queryParameters, responses), {
-  category: 'security'
-});
+describedBy = new Tuple(new ConstantString('describedBy'), new Alternatives(headers, queryParameters, responses), securityCategory);
 
 settings = new Tuple(new ConstantString('settings'), (function(func, args, ctor) {
   ctor.prototype = func.prototype;
@@ -542,7 +538,7 @@ settings = new Tuple(new ConstantString('settings'), (function(func, args, ctor)
 
 securitySchemesDefinition = new Tuple(stringNode, new Multiple(new Alternatives(description, securityType, settings, describedBy)));
 
-securitySchemes = new Tuple(new ConstantString('securitySchemes'), securitySchemesDefinition);
+securitySchemes = new Tuple(new ConstantString('securitySchemes'), securitySchemesDefinition, securityCategory);
 
 rootElement = new Alternatives(title, version, schemas, baseUri, baseUriParameters, mediaType, documentation, resource, traits, resourceTypes, securitySchemes, securedBy, protocols);
 

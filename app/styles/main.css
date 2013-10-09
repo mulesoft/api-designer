@@ -294,8 +294,7 @@ div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] {
   margin-left: 0px;
   margin-top: 13px;
   padding-right: 10px;
-  height: 107px;
-  overflow: auto;
+  min-height: 56px;
 }
 
 div[role=shelf]:not(.expanded) ul[role=sections] > li[role=section] > ul[role=items] {
