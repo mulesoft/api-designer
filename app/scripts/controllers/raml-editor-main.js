@@ -8,7 +8,7 @@ angular.module('ramlEditorApp')
     $scope, safeApply, ramlHint, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
     config) {
-    var editor, currentUpdateTimer, saveTimer;
+    var CodeMirror = codeMirror, editor, currentUpdateTimer, saveTimer;
 
     $scope.consoleSettings = { displayTryIt: false };
 
@@ -141,7 +141,7 @@ angular.module('ramlEditorApp')
 
       editor = codeMirror.initEditor();
 
-      editor.on('update', function (cm) {
+      editor.on('update', function () {
 
         if (currentUpdateTimer) {
           clearTimeout(currentUpdateTimer);
@@ -152,7 +152,7 @@ angular.module('ramlEditorApp')
         }, UPDATE_RESPONSIVENESS_INTERVAL);
       });
 
-      editor.on('change', function (cm, change) {
+      editor.on('change', function (cm) {
         $scope.triggerAutocomplete(cm);
       });
 

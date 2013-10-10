@@ -246,13 +246,14 @@ angular.module('raml')
 
           // FIXME Use editor.indentLine to handle the indentation!
           return {
-            text: e + ':' + padding,
-            displayText: e,
-            category: suggestion.metadata.category,
-            render: function (element, self, data) {
-              element.innerHTML = '<div>' + data.displayText + '</div>' +
-                '<div class="category">' + data.category + '</div>';
-          }};
+              text: e + ':' + padding,
+              displayText: e,
+              category: suggestion.metadata.category,
+              render: function (element, self, data) {
+                element.innerHTML = '<div>' + data.displayText + '</div>' +
+                  '<div class="category">' + data.category + '</div>';
+              }
+            };
         }).filter(function (e) {
           if (curWord) {
             return e && e.text.indexOf(curWord) === 0;
