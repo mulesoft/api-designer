@@ -97,7 +97,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                     });                  
                 });                 
 
-                it('should fail: document must be a mapping ---', function(done) {
+                it('should fail: document must be a map---', function(done) {
                     ptor.get(ramlUrl);
                     var definition = [
                         '#%RAML 0.8',
@@ -106,13 +106,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                     editorHelper.setValue(definition);
                     editorHelper.getErrorLineMessage().then(function (list){
                         var line = list[0], message = list[1];
-                        expect(message).to.eql("document must be a mapping");
+                        expect(message).to.eql("document must be a map");
                         expect(line).to.eql("2");
                         done(); 
                     });         
                 });
 
-                it('should fail: document must be a mapping (titl)', function(done){
+                it('should fail: document must be a map(titl)', function(done){
                     ptor.get(ramlUrl);
                     var definition = [
                         '#%RAML 0.8',
@@ -122,7 +122,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                     editorHelper.setValue(definition);
                     editorHelper.getErrorLineMessage().then(function (list){
                         var line = list[0], message = list[1];
-                        expect(message).to.eql("document must be a mapping");
+                        expect(message).to.eql("document must be a map");
                         expect(line).to.eql("3");
                         done(); 
                     }); 
@@ -143,7 +143,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                     }); 
                 });
 
-                it('should fail: block mapping end ...', function(done){
+                it('should fail: block map end ...', function(done){
                     ptor.get(ramlUrl);
                     var definition = [
                         '#%RAML 0.8',
@@ -295,7 +295,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);                        
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("URI parameter must be a mapping");
+                            expect(message).to.eql("URI parameter must be a map");
                             expect(line).to.eql("7");
                             done(); 
                         });                     
@@ -419,7 +419,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                         }); 
                     });
                     
-                    it('should fail: each documentation section must be a mapping', function(done){
+                    it('should fail: each documentation section must be a map', function(done){
                         ptor.get(ramlUrl);
                         var definition = [
                             '#%RAML 0.8',
@@ -431,7 +431,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);    
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("each documentation section must be a mapping");
+                            expect(message).to.eql("each documentation section must be a map");
                             expect(line).to.eql("5");
                             done(); 
                         });                 
@@ -609,7 +609,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                         });
                     });
 
-                    it('should fail: array as key - trait', function(done){ //RT-313
+                    it.skip('should fail: array as key - trait - RT-313', function(done){ //RT-313
                         ptor.get(ramlUrl);
                         var definition = [
                             '#%RAML 0.8',
@@ -715,13 +715,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);   
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("invalid resourceType definition, it must be a mapping");
+                            expect(message).to.eql("invalid resourceType definition, it must be a map");
                             expect(line).to.eql("6");
                             done(); 
                         });                                     
                     });
 
-                    it('should fail: it must be a mapping', function(done){
+                    it('should fail: it must be a map', function(done){
                         ptor.get(ramlUrl);
                         var definition = [
                             '#%RAML 0.8',
@@ -733,7 +733,7 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("invalid resourceType definition, it must be a mapping");
+                            expect(message).to.eql("invalid resourceType definition, it must be a map");
                             expect(line).to.eql("5");
                             done(); 
                         });                                     
