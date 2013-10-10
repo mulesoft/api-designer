@@ -193,7 +193,7 @@
 
     if (this.data.list[0]) {
       this.removeGhost();
-      this.ghost = new Ghost(this, this.data, this.data.list[0].displayText);
+      this.ghost = new Ghost(this, this.data, this.data.list[0].displayText, this.pick.bind(this));
     }
 
     cm.addKeyMap(this.keyMap = buildKeyMap(options, {
