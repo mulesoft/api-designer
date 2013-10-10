@@ -234,29 +234,32 @@ angular.module('raml')
       var editorState = hinter.getEditorState(editor),
           curWord = editorState.curWord,
           currLineTabCount = editorState.currLineTabCount,
-          start = editorState.start, end = editorState.end;
-      var alternatives = hinter.getAlternatives(editor);
+          start = editorState.start,
+          end = editorState.end,
+          alternatives = hinter.getAlternatives(editor),
+          list;
 
-      var list = alternatives.keys.map(function (e) {
-        var suggestion = alternatives.values.suggestions[e],
-          node = suggestion.open && suggestion.open(),
-          padding = hinter.getPadding(node, currLineTabCount);
+      list = alternatives.keys.map(function (e) {
+          var suggestion = alternatives.values.suggestions[e],
+              node = suggestion.open && suggestion.open(),
+              padding = hinter.getPadding(node, currLineTabCount);
 
-        // FIXME Use editor.indentLine to handle the indentation!
-        return {text: e + ':' + padding,
-                displayText: e,
-                category: suggestion.metadata.category,
-                render: function (element, self, data) {
-                  element.innerHTML = '<div>' + data.displayText +
-                  '</div><div class="category">' +
-                    data.category + '</div>';
-                }};
-      }).filter(function(e) {
-        if (curWord) {
-          return e && e.text.indexOf(curWord) === 0;
-        }
-        return true;
-      }) || [];
+          // FIXME Use editor.indentLine to handle the indentation!
+          return {
+            text: e + ':' + padding,
+            displayText: e,
+            category: suggestion.metadata.category,
+            render: function (element, self, data) {
+              element.innerHTML = '<div>' + data.displayText + '</div>' +
+                '<div class="category">' + data.category + '</div>';
+          }};
+        }).filter(function (e) {
+          if (curWord) {
+            return e && e.text.indexOf(curWord) === 0;
+          }
+
+          return true;
+        }) || [];
 
       return {list: list, from: start, to: end};
     };
