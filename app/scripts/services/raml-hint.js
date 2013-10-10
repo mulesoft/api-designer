@@ -246,7 +246,8 @@ angular.module('raml')
 
           // FIXME Use editor.indentLine to handle the indentation!
           return {
-              text: e + ':' + padding,
+              text: e + ':',
+              padding: padding,
               displayText: e,
               category: suggestion.metadata.category,
               render: function (element, self, data) {
