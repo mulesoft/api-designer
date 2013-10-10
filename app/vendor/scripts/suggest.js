@@ -792,6 +792,9 @@ suggestionTree = transverse(TreeMapToSuggestionTree, root);
 
 suggest = function(root, index, path) {
   var currentSuggestion, key, suggestions, val;
+  if (!path) {
+    return root;
+  }
   key = path[index];
   if (key == null) {
     return root;
