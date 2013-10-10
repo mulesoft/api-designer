@@ -9,3 +9,5 @@ bower_components
 .vimrc
 .idea
 coverage
+selenium
+editor-functional-tests/test/config.js
