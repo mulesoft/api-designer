@@ -9,7 +9,7 @@
 
     if (cm.state.completionActive) cm.state.completionActive.close();
 
-    var completion = cm.state.completionActive = new Completion(cm, getHints, options || {});
+    var completion = cm.state.completionActive = new Completion(cm, getHints, options || { completeSingle: false });
     CodeMirror.signal(cm, "startCompletion", cm);
     if (completion.options.async)
       getHints(cm, function(hints) { completion.showHints(hints); }, completion.options);
@@ -165,6 +165,7 @@
     var left = pos.left, top = pos.bottom, below = true;
     hints.style.left = left + "px";
     hints.style.top = top + "px";
+    hints.style.display = completions.length > 1 ? 'block' : 'none';
     // If we're at the edge of the screen, then we want the menu to appear on the left of the cursor.
     var winW = window.innerWidth || Math.max(document.body.offsetWidth, document.documentElement.offsetWidth);
     var winH = window.innerHeight || Math.max(document.body.offsetHeight, document.documentElement.offsetHeight);
@@ -189,6 +190,11 @@
       hints.style.top = (top = pos.bottom - overlapY) + "px";
     }
     (options.container || document.body).appendChild(hints);
+
+    if (this.data.list[0]) {
+      this.removeGhost();
+      this.ghost = new Ghost(this, this.data, this.data.list[0].displayText);
+    }
 
     cm.addKeyMap(this.keyMap = buildKeyMap(options, {
       moveFocus: function(n) { widget.changeActive(widget.selectedHint + n); },
@@ -238,6 +244,7 @@
       this.completion.widget = null;
       this.hints.parentNode.removeChild(this.hints);
       this.completion.cm.removeKeyMap(this.keyMap);
+      this.removeGhost();
 
       var cm = this.completion.cm;
       if (this.completion.options.closeOnUnfocus !== false) {
@@ -258,6 +265,10 @@
       node.className = node.className.replace(" CodeMirror-hint-active", "");
       node = this.hints.childNodes[this.selectedHint = i];
       node.className += " CodeMirror-hint-active";
+
+      this.removeGhost();
+      this.ghost = new Ghost(this, this.data, this.data.list[i].displayText, this.pick.bind(this));
+
       if (node.offsetTop < this.hints.scrollTop)
         this.hints.scrollTop = node.offsetTop - 3;
       else if (node.offsetTop + node.offsetHeight > this.hints.scrollTop + this.hints.clientHeight)
@@ -267,6 +278,67 @@
 
     screenAmount: function() {
       return Math.floor(this.hints.clientHeight / this.hints.firstChild.offsetHeight) || 1;
+    },
+
+    removeGhost: function() {
+      if (!this.ghost) { return; }
+      this.ghost.remove();
+      return this;
     }
   };
+
+  function Ghost(widget, data, text, accept) {
+    var that = this;
+
+    this.cm         = widget.completion.cm;
+    this.data       = data;
+    this.widget     = widget;
+    this.completion = widget.completion;
+
+    this.cm.addKeyMap(this.keyMap = {
+      'Tab':   accept || function () { that.accept(); },
+      'Right': accept || function () { that.accept(); }
+    });
+
+    if (!text) { return this.remove(); }
+
+    // At the moment, the ghost is going to assume the prefix text is accurate
+    var suffix = this.suffix = text.substr(this.data.to.ch - this.data.from.ch);
+
+    if (!suffix.length) { return this.remove(); }
+
+    // Creates the ghost element to be styled.
+    var ghostHint = document.createElement('span');
+    ghostHint.className = 'CodeMirror-hint-ghost';
+    ghostHint.appendChild(document.createTextNode(suffix));
+
+    // Abuse the bookmark feature of CodeMirror to achieve the desired completion
+    // effect without modifying source code.
+    this._ghost = this.cm.setBookmark(this.data.to, {
+      widget:     ghostHint,
+      insertLeft: true
+    });
+  }
+
+  Ghost.prototype = {
+    accept: function () {
+      if (this.suffix && this.data) {
+        this.cm.replaceRange(this.suffix, this.data.to, this.data.to);
+      }
+
+      return this.remove();
+    },
+
+    remove: function () {
+      if (this._ghost) { this._ghost.clear(); }
+
+      this.cm.removeKeyMap(this.keyMap);
+      delete this.ghost;
+      delete this.suffix;
+      delete this.widget.ghost;
+
+      return this;
+    }
+  };
+
 })();

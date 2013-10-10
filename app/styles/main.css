@@ -454,6 +454,14 @@ div[role=raml-editor].light .cm-s-solarized.cm-s-dark .CodeMirror-selected {
   background: #ddd;
 }
 
+.CodeMirror-code .CodeMirror-hint-ghost {
+  color: #777
+}
+
+div[role=raml-editor].light .CodeMirror-code .CodeMirror-hint-ghost {
+  color: #bbb
+}
+
 .CodeMirror-hints {
   background: rgba(19,33,40,1);
   border-radius: 0px;
