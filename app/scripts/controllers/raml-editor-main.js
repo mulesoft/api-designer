@@ -5,11 +5,10 @@ angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
-    $scope, safeApply, ramlParser,
+    $scope, safeApply, ramlHint, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
     config) {
     var editor, currentUpdateTimer, saveTimer;
-
 
     $scope.consoleSettings = { displayTryIt: false };
 
@@ -25,6 +24,7 @@ angular.module('ramlEditorApp')
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
       var file = $scope.file;
+
       if (source === $scope.definition) {
         return;
       }
@@ -36,6 +36,20 @@ angular.module('ramlEditorApp')
       $scope.firstLoad = false;
       $scope.definition = source;
       eventService.broadcast('event:raml-source-updated', $scope.definition);
+    };
+
+    $scope.triggerAutocomplete = function (cm) {
+      var editorState = ramlHint.getEditorState(cm) || {},
+          curLine = editorState.curLine || '',
+          trimmedCurLine = curLine.trim(),
+          end = editorState.end ? editorState.end.ch : 0,
+          lastChar = trimmedCurLine[trimmedCurLine.length - 1],
+          firstChar = trimmedCurLine[0],
+          currentPosIsLastChar = curLine.length === end;
+
+      if (curLine && currentPosIsLastChar && lastChar !== ':' && firstChar !== '/') {
+        CodeMirror.showHint(cm, CodeMirror.hint.javascript);
+      }
     };
 
     eventService.on('event:raml-source-updated', function (e, args) {
@@ -84,7 +98,6 @@ angular.module('ramlEditorApp')
       return $scope.file && $scope.file.dirty;
     };
 
-
     $scope.save = function () {
       if ($scope.canSave()) {
         $scope.file.contents = editor.getValue();
@@ -128,7 +141,8 @@ angular.module('ramlEditorApp')
 
       editor = codeMirror.initEditor();
 
-      editor.on('update', function () {
+      editor.on('update', function (cm) {
+
         if (currentUpdateTimer) {
           clearTimeout(currentUpdateTimer);
         }
@@ -136,6 +150,10 @@ angular.module('ramlEditorApp')
           $scope.sourceUpdated();
           currentUpdateTimer = undefined;
         }, UPDATE_RESPONSIVENESS_INTERVAL);
+      });
+
+      editor.on('change', function (cm, change) {
+        $scope.triggerAutocomplete(cm);
       });
 
       setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
