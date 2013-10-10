@@ -8,7 +8,7 @@ angular.module('ramlEditorApp')
     $scope, safeApply, ramlHint, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
     config) {
-    var CodeMirror = codeMirror, editor, currentUpdateTimer, saveTimer;
+    var CodeMirror = codeMirror.CodeMirror, editor, currentUpdateTimer, saveTimer;
 
     $scope.consoleSettings = { displayTryIt: false };
 
