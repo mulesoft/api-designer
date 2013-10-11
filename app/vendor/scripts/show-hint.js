@@ -9,7 +9,7 @@
 
     if (cm.state.completionActive) cm.state.completionActive.close();
 
-    var completion = cm.state.completionActive = new Completion(cm, getHints, options || { completeSingle: false });
+    var completion = cm.state.completionActive = new Completion(cm, getHints, options || {});
     CodeMirror.signal(cm, "startCompletion", cm);
     if (completion.options.async)
       getHints(cm, function(hints) { completion.showHints(hints); }, completion.options);
@@ -48,7 +48,7 @@
     showHints: function(data) {
       if (!data || !data.list.length || !this.active()) return this.close();
 
-      if (this.options.completeSingle != false && data.list.length == 1)
+      if (!this.options.ghosting && this.options.completeSingle != false && data.list.length == 1)
         this.pick(data, 0);
       else
         this.showWidget(data);
@@ -144,6 +144,8 @@
   function Widget(completion, data) {
     this.completion = completion;
     this.data = data;
+    this.options = completion.options || {};
+
     var widget = this, cm = completion.cm, options = completion.options;
 
     var hints = this.hints = document.createElement("ul");
@@ -165,7 +167,9 @@
     var left = pos.left, top = pos.bottom, below = true;
     hints.style.left = left + "px";
     hints.style.top = top + "px";
-    hints.style.display = completions.length > 1 ? 'block' : 'none';
+    if (this.options.ghosting) {
+      hints.style.display = completions.length > 1 ? "block" : "none";
+    }
     // If we're at the edge of the screen, then we want the menu to appear on the left of the cursor.
     var winW = window.innerWidth || Math.max(document.body.offsetWidth, document.documentElement.offsetWidth);
     var winH = window.innerHeight || Math.max(document.body.offsetHeight, document.documentElement.offsetHeight);
@@ -190,11 +194,6 @@
       hints.style.top = (top = pos.bottom - overlapY) + "px";
     }
     (options.container || document.body).appendChild(hints);
-
-    if (this.data.list[0]) {
-      this.removeGhost();
-      this.ghost = new Ghost(this, this.data, this.data.list[0].displayText, this.pick.bind(this));
-    }
 
     cm.addKeyMap(this.keyMap = buildKeyMap(options, {
       moveFocus: function(n) { widget.changeActive(widget.selectedHint + n); },
@@ -235,6 +234,12 @@
     });
 
     CodeMirror.signal(data, "select", completions[0], hints.firstChild);
+
+    if (this.options.ghosting && this.data.list[0]) {
+      this.removeGhost();
+      this.ghost = new Ghost(this, this.data, this.data.list[0].displayText, this.pick.bind(this));
+    }
+
     return true;
   }
 
@@ -247,7 +252,7 @@
       this.removeGhost();
 
       var cm = this.completion.cm;
-      if (this.completion.options.closeOnUnfocus !== false) {
+      if (this.options.closeOnUnfocus !== false) {
         cm.off("blur", this.onBlur);
         cm.off("focus", this.onFocus);
       }
@@ -266,8 +271,10 @@
       node = this.hints.childNodes[this.selectedHint = i];
       node.className += " CodeMirror-hint-active";
 
-      this.removeGhost();
-      this.ghost = new Ghost(this, this.data, this.data.list[i].displayText, this.pick.bind(this));
+      if (this.options.ghosting) {
+        this.removeGhost();
+        this.ghost = new Ghost(this, this.data, this.data.list[i].displayText, this.pick.bind(this));
+      }
 
       if (node.offsetTop < this.hints.scrollTop)
         this.hints.scrollTop = node.offsetTop - 3;

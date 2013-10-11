@@ -5,7 +5,7 @@ angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
-    $scope, safeApply, ramlHint, ramlParser,
+    $scope, $rootScope, $window, safeApply, ramlHint, ramlParser,
     ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
     config) {
     var CodeMirror = codeMirror.CodeMirror, editor, currentUpdateTimer, saveTimer;
@@ -15,11 +15,10 @@ angular.module('ramlEditorApp')
     $scope.setTheme = function (theme) {
       config.set('theme', theme);
       config.save();
-      $scope.theme = theme;
+      $scope.theme = $rootScope.theme = theme;
       safeApply();
     };
-
-    window.setTheme = $scope.setTheme;
+    $window.setTheme = $scope.setTheme;
 
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
@@ -48,7 +47,7 @@ angular.module('ramlEditorApp')
           currentPosIsLastChar = curLine.length === end;
 
       if (curLine && currentPosIsLastChar && !isKey && ['/', '#', '-'].indexOf(firstChar) === -1 ) {
-        CodeMirror.showHint(cm, CodeMirror.hint.javascript);
+        CodeMirror.showHint(cm, CodeMirror.hint.javascript, { ghosting: true });
       }
     };
 
@@ -133,7 +132,7 @@ angular.module('ramlEditorApp')
       $scope.documentation = '';
       $scope.baseUri = '';
       $scope.hasErrors = false;
-      $scope.theme = config.get('theme', '');
+      $scope.theme = $rootScope.theme = config.get('theme', '');
       $scope.shelf = {};
       $scope.shelf.collapsed =
         JSON.parse(config.get('shelf.collapsed', false));
