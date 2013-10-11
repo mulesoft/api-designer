@@ -248,7 +248,7 @@ angular.module('raml')
           return {
               text: e + ':',
               padding: padding,
-              displayText: e,
+              displayText: e + ':',
               category: suggestion.metadata.category,
               render: function (element, self, data) {
                 element.innerHTML = '<div>' + data.displayText + '</div>' +
