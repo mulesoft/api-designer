@@ -222,7 +222,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       };
 
       CodeMirror.commands.autocomplete = function (cm) {
-        CodeMirror.showHint(cm, CodeMirror.hint.javascript);
+        CodeMirror.showHint(cm, CodeMirror.hint.javascript, { ghosting: true });
       };
 
       CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);

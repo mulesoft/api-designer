@@ -233,7 +233,6 @@ angular.module('raml')
     hinter.autocompleteHelper = function(editor) {
       var editorState = hinter.getEditorState(editor),
           curWord = editorState.curWord,
-          currLineTabCount = editorState.currLineTabCount,
           start = editorState.start,
           end = editorState.end,
           alternatives = hinter.getAlternatives(editor),
@@ -241,14 +240,11 @@ angular.module('raml')
 
       list = alternatives.keys.map(function (e) {
           var suggestion = alternatives.values.suggestions[e],
-              node = suggestion.open && suggestion.open(),
-              padding = hinter.getPadding(node, currLineTabCount);
+              text = e + ':';
 
-          // FIXME Use editor.indentLine to handle the indentation!
           return {
-              text: e + ':',
-              padding: padding,
-              displayText: e,
+              text: text,
+              displayText: text,
               category: suggestion.metadata.category,
               render: function (element, self, data) {
                 element.innerHTML = '<div>' + data.displayText + '</div>' +
