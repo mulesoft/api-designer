@@ -97,8 +97,6 @@ http://ethanschoonover.com/solarized/img/solarized-palette.png
 .cm-s-solarized .cm-quote { color: #93a1a1; }
 .cm-s-solarized .cm-hr {
   color: transparent;
-  border-top: 1px solid #586e75;
-  display: block;
 }
 .cm-s-solarized .cm-link { color: #93a1a1; cursor: pointer; }
 .cm-s-solarized .cm-special { color: #6c71c4; }
