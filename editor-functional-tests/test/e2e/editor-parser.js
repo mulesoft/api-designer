@@ -637,6 +637,94 @@ describe('RAMLeditor - Parser errors validation',function(){
                         });  
                     });
 
+                    describe('protocols', function(){
+
+                        it('should fail: traits-protocols property already used protocol', function(done){
+                            ptor.get(ramlUrl);
+                            var definition = [
+                                '#%RAML 0.8',
+                                '---',
+                                'title: My API',
+                                'traits:',
+                                '  - hola:',
+                                '    protocols: []',
+                                '    protocols:'
+                            ].join('\\n');
+                            editorHelper.setValue(definition); 
+                            editorHelper.getErrorLineMessage().then(function (list){
+                                var line = list[0], message = list[1];
+                                expect(message).to.eql("property already used: 'protocols'");
+                                expect(line).to.eql("7");
+                                done(); 
+                            });  
+                        });
+
+
+                        it('should fail: protocol property must be an array', function(done){
+
+                            ptor.get(ramlUrl);
+                            var definition = [
+                                '#%RAML 0.8',
+                                '---',
+                                'title: My API',
+                                'traits:',
+                                '  - hola:',
+                                '      protocols:'
+                            ].join('\\n');
+                            editorHelper.setValue(definition); 
+                            editorHelper.getErrorLineMessage().then(function (list){
+                                var line = list[0], message = list[1];
+                                expect(message).to.eql("protocols property must be an array");
+                                expect(line).to.eql("4");
+                                done(); 
+                            });  
+                        });
+
+
+                        it('should fail: protocol value must be a string', function(done){
+
+                            ptor.get(ramlUrl);
+                            var definition = [
+                                '#%RAML 0.8',
+                                '---',
+                                'title: My API',
+                                'traits:',
+                                '  - hola:',
+                                '      protocols:',
+                                '        - '
+                            ].join('\\n');
+                            editorHelper.setValue(definition); 
+                            editorHelper.getErrorLineMessage().then(function (list){
+                                var line = list[0], message = list[1];
+                                expect(message).to.eql("value must be a string");
+                                expect(line).to.eql("7");
+                                done(); 
+                            });  
+                        });
+
+                        it('should fail: only HTTP and HTTPS values are allowed', function(done){
+
+                            ptor.get(ramlUrl);
+                            var definition = [
+                                '#%RAML 0.8',
+                                '---',
+                                'title: My API',
+                                'traits:',                            
+                                '  - hola:',
+                                '      protocols:',
+                                '        - htt'
+                            ].join('\\n');
+                            editorHelper.setValue(definition); 
+                            editorHelper.getErrorLineMessage().then(function (list){
+                                var line = list[0], message = list[1];
+                                expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                expect(line).to.eql("7");
+                                done(); 
+                            });  
+                        });
+
+                    }); // protocols
+
                 }); //traits
 
                 describe('resourceTyoes',function(){
@@ -762,6 +850,116 @@ describe('RAMLeditor - Parser errors validation',function(){
                             done(); 
                         });                                     
                     }); 
+                  
+                    it('should fail: property protocols is invalid in a resourceType', function(done){
+                        ptor.get(ramlUrl);
+                        var definition = [
+                            '#%RAML 0.8',
+                            '---',
+                            'title: My API',
+                            'resourceTypes:',
+                            '  - rt1:',
+                            '      protocols:'
+                                                     
+                        ].join('\\n');
+                        editorHelper.setValue(definition);
+                        editorHelper.getErrorLineMessage().then(function (list){
+                            var line = list[0], message = list[1];
+                            expect(message).to.eql("property: 'protocols' is invalid in a resource type");
+                            expect(line).to.eql("6");
+                            done(); 
+                        });                                     
+                    }); 
+                    
+                    describe('resourceTypes - Methods', function(){
+
+                        describe('protocols', function(){
+                            it('should fail: RTMethods-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    'resourceTypes:',
+                                    '  - hola:',
+                                    '      get:',
+                                    '        protocols: []',
+                                    '        protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("8");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: RTMethods-protocol property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    'resourceTypes:',
+                                    '  - hola:',
+                                    '      get:',
+                                    '        protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: RTMethods-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    'resourceTypes:',
+                                    '  - hola:',
+                                    '      get:',
+                                    '        protocols:',
+                                    '          - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("8");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                  '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    'resourceTypes:',
+                                    '  - hola:',
+                                    '      get:',
+                                    '        protocols:',
+                                    '          - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("8");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
+
+                    }); // RTMethods
 
                 }); //resourceTypes
 
@@ -825,6 +1023,87 @@ describe('RAMLeditor - Parser errors validation',function(){
 
                 }); //securitySchemes
 
+                describe('protocols', function(){
+
+                    it('should fail: root property already used protocol', function(done){
+
+                        ptor.get(ramlUrl);
+                        var definition = [
+                            '#%RAML 0.8',
+                            '---',
+                            'title: My API',
+                            'protocols: []',
+                            'protocols:'
+                        ].join('\\n');
+                        editorHelper.setValue(definition); 
+                        editorHelper.getErrorLineMessage().then(function (list){
+                            var line = list[0], message = list[1];
+                            expect(message).to.eql("root property already used: 'protocols'");
+                            expect(line).to.eql("5");
+                            done(); 
+                        });  
+                    });
+
+
+                    it('should fail: protocol property must be an array', function(done){
+
+                        ptor.get(ramlUrl);
+                        var definition = [
+                            '#%RAML 0.8',
+                            '---',
+                            'title: My API',
+                            'protocols:'
+                        ].join('\\n');
+                        editorHelper.setValue(definition); 
+                        editorHelper.getErrorLineMessage().then(function (list){
+                            var line = list[0], message = list[1];
+                            expect(message).to.eql("protocols property must be an array");
+                            expect(line).to.eql("4");
+                            done(); 
+                        });  
+                    });
+
+
+                    it('should fail: protocol value must be a string', function(done){
+
+                        ptor.get(ramlUrl);
+                        var definition = [
+                            '#%RAML 0.8',
+                            '---',
+                            'title: My API',
+                            'protocols:',
+                            '  - '
+                        ].join('\\n');
+                        editorHelper.setValue(definition); 
+                        editorHelper.getErrorLineMessage().then(function (list){
+                            var line = list[0], message = list[1];
+                            expect(message).to.eql("value must be a string");
+                            expect(line).to.eql("5");
+                            done(); 
+                        });  
+                    });
+
+                    it('should fail: only HTTP and HTTPS values are allowed', function(done){
+
+                        ptor.get(ramlUrl);
+                        var definition = [
+                            '#%RAML 0.8',
+                            '---',
+                            'title: My API',
+                            'protocols:',
+                            '  - htt'
+                        ].join('\\n');
+                        editorHelper.setValue(definition); 
+                        editorHelper.getErrorLineMessage().then(function (list){
+                            var line = list[0], message = list[1];
+                            expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                            expect(line).to.eql("5");
+                            done(); 
+                        });  
+                    });
+
+                }); //protocols
+
             }); //describeRootSection 
 
             describe('Resource', function(){
@@ -862,8 +1141,26 @@ describe('RAMLeditor - Parser errors validation',function(){
                         });
 
                     }); //type
+                        
+                    it('should fail: property protocols is invalid in a resource', function(done){
+                        ptor.get(ramlUrl);
+                        var definition = [
+                            '#%RAML 0.8',
+                            '---',
+                            'title: My API',
+                            '/rt1:',
+                            '  protocols:'                                                    
+                        ].join('\\n');
+                        editorHelper.setValue(definition);
+                        editorHelper.getErrorLineMessage().then(function (list){
+                            var line = list[0], message = list[1];
+                            expect(message).to.eql("property: 'protocols' is invalid in a resource");
+                            expect(line).to.eql("5");
+                            done(); 
+                        });                                     
+                    }); 
 
-                }); // Resource Parameters
+                }); // Resource attributes
                     
                 describe('Methods', function(){
 
@@ -906,6 +1203,90 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 done(); 
                             });                     
                         });
+                        
+                         describe('protocols', function(){
+                            
+                            it('should fail: Rget-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  get:',
+                                    '    protocols: []',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rget-protocol property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  get:',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("6");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rget-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  get:',
+                                    '    protocols:',
+                                    '      - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rget-protocols only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  get:',
+                                    '    protocols:',
+                                    '      - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
+
 
                     }); //get
 
@@ -949,6 +1330,89 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 done(); 
                             });                     
                         });
+                        
+                        describe('protocols', function(){
+                            
+                            it('should fail: Rput-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  put:',
+                                    '    protocols: []',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rput-protocol property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  put:',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("6");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rput-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  put:',
+                                    '    protocols:',
+                                    '      - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rput-protocols only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  put:',
+                                    '    protocols:',
+                                    '      - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
 
                     }); //put
 
@@ -991,6 +1455,89 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 done(); 
                             });                     
                         });
+                       
+                        describe('protocols', function(){
+                            
+                            it('should fail: Rhead-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  head:',
+                                    '    protocols: []',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rhead-protocols property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  head:',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("6");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rhead-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  head:',
+                                    '    protocols:',
+                                    '      - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rhead-protocols only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  head:',
+                                    '    protocols:',
+                                    '      - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
 
                     }); //head
 
@@ -1033,6 +1580,89 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 done(); 
                             });                     
                         });
+                       
+                        describe('protocols', function(){
+                            
+                            it('should fail: Roptions-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  options:',
+                                    '    protocols: []',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Roptions-protocol property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  options:',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("6");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Roptions-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  options:',
+                                    '    protocols:',
+                                    '      - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Roptions-protocols only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  options:',
+                                    '    protocols:',
+                                    '      - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
 
                     }); //options
 
@@ -1075,6 +1705,89 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 done(); 
                             });                     
                         });
+                        
+                        describe('protocols', function(){
+                            
+                            it('should fail: Rpost-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  post:',
+                                    '    protocols: []',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rpost-protocol property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  post:',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("6");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rpost-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  post:',
+                                    '    protocols:',
+                                    '      - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rpost-protocols only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  post:',
+                                    '    protocols:',
+                                    '      - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
 
                     }); //post
 
@@ -1117,7 +1830,89 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 done(); 
                             });                     
                         });
+                        
+                        describe('protocols', function(){
+                            
+                            it('should fail: Rdelete-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  delete:',
+                                    '    protocols: []',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
 
+                            it('should fail: Rdelete-protocol property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  delete:',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("6");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rdelete-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  delete:',
+                                    '    protocols:',
+                                    '      - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rdelete-protocols only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  delete:',
+                                    '    protocols:',
+                                    '      - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
                     }); //delete
 
                     describe('patch',function(){
@@ -1159,6 +1954,89 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 done(); 
                             });
                         });
+
+                        describe('protocols', function(){
+                            
+                            it('should fail: Rpatch-protocols property already used protocol', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  patch:',
+                                    '    protocols: []',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("property already used: 'protocols'");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rpatch-protocol property must be an array', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  patch:',
+                                    '    protocols:'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("protocols property must be an array");
+                                    expect(line).to.eql("6");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rpatch-protocol value must be a string', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  patch:',
+                                    '    protocols:',
+                                    '      - '
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("value must be a string");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                            it('should fail: Rpatch-protocols only HTTP and HTTPS values are allowed', function(done){
+                                ptor.get(ramlUrl);
+                                var definition = [
+                                    '#%RAML 0.8',
+                                    '---',
+                                    'title: My API',
+                                    '/reso:',
+                                    '  patch:',
+                                    '    protocols:',
+                                    '      - htt'
+                                ].join('\\n');
+                                editorHelper.setValue(definition); 
+                                editorHelper.getErrorLineMessage().then(function (list){
+                                    var line = list[0], message = list[1];
+                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
+                                    expect(line).to.eql("7");
+                                    done(); 
+                                });  
+                            });
+
+                        }); // protocols
 
                     }); //patch
 
