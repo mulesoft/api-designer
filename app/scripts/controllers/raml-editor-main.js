@@ -141,7 +141,7 @@ angular.module('ramlEditorApp')
 
       editor = codeMirror.initEditor();
 
-      editor.on('update', function () {
+      editor.on('change', function () {
 
         if (currentUpdateTimer) {
           clearTimeout(currentUpdateTimer);
