@@ -1,13 +1,395 @@
+/**
+* vkBeautify - javascript plugin to pretty-print or minify text in XML, JSON, CSS and SQL formats.
+*  
+* Version - 0.99.00.beta 
+* Copyright (c) 2012 Vadim Kiryukhin
+* vkiryukhin @ gmail.com
+* http://www.eslinstructor.net/vkbeautify/
+* 
+* Dual licensed under the MIT and GPL licenses:
+*   http://www.opensource.org/licenses/mit-license.php
+*   http://www.gnu.org/licenses/gpl.html
+*
+*   Pretty print
+*
+*        vkbeautify.xml(text [,indent_pattern]);
+*        vkbeautify.json(text [,indent_pattern]);
+*        vkbeautify.css(text [,indent_pattern]);
+*        vkbeautify.sql(text [,indent_pattern]);
+*
+*        @text - String; text to beatufy;
+*        @indent_pattern - Integer | String;
+*                Integer:  number of white spaces;
+*                String:   character string to visualize indentation ( can also be a set of white spaces )
+*   Minify
+*
+*        vkbeautify.xmlmin(text [,preserve_comments]);
+*        vkbeautify.jsonmin(text);
+*        vkbeautify.cssmin(text [,preserve_comments]);
+*        vkbeautify.sqlmin(text);
+*
+*        @text - String; text to minify;
+*        @preserve_comments - Bool; [optional];
+*                Set this flag to true to prevent removing comments from @text ( minxml and mincss functions only. )
+*
+*   Examples:
+*        vkbeautify.xml(text); // pretty print XML
+*        vkbeautify.json(text, 4 ); // pretty print JSON
+*        vkbeautify.css(text, '. . . .'); // pretty print CSS
+*        vkbeautify.sql(text, '----'); // pretty print SQL
+*
+*        vkbeautify.xmlmin(text, true);// minify XML, preserve comments
+*        vkbeautify.jsonmin(text);// minify JSON
+*        vkbeautify.cssmin(text);// minify CSS, remove comments ( default )
+*        vkbeautify.sqlmin(text);// minify SQL
+*
+*/
+
+(function() {
+
+function createShiftArr(step) {
+
+	var space = '    ';
+	
+	if ( isNaN(parseInt(step)) ) {  // argument is string
+		space = step;
+	} else { // argument is integer
+		switch(step) {
+			case 1: space = ' '; break;
+			case 2: space = '  '; break;
+			case 3: space = '   '; break;
+			case 4: space = '    '; break;
+			case 5: space = '     '; break;
+			case 6: space = '      '; break;
+			case 7: space = '       '; break;
+			case 8: space = '        '; break;
+			case 9: space = '         '; break;
+			case 10: space = '          '; break;
+			case 11: space = '           '; break;
+			case 12: space = '            '; break;
+		}
+	}
+
+	var shift = ['\n']; // array of shifts
+	for(ix=0;ix<100;ix++){
+		shift.push(shift[ix]+space); 
+	}
+	return shift;
+}
+
+function vkbeautify(){
+	this.step = '    '; // 4 spaces
+	this.shift = createShiftArr(this.step);
+};
+
+vkbeautify.prototype.xml = function(text,step) {
+
+	var ar = text.replace(/>\s{0,}</g,"><")
+				 .replace(/</g,"~::~<")
+				 .replace(/\s*xmlns\:/g,"~::~xmlns:")
+				 .replace(/\s*xmlns\=/g,"~::~xmlns=")
+				 .split('~::~'),
+		len = ar.length,
+		inComment = false,
+		deep = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;
+
+		for(ix=0;ix<len;ix++) {
+			// start comment or <![CDATA[...]]> or <!DOCTYPE //
+			if(ar[ix].search(/<!/) > -1) { 
+				str += shift[deep]+ar[ix];
+				inComment = true; 
+				// end comment  or <![CDATA[...]]> //
+				if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1 || ar[ix].search(/!DOCTYPE/) > -1 ) { 
+					inComment = false; 
+				}
+			} else 
+			// end comment  or <![CDATA[...]]> //
+			if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1) { 
+				str += ar[ix];
+				inComment = false; 
+			} else 
+			// <elm></elm> //
+			if( /^<\w/.exec(ar[ix-1]) && /^<\/\w/.exec(ar[ix]) &&
+				/^<[\w:\-\.\,]+/.exec(ar[ix-1]) == /^<\/[\w:\-\.\,]+/.exec(ar[ix])[0].replace('/','')) { 
+				str += ar[ix];
+				if(!inComment) deep--;
+			} else
+			 // <elm> //
+			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) == -1 && ar[ix].search(/\/>/) == -1 ) {
+				str = !inComment ? str += shift[deep++]+ar[ix] : str += ar[ix];
+			} else 
+			 // <elm>...</elm> //
+			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) > -1) {
+				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
+			} else 
+			// </elm> //
+			if(ar[ix].search(/<\//) > -1) { 
+				str = !inComment ? str += shift[--deep]+ar[ix] : str += ar[ix];
+			} else 
+			// <elm/> //
+			if(ar[ix].search(/\/>/) > -1 ) { 
+				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
+			} else 
+			// <? xml ... ?> //
+			if(ar[ix].search(/<\?/) > -1) { 
+				str += shift[deep]+ar[ix];
+			} else 
+			// xmlns //
+			if( ar[ix].search(/xmlns\:/) > -1  || ar[ix].search(/xmlns\=/) > -1) { 
+				str += shift[deep]+ar[ix];
+			} 
+			
+			else {
+				str += ar[ix];
+			}
+		}
+		
+	return  (str[0] == '\n') ? str.slice(1) : str;
+}
+
+vkbeautify.prototype.json = function(text,step) {
+
+	var step = step ? step : this.step;
+	
+	if (typeof JSON === 'undefined' ) return text; 
+	
+	if ( typeof text === "string" ) return JSON.stringify(JSON.parse(text), null, step);
+	if ( typeof text === "object" ) return JSON.stringify(text, null, step);
+		
+	return text; // text is not string nor object
+}
+
+vkbeautify.prototype.css = function(text, step) {
+
+	var ar = text.replace(/\s{1,}/g,' ')
+				.replace(/\{/g,"{~::~")
+				.replace(/\}/g,"~::~}~::~")
+				.replace(/\;/g,";~::~")
+				.replace(/\/\*/g,"~::~/*")
+				.replace(/\*\//g,"*/~::~")
+				.replace(/~::~\s{0,}~::~/g,"~::~")
+				.split('~::~'),
+		len = ar.length,
+		deep = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;
+		
+		for(ix=0;ix<len;ix++) {
+
+			if( /\{/.exec(ar[ix]))  { 
+				str += shift[deep++]+ar[ix];
+			} else 
+			if( /\}/.exec(ar[ix]))  { 
+				str += shift[--deep]+ar[ix];
+			} else
+			if( /\*\\/.exec(ar[ix]))  { 
+				str += shift[deep]+ar[ix];
+			}
+			else {
+				str += shift[deep]+ar[ix];
+			}
+		}
+		return str.replace(/^\n{1,}/,'');
+}
+
+//----------------------------------------------------------------------------
+
+function isSubquery(str, parenthesisLevel) {
+	return  parenthesisLevel - (str.replace(/\(/g,'').length - str.replace(/\)/g,'').length )
+}
+
+function split_sql(str, tab) {
+
+	return str.replace(/\s{1,}/g," ")
+
+				.replace(/ AND /ig,"~::~"+tab+tab+"AND ")
+				.replace(/ BETWEEN /ig,"~::~"+tab+"BETWEEN ")
+				.replace(/ CASE /ig,"~::~"+tab+"CASE ")
+				.replace(/ ELSE /ig,"~::~"+tab+"ELSE ")
+				.replace(/ END /ig,"~::~"+tab+"END ")
+				.replace(/ FROM /ig,"~::~FROM ")
+				.replace(/ GROUP\s{1,}BY/ig,"~::~GROUP BY ")
+				.replace(/ HAVING /ig,"~::~HAVING ")
+				//.replace(/ SET /ig," SET~::~")
+				.replace(/ IN /ig," IN ")
+				
+				.replace(/ JOIN /ig,"~::~JOIN ")
+				.replace(/ CROSS~::~{1,}JOIN /ig,"~::~CROSS JOIN ")
+				.replace(/ INNER~::~{1,}JOIN /ig,"~::~INNER JOIN ")
+				.replace(/ LEFT~::~{1,}JOIN /ig,"~::~LEFT JOIN ")
+				.replace(/ RIGHT~::~{1,}JOIN /ig,"~::~RIGHT JOIN ")
+				
+				.replace(/ ON /ig,"~::~"+tab+"ON ")
+				.replace(/ OR /ig,"~::~"+tab+tab+"OR ")
+				.replace(/ ORDER\s{1,}BY/ig,"~::~ORDER BY ")
+				.replace(/ OVER /ig,"~::~"+tab+"OVER ")
+
+				.replace(/\(\s{0,}SELECT /ig,"~::~(SELECT ")
+				.replace(/\)\s{0,}SELECT /ig,")~::~SELECT ")
+				
+				.replace(/ THEN /ig," THEN~::~"+tab+"")
+				.replace(/ UNION /ig,"~::~UNION~::~")
+				.replace(/ USING /ig,"~::~USING ")
+				.replace(/ WHEN /ig,"~::~"+tab+"WHEN ")
+				.replace(/ WHERE /ig,"~::~WHERE ")
+				.replace(/ WITH /ig,"~::~WITH ")
+				
+				//.replace(/\,\s{0,}\(/ig,",~::~( ")
+				//.replace(/\,/ig,",~::~"+tab+tab+"")
+
+				.replace(/ ALL /ig," ALL ")
+				.replace(/ AS /ig," AS ")
+				.replace(/ ASC /ig," ASC ")	
+				.replace(/ DESC /ig," DESC ")	
+				.replace(/ DISTINCT /ig," DISTINCT ")
+				.replace(/ EXISTS /ig," EXISTS ")
+				.replace(/ NOT /ig," NOT ")
+				.replace(/ NULL /ig," NULL ")
+				.replace(/ LIKE /ig," LIKE ")
+				.replace(/\s{0,}SELECT /ig,"SELECT ")
+				.replace(/\s{0,}UPDATE /ig,"UPDATE ")
+				.replace(/ SET /ig," SET ")
+							
+				.replace(/~::~{1,}/g,"~::~")
+				.split('~::~');
+}
+
+vkbeautify.prototype.sql = function(text,step) {
+
+	var ar_by_quote = text.replace(/\s{1,}/g," ")
+							.replace(/\'/ig,"~::~\'")
+							.split('~::~'),
+		len = ar_by_quote.length,
+		ar = [],
+		deep = 0,
+		tab = this.step,//+this.step,
+		inComment = true,
+		inQuote = false,
+		parenthesisLevel = 0,
+		str = '',
+		ix = 0,
+		shift = step ? createShiftArr(step) : this.shift;;
+
+		for(ix=0;ix<len;ix++) {
+			if(ix%2) {
+				ar = ar.concat(ar_by_quote[ix]);
+			} else {
+				ar = ar.concat(split_sql(ar_by_quote[ix], tab) );
+			}
+		}
+		
+		len = ar.length;
+		for(ix=0;ix<len;ix++) {
+			
+			parenthesisLevel = isSubquery(ar[ix], parenthesisLevel);
+			
+			if( /\s{0,}\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
+				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
+			} 
+			
+			if( /\s{0,}\s{0,}SET\s{0,}/.exec(ar[ix]))  { 
+				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
+			} 
+			
+			if( /\s{0,}\(\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
+				deep++;
+				str += shift[deep]+ar[ix];
+			} else 
+			if( /\'/.exec(ar[ix]) )  { 
+				if(parenthesisLevel<1 && deep) {
+					deep--;
+				}
+				str += ar[ix];
+			}
+			else  { 
+				str += shift[deep]+ar[ix];
+				if(parenthesisLevel<1 && deep) {
+					deep--;
+				}
+			} 
+			var junk = 0;
+		}
+
+		str = str.replace(/^\n{1,}/,'').replace(/\n{1,}/g,"\n");
+		return str;
+}
+
+
+vkbeautify.prototype.xmlmin = function(text, preserveComments) {
+
+	var str = preserveComments ? text
+							   : text.replace(/\<![ \r\n\t]*(--([^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)\>/g,"")
+									 .replace(/[ \r\n\t]{1,}xmlns/g, ' xmlns');
+	return  str.replace(/>\s{0,}</g,"><"); 
+}
+
+vkbeautify.prototype.jsonmin = function(text) {
+
+	if (typeof JSON === 'undefined' ) return text; 
+	
+	return JSON.stringify(JSON.parse(text), null, 0); 
+				
+}
+
+vkbeautify.prototype.cssmin = function(text, preserveComments) {
+	
+	var str = preserveComments ? text
+							   : text.replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//g,"") ;
+
+	return str.replace(/\s{1,}/g,' ')
+			  .replace(/\{\s{1,}/g,"{")
+			  .replace(/\}\s{1,}/g,"}")
+			  .replace(/\;\s{1,}/g,";")
+			  .replace(/\/\*\s{1,}/g,"/*")
+			  .replace(/\*\/\s{1,}/g,"*/");
+}
+
+vkbeautify.prototype.sqlmin = function(text) {
+	return text.replace(/\s{1,}/g," ").replace(/\s{1,}\(/,"(").replace(/\s{1,}\)/,")");
+}
+
+window.vkbeautify = new vkbeautify();
+
+})();
+
+
 RAML.Inspector = (function() {
   var exports = {};
 
-  var extractResources = function(basePathSegments, api) {
+  function extendMethod(api, method) {
+    method.requiresBasicAuthentication = function() {
+      var required = false,
+          securitySchemes = api.securitySchemes || [],
+          securedBy = this.securedBy || [];
+
+      securitySchemes.forEach(function(scheme) {
+        securedBy.forEach(function(type) {
+          if (scheme[type] && scheme[type].type === "Basic Authentication") {
+            required = true;
+          }
+        });
+      });
+
+      return required;
+    }
+  }
+
+  function extractResources(basePathSegments, api) {
     var resources = [];
 
     api.resources.forEach(function(resource) {
       var pathSegments = basePathSegments.concat(resource.relativeUri);
+      var overview = exports.resourceOverviewSource(pathSegments, resource);
+      overview.methods.forEach(function(method) {
+        extendMethod(api, method);
+      });
 
-      resources.push(exports.resourceOverviewSource(pathSegments, resource));
+      resources.push(overview);
+
       if (resource.resources) {
         extracted = extractResources(pathSegments, resource);
         extracted.forEach(function(resource) {
@@ -20,10 +402,12 @@ RAML.Inspector = (function() {
   };
 
   exports.resourceOverviewSource = function(pathSegments, resource) {
+    var methods = (resource.methods || []);
+
     return {
       pathSegments: pathSegments,
       name: resource.displayName,
-      methods: (resource.methods || []),
+      methods: methods,
       traits: resource.is,
       resourceType: resource.type,
       uriParameters: resource.uriParameters
@@ -54,7 +438,7 @@ RAML.Inspector = (function() {
   }
 
   PathSegment.prototype.toString = function() {
-    return this.text;
+    return this.templated ? this.text.replace(/[\/{}]/g, '') : this.text;
   }
 
   PathSegment.prototype.replaceWith = function(value) {
@@ -130,16 +514,22 @@ RAML.Inspector = (function() {
     return Object.keys(object || {}).length == 0;
   }
 
-  TryIt = function($scope, $http) {
+  TryIt = function($scope, $http, Base64) {
     this.baseUri = $scope.api.baseUri || '';
     this.pathBuilder = $scope.method.pathBuilder;
 
     this.http = $http;
+    this.encoder = Base64;
     this.httpMethod = $scope.method.method;
     this.headers = {};
     this.queryParameters = {};
     this.formParameters = {};
     this.supportsCustomBody = this.supportsFormUrlencoded = this.supportsFormData = false;
+
+    if ($scope.method.requiresBasicAuthentication()) {
+      this.basicauth = {};
+    }
+
     for (mediaType in $scope.method.body) {
       this.supportsMediaType = true;
 
@@ -176,8 +566,8 @@ RAML.Inspector = (function() {
   }
 
   TryIt.prototype.execute = function() {
-    var url = this.baseUri + this.pathBuilder(this.pathBuilder);
     var response = this.response = {};
+    var url = this.response.requestUrl = this.baseUri + this.pathBuilder(this.pathBuilder);
     var requestOptions = { url: url, method: this.httpMethod }
 
     if (!isEmpty(this.queryParameters)) {
@@ -193,27 +583,47 @@ RAML.Inspector = (function() {
     }
 
     if (this.mediaType) {
-      requestOptions.headers = requestOptions || {};
+      requestOptions.headers = requestOptions.headers || {};
       requestOptions.headers['Content-Type'] = this.mediaType;
       requestOptions.data = this.body;
     }
 
-    this.http(requestOptions).then(function(httpResponse) {
-      response.body = httpResponse.data;
-      response.requestUrl = url,
-      response.status = httpResponse.status,
-      response.headers = httpResponse.headers();
-      if (response.headers['content-type']) {
-        response.contentType = response.headers['content-type'].split(';')[0];
-      }
-    });
+    if (this.basicauth) {
+      var encoded = this.encoder.encode(this.basicauth.username + ":" + this.basicauth.password);
+      requestOptions.headers = requestOptions.headers || {};
+      requestOptions.headers['Authorization'] = "Basic " + encoded;
+    }
+
+    this.http(requestOptions).then(
+      this.handleResponse.bind(this), this.handleResponse.bind(this)
+    );
   };
+
+  TryIt.prototype.handleResponse = function(httpResponse) {
+    this.response.body = httpResponse.data,
+      this.response.status = httpResponse.status,
+      this.response.headers = httpResponse.headers();
+
+    if (this.response.headers['content-type']) {
+      this.response.contentType = this.response.headers['content-type'].split(';')[0];
+    }
+  }
 
   RAML.Controllers.tryIt = TryIt;
 })();
 
 (function() {
   RAML.Directives = {};
+})();
+
+(function() {
+  RAML.Directives.basicAuth = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'views/basic_auth.tmpl.html',
+      replace: true
+    }
+  }
 })();
 
 (function() {
@@ -392,18 +802,10 @@ RAML.Inspector = (function() {
 
   var controller = function($scope) {
     $scope.methodView = this;
-    this.currentTab = 'documentation';
   };
 
   controller.prototype.toggleExpansion = function() {
     this.expanded = !this.expanded;
-  };
-
-  controller.prototype.openTab = function(tab, $event) {
-    if (this.expanded)
-      $event.stopPropagation();
-
-    this.currentTab = tab;
   };
 
   RAML.Directives.method = function() {
@@ -646,14 +1048,103 @@ RAML.Filters = {};
   }
 })();
 
-'use strict';
+(function() {
+  var module = angular.module('raml', [])
 
-angular.module('raml', []).factory('ramlParser', function () {
-  return RAML.Parser;
-});
+  module.factory('ramlParser', function () {
+    return RAML.Parser;
+  });
+
+  module.factory('Base64', function () {
+    var keyStr = 'ABCDEFGHIJKLMNOP' +
+            'QRSTUVWXYZabcdef' +
+            'ghijklmnopqrstuv' +
+            'wxyz0123456789+/' +
+            '=';
+
+    return {
+      encode: function (input) {
+       var output = "";
+        var chr1, chr2, chr3 = "";
+        var enc1, enc2, enc3, enc4 = "";
+        var i = 0;
+
+        do {
+            chr1 = input.charCodeAt(i++);
+            chr2 = input.charCodeAt(i++);
+            chr3 = input.charCodeAt(i++);
+
+            enc1 = chr1 >> 2;
+            enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+            enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+            enc4 = chr3 & 63;
+
+            if (isNaN(chr2)) {
+                enc3 = enc4 = 64;
+            } else if (isNaN(chr3)) {
+                enc4 = 64;
+            }
+
+            output = output +
+                    keyStr.charAt(enc1) +
+                    keyStr.charAt(enc2) +
+                    keyStr.charAt(enc3) +
+                    keyStr.charAt(enc4);
+            chr1 = chr2 = chr3 = "";
+            enc1 = enc2 = enc3 = enc4 = "";
+        } while (i < input.length);
+
+        return output;
+      },
+
+      decode: function (input) {
+        var output = "";
+        var chr1, chr2, chr3 = "";
+        var enc1, enc2, enc3, enc4 = "";
+        var i = 0;
+
+        // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
+        var base64test = /[^A-Za-z0-9\+\/\=]/g;
+        if (base64test.exec(input)) {
+            alert("There were invalid base64 characters in the input text.\n" +
+                    "Valid base64 characters are A-Z, a-z, 0-9, '+', '/',and '='\n" +
+                    "Expect errors in decoding.");
+        }
+        input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+        do {
+            enc1 = keyStr.indexOf(input.charAt(i++));
+            enc2 = keyStr.indexOf(input.charAt(i++));
+            enc3 = keyStr.indexOf(input.charAt(i++));
+            enc4 = keyStr.indexOf(input.charAt(i++));
+
+            chr1 = (enc1 << 2) | (enc2 >> 4);
+            chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+            chr3 = ((enc3 & 3) << 6) | enc4;
+
+            output = output + String.fromCharCode(chr1);
+
+            if (enc3 != 64) {
+                output = output + String.fromCharCode(chr2);
+            }
+            if (enc4 != 64) {
+                output = output + String.fromCharCode(chr3);
+            }
+
+            chr1 = chr2 = chr3 = "";
+            enc1 = enc2 = enc3 = enc4 = "";
+
+        } while (i < input.length);
+
+        return output;
+      }
+    };
+  });
+})();
 
 var module = angular.module('ramlConsoleApp', ['raml', 'ngSanitize']);
 
+module.directive('basicAuth', RAML.Directives.basicAuth);
 module.directive('codeMirror', RAML.Directives.codeMirror);
 module.directive('collapsible', RAML.Directives.collapsible);
 module.directive('collapsibleContent', RAML.Directives.collapsibleContent);
@@ -689,6 +1180,23 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "      </div>\n" +
     "    </div>\n" +
     "  </div>\n" +
+    "</div>\n"
+  );
+
+  $templateCache.put("views/basic_auth.tmpl.html",
+    "<div>\n" +
+    "  <fieldset class=\"labelled-inline\" ng-if=\"method.requiresBasicAuthentication()\">\n" +
+    "    <legend>Basic Authentication</legend>\n" +
+    "    <div class=\"control-group\">\n" +
+    "      <label for=\"username\">username</label>\n" +
+    "      <input type=\"text\" name=\"username\" ng-model='apiClient.basicauth.password'/>\n" +
+    "    </div>\n" +
+    "\n" +
+    "    <div class=\"control-group\">\n" +
+    "      <label for=\"password\">password</label>\n" +
+    "      <input type=\"text\" name=\"password\" ng-model='apiClient.basicauth.username'/>\n" +
+    "    </div>\n" +
+    "  </fieldset>\n" +
     "</div>\n"
   );
 
@@ -730,23 +1238,27 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "              </a>\n" +
     "            </h3>\n" +
     "          </div>\n" +
-    "        <div collapsible-content>\n" +
-    "          <section role='response'>\n" +
-    "            <p markdown='response.description'></p>\n" +
-    "            <div ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
-    "              <h2>{{mediaType}}</h2>\n" +
-    "              <div ng-if=\"definition.schema\">\n" +
-    "                <h3>Response Schema</h3>\n" +
-    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "          <div collapsible-content>\n" +
+    "            <section role='response'>\n" +
+    "              <p markdown='response.description'></p>\n" +
+    "              <div ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
+    "                <h2>{{mediaType}}</h2>\n" +
+    "                <div ng-if=\"definition.schema\">\n" +
+    "                  <h3>Response Schema</h3>\n" +
+    "                  <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "                </div>\n" +
+    "                <div ng-if=\"definition.example\">\n" +
+    "                  <h3>Example Response</h3>\n" +
+    "                  <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "                </div>\n" +
     "              </div>\n" +
-    "              <div ng-if=\"definition.example\">\n" +
-    "                <h3>Example Response</h3>\n" +
-    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
-    "              </div>\n" +
-    "            </div>\n" +
-    "          </section>\n" +
+    "            </section>\n" +
+    "          </div>\n" +
     "        </div>\n" +
     "      </div>\n" +
+    "    </tab>\n" +
+    "    <tab heading=\"Try It\" active=\"documentation.tryItActive\">\n" +
+    "      <try-it></try-it>\n" +
     "    </tab>\n" +
     "  </tabset>\n" +
     "</section>\n"
@@ -758,16 +1270,10 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    <i ng-class=\"{'icon-caret-right': !methodView.expanded, 'icon-caret-down': methodView.expanded}\"></i>\n" +
     "    <span role=\"verb\">{{method.method}}:</span>\n" +
     "    <path-builder></path-builder>\n" +
-    "    <div class=\"pull-right actions\">\n" +
-    "      <button role=\"try-it-tab\" class=\"btn\" ng-click=\"methodView.openTab('tryIt', $event)\">Try It</button>\n" +
-    "      <i class=\"icon-file-alt documentation\" ng-click=\"methodView.openTab('documentation', $event)\"></i>\n" +
-    "    </div>\n" +
     "  </div>\n" +
     "  <div class='accordion-body' ng-show='methodView.expanded'>\n" +
     "    <div class='accordion-inner'>\n" +
-    "      <documentation ng-show=\"methodView.currentTab == 'documentation'\"></documentation>\n" +
-    "\n" +
-    "      <try-it ng-show=\"methodView.currentTab == 'tryIt'\"></try-it>\n" +
+    "      <documentation></documentation>\n" +
     "    </div>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -786,6 +1292,66 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   $templateCache.put("views/parameter_table.tmpl.html",
     "<section class='parameterTable' ng-show='parameters'>\n" +
     "  <h3>{{heading}}</h3>\n" +
+    "  <div role='parameter' ng-repeat='param in parameters'>\n" +
+    "    <h4>\n" +
+    "      <span role=\"display-name\">{{param.displayName}}</span>\n" +
+    "    <span class=\"constraints\">\n" +
+    "      <span role=\"required\" ng-if=\"param.required\">required, </span><!--\n" +
+    "      --><span role=\"enum\" ng-if=\"param.enum\">\n" +
+    "        one of\n" +
+    "        (<span ng-repeat=\"option in param.enum\"><!--\n" +
+    "          -->{{option}}<span ng-if=\"!$last\">, </span><!--\n" +
+    "        --></span>)<!--\n" +
+    "      --></span><!--\n" +
+    "      --><span ng-if=\"!param.enum\" role=\"type\">{{param.type}}</span><!--\n" +
+    "      --><span role=\"pattern\" ng-if=\"param.pattern\"> matching {{param.pattern}}</span><!--\n" +
+    "      --><span role=\"length\" ng-if=\"param.minLength && param.maxLength\">, {{param.minLength}}-{{param.maxLength}} characters</span><!--\n" +
+    "      --><span role=\"length\" ng-if=\"param.minLength && !param.maxLength\">, at least {{param.minLength}} characters</span><!--\n" +
+    "      --><span role=\"length\" ng-if=\"param.maxLength && !param.minLength\">, at most {{param.maxLength}} characters</span><!--\n" +
+    "\n" +
+    "      --><span role=\"range\" ng-if=\"param.minimum && param.maximum\"> between {{param.minimum}}-{{param.maximum}}</span><!--\n" +
+    "      --><span role=\"range\" ng-if=\"param.minimum && !param.maximum\"> ≥ {{param.minimum}}</span><!--\n" +
+    "      --><span role=\"range\" ng-if=\"param.maximum && !param.minimum\"> ≤ {{param.maximum}}</span><!--\n" +
+    "      --><span role=\"repeat\" ng-if=\"param.repeat\">, repeatable</span><!--\n" +
+    "      --><span ng-if=\"param.default\">, default: <span role=\"default\">{{param.default}}</span></span>\n" +
+    "\n" +
+    "    </span>\n" +
+    "    </h4>\n" +
+    "\n" +
+    "    <div class=\"info\">\n" +
+    "      <div role=\"description\" markdown=\"param.description\"></div>\n" +
+    "      <div ng-if=\"param.example\"><span class=\"label\">Example</span> <span role=\"example\">{{param.example}}</span></div>\n" +
+    "    </div>\n" +
+    "  </div>\n" +
+    "  <!--     <h4>\n" +
+    "      {{param.displayName}}\n" +
+    "      —\n" +
+    "      {{param.required}},\n" +
+    "      {{param.type}},\n" +
+    "      {{param.integerRange}},\n" +
+    "      {{param.characterRange}},\n" +
+    "      {{param.pattern}},\n" +
+    "      {{param.repeatable}}\n" +
+    "    </h4>\n" +
+    "    <div>Description: {{param.description}}</div>\n" +
+    "    <div>Possible values: {{param.enum}}</div>\n" +
+    "    <div>Example: {{param.example}}</div>\n" +
+    "    <div>Default: {{param.default}}</div>\n" +
+    "  </div> -->\n" +
+    "\n" +
+    "    <!-- <h4>\n" +
+    "      {{param.displayName}}\n" +
+    "      —\n" +
+    "      {{param.type}},\n" +
+    "      <ng-if=\"param.minimum && param.maximum\">{{param.minimum}}-{{param.maximum}},</ng-if>\n" +
+    "      <ng-if=\"param.minLength\">{{param.minLength}}-{{param.maxLength}} characters,</ng-if>\n" +
+    "      <ng-if=\"param.pattern\">{{param.pattern}}</ng-if>\n" +
+    "    </h4>\n" +
+    "    <div>Description: {{param.description}}</div>\n" +
+    "    <div>Possible values: {{param.enum}}</div>\n" +
+    "    <div>Example: {{param.example}}</div>\n" +
+    "  </div>\n" +
+    "\n" +
     "  <table>\n" +
     "    <thead>\n" +
     "      <tr>\n" +
@@ -821,14 +1387,14 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "        <td>{{param.pattern}}</td>\n" +
     "      </tr>\n" +
     "    </tbody>\n" +
-    "  </table>\n" +
+    "  </table> -->\n" +
     "</section>\n"
   );
 
   $templateCache.put("views/path_builder.tmpl.html",
     "<span role=\"path\">\n" +
     "  <span role='segment' ng-repeat='segment in pathBuilder.segments'>\n" +
-    "    <input ng-if='segment.templated' ng-click=\"$event.stopPropagation();\" ng-model=\"pathBuilder[segment.parameterName]\" type=\"text\" placeholder=\"{{segment.toString()}}\" />\n" +
+    "    <span ng-if='segment.templated'>/<input ng-if='segment.templated' ng-click=\"$event.stopPropagation();\" ng-model=\"pathBuilder[segment.parameterName]\" type=\"text\" placeholder=\"{{segment.toString()}}\" /></span>\n" +
     "    <span  ng-if='!segment.templated'>{{segment.toString()}}</span>\n" +
     "  </span>\n" +
     "</span>\n"
@@ -873,7 +1439,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "  </ul>\n" +
     "\n" +
     "  <ul role=\"methods\" ng-class=\"{hidden: resource.isOpen}\">\n" +
-    "    <li role=\"{{method}}\" ng-repeat=\"method in resource.methods\">{{method.method}}</li>\n" +
+    "    <li ng-repeat=\"method in resource.methods\">{{method.method}}</li>\n" +
     "  </ul>\n" +
     "</div>\n"
   );
@@ -911,6 +1477,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "<section class=\"try-it\">\n" +
     "\n" +
     "  <form>\n" +
+    "    <basic-auth></basic-auth>\n" +
     "    <named-parameters heading=\"Headers\" parameters=\"method.headers\" request-data=\"apiClient.headers\"></named-parameters>\n" +
     "    <named-parameters heading=\"Query Parameters\" parameters=\"method.queryParameters\" request-data=\"apiClient.queryParameters\"></named-parameters>\n" +
     "\n" +

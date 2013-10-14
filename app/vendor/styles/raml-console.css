@@ -7141,6 +7141,14 @@ form .form-actions {
   background-color: transparent;
   margin: 0;
 }
+.label {
+  color: #bbb;
+  font-weight: bold;
+  text-transform: uppercase;
+  text-shadow: none;
+  background: none;
+  padding: 0 5px 0 0;
+}
 .labelled-inline legend + .control-group {
   margin-top: 0;
 }
@@ -7318,6 +7326,9 @@ ul[role=methods] li {
 }
 [role=methodSummary] input {
   margin-bottom: 0;
+  width: 6em;
+  margin-left: 4px;
+  vertical-align: baseline;
 }
 [role=methodSummary] i {
   font-size: 24px;
@@ -7337,6 +7348,9 @@ span[role=segment]:last-child {
 }
 span[role=segment]:first-child {
   padding: 0;
+}
+span[role=segment] span {
+  white-space: nowrap;
 }
 .byline {
   font-size: 12px;
@@ -7493,4 +7507,25 @@ span[role=segment]:first-child {
 [role=root-documentation] section .content h6 {
   line-height: 1.15em;
   margin-top: 1.5em;
+}
+.parameterTable [role="parameter"]:first-of-type h4 {
+  margin-top: 10px;
+}
+.parameterTable [role="parameter"] h4 {
+  font-size: 16px;
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+.parameterTable [role="parameter"] h4 [role="display-name"] {
+  font-family: monospace;
+}
+.parameterTable [role="parameter"] .constraints {
+  color: #bbb;
+  font-weight: normal;
+  font-style: italic;
+  margin-left: 5px;
+  font-size: 14px;
+}
+.parameterTable [role="parameter"] .info {
+  margin-left: 0px;
 }
