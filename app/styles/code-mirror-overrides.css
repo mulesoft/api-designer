@@ -1,0 +1,117 @@
+/* CodeMirror Overrides */
+
+div.CodeMirror {
+    font-size: 12px;
+}
+
+.CodeMirror-foldgutter {
+    width: 15px;
+}
+.CodeMirror-foldgutter-open,
+.CodeMirror-foldgutter-folded {
+    color: #555;
+    cursor: pointer;
+}
+.CodeMirror-foldgutter-open:after {
+    content: "\25BE";
+}
+.CodeMirror-foldgutter-folded:after {
+    content: "\25B8";
+}
+
+.cm-s-solarized.CodeMirror,
+.cm-s-solarized .CodeMirror-gutters {
+  background-image: none;
+}
+
+.cm-s-solarized.cm-s-dark {
+  background: rgb(24,25,29);
+}
+
+.cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+  background: rgb(20,21,25);
+}
+
+div[role=raml-editor].light div.cm-s-solarized.cm-s-dark {
+  background: white;
+  text-shadow: #fefefe 0 1px;
+}
+
+div[role=raml-editor].light .cm-s-solarized.CodeMirror {
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+div[role=raml-editor].light div[role=tab-box] {
+  background: white;
+  border: 1px solid #555;
+}
+
+div[role=raml-editor].light div[role=tab].active {
+  text-shadow: #eee 0 1px;
+}
+
+div[role=raml-editor].light div[role=code] {
+  border-top: 1px solid #555;
+}
+
+div[role=raml-editor].light div.cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+  background: rgb(241, 241, 241);
+  border-right: 1px solid #999;
+}
+
+div[role=raml-editor].light .cm-s-solarized.cm-s-dark .CodeMirror-linenumber {
+  text-shadow: #fefefe 0 1px;
+}
+
+div[role=raml-editor].light .cm-s-solarized.cm-s-dark .CodeMirror-selected {
+  background: #ddd;
+}
+
+.CodeMirror-code .CodeMirror-hint-ghost {
+  color: #777
+}
+
+div[role=raml-editor].light .CodeMirror-code .CodeMirror-hint-ghost {
+  color: #bbb
+}
+
+.CodeMirror-hints {
+  background: rgba(19,33,40,1);
+  border-radius: 0px;
+  transition: ease-in 0.1s;
+}
+
+.CodeMirror-hints {
+  background: rgba(19,33,40,1);
+  border-radius: 0px;
+  transition: ease-in 0.1s;
+}
+
+.CodeMirror-hint {
+  max-width: 100%;
+  background: rgb(19,33,40,0.8);
+  color: gray;
+  border-radius: 0px;
+
+}
+
+.CodeMirror-hint-active {
+  background-color: #9b225c;
+  transition: background-color 0.1s;
+  border-radius: 25px;
+  color: white;
+  border-radius: 0px;
+}
+
+
+.CodeMirror-hint div {
+  float: left;
+}
+
+.CodeMirror-hint div.category {
+  font-size: 10px;
+  float: right;
+  padding-left: 10px;
+}
