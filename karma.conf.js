@@ -36,6 +36,7 @@ module.exports = function(config) {
     'app/vendor/scripts/showdown.min.js',
     'app/vendor/scripts/raml-console.js',
     'app/scripts/app.js',
+    'app/scripts/services/utils.js',
     'app/scripts/services/code-mirror.js',
     'app/scripts/services/code-mirror-errors.js',
     'app/scripts/services/config.js',

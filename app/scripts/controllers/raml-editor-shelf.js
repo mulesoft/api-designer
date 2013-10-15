@@ -26,7 +26,6 @@ angular.module('ramlEditorApp')
       }
 
       model.path = suggestions.path;
-
       $scope.model = model;
 
       safeApply();
