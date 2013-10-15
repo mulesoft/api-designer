@@ -265,6 +265,10 @@ div[role=shelf] > div[role=shelf-tab] {
   cursor: pointer;
 }
 
+div[role=shelf] > div[role=shelf-tab]:hover {
+  color: white;
+}
+
 div[role=shelf] > div[role=shelf-tab] > i + i {
   padding-left: 6px;
 }
