@@ -5,7 +5,7 @@
   </header>
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
     <div role="shelf" class="light" ng-class="{expanded: !shelf.collapsed}">
-      <div role="shelf-tab" ng-click="toggleShelf()"></div>
+      <div role="shelf-tab" ng-click="toggleShelf()"><i class="icon-inbox icon-big"></i><i class="icon-caret-down icon-small"></i></div>
       <div role="shelf-container" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
     <div role="browser"></div>
