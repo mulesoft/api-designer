@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="vendor/styles/raml-console.css">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/errors.css">
+    <link rel="stylesheet" href="styles/console-overrides.css">
+    <link rel="stylesheet" href="styles/code-mirror-overrides.css">
     <!-- endbuild -->
     <style>body { font-family: Ubuntu, sans-serif; }</style>
   </head>
@@ -39,9 +41,9 @@
     <script src="vendor/scripts/raml-console.js"></script>
     <!-- endbuild -->
     <!-- build:js({.tmp,app}) scripts/scripts.js -->
+    <script src="scripts/services/utils.js"></script>
     <script src="scripts/app.js"></script>
     <script src="scripts/filters/string-filters.js"></script>
-    <script src="scripts/common/eventService.js"></script>
     <script src="scripts/services/config.js"></script>
     <script src="scripts/services/code-mirror.js"></script>
     <script src="scripts/services/event.js"></script>

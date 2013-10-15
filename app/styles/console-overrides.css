@@ -1,0 +1,68 @@
+/* Console overrides */
+
+section[role=api-operation-list] {
+  padding: 0px;
+  margin-bottom: 7px;
+}
+
+section[role=api-operation-details-section-parameters] {
+  padding-bottom: 0px;
+}
+
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table {
+  margin-bottom: 0px;
+}
+
+section[role=api-operation-details-section-parameters] > section[role=parameter-list] > header > h1 {
+  font-size: 14px;
+}
+
+section[role=api-operation-details-section-request] > section[role=codes-list] > header > h1 {
+  font-size: 14px;
+}
+
+section[role=api-operation-details-section-request] {
+  padding-bottom: 0px;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li {
+  padding: 4px 12px;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:before,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:before {
+  bottom: -17px;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:after,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:after {
+  bottom: -17px;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > a:after,
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > span:after,
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > p:after {
+  bottom: -17px;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=operations],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] {
+  margin-top: 42px;
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=traits],
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] {
+  /*display: block;*/
+}
+
+section[role=api-operation].active > header > div[role=summary] > ul[role=traits] > li,
+section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] > li {
+  color: #555;
+}
+
+section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr > td > pre,
+section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr > td > pre {
+  width: 100%;
+  padding: 3px 0px;
+}

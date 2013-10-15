@@ -1,24 +1,33 @@
 'use strict';
 
-angular
-.module('helpers')
-.factory('eventService', function ($rootScope, $timeout) {
-  var service = {};
-  var lastEvents = {};
+(function() {
+  var module;
 
-  service.broadcast = function (eventName, data) {
-    $rootScope.$broadcast(eventName, data);
-    lastEvents[eventName] = { data: data };
-  };
+  try {
+    module = angular.module('helpers');
+  } catch (e) {
+    module = angular.module('helpers', []);
+  }
 
-  service.on = function (eventName, handler) {
-    $rootScope.$on(eventName, handler);
-    if (lastEvents[eventName] && handler) {
-      $timeout(function () {
-        handler({}, lastEvents[eventName].data);
-      });
-    }
-  };
+  module.factory('eventService', function ($rootScope, $timeout) {
+    var service = {};
+    var lastEvents = {};
 
-  return service;
-});
+    service.broadcast = function (eventName, data) {
+      $rootScope.$broadcast(eventName, data);
+      lastEvents[eventName] = { data: data };
+    };
+
+    service.on = function (eventName, handler) {
+      $rootScope.$on(eventName, handler);
+      if (lastEvents[eventName] && handler) {
+        $timeout(function () {
+          handler({}, lastEvents[eventName].data);
+        });
+      }
+    };
+
+    return service;
+  });
+
+})();

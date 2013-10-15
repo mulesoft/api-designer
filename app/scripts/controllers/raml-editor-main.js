@@ -134,14 +134,11 @@ angular.module('ramlEditorApp')
       $scope.hasErrors = false;
       $scope.theme = $rootScope.theme = config.get('theme', '');
       $scope.shelf = {};
-      $scope.shelf.collapsed =
-        JSON.parse(config.get('shelf.collapsed', false));
-
+      $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', false));
 
       editor = codeMirror.initEditor();
 
-      editor.on('update', function () {
-
+      editor.on('change', function () {
         if (currentUpdateTimer) {
           clearTimeout(currentUpdateTimer);
         }
@@ -155,11 +152,14 @@ angular.module('ramlEditorApp')
         $scope.triggerAutocomplete(cm);
       });
 
-      setTimeout(function () { eventService.broadcast('event:raml-editor-initialized', editor); }, 0);
+      setTimeout(function () {
+        eventService.broadcast('event:raml-editor-initialized', editor);
+      });
+
       setTimeout(function () {
         $scope.bootstrap();
         afterBootstrap();
-      }, 0);
+      });
     };
 
     $scope.init();
