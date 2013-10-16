@@ -14,45 +14,95 @@ angular.module('raml')
       return value.replace(new RegExp(':(.*)$', 'g'), '');
     }
 
-    function _computePath (editor, line, tabCount) {
-      if (line <= 0) {
-        return [];
-      }
-      var spaces = new Array(indentUnit + 1).join(' ');
-      var tabs = editor.getLine(line).split(spaces),
-          value = tabs.pop(), result = [];
-
-      // If this happens tabulation is wrong (tabCount can never be
-      // bigger than tabs.length)
-      if (tabCount > tabs.length) {
-        return undefined;
-      }
-      if (tabs.length === tabCount) {
-        if (tabCount !== 0) {
-          result = _computePath(editor, line - 1, tabs.length - 1);
-        }
-
-        if (result) {
-          return result.concat([extractKey(value)]);
-        }
-
-        // If invalid tabulation return undefined
-        return undefined;
-      } else {
-        return _computePath(editor, line - 1, tabCount);
-      }
-    }
-
     hinter.suggestRAML = suggestRAML;
 
-    hinter.computePath = function (editor) {
-      var editorState = hinter.getEditorState(editor),
-          line = editorState.cur.line,
-          curLine = editor.getLine(line),
-          spaces = new Array(indentUnit + 1).join(' '),
-          currLineTabCount = curLine.split(spaces).length - 1;
+    function indexAfterSpaces(s, i) {
+      i = i || 0;
+      while(i < s.length && s[i] === ' ') {
+        i++;
+      }
 
-      return _computePath(editor, line, currLineTabCount);
+      return i;
+    }
+
+    function getEditorTextAsArrayOfLines(editor, limit) {
+      var textAsList = [], i;
+
+      for (i = limit; i > 0; i--) {
+        textAsList.push(editor.getLine(i));
+      }
+
+      return textAsList;
+    }
+
+    hinter.computePath = function (editor) {
+      var
+          editorState = hinter.getEditorState(editor),
+          line = editorState.cur.line, textAsList,
+          tabSize = 2, lines;
+
+      textAsList = getEditorTextAsArrayOfLines(editor, line);
+
+      // It should have at least one element
+      if (!textAsList.length) {
+        return [];
+      }
+
+      lines = textAsList
+      .map(function (lineContent) {
+        var i = 0, result = {};
+
+        i = indexAfterSpaces(lineContent);
+
+        result.tabCount = i / tabSize;
+
+        if (lineContent.slice(i).indexOf('- ') === 0) {
+          result.isList = true;
+          i++;
+          i = indexAfterSpaces(lineContent, i);
+        }
+
+        lineContent = lineContent.slice(i).match(/(.+)(: |:\s*$)/);
+
+        result.content = (lineContent && lineContent.length > 2) ?
+          lineContent[1] : '';
+
+        return result;
+      });
+
+      var result = lines.slice(1).reduce(function (state, lineData) {
+        var prev = state[state.length - 1];
+
+        // Ignore line if greater in tabs
+        if (lineData.tabCount >= prev.tabCount) {
+          return state;
+        } else if (lineData.tabCount === prev.tabCount - 1) {
+          if (lineData.isList) {
+            prev.isList = true;
+            return state;
+          }
+        }
+
+        state.push(lineData);
+
+        return state;
+      }, [lines[0]]);
+
+      result = result.slice(1).reduce(function (state, lineData) {
+        if (state.path[0].tabCount > lineData.tabCount + 1 ) {
+          if (!state.path[0].isList && !lineData.isList) {
+            state.invalid = true;
+          }
+        }
+        state.path.unshift(lineData);
+        return state;
+      }, {invalid: false, path: [result[0]]});
+
+      var l = result.path.map(function (e) {
+        return e.content;
+      });
+
+      return result.invalid ? undefined : l;
     };
 
     hinter.createIndentation = function createIndentation (tabCount) {
@@ -107,36 +157,55 @@ angular.module('raml')
     };
 
     hinter.getScopes = function (editor) {
-      var total = editor.lineCount(), i, line,
-        zipValues = [], currentIndexes = {}, lineSplitted,
-        spaces = new Array(indentUnit + 1).join(' ');
+      var
+        total = editor.lineCount(), i, line,
+        zipValues = [], currentIndexes = {}, lineWithoutTabs, tabCount,
+        spacesCount;
       for (i = 0; i < total; i++) {
         line = editor.getLine(i);
-        lineSplitted = line.split(spaces);
-        zipValues.push([lineSplitted.length, lineSplitted.join(''), i]);
+        spacesCount = indexAfterSpaces(line);
+        tabCount = Math.floor(spacesCount / indentUnit);
+        lineWithoutTabs = line.slice(spacesCount);
+
+        zipValues.push([tabCount, lineWithoutTabs, i]);
       }
 
       var levelTable = zipValues.reduce(function (x,y) {
-        var currentArray = currentIndexes[y[0] - 2],
+        var currentArray = currentIndexes[y[0] - 1],
           lastArrayIndex, currentIndex;
 
         if (currentArray) {
           lastArrayIndex = currentArray.length - 1;
+          currentIndex = currentIndexes[y[0] - 1][lastArrayIndex];
+        } else if (y[0] > 1) {
+          // Case for lists, we fetch a level lower
+          currentArray = currentIndexes[y[0] - 2];
+          lastArrayIndex = currentArray.length - 1;
           currentIndex = currentIndexes[y[0] - 2][lastArrayIndex];
+
+          x[currentIndex] = x[currentIndex] || [];
+          x[currentIndex].push([y[2], y[1]]);
+
+          currentIndexes[y[0] - 1] = currentIndexes[y[0] - 1] || [];
+          currentIndexes[y[0] - 1].push(y[2]);
+          return x;
         } else {
+          // Case of the first element of the first level
           currentIndex = 0;
         }
 
         x[currentIndex] = x[currentIndex] || [];
         x[currentIndex].push([y[2], y[1]]);
 
-        currentIndexes[y[0] - 1] = currentIndexes[y[0] - 1] || [];
-        currentIndexes[y[0] - 1].push(y[2]);
+        currentIndexes[y[0]] = currentIndexes[y[0]] || [];
+        currentIndexes[y[0]].push(y[2]);
         return x;
       }, {});
 
       return {scopeLevels: currentIndexes, scopesByLine: levelTable};
     };
+
+
 
     function extractKeyPartFromScopes(scopesInfo) {
       return (scopesInfo || []).map(function (scopeInfo) {
