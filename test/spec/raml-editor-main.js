@@ -7,10 +7,10 @@ var codeMirror, eventService, codeMirrorErrors, ramlRepository,
 describe('RAML Editor Main Controller', function () {
   var params, ctrl, scope, annotationsToDisplay, editor;
 
-  beforeEach(angular.mock.module('ramlEditorApp'));
+  beforeEach(module('ramlEditorApp'));
 
   beforeEach(
-    angular.mock.inject( function ($injector) {
+    inject( function ($injector) {
       $rootScope = $injector.get('$rootScope');
       $controller = $injector.get('$controller');
       codeMirror = $injector.get('codeMirror');
