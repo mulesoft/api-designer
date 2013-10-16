@@ -117,7 +117,7 @@ describe('CodeMirror Service', function () {
   });
 
   describe('enter key', function () {
-    it('should keep the same tab level if the current line is a literal', function (){
+    it('should keep the same indentation level by default', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: hello\n' +
@@ -125,29 +125,28 @@ describe('CodeMirror Service', function () {
         'baseUri: http://example.com/api\n' +
         '/tags:\n' +
         '  displayName: Tags',
-        { line: 4, ch: 13},
+        { line: 4, ch: 19},
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
     });
 
-    it('should add another tab level if the current line is a scalar', function () {
+    it('should keep the same indentation level for elements without children', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: hello\n' +
         'version: v1.0\n' +
         'baseUri: http://example.com/api\n' +
-        '/tags:\n' +
-        '  name: Tags',
+        '/tags:',
         { line: 3, ch: 6},
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
+      editor.spacesToInsert.should.be.equal('\n');
     });
 
-    it('should add another tab level for second level scalars', function () {
+    it('should add one indentation level if the current line has children', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -266,7 +265,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(3));
     });
 
-    it('should keep the same indentation level if the cursor is in the middle of a sentence.', function (){
+    it('should add one indentation level if the cursor is in the middle of a sentence.', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -278,33 +277,34 @@ describe('CodeMirror Service', function () {
         '  get:\n' +
         '    summary: Get a list of recently tagged media\n' +
         '    description: This is a description of getting tags',
-        { line: 5, ch: 43 },
+        { line: 5, ch: 46 },
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it('should keep the same indentation level if the cursor is in the middle of a sentence.', function (){
+    it('should keep the same indentation level if the cursor is in the middle of a sentence and not on the first line.', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
-          'baseUri: http://www.api.com/{version}/{company}\n' +
-          'version: v1.1\n' +
-          '/tags:\n' +
-          '  name: Tags\n' +
-          '  description: This is a description of tags      with spaces in it\n' +
-          '  get:\n' +
-          '    summary: Get a list of recently tagged media\n' +
-          '    description: This is a description of getting tags',
-        { line: 5, ch: 43 },
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        '/tags:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags with spaces in it\n' +
+        '    but no in the first        line\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 6, ch: 22 },
         { indentUnit: indentUnit });
 
       codeMirrorService.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it('should keep the same indentation level if the cursor is in the middle of a sentence, but not on the first line.', function (){
+    if('should keep the same indentation level if the cursor is at the beginning of a sentence', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +

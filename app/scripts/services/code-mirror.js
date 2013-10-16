@@ -88,25 +88,27 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
         return;
       }
 
-      //if current line or parent line begins with: description, content, example or schema
+      //if current line or parent line begins with: content, example or schema
       //one indentation level should be added or the same level should be kept if
       //the cursor is not on the first line
-      if(/^(description|content|example|schema):/.test(curLineWithoutTabs)) {
+      if(/^(content|example|schema):/.test(curLineWithoutTabs)) {
         _replaceSelection(cm, 1, '');
         return;
       }
-
-      if(parentLine && /^(\s+)?(description|content|example|schema):/.test(parentLine)) {
+      if(parentLine && /^(\s+)?(content|example|schema):/.test(parentLine)) {
         _replaceSelection(cm, 0, '');
         return;
       }
 
       var offset = 0;
       if(curLineWithoutTabs.replace(' ', '').length > 0) {
-        var path = ramlHint.computePath(cm);
-        var suggestions = ramlHint.suggestRAML(path);
+        if(_currentNodeHasChildren(cm)) {
+          offset = 1;
+        }
+      }
 
-        offset = suggestions.isScalar ? 0 : 1;
+      if(editorState.cur.ch < editorState.curLine.length) {
+        offset = /^\s*\w+:/.test(editorState.curLine) ? 1 : 0;
       }
 
       var extraWhitespace = '';
@@ -158,6 +160,20 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       } else {
         return _hasParent (pattern, cm, parentLineNumber);
       }
+    }
+
+    function _currentNodeHasChildren(cm) {
+      var editorState = ramlHint.getEditorState(cm);
+
+      var potentialChildren = ramlHint.getScopes(cm).scopeLevels[editorState.currLineTabCount > 0 ? editorState.currLineTabCount + 1 : 1], firstChild;
+
+      if(potentialChildren) {
+        firstChild = potentialChildren.filter(function(line) {
+          return line === editorState.start.line + 1;
+        }).pop();
+      }
+
+      return !!firstChild;
     }
 
     service.getFoldRange = function (cm, start) {
