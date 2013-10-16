@@ -5,7 +5,7 @@ angular.module('raml')
     var service = {};
 
     service.getEmptyRaml = function () {
-      return '#%RAML 0.2\n---\n';
+      return '#%RAML 0.8\n';
     };
 
     service.getSnippet = function (suggestion) {
