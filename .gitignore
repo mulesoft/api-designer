@@ -11,3 +11,4 @@ bower_components
 coverage
 selenium
 editor-functional-tests/test/config.js
+test-results.xml
