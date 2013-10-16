@@ -34,10 +34,7 @@ describe('RAML Hint Service', function () {
 
       var res = hinter.computePath(editor);
       res.should.be.ok;
-      res.length.should.be.equal(3);
-      res[0].should.be.equal('/hello');
-      res[1].should.be.equal('/bye');
-      res[2].should.be.equal('get');
+      res.should.be.deep.equal(['/hello', '/bye', 'get']);
     });
 
     it('should inform when tab levels are invalid', function () {
@@ -52,7 +49,71 @@ describe('RAML Hint Service', function () {
         {line: 6, ch: 14});
       var res = hinter.computePath(editor);
       should.not.exist(res);
+    });
 
+    it('should offer computePath to lists at the same level', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        'traits:\n' +
+        '  - hello:\n' +
+        '      displayName: hello\n' +
+        '  - hello2:\n' +
+        '      displayName: hello2\n' +
+        '  ',
+        {line: 8, ch: 2});
+      var res = hinter.computePath(editor);
+      res.should.be.deep.equal(['traits', '']);
+    });
+
+    it('should offer computePath to lists at a more nested level', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        'traits:\n' +
+        '  - hello:\n' +
+        '      displayName: hello\n' +
+        '  - hello2:\n' +
+        '      displayName: hello2\n' +
+        '    ',
+        {line: 8, ch: 3});
+      var res = hinter.computePath(editor);
+      res.should.be.deep.equal(['traits', '']);
+    });
+
+    it('should offer options to valid elements inside lists', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        'traits:\n' +
+        '  - hello:\n' +
+        '      displayName: hello\n' +
+        '  - hello2:\n' +
+        '      displayName: hello\n' +
+        '      ',
+        {line: 8, ch: 6});
+      var res = hinter.computePath(editor);
+      res.should.be.deep.equal(['traits', 'hello2', '']);
+      res.should.be.ok;
+    });
+
+    it('should offer options to valid elements inside dictionary lists', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        'traits:\n' +
+        '  - hello:\n' +
+        '      displayName: hello\n' +
+        '    hello:\n' +
+        '      displayName: hello\n' +
+        '      ',
+        {line: 8, ch: 5});
+      var res = hinter.computePath(editor);
+      res.should.be.ok;
     });
 
     it.skip('should handle variable indentUnits', function () {
@@ -74,10 +135,23 @@ describe('RAML Hint Service', function () {
 
 
       var scopesByLine = hinter.getScopes(editor).scopesByLine;
-      scopesByLine[0].should.be.ok;
-      (scopesByLine[0].length).should.be.equal(4);
-      (scopesByLine[3].length).should.be.equal(2);
-      (scopesByLine[4].length).should.be.equal(1);
+      scopesByLine.should.be.deep.equal({
+        0: [
+            [0, 'title: hello'],
+            [1, 'version: v1.0'],
+            [2, 'baseUri: http://example.com/api'],
+            [3, '/hello:']
+          ],
+        3: [
+            [4, '/bye:'],
+            [6, '/ciao:']
+          ],
+        4: [
+            [5, 'get: {}']
+          ],
+        6: [
+          [7, 'get:']
+        ]});
 
       var scopeLevels = hinter.getScopes(editor).scopeLevels;
       (scopeLevels[0].length).should.be.equal(4);
@@ -85,6 +159,63 @@ describe('RAML Hint Service', function () {
       (scopeLevels[2].length).should.be.equal(2);
       // TODO Why scope levels isn't an array?
       Object.keys(scopeLevels).length.should.be.equal(3);
+    });
+
+    it('should handle structures with lists', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n' +
+        'traits:\n' +
+        '  - my_trait:\n' +
+        '      displayName: My Trait\n' +
+        '  - my_trait2:\n' +
+        '      displayName: My Trait 2\n' +
+        '/hello:\n' +
+        '  /bye:\n' +
+        '    get: {}\n' +
+        '  /ciao:\n' +
+        '    get:');
+
+
+      var scopesByLine = hinter.getScopes(editor).scopesByLine;
+      var scopeLevels = hinter.getScopes(editor).scopeLevels;
+      scopesByLine.should.be.deep.equal({
+        0: [
+            [0, 'title: hello'],
+            [1, 'version: v1.0'],
+            [2, 'baseUri: http://example.com/api'],
+            [3, 'traits:'],
+            [8, '/hello:']
+          ],
+        3: [
+          [4, '- my_trait:'],
+          [6, '- my_trait2:']
+        ],
+        4: [
+            [5, 'displayName: My Trait']
+          ],
+        5: [
+            [7, 'displayName: My Trait 2']
+          ],
+        8: [
+          [9, '/bye:'],
+          [11, '/ciao:']
+        ],
+        9: [
+          [10, 'get: {}']
+        ],
+        11: [
+          [12, 'get:']
+        ]});
+
+      scopeLevels.should.be.deep.equal({
+        0: [0,1,2,3,8],
+        1: [4,6,9,11],
+        2: [5,10,12],
+        3: [7]
+      });
+
     });
   });
 
