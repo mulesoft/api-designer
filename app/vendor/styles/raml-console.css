@@ -5276,19 +5276,22 @@ section,
 aside {
   font-family: 'Helvetica', sans-serif;
 }
-a,
-a:visited {
+[role=api-console] a,
+[role=api-console] a:visited {
   color: #07c;
   text-decoration: none;
   outline: 0;
 }
-a:hover,
-a:focus {
+[role=api-console] a:hover,
+[role=api-console] a:focus {
   text-decoration: none;
 }
-p a,
-p a:visited {
+[role=api-console] p a,
+[role=api-console] p a:visited {
   line-height: inherit;
+}
+[collapsible-toggle] {
+  cursor: pointer;
 }
 .hidden {
   visibility: hidden;
@@ -7115,6 +7118,9 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   padding: 0;
   border: none;
 }
+.bootstrap .nav-tabs li {
+  cursor: pointer;
+}
 .bootstrap .btn-primary {
   background-color: #24748f !important;
   background-color: #2988a7;
@@ -7129,6 +7135,12 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   color: #fff !important;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.16);
   -webkit-font-smoothing: antialiased;
+}
+.bootstrap .icon-spinner {
+  width: auto;
+  height: auto;
+  font-size: 24px;
+  line-height: inherit;
 }
 .bootstrap form {
   padding: 10px 20px;
@@ -7271,7 +7283,6 @@ ul[role=traits] li:last-child:after {
 }
 .accordion[role=resources] {
   background-color: white;
-  box-shadow: -3px -2px 3px 1px #d5d6da;
 }
 [role=resource] {
   border-top: 4px solid #e4e4e6;
@@ -7286,6 +7297,9 @@ ul[role=traits] li:last-child:after {
   color: #B2AEAD;
   padding: 5px 10px;
   *zoom: 1;
+}
+[role=resource] [role=resourceSummary]:hover {
+  background-color: #f8f8f8;
 }
 [role=resource] [role=resourceSummary] h2 {
   margin: 0 0 10px 0;
@@ -7314,6 +7328,7 @@ ul[role=methods] li {
 }
 [role=methodSummary] {
   padding: 15px;
+  margin-right: -5px;
   background-color: #FCFBF6;
 }
 [role=methodSummary] > *,
@@ -7389,6 +7404,7 @@ span[role=segment] span {
 }
 .try-it form {
   margin-bottom: 0;
+  *zoom: 1;
 }
 .try-it form .media-types {
   text-align: right;
@@ -7414,8 +7430,31 @@ span[role=segment] span {
   font-family: monospace;
   height: 7em;
 }
+.try-it form fieldset {
+  margin-top: 10px;
+}
+.try-it form legend {
+  margin-bottom: 0;
+}
 .try-it form .request-body {
   margin-top: -35px;
+}
+.try-it form .form-actions {
+  float: right;
+}
+.try-it form .form-actions .icon-spinner {
+  color: #1998C6;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+.try-it form:before,
+.try-it form:after {
+  display: table;
+  content: "";
+  line-height: 0;
+}
+.try-it form:after {
+  clear: both;
 }
 .try-it .response {
   color: #333;
@@ -7427,38 +7466,21 @@ span[role=segment] span {
 [role=documentation] {
   padding: 20px;
 }
-[role=documentation] h3 {
-  color: #333;
+[role=documentation] h2 i[class^="icon-"] {
+  line-height: 40px;
+  vertical-align: baseline;
 }
-[role=documentation] [role=documentation-requests] > div {
+[role=documentation] [role=documentation-requests] > div,
+[role=documentation] [role=documentation-responses] > div {
   margin-top: 30px;
 }
-[role=documentation] [role=documentation-requests] > div:first-child {
+[role=documentation] [role=documentation-requests] > div:first-child,
+[role=documentation] [role=documentation-responses] > div:first-child {
   margin-top: 0;
 }
 .code {
   border: 1px solid #CDCDCC;
   padding: 10px;
-}
-.parameterTable h3 {
-  text-align: left;
-  color: black;
-  font-size: 16px;
-  margin: 0;
-}
-.parameterTable th {
-  background-color: #F5F6FA;
-  border: 1px solid #CBCDCC;
-  padding: 5px 20px;
-  text-transform: uppercase;
-  font-size: 10px;
-}
-.parameterTable tbody {
-  border: 1px solid #CBCDCC;
-}
-.parameterTable td {
-  border-bottom: 1px solid #CBCDCC;
-  padding: 5px 20px;
 }
 [role=root-documentation] section {
   background-color: white;
@@ -7513,8 +7535,17 @@ span[role=segment] span {
   line-height: 1.15em;
   margin-top: 1.5em;
 }
+.parameterTable h3 {
+  text-align: left;
+  color: black;
+  font-size: 16px;
+  margin: 25px 0 0 0;
+}
+.parameterTable:first-of-type h3:first-of-type {
+  margin: 0;
+}
 .parameterTable [role="parameter"]:first-of-type h4 {
-  margin-top: 10px;
+  margin: 0;
 }
 .parameterTable [role="parameter"] h4 {
   font-size: 16px;

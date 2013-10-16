@@ -2519,9 +2519,6 @@ return Q;
 
 })(require("__browserify_process"))
 },{"__browserify_process":5}],7:[function(require,module,exports){
-// nothing to see here... no file methods for the browser
-
-},{}],8:[function(require,module,exports){
 var punycode = { encode : function (s) { return s } };
 
 exports.parse = urlParse;
@@ -3127,7 +3124,10 @@ function parseHost(host) {
   return out;
 }
 
-},{"querystring":9}],10:[function(require,module,exports){
+},{"querystring":8}],9:[function(require,module,exports){
+// nothing to see here... no file methods for the browser
+
+},{}],10:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, nodes, raml, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -3361,7 +3361,11 @@ function parseHost(host) {
 
 }).call(this);
 
-},{"./errors":1,"./events":2,"./nodes":11,"./raml":12,"./util":4,"url":8}],13:[function(require,module,exports){
+},{"./errors":1,"./events":2,"./nodes":11,"./raml":12,"./util":4,"url":7}],13:[function(require,module,exports){
+window.RAML = {}
+
+window.RAML.Parser = require('../lib/raml')
+},{"../lib/raml":12}],14:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
@@ -7226,7 +7230,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 },{}]},{},[])
 ;;module.exports=require("buffer-browserify")
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function(Buffer){(function() {
   var MarkedYAMLError, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -7839,120 +7843,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 }).call(this);
 
 })(require("__browserify_buffer").Buffer)
-},{"./errors":1,"./nodes":11,"./util":4,"__browserify_buffer":13}],15:[function(require,module,exports){
-(function() {
-  var composer, construct, joiner, parser, protocols, reader, resolver, scanner, schemas, securitySchemes, traits, transformations, types, util, validator;
-
-  util = require('./util');
-
-  reader = require('./reader');
-
-  scanner = require('./scanner');
-
-  parser = require('./parser');
-
-  composer = require('./composer');
-
-  resolver = require('./resolver');
-
-  construct = require('./construct');
-
-  validator = require('./validator');
-
-  joiner = require('./joiner');
-
-  traits = require('./traits');
-
-  types = require('./resourceTypes');
-
-  schemas = require('./schemas');
-
-  protocols = require('./protocols');
-
-  securitySchemes = require('./securitySchemes');
-
-  transformations = require('./transformations');
-
-  this.make_loader = function(Reader, Scanner, Parser, Composer, Resolver, Validator, ResourceTypes, Traits, Schemas, Protocols, Joiner, SecuritySchemes, Constructor, Transformations) {
-    if (Reader == null) {
-      Reader = reader.Reader;
-    }
-    if (Scanner == null) {
-      Scanner = scanner.Scanner;
-    }
-    if (Parser == null) {
-      Parser = parser.Parser;
-    }
-    if (Composer == null) {
-      Composer = composer.Composer;
-    }
-    if (Resolver == null) {
-      Resolver = resolver.Resolver;
-    }
-    if (Validator == null) {
-      Validator = validator.Validator;
-    }
-    if (ResourceTypes == null) {
-      ResourceTypes = types.ResourceTypes;
-    }
-    if (Traits == null) {
-      Traits = traits.Traits;
-    }
-    if (Schemas == null) {
-      Schemas = schemas.Schemas;
-    }
-    if (Protocols == null) {
-      Protocols = protocols.Protocols;
-    }
-    if (Joiner == null) {
-      Joiner = joiner.Joiner;
-    }
-    if (SecuritySchemes == null) {
-      SecuritySchemes = securitySchemes.SecuritySchemes;
-    }
-    if (Constructor == null) {
-      Constructor = construct.Constructor;
-    }
-    if (Transformations == null) {
-      Transformations = transformations.Transformations;
-    }
-    return (function() {
-      var component, components;
-
-      components = [Reader, Scanner, Parser, Composer, Resolver, Validator, Traits, ResourceTypes, Schemas, Protocols, Joiner, Constructor, SecuritySchemes, Transformations];
-
-      util.extend.apply(util, [_Class.prototype].concat((function() {
-        var _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = components.length; _i < _len; _i++) {
-          component = components[_i];
-          _results.push(component.prototype);
-        }
-        return _results;
-      })()));
-
-      function _Class(stream, location, validate, parent) {
-        var _i, _len, _ref;
-        this.parent = parent;
-        components[0].call(this, stream, location);
-        components[1].call(this, validate);
-        _ref = components.slice(2);
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          component = _ref[_i];
-          component.call(this);
-        }
-      }
-
-      return _Class;
-
-    })();
-  };
-
-  this.Loader = this.make_loader();
-
-}).call(this);
-
-},{"./composer":10,"./construct":14,"./joiner":21,"./parser":18,"./protocols":25,"./reader":16,"./resolver":19,"./resourceTypes":23,"./scanner":17,"./schemas":24,"./securitySchemes":26,"./traits":22,"./transformations":27,"./util":4,"./validator":20}],21:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4,"__browserify_buffer":14}],16:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -8352,7 +8243,120 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1}],18:[function(require,module,exports){
+},{"./errors":1}],17:[function(require,module,exports){
+(function() {
+  var composer, construct, joiner, parser, protocols, reader, resolver, scanner, schemas, securitySchemes, traits, transformations, types, util, validator;
+
+  util = require('./util');
+
+  reader = require('./reader');
+
+  scanner = require('./scanner');
+
+  parser = require('./parser');
+
+  composer = require('./composer');
+
+  resolver = require('./resolver');
+
+  construct = require('./construct');
+
+  validator = require('./validator');
+
+  joiner = require('./joiner');
+
+  traits = require('./traits');
+
+  types = require('./resourceTypes');
+
+  schemas = require('./schemas');
+
+  protocols = require('./protocols');
+
+  securitySchemes = require('./securitySchemes');
+
+  transformations = require('./transformations');
+
+  this.make_loader = function(Reader, Scanner, Parser, Composer, Resolver, Validator, ResourceTypes, Traits, Schemas, Protocols, Joiner, SecuritySchemes, Constructor, Transformations) {
+    if (Reader == null) {
+      Reader = reader.Reader;
+    }
+    if (Scanner == null) {
+      Scanner = scanner.Scanner;
+    }
+    if (Parser == null) {
+      Parser = parser.Parser;
+    }
+    if (Composer == null) {
+      Composer = composer.Composer;
+    }
+    if (Resolver == null) {
+      Resolver = resolver.Resolver;
+    }
+    if (Validator == null) {
+      Validator = validator.Validator;
+    }
+    if (ResourceTypes == null) {
+      ResourceTypes = types.ResourceTypes;
+    }
+    if (Traits == null) {
+      Traits = traits.Traits;
+    }
+    if (Schemas == null) {
+      Schemas = schemas.Schemas;
+    }
+    if (Protocols == null) {
+      Protocols = protocols.Protocols;
+    }
+    if (Joiner == null) {
+      Joiner = joiner.Joiner;
+    }
+    if (SecuritySchemes == null) {
+      SecuritySchemes = securitySchemes.SecuritySchemes;
+    }
+    if (Constructor == null) {
+      Constructor = construct.Constructor;
+    }
+    if (Transformations == null) {
+      Transformations = transformations.Transformations;
+    }
+    return (function() {
+      var component, components;
+
+      components = [Reader, Scanner, Parser, Composer, Resolver, Validator, Traits, ResourceTypes, Schemas, Protocols, Joiner, Constructor, SecuritySchemes, Transformations];
+
+      util.extend.apply(util, [_Class.prototype].concat((function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = components.length; _i < _len; _i++) {
+          component = components[_i];
+          _results.push(component.prototype);
+        }
+        return _results;
+      })()));
+
+      function _Class(stream, location, validate, parent) {
+        var _i, _len, _ref;
+        this.parent = parent;
+        components[0].call(this, stream, location);
+        components[1].call(this, validate);
+        _ref = components.slice(2);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          component = _ref[_i];
+          component.call(this);
+        }
+      }
+
+      return _Class;
+
+    })();
+  };
+
+  this.Loader = this.make_loader();
+
+}).call(this);
+
+},{"./composer":10,"./construct":15,"./joiner":16,"./parser":20,"./protocols":26,"./reader":18,"./resolver":21,"./resourceTypes":24,"./scanner":19,"./schemas":25,"./securitySchemes":27,"./traits":23,"./transformations":28,"./util":4,"./validator":22}],20:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, tokens, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -8963,7 +8967,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./events":2,"./tokens":3}],25:[function(require,module,exports){
+},{"./errors":1,"./events":2,"./tokens":3}],26:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, url, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9021,7 +9025,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         return;
       }
       parsedBaseUri = url.parse(baseUri);
-      protocol = parsedBaseUri.protocol.slice(0, -1).toUpperCase();
+      protocol = (parsedBaseUri.protocol || 'http:').slice(0, -1).toUpperCase();
       protocols = [new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', node.start_mark, node.end_mark), new nodes.SequenceNode('tag:yaml.org,2002:seq', [new nodes.ScalarNode('tag:yaml.org,2002:str', protocol, node.start_mark, node.end_mark)], node.start_mark, node.end_mark)];
       node.value.push(protocols);
       return protocols[1];
@@ -9063,7 +9067,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4,"url":8}],16:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4,"url":7}],18:[function(require,module,exports){
 (function() {
   var Mark, YAMLError, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9177,7 +9181,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1}],19:[function(require,module,exports){
+},{"./errors":1}],21:[function(require,module,exports){
 (function() {
   var YAMLError, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -9386,7 +9390,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4}],23:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4}],24:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9571,7 +9575,87 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4}],17:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4}],27:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  /*
+  The Schemas throws these.
+  */
+
+
+  this.SecuritySchemeError = (function(_super) {
+    __extends(SecuritySchemeError, _super);
+
+    /*
+      The Schemas class deals with applying schemas to resources according to the spec
+    */
+
+
+    function SecuritySchemeError() {
+      _ref = SecuritySchemeError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return SecuritySchemeError;
+
+  })(MarkedYAMLError);
+
+  this.SecuritySchemes = (function() {
+    function SecuritySchemes() {
+      this.get_security_scheme = __bind(this.get_security_scheme, this);
+      this.get_all_schemes = __bind(this.get_all_schemes, this);
+      this.has_schemes = __bind(this.has_schemes, this);
+      this.load_security_schemes = __bind(this.load_security_schemes, this);
+      this.declaredSchemes = {};
+    }
+
+    SecuritySchemes.prototype.load_security_schemes = function(node) {
+      var allschemes,
+        _this = this;
+      if (this.has_property(node, "securitySchemes")) {
+        allschemes = this.property_value(node, "securitySchemes");
+        if (allschemes && typeof allschemes === "object") {
+          return allschemes.forEach(function(scheme_entry) {
+            if (scheme_entry.tag === 'tag:yaml.org,2002:map') {
+              return scheme_entry.value.forEach(function(scheme) {
+                return _this.declaredSchemes[scheme[0].value] = scheme[1].value;
+              });
+            }
+          });
+        }
+      }
+    };
+
+    SecuritySchemes.prototype.has_schemes = function(node) {
+      if (this.declaredSchemes.length === 0 && this.has_property(node, "schemes")) {
+        this.load_schemes(node);
+      }
+      return Object.keys(this.declaredSchemes).length > 0;
+    };
+
+    SecuritySchemes.prototype.get_all_schemes = function() {
+      return this.declaredSchemes;
+    };
+
+    SecuritySchemes.prototype.get_security_scheme = function(schemaName) {
+      return this.declaredSchemes[schemaName];
+    };
+
+    return SecuritySchemes;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":11}],19:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, SimpleKey, tokens, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11077,7 +11161,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./tokens":3,"./util":4}],24:[function(require,module,exports){
+},{"./errors":1,"./tokens":3,"./util":4}],25:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11178,91 +11262,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11}],26:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  /*
-  The Schemas throws these.
-  */
-
-
-  this.SecuritySchemeError = (function(_super) {
-    __extends(SecuritySchemeError, _super);
-
-    /*
-      The Schemas class deals with applying schemas to resources according to the spec
-    */
-
-
-    function SecuritySchemeError() {
-      _ref = SecuritySchemeError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return SecuritySchemeError;
-
-  })(MarkedYAMLError);
-
-  this.SecuritySchemes = (function() {
-    function SecuritySchemes() {
-      this.get_security_scheme = __bind(this.get_security_scheme, this);
-      this.get_all_schemes = __bind(this.get_all_schemes, this);
-      this.has_schemes = __bind(this.has_schemes, this);
-      this.load_security_schemes = __bind(this.load_security_schemes, this);
-      this.declaredSchemes = {};
-    }
-
-    SecuritySchemes.prototype.load_security_schemes = function(node) {
-      var allschemes,
-        _this = this;
-      if (this.has_property(node, "securitySchemes")) {
-        allschemes = this.property_value(node, "securitySchemes");
-        if (allschemes && typeof allschemes === "object") {
-          return allschemes.forEach(function(scheme_entry) {
-            if (scheme_entry.tag === 'tag:yaml.org,2002:map') {
-              return scheme_entry.value.forEach(function(scheme) {
-                return _this.declaredSchemes[scheme[0].value] = scheme[1].value;
-              });
-            }
-          });
-        }
-      }
-    };
-
-    SecuritySchemes.prototype.has_schemes = function(node) {
-      if (this.declaredSchemes.length === 0 && this.has_property(node, "schemes")) {
-        this.load_schemes(node);
-      }
-      return Object.keys(this.declaredSchemes).length > 0;
-    };
-
-    SecuritySchemes.prototype.get_all_schemes = function() {
-      return this.declaredSchemes;
-    };
-
-    SecuritySchemes.prototype.get_security_scheme = function(schemaName) {
-      return this.declaredSchemes[schemaName];
-    };
-
-    return SecuritySchemes;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":11}],28:[function(require,module,exports){
-window.RAML = {}
-
-window.RAML.Parser = require('../lib/raml')
-},{"../lib/raml":12}],9:[function(require,module,exports){
+},{"./errors":1,"./nodes":11}],8:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -11581,21 +11581,767 @@ function decode(str) {
   }
 }
 
-},{}],20:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function() {
-  var MarkedYAMLError, nodes, traits, uritemplate, util, _ref,
+  var _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  this.composer = require('./composer');
+
+  this.constructor = require('./construct');
+
+  this.errors = require('./errors');
+
+  this.events = require('./events');
+
+  this.loader = require('./loader');
+
+  this.nodes = require('./nodes');
+
+  this.parser = require('./parser');
+
+  this.reader = require('./reader');
+
+  this.resolver = require('./resolver');
+
+  this.scanner = require('./scanner');
+
+  this.tokens = require('./tokens');
+
+  this.q = require('q');
+
+  this.FileError = (function(_super) {
+    __extends(FileError, _super);
+
+    function FileError() {
+      _ref = FileError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return FileError;
+
+  })(this.errors.MarkedYAMLError);
+
+  /*
+  Scan a RAML stream and produce scanning tokens.
+  */
+
+
+  this.scan = function(stream, location) {
+    var loader, _results;
+    loader = new exports.loader.Loader(stream, location, false);
+    _results = [];
+    while (loader.check_token()) {
+      _results.push(loader.get_token());
+    }
+    return _results;
+  };
+
+  /*
+  Parse a RAML stream and produce parsing events.
+  */
+
+
+  this.parse = function(stream, location) {
+    var loader, _results;
+    loader = new exports.loader.Loader(stream, location, false);
+    _results = [];
+    while (loader.check_event()) {
+      _results.push(loader.get_event());
+    }
+    return _results;
+  };
+
+  /*
+  Parse the first RAML document in a stream and produce the corresponding
+  representation tree.
+  */
+
+
+  this.compose = function(stream, validate, apply, join, location, parent) {
+    var loader;
+    if (validate == null) {
+      validate = true;
+    }
+    if (apply == null) {
+      apply = true;
+    }
+    if (join == null) {
+      join = true;
+    }
+    loader = new exports.loader.Loader(stream, location, validate, parent);
+    return loader.get_single_node(validate, apply, join);
+  };
+
+  /*
+  Parse the first RAML document in a stream and produce the corresponding
+  Javascript object.
+  */
+
+
+  this.load = function(stream, validate, location) {
+    var _this = this;
+    if (validate == null) {
+      validate = true;
+    }
+    return this.q.fcall(function() {
+      var loader;
+      loader = new exports.loader.Loader(stream, location, validate);
+      return loader.get_single_data();
+    });
+  };
+
+  /*
+  Parse the first RAML document in a stream and produce a list of
+  all the absolute URIs for all resources.
+  */
+
+
+  this.resources = function(stream, validate, location) {
+    var _this = this;
+    if (validate == null) {
+      validate = true;
+    }
+    return this.q.fcall(function() {
+      var loader;
+      loader = new exports.loader.Loader(stream, location, validate);
+      return loader.resources();
+    });
+  };
+
+  /*
+  Parse the first RAML document in a stream and produce the corresponding
+  Javascript object.
+  */
+
+
+  this.loadFile = function(file, validate) {
+    var _this = this;
+    if (validate == null) {
+      validate = true;
+    }
+    return this.q.fcall(function() {
+      var stream;
+      stream = _this.readFile(file);
+      return _this.load(stream, validate, file);
+    });
+  };
+
+  /*
+  Parse the first RAML document in a file and produce the corresponding
+  representation tree.
+  */
+
+
+  this.composeFile = function(file, validate, apply, join, parent) {
+    var stream;
+    if (validate == null) {
+      validate = true;
+    }
+    if (apply == null) {
+      apply = true;
+    }
+    if (join == null) {
+      join = true;
+    }
+    stream = this.readFile(file);
+    return this.compose(stream, validate, apply, join, file, parent);
+  };
+
+  /*
+  Parse the first RAML document in a file and produce a list of
+  all the absolute URIs for all resources.
+  */
+
+
+  this.resourcesFile = function(file, validate) {
+    var stream;
+    if (validate == null) {
+      validate = true;
+    }
+    stream = this.readFile(file);
+    return this.resources(stream, validate, file);
+  };
+
+  /*
+  Read file either locally or from the network.
+  */
+
+
+  this.readFile = function(file) {
+    var error, url;
+    url = require('url').parse(file);
+    if (url.protocol != null) {
+      if (!url.protocol.match(/^https?/i)) {
+        throw new exports.FileError("while reading " + file, null, "unknown protocol " + url.protocol, this.start_mark);
+      } else {
+        return this.fetchFile(file);
+      }
+    } else {
+      if (typeof window !== "undefined" && window !== null) {
+        return this.fetchFile(file);
+      } else {
+        try {
+          return require('fs').readFileSync(file).toString();
+        } catch (_error) {
+          error = _error;
+          throw new exports.FileError("while reading " + file, null, "cannot read " + file + " (" + error + ")", this.start_mark);
+        }
+      }
+    }
+  };
+
+  /*
+  Read file from the network.
+  */
+
+
+  this.fetchFile = function(file) {
+    var error, xhr;
+    if (typeof window !== "undefined" && window !== null) {
+      xhr = new XMLHttpRequest();
+    } else {
+      xhr = new (require('xmlhttprequest').XMLHttpRequest)();
+    }
+    try {
+      xhr.open('GET', file, false);
+      xhr.setRequestHeader('Accept', 'application/raml+yaml, */*');
+      xhr.send(null);
+      if ((typeof xhr.status === 'number' && xhr.status === 200) || (typeof xhr.status === 'string' && xhr.status.match(/^200/i))) {
+        return xhr.responseText;
+      }
+      throw new Error("HTTP " + xhr.status + " " + xhr.statusText);
+    } catch (_error) {
+      error = _error;
+      throw new exports.FileError("while fetching " + file, null, "cannot fetch " + file + " (" + error + ")", this.start_mark);
+    }
+  };
+
+}).call(this);
+
+},{"./composer":10,"./construct":15,"./errors":1,"./events":2,"./loader":17,"./nodes":11,"./parser":20,"./reader":18,"./resolver":21,"./scanner":19,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],28:[function(require,module,exports){
+(function() {
+  var nodes, uritemplate, url, util,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  uritemplate = require('uritemplate');
+
+  nodes = require('./nodes');
+
+  url = require('url');
+
+  util = require('./util');
+
+  /*
+     Applies transformations to the RAML
+  */
+
+
+  this.Transformations = (function() {
+    function Transformations() {
+      this.isContentTypeString = __bind(this.isContentTypeString, this);
+      this.add_key_value_to_node = __bind(this.add_key_value_to_node, this);
+      this.apply_default_media_type_to_resource = __bind(this.apply_default_media_type_to_resource, this);
+      this.get_media_type = __bind(this.get_media_type, this);
+      this.load_default_media_type = __bind(this.load_default_media_type, this);
+      this.applyAstTransformations = __bind(this.applyAstTransformations, this);
+      this.applyTransformations = __bind(this.applyTransformations, this);
+      this.declaredSchemas = {};
+    }
+
+    Transformations.prototype.applyTransformations = function(rootObject) {
+      var resources;
+      this.applyTransformationsToRoot(rootObject);
+      resources = rootObject.resources;
+      return this.applyTransformationsToResources(rootObject, resources);
+    };
+
+    Transformations.prototype.applyAstTransformations = function(document) {
+      return this.transform_document(document);
+    };
+
+    Transformations.prototype.load_default_media_type = function(node) {
+      if (!util.isMapping(node || (node != null ? node.value : void 0))) {
+        return;
+      }
+      return this.mediaType = this.property_value(node, "mediaType");
+    };
+
+    Transformations.prototype.get_media_type = function() {
+      return this.mediaType;
+    };
+
+    Transformations.prototype.applyTransformationsToRoot = function(rootObject) {
+      var expressions, template;
+      if (rootObject.baseUri) {
+        template = uritemplate.parse(rootObject.baseUri);
+        expressions = template.expressions.filter(function(expr) {
+          return 'templateText' in expr;
+        }).map(function(expression) {
+          return expression.templateText;
+        });
+        if (expressions.length) {
+          if (!rootObject.baseUriParameters) {
+            rootObject.baseUriParameters = {};
+          }
+        }
+        return expressions.forEach(function(parameterName) {
+          if (!(parameterName in rootObject.baseUriParameters)) {
+            rootObject.baseUriParameters[parameterName] = {
+              type: "string",
+              required: true,
+              displayName: parameterName
+            };
+            if (parameterName === "version") {
+              return rootObject.baseUriParameters[parameterName]["enum"] = [rootObject.version];
+            }
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.applyTransformationsToResources = function(rootObject, resources) {
+      var expressions, inheritedSecScheme, method, parameterName, pathParts, relativeUri, resource, template, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
+      if (resources != null ? resources.length : void 0) {
+        _results = [];
+        for (_i = 0, _len = resources.length; _i < _len; _i++) {
+          resource = resources[_i];
+          inheritedSecScheme = resource.securedBy ? resource.securedBy : rootObject != null ? rootObject.securedBy : void 0;
+          if ((_ref = resource.methods) != null ? _ref.length : void 0) {
+            _ref1 = resource.methods;
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              method = _ref1[_j];
+              if (!("securedBy" in method)) {
+                if (inheritedSecScheme) {
+                  method.securedBy = inheritedSecScheme;
+                }
+              }
+            }
+          }
+          relativeUri = url.parse(resource.relativeUri);
+          pathParts = relativeUri.path.split('\/');
+          while (!pathParts[0] && pathParts.length) {
+            pathParts.shift();
+          }
+          resource.relativeUriPathSegments = pathParts;
+          template = uritemplate.parse(resource.relativeUri);
+          expressions = template.expressions.filter(function(expr) {
+            return 'templateText' in expr;
+          }).map(function(expression) {
+            return expression.templateText;
+          });
+          if (expressions.length) {
+            if (!resource.uriParameters) {
+              resource.uriParameters = {};
+            }
+          }
+          for (_k = 0, _len2 = expressions.length; _k < _len2; _k++) {
+            parameterName = expressions[_k];
+            if (!(parameterName in resource.uriParameters)) {
+              resource.uriParameters[parameterName] = {
+                type: "string",
+                required: true,
+                displayName: parameterName
+              };
+            }
+          }
+          _results.push(this.applyTransformationsToResources(rootObject, resource.resources));
+        }
+        return _results;
+      }
+    };
+
+    /*
+    Media Type pivot when using default mediaType property
+    */
+
+
+    Transformations.prototype.apply_default_media_type_to_resource = function(resource) {
+      var methods,
+        _this = this;
+      if (!this.mediaType) {
+        return;
+      }
+      if (!util.isMapping(resource)) {
+        return;
+      }
+      methods = this.child_methods(resource);
+      return methods.forEach(function(method) {
+        return _this.apply_default_media_type_to_method(method[1]);
+      });
+    };
+
+    Transformations.prototype.apply_default_media_type_to_method = function(method) {
+      var responses,
+        _this = this;
+      if (!this.mediaType) {
+        return;
+      }
+      if (!util.isMapping(method)) {
+        return;
+      }
+      if (this.has_property(method, "body")) {
+        this.apply_default_media_type_to_body(this.get_property(method, "body"));
+      }
+      if (this.has_property(method, "responses")) {
+        responses = this.get_property(method, "responses");
+        return responses.value.forEach(function(response) {
+          if (_this.has_property(response[1], "body")) {
+            return _this.apply_default_media_type_to_body(_this.get_property(response[1], "body"));
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.apply_default_media_type_to_body = function(body) {
+      var key, responseType, responseTypeKey, _ref, _ref1, _ref2;
+      if (!util.isMapping(body)) {
+        return;
+      }
+      if (body != null ? (_ref = body.value) != null ? (_ref1 = _ref[0]) != null ? (_ref2 = _ref1[0]) != null ? _ref2.value : void 0 : void 0 : void 0 : void 0) {
+        key = body.value[0][0].value;
+        if (!key.match(/\//)) {
+          responseType = new nodes.MappingNode('tag:yaml.org,2002:map', [], body.start_mark, body.end_mark);
+          responseTypeKey = new nodes.ScalarNode('tag:yaml.org,2002:str', this.mediaType, body.start_mark, body.end_mark);
+          responseType.value.push([responseTypeKey, body.clone()]);
+          return body.value = responseType.value;
+        }
+      }
+    };
+
+    Transformations.prototype.noop = function() {};
+
+    Transformations.prototype.transform_types = function(typeProperty) {
+      var types,
+        _this = this;
+      types = typeProperty.value;
+      return types.forEach(function(type_entry) {
+        return type_entry.value.forEach(function(type) {
+          return _this.transform_resource(type, true);
+        });
+      });
+    };
+
+    Transformations.prototype.transform_traits = function(traitProperty) {
+      var traits,
+        _this = this;
+      traits = traitProperty.value;
+      return traits.forEach(function(trait_entry) {
+        return trait_entry.value.forEach(function(trait) {
+          return _this.transform_method(trait[1], true);
+        });
+      });
+    };
+
+    Transformations.prototype.transform_named_params = function(property, allowParameterKeys, requiredByDefault) {
+      var _this = this;
+      if (requiredByDefault == null) {
+        requiredByDefault = true;
+      }
+      if (util.isNull(property[1])) {
+        return;
+      }
+      return property[1].value.forEach(function(param) {
+        if (util.isNull(param[1])) {
+          param[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], param[1].start_mark, param[1].end_mark);
+        }
+        return _this.transform_common_parameter_properties(param[0].value, param[1], allowParameterKeys, requiredByDefault);
+      });
+    };
+
+    Transformations.prototype.transform_common_parameter_properties = function(parameterName, node, allowParameterKeys, requiredByDefault) {
+      var _this = this;
+      if (util.isSequence(node)) {
+        return node.value.forEach(function(parameter) {
+          return _this.transform_named_parameter(parameterName, parameter, allowParameterKeys, requiredByDefault);
+        });
+      } else {
+        return this.transform_named_parameter(parameterName, node, allowParameterKeys, requiredByDefault);
+      }
+    };
+
+    Transformations.prototype.transform_named_parameter = function(parameterName, node, allowParameterKeys, requiredByDefault) {
+      var hasDisplayName, hasRequired, hasType,
+        _this = this;
+      hasDisplayName = false;
+      hasRequired = false;
+      hasType = false;
+      node.value.forEach(function(childNode) {
+        var canonicalPropertyName;
+        if (allowParameterKeys && _this.isParameterKey(childNode)) {
+          return;
+        }
+        canonicalPropertyName = _this.canonicalizePropertyName(childNode[0].value, allowParameterKeys);
+        switch (canonicalPropertyName) {
+          case "pattern":
+            return _this.noop();
+          case "default":
+            return _this.noop();
+          case "enum":
+            return _this.noop();
+          case "description":
+            return _this.noop();
+          case "example":
+            return _this.noop();
+          case "minLength":
+            return _this.noop();
+          case "maxLength":
+            return _this.noop();
+          case "minimum":
+            return _this.noop();
+          case "maximum":
+            return _this.noop();
+          case "repeat":
+            return _this.noop();
+          case "displayName":
+            return hasDisplayName = true;
+          case "type":
+            return hasType = true;
+          case "required":
+            return hasRequired = true;
+          default:
+            return _this.noop();
+        }
+      });
+      if (!hasDisplayName) {
+        this.add_key_value_to_node(node, 'displayName', 'tag:yaml.org,2002:str', this.canonicalizePropertyName(parameterName, allowParameterKeys));
+      }
+      if (!hasRequired) {
+        if (requiredByDefault) {
+          this.add_key_value_to_node(node, 'required', 'tag:yaml.org,2002:bool', 'true');
+        }
+      }
+      if (!hasType) {
+        return this.add_key_value_to_node(node, 'type', 'tag:yaml.org,2002:str', 'string');
+      }
+    };
+
+    Transformations.prototype.add_key_value_to_node = function(node, keyName, valueTag, value) {
+      var propertyName, propertyValue;
+      propertyName = new nodes.ScalarNode('tag:yaml.org,2002:str', keyName, node.start_mark, node.end_mark);
+      propertyValue = new nodes.ScalarNode(valueTag, value, node.start_mark, node.end_mark);
+      return node.value.push([propertyName, propertyValue]);
+    };
+
+    Transformations.prototype.transform_document = function(node) {
+      var _this = this;
+      if (node != null ? node.value : void 0) {
+        return node.value.forEach(function(property) {
+          var _ref;
+          switch (property[0].value) {
+            case "title":
+              return _this.noop();
+            case "securitySchemes":
+              return _this.noop();
+            case "schemas":
+              return _this.noop();
+            case "version":
+              return _this.noop();
+            case "documentation":
+              return _this.noop();
+            case "mediaType":
+              return _this.noop();
+            case "securedBy":
+              return _this.noop();
+            case "baseUri":
+              return _this.noop();
+            case "traits":
+              return _this.transform_traits(property[1]);
+            case "baseUriParameters":
+              return _this.transform_named_params(property, false);
+            case "resourceTypes":
+              return _this.transform_types(property[1]);
+            case "resources":
+              return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
+                return _this.transform_resource(resource);
+              }) : void 0;
+            default:
+              return _this.noop();
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.transform_resource = function(resource, allowParameterKeys) {
+      var _this = this;
+      if (allowParameterKeys == null) {
+        allowParameterKeys = false;
+      }
+      if (resource.value) {
+        return resource.value.forEach(function(property) {
+          var canonicalKey, isKnownCommonProperty, _ref, _ref1;
+          isKnownCommonProperty = _this.transform_common_properties(property, allowParameterKeys);
+          if (!isKnownCommonProperty) {
+            if (_this.isHttpMethod(property[0].value, allowParameterKeys)) {
+              return _this.transform_method(property[1], allowParameterKeys);
+            } else {
+              canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+              switch (canonicalKey) {
+                case "type":
+                  return _this.noop();
+                case "usage":
+                  return _this.noop();
+                case "securedBy":
+                  return _this.noop();
+                case "uriParameters":
+                  return _this.transform_named_params(property, allowParameterKeys);
+                case "baseUriParameters":
+                  return _this.transform_named_params(property, allowParameterKeys);
+                case "resources":
+                  return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
+                    return _this.transform_resource(resource);
+                  }) : void 0;
+                case "methods":
+                  return (_ref1 = property[1]) != null ? _ref1.value.forEach(function(method) {
+                    return _this.transform_method(method, allowParameterKeys);
+                  }) : void 0;
+                default:
+                  return _this.noop();
+              }
+            }
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.transform_method = function(method, allowParameterKeys) {
+      var _this = this;
+      if (util.isNull(method)) {
+        return;
+      }
+      return method.value.forEach(function(property) {
+        var canonicalKey;
+        if (_this.transform_common_properties(property, allowParameterKeys)) {
+          return;
+        }
+        canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+        switch (canonicalKey) {
+          case "securedBy":
+            return _this.noop();
+          case "usage":
+            return _this.noop();
+          case "headers":
+            return _this.transform_named_params(property, allowParameterKeys);
+          case "queryParameters":
+            return _this.transform_named_params(property, allowParameterKeys, false);
+          case "baseUriParameters":
+            return _this.transform_named_params(property, allowParameterKeys);
+          case "body":
+            return _this.transform_body(property, allowParameterKeys);
+          case "responses":
+            return _this.transform_responses(property, allowParameterKeys);
+          default:
+            return _this.noop();
+        }
+      });
+    };
+
+    Transformations.prototype.transform_responses = function(responses, allowParameterKeys) {
+      var _this = this;
+      if (util.isNull(responses[1])) {
+        return;
+      }
+      return responses[1].value.forEach(function(response) {
+        return _this.transform_response(response, allowParameterKeys);
+      });
+    };
+
+    Transformations.prototype.transform_response = function(response, allowParameterKeys) {
+      var _this = this;
+      if (util.isMapping(response[1])) {
+        return response[1].value.forEach(function(property) {
+          var canonicalKey;
+          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+          switch (canonicalKey) {
+            case "description":
+              return _this.noop();
+            case "body":
+              return _this.transform_body(property, allowParameterKeys);
+            case "headers":
+              return _this.transform_named_params(property, allowParameterKeys);
+            default:
+              return _this.noop();
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.isContentTypeString = function(value) {
+      return value != null ? value.match(/^[^\/]+\/[^\/]+$/) : void 0;
+    };
+
+    Transformations.prototype.transform_body = function(property, allowParameterKeys) {
+      var _ref,
+        _this = this;
+      if (util.isNull(property[1])) {
+        return;
+      }
+      return (_ref = property[1].value) != null ? _ref.forEach(function(bodyProperty) {
+        var canonicalProperty;
+        if (_this.isParameterKey(bodyProperty)) {
+          return _this.noop();
+        } else if (_this.isContentTypeString(bodyProperty[0].value)) {
+          return _this.transform_body(bodyProperty, allowParameterKeys);
+        } else {
+          canonicalProperty = _this.canonicalizePropertyName(bodyProperty[0].value, allowParameterKeys);
+          switch (canonicalProperty) {
+            case "example":
+              return _this.noop();
+            case "schema":
+              return _this.noop();
+            case "formParameters":
+              return _this.transform_named_params(bodyProperty, allowParameterKeys, false);
+            default:
+              return _this.noop();
+          }
+        }
+      }) : void 0;
+    };
+
+    Transformations.prototype.transform_common_properties = function(property, allowParameterKeys) {
+      var canonicalProperty;
+      if (this.isParameterKey(property)) {
+        return true;
+      } else {
+        canonicalProperty = this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+        switch (canonicalProperty) {
+          case "displayName":
+            return true;
+          case "description":
+            return true;
+          case "is":
+            return true;
+          default:
+            this.noop();
+        }
+      }
+      return false;
+    };
+
+    return Transformations;
+
+  })();
+
+}).call(this);
+
+},{"./nodes":11,"./util":4,"uritemplate":30,"url":7}],22:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, traits, uritemplate, url, util, _ref,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+
+  url = require('url');
+
+  uritemplate = require('uritemplate');
 
   MarkedYAMLError = require('./errors').MarkedYAMLError;
 
   nodes = require('./nodes');
 
   traits = require('./traits');
-
-  uritemplate = require('uritemplate');
 
   util = require('./util');
 
@@ -11678,7 +12424,7 @@ function decode(str) {
           for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
             scheme = _ref2[_j];
             if (!util.isMapping(scheme[1])) {
-              throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme.start_mark);
+              throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme[0].start_mark);
             }
             _results1.push(this.validate_security_scheme(scheme[1]));
           }
@@ -11751,39 +12497,39 @@ function decode(str) {
     };
 
     Validator.prototype.validate_oauth2_settings = function(settings) {
-      var accessTokenUrl, authorizationUrl, property, settingProperties, _i, _len, _ref1;
-      authorizationUrl = false;
-      accessTokenUrl = false;
+      var property, propertyName, settingProperties, _i, _j, _len, _len1, _ref1, _ref2, _results;
       settingProperties = {};
       _ref1 = settings[1].value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         property = _ref1[_i];
         this.trackRepeatedProperties(settingProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "setting with the same name already exists");
         switch (property[0].value) {
-          case "authorizationUrl":
+          case "authorizationUri":
             if (!util.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', property[0].start_mark);
+              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', property[0].start_mark);
             }
             break;
-          case "accessTokenUrl":
+          case "accessTokenUri":
             if (!util.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', property[0].start_mark);
+              throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUri must be a URL', property[0].start_mark);
             }
         }
       }
-      if (!("accessTokenUrl" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', settings.start_mark);
+      _ref2 = ['accessTokenUri', 'authorizationUri'];
+      _results = [];
+      for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+        propertyName = _ref2[_j];
+        if (!(propertyName in settingProperties)) {
+          throw new exports.ValidationError('while validating security scheme', null, "OAuth 2.0 settings must have " + propertyName + " property", settings[0].start_mark);
+        } else {
+          _results.push(void 0);
+        }
       }
-      if (!("authorizationUrl" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', settings.start_mark);
-      }
+      return _results;
     };
 
     Validator.prototype.validate_oauth1_settings = function(settings) {
-      var authorizationUri, property, requestTokenUri, settingProperties, tokenCredentialsUri, _i, _len, _ref1;
-      requestTokenUri = false;
-      authorizationUri = false;
-      tokenCredentialsUri = false;
+      var property, propertyName, settingProperties, _i, _j, _len, _len1, _ref1, _ref2, _results;
       settingProperties = {};
       _ref1 = settings[1].value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
@@ -11794,30 +12540,29 @@ function decode(str) {
             if (!util.isString(property[1])) {
               throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', property[0].start_mark);
             }
-            requestTokenUri = true;
             break;
           case "authorizationUri":
             if (!util.isString(property[1])) {
               throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', property[0].start_mark);
             }
-            authorizationUri = true;
             break;
           case "tokenCredentialsUri":
             if (!util.isString(property[1])) {
               throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', property[0].start_mark);
             }
-            tokenCredentialsUri = true;
         }
       }
-      if (!("requestTokenUri" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', settings.start_mark);
+      _ref2 = ['requestTokenUri', 'authorizationUri', 'tokenCredentialsUri'];
+      _results = [];
+      for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+        propertyName = _ref2[_j];
+        if (!(propertyName in settingProperties)) {
+          throw new exports.ValidationError('while validating security scheme', null, "OAuth 1.0 settings must have " + propertyName + " property", settings[0].start_mark);
+        } else {
+          _results.push(void 0);
+        }
       }
-      if (!("authorizationUri" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', settings.start_mark);
-      }
-      if (!("tokenCredentialsUri" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', settings.start_mark);
-      }
+      return _results;
     };
 
     Validator.prototype.validate_root_schemas = function(schemas) {
@@ -12986,8 +13731,15 @@ function decode(str) {
     };
 
     Validator.prototype.validate_base_uri = function(baseUriNode) {
-      var baseUri, err, expressions, template, _ref1;
-      baseUri = baseUriNode.value;
+      var baseUri, err, expressions, protocol, template, _ref1;
+      baseUri = (baseUriNode.value || '').trim();
+      if (!baseUri) {
+        throw new exports.ValidationError('while validating baseUri', null, 'baseUri must have a value', baseUriNode.start_mark);
+      }
+      protocol = ((url.parse(baseUri)).protocol || 'http:').slice(0, -1).toUpperCase();
+      if (protocol !== 'HTTP' && protocol !== 'HTTPS') {
+        throw new exports.ValidationError('while validating baseUri', null, 'baseUri protocol must be either HTTP or HTTPS', baseUriNode.start_mark);
+      }
       try {
         template = uritemplate.parse(baseUri);
       } catch (_error) {
@@ -13044,751 +13796,7 @@ function decode(str) {
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./traits":22,"./util":4,"uritemplate":29}],27:[function(require,module,exports){
-(function() {
-  var nodes, uritemplate, url, util,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  uritemplate = require('uritemplate');
-
-  nodes = require('./nodes');
-
-  url = require('url');
-
-  util = require('./util');
-
-  /*
-     Applies transformations to the RAML
-  */
-
-
-  this.Transformations = (function() {
-    function Transformations() {
-      this.isContentTypeString = __bind(this.isContentTypeString, this);
-      this.add_key_value_to_node = __bind(this.add_key_value_to_node, this);
-      this.apply_default_media_type_to_resource = __bind(this.apply_default_media_type_to_resource, this);
-      this.get_media_type = __bind(this.get_media_type, this);
-      this.load_default_media_type = __bind(this.load_default_media_type, this);
-      this.applyAstTransformations = __bind(this.applyAstTransformations, this);
-      this.applyTransformations = __bind(this.applyTransformations, this);
-      this.declaredSchemas = {};
-    }
-
-    Transformations.prototype.applyTransformations = function(rootObject) {
-      var resources;
-      this.applyTransformationsToRoot(rootObject);
-      resources = rootObject.resources;
-      return this.applyTransformationsToResources(rootObject, resources);
-    };
-
-    Transformations.prototype.applyAstTransformations = function(document) {
-      return this.transform_document(document);
-    };
-
-    Transformations.prototype.load_default_media_type = function(node) {
-      if (!util.isMapping(node || (node != null ? node.value : void 0))) {
-        return;
-      }
-      return this.mediaType = this.property_value(node, "mediaType");
-    };
-
-    Transformations.prototype.get_media_type = function() {
-      return this.mediaType;
-    };
-
-    Transformations.prototype.applyTransformationsToRoot = function(rootObject) {
-      var expressions, template;
-      if (rootObject.baseUri) {
-        template = uritemplate.parse(rootObject.baseUri);
-        expressions = template.expressions.filter(function(expr) {
-          return 'templateText' in expr;
-        }).map(function(expression) {
-          return expression.templateText;
-        });
-        if (expressions.length) {
-          if (!rootObject.baseUriParameters) {
-            rootObject.baseUriParameters = {};
-          }
-        }
-        return expressions.forEach(function(parameterName) {
-          if (!(parameterName in rootObject.baseUriParameters)) {
-            rootObject.baseUriParameters[parameterName] = {
-              type: "string",
-              required: true,
-              displayName: parameterName
-            };
-            if (parameterName === "version") {
-              return rootObject.baseUriParameters[parameterName]["enum"] = [rootObject.version];
-            }
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.applyTransformationsToResources = function(rootObject, resources) {
-      var expressions, inheritedSecScheme, method, parameterName, pathParts, relativeUri, resource, template, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
-      if (resources != null ? resources.length : void 0) {
-        _results = [];
-        for (_i = 0, _len = resources.length; _i < _len; _i++) {
-          resource = resources[_i];
-          inheritedSecScheme = resource.securedBy ? resource.securedBy : rootObject != null ? rootObject.securedBy : void 0;
-          if ((_ref = resource.methods) != null ? _ref.length : void 0) {
-            _ref1 = resource.methods;
-            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-              method = _ref1[_j];
-              if (!("securedBy" in method)) {
-                if (inheritedSecScheme) {
-                  method.securedBy = inheritedSecScheme;
-                }
-              }
-            }
-          }
-          relativeUri = url.parse(resource.relativeUri);
-          pathParts = relativeUri.path.split('\/');
-          while (!pathParts[0] && pathParts.length) {
-            pathParts.shift();
-          }
-          resource.relativeUriPathSegments = pathParts;
-          template = uritemplate.parse(resource.relativeUri);
-          expressions = template.expressions.filter(function(expr) {
-            return 'templateText' in expr;
-          }).map(function(expression) {
-            return expression.templateText;
-          });
-          if (expressions.length) {
-            if (!resource.uriParameters) {
-              resource.uriParameters = {};
-            }
-          }
-          for (_k = 0, _len2 = expressions.length; _k < _len2; _k++) {
-            parameterName = expressions[_k];
-            if (!(parameterName in resource.uriParameters)) {
-              resource.uriParameters[parameterName] = {
-                type: "string",
-                required: true,
-                displayName: parameterName
-              };
-            }
-          }
-          _results.push(this.applyTransformationsToResources(rootObject, resource.resources));
-        }
-        return _results;
-      }
-    };
-
-    /*
-    Media Type pivot when using default mediaType property
-    */
-
-
-    Transformations.prototype.apply_default_media_type_to_resource = function(resource) {
-      var methods,
-        _this = this;
-      if (!this.mediaType) {
-        return;
-      }
-      if (!util.isMapping(resource)) {
-        return;
-      }
-      methods = this.child_methods(resource);
-      return methods.forEach(function(method) {
-        return _this.apply_default_media_type_to_method(method[1]);
-      });
-    };
-
-    Transformations.prototype.apply_default_media_type_to_method = function(method) {
-      var responses,
-        _this = this;
-      if (!this.mediaType) {
-        return;
-      }
-      if (!util.isMapping(method)) {
-        return;
-      }
-      if (this.has_property(method, "body")) {
-        this.apply_default_media_type_to_body(this.get_property(method, "body"));
-      }
-      if (this.has_property(method, "responses")) {
-        responses = this.get_property(method, "responses");
-        return responses.value.forEach(function(response) {
-          if (_this.has_property(response[1], "body")) {
-            return _this.apply_default_media_type_to_body(_this.get_property(response[1], "body"));
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.apply_default_media_type_to_body = function(body) {
-      var key, responseType, responseTypeKey, _ref, _ref1, _ref2;
-      if (!util.isMapping(body)) {
-        return;
-      }
-      if (body != null ? (_ref = body.value) != null ? (_ref1 = _ref[0]) != null ? (_ref2 = _ref1[0]) != null ? _ref2.value : void 0 : void 0 : void 0 : void 0) {
-        key = body.value[0][0].value;
-        if (!key.match(/\//)) {
-          responseType = new nodes.MappingNode('tag:yaml.org,2002:map', [], body.start_mark, body.end_mark);
-          responseTypeKey = new nodes.ScalarNode('tag:yaml.org,2002:str', this.mediaType, body.start_mark, body.end_mark);
-          responseType.value.push([responseTypeKey, body.clone()]);
-          return body.value = responseType.value;
-        }
-      }
-    };
-
-    Transformations.prototype.noop = function() {};
-
-    Transformations.prototype.transform_types = function(typeProperty) {
-      var types,
-        _this = this;
-      types = typeProperty.value;
-      return types.forEach(function(type_entry) {
-        return type_entry.value.forEach(function(type) {
-          return _this.transform_resource(type, true);
-        });
-      });
-    };
-
-    Transformations.prototype.transform_traits = function(traitProperty) {
-      var traits,
-        _this = this;
-      traits = traitProperty.value;
-      return traits.forEach(function(trait_entry) {
-        return trait_entry.value.forEach(function(trait) {
-          return _this.transform_method(trait[1], true);
-        });
-      });
-    };
-
-    Transformations.prototype.transform_named_params = function(property, allowParameterKeys, requiredByDefault) {
-      var _this = this;
-      if (requiredByDefault == null) {
-        requiredByDefault = true;
-      }
-      if (util.isNull(property[1])) {
-        return;
-      }
-      return property[1].value.forEach(function(param) {
-        if (util.isNull(param[1])) {
-          param[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], param[1].start_mark, param[1].end_mark);
-        }
-        return _this.transform_common_parameter_properties(param[0].value, param[1], allowParameterKeys, requiredByDefault);
-      });
-    };
-
-    Transformations.prototype.transform_common_parameter_properties = function(parameterName, node, allowParameterKeys, requiredByDefault) {
-      var _this = this;
-      if (util.isSequence(node)) {
-        return node.value.forEach(function(parameter) {
-          return _this.transform_named_parameter(parameterName, parameter, allowParameterKeys, requiredByDefault);
-        });
-      } else {
-        return this.transform_named_parameter(parameterName, node, allowParameterKeys, requiredByDefault);
-      }
-    };
-
-    Transformations.prototype.transform_named_parameter = function(parameterName, node, allowParameterKeys, requiredByDefault) {
-      var hasDisplayName, hasRequired, hasType,
-        _this = this;
-      hasDisplayName = false;
-      hasRequired = false;
-      hasType = false;
-      node.value.forEach(function(childNode) {
-        var canonicalPropertyName;
-        if (allowParameterKeys && _this.isParameterKey(childNode)) {
-          return;
-        }
-        canonicalPropertyName = _this.canonicalizePropertyName(childNode[0].value, allowParameterKeys);
-        switch (canonicalPropertyName) {
-          case "pattern":
-            return _this.noop();
-          case "default":
-            return _this.noop();
-          case "enum":
-            return _this.noop();
-          case "description":
-            return _this.noop();
-          case "example":
-            return _this.noop();
-          case "minLength":
-            return _this.noop();
-          case "maxLength":
-            return _this.noop();
-          case "minimum":
-            return _this.noop();
-          case "maximum":
-            return _this.noop();
-          case "repeat":
-            return _this.noop();
-          case "displayName":
-            return hasDisplayName = true;
-          case "type":
-            return hasType = true;
-          case "required":
-            return hasRequired = true;
-          default:
-            return _this.noop();
-        }
-      });
-      if (!hasDisplayName) {
-        this.add_key_value_to_node(node, 'displayName', 'tag:yaml.org,2002:str', this.canonicalizePropertyName(parameterName, allowParameterKeys));
-      }
-      if (!hasRequired) {
-        if (requiredByDefault) {
-          this.add_key_value_to_node(node, 'required', 'tag:yaml.org,2002:bool', 'true');
-        }
-      }
-      if (!hasType) {
-        return this.add_key_value_to_node(node, 'type', 'tag:yaml.org,2002:str', 'string');
-      }
-    };
-
-    Transformations.prototype.add_key_value_to_node = function(node, keyName, valueTag, value) {
-      var propertyName, propertyValue;
-      propertyName = new nodes.ScalarNode('tag:yaml.org,2002:str', keyName, node.start_mark, node.end_mark);
-      propertyValue = new nodes.ScalarNode(valueTag, value, node.start_mark, node.end_mark);
-      return node.value.push([propertyName, propertyValue]);
-    };
-
-    Transformations.prototype.transform_document = function(node) {
-      var _this = this;
-      if (node != null ? node.value : void 0) {
-        return node.value.forEach(function(property) {
-          var _ref;
-          switch (property[0].value) {
-            case "title":
-              return _this.noop();
-            case "securitySchemes":
-              return _this.noop();
-            case "schemas":
-              return _this.noop();
-            case "version":
-              return _this.noop();
-            case "documentation":
-              return _this.noop();
-            case "mediaType":
-              return _this.noop();
-            case "securedBy":
-              return _this.noop();
-            case "baseUri":
-              return _this.noop();
-            case "traits":
-              return _this.transform_traits(property[1]);
-            case "baseUriParameters":
-              return _this.transform_named_params(property, false);
-            case "resourceTypes":
-              return _this.transform_types(property[1]);
-            case "resources":
-              return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
-                return _this.transform_resource(resource);
-              }) : void 0;
-            default:
-              return _this.noop();
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.transform_resource = function(resource, allowParameterKeys) {
-      var _this = this;
-      if (allowParameterKeys == null) {
-        allowParameterKeys = false;
-      }
-      if (resource.value) {
-        return resource.value.forEach(function(property) {
-          var canonicalKey, isKnownCommonProperty, _ref, _ref1;
-          isKnownCommonProperty = _this.transform_common_properties(property, allowParameterKeys);
-          if (!isKnownCommonProperty) {
-            if (_this.isHttpMethod(property[0].value, allowParameterKeys)) {
-              return _this.transform_method(property[1], allowParameterKeys);
-            } else {
-              canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-              switch (canonicalKey) {
-                case "type":
-                  return _this.noop();
-                case "usage":
-                  return _this.noop();
-                case "securedBy":
-                  return _this.noop();
-                case "uriParameters":
-                  return _this.transform_named_params(property, allowParameterKeys);
-                case "baseUriParameters":
-                  return _this.transform_named_params(property, allowParameterKeys);
-                case "resources":
-                  return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
-                    return _this.transform_resource(resource);
-                  }) : void 0;
-                case "methods":
-                  return (_ref1 = property[1]) != null ? _ref1.value.forEach(function(method) {
-                    return _this.transform_method(method, allowParameterKeys);
-                  }) : void 0;
-                default:
-                  return _this.noop();
-              }
-            }
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.transform_method = function(method, allowParameterKeys) {
-      var _this = this;
-      if (util.isNull(method)) {
-        return;
-      }
-      return method.value.forEach(function(property) {
-        var canonicalKey;
-        if (_this.transform_common_properties(property, allowParameterKeys)) {
-          return;
-        }
-        canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-        switch (canonicalKey) {
-          case "securedBy":
-            return _this.noop();
-          case "usage":
-            return _this.noop();
-          case "headers":
-            return _this.transform_named_params(property, allowParameterKeys);
-          case "queryParameters":
-            return _this.transform_named_params(property, allowParameterKeys, false);
-          case "baseUriParameters":
-            return _this.transform_named_params(property, allowParameterKeys);
-          case "body":
-            return _this.transform_body(property, allowParameterKeys);
-          case "responses":
-            return _this.transform_responses(property, allowParameterKeys);
-          default:
-            return _this.noop();
-        }
-      });
-    };
-
-    Transformations.prototype.transform_responses = function(responses, allowParameterKeys) {
-      var _this = this;
-      if (util.isNull(responses[1])) {
-        return;
-      }
-      return responses[1].value.forEach(function(response) {
-        return _this.transform_response(response, allowParameterKeys);
-      });
-    };
-
-    Transformations.prototype.transform_response = function(response, allowParameterKeys) {
-      var _this = this;
-      if (util.isMapping(response[1])) {
-        return response[1].value.forEach(function(property) {
-          var canonicalKey;
-          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-          switch (canonicalKey) {
-            case "description":
-              return _this.noop();
-            case "body":
-              return _this.transform_body(property, allowParameterKeys);
-            case "headers":
-              return _this.transform_named_params(property, allowParameterKeys);
-            default:
-              return _this.noop();
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.isContentTypeString = function(value) {
-      return value != null ? value.match(/^[^\/]+\/[^\/]+$/) : void 0;
-    };
-
-    Transformations.prototype.transform_body = function(property, allowParameterKeys) {
-      var _ref,
-        _this = this;
-      if (util.isNull(property[1])) {
-        return;
-      }
-      return (_ref = property[1].value) != null ? _ref.forEach(function(bodyProperty) {
-        var canonicalProperty;
-        if (_this.isParameterKey(bodyProperty)) {
-          return _this.noop();
-        } else if (_this.isContentTypeString(bodyProperty[0].value)) {
-          return _this.transform_body(bodyProperty, allowParameterKeys);
-        } else {
-          canonicalProperty = _this.canonicalizePropertyName(bodyProperty[0].value, allowParameterKeys);
-          switch (canonicalProperty) {
-            case "example":
-              return _this.noop();
-            case "schema":
-              return _this.noop();
-            case "formParameters":
-              return _this.transform_named_params(bodyProperty, allowParameterKeys, false);
-            default:
-              return _this.noop();
-          }
-        }
-      }) : void 0;
-    };
-
-    Transformations.prototype.transform_common_properties = function(property, allowParameterKeys) {
-      var canonicalProperty;
-      if (this.isParameterKey(property)) {
-        return true;
-      } else {
-        canonicalProperty = this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-        switch (canonicalProperty) {
-          case "displayName":
-            return true;
-          case "description":
-            return true;
-          case "is":
-            return true;
-          default:
-            this.noop();
-        }
-      }
-      return false;
-    };
-
-    return Transformations;
-
-  })();
-
-}).call(this);
-
-},{"./nodes":11,"./util":4,"uritemplate":29,"url":8}],12:[function(require,module,exports){
-(function() {
-  var _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  this.composer = require('./composer');
-
-  this.constructor = require('./construct');
-
-  this.errors = require('./errors');
-
-  this.events = require('./events');
-
-  this.loader = require('./loader');
-
-  this.nodes = require('./nodes');
-
-  this.parser = require('./parser');
-
-  this.reader = require('./reader');
-
-  this.resolver = require('./resolver');
-
-  this.scanner = require('./scanner');
-
-  this.tokens = require('./tokens');
-
-  this.q = require('q');
-
-  this.FileError = (function(_super) {
-    __extends(FileError, _super);
-
-    function FileError() {
-      _ref = FileError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return FileError;
-
-  })(this.errors.MarkedYAMLError);
-
-  /*
-  Scan a RAML stream and produce scanning tokens.
-  */
-
-
-  this.scan = function(stream, location) {
-    var loader, _results;
-    loader = new exports.loader.Loader(stream, location, false);
-    _results = [];
-    while (loader.check_token()) {
-      _results.push(loader.get_token());
-    }
-    return _results;
-  };
-
-  /*
-  Parse a RAML stream and produce parsing events.
-  */
-
-
-  this.parse = function(stream, location) {
-    var loader, _results;
-    loader = new exports.loader.Loader(stream, location, false);
-    _results = [];
-    while (loader.check_event()) {
-      _results.push(loader.get_event());
-    }
-    return _results;
-  };
-
-  /*
-  Parse the first RAML document in a stream and produce the corresponding
-  representation tree.
-  */
-
-
-  this.compose = function(stream, validate, apply, join, location, parent) {
-    var loader;
-    if (validate == null) {
-      validate = true;
-    }
-    if (apply == null) {
-      apply = true;
-    }
-    if (join == null) {
-      join = true;
-    }
-    loader = new exports.loader.Loader(stream, location, validate, parent);
-    return loader.get_single_node(validate, apply, join);
-  };
-
-  /*
-  Parse the first RAML document in a stream and produce the corresponding
-  Javascript object.
-  */
-
-
-  this.load = function(stream, validate, location) {
-    var _this = this;
-    if (validate == null) {
-      validate = true;
-    }
-    return this.q.fcall(function() {
-      var loader;
-      loader = new exports.loader.Loader(stream, location, validate);
-      return loader.get_single_data();
-    });
-  };
-
-  /*
-  Parse the first RAML document in a stream and produce a list of
-  all the absolute URIs for all resources.
-  */
-
-
-  this.resources = function(stream, validate, location) {
-    var _this = this;
-    if (validate == null) {
-      validate = true;
-    }
-    return this.q.fcall(function() {
-      var loader;
-      loader = new exports.loader.Loader(stream, location, validate);
-      return loader.resources();
-    });
-  };
-
-  /*
-  Parse the first RAML document in a stream and produce the corresponding
-  Javascript object.
-  */
-
-
-  this.loadFile = function(file, validate) {
-    var _this = this;
-    if (validate == null) {
-      validate = true;
-    }
-    return this.q.fcall(function() {
-      var stream;
-      stream = _this.readFile(file);
-      return _this.load(stream, validate, file);
-    });
-  };
-
-  /*
-  Parse the first RAML document in a file and produce the corresponding
-  representation tree.
-  */
-
-
-  this.composeFile = function(file, validate, apply, join, parent) {
-    var stream;
-    if (validate == null) {
-      validate = true;
-    }
-    if (apply == null) {
-      apply = true;
-    }
-    if (join == null) {
-      join = true;
-    }
-    stream = this.readFile(file);
-    return this.compose(stream, validate, apply, join, file, parent);
-  };
-
-  /*
-  Parse the first RAML document in a file and produce a list of
-  all the absolute URIs for all resources.
-  */
-
-
-  this.resourcesFile = function(file, validate) {
-    var stream;
-    if (validate == null) {
-      validate = true;
-    }
-    stream = this.readFile(file);
-    return this.resources(stream, validate, file);
-  };
-
-  /*
-  Read file either locally or from the network.
-  */
-
-
-  this.readFile = function(file) {
-    var error, url;
-    url = require('url').parse(file);
-    if (url.protocol != null) {
-      if (!url.protocol.match(/^https?/i)) {
-        throw new exports.FileError("while reading " + file, null, "unknown protocol " + url.protocol, this.start_mark);
-      } else {
-        return this.fetchFile(file);
-      }
-    } else {
-      if (typeof window !== "undefined" && window !== null) {
-        return this.fetchFile(file);
-      } else {
-        try {
-          return require('fs').readFileSync(file).toString();
-        } catch (_error) {
-          error = _error;
-          throw new exports.FileError("while reading " + file, null, "cannot read " + file + " (" + error + ")", this.start_mark);
-        }
-      }
-    }
-  };
-
-  /*
-  Read file from the network.
-  */
-
-
-  this.fetchFile = function(file) {
-    var error, xhr;
-    if (typeof window !== "undefined" && window !== null) {
-      xhr = new XMLHttpRequest();
-    } else {
-      xhr = new (require('xmlhttprequest').XMLHttpRequest)();
-    }
-    try {
-      xhr.open('GET', file, false);
-      xhr.setRequestHeader('Accept', 'application/raml+yaml, */*');
-      xhr.send(null);
-      if ((typeof xhr.status === 'number' && xhr.status === 200) || (typeof xhr.status === 'string' && xhr.status.match(/^200/i))) {
-        return xhr.responseText;
-      }
-      throw new Error("HTTP " + xhr.status + " " + xhr.statusText);
-    } catch (_error) {
-      error = _error;
-      throw new exports.FileError("while fetching " + file, null, "cannot fetch " + file + " (" + error + ")", this.start_mark);
-    }
-  };
-
-}).call(this);
-
-},{"./composer":10,"./construct":14,"./errors":1,"./events":2,"./loader":15,"./nodes":11,"./parser":18,"./reader":16,"./resolver":19,"./scanner":17,"./tokens":3,"fs":7,"q":6,"url":8,"xmlhttprequest":30}],22:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./traits":23,"./util":4,"uritemplate":30,"url":7}],23:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, inflection, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -14032,6 +14040,572 @@ function decode(str) {
 }).call(this);
 
 },{"./errors":1,"./nodes":11,"./util":4,"inflection":31}],29:[function(require,module,exports){
+(function(process,Buffer){/**
+ * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
+ *
+ * This can be used with JS designed for browsers to improve reuse of code and
+ * allow the use of existing libraries.
+ *
+ * Usage: include("XMLHttpRequest.js") and use XMLHttpRequest per W3C specs.
+ *
+ * @author Dan DeFelippi <dan@driverdan.com>
+ * @contributor David Ellis <d.f.ellis@ieee.org>
+ * @license MIT
+ */
+
+var Url = require("url")
+  , spawn = require("child_process").spawn
+  , fs = require('fs');
+
+exports.XMLHttpRequest = function() {
+  /**
+   * Private variables
+   */
+  var self = this;
+  var http = require('http');
+  var https = require('https');
+
+  // Holds http.js objects
+  var client;
+  var request;
+  var response;
+
+  // Request settings
+  var settings = {};
+
+  // Disable header blacklist.
+  // Not part of XHR specs.
+  var disableHeaderCheck = false;
+
+  // Set some default headers
+  var defaultHeaders = {
+    "User-Agent": "node-XMLHttpRequest",
+    "Accept": "*/*",
+  };
+
+  var headers = defaultHeaders;
+
+  // These headers are not user setable.
+  // The following are allowed but banned in the spec:
+  // * user-agent
+  var forbiddenRequestHeaders = [
+    "accept-charset",
+    "accept-encoding",
+    "access-control-request-headers",
+    "access-control-request-method",
+    "connection",
+    "content-length",
+    "content-transfer-encoding",
+    "cookie",
+    "cookie2",
+    "date",
+    "expect",
+    "host",
+    "keep-alive",
+    "origin",
+    "referer",
+    "te",
+    "trailer",
+    "transfer-encoding",
+    "upgrade",
+    "via"
+  ];
+
+  // These request methods are not allowed
+  var forbiddenRequestMethods = [
+    "TRACE",
+    "TRACK",
+    "CONNECT"
+  ];
+
+  // Send flag
+  var sendFlag = false;
+  // Error flag, used when errors occur or abort is called
+  var errorFlag = false;
+
+  // Event listeners
+  var listeners = {};
+
+  /**
+   * Constants
+   */
+
+  this.UNSENT = 0;
+  this.OPENED = 1;
+  this.HEADERS_RECEIVED = 2;
+  this.LOADING = 3;
+  this.DONE = 4;
+
+  /**
+   * Public vars
+   */
+
+  // Current state
+  this.readyState = this.UNSENT;
+
+  // default ready state change handler in case one is not set or is set late
+  this.onreadystatechange = null;
+
+  // Result & response
+  this.responseText = "";
+  this.responseXML = "";
+  this.status = null;
+  this.statusText = null;
+
+  /**
+   * Private methods
+   */
+
+  /**
+   * Check if the specified header is allowed.
+   *
+   * @param string header Header to validate
+   * @return boolean False if not allowed, otherwise true
+   */
+  var isAllowedHttpHeader = function(header) {
+    return disableHeaderCheck || (header && forbiddenRequestHeaders.indexOf(header.toLowerCase()) === -1);
+  };
+
+  /**
+   * Check if the specified method is allowed.
+   *
+   * @param string method Request method to validate
+   * @return boolean False if not allowed, otherwise true
+   */
+  var isAllowedHttpMethod = function(method) {
+    return (method && forbiddenRequestMethods.indexOf(method) === -1);
+  };
+
+  /**
+   * Public methods
+   */
+
+  /**
+   * Open the connection. Currently supports local server requests.
+   *
+   * @param string method Connection method (eg GET, POST)
+   * @param string url URL for the connection.
+   * @param boolean async Asynchronous connection. Default is true.
+   * @param string user Username for basic authentication (optional)
+   * @param string password Password for basic authentication (optional)
+   */
+  this.open = function(method, url, async, user, password) {
+    this.abort();
+    errorFlag = false;
+
+    // Check for valid request method
+    if (!isAllowedHttpMethod(method)) {
+      throw "SecurityError: Request method not allowed";
+      return;
+    }
+
+    settings = {
+      "method": method,
+      "url": url.toString(),
+      "async": (typeof async !== "boolean" ? true : async),
+      "user": user || null,
+      "password": password || null
+    };
+
+    setState(this.OPENED);
+  };
+
+  /**
+   * Disables or enables isAllowedHttpHeader() check the request. Enabled by default.
+   * This does not conform to the W3C spec.
+   *
+   * @param boolean state Enable or disable header checking.
+   */
+  this.setDisableHeaderCheck = function(state) {
+    disableHeaderCheck = state;
+  }
+
+  /**
+   * Sets a header for the request.
+   *
+   * @param string header Header name
+   * @param string value Header value
+   */
+  this.setRequestHeader = function(header, value) {
+    if (this.readyState != this.OPENED) {
+      throw "INVALID_STATE_ERR: setRequestHeader can only be called when state is OPEN";
+    }
+    if (!isAllowedHttpHeader(header)) {
+      console.warn('Refused to set unsafe header "' + header + '"');
+      return;
+    }
+    if (sendFlag) {
+      throw "INVALID_STATE_ERR: send flag is true";
+    }
+    headers[header] = value;
+  };
+
+  /**
+   * Gets a header from the server response.
+   *
+   * @param string header Name of header to get.
+   * @return string Text of the header or null if it doesn't exist.
+   */
+  this.getResponseHeader = function(header) {
+    if (typeof header === "string"
+      && this.readyState > this.OPENED
+      && response.headers[header.toLowerCase()]
+      && !errorFlag
+    ) {
+      return response.headers[header.toLowerCase()];
+    }
+
+    return null;
+  };
+
+  /**
+   * Gets all the response headers.
+   *
+   * @return string A string with all response headers separated by CR+LF
+   */
+  this.getAllResponseHeaders = function() {
+    if (this.readyState < this.HEADERS_RECEIVED || errorFlag) {
+      return "";
+    }
+    var result = "";
+
+    for (var i in response.headers) {
+      // Cookie headers are excluded
+      if (i !== "set-cookie" && i !== "set-cookie2") {
+        result += i + ": " + response.headers[i] + "\r\n";
+      }
+    }
+    return result.substr(0, result.length - 2);
+  };
+
+  /**
+   * Gets a request header
+   *
+   * @param string name Name of header to get
+   * @return string Returns the request header or empty string if not set
+   */
+  this.getRequestHeader = function(name) {
+    // @TODO Make this case insensitive
+    if (typeof name === "string" && headers[name]) {
+      return headers[name];
+    }
+
+    return "";
+  }
+
+  /**
+   * Sends the request to the server.
+   *
+   * @param string data Optional data to send as request body.
+   */
+  this.send = function(data) {
+    if (this.readyState != this.OPENED) {
+      throw "INVALID_STATE_ERR: connection must be opened before send() is called";
+    }
+
+    if (sendFlag) {
+      throw "INVALID_STATE_ERR: send has already been called";
+    }
+
+    var ssl = false, local = false;
+    var url = Url.parse(settings.url);
+
+    // Determine the server
+    switch (url.protocol) {
+      case 'https:':
+        ssl = true;
+        // SSL & non-SSL both need host, no break here.
+      case 'http:':
+        var host = url.hostname;
+        break;
+
+      case 'file:':
+        local = true;
+        break;
+
+      case undefined:
+      case '':
+        var host = "localhost";
+        break;
+
+      default:
+        throw "Protocol not supported.";
+    }
+
+    // Load files off the local filesystem (file://)
+    if (local) {
+      if (settings.method !== "GET") {
+        throw "XMLHttpRequest: Only GET method is supported";
+      }
+
+      if (settings.async) {
+        fs.readFile(url.pathname, 'utf8', function(error, data) {
+          if (error) {
+            self.handleError(error);
+          } else {
+            self.status = 200;
+            self.responseText = data;
+            setState(self.DONE);
+          }
+        });
+      } else {
+        try {
+          this.responseText = fs.readFileSync(url.pathname, 'utf8');
+          this.status = 200;
+          setState(self.DONE);
+        } catch(e) {
+          this.handleError(e);
+        }
+      }
+
+      return;
+    }
+
+    // Default to port 80. If accessing localhost on another port be sure
+    // to use http://localhost:port/path
+    var port = url.port || (ssl ? 443 : 80);
+    // Add query string if one is used
+    var uri = url.pathname + (url.search ? url.search : '');
+
+    // Set the Host header or the server may reject the request
+    headers["Host"] = host;
+    if (!((ssl && port === 443) || port === 80)) {
+      headers["Host"] += ':' + url.port;
+    }
+
+    // Set Basic Auth if necessary
+    if (settings.user) {
+      if (typeof settings.password == "undefined") {
+        settings.password = "";
+      }
+      var authBuf = new Buffer(settings.user + ":" + settings.password);
+      headers["Authorization"] = "Basic " + authBuf.toString("base64");
+    }
+
+    // Set content length header
+    if (settings.method === "GET" || settings.method === "HEAD") {
+      data = null;
+    } else if (data) {
+      headers["Content-Length"] = Buffer.byteLength(data);
+
+      if (!headers["Content-Type"]) {
+        headers["Content-Type"] = "text/plain;charset=UTF-8";
+      }
+    } else if (settings.method === "POST") {
+      // For a post with no data set Content-Length: 0.
+      // This is required by buggy servers that don't meet the specs.
+      headers["Content-Length"] = 0;
+    }
+
+    var options = {
+      host: host,
+      port: port,
+      path: uri,
+      method: settings.method,
+      headers: headers,
+      agent: false
+    };
+
+    // Reset error flag
+    errorFlag = false;
+
+    // Handle async requests
+    if (settings.async) {
+      // Use the proper protocol
+      var doRequest = ssl ? https.request : http.request;
+
+      // Request is being sent, set send flag
+      sendFlag = true;
+
+      // As per spec, this is called here for historical reasons.
+      self.dispatchEvent("readystatechange");
+
+      // Create the request
+      request = doRequest(options, function(resp) {
+        response = resp;
+        response.setEncoding("utf8");
+
+        setState(self.HEADERS_RECEIVED);
+        self.status = response.statusCode;
+
+        response.on('data', function(chunk) {
+          // Make sure there's some data
+          if (chunk) {
+            self.responseText += chunk;
+          }
+          // Don't emit state changes if the connection has been aborted.
+          if (sendFlag) {
+            setState(self.LOADING);
+          }
+        });
+
+        response.on('end', function() {
+          if (sendFlag) {
+            // Discard the 'end' event if the connection has been aborted
+            setState(self.DONE);
+            sendFlag = false;
+          }
+        });
+
+        response.on('error', function(error) {
+          self.handleError(error);
+        });
+      }).on('error', function(error) {
+        self.handleError(error);
+      });
+
+      // Node 0.4 and later won't accept empty data. Make sure it's needed.
+      if (data) {
+        request.write(data);
+      }
+
+      request.end();
+
+      self.dispatchEvent("loadstart");
+    } else { // Synchronous
+      // Create a temporary file for communication with the other Node process
+      var syncFile = ".node-xmlhttprequest-sync-" + process.pid;
+      fs.writeFileSync(syncFile, "", "utf8");
+      // The async request the other Node process executes
+      var execString = "var http = require('http'), https = require('https'), fs = require('fs');"
+        + "var doRequest = http" + (ssl ? "s" : "") + ".request;"
+        + "var options = " + JSON.stringify(options) + ";"
+        + "var responseText = '';"
+        + "var req = doRequest(options, function(response) {"
+        + "response.setEncoding('utf8');"
+        + "response.on('data', function(chunk) {"
+        + "responseText += chunk;"
+        + "});"
+        + "response.on('end', function() {"
+        + "fs.writeFileSync('" + syncFile + "', 'NODE-XMLHTTPREQUEST-STATUS:' + response.statusCode + ',' + responseText, 'utf8');"
+        + "});"
+        + "response.on('error', function(error) {"
+        + "fs.writeFileSync('" + syncFile + "', 'NODE-XMLHTTPREQUEST-ERROR:' + JSON.stringify(error), 'utf8');"
+        + "});"
+        + "}).on('error', function(error) {"
+        + "fs.writeFileSync('" + syncFile + "', 'NODE-XMLHTTPREQUEST-ERROR:' + JSON.stringify(error), 'utf8');"
+        + "});"
+        + (data ? "req.write('" + data.replace(/'/g, "\\'") + "');":"")
+        + "req.end();";
+      // Start the other Node Process, executing this string
+      syncProc = spawn(process.argv[0], ["-e", execString]);
+      while((self.responseText = fs.readFileSync(syncFile, 'utf8')) == "") {
+        // Wait while the file is empty
+      }
+      // Kill the child process once the file has data
+      syncProc.stdin.end();
+      // Remove the temporary file
+      fs.unlinkSync(syncFile);
+      if (self.responseText.match(/^NODE-XMLHTTPREQUEST-ERROR:/)) {
+        // If the file returned an error, handle it
+        var errorObj = self.responseText.replace(/^NODE-XMLHTTPREQUEST-ERROR:/, "");
+        self.handleError(errorObj);
+      } else {
+        // If the file returned okay, parse its data and move to the DONE state
+        self.status = self.responseText.replace(/^NODE-XMLHTTPREQUEST-STATUS:([0-9]*),.*/, "$1");
+        self.responseText = self.responseText.replace(/^NODE-XMLHTTPREQUEST-STATUS:[0-9]*,(.*)/, "$1");
+        setState(self.DONE);
+      }
+    }
+  };
+
+  /**
+   * Called when an error is encountered to deal with it.
+   */
+  this.handleError = function(error) {
+    this.status = 503;
+    this.statusText = error;
+    this.responseText = error.stack;
+    errorFlag = true;
+    setState(this.DONE);
+  };
+
+  /**
+   * Aborts a request.
+   */
+  this.abort = function() {
+    if (request) {
+      request.abort();
+      request = null;
+    }
+
+    headers = defaultHeaders;
+    this.responseText = "";
+    this.responseXML = "";
+
+    errorFlag = true;
+
+    if (this.readyState !== this.UNSENT
+        && (this.readyState !== this.OPENED || sendFlag)
+        && this.readyState !== this.DONE) {
+      sendFlag = false;
+      setState(this.DONE);
+    }
+    this.readyState = this.UNSENT;
+  };
+
+  /**
+   * Adds an event listener. Preferred method of binding to events.
+   */
+  this.addEventListener = function(event, callback) {
+    if (!(event in listeners)) {
+      listeners[event] = [];
+    }
+    // Currently allows duplicate callbacks. Should it?
+    listeners[event].push(callback);
+  };
+
+  /**
+   * Remove an event callback that has already been bound.
+   * Only works on the matching funciton, cannot be a copy.
+   */
+  this.removeEventListener = function(event, callback) {
+    if (event in listeners) {
+      // Filter will return a new array with the callback removed
+      listeners[event] = listeners[event].filter(function(ev) {
+        return ev !== callback;
+      });
+    }
+  };
+
+  /**
+   * Dispatch any events, including both "on" methods and events attached using addEventListener.
+   */
+  this.dispatchEvent = function(event) {
+    if (typeof self["on" + event] === "function") {
+      self["on" + event]();
+    }
+    if (event in listeners) {
+      for (var i = 0, len = listeners[event].length; i < len; i++) {
+        listeners[event][i].call(self);
+      }
+    }
+  };
+
+  /**
+   * Changes readyState and calls onreadystatechange.
+   *
+   * @param int state New state
+   */
+  var setState = function(state) {
+    if (self.readyState !== state) {
+      self.readyState = state;
+
+      if (settings.async || self.readyState < self.OPENED || self.readyState === self.DONE) {
+        self.dispatchEvent("readystatechange");
+      }
+
+      if (self.readyState === self.DONE && !errorFlag) {
+        self.dispatchEvent("load");
+        // @TODO figure out InspectorInstrumentation::didLoadXHR(cookie)
+        self.dispatchEvent("loadend");
+      }
+    }
+  };
+};
+
+})(require("__browserify_process"),require("__browserify_buffer").Buffer)
+},{"__browserify_buffer":14,"__browserify_process":5,"child_process":32,"fs":9,"http":33,"https":34,"url":7}],30:[function(require,module,exports){
 (function(global){/*global unescape, module, define, window, global*/
 
 /*
@@ -14919,575 +15493,11 @@ var UriTemplate = (function () {
 ));
 
 })(window)
-},{}],30:[function(require,module,exports){
-(function(process,Buffer){/**
- * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
- *
- * This can be used with JS designed for browsers to improve reuse of code and
- * allow the use of existing libraries.
- *
- * Usage: include("XMLHttpRequest.js") and use XMLHttpRequest per W3C specs.
- *
- * @author Dan DeFelippi <dan@driverdan.com>
- * @contributor David Ellis <d.f.ellis@ieee.org>
- * @license MIT
- */
-
-var Url = require("url")
-  , spawn = require("child_process").spawn
-  , fs = require('fs');
-
-exports.XMLHttpRequest = function() {
-  /**
-   * Private variables
-   */
-  var self = this;
-  var http = require('http');
-  var https = require('https');
-
-  // Holds http.js objects
-  var client;
-  var request;
-  var response;
-
-  // Request settings
-  var settings = {};
-
-  // Disable header blacklist.
-  // Not part of XHR specs.
-  var disableHeaderCheck = false;
-
-  // Set some default headers
-  var defaultHeaders = {
-    "User-Agent": "node-XMLHttpRequest",
-    "Accept": "*/*",
-  };
-
-  var headers = defaultHeaders;
-
-  // These headers are not user setable.
-  // The following are allowed but banned in the spec:
-  // * user-agent
-  var forbiddenRequestHeaders = [
-    "accept-charset",
-    "accept-encoding",
-    "access-control-request-headers",
-    "access-control-request-method",
-    "connection",
-    "content-length",
-    "content-transfer-encoding",
-    "cookie",
-    "cookie2",
-    "date",
-    "expect",
-    "host",
-    "keep-alive",
-    "origin",
-    "referer",
-    "te",
-    "trailer",
-    "transfer-encoding",
-    "upgrade",
-    "via"
-  ];
-
-  // These request methods are not allowed
-  var forbiddenRequestMethods = [
-    "TRACE",
-    "TRACK",
-    "CONNECT"
-  ];
-
-  // Send flag
-  var sendFlag = false;
-  // Error flag, used when errors occur or abort is called
-  var errorFlag = false;
-
-  // Event listeners
-  var listeners = {};
-
-  /**
-   * Constants
-   */
-
-  this.UNSENT = 0;
-  this.OPENED = 1;
-  this.HEADERS_RECEIVED = 2;
-  this.LOADING = 3;
-  this.DONE = 4;
-
-  /**
-   * Public vars
-   */
-
-  // Current state
-  this.readyState = this.UNSENT;
-
-  // default ready state change handler in case one is not set or is set late
-  this.onreadystatechange = null;
-
-  // Result & response
-  this.responseText = "";
-  this.responseXML = "";
-  this.status = null;
-  this.statusText = null;
-
-  /**
-   * Private methods
-   */
-
-  /**
-   * Check if the specified header is allowed.
-   *
-   * @param string header Header to validate
-   * @return boolean False if not allowed, otherwise true
-   */
-  var isAllowedHttpHeader = function(header) {
-    return disableHeaderCheck || (header && forbiddenRequestHeaders.indexOf(header.toLowerCase()) === -1);
-  };
-
-  /**
-   * Check if the specified method is allowed.
-   *
-   * @param string method Request method to validate
-   * @return boolean False if not allowed, otherwise true
-   */
-  var isAllowedHttpMethod = function(method) {
-    return (method && forbiddenRequestMethods.indexOf(method) === -1);
-  };
-
-  /**
-   * Public methods
-   */
-
-  /**
-   * Open the connection. Currently supports local server requests.
-   *
-   * @param string method Connection method (eg GET, POST)
-   * @param string url URL for the connection.
-   * @param boolean async Asynchronous connection. Default is true.
-   * @param string user Username for basic authentication (optional)
-   * @param string password Password for basic authentication (optional)
-   */
-  this.open = function(method, url, async, user, password) {
-    this.abort();
-    errorFlag = false;
-
-    // Check for valid request method
-    if (!isAllowedHttpMethod(method)) {
-      throw "SecurityError: Request method not allowed";
-      return;
-    }
-
-    settings = {
-      "method": method,
-      "url": url.toString(),
-      "async": (typeof async !== "boolean" ? true : async),
-      "user": user || null,
-      "password": password || null
-    };
-
-    setState(this.OPENED);
-  };
-
-  /**
-   * Disables or enables isAllowedHttpHeader() check the request. Enabled by default.
-   * This does not conform to the W3C spec.
-   *
-   * @param boolean state Enable or disable header checking.
-   */
-  this.setDisableHeaderCheck = function(state) {
-    disableHeaderCheck = state;
-  }
-
-  /**
-   * Sets a header for the request.
-   *
-   * @param string header Header name
-   * @param string value Header value
-   */
-  this.setRequestHeader = function(header, value) {
-    if (this.readyState != this.OPENED) {
-      throw "INVALID_STATE_ERR: setRequestHeader can only be called when state is OPEN";
-    }
-    if (!isAllowedHttpHeader(header)) {
-      console.warn('Refused to set unsafe header "' + header + '"');
-      return;
-    }
-    if (sendFlag) {
-      throw "INVALID_STATE_ERR: send flag is true";
-    }
-    headers[header] = value;
-  };
-
-  /**
-   * Gets a header from the server response.
-   *
-   * @param string header Name of header to get.
-   * @return string Text of the header or null if it doesn't exist.
-   */
-  this.getResponseHeader = function(header) {
-    if (typeof header === "string"
-      && this.readyState > this.OPENED
-      && response.headers[header.toLowerCase()]
-      && !errorFlag
-    ) {
-      return response.headers[header.toLowerCase()];
-    }
-
-    return null;
-  };
-
-  /**
-   * Gets all the response headers.
-   *
-   * @return string A string with all response headers separated by CR+LF
-   */
-  this.getAllResponseHeaders = function() {
-    if (this.readyState < this.HEADERS_RECEIVED || errorFlag) {
-      return "";
-    }
-    var result = "";
-
-    for (var i in response.headers) {
-      // Cookie headers are excluded
-      if (i !== "set-cookie" && i !== "set-cookie2") {
-        result += i + ": " + response.headers[i] + "\r\n";
-      }
-    }
-    return result.substr(0, result.length - 2);
-  };
-
-  /**
-   * Gets a request header
-   *
-   * @param string name Name of header to get
-   * @return string Returns the request header or empty string if not set
-   */
-  this.getRequestHeader = function(name) {
-    // @TODO Make this case insensitive
-    if (typeof name === "string" && headers[name]) {
-      return headers[name];
-    }
-
-    return "";
-  }
-
-  /**
-   * Sends the request to the server.
-   *
-   * @param string data Optional data to send as request body.
-   */
-  this.send = function(data) {
-    if (this.readyState != this.OPENED) {
-      throw "INVALID_STATE_ERR: connection must be opened before send() is called";
-    }
-
-    if (sendFlag) {
-      throw "INVALID_STATE_ERR: send has already been called";
-    }
-
-    var ssl = false, local = false;
-    var url = Url.parse(settings.url);
-
-    // Determine the server
-    switch (url.protocol) {
-      case 'https:':
-        ssl = true;
-        // SSL & non-SSL both need host, no break here.
-      case 'http:':
-        var host = url.hostname;
-        break;
-
-      case 'file:':
-        local = true;
-        break;
-
-      case undefined:
-      case '':
-        var host = "localhost";
-        break;
-
-      default:
-        throw "Protocol not supported.";
-    }
-
-    // Load files off the local filesystem (file://)
-    if (local) {
-      if (settings.method !== "GET") {
-        throw "XMLHttpRequest: Only GET method is supported";
-      }
-
-      if (settings.async) {
-        fs.readFile(url.pathname, 'utf8', function(error, data) {
-          if (error) {
-            self.handleError(error);
-          } else {
-            self.status = 200;
-            self.responseText = data;
-            setState(self.DONE);
-          }
-        });
-      } else {
-        try {
-          this.responseText = fs.readFileSync(url.pathname, 'utf8');
-          this.status = 200;
-          setState(self.DONE);
-        } catch(e) {
-          this.handleError(e);
-        }
-      }
-
-      return;
-    }
-
-    // Default to port 80. If accessing localhost on another port be sure
-    // to use http://localhost:port/path
-    var port = url.port || (ssl ? 443 : 80);
-    // Add query string if one is used
-    var uri = url.pathname + (url.search ? url.search : '');
-
-    // Set the Host header or the server may reject the request
-    headers["Host"] = host;
-    if (!((ssl && port === 443) || port === 80)) {
-      headers["Host"] += ':' + url.port;
-    }
-
-    // Set Basic Auth if necessary
-    if (settings.user) {
-      if (typeof settings.password == "undefined") {
-        settings.password = "";
-      }
-      var authBuf = new Buffer(settings.user + ":" + settings.password);
-      headers["Authorization"] = "Basic " + authBuf.toString("base64");
-    }
-
-    // Set content length header
-    if (settings.method === "GET" || settings.method === "HEAD") {
-      data = null;
-    } else if (data) {
-      headers["Content-Length"] = Buffer.byteLength(data);
-
-      if (!headers["Content-Type"]) {
-        headers["Content-Type"] = "text/plain;charset=UTF-8";
-      }
-    } else if (settings.method === "POST") {
-      // For a post with no data set Content-Length: 0.
-      // This is required by buggy servers that don't meet the specs.
-      headers["Content-Length"] = 0;
-    }
-
-    var options = {
-      host: host,
-      port: port,
-      path: uri,
-      method: settings.method,
-      headers: headers,
-      agent: false
-    };
-
-    // Reset error flag
-    errorFlag = false;
-
-    // Handle async requests
-    if (settings.async) {
-      // Use the proper protocol
-      var doRequest = ssl ? https.request : http.request;
-
-      // Request is being sent, set send flag
-      sendFlag = true;
-
-      // As per spec, this is called here for historical reasons.
-      self.dispatchEvent("readystatechange");
-
-      // Create the request
-      request = doRequest(options, function(resp) {
-        response = resp;
-        response.setEncoding("utf8");
-
-        setState(self.HEADERS_RECEIVED);
-        self.status = response.statusCode;
-
-        response.on('data', function(chunk) {
-          // Make sure there's some data
-          if (chunk) {
-            self.responseText += chunk;
-          }
-          // Don't emit state changes if the connection has been aborted.
-          if (sendFlag) {
-            setState(self.LOADING);
-          }
-        });
-
-        response.on('end', function() {
-          if (sendFlag) {
-            // Discard the 'end' event if the connection has been aborted
-            setState(self.DONE);
-            sendFlag = false;
-          }
-        });
-
-        response.on('error', function(error) {
-          self.handleError(error);
-        });
-      }).on('error', function(error) {
-        self.handleError(error);
-      });
-
-      // Node 0.4 and later won't accept empty data. Make sure it's needed.
-      if (data) {
-        request.write(data);
-      }
-
-      request.end();
-
-      self.dispatchEvent("loadstart");
-    } else { // Synchronous
-      // Create a temporary file for communication with the other Node process
-      var syncFile = ".node-xmlhttprequest-sync-" + process.pid;
-      fs.writeFileSync(syncFile, "", "utf8");
-      // The async request the other Node process executes
-      var execString = "var http = require('http'), https = require('https'), fs = require('fs');"
-        + "var doRequest = http" + (ssl ? "s" : "") + ".request;"
-        + "var options = " + JSON.stringify(options) + ";"
-        + "var responseText = '';"
-        + "var req = doRequest(options, function(response) {"
-        + "response.setEncoding('utf8');"
-        + "response.on('data', function(chunk) {"
-        + "responseText += chunk;"
-        + "});"
-        + "response.on('end', function() {"
-        + "fs.writeFileSync('" + syncFile + "', 'NODE-XMLHTTPREQUEST-STATUS:' + response.statusCode + ',' + responseText, 'utf8');"
-        + "});"
-        + "response.on('error', function(error) {"
-        + "fs.writeFileSync('" + syncFile + "', 'NODE-XMLHTTPREQUEST-ERROR:' + JSON.stringify(error), 'utf8');"
-        + "});"
-        + "}).on('error', function(error) {"
-        + "fs.writeFileSync('" + syncFile + "', 'NODE-XMLHTTPREQUEST-ERROR:' + JSON.stringify(error), 'utf8');"
-        + "});"
-        + (data ? "req.write('" + data.replace(/'/g, "\\'") + "');":"")
-        + "req.end();";
-      // Start the other Node Process, executing this string
-      syncProc = spawn(process.argv[0], ["-e", execString]);
-      while((self.responseText = fs.readFileSync(syncFile, 'utf8')) == "") {
-        // Wait while the file is empty
-      }
-      // Kill the child process once the file has data
-      syncProc.stdin.end();
-      // Remove the temporary file
-      fs.unlinkSync(syncFile);
-      if (self.responseText.match(/^NODE-XMLHTTPREQUEST-ERROR:/)) {
-        // If the file returned an error, handle it
-        var errorObj = self.responseText.replace(/^NODE-XMLHTTPREQUEST-ERROR:/, "");
-        self.handleError(errorObj);
-      } else {
-        // If the file returned okay, parse its data and move to the DONE state
-        self.status = self.responseText.replace(/^NODE-XMLHTTPREQUEST-STATUS:([0-9]*),.*/, "$1");
-        self.responseText = self.responseText.replace(/^NODE-XMLHTTPREQUEST-STATUS:[0-9]*,(.*)/, "$1");
-        setState(self.DONE);
-      }
-    }
-  };
-
-  /**
-   * Called when an error is encountered to deal with it.
-   */
-  this.handleError = function(error) {
-    this.status = 503;
-    this.statusText = error;
-    this.responseText = error.stack;
-    errorFlag = true;
-    setState(this.DONE);
-  };
-
-  /**
-   * Aborts a request.
-   */
-  this.abort = function() {
-    if (request) {
-      request.abort();
-      request = null;
-    }
-
-    headers = defaultHeaders;
-    this.responseText = "";
-    this.responseXML = "";
-
-    errorFlag = true;
-
-    if (this.readyState !== this.UNSENT
-        && (this.readyState !== this.OPENED || sendFlag)
-        && this.readyState !== this.DONE) {
-      sendFlag = false;
-      setState(this.DONE);
-    }
-    this.readyState = this.UNSENT;
-  };
-
-  /**
-   * Adds an event listener. Preferred method of binding to events.
-   */
-  this.addEventListener = function(event, callback) {
-    if (!(event in listeners)) {
-      listeners[event] = [];
-    }
-    // Currently allows duplicate callbacks. Should it?
-    listeners[event].push(callback);
-  };
-
-  /**
-   * Remove an event callback that has already been bound.
-   * Only works on the matching funciton, cannot be a copy.
-   */
-  this.removeEventListener = function(event, callback) {
-    if (event in listeners) {
-      // Filter will return a new array with the callback removed
-      listeners[event] = listeners[event].filter(function(ev) {
-        return ev !== callback;
-      });
-    }
-  };
-
-  /**
-   * Dispatch any events, including both "on" methods and events attached using addEventListener.
-   */
-  this.dispatchEvent = function(event) {
-    if (typeof self["on" + event] === "function") {
-      self["on" + event]();
-    }
-    if (event in listeners) {
-      for (var i = 0, len = listeners[event].length; i < len; i++) {
-        listeners[event][i].call(self);
-      }
-    }
-  };
-
-  /**
-   * Changes readyState and calls onreadystatechange.
-   *
-   * @param int state New state
-   */
-  var setState = function(state) {
-    if (self.readyState !== state) {
-      self.readyState = state;
-
-      if (settings.async || self.readyState < self.OPENED || self.readyState === self.DONE) {
-        self.dispatchEvent("readystatechange");
-      }
-
-      if (self.readyState === self.DONE && !errorFlag) {
-        self.dispatchEvent("load");
-        // @TODO figure out InspectorInstrumentation::didLoadXHR(cookie)
-        self.dispatchEvent("loadend");
-      }
-    }
-  };
-};
-
-})(require("__browserify_process"),require("__browserify_buffer").Buffer)
-},{"__browserify_buffer":13,"__browserify_process":5,"child_process":32,"fs":7,"http":33,"https":34,"url":8}],31:[function(require,module,exports){
-module.exports = require( './lib/inflection' );
-},{"./lib/inflection":35}],34:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
+exports.spawn = function () {};
+exports.exec = function () {};
+
+},{}],34:[function(require,module,exports){
 var http = require('http');
 
 var https = module.exports;
@@ -15501,11 +15511,7 @@ https.request = function (params, cb) {
     params.scheme = 'https';
     return http.request.call(this, params, cb);
 }
-},{"http":33}],32:[function(require,module,exports){
-exports.spawn = function () {};
-exports.exec = function () {};
-
-},{}],36:[function(require,module,exports){
+},{"http":33}],35:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -15702,7 +15708,71 @@ EventEmitter.listenerCount = function(emitter, type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":5}],35:[function(require,module,exports){
+},{"__browserify_process":5}],31:[function(require,module,exports){
+module.exports = require( './lib/inflection' );
+},{"./lib/inflection":36}],33:[function(require,module,exports){
+var http = module.exports;
+var EventEmitter = require('events').EventEmitter;
+var Request = require('./lib/request');
+
+http.request = function (params, cb) {
+    if (!params) params = {};
+    if (!params.host) params.host = window.location.host.split(':')[0];
+    if (!params.port) params.port = window.location.port;
+    if (!params.scheme) params.scheme = window.location.protocol.split(':')[0];
+    
+    var req = new Request(new xhrHttp, params);
+    if (cb) req.on('response', cb);
+    return req;
+};
+
+http.get = function (params, cb) {
+    params.method = 'GET';
+    var req = http.request(params, cb);
+    req.end();
+    return req;
+};
+
+http.Agent = function () {};
+http.Agent.defaultMaxSockets = 4;
+
+var xhrHttp = (function () {
+    if (typeof window === 'undefined') {
+        throw new Error('no window object present');
+    }
+    else if (window.XMLHttpRequest) {
+        return window.XMLHttpRequest;
+    }
+    else if (window.ActiveXObject) {
+        var axs = [
+            'Msxml2.XMLHTTP.6.0',
+            'Msxml2.XMLHTTP.3.0',
+            'Microsoft.XMLHTTP'
+        ];
+        for (var i = 0; i < axs.length; i++) {
+            try {
+                var ax = new(window.ActiveXObject)(axs[i]);
+                return function () {
+                    if (ax) {
+                        var ax_ = ax;
+                        ax = null;
+                        return ax_;
+                    }
+                    else {
+                        return new(window.ActiveXObject)(axs[i]);
+                    }
+                };
+            }
+            catch (e) {}
+        }
+        throw new Error('ajax not supported in this browser')
+    }
+    else {
+        throw new Error('ajax not supported in this browser');
+    }
+})();
+
+},{"./lib/request":37,"events":35}],36:[function(require,module,exports){
 /*!
  * inflection
  * Copyright(c) 2011 Ben Lin <ben@dreamerslab.com>
@@ -16239,69 +16309,7 @@ module.exports = {
   }
 };
 
-},{}],33:[function(require,module,exports){
-var http = module.exports;
-var EventEmitter = require('events').EventEmitter;
-var Request = require('./lib/request');
-
-http.request = function (params, cb) {
-    if (!params) params = {};
-    if (!params.host) params.host = window.location.host.split(':')[0];
-    if (!params.port) params.port = window.location.port;
-    if (!params.scheme) params.scheme = window.location.protocol.split(':')[0];
-    
-    var req = new Request(new xhrHttp, params);
-    if (cb) req.on('response', cb);
-    return req;
-};
-
-http.get = function (params, cb) {
-    params.method = 'GET';
-    var req = http.request(params, cb);
-    req.end();
-    return req;
-};
-
-http.Agent = function () {};
-http.Agent.defaultMaxSockets = 4;
-
-var xhrHttp = (function () {
-    if (typeof window === 'undefined') {
-        throw new Error('no window object present');
-    }
-    else if (window.XMLHttpRequest) {
-        return window.XMLHttpRequest;
-    }
-    else if (window.ActiveXObject) {
-        var axs = [
-            'Msxml2.XMLHTTP.6.0',
-            'Msxml2.XMLHTTP.3.0',
-            'Microsoft.XMLHTTP'
-        ];
-        for (var i = 0; i < axs.length; i++) {
-            try {
-                var ax = new(window.ActiveXObject)(axs[i]);
-                return function () {
-                    if (ax) {
-                        var ax_ = ax;
-                        ax = null;
-                        return ax_;
-                    }
-                    else {
-                        return new(window.ActiveXObject)(axs[i]);
-                    }
-                };
-            }
-            catch (e) {}
-        }
-        throw new Error('ajax not supported in this browser')
-    }
-    else {
-        throw new Error('ajax not supported in this browser');
-    }
-})();
-
-},{"./lib/request":37,"events":36}],38:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 var events = require('events');
 var util = require('util');
 
@@ -16422,128 +16430,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":36,"util":39}],40:[function(require,module,exports){
-var Stream = require('stream');
-
-var Response = module.exports = function (res) {
-    this.offset = 0;
-    this.readable = true;
-};
-
-Response.prototype = new Stream;
-
-var capable = {
-    streaming : true,
-    status2 : true
-};
-
-function parseHeaders (res) {
-    var lines = res.getAllResponseHeaders().split(/\r?\n/);
-    var headers = {};
-    for (var i = 0; i < lines.length; i++) {
-        var line = lines[i];
-        if (line === '') continue;
-        
-        var m = line.match(/^([^:]+):\s*(.*)/);
-        if (m) {
-            var key = m[1].toLowerCase(), value = m[2];
-            
-            if (headers[key] !== undefined) {
-            
-                if (isArray(headers[key])) {
-                    headers[key].push(value);
-                }
-                else {
-                    headers[key] = [ headers[key], value ];
-                }
-            }
-            else {
-                headers[key] = value;
-            }
-        }
-        else {
-            headers[line] = true;
-        }
-    }
-    return headers;
-}
-
-Response.prototype.getResponse = function (xhr) {
-    var respType = String(xhr.responseType).toLowerCase();
-    if (respType === 'blob') return xhr.responseBlob || xhr.response;
-    if (respType === 'arraybuffer') return xhr.response;
-    return xhr.responseText;
-}
-
-Response.prototype.getHeader = function (key) {
-    return this.headers[key.toLowerCase()];
-};
-
-Response.prototype.handle = function (res) {
-    if (res.readyState === 2 && capable.status2) {
-        try {
-            this.statusCode = res.status;
-            this.headers = parseHeaders(res);
-        }
-        catch (err) {
-            capable.status2 = false;
-        }
-        
-        if (capable.status2) {
-            this.emit('ready');
-        }
-    }
-    else if (capable.streaming && res.readyState === 3) {
-        try {
-            if (!this.statusCode) {
-                this.statusCode = res.status;
-                this.headers = parseHeaders(res);
-                this.emit('ready');
-            }
-        }
-        catch (err) {}
-        
-        try {
-            this._emitData(res);
-        }
-        catch (err) {
-            capable.streaming = false;
-        }
-    }
-    else if (res.readyState === 4) {
-        if (!this.statusCode) {
-            this.statusCode = res.status;
-            this.emit('ready');
-        }
-        this._emitData(res);
-        
-        if (res.error) {
-            this.emit('error', this.getResponse(res));
-        }
-        else this.emit('end');
-        
-        this.emit('close');
-    }
-};
-
-Response.prototype._emitData = function (res) {
-    var respBody = this.getResponse(res);
-    if (respBody.toString().match(/ArrayBuffer/)) {
-        this.emit('data', new Uint8Array(respBody, this.offset));
-        this.offset = respBody.byteLength;
-        return;
-    }
-    if (respBody.length > this.offset) {
-        this.emit('data', respBody.slice(this.offset));
-        this.offset = respBody.length;
-    }
-};
-
-var isArray = Array.isArray || function (xs) {
-    return Object.prototype.toString.call(xs) === '[object Array]';
-};
-
-},{"stream":38}],39:[function(require,module,exports){
+},{"events":35,"util":39}],39:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -16890,7 +16777,128 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":36}],37:[function(require,module,exports){
+},{"events":35}],40:[function(require,module,exports){
+var Stream = require('stream');
+
+var Response = module.exports = function (res) {
+    this.offset = 0;
+    this.readable = true;
+};
+
+Response.prototype = new Stream;
+
+var capable = {
+    streaming : true,
+    status2 : true
+};
+
+function parseHeaders (res) {
+    var lines = res.getAllResponseHeaders().split(/\r?\n/);
+    var headers = {};
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (line === '') continue;
+        
+        var m = line.match(/^([^:]+):\s*(.*)/);
+        if (m) {
+            var key = m[1].toLowerCase(), value = m[2];
+            
+            if (headers[key] !== undefined) {
+            
+                if (isArray(headers[key])) {
+                    headers[key].push(value);
+                }
+                else {
+                    headers[key] = [ headers[key], value ];
+                }
+            }
+            else {
+                headers[key] = value;
+            }
+        }
+        else {
+            headers[line] = true;
+        }
+    }
+    return headers;
+}
+
+Response.prototype.getResponse = function (xhr) {
+    var respType = String(xhr.responseType).toLowerCase();
+    if (respType === 'blob') return xhr.responseBlob || xhr.response;
+    if (respType === 'arraybuffer') return xhr.response;
+    return xhr.responseText;
+}
+
+Response.prototype.getHeader = function (key) {
+    return this.headers[key.toLowerCase()];
+};
+
+Response.prototype.handle = function (res) {
+    if (res.readyState === 2 && capable.status2) {
+        try {
+            this.statusCode = res.status;
+            this.headers = parseHeaders(res);
+        }
+        catch (err) {
+            capable.status2 = false;
+        }
+        
+        if (capable.status2) {
+            this.emit('ready');
+        }
+    }
+    else if (capable.streaming && res.readyState === 3) {
+        try {
+            if (!this.statusCode) {
+                this.statusCode = res.status;
+                this.headers = parseHeaders(res);
+                this.emit('ready');
+            }
+        }
+        catch (err) {}
+        
+        try {
+            this._emitData(res);
+        }
+        catch (err) {
+            capable.streaming = false;
+        }
+    }
+    else if (res.readyState === 4) {
+        if (!this.statusCode) {
+            this.statusCode = res.status;
+            this.emit('ready');
+        }
+        this._emitData(res);
+        
+        if (res.error) {
+            this.emit('error', this.getResponse(res));
+        }
+        else this.emit('end');
+        
+        this.emit('close');
+    }
+};
+
+Response.prototype._emitData = function (res) {
+    var respBody = this.getResponse(res);
+    if (respBody.toString().match(/ArrayBuffer/)) {
+        this.emit('data', new Uint8Array(respBody, this.offset));
+        this.offset = respBody.byteLength;
+        return;
+    }
+    if (respBody.length > this.offset) {
+        this.emit('data', respBody.slice(this.offset));
+        this.offset = respBody.length;
+    }
+};
+
+var isArray = Array.isArray || function (xs) {
+    return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+},{"stream":38}],37:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream');
@@ -17023,7 +17031,7 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":40,"Base64":42,"concat-stream":41,"stream":38}],42:[function(require,module,exports){
+},{"./response":40,"Base64":41,"concat-stream":42,"stream":38}],41:[function(require,module,exports){
 ;(function () {
 
   var
@@ -17080,7 +17088,7 @@ var indexOf = function (xs, x) {
 
 }());
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var stream = require('stream')
 var bops = require('bops')
 var util = require('util')
@@ -17165,6 +17173,44 @@ function subarray(buf, from, to) {
   return buf.subarray(from || 0, to || buf.length)
 }
 
+},{}],48:[function(require,module,exports){
+module.exports = join
+
+function join(targets, hint) {
+  if(!targets.length) {
+    return new Uint8Array(0)
+  }
+
+  var len = hint !== undefined ? hint : get_length(targets)
+    , out = new Uint8Array(len)
+    , cur = targets[0]
+    , curlen = cur.length
+    , curidx = 0
+    , curoff = 0
+    , i = 0
+
+  while(i < len) {
+    if(curoff === curlen) {
+      curoff = 0
+      ++curidx
+      cur = targets[curidx]
+      curlen = cur && cur.length
+      continue
+    }
+    out[i++] = cur[curoff++] 
+  }
+
+  return out
+}
+
+function get_length(targets) {
+  var size = 0
+  for(var i = 0, len = targets.length; i < len; ++i) {
+    size += targets[i].byteLength
+  }
+  return size
+}
+
 },{}],49:[function(require,module,exports){
 module.exports = copy
 
@@ -17217,44 +17263,6 @@ function slow_copy(from, to, j, i, jend) {
   for(; i < iend; ++i, ++x) {
     to[j++] = tmp[x]
   }
-}
-
-},{}],48:[function(require,module,exports){
-module.exports = join
-
-function join(targets, hint) {
-  if(!targets.length) {
-    return new Uint8Array(0)
-  }
-
-  var len = hint !== undefined ? hint : get_length(targets)
-    , out = new Uint8Array(len)
-    , cur = targets[0]
-    , curlen = cur.length
-    , curidx = 0
-    , curoff = 0
-    , i = 0
-
-  while(i < len) {
-    if(curoff === curlen) {
-      curoff = 0
-      ++curidx
-      cur = targets[curidx]
-      curlen = cur && cur.length
-      continue
-    }
-    out[i++] = cur[curoff++] 
-  }
-
-  return out
-}
-
-function get_length(targets) {
-  var size = 0
-  for(var i = 0, len = targets.length; i < len; ++i) {
-    size += targets[i].byteLength
-  }
-  return size
 }
 
 },{}],50:[function(require,module,exports){
@@ -17461,120 +17469,7 @@ function get(target) {
   return out
 }
 
-},{}],54:[function(require,module,exports){
-module.exports = to_utf8
-
-var out = []
-  , col = []
-  , fcc = String.fromCharCode
-  , mask = [0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]
-  , unmask = [
-      0x00
-    , 0x01
-    , 0x02 | 0x01
-    , 0x04 | 0x02 | 0x01
-    , 0x08 | 0x04 | 0x02 | 0x01
-    , 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-  ]
-
-function to_utf8(bytes, start, end) {
-  start = start === undefined ? 0 : start
-  end = end === undefined ? bytes.length : end
-
-  var idx = 0
-    , hi = 0x80
-    , collecting = 0
-    , pos
-    , by
-
-  col.length =
-  out.length = 0
-
-  while(idx < bytes.length) {
-    by = bytes[idx]
-    if(!collecting && by & hi) {
-      pos = find_pad_position(by)
-      collecting += pos
-      if(pos < 8) {
-        col[col.length] = by & unmask[6 - pos]
-      }
-    } else if(collecting) {
-      col[col.length] = by & unmask[6]
-      --collecting
-      if(!collecting && col.length) {
-        out[out.length] = fcc(reduced(col, pos))
-        col.length = 0
-      }
-    } else { 
-      out[out.length] = fcc(by)
-    }
-    ++idx
-  }
-  if(col.length && !collecting) {
-    out[out.length] = fcc(reduced(col, pos))
-    col.length = 0
-  }
-  return out.join('')
-}
-
-function find_pad_position(byt) {
-  for(var i = 0; i < 7; ++i) {
-    if(!(byt & mask[i])) {
-      break
-    }
-  }
-  return i
-}
-
-function reduced(list) {
-  var out = 0
-  for(var i = 0, len = list.length; i < len; ++i) {
-    out |= list[i] << ((len - i - 1) * 6)
-  }
-  return out
-}
-
-},{}],45:[function(require,module,exports){
-module.exports = to
-
-var base64 = require('base64-js')
-  , toutf8 = require('to-utf8')
-
-var encoders = {
-    hex: to_hex
-  , utf8: to_utf
-  , base64: to_base64
-}
-
-function to(buf, encoding) {
-  return encoders[encoding || 'utf8'](buf)
-}
-
-function to_hex(buf) {
-  var str = ''
-    , byt
-
-  for(var i = 0, len = buf.length; i < len; ++i) {
-    byt = buf[i]
-    str += ((byt & 0xF0) >>> 4).toString(16)
-    str += (byt & 0x0F).toString(16)
-  }
-
-  return str
-}
-
-function to_utf(buf) {
-  return toutf8(buf)
-}
-
-function to_base64(buf) {
-  return base64.fromByteArray(buf)
-}
-
-
-},{"base64-js":55,"to-utf8":54}],44:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = from
 
 var base64 = require('base64-js')
@@ -17634,7 +17529,45 @@ function from_base64(str) {
   return new Uint8Array(base64.toByteArray(str)) 
 }
 
-},{"base64-js":55}],55:[function(require,module,exports){
+},{"base64-js":54}],45:[function(require,module,exports){
+module.exports = to
+
+var base64 = require('base64-js')
+  , toutf8 = require('to-utf8')
+
+var encoders = {
+    hex: to_hex
+  , utf8: to_utf
+  , base64: to_base64
+}
+
+function to(buf, encoding) {
+  return encoders[encoding || 'utf8'](buf)
+}
+
+function to_hex(buf) {
+  var str = ''
+    , byt
+
+  for(var i = 0, len = buf.length; i < len; ++i) {
+    byt = buf[i]
+    str += ((byt & 0xF0) >>> 4).toString(16)
+    str += (byt & 0x0F).toString(16)
+  }
+
+  return str
+}
+
+function to_utf(buf) {
+  return toutf8(buf)
+}
+
+function to_base64(buf) {
+  return base64.fromByteArray(buf)
+}
+
+
+},{"base64-js":54,"to-utf8":55}],54:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -17720,5 +17653,80 @@ function from_base64(str) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}]},{},[28,10,14,1,2,21,15,11,18,25,12,16,19,23,17,24,26,3,22,27,4,20,6])
+},{}],55:[function(require,module,exports){
+module.exports = to_utf8
+
+var out = []
+  , col = []
+  , fcc = String.fromCharCode
+  , mask = [0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]
+  , unmask = [
+      0x00
+    , 0x01
+    , 0x02 | 0x01
+    , 0x04 | 0x02 | 0x01
+    , 0x08 | 0x04 | 0x02 | 0x01
+    , 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+    , 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+    , 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+  ]
+
+function to_utf8(bytes, start, end) {
+  start = start === undefined ? 0 : start
+  end = end === undefined ? bytes.length : end
+
+  var idx = 0
+    , hi = 0x80
+    , collecting = 0
+    , pos
+    , by
+
+  col.length =
+  out.length = 0
+
+  while(idx < bytes.length) {
+    by = bytes[idx]
+    if(!collecting && by & hi) {
+      pos = find_pad_position(by)
+      collecting += pos
+      if(pos < 8) {
+        col[col.length] = by & unmask[6 - pos]
+      }
+    } else if(collecting) {
+      col[col.length] = by & unmask[6]
+      --collecting
+      if(!collecting && col.length) {
+        out[out.length] = fcc(reduced(col, pos))
+        col.length = 0
+      }
+    } else { 
+      out[out.length] = fcc(by)
+    }
+    ++idx
+  }
+  if(col.length && !collecting) {
+    out[out.length] = fcc(reduced(col, pos))
+    col.length = 0
+  }
+  return out.join('')
+}
+
+function find_pad_position(byt) {
+  for(var i = 0; i < 7; ++i) {
+    if(!(byt & mask[i])) {
+      break
+    }
+  }
+  return i
+}
+
+function reduced(list) {
+  var out = 0
+  for(var i = 0, len = list.length; i < len; ++i) {
+    out |= list[i] << ((len - i - 1) * 6)
+  }
+  return out
+}
+
+},{}]},{},[13,10,15,1,2,16,17,11,20,26,12,18,21,24,19,27,25,3,23,28,22,4,6])
 ;

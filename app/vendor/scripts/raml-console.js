@@ -594,12 +594,15 @@ RAML.Inspector = (function() {
       requestOptions.headers['Authorization'] = "Basic " + encoded;
     }
 
+    this.requestInProgress = true;
     this.http(requestOptions).then(
       this.handleResponse.bind(this), this.handleResponse.bind(this)
     );
   };
 
   TryIt.prototype.handleResponse = function(httpResponse) {
+    this.requestInProgress = false;
+
     this.response.body = httpResponse.data,
       this.response.status = httpResponse.status,
       this.response.headers = httpResponse.headers();
@@ -614,6 +617,19 @@ RAML.Inspector = (function() {
 
 (function() {
   RAML.Directives = {};
+})();
+
+(function() {
+  'use strict';
+
+  RAML.Directives.apiResources = function() {
+
+    return {
+      restrict: 'E',
+      templateUrl: 'views/api_resources.tmpl.html',
+      replace: true
+    }
+  }
 })();
 
 (function() {
@@ -982,6 +998,19 @@ RAML.Inspector = (function() {
 (function() {
   'use strict';
 
+  RAML.Directives.rootDocumentation = function() {
+
+    return {
+      restrict: 'E',
+      templateUrl: 'views/root_documentation.tmpl.html',
+      replace: true
+    }
+  }
+})();
+
+(function() {
+  'use strict';
+
   ////////////
   // tabset
   ////////////
@@ -1144,6 +1173,7 @@ RAML.Filters = {};
 
 var module = angular.module('ramlConsoleApp', ['raml', 'ngSanitize']);
 
+module.directive('apiResources', RAML.Directives.apiResources);
 module.directive('basicAuth', RAML.Directives.basicAuth);
 module.directive('codeMirror', RAML.Directives.codeMirror);
 module.directive('collapsible', RAML.Directives.collapsible);
@@ -1158,6 +1188,7 @@ module.directive('pathBuilder', RAML.Directives.pathBuilder);
 module.directive('ramlConsole', RAML.Directives.ramlConsole);
 module.directive('ramlConsoleInitializer', RAML.Directives.ramlConsoleInitializer);
 module.directive('resourceSummary', RAML.Directives.resourceSummary);
+module.directive('rootDocumentation', RAML.Directives.rootDocumentation);
 module.directive('tab', RAML.Directives.tab);
 module.directive('tabset', RAML.Directives.tabset);
 module.directive('tryIt', RAML.Directives.tryIt);
@@ -1215,40 +1246,37 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    </tab>\n" +
     "    <tab role='documentation-requests' heading=\"Requests\" active='documentation.requestsActive' disabled=\"!documentation.hasRequestDocumentation\">\n" +
     "      <div ng-repeat=\"(mediaType, definition) in method.body track by mediaType\">\n" +
-    "        <h2>{{mediaType}}</h2>\n" +
+    "        <h3>{{mediaType}}</h3>\n" +
     "        <div ng-if=\"definition.schema\">\n" +
-    "          <h3>Request Schema</h3>\n" +
+    "          <h4>Schema</h4>\n" +
     "          <div class=\"code\" code-mirror=\"definition.schema\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
     "        </div>\n" +
     "        <div ng-if=\"definition.example\">\n" +
-    "          <h3>Example Request</h3>\n" +
+    "          <h4>Example</h4>\n" +
     "          <div class=\"code\" code-mirror=\"definition.example\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "    </tab>\n" +
     "    <tab role='documentation-responses' heading=\"Responses\" active='documentation.responsesActive' disabled='!documentation.hasResponseDocumentation'>\n" +
-    "      <h2>Responses</h2>\n" +
     "      <div ng-repeat='(responseCode, response) in method.responses'>\n" +
     "        <div collapsible>\n" +
     "          <div collapsible-toggle>\n" +
-    "            <h3>\n" +
-    "              <a href=\"\">\n" +
-    "                <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
-    "                {{responseCode}}\n" +
-    "              </a>\n" +
-    "            </h3>\n" +
+    "            <h2>\n" +
+    "              <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
+    "              {{responseCode}}\n" +
+    "            </h2>\n" +
     "          </div>\n" +
     "          <div collapsible-content>\n" +
     "            <section role='response'>\n" +
     "              <p markdown='response.description'></p>\n" +
     "              <div ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
-    "                <h2>{{mediaType}}</h2>\n" +
+    "                <h3>{{mediaType}}</h3>\n" +
     "                <div ng-if=\"definition.schema\">\n" +
-    "                  <h3>Response Schema</h3>\n" +
+    "                  <h4>Schema</h4>\n" +
     "                  <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
     "                </div>\n" +
     "                <div ng-if=\"definition.example\">\n" +
-    "                  <h3>Example Response</h3>\n" +
+    "                  <h4>Example</h4>\n" +
     "                  <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
     "                </div>\n" +
     "              </div>\n" +
@@ -1323,71 +1351,6 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "      <div ng-if=\"param.example\"><span class=\"label\">Example</span> <span role=\"example\">{{param.example}}</span></div>\n" +
     "    </div>\n" +
     "  </div>\n" +
-    "  <!--     <h4>\n" +
-    "      {{param.displayName}}\n" +
-    "      —\n" +
-    "      {{param.required}},\n" +
-    "      {{param.type}},\n" +
-    "      {{param.integerRange}},\n" +
-    "      {{param.characterRange}},\n" +
-    "      {{param.pattern}},\n" +
-    "      {{param.repeatable}}\n" +
-    "    </h4>\n" +
-    "    <div>Description: {{param.description}}</div>\n" +
-    "    <div>Possible values: {{param.enum}}</div>\n" +
-    "    <div>Example: {{param.example}}</div>\n" +
-    "    <div>Default: {{param.default}}</div>\n" +
-    "  </div> -->\n" +
-    "\n" +
-    "    <!-- <h4>\n" +
-    "      {{param.displayName}}\n" +
-    "      —\n" +
-    "      {{param.type}},\n" +
-    "      <ng-if=\"param.minimum && param.maximum\">{{param.minimum}}-{{param.maximum}},</ng-if>\n" +
-    "      <ng-if=\"param.minLength\">{{param.minLength}}-{{param.maxLength}} characters,</ng-if>\n" +
-    "      <ng-if=\"param.pattern\">{{param.pattern}}</ng-if>\n" +
-    "    </h4>\n" +
-    "    <div>Description: {{param.description}}</div>\n" +
-    "    <div>Possible values: {{param.enum}}</div>\n" +
-    "    <div>Example: {{param.example}}</div>\n" +
-    "  </div>\n" +
-    "\n" +
-    "  <table>\n" +
-    "    <thead>\n" +
-    "      <tr>\n" +
-    "        <th>Param</th>\n" +
-    "        <th>Type</th>\n" +
-    "        <th>Description</th>\n" +
-    "        <th>Example</th>\n" +
-    "        <th>Repeatable</th>\n" +
-    "        <th>Default</th>\n" +
-    "        <th>Required</th>\n" +
-    "        <th>Minimum</th>\n" +
-    "        <th>Maximum</th>\n" +
-    "        <th>Minimum Length</th>\n" +
-    "        <th>Maximum Length</th>\n" +
-    "        <th>Valid Values</th>\n" +
-    "        <th>Pattern</th>\n" +
-    "      </tr>\n" +
-    "    </thead>\n" +
-    "    <tbody>\n" +
-    "      <tr role='parameter' ng-repeat='param in parameters'>\n" +
-    "        <td><strong>{{param.displayName}}</strong></td>\n" +
-    "        <td><em>{{param.type}}</em></td>\n" +
-    "        <td>{{param.description}}</td>\n" +
-    "        <td>{{param.example}}</td>\n" +
-    "        <td>{{param.repeat | yesNo}}</td>\n" +
-    "        <td>{{param.default}}</td>\n" +
-    "        <td>{{param.required | yesNo}}</td>\n" +
-    "        <td>{{param.minimum}}</td>\n" +
-    "        <td>{{param.maximum}}</td>\n" +
-    "        <td>{{param.minLength}}</td>\n" +
-    "        <td>{{param.maxLength}}</td>\n" +
-    "        <td>{{param.enum}}</td>\n" +
-    "        <td>{{param.pattern}}</td>\n" +
-    "      </tr>\n" +
-    "    </tbody>\n" +
-    "  </table> -->\n" +
     "</section>\n"
   );
 
@@ -1414,8 +1377,12 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "  </nav>\n" +
     "\n" +
     "  <div id=\"content\" ng-switch='ramlConsole.view'>\n" +
-    "    <ng-include ng-switch-when='rootDocumentation' src=\"'views/root_documentation.tmpl.html'\"></ng-include>\n" +
-    "    <ng-include ng-switch-default src=\"'views/api_resources.tmpl.html'\"></ng-include>\n" +
+    "    <div ng-switch-when='rootDocumentation'>\n" +
+    "      <root-documentation></root-documentation>\n" +
+    "    </div>\n" +
+    "    <div ng-switch-default>\n" +
+    "      <api-resources></api-resources>\n" +
+    "    </div>\n" +
     "  </div>\n" +
     "</article>\n"
   );
@@ -1498,13 +1465,15 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    </div>\n" +
     "\n" +
     "    <div class=\"form-actions\">\n" +
+    "      <i ng-show='apiClient.requestInProgress' class=\"icon-spinner icon-spin icon-large\"></i>\n" +
+    "\n" +
     "      <button role=\"try-it\" class=\"btn inverted\" ng-click=\"apiClient.execute()\">\n" +
     "        Try It\n" +
     "      </button>\n" +
     "    </div>\n" +
     "  </form>\n" +
     "\n" +
-    "  <div class=\"response\" ng-if=\"apiClient.response\">\n" +
+    "  <div class=\"response\" ng-if=\"apiClient.response && !apiClient.requestInProgress\">\n" +
     "    <h3>Response</h3>\n" +
     "    <div class=\"request-url\">\n" +
     "      <h4>Request URL</h4>\n" +
