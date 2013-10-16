@@ -1,6 +1,6 @@
 <div role="raml-editor" class="{{theme}}" ng-controller="ramlMain">
   <header>
-    <h1><strong>RAML</strong>editor</h1>
+    <h1><strong>API</strong>designer</h1>
     <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
   </header>
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
@@ -21,7 +21,9 @@
     <div role="tabs">
       <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
     </div>
-    <div role="actions"></div>
+    <div role="actions">
+      <div role="new-button" ng-click="newFile()"><i class="icon-plus"></i></div>
+    </div>
     <div role="code" style="height:inherit"><textarea id="code" name="code" style="display: none;"></textarea></div>
   </div>
   <div role="preview">
