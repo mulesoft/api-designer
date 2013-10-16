@@ -71,7 +71,7 @@ div[role=raml-editor] > header > h1 > strong {
   font-weight: bold;
 }
 
-div[role=raml-editor] > header > div[role=save-button] {
+div[role=raml-editor] > header > div[role$=button] {
   position: absolute;
   top: 51%;
   right: 0px;
@@ -84,7 +84,22 @@ div[role=raml-editor] > header > div[role=save-button] {
   cursor: pointer;
 }
 
-div[role=raml-editor] > header > div[role=save-button].disabled {
+div[role=raml-editor] > header > div[role=save-button] {
+  position: absolute;
+  top: 51%;
+  right: 0px;
+  margin: -19px 100px 0px 0px;
+  padding: 10px 13px;
+  background-color: rgb(87,152,202);
+  color: white;
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+
+div[role=raml-editor] > header > div[role=save-button].disabled,
+div[role=raml-editor] > header > div[role=saveas-button].disabled {
   background-color: #999;
   cursor: default;
 }
