@@ -110,6 +110,14 @@ angular.module('ramlEditorApp')
       }
     };
 
+    $scope.newFile = function (){
+      if(!$scope.canSave()) {
+        $scope.file = ramlRepository.createFile();
+        editor.setValue($scope.file.contents);
+        editor.setCursor({line: 1, ch: 0});
+      }
+    };
+
     $scope.isShelfCollapsed = function () {
       return $scope.shelf.collapsed;
     };
