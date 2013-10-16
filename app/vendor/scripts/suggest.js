@@ -1,5 +1,5 @@
 ;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var Alternatives, Boolean, ConstantString, Include, Integer, JSONSchema, ListNode, Markdown, Multiple, Node, NodeMap, PostposedExecution, Regex, StringNode, TreeMap, Tuple, XMLSchema, action, actionDefinition, actionName, baseUri, baseUriParameters, body, bodyCategory, bodySchema, boolean, cache, chapter, d3fault, describedBy, description, docsCategory, documentation, enum2, example, formParameters, header, headers, include, integer, isTrait, jsonSchema, listNode, markdown, maxLength, maximum, mediaType, methodsCategory, mimeType, mimeTypeParameters, minLength, minimum, model, name, notImplemented, parameterProperty, parameterType, parametersCategory, pattern, postposedResource, protocols, protocolsAlternatives, queryParameterDefinition, queryParameters, regex, required, resource, resourceDefinition, resourceTypes, resourceTypesDefinition, resourcesCategory, responseCode, responses, responsesCategory, root, rootCategory, rootElement, schemas, schemasCategory, securedBy, securityCategory, securitySchemes, securitySchemesDefinition, securityType, settingAlternative, settings, stringNode, summary, title, traits, traitsAndResourceTypesCategory, traitsDefinition, transverse, transversePrimitive, typ3, type, uriParameter, uriParameters, version, xmlSchema, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8,
+var Alternatives, Boolean, ConstantString, Include, Integer, JSONSchema, ListNode, Markdown, Multiple, Node, NodeMap, PostposedExecution, Regex, StringNode, TreeMap, Tuple, XMLSchema, action, actionDefinition, actionName, baseUri, baseUriParameters, body, bodyCategory, bodySchema, boolean, cache, chapter, d3fault, describedBy, description, docsCategory, documentation, enum2, example, formParameterDefinition, formParameters, header, headers, include, integer, isTrait, jsonSchema, listNode, markdown, maxLength, maximum, mediaType, methodsCategory, mimeType, mimeTypeParameters, minLength, minimum, model, name, notImplemented, parameterProperty, parameterType, parametersCategory, pattern, postposedResource, protocols, protocolsAlternatives, queryParameterDefinition, queryParameters, regex, required, resource, resourceDefinition, resourceTypes, resourceTypesDefinition, resourcesCategory, responseCode, responses, responsesCategory, root, rootCategory, rootElement, schemas, schemasCategory, securedBy, securityCategory, securitySchemes, securitySchemesDefinition, securityType, settingAlternative, settings, stringNode, title, traits, traitsAndResourceTypesCategory, traitsDefinition, transverse, transversePrimitive, typ3, type, uriParameter, uriParameters, version, xmlSchema, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8,
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -427,8 +427,6 @@ chapter = new Alternatives(title, new Tuple(new ConstantString('content'), strin
 
 documentation = new Tuple(new ConstantString('documentation'), new Multiple(chapter), rootCategory);
 
-summary = new Tuple(new ConstantString('summary'), stringNode, docsCategory);
-
 example = new Tuple(new ConstantString('example'), stringNode, docsCategory);
 
 header = new Tuple(stringNode, new Multiple(new Alternatives(parameterProperty, example)), parametersCategory);
@@ -439,7 +437,9 @@ queryParameterDefinition = new Tuple(stringNode, new Multiple(new Alternatives(p
 
 queryParameters = new Tuple(new ConstantString('queryParameters'), new Multiple(queryParameterDefinition), parametersCategory);
 
-formParameters = new Tuple(new ConstantString('formParameters'), new Multiple(new Alternatives(parameterProperty, example)), parametersCategory);
+formParameterDefinition = new Tuple(stringNode, new Multiple(new Alternatives(parameterProperty, example)), parametersCategory);
+
+formParameters = new Tuple(new ConstantString('formParameters'), new Multiple(formParameterDefinition), parametersCategory);
 
 bodySchema = new Tuple(new ConstantString('schema'), new Alternatives(xmlSchema, jsonSchema), schemasCategory);
 
@@ -455,7 +455,7 @@ responses = new Tuple(new ConstantString('responses'), new Multiple(responseCode
 
 securedBy = new Tuple(new ConstantString('securedBy'), listNode, securityCategory);
 
-actionDefinition = new Alternatives(summary, description, headers, queryParameters, body, responses, securedBy, protocols);
+actionDefinition = new Alternatives(description, baseUriParameters, headers, queryParameters, body, responses, securedBy, protocols);
 
 action = (function(func, args, ctor) {
   ctor.prototype = func.prototype;
@@ -484,11 +484,11 @@ resourceDefinition = new Alternatives(name, action, isTrait, type, postposedReso
 
 resource = new Tuple(stringNode, new Multiple(resourceDefinition), resourcesCategory);
 
-traitsDefinition = new Tuple(stringNode, new Multiple(new Alternatives(name, summary, description, headers, queryParameters, body, responses, securedBy, protocols)), traitsAndResourceTypesCategory);
+traitsDefinition = new Tuple(stringNode, new Multiple(new Alternatives(name, description, baseUriParameters, headers, queryParameters, body, responses, securedBy, protocols)), traitsAndResourceTypesCategory);
 
 traits = new Tuple(new ConstantString('traits'), new Multiple(traitsDefinition), traitsAndResourceTypesCategory);
 
-resourceTypesDefinition = new Tuple(stringNode, new Multiple(new Alternatives(summary, description, name, action, isTrait, type, securedBy, baseUriParameters, uriParameters)), traitsAndResourceTypesCategory);
+resourceTypesDefinition = new Tuple(stringNode, new Multiple(new Alternatives(description, name, action, isTrait, type, securedBy, baseUriParameters, uriParameters)), traitsAndResourceTypesCategory);
 
 resourceTypes = new Tuple(new ConstantString('resourceTypes'), resourceTypesDefinition, traitsAndResourceTypesCategory);
 
