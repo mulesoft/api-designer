@@ -54,7 +54,7 @@ angular.module('raml')
 
         i = indexAfterSpaces(lineContent);
 
-        result.tabCount = i / tabSize;
+        result.tabCount = Math.floor(i / tabSize);
 
         if (lineContent.slice(i).indexOf('- ') === 0) {
           result.isList = true;
@@ -62,7 +62,7 @@ angular.module('raml')
           i = indexAfterSpaces(lineContent, i);
         }
 
-        lineContent = lineContent.slice(i).match(/(.+)(: |:\s*$)/);
+        lineContent = lineContent.slice(i).match(/^(.+)(: |:\s*$)/);
 
         result.content = (lineContent && lineContent.length > 2) ?
           lineContent[1] : '';
