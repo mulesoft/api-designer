@@ -5,6 +5,8 @@ var codeMirror, eventService, codeMirrorErrors, ramlRepository,
 
 
 describe('RAML Editor Main Controller', function () {
+  var params, ctrl, scope, annotationsToDisplay, editor;
+
   beforeEach(angular.mock.module('ramlEditorApp'));
 
   beforeEach(
@@ -16,35 +18,40 @@ describe('RAML Editor Main Controller', function () {
     })
   );
 
+  beforeEach(function () {
+    scope = $rootScope.$new();
+
+    editor = {
+      on: function () {},
+      setValue: function() {},
+      setCursor: function(){}
+    }
+
+    codeMirror.initEditor = function (){
+      return editor;
+    };
+
+    codeMirrorErrors = {};
+    codeMirrorErrors.displayAnnotations = function (annotations) {
+      annotationsToDisplay = annotations;
+    };
+
+    ramlRepository = {
+      bootstrap: function () {},
+      createFile: function(){}
+    };
+
+    params = {
+      $scope: scope,
+      codeMirror: codeMirror,
+      codeMirrorErrors: codeMirrorErrors,
+      eventService: eventService,
+      ramlRepository: ramlRepository,
+      afterBootstrap: function () { }
+    };
+  });
+
   describe('on raml parser error', function () {
-    var params, ctrl, scope, annotationsToDisplay;
-
-    beforeEach(function () {
-      scope = $rootScope.$new();
-      codeMirror.initEditor = function () {
-        return {
-          on: function () {}
-        };
-      };
-
-      codeMirrorErrors = {};
-      codeMirrorErrors.displayAnnotations = function (annotations) {
-        annotationsToDisplay = annotations;
-      };
-
-      ramlRepository = { bootstrap: function () {} };
-
-      params = {
-        $scope: scope,
-        codeMirror: codeMirror,
-        codeMirrorErrors: codeMirrorErrors,
-        eventService: eventService,
-        ramlRepository: ramlRepository,
-        afterBootstrap: function () { }
-      };
-
-    });
-    
     it('should display errors on first line if no line specified', function (done) {
       // Arrange
       params.afterBootstrap = function () {
@@ -70,47 +77,12 @@ describe('RAML Editor Main Controller', function () {
   });
 
   describe('controller actions', function (){
-    var scope;
-    var params;
-    var controller;
-    var editor = {
-      on: function () {},
-      setValue: function() {},
-      setCursor: function(){}
-    }
-
-    beforeEach(function(){
-      scope = $rootScope.$new();
-
-      codeMirror.initEditor = function (){
-        return editor;
-      };
-
-      codeMirrorErrors = {};
-      codeMirrorErrors.displayAnnotations = function (annotations) { };
-
-      ramlRepository = {
-        bootstrap: function () {},
-        createFile: function () {}
-      }
-
-      params = {
-        $scope: scope,
-        codeMirror: codeMirror,
-        codeMirrorErrors: codeMirrorErrors,
-        eventService: eventService,
-        ramlRepository: ramlRepository,
-        afterBootstrap: function() {}
-      };
-
-    });
-
     it('should create a new RAML file if the current document is saved', function(done){
       //arrange
       params.afterBootstrap = function(){
         done();
       }
-      controller = $controller('ramlMain', params);
+      ctrl = $controller('ramlMain', params);
 
       var file = {
         contents: 'NEW RAML FILE'
