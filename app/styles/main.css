@@ -1,20 +1,20 @@
 html {
-    height: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
+  height: 100%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-    background: #fafafa;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    color: #333;
-    height: 100%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    margin: 0px;
-    padding-bottom: 0px;
+  background: #fafafa;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #333;
+  height: 100%;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0;
+  padding-bottom: 0;
 }
 
 div.container {
@@ -25,16 +25,15 @@ div.container {
 }
 
 div[role=raml-editor] {
-    width: 100%;
-    height: 100%;
-    padding-top: 60px;
-    padding-left: 4px;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    position: relative;
-    background: rgb(52,52,54);
-    position: relative;
+  width: 100%;
+  height: 100%;
+  padding-top: 60px;
+  padding-left: 4px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  position: relative;
+  background: rgb(52,52,54);
 }
 
 div[role=raml-editor] > header {
@@ -42,26 +41,26 @@ div[role=raml-editor] > header {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   position: absolute;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
   margin-left: 4px;
   padding-top: 12px;
   padding-left: 18px;
-  right: 0px;
+  right: 0;
   background: rgb(87,88,90);
   height: 60px;
-  border-radius: 5px 0px 0px 0px;
+  border-radius: 5px 0 0 0;
 }
 
 div[role=raml-editor] > header > h1 {
-  padding: 0px;
-  margin: 5px 0px 10px 0px;
+  padding: 0;
+  margin: 5px 0 10px 0;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   font-size: 24px;
   font-weight: lighter;
-  text-shadow: -1px 0px 4px #222;
+  text-shadow: -1px 0 4px #222;
   color: white;
   letter-spacing: 1px;
   position: relative;
@@ -74,8 +73,8 @@ div[role=raml-editor] > header > h1 > strong {
 div[role=raml-editor] > header > div[role=save-button] {
   position: absolute;
   top: 51%;
-  right: 0px;
-  margin: -19px 15px 0px 0px;
+  right: 0;
+  margin: -19px 15px 0 0;
   padding: 10px 13px;
   background-color: rgb(87,152,202);
   color: white;
@@ -93,7 +92,7 @@ div[role=editor] {
   width: 60%;
   height: 100%;
   float: left;
-  padding: 0px;
+  padding: 0;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -102,7 +101,7 @@ div[role=editor] {
   padding-top: 32px;
   padding-bottom: 41px;
   background: rgb(11,11,13);
-  border-radius: 5px 0px 0px 0px;
+  border-radius: 5px 0 0 0;
 }
 
 div[role=editor].collapsed {
@@ -110,7 +109,7 @@ div[role=editor].collapsed {
 }
 
 div[role=editor].error {
-  box-shadow: 0px 0px 5px 1px red;
+  box-shadow: 0 0 5px 1px red;
   transition: all .5s ease-out;
 }
 
@@ -122,6 +121,8 @@ div[role=tabs] {
   position: absolute;
   top: 3px;
   left: 20px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 
@@ -132,6 +133,8 @@ div[role=tab] {
   float:left;
   margin:0 -10px 0 0;
   position: relative;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
   color: #839496;
   text-shadow: #002b36 0 1px;
@@ -148,12 +151,17 @@ div[role=tab-box] {
   border:1px solid rgb(42,44,51);
   border-top-width: 2px;
   margin:0 8px 0;
-  -webkit-transform: perspective(100px) rotateX(20deg);
   -moz-transform: perspective(100px) rotateX(20deg);
+  -ms-transform: perspective(100px) rotateX(20deg);
+  -o-transform: perspective(100px) rotateX(20deg);
+  -webkit-transform: perspective(100px) rotateX(20deg);
+  transform: perspective(100px) rotateX(20deg);
   position: absolute;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
   width: 140px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
   box-sizing: border-box;
   z-index: -1;
 }
@@ -172,25 +180,25 @@ div[role=tab].active div[role=tab-box]{
 /* Preview - Console */
 
 div[role=preview] {
-    width: 40%;
-    float: left;
-    padding: 0px;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-    height: 100%;
-    overflow: hidden;
-    background: rgb(230,231,235);
+  width: 40%;
+  float: left;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  height: 100%;
+  overflow: hidden;
+  background: rgb(230,231,235);
 }
 
 div[role=preview] > header > h2 {
   height: auto;
-  padding: 0px 0px 10px 0px;
+  padding: 0 0 10px 0;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   font-size: 20px;
-  margin: 0px;
+  margin: 0;
   font-weight: normal;
 }
 
@@ -216,11 +224,11 @@ div[role=preview] > div[role=console] {
 div[role=shelf] {
   position: absolute;
   background: rgb(26,32,43);
-  color: grey;
+  color: gray;
   left: -10px;
-  right: 0px;
+  right: 0;
   height: 40px;
-  bottom: 0px;
+  bottom: 0;
   border-top: 1px solid rgb(48,83,110);
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -249,7 +257,7 @@ div[role=shelf] div[role=shelf-container] {
 
 div[role=shelf] > div[role=shelf-tab] {
   position: absolute;
-  right: 0px;
+  right: 0;
   width: 50px;
   height: 26px;
   display: block;
@@ -262,7 +270,7 @@ div[role=shelf] > div[role=shelf-tab] {
   z-index: 100;
   border-top: 1px solid rgb(48,83,110);
   border-left: 1px solid rgb(48,83,110);
-  border-radius: 2px 0px 0px 0px;
+  border-radius: 2px 0 0 0;
   cursor: pointer;
 }
 
@@ -275,21 +283,20 @@ div[role=shelf] > div[role=shelf-tab] > i + i {
 }
 
 div[role=shelf] ul {
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
   padding-left: 15px;
 }
 
 div[role=shelf] ul[role=sections] {
-  margin-left: 0px;
-  padding-left: 0px;
-  padding-bottom: 0px;
+  margin-left: 0;
+  padding-left: 0;
+  padding-bottom: 0;
 }
 
 div[role=shelf] ul[role=sections] > li[role=section] {
-  padding-top: 8px;
-  padding-bottom: 10px;
-  margin-right: 10px;
+  padding: 10px 0;
+  margin-right: 15px;
   text-transform: uppercase;
   list-style-type: none;
   font-size: 11px;
@@ -302,8 +309,8 @@ div[role=shelf] ul[role=sections] > li[role=section] {
 }
 
 div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] {
-  padding-left: 0px;
-  margin-left: 0px;
+  padding-left: 0;
+  margin-left: 0;
   margin-top: 13px;
   padding-right: 10px;
   min-height: 56px;
@@ -329,40 +336,26 @@ div[role=shelf] ul[role=sections] > li[role=section].methods > ul[role=items] > 
   clear: both;
 }
 
-div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:before {
-  content: '+';
-  font-size: 10px;
-  vertical-align: 1px;
-  padding-left: 5px;
-  padding-right: 4px;
-  display: inline-block;
-  color: #ddd;
-  font-weight: bold;
-}
-
 div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
+  background-color: rgb(15,18,23);
+  border-radius: 25px;
   color: gray;
-  text-shadow: 0px 0px;
-  list-style-type: none;
-  text-transform: none;
+  cursor: pointer;
+  float: left;
+  font-family: "Lucida Console", Monaco, monospace;
   font-size: 12px;
   font-weight: lighter;
-  padding-top: 4px;
-  cursor: pointer;
-  padding-bottom: 3px;
   letter-spacing: 0.3px;
-  font-family: "Lucida Console", Monaco, monospace;
-  /*clear: both;*/
-  float: left;
-  padding-right: 10px;
-  /*min-width: 100px;*/
-  background-color: rgb(15,18,23);
+  list-style-type: none;
+  margin: 2px 0;
+  padding: 5px;
+  text-shadow: 0 0;
+  text-transform: none;
   transition: background-color 0.1s;
-  border-radius: 25px;
-  /*color: white;*/
-  margin-right: 5px;
-  margin-top: 2px;
-  margin-bottom: 3px;
+}
+
+div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li > span {
+  margin-left: 5px;
 }
 
 div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li:hover {
