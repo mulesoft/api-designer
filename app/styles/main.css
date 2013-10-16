@@ -101,7 +101,6 @@ div[role=editor] {
   padding-top: 32px;
   padding-bottom: 41px;
   background: rgb(11,11,13);
-  border-radius: 5px 0 0 0;
 }
 
 div[role=editor].collapsed {
