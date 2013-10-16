@@ -169,6 +169,22 @@ div[role=tab].active div[role=tab-box]{
   background-color: rgb(24,25,29);
 }
 
+div[role=actions] {
+  color: grey;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 25px;
+}
+
+div[role=actions] div[role=new-button] {
+  cursor: pointer;
+  padding: 8px 5px;
+  width: 15px;
+  position: absolute;
+  right: 0;
+}
+
 /* Preview - Console */
 
 div[role=preview] {
@@ -370,6 +386,10 @@ div[role=raml-editor].light {
 
 div[role=raml-editor].light div[role=editor] {
   background: rgb(103,103,106);
+}
+
+div[role=raml-editor].light div[role=actions] {
+  color: rgb(202,204,212);
 }
 
 div[role=raml-editor].light div[role=shelf] {
