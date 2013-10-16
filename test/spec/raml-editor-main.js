@@ -73,19 +73,25 @@ describe('RAML Editor Main Controller', function () {
     var scope;
     var params;
     var controller;
+    var editor = {
+      on: function () {},
+      setValue: function() {},
+      setCursor: function(){}
+    }
 
     beforeEach(function(){
       scope = $rootScope.$new();
+
       codeMirror.initEditor = function (){
-        return {
-          on: function (){ }
-        }
-      }
-      codeMirrorErrors = {};
-      codeMirrorErrors.displayAnnotations = function (annotations) {
+        return editor;
       };
+
+      codeMirrorErrors = {};
+      codeMirrorErrors.displayAnnotations = function (annotations) { };
+
       ramlRepository = {
-        bootstrap: function (){ }
+        bootstrap: function () {},
+        createFile: function () {}
       }
 
       params = {
@@ -99,14 +105,38 @@ describe('RAML Editor Main Controller', function () {
 
     });
 
-    it('should create a new RAML file', function(done){
+    it('should create a new RAML file if the current document is saved', function(done){
+      //arrange
       params.afterBootstrap = function(){
         done();
       }
-
       controller = $controller('ramlMain', params);
 
-      console.log(controller.toggleShelf);
+      var file = {
+        contents: 'NEW RAML FILE'
+      }
+
+      sinon.stub(scope, 'canSave').returns(false);
+      sinon.stub(ramlRepository, 'createFile').returns(file);
+      sinon.stub(editor, 'setValue');
+      sinon.stub(editor, 'setCursor');
+
+      //act
+      scope.newFile();
+
+      //assert
+      scope.canSave.should.have.been.calledOnce;
+      ramlRepository.createFile.should.have.been.calledOnce;
+      editor.setValue.should.have.been.calledOnce;
+      editor.setCursor.should.have.been.calledOnce;
+
+      scope.file.should.deep.equal(file);
+
+      //restore
+      scope.canSave.restore();
+      ramlRepository.createFile.restore();
+      editor.setValue.restore();
+      editor.setCursor.restore();
     });
   });
 
