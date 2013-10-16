@@ -69,4 +69,45 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
+  describe('controller actions', function (){
+    var scope;
+    var params;
+    var controller;
+
+    beforeEach(function(){
+      scope = $rootScope.$new();
+      codeMirror.initEditor = function (){
+        return {
+          on: function (){ }
+        }
+      }
+      codeMirrorErrors = {};
+      codeMirrorErrors.displayAnnotations = function (annotations) {
+      };
+      ramlRepository = {
+        bootstrap: function (){ }
+      }
+
+      params = {
+        $scope: scope,
+        codeMirror: codeMirror,
+        codeMirrorErrors: codeMirrorErrors,
+        eventService: eventService,
+        ramlRepository: ramlRepository,
+        afterBootstrap: function() {}
+      };
+
+    });
+
+    it('should create a new RAML file', function(done){
+      params.afterBootstrap = function(){
+        done();
+      }
+
+      controller = $controller('ramlMain', params);
+
+      console.log(controller.toggleShelf);
+    });
+  });
+
 });
