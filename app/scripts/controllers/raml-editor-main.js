@@ -120,6 +120,10 @@ angular.module('ramlEditorApp')
       config.save();
     };
 
+    $scope.toggleBrowser = function () {
+      $scope.browser.expanded = !$scope.browser.expanded;
+    };
+
     eventService.on('event:save', function () {
       $scope.save();
     });
@@ -135,6 +139,8 @@ angular.module('ramlEditorApp')
       $scope.theme = $rootScope.theme = config.get('theme', '');
       $scope.shelf = {};
       $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', false));
+      $scope.browser = {};
+      $scope.browser.expanded = false;
 
       editor = codeMirror.initEditor();
 

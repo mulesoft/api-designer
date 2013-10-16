@@ -1,0 +1,67 @@
+/* Browser */
+div[role=browser] {
+  position: absolute;
+  top: 9px;
+  left: 16px;
+  overflow: show;
+  cursor: pointer;
+}
+
+div[role=raml-editor].light div[role=browser] {
+  color: #999;
+}
+
+div[role=browser]:hover > i,
+div[role=raml-editor].light div[role=browser]:hover > i {
+  color: #bbb;
+}
+
+div[role=browser] > ul[role=file-list] {
+  padding: 6px 0px;
+  margin: 0px;
+  position: absolute;
+  top: 24px;
+  left: -16px;
+  list-style: none;
+  font-size: 13px;
+  border-radius: 0px 3px 3px 0px;
+  z-index: 50;
+  min-width: 140px;
+  background-color: white;
+  box-shadow: 2px 2px 7px -2px #333;
+  color: #777;
+  background-color: rgb(20,21,25);
+  border: 1px solid rgb(48,83,110);
+  display: none;
+}
+
+div[role=browser].expanded > ul[role=file-list] {
+  display: block;
+}
+
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
+  background-color: white;
+  box-shadow: 2px 2px 7px -2px #999;
+  color: #aaa;
+  background-color: white;
+  border: 1px solid rgb(131,148,150);
+}
+
+div[role=browser] > ul[role=file-list] > li {
+  padding: 2px 13px;
+  cursor: pointer;
+  line-height: 18px;
+}
+
+div[role=browser] > ul[role=file-list] > li:hover {
+  background-color: rgb(30,79,106);
+}
+
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:hover {
+  background-color: rgb(47,124,166);
+}
+
+div[role=browser] > ul[role=file-list] > li > i {
+  padding-right: 8px;
+  /*color: #888;*/
+}
