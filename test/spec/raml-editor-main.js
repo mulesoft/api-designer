@@ -112,13 +112,137 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('Save As', function () {
-    it.skip('should be enabled only if the file has already been saved', function (done){
-      //arrange
-      params.afterBootstrap = function() {
-        done();
+  describe('Save and Save As', function () {
+    it('save should be enabled only if file is dirty', function(done) {
+      params.afterBootstrap = function () { done(); }
+      ctrl = $controller('ramlMain', params);
+
+      scope.file = {
+        dirty: true
       }
-    })
+
+      scope.canSave().should.be.ok;
+
+      scope.file.dirty = false;
+      scope.canSave().should.not.be.ok;
+    });
+
+    it('should abort if the file can\'t be saved', function(done){
+      params.afterBootstrap = function () { done(); }
+      ctrl = $controller('ramlMain', params);
+
+      sinon.stub(scope, 'canSave').returns(false);
+      sinon.stub(scope, '_saveFile');
+
+      scope.save();
+
+      scope.canSave.should.have.been.calledOnce;
+      scope._saveFile.should.have.not.been.calledOnce;
+
+      scope.canSave.restore();
+      scope._saveFile.restore();
+    });
+
+    it('should ask for a file name if the file is new has never been saved', function (done) {
+      params.afterBootstrap = function () { done(); }
+      ctrl = $controller('ramlMain', params);
+
+      sinon.stub(scope, 'canSave').returns(true);
+      sinon.stub(scope, '_promptForFileName');
+      sinon.stub(scope, '_saveFile');
+
+      scope.file = {
+        persisted: false
+      };
+
+      scope.save();
+
+      scope.canSave.should.have.been.calledOnce;
+      scope._promptForFileName.should.have.been.called;
+      scope._saveFile.should.have.been.called;
+
+      scope.canSave.restore();
+      scope._promptForFileName.restore();
+      scope._saveFile.restore();
+    });
+
+    it('should not ask for a file name if the file is new has never been saved', function (done) {
+      params.afterBootstrap = function () { done(); }
+      ctrl = $controller('ramlMain', params);
+
+      sinon.stub(scope, 'canSave').returns(true);
+      sinon.stub(scope, '_promptForFileName');
+      sinon.stub(scope, '_saveFile');
+
+      scope.file = {
+        persisted: true
+      };
+
+      scope.save();
+
+      scope.canSave.should.have.been.calledOnce;
+      scope._promptForFileName.should.have.not.been.called;
+      scope._saveFile.should.have.been.called;
+
+      scope.canSave.restore();
+      scope._promptForFileName.restore();
+      scope._saveFile.restore();
+    });
+
+    it('save as should be enabled only if the file has been saved or loaded from the persistence store', function (done){
+      //arrange
+      params.afterBootstrap = function () { done(); }
+      ctrl = $controller('ramlMain', params);
+
+      scope.file = {
+        persisted: true
+      };
+
+      //act & assert
+      scope.canSaveAs().should.be.ok;
+
+      scope.file.persisted = false;
+      scope.canSaveAs().should.not.be.ok;
+    });
+
+    it('should abort if the file is new', function(done) {
+      params.afterBootstrap = function () { done(); }
+      ctrl = $controller('ramlMain', params);
+
+      scope.file = {
+        persisted: false
+      }
+
+      sinon.stub(scope, '_promptForFileName');
+
+      scope.saveAs();
+
+      scope._promptForFileName.should.have.not.been.called;
+      scope._promptForFileName.restore();
+    });
+
+    it('should ask for a file name and call save file', function (done) {
+      params.afterBootstrap = function () { done(); }
+      ctrl = $controller('ramlMain', params);
+
+      scope.file = {
+        persisted: true
+      }
+
+      sinon.stub(scope, '_promptForFileName');
+      sinon.stub(scope, '_saveFile');
+
+      scope.saveAs();
+
+      scope._promptForFileName.should.have.been.calledOnce;
+      scope._saveFile.should.have.been.calledOnce;
+
+      scope._saveFile.should.have.been.calledAfter(scope._promptForFileName);
+
+      scope._promptForFileName.restore();
+      scope._saveFile.restore();
+    });
+
   });
 
 });
