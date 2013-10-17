@@ -157,9 +157,9 @@ describe('RAML Editor Main Controller', function () {
 
       scope.save();
 
-      scope.canSave.should.have.been.calledOnce;
-      scope._promptForFileName.should.have.been.called;
-      scope._saveFile.should.have.been.called;
+      scope.canSave.calledOnce.should.be.ok;
+      scope._promptForFileName.called.should.be.ok;
+      scope._saveFile.called.should.be.ok;
 
       scope.canSave.restore();
       scope._promptForFileName.restore();
@@ -180,9 +180,9 @@ describe('RAML Editor Main Controller', function () {
 
       scope.save();
 
-      scope.canSave.should.have.been.calledOnce;
-      scope._promptForFileName.should.have.not.been.called;
-      scope._saveFile.should.have.been.called;
+      scope.canSave.calledOnce.should.be.ok;
+      scope._promptForFileName.called.should.not.be.ok;
+      scope._saveFile.called.should.be.ok;
 
       scope.canSave.restore();
       scope._promptForFileName.restore();
@@ -217,7 +217,7 @@ describe('RAML Editor Main Controller', function () {
 
       scope.saveAs();
 
-      scope._promptForFileName.should.have.not.been.called;
+      scope._promptForFileName.called.should.not.be.ok;
       scope._promptForFileName.restore();
     });
 
@@ -234,8 +234,8 @@ describe('RAML Editor Main Controller', function () {
 
       scope.saveAs();
 
-      scope._promptForFileName.should.have.been.calledOnce;
-      scope._saveFile.should.have.been.calledOnce;
+      scope._promptForFileName.calledOnce.should.be.ok;
+      scope._saveFile.calledOnce.should.be.ok;
 
       scope._saveFile.calledAfter(scope._promptForFileName).should.be.ok;
 
