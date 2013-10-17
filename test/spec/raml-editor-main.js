@@ -136,8 +136,8 @@ describe('RAML Editor Main Controller', function () {
 
       scope.save();
 
-      scope.canSave.should.have.been.calledOnce;
-      scope._saveFile.should.have.not.been.calledOnce;
+      scope.canSave.calledOnce.should.be.ok;
+      scope._saveFile.calledOnce.should.not.be.ok;
 
       scope.canSave.restore();
       scope._saveFile.restore();
@@ -237,7 +237,7 @@ describe('RAML Editor Main Controller', function () {
       scope._promptForFileName.should.have.been.calledOnce;
       scope._saveFile.should.have.been.calledOnce;
 
-      scope._saveFile.should.have.been.calledAfter(scope._promptForFileName);
+      scope._saveFile.calledAfter(scope._promptForFileName).should.be.ok;
 
       scope._promptForFileName.restore();
       scope._saveFile.restore();
