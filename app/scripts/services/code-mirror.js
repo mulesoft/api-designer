@@ -4,7 +4,7 @@ var CodeMirror = window.CodeMirror;
 
 angular.module('codeMirror', ['raml', 'ramlEditorApp'])
   .factory('codeMirror', function (ramlHint, codeMirrorHighLight, eventService,
-    getLineIndent, generateSpaces) {
+    getLineIndent, generateSpaces, generateTabs) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
@@ -122,10 +122,9 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp'])
     };
 
     function _replaceSelection(editor, offset, whitespace) {
-      var indentUnit = editor.getOption('indentUnit');
       var editorState = ramlHint.getEditorState(editor);
 
-      var spaces = '\n' + generateSpaces(indentUnit * (editorState.currLineTabCount + offset)) + whitespace;
+      var spaces = '\n' + generateTabs(editorState.currLineTabCount + offset) + whitespace;
       editor.replaceSelection(spaces, 'end', '+input');
     }
 
