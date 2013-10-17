@@ -1,23 +1,6 @@
 'use strict';
 
 angular.module('codeMirror')
-  .value('getNumberOfIndentTabs', function (string) {
-    // TODO: Use the indent size value
-    var indentTabs = string.split('  ')
-      .reduce(function (state, curr) {
-        if (!state.textFound) {
-          if (curr === '') {
-            state.value++;
-          } else {
-            state.textFound = true;
-          }
-        }
-        return state;
-      },
-      {value: 0, textFound: false});
-
-    return indentTabs.value - 1;
-  })
   .value('highlightRootElement', function (name, titleClass, contentClass, state, level, key) {
     // Using one level of nesting nest (ie. [name + '.level']) instead of
     // [name].level to use default copy state function.
@@ -42,7 +25,8 @@ angular.module('codeMirror')
   .factory('keywordRegex', function (booleanValues) {
     return new RegExp('\\b((' + booleanValues.join(')|(') + '))$', 'i');
   })
-  .factory('token', function (keywordRegex, highlightRootElement, getNumberOfIndentTabs) {
+  .factory('token', function (keywordRegex, highlightRootElement,
+    getLineIndent) {
     return function(stream, state) {
       var ch = stream.peek();
       var esc = state.escaped;
@@ -91,7 +75,7 @@ angular.module('codeMirror')
       /* pairs (associative arrays) -> key */
       if (!state.pair && stream.match(/^\s*([a-z0-9\?\/\{\}\._\-])+(?=\s*:)/i)) {
         var key = stream.string.replace(/^\s+|\s+$/g, '').split(':')[0];
-        var level = getNumberOfIndentTabs(stream.string);
+        var level = getLineIndent(stream.string).tabCount;
 
         state.pair = true;
         state.keyCol = stream.indentation();

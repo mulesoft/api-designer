@@ -2,28 +2,12 @@
 
 var CodeMirror = window.CodeMirror, suggestRAML = window.suggestRAML;
 
-angular.module('raml')
-  .factory('ramlHint', function () {
+angular.module('ramlEditorApp')
+  .factory('ramlHint', function (getLineIndent, generateTabs, extractKey) {
     var hinter = {};
     var WORD = /[\w$]+/;
-    // TODO Unhardcode: Can't do neither cm.getOption('indentUnit')
-    // nor editor.getOption('indentUnit') :(
-    var indentUnit = 2;
-
-    function extractKey(value) {
-      return value.replace(new RegExp(':(.*)$', 'g'), '');
-    }
 
     hinter.suggestRAML = suggestRAML;
-
-    function indexAfterSpaces(s, i) {
-      i = i || 0;
-      while(i < s.length && s[i] === ' ') {
-        i++;
-      }
-
-      return i;
-    }
 
     function getEditorTextAsArrayOfLines(editor, limit) {
       var textAsList = [], i;
@@ -39,7 +23,11 @@ angular.module('raml')
       var
           editorState = hinter.getEditorState(editor),
           line = editorState.cur.line, textAsList,
-          tabSize = 2, lines;
+          lines;
+
+      if (line === 0) {
+        return null;
+      }
 
       textAsList = getEditorTextAsArrayOfLines(editor, line);
 
@@ -50,22 +38,23 @@ angular.module('raml')
 
       lines = textAsList
       .map(function (lineContent) {
-        var i = 0, result = {};
+        var result = {}, lineIndentInfo = getLineIndent(lineContent),
+          listMatcher;
 
-        i = indexAfterSpaces(lineContent);
+        result.tabCount = lineIndentInfo.tabCount;
+        lineContent = lineIndentInfo.content;
 
-        result.tabCount = Math.floor(i / tabSize);
+        listMatcher = /^(- )(.*)$/.exec(lineContent) || {index: -1};
 
-        if (lineContent.slice(i).indexOf('- ') === 0) {
+        // Case is a list
+        if (listMatcher.index === 0) {
           result.isList = true;
-          i++;
-          i = indexAfterSpaces(lineContent, i);
+          lineContent = listMatcher[2];
         }
 
-        lineContent = lineContent.slice(i).match(/^(.+)(: |:\s*$)/);
+        lineContent = /^(.+)(: |:\s*$)/.exec(lineContent);
 
-        result.content = (lineContent && lineContent.length > 2) ?
-          lineContent[1] : '';
+        result.content = lineContent ? lineContent[1] : '';
 
         return result;
       });
@@ -105,15 +94,6 @@ angular.module('raml')
       return result.invalid ? undefined : l;
     };
 
-    hinter.createIndentation = function createIndentation (tabCount) {
-      var s = new Array(indentUnit + 1).join(' ');
-      var result = '';
-      for (var i = 0; i < tabCount; i++) {
-        result += s;
-      }
-      return result;
-    };
-
     hinter.getPadding = function getPadding(node, tabCount) {
       if (!node || !node.constructor || !node.constructor.name) {
         throw new Error('Can\'t determine padding for node: ' + node);
@@ -123,20 +103,18 @@ angular.module('raml')
         return ' ';
       }
 
-      return '\n' + hinter.createIndentation(tabCount);
+      return '\n' + generateTabs(tabCount);
     };
 
     hinter.getEditorState = function(editor, options) {
       var word = options && options.word || WORD;
       var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
       var startPos = cur.ch, endPos = startPos;
-
       var currLineTabCount = 0;
-      var curLineSpaces = curLine.match(/^\s+/);
-      if(curLineSpaces) {
-        currLineTabCount = Math.floor(curLineSpaces[0].length / indentUnit);
-      }
 
+      currLineTabCount = getLineIndent(curLine).tabCount;
+
+//      while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
@@ -160,12 +138,13 @@ angular.module('raml')
       var
         total = editor.lineCount(), i, line,
         zipValues = [], currentIndexes = {}, lineWithoutTabs, tabCount,
-        spacesCount;
+        lineIndentInfo;
+
       for (i = 0; i < total; i++) {
         line = editor.getLine(i);
-        spacesCount = indexAfterSpaces(line);
-        tabCount = Math.floor(spacesCount / indentUnit);
-        lineWithoutTabs = line.slice(spacesCount);
+        lineIndentInfo = getLineIndent(line);
+        tabCount = lineIndentInfo.tabCount;
+        lineWithoutTabs = lineIndentInfo.content;
 
         zipValues.push([tabCount, lineWithoutTabs, i]);
       }
@@ -263,11 +242,12 @@ angular.module('raml')
         keysToErase, alternativeKeys = [];
 
       // Invalid tabulation detected :)
-      if ( !val ) {
+      if ( val === undefined) {
         return {values: {}, keys: [], path: []};
       }
-
-      val.pop();
+      else if ( val !== null ) {
+        val.pop();
+      }
 
       alternatives = hinter.suggestRAML(val);
 
@@ -279,6 +259,9 @@ angular.module('raml')
         alternativeKeys = Object.keys(alternatives.suggestions);
       }
 
+      if (!val) {
+        val = [];
+      }
       return {values: alternatives, keys: alternativeKeys, path: val};
     };
 
@@ -287,7 +270,7 @@ angular.module('raml')
 
       var list = alternatives.keys.map(function (e) {
         var suggestion = alternatives.values.suggestions[e];
-        return { name: e, category: suggestion.metadata.category };
+        return { name: e, category: suggestion.metadata.category, isText: suggestion.metadata.isText  };
       }) || [];
 
       if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
@@ -309,7 +292,7 @@ angular.module('raml')
 
       list = alternatives.keys.map(function (e) {
           var suggestion = alternatives.values.suggestions[e],
-              text = e + ':';
+              text = suggestion.metadata.isText ? e : e + ':';
 
           return {
               text: text,

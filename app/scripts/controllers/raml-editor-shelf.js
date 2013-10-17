@@ -2,7 +2,7 @@
 
 angular.module('ramlEditorApp')
   .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint,
-    eventService, codeMirror, ramlSnippets, safeApply) {
+    eventService, codeMirror, ramlSnippets, safeApply, generateTabs) {
     var hinter = ramlHint;
 
     eventService.on('event:raml-editor-initialized', function () {
@@ -52,7 +52,7 @@ angular.module('ramlEditorApp')
       var code = ramlSnippets.getSnippet(item);
       var line = editor.getLine(cur.line);
       var count = $scope.model.path.length;
-      var padding = ramlHint.createIndentation(count);
+      var padding = generateTabs(count);
       var rangeLine = cur.line;
       var rangeEndChar = 0;
 
