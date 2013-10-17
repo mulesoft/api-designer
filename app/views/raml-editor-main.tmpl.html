@@ -5,13 +5,22 @@
     <div role="saveas-button" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()">Save As</div>
   </header>
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
-    <div role="shelf" class="light" ng-class="{expanded: !shelf.collapsed}">
+    <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
       <div role="shelf-tab" ng-click="toggleShelf()">
         <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
       </div>
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
-    <div role="browser"></div>
+    <div role="browser" ng-class="{expanded: browser.expanded}">
+      <div role="browser-toggle-button" ng-click="toggleBrowser()">
+        <i class="icon-folder-open"></i>
+        <i ng-class="browser.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i>
+      </div>
+      <ul role="file-list">
+        <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
+        <li ng-repeat="fileEntry in files" ng-click="loadFile(fileEntry)"><i class="icon-file"></i>{{fileEntry.name}}</li>
+      </ul>
+    </div>
     <div role="tabs">
       <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
     </div>

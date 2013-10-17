@@ -5,7 +5,7 @@ var codeMirror, eventService, codeMirrorErrors, ramlRepository,
 
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout;
 
   beforeEach(module('ramlEditorApp'));
 
@@ -13,6 +13,7 @@ describe('RAML Editor Main Controller', function () {
     inject( function ($injector) {
       $rootScope = $injector.get('$rootScope');
       $controller = $injector.get('$controller');
+      $timeout = $injector.get('$timeout');
       codeMirror = $injector.get('codeMirror');
       eventService = $injector.get('eventService');
     })
@@ -24,8 +25,9 @@ describe('RAML Editor Main Controller', function () {
     editor = {
       on: function () {},
       setValue: function() {},
-      setCursor: function(){}
-    }
+      setCursor: function() {},
+      focus: function() {}
+    };
 
     codeMirror.initEditor = function (){
       return editor;
@@ -38,7 +40,9 @@ describe('RAML Editor Main Controller', function () {
 
     ramlRepository = {
       bootstrap: function () {},
-      createFile: function(){}
+      createFile: function () {},
+      getDirectory: function () {},
+      loadFile: function () {}
     };
 
     params = {
@@ -52,11 +56,8 @@ describe('RAML Editor Main Controller', function () {
   });
 
   describe('on raml parser error', function () {
-    it('should display errors on first line if no line specified', function (done) {
+    it('should display errors on first line if no line specified', function () {
       // Arrange
-      params.afterBootstrap = function () {
-        done();
-      };
       ctrl = $controller('ramlMain', params);
       var error = {
         message: 'Error without line or column!'
@@ -65,7 +66,7 @@ describe('RAML Editor Main Controller', function () {
 
       // Act
       eventService.broadcast('event:raml-parser-error', error);
-      
+
       // Assert
       annotationsToDisplay.should.be.ok;
       annotationsToDisplay.length.should.be.equal(1);
@@ -77,16 +78,13 @@ describe('RAML Editor Main Controller', function () {
   });
 
   describe('controller actions', function (){
-    it('should create a new RAML file if the current document is saved', function(done){
+    it('should create a new RAML file if the current document is saved', function(){
       //arrange
-      params.afterBootstrap = function(){
-        done();
-      }
       ctrl = $controller('ramlMain', params);
 
       var file = {
         contents: 'NEW RAML FILE'
-      }
+      };
 
       sinon.stub(scope, 'canSave').returns(false);
       sinon.stub(ramlRepository, 'createFile').returns(file);
@@ -113,8 +111,7 @@ describe('RAML Editor Main Controller', function () {
   });
 
   describe('Save and Save As', function () {
-    it('save should be enabled only if file is dirty', function(done) {
-      params.afterBootstrap = function () { done(); }
+    it('save should be enabled only if file is dirty', function() {
       ctrl = $controller('ramlMain', params);
 
       scope.file = {
@@ -127,8 +124,7 @@ describe('RAML Editor Main Controller', function () {
       scope.canSave().should.not.be.ok;
     });
 
-    it('should abort if the file can\'t be saved', function(done){
-      params.afterBootstrap = function () { done(); }
+    it('should abort if the file can\'t be saved', function(){
       ctrl = $controller('ramlMain', params);
 
       sinon.stub(scope, 'canSave').returns(false);
@@ -143,12 +139,11 @@ describe('RAML Editor Main Controller', function () {
       scope._saveFile.restore();
     });
 
-    it('should ask for a file name if the file is new has never been saved', function (done) {
-      params.afterBootstrap = function () { done(); }
+    it('should ask for a file name if the file is new has never been saved', function () {
       ctrl = $controller('ramlMain', params);
 
       sinon.stub(scope, 'canSave').returns(true);
-      sinon.stub(scope, '_promptForFileName');
+      sinon.stub(scope, '_promptForFileName').returns("api.raml");
       sinon.stub(scope, '_saveFile');
 
       scope.file = {
@@ -166,8 +161,7 @@ describe('RAML Editor Main Controller', function () {
       scope._saveFile.restore();
     });
 
-    it('should not ask for a file name if the file is new has never been saved', function (done) {
-      params.afterBootstrap = function () { done(); }
+    it('should not ask for a file name if the file is new has never been saved', function () {
       ctrl = $controller('ramlMain', params);
 
       sinon.stub(scope, 'canSave').returns(true);
@@ -189,9 +183,8 @@ describe('RAML Editor Main Controller', function () {
       scope._saveFile.restore();
     });
 
-    it('save as should be enabled only if the file has been saved or loaded from the persistence store', function (done){
+    it('save as should be enabled only if the file has been saved or loaded from the persistence store', function (){
       //arrange
-      params.afterBootstrap = function () { done(); }
       ctrl = $controller('ramlMain', params);
 
       scope.file = {
@@ -205,8 +198,7 @@ describe('RAML Editor Main Controller', function () {
       scope.canSaveAs().should.not.be.ok;
     });
 
-    it('should abort if the file is new', function(done) {
-      params.afterBootstrap = function () { done(); }
+    it('should abort if the file is new', function() {
       ctrl = $controller('ramlMain', params);
 
       scope.file = {
@@ -221,15 +213,14 @@ describe('RAML Editor Main Controller', function () {
       scope._promptForFileName.restore();
     });
 
-    it('should ask for a file name and call save file', function (done) {
-      params.afterBootstrap = function () { done(); }
+    it('should ask for a file name and call save file', function () {
       ctrl = $controller('ramlMain', params);
 
       scope.file = {
         persisted: true
       }
 
-      sinon.stub(scope, '_promptForFileName');
+      sinon.stub(scope, '_promptForFileName').returns("api.raml");
       sinon.stub(scope, '_saveFile');
 
       scope.saveAs();
@@ -242,7 +233,61 @@ describe('RAML Editor Main Controller', function () {
       scope._promptForFileName.restore();
       scope._saveFile.restore();
     });
+  });
 
+  describe('file browser actions', function () {
+    var file1 = { name: 'api.raml', path: '/', contents: 'file1' };
+    var file2 = { name: 'traits.raml', path: '/', contents: 'file2' };
+
+    it('should expand the file browser', function () {
+      //arrange
+      ctrl = $controller('ramlMain', params);
+
+      //act
+      scope.toggleBrowser();
+
+      //assert
+      scope.browser.expanded.should.be.equal(true);
+    });
+
+    it('opening the file browser should trigger a file listing retrieval', function () {
+      //arrange
+      var fileList = [ file1, file2 ];
+
+      fileList.loading = false;
+      ctrl = $controller('ramlMain', params);
+      sinon.stub(ramlRepository, 'getDirectory').returns(fileList).yields(fileList);
+
+      //act
+      scope.toggleBrowser();
+
+      //assert
+      scope.browser.expanded.should.be.equal(true);
+      ramlRepository.getDirectory.should.have.been.calledOnce;
+      scope.files.should.deep.equal(fileList);
+
+      //restore
+      ramlRepository.getDirectory.restore();
+    });
+
+    it('selecting a file from the browser should open it in the code editor', function () {
+      //arrange
+      ctrl = $controller('ramlMain', params);
+      sinon.stub(ramlRepository, 'loadFile').returns(file1).yields(file1);
+      sinon.spy(editor, 'setValue');
+
+      //act
+      scope.loadFile(file1);
+
+      //assert
+      scope.file.should.deep.equal(file1);
+      ramlRepository.loadFile.should.have.been.calledOnce;
+      editor.setValue.calledWith(file1.contents).should.be.ok;
+
+      //restore
+      ramlRepository.loadFile.restore();
+      editor.setValue.restore();
+    });
   });
 
 });
