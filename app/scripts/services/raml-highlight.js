@@ -1,23 +1,6 @@
 'use strict';
 
 angular.module('codeMirror')
-  .value('getNumberOfIndentTabs', function (string) {
-    // TODO: Use the indent size value
-    var indentTabs = string.split('  ')
-      .reduce(function (state, curr) {
-        if (!state.textFound) {
-          if (curr === '') {
-            state.value++;
-          } else {
-            state.textFound = true;
-          }
-        }
-        return state;
-      },
-      {value: 0, textFound: false});
-    
-    return indentTabs.value - 1;
-  })
   .value('highlightRootElement', function (name, titleClass, contentClass, state, level, key) {
     // Using one level of nesting nest (ie. [name + '.level']) instead of
     // [name].level to use default copy state function.
@@ -41,12 +24,12 @@ angular.module('codeMirror')
     return new RegExp('\\b((' + booleanValues.join(')|(') + '))$', 'i');
   })
   .factory('token', function (keywordRegex, highlightRootElement,
-    getNumberOfIndentTabs) {
+    getLineIndent) {
     return function(stream, state) {
       var ch = stream.peek();
       var esc = state.escaped;
       state.escaped = false;
-    
+
       /* RAML tag */
       if (ch === '#' && stream.string.replace(/^\s+|\s+$/g, '').toUpperCase() === '#%RAML 0.8') {
         stream.skipToEnd();
@@ -57,19 +40,19 @@ angular.module('codeMirror')
         stream.skipToEnd();
         return 'comment';
       }
-    
+
       if (state.literal && stream.indentation() > state.keyCol) {
         stream.skipToEnd();
         return 'none';
       } else if (state.literal) {
         state.literal = false;
       }
-    
+
       if (stream.sol()) {
         state.keyCol = 0;
         state.pair = false;
         state.pairStart = false;
-    
+
         /* document start */
         if(stream.match(/---/)) {
           return 'def';
@@ -86,11 +69,11 @@ angular.module('codeMirror')
       /* pairs (associative arrays) -> key */
       if (!state.pair && stream.match(/^\s*([a-z0-9\?\/\{\}\._\-])+(?=\s*:)/i)) {
         var key = stream.string.replace(/^\s+|\s+$/g, '').split(':')[0];
-        var level = getNumberOfIndentTabs(stream.string);
-    
+        var level = getLineIndent(stream.string).tabCount;
+
         state.pair = true;
         state.keyCol = stream.indentation();
-    
+
         /* methods */
         if (level <= state.methodLevel || key.indexOf('/') === 0) {
           state.methodLevel = 0;
@@ -106,30 +89,30 @@ angular.module('codeMirror')
         if (state.insideMethod) {
           return 'method-content';
         }
-    
-    
+
+
         var rootElements =
           highlightRootElement('traits', 'trait-title', 'trait-content', state, level, key) ||
           highlightRootElement('resourceTypes', 'resource-type-title', 'resource-type-content', state, level, key) ||
           highlightRootElement('schemas', 'schema-title', 'schema-content', state, level, key) ||
           highlightRootElement('securitySchemes', 'security-scheme-title', 'security-scheme-content', state, level, key);
-    
+
         if (rootElements) {
           return rootElements;
         }
-    
+
         /* resources */
         if (key.indexOf('/') === 0) {
           return 'resource';
         }
-    
+
         return 'key';
       }
       if (state.pair && stream.match(/^:\s*/)) {
         state.pairStart = true;
         return 'meta';
       }
-    
+
       /* inline pairs/lists */
       if (stream.match(/^(\{|\}|\[|\])/)) {
         if (ch === '{') {
@@ -146,13 +129,13 @@ angular.module('codeMirror')
         }
         return 'meta';
       }
-    
+
       /* list seperator */
       if (state.inlineList > 0 && !esc && ch === ',') {
         stream.next();
         return 'meta';
       }
-    
+
       /* pairs seperator */
       if (state.inlinePairs > 0 && !esc && ch === ',') {
         state.keyCol = 0;
@@ -161,7 +144,7 @@ angular.module('codeMirror')
         stream.next();
         return 'meta';
       }
-    
+
       /* start of value of a pair */
       if (state.pairStart) {
         /* block literals */
@@ -185,7 +168,7 @@ angular.module('codeMirror')
           return 'keyword';
         }
       }
-    
+
       /* nothing found, continue */
       state.pairStart = false;
       state.escaped = (ch === '\\');
