@@ -101,17 +101,35 @@ angular.module('ramlEditorApp')
       return $scope.file && $scope.file.dirty;
     };
 
+    $scope.canSaveAs = function () {
+      return $scope.file && $scope.file.persisted;
+    };
+
     $scope.save = function () {
-      if ($scope.canSave()) {
-        $scope.file.contents = editor.getValue();
-        ramlRepository.saveFile($scope.file, function () {
-          safeApply();
-          if (saveTimer) {
-            clearTimeout(saveTimer);
-          }
-          saveTimer = setTimeout($scope.save, AUTOSAVE_INTERVAL);
-        });
+      if(!$scope.canSave()) {
+        return;
       }
+
+      if(!$scope.file.persisted) {
+        if(!$scope._promptForFileName()) {
+          return;
+        }
+      }
+
+      $scope._saveFile();
+    };
+
+    $scope.saveAs = function(){
+      if(!$scope.file.persisted) {
+        return;
+      }
+
+      if(!$scope._promptForFileName()) {
+        return;
+      }
+
+      $scope.file.dirty = true;
+      $scope._saveFile();
     };
 
     $scope.newFile = function (){
@@ -119,6 +137,8 @@ angular.module('ramlEditorApp')
         $scope.file = ramlRepository.createFile();
         editor.setValue($scope.file.contents);
         editor.setCursor({line: 1, ch: 0});
+
+        clearTimeout(saveTimer);
       }
     };
 
@@ -189,4 +209,21 @@ angular.module('ramlEditorApp')
     };
 
     $scope.init();
+
+    $scope._promptForFileName = function () {
+      var fileName = prompt('File Name?', $scope.file.name);
+      $scope.file.name = fileName || $scope.file.name;
+      return !!fileName;
+    };
+
+    $scope._saveFile = function() {
+      $scope.file.contents = editor.getValue();
+      ramlRepository.saveFile($scope.file, function () {
+        safeApply();
+        if (saveTimer) {
+          clearTimeout(saveTimer);
+        }
+        saveTimer = setTimeout($scope.save, AUTOSAVE_INTERVAL);
+      });
+    };
   });

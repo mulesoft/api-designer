@@ -22,15 +22,17 @@ angular.module('fs', ['raml', 'utils', 'ngCookies'])
   .factory('ramlRepository', function (ramlSnippets, fileSystem) {
     var service = {};
     var defaultPath = '/';
-    var defaultName = 'untitled';
+    var defaultName = 'untitled.raml';
 
     function RamlFile (name, path, contents) {
       this.path = path || defaultPath;
       this.name = name || defaultName;
       this.contents = typeof contents === 'string' ? contents : null;
+
       this.dirty = !name;
       this.removed = false;
       this.loading = false;
+      this.persisted = false;
     }
 
     RamlFile.prototype = {
@@ -54,18 +56,18 @@ angular.module('fs', ['raml', 'utils', 'ngCookies'])
       fileSystem.load(file.path, file.name,
         function (data) {
           file.contents = data;
-          file.loading = false;
-          file.dirty = false;
-          file.removed = false;
+          file.loading = file.dirty = file.removed = false;
+          file.persisted = true;
+
           if (callback) {
             callback(file);
           }
         },
         function (error) {
           file.error = error;
-          file.loading = false;
-          file.dirty = false;
-          file.removed = false;
+          file.loading = file.dirty = file.removed = false;
+          file.persisted = true;
+
           if (errorCallback) {
             errorCallback(error);
           }
@@ -104,17 +106,17 @@ angular.module('fs', ['raml', 'utils', 'ngCookies'])
 
       fileSystem.remove(file.path, file.name,
         function () {
-          file.loading = false;
-          file.dirty = false;
+          file.loading = file.dirty = false;
           file.removed = true;
+
           if (callback) {
             callback(file);
           }
         },
         function (error) {
           file.error = error;
-          file.loading = false;
-          file.removed = false;
+          file.loading = file.removed = false;
+
           if (errorCallback) {
             errorCallback(error);
           }
@@ -130,9 +132,9 @@ angular.module('fs', ['raml', 'utils', 'ngCookies'])
 
       fileSystem.save(file.path, file.name, file.contents,
         function () {
-          file.loading = false;
-          file.dirty = false;
-          file.removed = false;
+          file.loading = file.dirty = file.removed = false;
+          file.persisted = true;
+
           if (callback) {
             callback(file);
           }
@@ -140,6 +142,7 @@ angular.module('fs', ['raml', 'utils', 'ngCookies'])
         function (error) {
           file.error = error;
           file.loading = false;
+
           if (errorCallback) {
             errorCallback(error);
           }
@@ -147,7 +150,7 @@ angular.module('fs', ['raml', 'utils', 'ngCookies'])
     };
 
     service.createFile = function () {
-      var file = new RamlFile(defaultName, defaultPath, ramlSnippets.getEmptyRaml());
+      var file = new RamlFile(null, defaultPath, ramlSnippets.getEmptyRaml());
       return file;
     };
 

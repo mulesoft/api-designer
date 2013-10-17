@@ -2,6 +2,7 @@
   <header>
     <h1><strong>API</strong>designer</h1>
     <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
+    <div role="saveas-button" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()">Save As</div>
   </header>
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
     <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
