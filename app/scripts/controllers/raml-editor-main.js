@@ -99,7 +99,7 @@ angular.module('ramlEditorApp')
 
     $scope.canSaveAs = function () {
       return $scope.file && $scope.file.persisted;
-    }
+    };
 
     $scope.save = function () {
       if(!$scope.canSave()) {
@@ -187,7 +187,7 @@ angular.module('ramlEditorApp')
     $scope.init();
 
     function _promptForFileName () {
-      $scope.file.name = prompt("File Name?", $scope.file.name) || $scope.file.name;
+      $scope.file.name = prompt('File Name?', $scope.file.name) || $scope.file.name;
     }
     function _saveFile() {
       $scope.file.contents = editor.getValue();
