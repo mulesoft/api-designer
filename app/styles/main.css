@@ -99,7 +99,6 @@ div[role=editor] {
   position: relative;
   transition: padding-bottom .05s ease-in;
   padding-top: 32px;
-  padding-bottom: 41px;
   background: rgb(11,11,13);
 }
 
@@ -242,14 +241,12 @@ div[role=shelf] {
   color: gray;
   left: -10px;
   right: 0;
-  height: 40px;
   bottom: 0;
   border-top: 1px solid rgb(48,83,110);
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  padding-left: 18px;
-  padding-top: 6px;
+  padding: 0 20px;
   font-size: 15px;
   /* TODO Create a less function to make this easier */
   -webkit-touch-callout: none;
@@ -259,6 +256,7 @@ div[role=shelf] {
   -ms-user-select: none;
   user-select: none;
   transition: height .1s ease-in;
+  z-index: 5;
 }
 
 div[role=shelf].expanded {
@@ -272,16 +270,14 @@ div[role=shelf] div[role=shelf-container] {
 
 div[role=shelf] > div[role=shelf-tab] {
   position: absolute;
+  top: -31px;
   right: 0;
-  width: 50px;
-  height: 26px;
   display: block;
-  padding: 4px 8px;
+  padding: 5px 10px;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   background: rgb(26,32,43);
-  top: -26px;
   z-index: 100;
   border-top: 1px solid rgb(48,83,110);
   border-left: 1px solid rgb(48,83,110);

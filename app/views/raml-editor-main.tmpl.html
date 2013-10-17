@@ -6,8 +6,9 @@
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
     <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
       <div role="shelf-tab" ng-click="toggleShelf()">
-        <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i></div>
-      <div role="shelf-container" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
+        <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
+      </div>
+      <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
     <div role="browser" ng-class="{expanded: browser.expanded}">
       <div role="browser-toggle-button" ng-click="toggleBrowser()">
