@@ -4,7 +4,7 @@ var hinter, editor;
 
 describe('RAML Hint Service', function () {
   beforeEach(function () {
-    var $injector = angular.injector(['raml']);
+    var $injector = angular.injector(['ramlEditorApp']);
     hinter = $injector.get('ramlHint');
     hinter.should.be.ok;
   });

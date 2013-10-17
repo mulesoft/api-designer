@@ -2,8 +2,9 @@
 
 var CodeMirror = window.CodeMirror;
 
-angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
-  .factory('codeMirror', function (ramlHint, codeMirrorHighLight, eventService) {
+angular.module('codeMirror', ['raml', 'ramlEditorApp'])
+  .factory('codeMirror', function (ramlHint, codeMirrorHighLight, eventService,
+    getLineIndent, generateSpaces, generateTabs) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
@@ -32,7 +33,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       } else {
         unitsToIndent = indentUnit;
       }
-      spaces = new Array(unitsToIndent + 1).join(' ');
+      spaces = generateSpaces(unitsToIndent);
       cm.replaceSelection(spaces, 'end', '+input');
     };
 
@@ -121,10 +122,9 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
     };
 
     function _replaceSelection(editor, offset, whitespace) {
-      var indentUnit = editor.getOption('indentUnit');
       var editorState = ramlHint.getEditorState(editor);
 
-      var spaces = '\n' + new Array(indentUnit * (editorState.currLineTabCount + offset) + 1).join(' ') + whitespace;
+      var spaces = '\n' + generateTabs(editorState.currLineTabCount + offset) + whitespace;
       editor.replaceSelection(spaces, 'end', '+input');
     }
 
@@ -150,8 +150,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       }
 
       var line = cm.getLine(lineNumber);
-      var indentUnit = cm.getOption('indentUnit');
-      var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
+      var indent = getLineIndent(line).tabCount;
 
       var parentLineNumber = _getParentLineNumber(cm, lineNumber, indent);
 
@@ -177,8 +176,6 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
     }
 
     service.getFoldRange = function (cm, start) {
-      var indentUnit = cm.getOption('indentUnit');
-
       var line = cm.getLine(start.line);
 
       if(line.length === 0) {
@@ -189,8 +186,9 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       if (!nextLine) {
         return;
       }
-      var indent = line.split(new Array(indentUnit + 1).join(' ')).length - 1;
-      var nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
+      var
+        indent = getLineIndent(line).tabCount,
+        nextLineIndent = getLineIndent(nextLine).tabCount;
 
       if(/(content|schema|example):(\s?)\|/.test(_getParentLine(cm, start.line, indent))) {
         return;
@@ -203,7 +201,7 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       if(nextLineIndent > indent) {
         for(var i = start.line + 2, end = cm.lineCount(); i < end; ++i) {
           nextLine = cm.getLine(i);
-          nextLineIndent = nextLine.split(new Array(indentUnit + 1).join(' ')).length - 1;
+          nextLineIndent = getLineIndent(nextLine).tabCount;
 
           if(nextLineIndent <= indent && nextLine.length > 0) {
             nextLine = cm.getLine(i-1);
