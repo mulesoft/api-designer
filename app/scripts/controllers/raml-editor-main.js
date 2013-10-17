@@ -3,12 +3,13 @@
 angular.module('ramlEditorApp')
   .constant('AUTOSAVE_INTERVAL', 60000)
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
+  .constant('REFRESH_FILES_INTERVAL', 5000)
+  .constant('DEFAULT_PATH', '/')
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
-    $scope, $rootScope, $window, safeApply, ramlHint, ramlParser,
-    ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
-    config) {
-    var CodeMirror = codeMirror.CodeMirror, editor, currentUpdateTimer, saveTimer;
+    REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
+    ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap, config) {
+    var CodeMirror = codeMirror.CodeMirror, editor, saveTimer;
 
     $scope.consoleSettings = { displayTryIt: false };
 
@@ -85,12 +86,15 @@ angular.module('ramlEditorApp')
     });
 
     $scope.bootstrap = function () {
-      ramlRepository.bootstrap(function (file) {
-        $scope.file = file;
-        $scope.firstLoad = true;
-        editor.replaceRange(file.contents, {line: 0, ch: 0}, {line: 0, ch: 0});
-        editor.setCursor({line: 0, ch: 0});
-      });
+      ramlRepository.bootstrap($scope.switchFile);
+    };
+
+    $scope.switchFile = function (file) {
+      $scope.file = file;
+      $scope.firstLoad = true;
+      editor.setValue($scope.file.contents);
+      editor.setCursor({line: 0, ch: 0});
+      editor.focus();
     };
 
     $scope.canSave = function () {
@@ -128,6 +132,26 @@ angular.module('ramlEditorApp')
       config.save();
     };
 
+    $scope.toggleBrowser = function () {
+      var browser = $scope.browser;
+      browser.expanded = !browser.expanded;
+      if (browser.expanded) {
+        $scope.listFiles();
+      }
+    };
+
+    $scope.listFiles = throttle(function () {
+      $scope.files = ramlRepository.getDirectory(DEFAULT_PATH, function () {
+        safeApply();
+      });
+    }, REFRESH_FILES_INTERVAL);
+
+    $scope.loadFile = function(fileEntry) {
+      var browser = $scope.browser;
+      ramlRepository.loadFile(fileEntry, $scope.switchFile);
+      browser.expanded = false;
+    };
+
     eventService.on('event:save', function () {
       $scope.save();
     });
@@ -140,31 +164,25 @@ angular.module('ramlEditorApp')
       $scope.documentation = '';
       $scope.baseUri = '';
       $scope.hasErrors = false;
-      $scope.theme = $rootScope.theme = config.get('theme', '');
+      $scope.theme = $rootScope.theme = config.get('theme', 'dark');
       $scope.shelf = {};
       $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', false));
+      $scope.browser = {};
+      $scope.browser.expanded = false;
 
       editor = codeMirror.initEditor();
 
-      editor.on('change', function () {
-        if (currentUpdateTimer) {
-          clearTimeout(currentUpdateTimer);
-        }
-        currentUpdateTimer = setTimeout(function () {
-          $scope.sourceUpdated();
-          currentUpdateTimer = undefined;
-        }, UPDATE_RESPONSIVENESS_INTERVAL);
-      });
+      editor.on('change', throttle($scope.sourceUpdated, UPDATE_RESPONSIVENESS_INTERVAL));
 
       editor.on('change', function (cm) {
         $scope.triggerAutocomplete(cm);
       });
 
-      setTimeout(function () {
+      $timeout(function () {
         eventService.broadcast('event:raml-editor-initialized', editor);
       });
 
-      setTimeout(function () {
+      $timeout(function () {
         $scope.bootstrap();
         afterBootstrap();
       });
