@@ -556,7 +556,7 @@ this.integer = integer;
 
 
 },{"./utils.coffee":3}],2:[function(require,module,exports){
-var IntegerWildcard, InvalidState, NodeMap, OpenSuggestion, SimpleSuggestion, StringWildcard, SuggestItem, Suggestion, SuggestionNode, SuggestionNodeMap, TreeMap, TreeMapToSuggestionTree, functionize, integer, integerWildcard, invalidState, root, stringWilcard, suggest, suggestRAML, suggestionTree, transverse, transversePrimitive, type, _ref, _ref1, _ref2,
+var IntegerWildcard, InvalidState, NodeMap, OpenSuggestion, SimpleSuggestion, StringWildcard, SuggestItem, Suggestion, SuggestionNode, SuggestionNodeMap, TreeMap, TreeMapToSuggestionTree, functionize, integer, integerWildcard, invalidState, root, stringWilcard, suggest, suggestRAML, suggestionTree, transverse, transversePrimitive, type, versionSuggestion, _ref, _ref1, _ref2,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -630,8 +630,6 @@ StringWildcard = (function(_super) {
 
 })(SuggestionNode);
 
-stringWilcard = new StringWildcard;
-
 IntegerWildcard = (function(_super) {
   __extends(IntegerWildcard, _super);
 
@@ -642,8 +640,6 @@ IntegerWildcard = (function(_super) {
   return IntegerWildcard;
 
 })(SuggestionNode);
-
-integerWildcard = new IntegerWildcard;
 
 InvalidState = (function() {
   function InvalidState(suggestions) {
@@ -657,6 +653,10 @@ InvalidState = (function() {
   return InvalidState;
 
 })();
+
+stringWilcard = new StringWildcard;
+
+integerWildcard = new IntegerWildcard;
 
 invalidState = new InvalidState;
 
@@ -790,9 +790,18 @@ TreeMapToSuggestionTree = (function(_super) {
 
 suggestionTree = transverse(TreeMapToSuggestionTree, root);
 
+versionSuggestion = new SimpleSuggestion({
+  "#%RAML 0.8": new SuggestItem(null, "#%RAML 0.8", {
+    category: "root",
+    isText: true
+  })
+});
+
 suggest = function(root, index, path) {
   var currentSuggestion, key, suggestions, val;
-  if (!path) {
+  if (path === null) {
+    return versionSuggestion;
+  } else if (path === void 0) {
     return root;
   }
   key = path[index];

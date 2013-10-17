@@ -41,6 +41,10 @@ angular.module('raml')
           line = editorState.cur.line, textAsList,
           tabSize = 2, lines;
 
+      if (line === 0) {
+        return null;
+      }
+
       textAsList = getEditorTextAsArrayOfLines(editor, line);
 
       // It should have at least one element
@@ -263,11 +267,12 @@ angular.module('raml')
         keysToErase, alternativeKeys = [];
 
       // Invalid tabulation detected :)
-      if ( !val ) {
+      if ( val === undefined) {
         return {values: {}, keys: [], path: []};
       }
-
-      val.pop();
+      else if ( val !== null ) {
+        val.pop();
+      }
 
       alternatives = hinter.suggestRAML(val);
 
@@ -279,6 +284,9 @@ angular.module('raml')
         alternativeKeys = Object.keys(alternatives.suggestions);
       }
 
+      if (!val) {
+        val = [];
+      }
       return {values: alternatives, keys: alternativeKeys, path: val};
     };
 
@@ -309,7 +317,7 @@ angular.module('raml')
 
       list = alternatives.keys.map(function (e) {
           var suggestion = alternatives.values.suggestions[e],
-              text = e + ':';
+              text = suggestion.metadata.isText ? e : e + ':';
 
           return {
               text: text,
