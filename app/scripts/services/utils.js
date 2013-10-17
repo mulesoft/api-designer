@@ -20,7 +20,7 @@ angular.module('utils', [])
   })
   .factory('getLineIndent', function (indentUnit) {
     return function (string, indentSize) {
-      var result = /^(\s*)([\w\W]*)$/.exec(string);
+      var result = /^(\s*)(.*)$/.exec(string);
 
       if (!string) {
         return {tabCount: 0, spaceCount: 0, content: ''};
@@ -48,6 +48,6 @@ angular.module('utils', [])
   })
   .value('extractKey', function (value) {
     value = value || '';
-    var match = /^([\w\W]+):( [\w\W]*$|$)/.exec(value);
+    var match = /^(.+):( .*$|$)/.exec(value);
     return match && match.length > 1 ? match[1] : '';
   });

@@ -40,7 +40,7 @@ angular.module('ramlEditorApp')
         result.tabCount = lineIndentInfo.tabCount;
         lineContent = lineIndentInfo.content;
 
-        listMatcher = /^(- )([\w\W]*)$/.exec(lineContent) || {index: -1};
+        listMatcher = /^(- )(.*)$/.exec(lineContent) || {index: -1};
 
         // Case is a list
         if (listMatcher.index === 0) {
@@ -48,7 +48,7 @@ angular.module('ramlEditorApp')
           lineContent = listMatcher[2];
         }
 
-        lineContent = /^([\w\W]+)(: |:\s*$)/.exec(lineContent);
+        lineContent = /^(.+)(: |:\s*$)/.exec(lineContent);
 
         result.content = lineContent ? lineContent[1] : '';
 

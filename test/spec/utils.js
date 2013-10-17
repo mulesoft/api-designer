@@ -65,6 +65,23 @@ describe('Utils module', function () {
       indentInfo.spaceCount.should.be.equal(4);
 
     });
+
+    it('should work with dashes correctly', function() {
+      var indentInfo = getLineIndent('  - hello:');
+      indentInfo.tabCount.should.be.equal(1);
+      indentInfo.content.should.be.equal('- hello:');
+      indentInfo.spaceCount.should.be.equal(2);
+
+      indentInfo = getLineIndent('   - hello:');
+      indentInfo.tabCount.should.be.equal(1);
+      indentInfo.content.should.be.equal('- hello:');
+      indentInfo.spaceCount.should.be.equal(3);
+      
+      indentInfo = getLineIndent('-hello:');
+      indentInfo.tabCount.should.be.equal(0);
+      indentInfo.content.should.be.equal('-hello:');
+      indentInfo.spaceCount.should.be.equal(0);
+    });
   });
   describe('generateSpaces', function () {
     var generateSpaces;
