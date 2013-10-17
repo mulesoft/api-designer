@@ -116,6 +116,26 @@ describe('RAML Hint Service', function () {
       res.should.be.ok;
     });
 
+    it('should return null for first line first char', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n',
+        {line: 0, ch: 0});
+      var res = hinter.computePath(editor);
+      should.not.exist(res);
+    });
+
+    it('should return null for first line non first char', function () {
+      editor = getEditor(
+        'title: hello\n'+
+        'version: v1.0\n' +
+        'baseUri: http://example.com/api\n',
+      {line: 0, ch: 4});
+      var res = hinter.computePath(editor);
+      should.not.exist(res);
+    });
+
     it.skip('should handle variable indentUnits', function () {
       //TODO Add test when decoupling indentUnit
     });
@@ -408,6 +428,25 @@ describe('RAML Hint Service', function () {
       newAlternatives.path.should.be.deep.equal([]);
 
       hinter.computePath.restore();
+    });
+
+    it('should provide suggestRAML alternatives when path is null', function () {
+      var alternatives = {suggestions: {"#%RAML 0.8": {a:1}}, category: 'x'};
+      editor = getEditor(
+            'title: hello\n',
+            {line: 0, ch: 0});
+
+      hinter.suggestRAML = function() {
+        return alternatives;
+      };
+      hinter.computePath = function(editorRef) {
+        return null;
+      };
+
+      var newAlternatives = hinter.getAlternatives(editor);
+      alternatives.suggestions.should.be.deep.equal(newAlternatives.values.suggestions);
+
+      newAlternatives.keys.length.should.be.equal(1);
     });
 
   });

@@ -46,7 +46,7 @@ angular.module('ramlEditorApp')
           firstChar = trimmedCurLine[0],
           currentPosIsLastChar = curLine.length === end;
 
-      if (curLine && currentPosIsLastChar && !isKey && ['/', '#', '-'].indexOf(firstChar) === -1 ) {
+      if ((curLine && currentPosIsLastChar && !isKey && ['/', '#', '-'].indexOf(firstChar) === -1 ) || curLine === 0){
         CodeMirror.showHint(cm, CodeMirror.hint.javascript, { ghosting: true });
       }
     };

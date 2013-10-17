@@ -25,6 +25,10 @@ angular.module('ramlEditorApp')
           line = editorState.cur.line, textAsList,
           lines;
 
+      if (line === 0) {
+        return null;
+      }
+
       textAsList = getEditorTextAsArrayOfLines(editor, line);
 
       // It should have at least one element
@@ -110,6 +114,7 @@ angular.module('ramlEditorApp')
 
       currLineTabCount = getLineIndent(curLine).tabCount;
 
+//      while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
@@ -237,11 +242,12 @@ angular.module('ramlEditorApp')
         keysToErase, alternativeKeys = [];
 
       // Invalid tabulation detected :)
-      if ( !val ) {
+      if ( val === undefined) {
         return {values: {}, keys: [], path: []};
       }
-
-      val.pop();
+      else if ( val !== null ) {
+        val.pop();
+      }
 
       alternatives = hinter.suggestRAML(val);
 
@@ -253,6 +259,9 @@ angular.module('ramlEditorApp')
         alternativeKeys = Object.keys(alternatives.suggestions);
       }
 
+      if (!val) {
+        val = [];
+      }
       return {values: alternatives, keys: alternativeKeys, path: val};
     };
 
@@ -261,7 +270,7 @@ angular.module('ramlEditorApp')
 
       var list = alternatives.keys.map(function (e) {
         var suggestion = alternatives.values.suggestions[e];
-        return { name: e, category: suggestion.metadata.category };
+        return { name: e, category: suggestion.metadata.category, isText: suggestion.metadata.isText  };
       }) || [];
 
       if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
@@ -283,7 +292,7 @@ angular.module('ramlEditorApp')
 
       list = alternatives.keys.map(function (e) {
           var suggestion = alternatives.values.suggestions[e],
-              text = e + ':';
+              text = suggestion.metadata.isText ? e : e + ':';
 
           return {
               text: text,
