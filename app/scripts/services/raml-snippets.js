@@ -57,9 +57,8 @@ angular.module('raml')
           ind + 'baseUri: http://server/api/{version}\n';
       }
 
-      if (snippetName.toLowerCase() === '#%raml 0.8') {
-        return snippetName + '\n';
-      }
+      if (suggestion.isText)
+        return ind + snippetName + "\n";
 
       return ind + snippetName + ':';
     };

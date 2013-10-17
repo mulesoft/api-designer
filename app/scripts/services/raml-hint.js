@@ -5,7 +5,7 @@ var CodeMirror = window.CodeMirror, suggestRAML = window.suggestRAML;
 angular.module('raml')
   .factory('ramlHint', function () {
     var hinter = {};
-    var WORD = /[\w$]+/;
+    var WORD = /([\S$])+/;
     // TODO Unhardcode: Can't do neither cm.getOption('indentUnit')
     // nor editor.getOption('indentUnit') :(
     var indentUnit = 2;
@@ -141,6 +141,7 @@ angular.module('raml')
         currLineTabCount = Math.floor(curLineSpaces[0].length / indentUnit);
       }
 
+//      while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
@@ -295,7 +296,7 @@ angular.module('raml')
 
       var list = alternatives.keys.map(function (e) {
         var suggestion = alternatives.values.suggestions[e];
-        return { name: e, category: suggestion.metadata.category };
+        return { name: e, category: suggestion.metadata.category, isText: suggestion.metadata.isText  };
       }) || [];
 
       if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
