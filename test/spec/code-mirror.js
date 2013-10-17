@@ -620,7 +620,47 @@ describe('CodeMirror Service', function () {
       foldRange = codeMirrorService.getFoldRange(editor, { line: 21 });
       should.equal(foldRange, undefined);
     });
-    
+
+    it('should keep the same indentation level for document start marker (RT-156)', function () {
+      var indentUnit = 2;
+      var editor = getEditor(
+        [
+          '---'
+        ].join('\n'),
+        {
+          line: 0,
+          ch: 3
+        },
+        {
+          indentUnit: indentUnit
+        }
+      );
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n');
+    });
+
+    it('should keep the same indentation level for sequence of entries with a little help', function () {
+      var indentUnit = 2;
+      var editor = getEditor(
+        [
+          'key1:',
+          '  - value 1',
+          '  - value 2'
+        ].join('\n'),
+        {
+          line: 2,
+          ch: -1
+        },
+        {
+          indentUnit: indentUnit
+        }
+      );
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit) + '- ');
+    });
+
     it('should not allow folding of scalars even when having spaces after it (RT-325)', function (){
       var indentUnit = 2;
       editor = getEditor([
