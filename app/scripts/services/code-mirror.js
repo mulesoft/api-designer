@@ -66,54 +66,63 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
       var editorState = ramlHint.getEditorState(cm);
       var indentUnit = cm.getOption('indentUnit');
       var indent = editorState.currLineTabCount;
-
       var curLineWithoutTabs = service.removeTabs(editorState.curLine, indentUnit);
-
-      //this overrides everything else, because the '|' explicitly declares the line as a scalar
-      //with a continuation on other lines. This applies to the current line or the parent of the current line
       var parentLine = _getParentLine(cm, editorState.start.line, indent);
 
-      if(curLineWithoutTabs && curLineWithoutTabs.match(/\|$/)) {
+      // this overrides everything else, because the '|' explicitly declares the line as a scalar
+      // with a continuation on other lines. This applies to the current line or the parent of the current line
+      if (/\|$/.test(curLineWithoutTabs)) {
         _replaceSelection(cm, 1, '');
         return;
       }
-      if(parentLine && parentLine.match(/\|$/)) {
+
+      if (/\|$/.test(parentLine)) {
         _replaceSelection(cm, 0, '');
         return;
       }
 
-      //it it's an array value, if should add another indentation.
-      if(curLineWithoutTabs.match(/^-/)){
-        _replaceSelection(cm, 2, '');
+      // if it's a sequence (<dash><space><...>)
+      if (/^-\s/.test(curLineWithoutTabs)) {
+        if (/:\s*$/.test(curLineWithoutTabs)) {
+          // we should add another indentation in case of one-key mapping
+          _replaceSelection(cm, 2, '');
+        } else {
+          // or keep the same indentation level in case user wants to keep
+          // entering sequence entries, but with a little help, we start
+          // new line with '- '
+          _replaceSelection(cm, 0, '- ');
+        }
         return;
       }
 
-      //if current line or parent line begins with: content, example or schema
-      //one indentation level should be added or the same level should be kept if
-      //the cursor is not on the first line
-      if(/^(content|example|schema):/.test(curLineWithoutTabs)) {
+      // if current line or parent line begins with: content, example or schema
+      // one indentation level should be added or the same level should be kept if
+      // the cursor is not on the first line
+      if (/^(content|example|schema):/.test(curLineWithoutTabs)) {
         _replaceSelection(cm, 1, '');
         return;
       }
-      if(parentLine && /^(\s+)?(content|example|schema):/.test(parentLine)) {
+
+      if (/^(\s+)?(content|example|schema):/.test(parentLine)) {
         _replaceSelection(cm, 0, '');
         return;
       }
 
       var offset = 0;
-      if(curLineWithoutTabs.replace(' ', '').length > 0) {
-        if(_currentNodeHasChildren(cm)) {
+      if (curLineWithoutTabs.replace(' ', '').length > 0) {
+        if (_currentNodeHasChildren(cm)) {
           offset = 1;
         }
       }
 
-      if(editorState.cur.ch < editorState.curLine.length) {
+      if (editorState.cur.ch < editorState.curLine.length) {
         offset = /^\s*\w+:/.test(editorState.curLine) ? 1 : 0;
       }
 
       var extraWhitespace = '';
       var leadingWhitespace = curLineWithoutTabs.match(/^\s+/);
-      if(leadingWhitespace && leadingWhitespace[0] && !offset) {
+
+      if (leadingWhitespace && leadingWhitespace[0] && !offset) {
         extraWhitespace = leadingWhitespace[0];
       }
 
@@ -129,9 +138,10 @@ angular.module('codeMirror', ['raml', 'ramlConsoleApp'])
     }
 
     function _getParentLineNumber (cm, lineNumber, indentLevel) {
-      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? indentLevel - 1 : 0], parent;
+      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? (indentLevel - 1) : 0];
+      var parent = null;
 
-      if(potentialParents) {
+      if (potentialParents) {
         parent = potentialParents.filter(function (line) {
           return line < lineNumber;
         }).pop();
