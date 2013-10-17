@@ -181,7 +181,7 @@ describe('RAML Editor Main Controller', function () {
         scope._saveFile.restore();
       });
 
-      it('save should not ask for a file name if the file is new has never been saved', function () {
+      it('should not ask for a file name if the file comes from the persistence store', function () {
         ctrl = $controller('ramlMain', params);
 
         sinon.stub(scope, 'canSave').returns(true);
