@@ -507,18 +507,40 @@ RAML.Inspector = (function() {
 })();
 
 (function() {
+  function parseHeaders(headers) {
+    var parsed = {}, key, val, i;
+
+    if (!headers) return parsed;
+
+    headers.split('\n').forEach(function(line) {
+      i = line.indexOf(':');
+      key = line.substr(0, i).trim();
+      val = line.substr(i + 1).trim();
+
+      if (key) {
+        if (parsed[key]) {
+          parsed[key] += ', ' + val;
+        } else {
+          parsed[key] = val;
+        }
+      }
+    });
+
+    return parsed;
+  }
+
   var FORM_URLENCODED = 'application/x-www-form-urlencoded';
   var FORM_DATA = 'multipart/form-data';
+  var apply;
 
   function isEmpty(object) {
     return Object.keys(object || {}).length == 0;
   }
 
-  TryIt = function($scope, $http, Base64) {
+  TryIt = function($scope, Base64) {
     this.baseUri = $scope.api.baseUri || '';
     this.pathBuilder = $scope.method.pathBuilder;
 
-    this.http = $http;
     this.encoder = Base64;
     this.httpMethod = $scope.method.method;
     this.headers = {};
@@ -543,6 +565,9 @@ RAML.Inspector = (function() {
     }
 
     $scope.apiClient = this;
+    apply = function() {
+      $scope.$apply.apply($scope, arguments);
+    };
   };
 
   TryIt.prototype.showBody = function() {
@@ -568,10 +593,21 @@ RAML.Inspector = (function() {
   TryIt.prototype.execute = function() {
     var response = this.response = {};
     var url = this.response.requestUrl = this.baseUri + this.pathBuilder(this.pathBuilder);
-    var requestOptions = { url: url, method: this.httpMethod }
+    var requestOptions = { url: url, type: this.httpMethod, headers: {} }
+
+    function handleResponse(jqXhr) {
+      response.body = jqXhr.responseText,
+      response.status = jqXhr.status,
+      response.headers = parseHeaders(jqXhr.getAllResponseHeaders());
+
+      if (response.headers['Content-Type']) {
+        response.contentType = response.headers['Content-Type'].split(';')[0];
+      }
+      apply();
+    }
 
     if (!isEmpty(this.queryParameters)) {
-      requestOptions.params = this.queryParameters;
+      requestOptions.data = this.queryParameters;
     }
 
     if (!isEmpty(this.formParameters)) {
@@ -583,36 +619,22 @@ RAML.Inspector = (function() {
     }
 
     if (this.mediaType) {
-      requestOptions.headers = requestOptions.headers || {};
-      requestOptions.headers['Content-Type'] = this.mediaType;
-      requestOptions.data = this.body;
+      requestOptions.contentType = this.mediaType;
+      if (this.showBody()) { requestOptions.data = this.body; }
     }
 
     if (this.basicauth) {
       var encoded = this.encoder.encode(this.basicauth.username + ":" + this.basicauth.password);
-      requestOptions.headers = requestOptions.headers || {};
       requestOptions.headers['Authorization'] = "Basic " + encoded;
     }
 
-    this.requestInProgress = true;
-    this.http(requestOptions).then(
-      this.handleResponse.bind(this), this.handleResponse.bind(this)
+    $.ajax(requestOptions).then(
+      function(data, textStatus, jqXhr) { handleResponse(jqXhr); },
+      function(jqXhr) { handleResponse(jqXhr); }
     );
   };
 
-  TryIt.prototype.handleResponse = function(httpResponse) {
-    this.requestInProgress = false;
-
-    this.response.body = httpResponse.data,
-      this.response.status = httpResponse.status,
-      this.response.headers = httpResponse.headers();
-
-    if (this.response.headers['content-type']) {
-      this.response.contentType = this.response.headers['content-type'].split(';')[0];
-    }
-  }
-
-  RAML.Controllers.tryIt = TryIt;
+  RAML.Controllers.TryIt = TryIt;
 })();
 
 (function() {
@@ -1060,7 +1082,7 @@ RAML.Inspector = (function() {
       restrict: 'E',
       templateUrl: 'views/try_it.tmpl.html',
       replace: true,
-      controller: RAML.Controllers.tryIt
+      controller: RAML.Controllers.TryIt
     }
   }
 })();
@@ -1200,7 +1222,7 @@ module.filter('yesNo', RAML.Filters.yesNo);
 angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache) {
 
   $templateCache.put("views/api_resources.tmpl.html",
-    "<div class='accordion' role=\"resources\">\n" +
+    "<div id=\"api-reference\" class='accordion' role=\"resources\">\n" +
     "  <div ng-class=\"{expanded: resource.isOpen}\" class='accordion-group' role=\"resource\" ng-repeat=\"resource in api.resources\">\n" +
     "    <resource-summary class='accordion-heading accordion-toggle' ng-click='resource.isOpen = !resource.isOpen'></resource-summary>\n" +
     "    <div class='accordion-body' ng-show='resource.isOpen'>\n" +
@@ -1220,12 +1242,12 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    <legend>Basic Authentication</legend>\n" +
     "    <div class=\"control-group\">\n" +
     "      <label for=\"username\">username</label>\n" +
-    "      <input type=\"text\" name=\"username\" ng-model='apiClient.basicauth.password'/>\n" +
+    "      <input type=\"text\" name=\"username\" ng-model='apiClient.basicauth.username'/>\n" +
     "    </div>\n" +
     "\n" +
     "    <div class=\"control-group\">\n" +
     "      <label for=\"password\">password</label>\n" +
-    "      <input type=\"text\" name=\"password\" ng-model='apiClient.basicauth.username'/>\n" +
+    "      <input type=\"password\" name=\"password\" ng-model='apiClient.basicauth.password'/>\n" +
     "    </div>\n" +
     "  </fieldset>\n" +
     "</div>\n"
@@ -1245,45 +1267,41 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "\n" +
     "    </tab>\n" +
     "    <tab role='documentation-requests' heading=\"Requests\" active='documentation.requestsActive' disabled=\"!documentation.hasRequestDocumentation\">\n" +
-    "      <div ng-repeat=\"(mediaType, definition) in method.body track by mediaType\">\n" +
-    "        <h3>{{mediaType}}</h3>\n" +
-    "        <div ng-if=\"definition.schema\">\n" +
-    "          <h4>Schema</h4>\n" +
+    "      <section ng-repeat=\"(mediaType, definition) in method.body track by mediaType\">\n" +
+    "        <h4>{{mediaType}}</h4>\n" +
+    "        <section ng-if=\"definition.schema\">\n" +
+    "          <h5>Schema</h5>\n" +
     "          <div class=\"code\" code-mirror=\"definition.schema\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
-    "        </div>\n" +
-    "        <div ng-if=\"definition.example\">\n" +
-    "          <h4>Example</h4>\n" +
+    "        </section>\n" +
+    "        <section ng-if=\"definition.example\">\n" +
+    "          <h5>Example</h5>\n" +
     "          <div class=\"code\" code-mirror=\"definition.example\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
+    "        </section>\n" +
+    "      </section>\n" +
     "    </tab>\n" +
     "    <tab role='documentation-responses' heading=\"Responses\" active='documentation.responsesActive' disabled='!documentation.hasResponseDocumentation'>\n" +
-    "      <div ng-repeat='(responseCode, response) in method.responses'>\n" +
-    "        <div collapsible>\n" +
-    "          <div collapsible-toggle>\n" +
-    "            <h2>\n" +
-    "              <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
-    "              {{responseCode}}\n" +
-    "            </h2>\n" +
-    "          </div>\n" +
-    "          <div collapsible-content>\n" +
-    "            <section role='response'>\n" +
-    "              <p markdown='response.description'></p>\n" +
-    "              <div ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
-    "                <h3>{{mediaType}}</h3>\n" +
-    "                <div ng-if=\"definition.schema\">\n" +
-    "                  <h4>Schema</h4>\n" +
-    "                  <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
-    "                </div>\n" +
-    "                <div ng-if=\"definition.example\">\n" +
-    "                  <h4>Example</h4>\n" +
-    "                  <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
-    "                </div>\n" +
-    "              </div>\n" +
+    "      <section collapsible ng-repeat='(responseCode, response) in method.responses'>\n" +
+    "        <h4 collapsible-toggle>\n" +
+    "          <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
+    "          {{responseCode}}\n" +
+    "        </h4>\n" +
+    "        <div collapsible-content>\n" +
+    "          <section role='response'>\n" +
+    "            <p markdown='response.description'></p>\n" +
+    "            <section ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
+    "              <h5>{{mediaType}}</h5>\n" +
+    "              <section ng-if=\"definition.schema\">\n" +
+    "                <h6>Schema</h6>\n" +
+    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "              </section>\n" +
+    "              <section ng-if=\"definition.example\">\n" +
+    "                <h6>Example</h6>\n" +
+    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "              </section>\n" +
     "            </section>\n" +
-    "          </div>\n" +
+    "          </section>\n" +
     "        </div>\n" +
-    "      </div>\n" +
+    "      </section>\n" +
     "    </tab>\n" +
     "    <tab heading=\"Try It\" active=\"documentation.tryItActive\">\n" +
     "      <try-it></try-it>\n" +
@@ -1319,10 +1337,10 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
 
   $templateCache.put("views/parameter_table.tmpl.html",
     "<section class='parameterTable' ng-show='parameters'>\n" +
-    "  <h3>{{heading}}</h3>\n" +
-    "  <div role='parameter' ng-repeat='param in parameters'>\n" +
-    "    <h4>\n" +
-    "      <span role=\"display-name\">{{param.displayName}}</span>\n" +
+    "  <h4>{{heading}}</h4>\n" +
+    "  <section role='parameter' ng-repeat='param in parameters'>\n" +
+    "    <h5>\n" +
+    "      <code role=\"display-name\">{{param.displayName}}</code>\n" +
     "    <span class=\"constraints\">\n" +
     "      <span role=\"required\" ng-if=\"param.required\">required, </span><!--\n" +
     "      --><span role=\"enum\" ng-if=\"param.enum\">\n" +
@@ -1344,13 +1362,13 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "      --><span ng-if=\"param.default\">, default: <span role=\"default\">{{param.default}}</span></span>\n" +
     "\n" +
     "    </span>\n" +
-    "    </h4>\n" +
+    "    </h5>\n" +
     "\n" +
     "    <div class=\"info\">\n" +
     "      <div role=\"description\" markdown=\"param.description\"></div>\n" +
     "      <div ng-if=\"param.example\"><span class=\"label\">Example</span> <span role=\"example\">{{param.example}}</span></div>\n" +
     "    </div>\n" +
-    "  </div>\n" +
+    "  </section>\n" +
     "</section>\n"
   );
 
@@ -1465,7 +1483,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    </div>\n" +
     "\n" +
     "    <div class=\"form-actions\">\n" +
-    "      <i ng-show='apiClient.requestInProgress' class=\"icon-spinner icon-spin icon-large\"></i>\n" +
+    "      <i ng-show='apiClient.response.status' class=\"icon-spinner icon-spin icon-large\"></i>\n" +
     "\n" +
     "      <button role=\"try-it\" class=\"btn inverted\" ng-click=\"apiClient.execute()\">\n" +
     "        Try It\n" +
@@ -1473,28 +1491,30 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    </div>\n" +
     "  </form>\n" +
     "\n" +
-    "  <div class=\"response\" ng-if=\"apiClient.response && !apiClient.requestInProgress\">\n" +
-    "    <h3>Response</h3>\n" +
+    "  <div class=\"response\" ng-if=\"apiClient.response\">\n" +
+    "    <h4>Response</h4>\n" +
     "    <div class=\"request-url\">\n" +
-    "      <h4>Request URL</h4>\n" +
-    "      <span class=\"response-value\">{{apiClient.response.requestUrl}}</span>\n" +
+    "      <h5>Request URL</h5>\n" +
+    "      <code class=\"response-value\">{{apiClient.response.requestUrl}}</code>\n" +
     "    </div>\n" +
     "\n" +
     "    <div class=\"status\">\n" +
-    "      <h4>Status</h4>\n" +
-    "      <span class=\"response-value\">{{apiClient.response.status}}</span>\n" +
+    "      <h5>Status</h5>\n" +
+    "      <code class=\"response-value\">{{apiClient.response.status}}</code>\n" +
     "    </div>\n" +
     "    <div class=\"headers\">\n" +
-    "      <h4>Headers</h4>\n" +
+    "      <h5>Headers</h5>\n" +
     "      <ul class=\"response-value\">\n" +
     "        <li ng-repeat=\"(header, value) in apiClient.response.headers\">\n" +
-    "          <span class=\"header-key\">{{header}}:</span>\n" +
-    "          <span class=\"header-value\">{{value}}</span>\n" +
+    "          <code>\n" +
+    "            <span class=\"header-key\">{{header}}:</span>\n" +
+    "            <span class=\"header-value\">{{value}}</span>\n" +
+    "          </code>\n" +
     "        </li>\n" +
     "      </ul>\n" +
     "    </div>\n" +
     "    <div class=\"body\">\n" +
-    "      <h4>Body</h4>\n" +
+    "      <h5>Body</h5>\n" +
     "      <div class=\"response-value\">\n" +
     "        <div class=\"code\" mode='{{apiClient.response.contentType}}' code-mirror=\"apiClient.response.body\" visible=\"apiClient.response.body\"></div>\n" +
     "      </div>\n" +

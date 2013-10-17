@@ -1,3 +1,4 @@
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:400italic,600italic,700italic,400,600,700);
 /*!
  * Bootstrap v2.3.2
  *
@@ -7099,6 +7100,13 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   padding: 0;
   list-style: none;
 }
+.bootstrap code {
+  padding: 0;
+  color: #333;
+  background: transparent;
+  border: none;
+  font-size: inherit;
+}
 .bootstrap .accordion {
   margin-bottom: 0;
 }
@@ -7117,6 +7125,9 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .bootstrap .accordion-inner {
   padding: 0;
   border: none;
+}
+.bootstrap .nav-tabs {
+  margin-bottom: 0;
 }
 .bootstrap .nav-tabs li {
   cursor: pointer;
@@ -7142,14 +7153,8 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
   font-size: 24px;
   line-height: inherit;
 }
-.bootstrap form {
-  padding: 10px 20px;
-  background-color: #f8f8f8;
-}
 .bootstrap form legend {
   border-bottom: none;
-  font-family: 'open sans', sans-serif;
-  font-size: 18px;
   margin-bottom: 10px;
 }
 .bootstrap form .form-actions {
@@ -7251,6 +7256,36 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .btn.inverted:active,
 .btn.inverted.active {
   background-color: #c9d5df \9;
+}
+raml-console code {
+  font-family: 'Courier New', 'Courier', monospace;
+}
+raml-console .tab-pane {
+  padding: 20px;
+}
+raml-console #api-reference section:first-of-type > h4,
+raml-console #api-reference section:first-of-type > h5,
+raml-console #api-reference section:first-of-type > h6 {
+  margin-top: 0;
+}
+raml-console #api-reference h4,
+raml-console #api-reference h5,
+raml-console #api-reference legend {
+  font-family: 'Open Sans', sans-serif;
+  font-weight: 700;
+  line-height: 1.15em;
+}
+raml-console #api-reference h4,
+raml-console #api-reference legend {
+  font-size: 18px;
+  margin-bottom: 5px;
+}
+raml-console #api-reference h4 {
+  margin-top: 25px;
+}
+raml-console #api-reference h5 {
+  margin-top: 20px;
+  margin-bottom: 5px;
 }
 #api-title {
   padding-left: 10px;
@@ -7430,6 +7465,9 @@ span[role=segment] span {
   font-family: monospace;
   height: 7em;
 }
+.try-it form fieldset:first-of-type {
+  margin-top: 0;
+}
 .try-it form fieldset {
   margin-top: 10px;
 }
@@ -7534,23 +7572,6 @@ span[role=segment] span {
 [role=root-documentation] section .content h6 {
   line-height: 1.15em;
   margin-top: 1.5em;
-}
-.parameterTable h3 {
-  text-align: left;
-  color: black;
-  font-size: 16px;
-  margin: 25px 0 0 0;
-}
-.parameterTable:first-of-type h3:first-of-type {
-  margin: 0;
-}
-.parameterTable [role="parameter"]:first-of-type h4 {
-  margin: 0;
-}
-.parameterTable [role="parameter"] h4 {
-  font-size: 16px;
-  margin-top: 20px;
-  margin-bottom: 0;
 }
 .parameterTable [role="parameter"] h4 [role="display-name"] {
   font-family: monospace;

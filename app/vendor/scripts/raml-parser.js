@@ -3362,10 +3362,6 @@ function parseHost(host) {
 }).call(this);
 
 },{"./errors":1,"./events":2,"./nodes":11,"./raml":12,"./util":4,"url":7}],13:[function(require,module,exports){
-window.RAML = {}
-
-window.RAML.Parser = require('../lib/raml')
-},{"../lib/raml":12}],14:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
@@ -7230,7 +7226,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 },{}]},{},[])
 ;;module.exports=require("buffer-browserify")
 
-},{}],15:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function(Buffer){(function() {
   var MarkedYAMLError, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -7843,7 +7839,11 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 }).call(this);
 
 })(require("__browserify_buffer").Buffer)
-},{"./errors":1,"./nodes":11,"./util":4,"__browserify_buffer":14}],16:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4,"__browserify_buffer":13}],15:[function(require,module,exports){
+window.RAML = {}
+
+window.RAML.Parser = require('../lib/raml')
+},{"../lib/raml":12}],16:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -7953,7 +7953,120 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11}],11:[function(require,module,exports){
+},{"./errors":1,"./nodes":11}],17:[function(require,module,exports){
+(function() {
+  var composer, construct, joiner, parser, protocols, reader, resolver, scanner, schemas, securitySchemes, traits, transformations, types, util, validator;
+
+  util = require('./util');
+
+  reader = require('./reader');
+
+  scanner = require('./scanner');
+
+  parser = require('./parser');
+
+  composer = require('./composer');
+
+  resolver = require('./resolver');
+
+  construct = require('./construct');
+
+  validator = require('./validator');
+
+  joiner = require('./joiner');
+
+  traits = require('./traits');
+
+  types = require('./resourceTypes');
+
+  schemas = require('./schemas');
+
+  protocols = require('./protocols');
+
+  securitySchemes = require('./securitySchemes');
+
+  transformations = require('./transformations');
+
+  this.make_loader = function(Reader, Scanner, Parser, Composer, Resolver, Validator, ResourceTypes, Traits, Schemas, Protocols, Joiner, SecuritySchemes, Constructor, Transformations) {
+    if (Reader == null) {
+      Reader = reader.Reader;
+    }
+    if (Scanner == null) {
+      Scanner = scanner.Scanner;
+    }
+    if (Parser == null) {
+      Parser = parser.Parser;
+    }
+    if (Composer == null) {
+      Composer = composer.Composer;
+    }
+    if (Resolver == null) {
+      Resolver = resolver.Resolver;
+    }
+    if (Validator == null) {
+      Validator = validator.Validator;
+    }
+    if (ResourceTypes == null) {
+      ResourceTypes = types.ResourceTypes;
+    }
+    if (Traits == null) {
+      Traits = traits.Traits;
+    }
+    if (Schemas == null) {
+      Schemas = schemas.Schemas;
+    }
+    if (Protocols == null) {
+      Protocols = protocols.Protocols;
+    }
+    if (Joiner == null) {
+      Joiner = joiner.Joiner;
+    }
+    if (SecuritySchemes == null) {
+      SecuritySchemes = securitySchemes.SecuritySchemes;
+    }
+    if (Constructor == null) {
+      Constructor = construct.Constructor;
+    }
+    if (Transformations == null) {
+      Transformations = transformations.Transformations;
+    }
+    return (function() {
+      var component, components;
+
+      components = [Reader, Scanner, Parser, Composer, Resolver, Validator, Traits, ResourceTypes, Schemas, Protocols, Joiner, Constructor, SecuritySchemes, Transformations];
+
+      util.extend.apply(util, [_Class.prototype].concat((function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = components.length; _i < _len; _i++) {
+          component = components[_i];
+          _results.push(component.prototype);
+        }
+        return _results;
+      })()));
+
+      function _Class(stream, location, validate, parent) {
+        var _i, _len, _ref;
+        this.parent = parent;
+        components[0].call(this, stream, location);
+        components[1].call(this, validate);
+        _ref = components.slice(2);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          component = _ref[_i];
+          component.call(this);
+        }
+      }
+
+      return _Class;
+
+    })();
+  };
+
+  this.Loader = this.make_loader();
+
+}).call(this);
+
+},{"./composer":10,"./construct":14,"./joiner":16,"./parser":20,"./protocols":26,"./reader":18,"./resolver":21,"./resourceTypes":24,"./scanner":19,"./schemas":25,"./securitySchemes":27,"./traits":23,"./transformations":28,"./util":4,"./validator":22}],11:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, unique_id, _ref, _ref1, _ref2,
     __hasProp = {}.hasOwnProperty,
@@ -8243,120 +8356,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1}],17:[function(require,module,exports){
-(function() {
-  var composer, construct, joiner, parser, protocols, reader, resolver, scanner, schemas, securitySchemes, traits, transformations, types, util, validator;
-
-  util = require('./util');
-
-  reader = require('./reader');
-
-  scanner = require('./scanner');
-
-  parser = require('./parser');
-
-  composer = require('./composer');
-
-  resolver = require('./resolver');
-
-  construct = require('./construct');
-
-  validator = require('./validator');
-
-  joiner = require('./joiner');
-
-  traits = require('./traits');
-
-  types = require('./resourceTypes');
-
-  schemas = require('./schemas');
-
-  protocols = require('./protocols');
-
-  securitySchemes = require('./securitySchemes');
-
-  transformations = require('./transformations');
-
-  this.make_loader = function(Reader, Scanner, Parser, Composer, Resolver, Validator, ResourceTypes, Traits, Schemas, Protocols, Joiner, SecuritySchemes, Constructor, Transformations) {
-    if (Reader == null) {
-      Reader = reader.Reader;
-    }
-    if (Scanner == null) {
-      Scanner = scanner.Scanner;
-    }
-    if (Parser == null) {
-      Parser = parser.Parser;
-    }
-    if (Composer == null) {
-      Composer = composer.Composer;
-    }
-    if (Resolver == null) {
-      Resolver = resolver.Resolver;
-    }
-    if (Validator == null) {
-      Validator = validator.Validator;
-    }
-    if (ResourceTypes == null) {
-      ResourceTypes = types.ResourceTypes;
-    }
-    if (Traits == null) {
-      Traits = traits.Traits;
-    }
-    if (Schemas == null) {
-      Schemas = schemas.Schemas;
-    }
-    if (Protocols == null) {
-      Protocols = protocols.Protocols;
-    }
-    if (Joiner == null) {
-      Joiner = joiner.Joiner;
-    }
-    if (SecuritySchemes == null) {
-      SecuritySchemes = securitySchemes.SecuritySchemes;
-    }
-    if (Constructor == null) {
-      Constructor = construct.Constructor;
-    }
-    if (Transformations == null) {
-      Transformations = transformations.Transformations;
-    }
-    return (function() {
-      var component, components;
-
-      components = [Reader, Scanner, Parser, Composer, Resolver, Validator, Traits, ResourceTypes, Schemas, Protocols, Joiner, Constructor, SecuritySchemes, Transformations];
-
-      util.extend.apply(util, [_Class.prototype].concat((function() {
-        var _i, _len, _results;
-        _results = [];
-        for (_i = 0, _len = components.length; _i < _len; _i++) {
-          component = components[_i];
-          _results.push(component.prototype);
-        }
-        return _results;
-      })()));
-
-      function _Class(stream, location, validate, parent) {
-        var _i, _len, _ref;
-        this.parent = parent;
-        components[0].call(this, stream, location);
-        components[1].call(this, validate);
-        _ref = components.slice(2);
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          component = _ref[_i];
-          component.call(this);
-        }
-      }
-
-      return _Class;
-
-    })();
-  };
-
-  this.Loader = this.make_loader();
-
-}).call(this);
-
-},{"./composer":10,"./construct":15,"./joiner":16,"./parser":20,"./protocols":26,"./reader":18,"./resolver":21,"./resourceTypes":24,"./scanner":19,"./schemas":25,"./securitySchemes":27,"./traits":23,"./transformations":28,"./util":4,"./validator":22}],20:[function(require,module,exports){
+},{"./errors":1}],20:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, tokens, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9575,7 +9575,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4}],27:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4}],25:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9591,42 +9591,43 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
   */
 
 
-  this.SecuritySchemeError = (function(_super) {
-    __extends(SecuritySchemeError, _super);
+  this.SchemaError = (function(_super) {
+    __extends(SchemaError, _super);
 
-    /*
-      The Schemas class deals with applying schemas to resources according to the spec
-    */
-
-
-    function SecuritySchemeError() {
-      _ref = SecuritySchemeError.__super__.constructor.apply(this, arguments);
+    function SchemaError() {
+      _ref = SchemaError.__super__.constructor.apply(this, arguments);
       return _ref;
     }
 
-    return SecuritySchemeError;
+    return SchemaError;
 
   })(MarkedYAMLError);
 
-  this.SecuritySchemes = (function() {
-    function SecuritySchemes() {
-      this.get_security_scheme = __bind(this.get_security_scheme, this);
-      this.get_all_schemes = __bind(this.get_all_schemes, this);
-      this.has_schemes = __bind(this.has_schemes, this);
-      this.load_security_schemes = __bind(this.load_security_schemes, this);
-      this.declaredSchemes = {};
+  /*
+    The Schemas class deals with applying schemas to resources according to the spec
+  */
+
+
+  this.Schemas = (function() {
+    function Schemas() {
+      this.get_schemas_used = __bind(this.get_schemas_used, this);
+      this.apply_schemas = __bind(this.apply_schemas, this);
+      this.get_all_schemas = __bind(this.get_all_schemas, this);
+      this.has_schemas = __bind(this.has_schemas, this);
+      this.load_schemas = __bind(this.load_schemas, this);
+      this.declaredSchemas = {};
     }
 
-    SecuritySchemes.prototype.load_security_schemes = function(node) {
-      var allschemes,
+    Schemas.prototype.load_schemas = function(node) {
+      var allSchemas,
         _this = this;
-      if (this.has_property(node, "securitySchemes")) {
-        allschemes = this.property_value(node, "securitySchemes");
-        if (allschemes && typeof allschemes === "object") {
-          return allschemes.forEach(function(scheme_entry) {
-            if (scheme_entry.tag === 'tag:yaml.org,2002:map') {
-              return scheme_entry.value.forEach(function(scheme) {
-                return _this.declaredSchemes[scheme[0].value] = scheme[1].value;
+      if (this.has_property(node, "schemas")) {
+        allSchemas = this.property_value(node, "schemas");
+        if (allSchemas && typeof allSchemas === "object") {
+          return allSchemas.forEach(function(schema_entry) {
+            if (schema_entry && typeof schema_entry === "object" && typeof schema_entry.value === "object") {
+              return schema_entry.value.forEach(function(schema) {
+                return _this.declaredSchemas[schema[0].value] = schema;
               });
             }
           });
@@ -9634,22 +9635,42 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       }
     };
 
-    SecuritySchemes.prototype.has_schemes = function(node) {
-      if (this.declaredSchemes.length === 0 && this.has_property(node, "schemes")) {
-        this.load_schemes(node);
+    Schemas.prototype.has_schemas = function(node) {
+      if (this.declaredSchemas.length === 0 && this.has_property(node, "schemas")) {
+        this.load_schemas(node);
       }
-      return Object.keys(this.declaredSchemes).length > 0;
+      return Object.keys(this.declaredSchemas).length > 0;
     };
 
-    SecuritySchemes.prototype.get_all_schemes = function() {
-      return this.declaredSchemes;
+    Schemas.prototype.get_all_schemas = function() {
+      return this.declaredSchemas;
     };
 
-    SecuritySchemes.prototype.get_security_scheme = function(schemaName) {
-      return this.declaredSchemes[schemaName];
+    Schemas.prototype.apply_schemas = function(node) {
+      var resources, schemas,
+        _this = this;
+      resources = this.child_resources(node);
+      schemas = this.get_schemas_used(resources);
+      return schemas.forEach(function(schema) {
+        if (schema[1].value in _this.declaredSchemas) {
+          return schema[1].value = _this.declaredSchemas[schema[1].value][1].value;
+        }
+      });
     };
 
-    return SecuritySchemes;
+    Schemas.prototype.get_schemas_used = function(resources) {
+      var schemas,
+        _this = this;
+      schemas = [];
+      resources.forEach(function(resource) {
+        var properties;
+        properties = _this.get_properties(resource[1], "schema");
+        return schemas = schemas.concat(properties);
+      });
+      return schemas;
+    };
+
+    return Schemas;
 
   })();
 
@@ -11161,7 +11182,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./tokens":3,"./util":4}],25:[function(require,module,exports){
+},{"./errors":1,"./tokens":3,"./util":4}],27:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11177,43 +11198,42 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
   */
 
 
-  this.SchemaError = (function(_super) {
-    __extends(SchemaError, _super);
+  this.SecuritySchemeError = (function(_super) {
+    __extends(SecuritySchemeError, _super);
 
-    function SchemaError() {
-      _ref = SchemaError.__super__.constructor.apply(this, arguments);
+    /*
+      The Schemas class deals with applying schemas to resources according to the spec
+    */
+
+
+    function SecuritySchemeError() {
+      _ref = SecuritySchemeError.__super__.constructor.apply(this, arguments);
       return _ref;
     }
 
-    return SchemaError;
+    return SecuritySchemeError;
 
   })(MarkedYAMLError);
 
-  /*
-    The Schemas class deals with applying schemas to resources according to the spec
-  */
-
-
-  this.Schemas = (function() {
-    function Schemas() {
-      this.get_schemas_used = __bind(this.get_schemas_used, this);
-      this.apply_schemas = __bind(this.apply_schemas, this);
-      this.get_all_schemas = __bind(this.get_all_schemas, this);
-      this.has_schemas = __bind(this.has_schemas, this);
-      this.load_schemas = __bind(this.load_schemas, this);
-      this.declaredSchemas = {};
+  this.SecuritySchemes = (function() {
+    function SecuritySchemes() {
+      this.get_security_scheme = __bind(this.get_security_scheme, this);
+      this.get_all_schemes = __bind(this.get_all_schemes, this);
+      this.has_schemes = __bind(this.has_schemes, this);
+      this.load_security_schemes = __bind(this.load_security_schemes, this);
+      this.declaredSchemes = {};
     }
 
-    Schemas.prototype.load_schemas = function(node) {
-      var allSchemas,
+    SecuritySchemes.prototype.load_security_schemes = function(node) {
+      var allschemes,
         _this = this;
-      if (this.has_property(node, "schemas")) {
-        allSchemas = this.property_value(node, "schemas");
-        if (allSchemas && typeof allSchemas === "object") {
-          return allSchemas.forEach(function(schema_entry) {
-            if (schema_entry && typeof schema_entry === "object" && typeof schema_entry.value === "object") {
-              return schema_entry.value.forEach(function(schema) {
-                return _this.declaredSchemas[schema[0].value] = schema;
+      if (this.has_property(node, "securitySchemes")) {
+        allschemes = this.property_value(node, "securitySchemes");
+        if (allschemes && typeof allschemes === "object") {
+          return allschemes.forEach(function(scheme_entry) {
+            if (scheme_entry.tag === 'tag:yaml.org,2002:map') {
+              return scheme_entry.value.forEach(function(scheme) {
+                return _this.declaredSchemes[scheme[0].value] = scheme[1].value;
               });
             }
           });
@@ -11221,42 +11241,22 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       }
     };
 
-    Schemas.prototype.has_schemas = function(node) {
-      if (this.declaredSchemas.length === 0 && this.has_property(node, "schemas")) {
-        this.load_schemas(node);
+    SecuritySchemes.prototype.has_schemes = function(node) {
+      if (this.declaredSchemes.length === 0 && this.has_property(node, "schemes")) {
+        this.load_schemes(node);
       }
-      return Object.keys(this.declaredSchemas).length > 0;
+      return Object.keys(this.declaredSchemes).length > 0;
     };
 
-    Schemas.prototype.get_all_schemas = function() {
-      return this.declaredSchemas;
+    SecuritySchemes.prototype.get_all_schemes = function() {
+      return this.declaredSchemes;
     };
 
-    Schemas.prototype.apply_schemas = function(node) {
-      var resources, schemas,
-        _this = this;
-      resources = this.child_resources(node);
-      schemas = this.get_schemas_used(resources);
-      return schemas.forEach(function(schema) {
-        if (schema[1].value in _this.declaredSchemas) {
-          return schema[1].value = _this.declaredSchemas[schema[1].value][1].value;
-        }
-      });
+    SecuritySchemes.prototype.get_security_scheme = function(schemaName) {
+      return this.declaredSchemes[schemaName];
     };
 
-    Schemas.prototype.get_schemas_used = function(resources) {
-      var schemas,
-        _this = this;
-      schemas = [];
-      resources.forEach(function(resource) {
-        var properties;
-        properties = _this.get_properties(resource[1], "schema");
-        return schemas = schemas.concat(properties);
-      });
-      return schemas;
-    };
-
-    return Schemas;
+    return SecuritySchemes;
 
   })();
 
@@ -11820,7 +11820,7 @@ function decode(str) {
 
 }).call(this);
 
-},{"./composer":10,"./construct":15,"./errors":1,"./events":2,"./loader":17,"./nodes":11,"./parser":20,"./reader":18,"./resolver":21,"./scanner":19,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],28:[function(require,module,exports){
+},{"./composer":10,"./construct":14,"./errors":1,"./events":2,"./loader":17,"./nodes":11,"./parser":20,"./reader":18,"./resolver":21,"./scanner":19,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],28:[function(require,module,exports){
 (function() {
   var nodes, uritemplate, url, util,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -14605,7 +14605,7 @@ exports.XMLHttpRequest = function() {
 };
 
 })(require("__browserify_process"),require("__browserify_buffer").Buffer)
-},{"__browserify_buffer":14,"__browserify_process":5,"child_process":32,"fs":9,"http":33,"https":34,"url":7}],30:[function(require,module,exports){
+},{"__browserify_buffer":13,"__browserify_process":5,"child_process":32,"fs":9,"http":33,"https":34,"url":7}],30:[function(require,module,exports){
 (function(global){/*global unescape, module, define, window, global*/
 
 /*
@@ -15511,7 +15511,9 @@ https.request = function (params, cb) {
     params.scheme = 'https';
     return http.request.call(this, params, cb);
 }
-},{"http":33}],35:[function(require,module,exports){
+},{"http":33}],31:[function(require,module,exports){
+module.exports = require( './lib/inflection' );
+},{"./lib/inflection":35}],36:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -15708,9 +15710,7 @@ EventEmitter.listenerCount = function(emitter, type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":5}],31:[function(require,module,exports){
-module.exports = require( './lib/inflection' );
-},{"./lib/inflection":36}],33:[function(require,module,exports){
+},{"__browserify_process":5}],33:[function(require,module,exports){
 var http = module.exports;
 var EventEmitter = require('events').EventEmitter;
 var Request = require('./lib/request');
@@ -15772,7 +15772,7 @@ var xhrHttp = (function () {
     }
 })();
 
-},{"./lib/request":37,"events":35}],36:[function(require,module,exports){
+},{"./lib/request":37,"events":36}],35:[function(require,module,exports){
 /*!
  * inflection
  * Copyright(c) 2011 Ben Lin <ben@dreamerslab.com>
@@ -16430,7 +16430,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":35,"util":39}],39:[function(require,module,exports){
+},{"events":36,"util":39}],39:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -16777,7 +16777,7 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":35}],40:[function(require,module,exports){
+},{"events":36}],40:[function(require,module,exports){
 var Stream = require('stream');
 
 var Response = module.exports = function (res) {
@@ -17728,5 +17728,5 @@ function reduced(list) {
   return out
 }
 
-},{}]},{},[13,10,15,1,2,16,17,11,20,26,12,18,21,24,19,27,25,3,23,28,22,4,6])
+},{}]},{},[15,10,14,1,2,16,17,11,20,26,12,18,21,24,19,25,27,3,23,28,4,22,6])
 ;
