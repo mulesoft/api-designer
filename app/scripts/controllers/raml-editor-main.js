@@ -7,7 +7,7 @@ angular.module('ramlEditorApp')
   .constant('DEFAULT_PATH', '/')
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
-    REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $window, safeApply, throttle, ramlHint,
+    REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
     ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap, config) {
     var CodeMirror = codeMirror.CodeMirror, editor, saveTimer;
 
@@ -178,11 +178,11 @@ angular.module('ramlEditorApp')
         $scope.triggerAutocomplete(cm);
       });
 
-      setTimeout(function () {
+      $timeout(function () {
         eventService.broadcast('event:raml-editor-initialized', editor);
       });
 
-      setTimeout(function () {
+      $timeout(function () {
         $scope.bootstrap();
         afterBootstrap();
       });
