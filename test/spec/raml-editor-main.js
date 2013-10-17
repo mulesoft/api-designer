@@ -110,128 +110,170 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('Save and Save As', function () {
-    it('save should be enabled only if file is dirty', function() {
-      ctrl = $controller('ramlMain', params);
+  describe('saving files', function () {
+    describe('save', function () {
+      it('should be enabled only if file is dirty', function() {
+        ctrl = $controller('ramlMain', params);
 
-      scope.file = {
-        dirty: true
-      }
+        scope.file = {
+          dirty: true
+        }
 
-      scope.canSave().should.be.ok;
+        scope.canSave().should.be.ok;
 
-      scope.file.dirty = false;
-      scope.canSave().should.not.be.ok;
+        scope.file.dirty = false;
+        scope.canSave().should.not.be.ok;
+      });
+
+      it('should abort if the file can\'t be saved', function(){
+        ctrl = $controller('ramlMain', params);
+
+        sinon.stub(scope, 'canSave').returns(false);
+        sinon.stub(scope, '_saveFile');
+
+        scope.save();
+
+        scope.canSave.calledOnce.should.be.ok;
+        scope._saveFile.calledOnce.should.not.be.ok;
+
+        scope.canSave.restore();
+        scope._saveFile.restore();
+      });
+
+      it('should abort if no file name is provided', function () {
+        ctrl = $controller('ramlMain', params);
+
+        scope.file = {
+          dirty: true
+        }
+
+        sinon.stub(scope, '_promptForFileName');
+        sinon.stub(scope, '_saveFile');
+
+        scope.save();
+
+        scope._promptForFileName.called.should.be.ok;
+        scope._saveFile.calledOnce.should.not.be.ok;
+
+        scope._promptForFileName.restore();
+        scope._saveFile.restore();
+      });
+
+      it('should ask for a file name if the file is new has never been saved', function () {
+        ctrl = $controller('ramlMain', params);
+
+        sinon.stub(scope, 'canSave').returns(true);
+        sinon.stub(scope, '_promptForFileName').returns("api.raml");
+        sinon.stub(scope, '_saveFile');
+
+        scope.file = {
+          persisted: false
+        };
+
+        scope.save();
+
+        scope.canSave.calledOnce.should.be.ok;
+        scope._promptForFileName.called.should.be.ok;
+        scope._saveFile.called.should.be.ok;
+
+        scope.canSave.restore();
+        scope._promptForFileName.restore();
+        scope._saveFile.restore();
+      });
+
+      it('save should not ask for a file name if the file is new has never been saved', function () {
+        ctrl = $controller('ramlMain', params);
+
+        sinon.stub(scope, 'canSave').returns(true);
+        sinon.stub(scope, '_promptForFileName');
+        sinon.stub(scope, '_saveFile');
+
+        scope.file = {
+          persisted: true
+        };
+
+        scope.save();
+
+        scope.canSave.calledOnce.should.be.ok;
+        scope._promptForFileName.called.should.not.be.ok;
+        scope._saveFile.called.should.be.ok;
+
+        scope.canSave.restore();
+        scope._promptForFileName.restore();
+        scope._saveFile.restore();
+      });
     });
 
-    it('should abort if the file can\'t be saved', function(){
-      ctrl = $controller('ramlMain', params);
+    describe('save as', function () {
+      it('should be enabled only if the file has been saved or loaded from the persistence store', function (){
+        //arrange
+        ctrl = $controller('ramlMain', params);
 
-      sinon.stub(scope, 'canSave').returns(false);
-      sinon.stub(scope, '_saveFile');
+        scope.file = {
+          persisted: true
+        };
 
-      scope.save();
+        //act & assert
+        scope.canSaveAs().should.be.ok;
 
-      scope.canSave.calledOnce.should.be.ok;
-      scope._saveFile.calledOnce.should.not.be.ok;
+        scope.file.persisted = false;
+        scope.canSaveAs().should.not.be.ok;
+      });
 
-      scope.canSave.restore();
-      scope._saveFile.restore();
-    });
+      it('should abort if the file is new', function() {
+        ctrl = $controller('ramlMain', params);
 
-    it('should ask for a file name if the file is new has never been saved', function () {
-      ctrl = $controller('ramlMain', params);
+        scope.file = {
+          persisted: false
+        }
 
-      sinon.stub(scope, 'canSave').returns(true);
-      sinon.stub(scope, '_promptForFileName').returns("api.raml");
-      sinon.stub(scope, '_saveFile');
+        sinon.stub(scope, '_promptForFileName');
 
-      scope.file = {
-        persisted: false
-      };
+        scope.saveAs();
 
-      scope.save();
+        scope._promptForFileName.called.should.not.be.ok;
+        scope._promptForFileName.restore();
+      });
 
-      scope.canSave.calledOnce.should.be.ok;
-      scope._promptForFileName.called.should.be.ok;
-      scope._saveFile.called.should.be.ok;
+      it('should abort if no file name is provided', function () {
+        ctrl = $controller('ramlMain', params);
 
-      scope.canSave.restore();
-      scope._promptForFileName.restore();
-      scope._saveFile.restore();
-    });
+        scope.file = {
+          persisted: true
+        }
 
-    it('should not ask for a file name if the file is new has never been saved', function () {
-      ctrl = $controller('ramlMain', params);
+        sinon.stub(scope, '_promptForFileName');
+        sinon.stub(scope, '_saveFile');
 
-      sinon.stub(scope, 'canSave').returns(true);
-      sinon.stub(scope, '_promptForFileName');
-      sinon.stub(scope, '_saveFile');
+        scope.saveAs();
 
-      scope.file = {
-        persisted: true
-      };
+        scope._promptForFileName.called.should.be.ok;
+        scope._saveFile.calledOnce.should.not.be.ok;
 
-      scope.save();
+        scope._promptForFileName.restore();
+        scope._saveFile.restore();
+      });
 
-      scope.canSave.calledOnce.should.be.ok;
-      scope._promptForFileName.called.should.not.be.ok;
-      scope._saveFile.called.should.be.ok;
+      it('save as should ask for a file name and call save file', function () {
+        ctrl = $controller('ramlMain', params);
 
-      scope.canSave.restore();
-      scope._promptForFileName.restore();
-      scope._saveFile.restore();
-    });
+        scope.file = {
+          persisted: true
+        }
 
-    it('save as should be enabled only if the file has been saved or loaded from the persistence store', function (){
-      //arrange
-      ctrl = $controller('ramlMain', params);
+        sinon.stub(scope, '_promptForFileName').returns("api.raml");
+        sinon.stub(scope, '_saveFile');
 
-      scope.file = {
-        persisted: true
-      };
+        scope.saveAs();
 
-      //act & assert
-      scope.canSaveAs().should.be.ok;
+        scope._promptForFileName.calledOnce.should.be.ok;
+        scope._saveFile.calledOnce.should.be.ok;
 
-      scope.file.persisted = false;
-      scope.canSaveAs().should.not.be.ok;
-    });
+        scope._saveFile.calledAfter(scope._promptForFileName).should.be.ok;
 
-    it('should abort if the file is new', function() {
-      ctrl = $controller('ramlMain', params);
-
-      scope.file = {
-        persisted: false
-      }
-
-      sinon.stub(scope, '_promptForFileName');
-
-      scope.saveAs();
-
-      scope._promptForFileName.called.should.not.be.ok;
-      scope._promptForFileName.restore();
-    });
-
-    it('should ask for a file name and call save file', function () {
-      ctrl = $controller('ramlMain', params);
-
-      scope.file = {
-        persisted: true
-      }
-
-      sinon.stub(scope, '_promptForFileName').returns("api.raml");
-      sinon.stub(scope, '_saveFile');
-
-      scope.saveAs();
-
-      scope._promptForFileName.calledOnce.should.be.ok;
-      scope._saveFile.calledOnce.should.be.ok;
-
-      scope._saveFile.calledAfter(scope._promptForFileName).should.be.ok;
-
-      scope._promptForFileName.restore();
-      scope._saveFile.restore();
+        scope._promptForFileName.restore();
+        scope._saveFile.restore();
+      });
     });
   });
 
