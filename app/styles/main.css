@@ -198,6 +198,11 @@ div[role=actions] div[role=new-button] {
   right: 0;
 }
 
+div[role=actions] div[role=new-button]:hover {
+  color: white;
+}
+
+
 /* Preview - Console */
 
 div[role=preview] {

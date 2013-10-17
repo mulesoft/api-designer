@@ -112,4 +112,13 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
+  describe('Save As', function () {
+    it('should be enabled only if file has been saved', function (done){
+      //arrange
+      params.afterBootstrap = function() {
+        done();
+      }
+    })
+  });
+
 });
