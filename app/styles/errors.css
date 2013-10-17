@@ -13,7 +13,6 @@
   overflow: hidden;
   padding: 2px 5px;
   position: fixed;
-  white-space: pre;
   z-index: 100;
   max-width: 600px;
   opacity: 0;
@@ -31,8 +30,7 @@
 
 .CodeMirror-lint-mark-error {
   background-image:
-  url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==")
-  ;
+  url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==");
 }
 
 .CodeMirror-lint-mark-warning {
@@ -74,7 +72,7 @@
 }
 
 .cm-s-solarized .CodeMirror-gutters {
-  padding: 0px 5px 0px 0px;
+  padding: 0 5px 0 0;
   box-shadow: none;
 }
 
@@ -83,8 +81,8 @@
 }
 
 .CodeMirror-foldgutter-open, .CodeMirror-foldgutter-folded {
-  padding-left: 0px;
+  padding-left: 0;
   font-size: 18px;
   margin-top: -2px;
-  padding-right: 0px;
+  padding-right: 0;
 }
