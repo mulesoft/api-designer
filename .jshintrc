@@ -28,7 +28,8 @@
     "inject": false,
     "mock": false,
     "sinon": false,
-    "getEditor": false
+    "getEditor": false,
+    "prompt": false
 
   }
 }
