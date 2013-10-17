@@ -100,7 +100,6 @@ div[role=editor] {
   transition: padding-bottom .05s ease-in;
   padding-top: 32px;
   background: rgb(11,11,13);
-  border-radius: 5px 0 0 0;
 }
 
 div[role=editor].collapsed {
@@ -119,7 +118,7 @@ div[role=tabs] {
   overflow:visible;
   position: absolute;
   top: 3px;
-  left: 20px;
+  left: 53px;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
