@@ -137,6 +137,8 @@ angular.module('ramlEditorApp')
         $scope.file = ramlRepository.createFile();
         editor.setValue($scope.file.contents);
         editor.setCursor({line: 1, ch: 0});
+
+        clearTimeout(saveTimer);
       }
     };
 
