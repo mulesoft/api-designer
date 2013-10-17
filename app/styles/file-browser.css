@@ -5,15 +5,25 @@ div[role=browser] {
   left: 16px;
   overflow: show;
   cursor: pointer;
+  color: grey;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 
 div[role=raml-editor].light div[role=browser] {
-  color: #999;
+  color: rgb(202,204,212);
 }
 
-div[role=browser]:hover > i,
-div[role=raml-editor].light div[role=browser]:hover > i {
-  color: #bbb;
+div[role=browser]:hover > div[role=browser-toggle-button] > i {
+  color: #aaa;
+}
+
+div[role=raml-editor].light div[role=browser]:hover > div[role=browser-toggle-button] > i {
+  color: #eee;
 }
 
 div[role=browser] > ul[role=file-list] {
@@ -53,11 +63,17 @@ div[role=browser] > ul[role=file-list] > li {
   line-height: 18px;
 }
 
-div[role=browser] > ul[role=file-list] > li:hover {
+div[role=browser] > ul[role=file-list] > li.read-only {
+  cursor: default;
+}
+
+div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
+  color: #ccc;
   background-color: rgb(30,79,106);
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:hover {
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
+  color: #eee;
   background-color: rgb(47,124,166);
 }
 

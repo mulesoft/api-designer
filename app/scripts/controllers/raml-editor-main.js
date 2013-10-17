@@ -3,10 +3,11 @@
 angular.module('ramlEditorApp')
   .constant('AUTOSAVE_INTERVAL', 60000)
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
+  .constant('REFRESH_FILES_INTERVAL', 5000)
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
-    $scope, $rootScope, $window, safeApply, ramlHint, ramlParser,
-    ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
+    REFRESH_FILES_INTERVAL, $scope, $rootScope, $window, safeApply, throttle, ramlHint,
+    ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap,
     config) {
     var CodeMirror = codeMirror.CodeMirror, editor, currentUpdateTimer, saveTimer;
 
@@ -129,8 +130,18 @@ angular.module('ramlEditorApp')
     };
 
     $scope.toggleBrowser = function () {
-      $scope.browser.expanded = !$scope.browser.expanded;
+      var browser = $scope.browser;
+      browser.expanded = !browser.expanded;
+      if (browser.expanded) {
+        $scope.loadFiles();
+      }
     };
+
+    $scope.loadFiles = throttle(function () {
+      $scope.files = ramlRepository.getDirectory('/', function () {
+        safeApply();
+      });
+    }, REFRESH_FILES_INTERVAL);
 
     eventService.on('event:save', function () {
       $scope.save();

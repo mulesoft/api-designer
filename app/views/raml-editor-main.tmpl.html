@@ -9,13 +9,14 @@
         <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i></div>
       <div role="shelf-container" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
-    <div role="browser" ng-click="toggleBrowser()" ng-class="{expanded: browser.expanded}">
-      <i class="icon-folder-open"></i>
-      <i ng-class="browser.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i>
+    <div role="browser" ng-class="{expanded: browser.expanded}">
+      <div role="browser-toggler" ng-click="toggleBrowser()">
+        <i class="icon-folder-open"></i>
+        <i ng-class="browser.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i>
+      </div>
       <ul role="file-list">
-        <li><i class="icon-file"></i>api.raml</li>
-        <li><i class="icon-file"></i>traits.raml</li>
-        <li><i class="icon-file"></i>my-first-api.raml</li>
+        <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
+        <li ng-repeat="fileEntry in files"><i class="icon-file"></i>{{fileEntry.name}}</li>
       </ul>
     </div>
     <div role="tabs">
