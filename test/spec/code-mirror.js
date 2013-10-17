@@ -620,5 +620,31 @@ describe('CodeMirror Service', function () {
       foldRange = codeMirrorService.getFoldRange(editor, { line: 21 });
       should.equal(foldRange, undefined);
     });
+    
+    it('should not allow folding of scalars even when having spaces after it (RT-325)', function (){
+      var indentUnit = 2;
+      editor = getEditor([
+        '#%RAML 0.8',
+        '---',
+        'title: Test',
+        'resourceTypes:   ',
+        '  - base:',
+        '      is: [hola]',
+        '      get:',
+        'traits:',
+        '  - hola:',
+        '      displayName: HOL',
+        '/tags:',
+        '  type:',
+        '    base:',
+        '  displayName: Tags',
+        '  get:'
+        ].join('\n'),
+        { line: 7, ch: 0 },
+        { indentUnit: indentUnit });
+
+      var foldRange = codeMirrorService.getFoldRange(editor, { line: 2 });
+      should.not.exist(foldRange);
+    });
   });
 });
