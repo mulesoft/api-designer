@@ -11,7 +11,7 @@
       </div>
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
-    <div role="browser" ng-class="{expanded: browser.expanded}">
+    <div role="browser" ng-class="{expanded: browser.expanded}" ng-mouseleave="collapseBrowser()">
       <div role="browser-toggle-button" ng-click="toggleBrowser()">
         <i class="icon-folder-open"></i>
         <i ng-class="browser.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i>

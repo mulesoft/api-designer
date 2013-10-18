@@ -155,6 +155,13 @@ angular.module('ramlEditorApp')
       config.save();
     };
 
+    $scope.collapseBrowser = function () {
+      var browser = $scope.browser;
+      if (browser.expanded) {
+        $scope.toggleBrowser();
+      }
+    };
+
     $scope.toggleBrowser = function () {
       var browser = $scope.browser;
       browser.expanded = !browser.expanded;

@@ -94,4 +94,24 @@ angular.module('utils', [])
   })
   .value('$confirm', function (message) {
     return window.confirm(message);
-  });
+  })
+  .directive('ngMouseenter', ['$parse', function($parse) {
+    return function(scope, element, attr) {
+      var fn = $parse(attr.ngBlur);
+      element.bind('mouseenter', function(event) {
+        scope.$apply(function() {
+          fn(scope, {$event:event});
+        });
+      });
+    };
+  }])
+  .directive('ngMouseleave', ['$parse', function($parse) {
+    return function(scope, element, attr) {
+      var fn = $parse(attr.ngBlur);
+      element.bind('mouseleave', function(event) {
+        scope.$apply(function() {
+          fn(scope, {$event:event});
+        });
+      });
+    };
+  }]);
