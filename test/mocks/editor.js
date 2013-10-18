@@ -36,6 +36,12 @@
     deleteH: function (offset, range) {
       range.should.be.equal('char');
       this.deleteOffset += offset;
+    },
+    replaceRange: function () {
+      this.replaceRangeArguments = Array.prototype.slice.call(arguments, 0);
+    },
+    focus: function () {
+
     }
   };
 
