@@ -3,7 +3,63 @@
 var CodeMirror = window.CodeMirror, suggestRAML = window.suggestRAML;
 
 angular.module('ramlEditorApp')
-  .factory('ramlHint', function (getLineIndent, generateTabs, extractKey) {
+  /**
+   * Returns array of lines (including specified)
+   * at the same level as line at <lineNumber>.
+   *
+   * If <lineNumber> is not specified, current line
+   * under cursor will be used.
+   */
+  .factory('getNeighborLines', function (getLineIndent) {
+    return function (editor, lineNumber) {
+      if (typeof lineNumber !== 'number') {
+        lineNumber = editor.getCursor().line;
+      }
+
+      var lineNumbers = [lineNumber];
+      var lineIndent = getLineIndent(editor.getLine(lineNumber));
+      var linesCount = editor.lineCount();
+      var i;
+      var nextLine;
+      var nextLineIndent;
+
+      // lines above specified
+      for (i = lineNumber - 1; i >= 0; i--) {
+        nextLine = editor.getLine(i);
+        nextLineIndent = getLineIndent(nextLine);
+
+        if (nextLineIndent.tabCount !== lineIndent.tabCount) {
+          break;
+        }
+
+        lineNumbers.push(i);
+      }
+
+      // lines below specified
+      for (i = lineNumber + 1; i < linesCount; i++) {
+        nextLine = editor.getLine(i);
+        nextLineIndent = getLineIndent(nextLine);
+
+        if (nextLineIndent.tabCount !== lineIndent.tabCount) {
+          break;
+        }
+
+        lineNumbers.push(i);
+      }
+
+      return lineNumbers.sort().map(function (lineNumber) {
+        return editor.getLine(lineNumber);
+      });
+    };
+  })
+  .factory('getKeysToErase', function (getNeighborLines, extractKey) {
+    return function (editor) {
+      return getNeighborLines(editor).map(function (line) {
+        return extractKey(line.trim());
+      });
+    };
+  })
+  .factory('ramlHint', function (getLineIndent, generateTabs, getKeysToErase) {
     var hinter = {};
     var WORD = /[\w$]+/;
 
@@ -184,38 +240,6 @@ angular.module('ramlEditorApp')
       return {scopeLevels: currentIndexes, scopesByLine: levelTable};
     };
 
-
-
-    function extractKeyPartFromScopes(scopesInfo) {
-      return (scopesInfo || []).map(function (scopeInfo) {
-        return extractKey(scopeInfo[1]);
-      });
-    }
-
-    hinter.getKeysToErase = function (editor) {
-      var editorState = hinter.getEditorState(editor),
-          scopes = hinter.getScopes(editor),
-          currentLineNumber = editorState.cur.line,
-          currentScopeLevel = editorState.currLineTabCount;
-
-      if (currentScopeLevel !== 0) {
-        var scopesAtLevel = scopes.scopeLevels[currentScopeLevel - 1] || [];
-
-        // We get the maximal element of the set of less than number of line
-        var numOfLinesOfParentScopes = scopesAtLevel.filter(function (numOfLine) {
-          return numOfLine < currentLineNumber;
-        });
-
-        var scopeLineInformation = scopes.scopesByLine[
-          numOfLinesOfParentScopes[numOfLinesOfParentScopes.length - 1]
-        ];
-
-        return extractKeyPartFromScopes(scopeLineInformation);
-      } else {
-        return extractKeyPartFromScopes(scopes.scopesByLine[0]);
-      }
-    };
-
     hinter.selectiveCloneAlternatives = function (oldAlternatives, keysToErase) {
       var newAlternatives = {}, newAlternativesSuggestions = {};
 
@@ -251,7 +275,7 @@ angular.module('ramlEditorApp')
 
       alternatives = hinter.suggestRAML(val);
 
-      keysToErase = hinter.getKeysToErase(editor);
+      keysToErase = getKeysToErase(editor);
 
       alternatives = hinter.selectiveCloneAlternatives(alternatives, keysToErase);
 
