@@ -61,7 +61,7 @@ angular.module('ramlEditorApp')
   })
   .factory('ramlHint', function (getLineIndent, generateTabs, getKeysToErase) {
     var hinter = {};
-    var WORD = /[\w$]+/;
+    var WORD = /[^\s]+|[$]+/;
 
     hinter.suggestRAML = suggestRAML;
 
@@ -166,11 +166,10 @@ angular.module('ramlEditorApp')
       var word = options && options.word || WORD;
       var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
       var startPos = cur.ch, endPos = startPos;
-      var currLineTabCount = 0;
+      var currLineTabCount;
 
       currLineTabCount = getLineIndent(curLine).tabCount;
 
-//      while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
