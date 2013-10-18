@@ -150,18 +150,6 @@ angular.module('ramlEditorApp')
       return result.invalid ? undefined : l;
     };
 
-    hinter.getPadding = function getPadding(node, tabCount) {
-      if (!node || !node.constructor || !node.constructor.name) {
-        throw new Error('Can\'t determine padding for node: ' + node);
-      }
-
-      if ('StringWildcard' === node.constructor.name) {
-        return ' ';
-      }
-
-      return '\n' + generateTabs(tabCount);
-    };
-
     hinter.getEditorState = function(editor, options) {
       var word = options && options.word || WORD;
       var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
