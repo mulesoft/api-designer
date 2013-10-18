@@ -686,5 +686,46 @@ describe('CodeMirror Service', function () {
       var foldRange = codeMirrorService.getFoldRange(editor, { line: 2 });
       should.not.exist(foldRange);
     });
+
+    it('', function (){
+      var indentUnit = 2,
+          foldRange;
+
+      editor = getEditor([
+        '#%RAML 0.8',
+        '---',
+        'title: Test',
+        'resourceTypes:   ',
+        '  - base:',
+        '      is: [hola]',
+        '      get:',
+        'traits:',
+        '  - hola:',
+        '      displayName: HOL',
+        '/tags:',
+        '  /abc:',
+        '    /cde:',
+        '',
+        '  ',
+        '    ',
+        '      ',
+        '        ',
+        '  '
+        ].join('\n'),
+        { line: 7, ch: 0 },
+        { indentUnit: indentUnit });
+      
+      foldRange = codeMirrorService.getFoldRange(editor, { line: 10 });
+      
+      foldRange.from.line.should.be.equal(10);
+      foldRange.from.ch.should.be.equal(6);
+      
+      foldRange.to.line.should.be.equal(13);
+      foldRange.to.ch.should.be.equal(0);
+
+      foldRange = codeMirrorService.getFoldRange(editor, { line: 14 });
+      console.log(foldRange);
+      should.not.exist(foldRange);
+    });
   });
 });
