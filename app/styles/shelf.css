@@ -190,29 +190,29 @@ ul[role=items] > li > i{
 /* Category colors */
 /* TODO: extract color on less files */
 li.parameters > ul[role=items] > li > i.icon-reply {
-color: #1f77b4;
+  color: #1f77b4;
 }
 
 li.security > ul[role=items] > li > i.icon-reply {
-color: #ff7f0e;
+  color: #ff7f0e;
 }
 
 li.root > ul[role=items] > li > i.icon-reply {
-color: #2ca02c;
+  color: #2ca02c;
 
 }
 li.docs > ul[role=items] > li > i.icon-reply {
-color: #d62728;
+  color: #d62728;
 }
 li.methods > ul[role=items] > li > i.icon-reply {
-color: #9467bd;
+  color: #9467bd;
 }
 li.responses > ul[role=items] > li > i.icon-reply {
-color: #e377c2;
+  color: #e377c2;
 }
 li.resources > ul[role=items] > li > i.icon-reply {
-color: #bcbd22;
+  color: #bcbd22;
 }
 li.traits-and-types ul[role=items] > li > i.icon-reply {
-color: #17becf;
+  color: #17becf;
 }
