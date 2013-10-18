@@ -11,7 +11,7 @@
       </div>
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
-    <div role="browser" ng-class="{expanded: browser.expanded}">
+    <div role="browser" ng-class="{expanded: browser.expanded}" ng-mouseleave="collapseBrowser()">
       <div role="browser-toggle-button" ng-click="toggleBrowser()">
         <i class="icon-folder-open"></i>
         <i ng-class="browser.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i>
@@ -19,7 +19,7 @@
       <ul role="file-list">
         <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
         <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
-        <li ng-repeat="fileEntry in files" ng-click="loadFile(fileEntry)"><i class="icon-file"></i>{{fileEntry.name}}</li>
+        <li ng-repeat="fileEntry in files" ng-click="loadFile(fileEntry)"><i class="icon-file"></i>{{fileEntry.name}}<i class="icon-trash"></i></li>
       </ul>
     </div>
     <div role="tabs">
