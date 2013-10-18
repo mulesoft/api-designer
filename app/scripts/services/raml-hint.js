@@ -29,7 +29,13 @@ angular.module('ramlEditorApp')
         nextLineIndent = getLineIndent(nextLine);
 
         if (nextLineIndent.tabCount !== lineIndent.tabCount) {
-          break;
+          // level is decreasing, no way we can get back
+          if (nextLineIndent.tabCount < lineIndent.tabCount) {
+            break;
+          }
+
+          // level is increasing, but we still can get back
+          continue;
         }
 
         lineNumbers.push(i);
@@ -41,7 +47,13 @@ angular.module('ramlEditorApp')
         nextLineIndent = getLineIndent(nextLine);
 
         if (nextLineIndent.tabCount !== lineIndent.tabCount) {
-          break;
+          // level is decreasing, no way we can get back
+          if (nextLineIndent.tabCount < lineIndent.tabCount) {
+            break;
+          }
+
+          // level is increasing, but we still can get back
+          continue;
         }
 
         lineNumbers.push(i);

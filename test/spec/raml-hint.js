@@ -638,9 +638,9 @@ describe('RAML Hint Service', function () {
     it('should return expected neighbor lines #1', function () {
       var editor = getEditor(
         [
-          'line 1:',
-          'line 2:',
-          'line 3:'
+          'line 1:', //
+          'line 2:', // <---
+          'line 3:'  //
         ].join('\n'),
         {
           line: 1,
@@ -658,9 +658,9 @@ describe('RAML Hint Service', function () {
     it('should return expected neighbor lines #2', function () {
       var editor = getEditor(
         [
-          'line 1:',
-          'line 2:',
-          '  line 3:'
+          'line 1:',  //
+          'line 2:',  // <---
+          '  line 3:' //
         ].join('\n'),
         {
           line: 1,
@@ -677,9 +677,9 @@ describe('RAML Hint Service', function () {
     it('should return expected neighbor lines #3', function () {
       var editor = getEditor(
         [
-          '  line 1:',
-          'line 2:',
-          'line 3:'
+          '  line 1:', //
+          'line 2:',   // <---
+          'line 3:'    //
         ].join('\n'),
         {
           line: 1,
@@ -696,9 +696,28 @@ describe('RAML Hint Service', function () {
     it('should return expected neighbor lines #4', function () {
       var editor = getEditor(
         [
-          'line 1:',
-          '  line 2:',
-          'line 3:'
+          'line 1:',   // <---
+          '  line 2:', //
+          'line 3:'    //
+        ].join('\n'),
+        {
+          line: 0,
+          ch: 0
+        }
+      );
+
+      getNeighborLines(editor).should.be.deep.equal([
+        'line 1:',
+        'line 3:'
+      ]);
+    });
+
+    it('should return expected neighbor lines #5', function () {
+      var editor = getEditor(
+        [
+          'line 1:',   //
+          '  line 2:', // <---
+          'line 3:'    //
         ].join('\n'),
         {
           line: 1,
@@ -708,6 +727,49 @@ describe('RAML Hint Service', function () {
 
       getNeighborLines(editor).should.be.deep.equal([
         '  line 2:'
+      ]);
+    });
+
+    it('should return expected neighbor lines #6', function () {
+      var editor = getEditor(
+        [
+          'line 1:',   //
+          '  line 2:', //
+          'line 3:'    // <---
+        ].join('\n'),
+        {
+          line: 2,
+          ch: 0
+        }
+      );
+
+      getNeighborLines(editor).should.be.deep.equal([
+        'line 1:',
+        'line 3:'
+      ]);
+    });
+
+    it('should return expected neighbor lines #7', function () {
+      var editor = getEditor(
+        [
+          'line 1:',     //
+          '  line 2:',   //
+          '    line 3:', //
+          '  line 4:',   // <---
+          '    line 5:', //
+          '  line 6:',   //
+          'line 7:'      //
+        ].join('\n'),
+        {
+          line: 3,
+          ch: 0
+        }
+      );
+
+      getNeighborLines(editor).should.be.deep.equal([
+        '  line 2:',
+        '  line 4:',
+        '  line 6:'
       ]);
     });
   });
