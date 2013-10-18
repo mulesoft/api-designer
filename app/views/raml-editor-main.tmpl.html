@@ -18,6 +18,7 @@
       </div>
       <ul role="file-list">
         <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
+        <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
         <li ng-repeat="fileEntry in files" ng-click="loadFile(fileEntry)"><i class="icon-file"></i>{{fileEntry.name}}</li>
       </ul>
     </div>
