@@ -220,7 +220,7 @@ angular.module('ramlEditorApp')
     };
 
     $scope._confirmLoseChanges = function () {
-      return $confirm('Are you sure you want to lose you unsaved changes?');
+      return $confirm('Are you sure you want to lose your unsaved changes?');
     };
 
     $scope._saveFile = function() {
