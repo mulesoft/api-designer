@@ -8,7 +8,7 @@ angular.module('ramlEditorApp')
   .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
-    ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap, config) {
+    ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap, config, $prompt, $confirm) {
     var CodeMirror = codeMirror.CodeMirror, editor, saveTimer;
 
     $scope.consoleSettings = { displayTryIt: false };
@@ -91,11 +91,13 @@ angular.module('ramlEditorApp')
     };
 
     $scope.switchFile = function (file) {
-      $scope.file = file;
-      $scope.firstLoad = true;
-      editor.setValue($scope.file.contents);
-      editor.setCursor({line: 0, ch: 0});
-      editor.focus();
+      if( !$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
+        $scope.file = file;
+        $scope.firstLoad = true;
+        editor.setValue($scope.file.contents);
+        editor.setCursor({line: 0, ch: 0});
+        editor.focus();
+      }
     };
 
     $scope.canSave = function () {
@@ -134,7 +136,7 @@ angular.module('ramlEditorApp')
     };
 
     $scope.newFile = function (){
-      if(!$scope.canSave()) {
+      if( !$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
         $scope.file = ramlRepository.createFile();
         editor.setValue($scope.file.contents);
         editor.setCursor({line: 1, ch: 0});
@@ -212,9 +214,13 @@ angular.module('ramlEditorApp')
     $scope.init();
 
     $scope._promptForFileName = function () {
-      var fileName = prompt('File Name?', $scope.file.name);
+      var fileName = $prompt('File Name?', $scope.file.name);
       $scope.file.name = fileName || $scope.file.name;
       return !!fileName;
+    };
+
+    $scope._confirmLoseChanges = function () {
+      return $confirm('Are you sure you want to lose your unsaved changes?');
     };
 
     $scope._saveFile = function() {

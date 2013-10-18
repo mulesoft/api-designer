@@ -5,7 +5,7 @@ var codeMirror, eventService, codeMirrorErrors, ramlRepository,
 
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor, $timeout;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm;
 
   beforeEach(module('ramlEditorApp'));
 
@@ -16,6 +16,7 @@ describe('RAML Editor Main Controller', function () {
       $timeout = $injector.get('$timeout');
       codeMirror = $injector.get('codeMirror');
       eventService = $injector.get('eventService');
+      $confirm = $injector.get('$confirm');
     })
   );
 
@@ -51,6 +52,7 @@ describe('RAML Editor Main Controller', function () {
       codeMirrorErrors: codeMirrorErrors,
       eventService: eventService,
       ramlRepository: ramlRepository,
+      $confirm: $confirm,
       afterBootstrap: function () { }
     };
   });
@@ -95,12 +97,86 @@ describe('RAML Editor Main Controller', function () {
       scope.newFile();
 
       //assert
-      scope.canSave.should.have.been.calledOnce;
-      ramlRepository.createFile.should.have.been.calledOnce;
-      editor.setValue.should.have.been.calledOnce;
-      editor.setCursor.should.have.been.calledOnce;
+
+      scope.canSave.calledOnce.should.be.ok;
+      ramlRepository.createFile.calledOnce.should.be.ok;
+      editor.setValue.calledOnce.should.be.ok;
+      editor.setCursor.calledOnce.should.be.ok;
 
       scope.file.should.deep.equal(file);
+
+      //restore
+      scope.canSave.restore();
+      ramlRepository.createFile.restore();
+      editor.setValue.restore();
+      editor.setCursor.restore();
+    });
+
+    it('should create a new RAML file if the current document is not saved and the prompt is successful', function(){
+      //arrange
+      var calledConfirm = false;
+      params["$confirm"] = function(){
+          calledConfirm = true;
+          return true;
+      };
+
+      ctrl = $controller('ramlMain', params);
+
+      var file = {
+          contents: 'NEW RAML FILE'
+      };
+
+      sinon.stub(scope, 'canSave').returns(true);
+      sinon.stub(ramlRepository, 'createFile').returns(file);
+      sinon.stub(editor, 'setValue');
+      sinon.stub(editor, 'setCursor');
+
+      //act
+      scope.newFile();
+
+      //assert
+      scope.canSave.calledTwice.should.be.ok;
+      ramlRepository.createFile.calledOnce.should.be.ok;
+      editor.setValue.calledOnce.should.be.ok;
+      editor.setCursor.calledOnce.should.be.ok;
+      calledConfirm.should.be.ok;
+      editor.setValue.calledWith(file.contents).should.be.ok;
+      scope.file.should.deep.equal(file);
+
+      //restore
+      scope.canSave.restore();
+      ramlRepository.createFile.restore();
+      editor.setValue.restore();
+      editor.setCursor.restore();
+    });
+
+    it('should not create a new RAML file if the current document is not saved and the prompt fails', function(){
+      //arrange
+      var calledConfirm = false;
+      params["$confirm"] = function(){
+          calledConfirm = true;
+          return false;
+      };
+
+      ctrl = $controller('ramlMain', params);
+
+      var file = {
+          contents: 'NEW RAML FILE'
+      };
+
+      sinon.stub(scope, 'canSave').returns(true);
+      sinon.stub(ramlRepository, 'createFile').returns(file);
+      sinon.stub(editor, 'setValue');
+      sinon.stub(editor, 'setCursor');
+
+      //act
+      scope.newFile();
+
+      //assert
+      scope.canSave.calledTwice.should.be.ok;
+      ramlRepository.createFile.called.should.not.be.ok;
+      calledConfirm.should.be.ok;
+
 
       //restore
       scope.canSave.restore();
@@ -330,6 +406,63 @@ describe('RAML Editor Main Controller', function () {
       ramlRepository.loadFile.restore();
       editor.setValue.restore();
     });
+
+    it('switching a file from the browser should not open it in the code editor if the document is unsaved and confirmation fails', function () {
+      //arrange
+      var calledConfirm = false;
+      params["$confirm"] = function(){
+        calledConfirm = true;
+        return false;
+      };
+
+      ctrl = $controller('ramlMain', params);
+      sinon.stub(scope, 'canSave').returns(true);
+      sinon.stub(ramlRepository, 'loadFile').returns(file1).yields(file1);
+      sinon.spy(editor, 'setValue');
+
+      //act
+      scope.switchFile(file1);
+
+      //assert
+      scope.canSave.calledTwice.should.be.ok;
+      ramlRepository.loadFile.called.should.not.be.ok;
+      calledConfirm.should.be.ok;
+
+      //restore
+      ramlRepository.loadFile.restore();
+      editor.setValue.restore();
+    });
+
+    it('switching a file from the browser should open it in the code editor if the document is unsaved and confirmation confirms it', function () {
+      //arrange
+      var calledConfirm = false;
+      params["$confirm"] = function(){
+          calledConfirm = true;
+          return true;
+      };
+
+      ctrl = $controller('ramlMain', params);
+      sinon.stub(scope, 'canSave').returns(true);
+      sinon.stub(ramlRepository, 'loadFile').returns(file1).yields(file1);
+      sinon.spy(editor, 'setValue');
+      sinon.spy(editor, 'setCursor');
+      sinon.spy(editor, 'focus');
+
+      //act
+      scope.switchFile(file1);
+
+      //assert
+      scope.canSave.calledTwice.should.be.ok;
+      editor.setValue.calledWith(file1.contents).should.be.ok;
+      editor.setCursor.calledWith({line: 0, ch: 0}).should.be.ok;
+      editor.focus.calledOnce.should.be.ok;
+      calledConfirm.should.be.ok;
+
+      //restore
+      ramlRepository.loadFile.restore();
+      editor.setValue.restore();
+    });
+
   });
 
 });

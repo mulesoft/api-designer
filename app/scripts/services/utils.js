@@ -88,4 +88,10 @@ angular.module('utils', [])
     value = value || '';
     var match = /^(.+):( .*$|$)/.exec(value);
     return match && match.length > 1 ? match[1] : '';
+  })
+  .value('$prompt', function (message, value) {
+    return window.prompt(message, value);
+  })
+  .value('$confirm', function (message) {
+    return window.confirm(message);
   });
