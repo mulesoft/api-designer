@@ -1,9 +1,36 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .controller('ramlEditorShelf', function ($scope, $rootScope, ramlHint,
-    eventService, codeMirror, ramlSnippets, safeApply, generateTabs) {
-    var hinter = ramlHint;
+  .factory('applySuggestion', function (ramlSnippets, getLineIndent, generateTabs) {
+    return function (editor, suggestion) {
+      var cursor = editor.getCursor();
+      var code = ramlSnippets.getSnippet(suggestion);
+      var line = editor.getLine(cursor.line);
+      var padding = generateTabs(getLineIndent(line).tabCount);
+      var rangeLine = cursor.line;
+      var rangeEndChar = 0;
+
+      if (code) {
+        code = code.replace(/\{\{padding\}\}/g, padding);
+
+        if (line.trim()) {
+          if (code.indexOf('\n') === -1) {
+            code = code + '\n';
+          }
+        } else {
+          rangeEndChar = line.length;
+          if (code.indexOf('\n') !== -1) {
+            code = code + padding;
+          }
+        }
+
+        editor.replaceRange(code, {line: rangeLine, ch: 0}, {line: rangeLine, ch: rangeEndChar});
+        editor.focus();
+      }
+    };
+  })
+  .controller('ramlEditorShelf', function ($scope, ramlHint,
+    eventService, codeMirror, safeApply, applySuggestion) {
 
     eventService.on('event:raml-editor-initialized', function () {
       var editor = codeMirror.getEditor();
@@ -12,7 +39,7 @@ angular.module('ramlEditorApp')
 
     $scope.cursorMoved = function () {
       var editor = codeMirror.getEditor();
-      var suggestions = hinter.getSuggestions(editor);
+      var suggestions = ramlHint.getSuggestions(editor);
       var sections = {};
       var model = { sections: [] };
 
@@ -46,32 +73,7 @@ angular.module('ramlEditorApp')
       return (index === -1) ? index.length : index;
     };
 
-    $scope.itemClick = function (item) {
-      var editor = codeMirror.getEditor();
-      var cur = editor.getCursor();
-      var code = ramlSnippets.getSnippet(item);
-      var line = editor.getLine(cur.line);
-      var count = $scope.model.path.length;
-      var padding = generateTabs(count);
-      var rangeLine = cur.line;
-      var rangeEndChar = 0;
-
-      if (code) {
-        code = code.replace(/\{\{padding\}\}/g, padding);
-
-        if (line.replace(/^\s+|\s+$/g, '') === '') {
-          rangeEndChar = line.length;
-          if (code.indexOf('\n') >= 0) {
-            code = code + padding;
-          }
-        } else {
-          if (code.indexOf('\n') < 0) {
-            code = code + '\n';
-          }
-        }
-
-        editor.replaceRange(code, {line: rangeLine, ch: 0}, {line: rangeLine, ch: rangeEndChar});
-        editor.focus();
-      }
+    $scope.itemClick = function (suggestion) {
+      applySuggestion(codeMirror.getEditor(), suggestion);
     };
   });
