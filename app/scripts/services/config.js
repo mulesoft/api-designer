@@ -10,7 +10,7 @@ angular.module('raml')
 
       if (window && window.localStorage) {
         for (i = 0; i < localStorage.length; i++){
-          key = localStorage.key(i);
+          key = localStorage.key(i)
 
           if (key.indexOf('config.') === 0) {
             config[key.substring('config.'.length)] = localStorage.getItem(key);
