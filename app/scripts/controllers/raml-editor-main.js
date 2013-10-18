@@ -43,11 +43,13 @@ angular.module('ramlEditorApp')
           curLine = editorState.curLine || '',
           trimmedCurLine = curLine.trim(),
           end = editorState.end ? editorState.end.ch : 0,
+          lineNumber = editorState.start ? editorState.start.line : 0,
           isKey = curLine.indexOf(':') > -1,
           firstChar = trimmedCurLine[0],
           currentPosIsLastChar = curLine.length === end;
 
-      if ((curLine && currentPosIsLastChar && !isKey && ['/', '#', '-'].indexOf(firstChar) === -1 ) || curLine === 0){
+      if ((curLine && currentPosIsLastChar && !isKey && ['/', '#', '-'].indexOf(firstChar) === -1 )
+          || (curLine && currentPosIsLastChar && !isKey && lineNumber === 0 && ['#'].indexOf(firstChar) === 0 )){
         CodeMirror.showHint(cm, CodeMirror.hint.javascript, { ghosting: true });
       }
     };
