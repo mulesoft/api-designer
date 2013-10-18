@@ -255,11 +255,11 @@ describe('RAML Hint Service', function () {
 
         var editorState = ramlHint.getEditorState(editor);
         (editorState).should.be.ok;
-        (editorState.curWord).should.be.equal('bye');
+        (editorState.curWord).should.be.equal('/bye:');
         (editorState.start.line).should.be.equal(4);
-        (editorState.start.ch).should.be.equal(3);
+        (editorState.start.ch).should.be.equal(2);
         (editorState.end.line).should.be.equal(4);
-        (editorState.end.ch).should.be.equal(6);
+        (editorState.end.ch).should.be.equal(7);
         (editorState.curLine).should.be.equal('  /bye:');
         (editorState.currLineTabCount).should.be.equal(1);
       });
@@ -279,11 +279,11 @@ describe('RAML Hint Service', function () {
 
         var editorState = ramlHint.getEditorState(editor);
         (editorState).should.be.ok;
-        (editorState.curWord).should.be.equal('description');
+        (editorState.curWord).should.be.equal('description:');
         (editorState.start.line).should.be.equal(6);
         (editorState.start.ch).should.be.equal(6);
         (editorState.end.line).should.be.equal(6);
-        (editorState.end.ch).should.be.equal(17);
+        (editorState.end.ch).should.be.equal(18);
         (editorState.curLine).should.be.equal('      description: this is a text     with spaces');
         (editorState.currLineTabCount).should.be.equal(3);
       });
