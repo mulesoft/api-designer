@@ -91,11 +91,13 @@ angular.module('ramlEditorApp')
     };
 
     $scope.switchFile = function (file) {
-      $scope.file = file;
-      $scope.firstLoad = true;
-      editor.setValue($scope.file.contents);
-      editor.setCursor({line: 0, ch: 0});
-      editor.focus();
+      if( !$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
+        $scope.file = file;
+        $scope.firstLoad = true;
+        editor.setValue($scope.file.contents);
+        editor.setCursor({line: 0, ch: 0});
+        editor.focus();
+      }
     };
 
     $scope.canSave = function () {
