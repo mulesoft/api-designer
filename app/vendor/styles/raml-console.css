@@ -7095,6 +7095,9 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
     visibility: hidden;
   }
 }
+.bootstrap h2 {
+  line-height: 20px;
+}
 .bootstrap ul {
   margin: 0;
   padding: 0;
@@ -7257,11 +7260,21 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .btn.inverted.active {
   background-color: #c9d5df \9;
 }
+raml-console h2 {
+  line-height: 20px;
+}
 raml-console code {
   font-family: 'Courier New', 'Courier', monospace;
 }
 raml-console .tab-pane {
   padding: 20px;
+}
+raml-console #api-title {
+  float: left;
+  padding-left: 10px;
+  font-size: 20px;
+  line-height: 1em;
+  margin: 20px 0;
 }
 raml-console #api-reference section:first-of-type > h4,
 raml-console #api-reference section:first-of-type > h5,
@@ -7286,11 +7299,6 @@ raml-console #api-reference h4 {
 raml-console #api-reference h5 {
   margin-top: 20px;
   margin-bottom: 5px;
-}
-#api-title {
-  padding-left: 10px;
-  margin-bottom: 15px;
-  float: left;
 }
 #main-nav {
   float: right;
@@ -7330,7 +7338,7 @@ ul[role=traits] li:last-child:after {
 }
 [role=resource] [role=resourceSummary] {
   color: #B2AEAD;
-  padding: 5px 10px;
+  padding: 10px;
   *zoom: 1;
 }
 [role=resource] [role=resourceSummary]:hover {
@@ -7351,15 +7359,21 @@ ul[role=traits] li:last-child:after {
 }
 ul[role=methods] {
   float: right;
+  text-align: right;
+  margin-bottom: -2px;
 }
 ul[role=methods] li {
   display: inline-block;
   background-color: #EFEBEA;
   text-transform: uppercase;
-  margin-left: 5px;
+  margin-left: 2px;
   text-align: center;
   font-size: 11px;
-  padding: 5px 20px;
+  padding: 3px 10px 1px;
+  margin-bottom: 2px;
+}
+ul[role=methods] li:first-child {
+  margin-left: 0;
 }
 [role=methodSummary] {
   padding: 15px;
@@ -7399,7 +7413,6 @@ span[role=segment]:last-child {
   font-style: normal;
   font-weight: bold;
   color: #1B99CD;
-  padding-left: 5px;
 }
 span[role=segment]:first-child {
   padding: 0;
@@ -7408,7 +7421,9 @@ span[role=segment] span {
   white-space: nowrap;
 }
 .byline {
+  float: left;
   font-size: 12px;
+  line-height: 24px;
   padding-top: 5px;
 }
 .byline li {
