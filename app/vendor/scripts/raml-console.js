@@ -9190,38 +9190,47 @@ window.vkbeautify = new vkbeautify();
 RAML.Inspector = (function() {
   var exports = {};
 
-  function extendMethod(api, method) {
-    method.requiresBasicAuthentication = function() {
-      var required = false,
-          securitySchemes = api.securitySchemes || [],
-          securedBy = this.securedBy || [];
+  function extendMethod(method, securitySchemes) {
+    securitySchemes = securitySchemes || [];
+
+    var securitySchemeFor = function(method, schemeType) {
+      var required = undefined,
+          securedBy = method.securedBy || [];
 
       securitySchemes.forEach(function(scheme) {
         securedBy.forEach(function(type) {
-          if (scheme[type] && scheme[type].type === "Basic Authentication") {
-            required = true;
+          if (scheme[type] && scheme[type].type === schemeType) {
+            required = scheme[type];
           }
         });
       });
 
       return required;
     }
+
+    method.requiresBasicAuthentication = function() {
+      return securitySchemeFor(this, "Basic Authentication");
+    }
+
+    method.requiresOauth2 = function() {
+      return securitySchemeFor(this, "OAuth 2.0");
+    }
   }
 
-  function extractResources(basePathSegments, api) {
+  function extractResources(basePathSegments, api, securitySchemes) {
     var resources = [];
 
     api.resources.forEach(function(resource) {
       var pathSegments = basePathSegments.concat(resource.relativeUri);
       var overview = exports.resourceOverviewSource(pathSegments, resource);
       overview.methods.forEach(function(method) {
-        extendMethod(api, method);
+        extendMethod(method, securitySchemes);
       });
 
       resources.push(overview);
 
       if (resource.resources) {
-        extracted = extractResources(pathSegments, resource);
+        extracted = extractResources(pathSegments, resource, securitySchemes);
         extracted.forEach(function(resource) {
           resources.push(resource);
         });
@@ -9245,7 +9254,7 @@ RAML.Inspector = (function() {
   };
 
   exports.create = function(api) {
-    api.resources = extractResources([], api);
+    api.resources = extractResources([], api, api.securitySchemes);
     return api;
   };
 
@@ -9301,6 +9310,295 @@ RAML.Inspector = (function() {
     create: function(pathSegments) {
       return createTemplate(pathSegments.map(convertPathSegment));
     }
+  }
+})();
+
+(function() {
+  var CONTENT_TYPE = "content-type";
+
+  var Client = function(parsed) {
+    this.securitySchemes = parsed.securitySchemes;
+  }
+
+  Client.prototype.securityScheme = function(name) {
+    var result = undefined;
+
+    this.securitySchemes.forEach(function(scheme) {
+      if (scheme[name]) {
+        result = scheme[name];
+      }
+    });
+
+    if (result !== undefined) {
+      return result;
+    } else {
+      throw new Error("Undefined Security Scheme: " + name);
+    }
+  };
+
+  var RequestDsl = function(options) {
+    this.data = function(data) {
+      options.data = data;
+    }
+
+    this.queryParam = function(name, value) {
+      options.data = options.data || {};
+      options.data[name] = value;
+    }
+
+    this.header = function(name, value) {
+      options.headers = options.headers || {};
+      options.headers[name] = value;
+
+      if (name.toLowerCase() == CONTENT_TYPE) {
+        options.contentType = value;
+      }
+    }
+
+    this.headers = function(headers) {
+      options.headers = {};
+      options.contentType = undefined;
+
+      for (var name in headers) {
+        this.header(name, headers[name])
+      }
+    }
+
+    this.toOptions = function() {
+      return options;
+    }
+  }
+
+  Client.prototype.createRequest = function(url, method) {
+    var request = {};
+    RequestDsl.call(request, { url: url, type: method });
+
+    return request;
+  }
+
+
+  RAML.Client = {
+    create: function(parsed) {
+      return new Client(parsed);
+    }
+  };
+})();
+
+RAML.Client.AuthStrategies = {};
+
+(function() {
+  var NO_OP_TOKEN = {
+    sign: function() {}
+  };
+
+  var Anonymous = function() {}
+  Anonymous.prototype.authenticate = function() {
+    return {
+      then: function(success) { success(NO_OP_TOKEN); }
+    }
+  };
+
+  var anonymous = new Anonymous();
+
+  RAML.Client.AuthStrategies.Anonymous = Anonymous;
+  RAML.Client.AuthStrategies.anonymous = function() {
+    return anonymous;
+  }
+})();
+
+
+RAML.Client.AuthStrategies.base64 = (function () {
+  var keyStr = 'ABCDEFGHIJKLMNOP' +
+    'QRSTUVWXYZabcdef' +
+    'ghijklmnopqrstuv' +
+    'wxyz0123456789+/' +
+    '=';
+
+  return {
+    encode: function (input) {
+     var output = "";
+     var chr1, chr2, chr3 = "";
+     var enc1, enc2, enc3, enc4 = "";
+     var i = 0;
+
+     do {
+      chr1 = input.charCodeAt(i++);
+      chr2 = input.charCodeAt(i++);
+      chr3 = input.charCodeAt(i++);
+
+      enc1 = chr1 >> 2;
+      enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+      enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+      enc4 = chr3 & 63;
+
+      if (isNaN(chr2)) {
+        enc3 = enc4 = 64;
+      } else if (isNaN(chr3)) {
+        enc4 = 64;
+      }
+
+      output = output +
+      keyStr.charAt(enc1) +
+      keyStr.charAt(enc2) +
+      keyStr.charAt(enc3) +
+      keyStr.charAt(enc4);
+      chr1 = chr2 = chr3 = "";
+      enc1 = enc2 = enc3 = enc4 = "";
+    } while (i < input.length);
+
+    return output;
+  },
+
+  decode: function (input) {
+    var output = "";
+    var chr1, chr2, chr3 = "";
+    var enc1, enc2, enc3, enc4 = "";
+    var i = 0;
+
+      // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
+      var base64test = /[^A-Za-z0-9\+\/\=]/g;
+      if (base64test.exec(input)) {
+        alert("There were invalid base64 characters in the input text.\n" +
+          "Valid base64 characters are A-Z, a-z, 0-9, '+', '/',and '='\n" +
+          "Expect errors in decoding.");
+      }
+      input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+
+      do {
+        enc1 = keyStr.indexOf(input.charAt(i++));
+        enc2 = keyStr.indexOf(input.charAt(i++));
+        enc3 = keyStr.indexOf(input.charAt(i++));
+        enc4 = keyStr.indexOf(input.charAt(i++));
+
+        chr1 = (enc1 << 2) | (enc2 >> 4);
+        chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+        chr3 = ((enc3 & 3) << 6) | enc4;
+
+        output = output + String.fromCharCode(chr1);
+
+        if (enc3 != 64) {
+          output = output + String.fromCharCode(chr2);
+        }
+        if (enc4 != 64) {
+          output = output + String.fromCharCode(chr3);
+        }
+
+        chr1 = chr2 = chr3 = "";
+        enc1 = enc2 = enc3 = enc4 = "";
+
+      } while (i < input.length);
+
+      return output;
+    }
+  };
+})();
+
+(function() {
+  var base64 = RAML.Client.AuthStrategies.base64;
+
+  var Basic = function(scheme, credentials) {
+    this.token = new Basic.Token(credentials);
+  }
+
+  Basic.prototype.authenticate = function() {
+    var token = this.token;
+
+    return {
+      then: function(success) { success(token); }
+    }
+  }
+
+  Basic.Token = function(credentials) {
+    this.encoded = base64.encode(credentials.username + ":" + credentials.password);
+  }
+
+  Basic.Token.prototype.sign = function(request) {
+    request.header('Authorization', 'Basic ' + this.encoded);
+  };
+
+  RAML.Client.AuthStrategies.Basic = Basic;
+  RAML.Client.AuthStrategies.basicAuth = function(credentials) {
+    return new Basic(null, credentials);
+  }
+})();
+
+(function() {
+  var WINDOW_NAME = 'raml-console-oauth2';
+
+  var Oauth2 = function(scheme, credentials) {
+    this.settings = scheme.settings;
+    this.credentialsManager = Oauth2.credentialsManager(credentials);
+  }
+
+  Oauth2.prototype.authenticate = function() {
+    var authorizationRequest = Oauth2.authorizationRequest(this.settings, this.credentialsManager);
+    var accessTokenRequest = Oauth2.accessTokenRequest(this.settings, this.credentialsManager);
+
+    return authorizationRequest.then(accessTokenRequest);
+  }
+
+
+  Oauth2.credentialsManager = function(credentials) {
+    return {
+      authorizationUrl : function(baseUrl) {
+         return baseUrl +
+           '?client_id=' + credentials.clientId +
+           '&response_type=code' +
+           '&redirect_uri=' + RAML.Settings.oauth2RedirectUri;
+      },
+
+      accessTokenParameters: function(code) {
+        return {
+          client_id: credentials.clientId,
+          client_secret: credentials.clientSecret,
+          code: code,
+          grant_type: 'authorization_code',
+          redirect_uri: RAML.Settings.oauth2RedirectUri
+        }
+      }
+    }
+  }
+
+  Oauth2.authorizationRequest = function(settings, credentialsManager) {
+    var authorizationUrl = credentialsManager.authorizationUrl(settings.authorizationUrl);
+    window.open(authorizationUrl, WINDOW_NAME);
+
+    var deferred = $.Deferred();
+    window.RAML.authorizationSuccess = function(code) { deferred.resolve(code) }
+    return deferred.promise();
+  }
+
+  Oauth2.accessTokenRequest = function(settings, credentialsManager) {
+    return function(code) {
+      var url = settings.accessTokenUrl;
+      if (RAML.Settings.proxy) {
+        url = RAML.Settings.proxy + url;
+      }
+
+      var requestOptions = {
+        url: url,
+        type: 'post',
+        data: credentialsManager.accessTokenParameters(code)
+      };
+
+      var createToken = function(data, textStatus, jqXhr) {
+        return new Oauth2.Token(data.access_token);
+      };
+      return $.ajax(requestOptions).then(createToken);
+    }
+  }
+
+  Oauth2.Token = function(access_token) {
+    this.access_token = access_token;
+  }
+
+  Oauth2.Token.prototype.sign = function(request) {
+    request.queryParam('access_token', this.access_token);
+  }
+
+  RAML.Client.AuthStrategies.Oauth2 = Oauth2;
+  RAML.Client.AuthStrategies.oauth2 = function(scheme, credentials) {
+    return new Oauth2(scheme, credentials)
   }
 })();
 
@@ -9367,14 +9665,13 @@ RAML.Inspector = (function() {
     return Object.keys(object || {}).length == 0;
   }
 
-  TryIt = function($scope, Base64) {
+  TryIt = function($scope) {
     this.baseUri = $scope.api.baseUri || '';
     if (this.baseUri.match(/\{version\}/) && $scope.api.version) {
       this.baseUri = this.baseUri.replace(/\{version\}/g, $scope.api.version);
     }
     this.pathBuilder = $scope.method.pathBuilder;
 
-    this.encoder = Base64;
     this.httpMethod = $scope.method.method;
     this.headers = {};
     this.queryParameters = {};
@@ -9383,6 +9680,11 @@ RAML.Inspector = (function() {
 
     if ($scope.method.requiresBasicAuthentication()) {
       this.basicauth = {};
+    }
+
+    if ($scope.method.requiresOauth2()) {
+      this.securityScheme = $scope.method.requiresOauth2();
+      this.oauth2 = {};
     }
 
     for (mediaType in $scope.method.body) {
@@ -9398,6 +9700,8 @@ RAML.Inspector = (function() {
     }
 
     $scope.apiClient = this;
+    this.client = $scope.client = RAML.Client.create($scope.api)
+
     apply = function() {
       $scope.$apply.apply($scope, arguments);
     };
@@ -9419,7 +9723,7 @@ RAML.Inspector = (function() {
     if (this.mediaType) {
       return this.mediaType == FORM_DATA
     } else  {
-      return (!this.suppoprtsCustomBody && !this.supportsFormUrlencoded && this.supportsFormData);
+      return (!this.supportsCustomBody && !this.supportsFormUrlencoded && this.supportsFormData);
     }
   }
 
@@ -9429,7 +9733,7 @@ RAML.Inspector = (function() {
     if (RAML.Settings.proxy) {
       url = RAML.Settings.proxy + url;
     }
-    var requestOptions = { url: url, type: this.httpMethod, headers: {} }
+    var request = this.client.createRequest(url, this.httpMethod);
 
     function handleResponse(jqXhr) {
       response.body = jqXhr.responseText,
@@ -9443,31 +9747,37 @@ RAML.Inspector = (function() {
     }
 
     if (!isEmpty(this.queryParameters)) {
-      requestOptions.data = this.queryParameters;
+      request.data(this.queryParameters);
     }
 
     if (!isEmpty(this.formParameters)) {
-      requestOptions.data = this.formParameters;
+      request.data(this.formParameters);
     }
 
     if (!isEmpty(this.headers)) {
-      requestOptions.headers = this.headers;
+      request.headers(this.headers);
     }
 
     if (this.mediaType) {
-      requestOptions.contentType = this.mediaType;
-      if (this.showBody()) { requestOptions.data = this.body; }
+      request.header("Content-Type", this.mediaType);
+      if (this.showBody()) { request.data(this.body); }
     }
+
+    var authStrategy = RAML.Client.AuthStrategies.anonymous();
 
     if (this.basicauth) {
-      var encoded = this.encoder.encode(this.basicauth.username + ":" + this.basicauth.password);
-      requestOptions.headers['Authorization'] = "Basic " + encoded;
+      authStrategy = RAML.Client.AuthStrategies.basicAuth(this.basicauth);
+    } else if (this.oauth2) {
+      authStrategy = RAML.Client.AuthStrategies.oauth2(this.securityScheme, this.oauth2);
     }
 
-    $.ajax(requestOptions).then(
-      function(data, textStatus, jqXhr) { handleResponse(jqXhr); },
-      function(jqXhr) { handleResponse(jqXhr); }
-    );
+    authStrategy.authenticate().then(function(token) {
+      token.sign(request);
+      $.ajax(request.toOptions()).then(
+        function(data, textStatus, jqXhr) { handleResponse(jqXhr); },
+        function(jqXhr) { handleResponse(jqXhr); }
+      );
+    });
   };
 
   RAML.Controllers.TryIt = TryIt;
@@ -9495,7 +9805,10 @@ RAML.Inspector = (function() {
     return {
       restrict: 'E',
       templateUrl: 'views/basic_auth.tmpl.html',
-      replace: true
+      replace: true,
+      scope: {
+        credentials: '='
+      }
     }
   }
 })();
@@ -9729,6 +10042,19 @@ RAML.Inspector = (function() {
 })();
 
 (function() {
+  RAML.Directives.oauth2 = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'views/oauth2.tmpl.html',
+      replace: true,
+      scope: {
+        credentials: '='
+      }
+    }
+  }
+})();
+
+(function() {
   'use strict';
 
   RAML.Directives.parameterTable = function() {
@@ -9887,6 +10213,20 @@ RAML.Inspector = (function() {
 })();
 
 (function() {
+  RAML.Directives.securitySchemes = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'views/security_schemes.tmpl.html',
+      replace: true,
+      scope: {
+        method: '=',
+        keychain: '='
+      }
+    }
+  }
+})();
+
+(function() {
   'use strict';
 
   ////////////
@@ -9957,6 +10297,11 @@ RAML.Filters = {};
 
 (function() {
   RAML.Settings = RAML.Settings || {};
+
+  var location = window.location;
+
+  var uri = location.protocol + '//' + location.host + location.pathname + 'authentication/oauth2.html';
+  RAML.Settings.oauth2RedirectUri = RAML.Settings.oauth2RedirectUri || uri;
 })();
 
 (function() {
@@ -9966,91 +10311,6 @@ RAML.Filters = {};
     return RAML.Parser;
   });
 
-  module.factory('Base64', function () {
-    var keyStr = 'ABCDEFGHIJKLMNOP' +
-            'QRSTUVWXYZabcdef' +
-            'ghijklmnopqrstuv' +
-            'wxyz0123456789+/' +
-            '=';
-
-    return {
-      encode: function (input) {
-       var output = "";
-        var chr1, chr2, chr3 = "";
-        var enc1, enc2, enc3, enc4 = "";
-        var i = 0;
-
-        do {
-            chr1 = input.charCodeAt(i++);
-            chr2 = input.charCodeAt(i++);
-            chr3 = input.charCodeAt(i++);
-
-            enc1 = chr1 >> 2;
-            enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-            enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
-            enc4 = chr3 & 63;
-
-            if (isNaN(chr2)) {
-                enc3 = enc4 = 64;
-            } else if (isNaN(chr3)) {
-                enc4 = 64;
-            }
-
-            output = output +
-                    keyStr.charAt(enc1) +
-                    keyStr.charAt(enc2) +
-                    keyStr.charAt(enc3) +
-                    keyStr.charAt(enc4);
-            chr1 = chr2 = chr3 = "";
-            enc1 = enc2 = enc3 = enc4 = "";
-        } while (i < input.length);
-
-        return output;
-      },
-
-      decode: function (input) {
-        var output = "";
-        var chr1, chr2, chr3 = "";
-        var enc1, enc2, enc3, enc4 = "";
-        var i = 0;
-
-        // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
-        var base64test = /[^A-Za-z0-9\+\/\=]/g;
-        if (base64test.exec(input)) {
-            alert("There were invalid base64 characters in the input text.\n" +
-                    "Valid base64 characters are A-Z, a-z, 0-9, '+', '/',and '='\n" +
-                    "Expect errors in decoding.");
-        }
-        input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
-
-        do {
-            enc1 = keyStr.indexOf(input.charAt(i++));
-            enc2 = keyStr.indexOf(input.charAt(i++));
-            enc3 = keyStr.indexOf(input.charAt(i++));
-            enc4 = keyStr.indexOf(input.charAt(i++));
-
-            chr1 = (enc1 << 2) | (enc2 >> 4);
-            chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
-            chr3 = ((enc3 & 3) << 6) | enc4;
-
-            output = output + String.fromCharCode(chr1);
-
-            if (enc3 != 64) {
-                output = output + String.fromCharCode(chr2);
-            }
-            if (enc4 != 64) {
-                output = output + String.fromCharCode(chr3);
-            }
-
-            chr1 = chr2 = chr3 = "";
-            enc1 = enc2 = enc3 = enc4 = "";
-
-        } while (i < input.length);
-
-        return output;
-      }
-    };
-  });
 })();
 
 var module = angular.module('ramlConsoleApp', ['raml', 'ngSanitize']);
@@ -10065,12 +10325,14 @@ module.directive('documentation', RAML.Directives.documentation);
 module.directive('markdown', RAML.Directives.markdown);
 module.directive('method', RAML.Directives.method);
 module.directive('namedParameters', RAML.Directives.namedParameters);
+module.directive('oauth2', RAML.Directives.oauth2);
 module.directive('parameterTable', RAML.Directives.parameterTable);
 module.directive('pathBuilder', RAML.Directives.pathBuilder);
 module.directive('ramlConsole', RAML.Directives.ramlConsole);
 module.directive('ramlConsoleInitializer', RAML.Directives.ramlConsoleInitializer);
 module.directive('resourceSummary', RAML.Directives.resourceSummary);
 module.directive('rootDocumentation', RAML.Directives.rootDocumentation);
+module.directive('securitySchemes', RAML.Directives.securitySchemes);
 module.directive('tab', RAML.Directives.tab);
 module.directive('tabset', RAML.Directives.tabset);
 module.directive('tryIt', RAML.Directives.tryIt);
@@ -10097,20 +10359,18 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   );
 
   $templateCache.put("views/basic_auth.tmpl.html",
-    "<div>\n" +
-    "  <fieldset class=\"labelled-inline\" ng-if=\"method.requiresBasicAuthentication()\">\n" +
-    "    <legend>Basic Authentication</legend>\n" +
-    "    <div class=\"control-group\">\n" +
-    "      <label for=\"username\">username</label>\n" +
-    "      <input type=\"text\" name=\"username\" ng-model='apiClient.basicauth.username'/>\n" +
-    "    </div>\n" +
+    "<fieldset class=\"labelled-inline\" role=\"basic\">\n" +
+    "  <legend>Basic Authentication</legend>\n" +
+    "  <div class=\"control-group\">\n" +
+    "    <label for=\"username\">username</label>\n" +
+    "    <input type=\"text\" name=\"username\" ng-model='credentials.username'/>\n" +
+    "  </div>\n" +
     "\n" +
-    "    <div class=\"control-group\">\n" +
-    "      <label for=\"password\">password</label>\n" +
-    "      <input type=\"password\" name=\"password\" ng-model='apiClient.basicauth.password'/>\n" +
-    "    </div>\n" +
-    "  </fieldset>\n" +
-    "</div>\n"
+    "  <div class=\"control-group\">\n" +
+    "    <label for=\"password\">password</label>\n" +
+    "    <input type=\"password\" name=\"password\" ng-model='credentials.password'/>\n" +
+    "  </div>\n" +
+    "</fieldset>\n"
   );
 
   $templateCache.put("views/documentation.tmpl.html",
@@ -10191,6 +10451,21 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "  <div class=\"control-group\" ng-repeat=\"(parameterName, parameter) in parameters track by parameterName\">\n" +
     "    <label for=\"{{paremeterName}}\">{{parameter.displayName}}</label>\n" +
     "    <input type=\"text\" name=\"{{parameterName}}\" ng-model='requestData[parameterName]'/>\n" +
+    "  </div>\n" +
+    "</fieldset>\n"
+  );
+
+  $templateCache.put("views/oauth2.tmpl.html",
+    "<fieldset class=\"labelled-inline\" role=\"oauth2\">\n" +
+    "  <legend>OAuth Credentials</legend>\n" +
+    "  <div class=\"control-group\">\n" +
+    "    <label for=\"clientId\">Client ID</label>\n" +
+    "    <input type=\"text\" name=\"clientId\" ng-model='credentials.clientId'/>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div class=\"control-group\">\n" +
+    "    <label for=\"clientSecret\">Client Secret</label>\n" +
+    "    <input type=\"password\" name=\"clientSecret\" ng-model='credentials.clientSecret'/>\n" +
     "  </div>\n" +
     "</fieldset>\n"
   );
@@ -10300,6 +10575,13 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "</div>\n"
   );
 
+  $templateCache.put("views/security_schemes.tmpl.html",
+    "<div>\n" +
+    "  <basic-auth ng-if=\"method.requiresBasicAuthentication()\" credentials='keychain.basicauth'></basic-auth>\n" +
+    "  <oauth2 ng-if=\"method.requiresOauth2()\" credentials='keychain.oauth2'></oauth2>\n" +
+    "</div>\n"
+  );
+
   $templateCache.put("views/tab.tmpl.html",
     "<div class=\"tab-pane\" ng-class=\"{active: active, disabled: disabled}\" ng-show=\"active\" ng-transclude>\n" +
     "\n" +
@@ -10322,7 +10604,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "<section class=\"try-it\">\n" +
     "\n" +
     "  <form>\n" +
-    "    <basic-auth></basic-auth>\n" +
+    "    <security-schemes method=\"method\" keychain=\"apiClient\"></security-schemes>\n" +
     "    <named-parameters heading=\"Headers\" parameters=\"method.headers\" request-data=\"apiClient.headers\"></named-parameters>\n" +
     "    <named-parameters heading=\"Query Parameters\" parameters=\"method.queryParameters\" request-data=\"apiClient.queryParameters\"></named-parameters>\n" +
     "\n" +

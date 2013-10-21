@@ -7260,43 +7260,45 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {
 .btn.inverted.active {
   background-color: #c9d5df \9;
 }
-raml-console h2 {
+raml-console article {
+  margin: 0 20px 20px;
+}
+raml-console article h2 {
   line-height: 20px;
 }
-raml-console code {
+raml-console article code {
   font-family: 'Courier New', 'Courier', monospace;
 }
-raml-console .tab-pane {
+raml-console article .tab-pane {
   padding: 20px;
 }
-raml-console #api-title {
+raml-console article #api-title {
   float: left;
-  padding-left: 10px;
   font-size: 20px;
   line-height: 1em;
   margin: 20px 0;
 }
-raml-console #api-reference section:first-of-type > h4,
-raml-console #api-reference section:first-of-type > h5,
-raml-console #api-reference section:first-of-type > h6 {
+raml-console article #api-reference section:first-of-type > h4,
+raml-console article #api-reference section:first-of-type > h5,
+raml-console article #api-reference section:first-of-type > h6 {
   margin-top: 0;
 }
-raml-console #api-reference h4,
-raml-console #api-reference h5,
-raml-console #api-reference legend {
+raml-console article #api-reference h4,
+raml-console article #api-reference h5,
+raml-console article #api-reference legend {
   font-family: 'Open Sans', sans-serif;
   font-weight: 700;
   line-height: 1.15em;
 }
-raml-console #api-reference h4,
-raml-console #api-reference legend {
+raml-console article #api-reference h4,
+raml-console article #api-reference legend {
   font-size: 18px;
   margin-bottom: 5px;
 }
-raml-console #api-reference h4 {
+raml-console article #api-reference h4 {
   margin-top: 25px;
 }
-raml-console #api-reference h5 {
+raml-console article #api-reference h5 {
   margin-top: 20px;
   margin-bottom: 5px;
 }
@@ -7376,8 +7378,7 @@ ul[role=methods] li:first-child {
   margin-left: 0;
 }
 [role=methodSummary] {
-  padding: 15px;
-  margin-right: -5px;
+  padding: 10px 20px;
   background-color: #FCFBF6;
 }
 [role=methodSummary] > *,
@@ -7393,7 +7394,9 @@ ul[role=methods] li:first-child {
   font-weight: bold;
   font-style: italic;
 }
-[role=methodSummary] input {
+[role=methodSummary] input,
+[role=methodSummary] input[type="text"] {
+  padding: 2px 4px;
   margin-bottom: 0;
   width: 6em;
   margin-left: 4px;
