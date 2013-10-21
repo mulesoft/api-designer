@@ -176,10 +176,22 @@ angular.module('ramlEditorApp')
       });
     }, REFRESH_FILES_INTERVAL);
 
-    $scope.loadFile = function(fileEntry) {
+    $scope.loadFile = function (fileEntry) {
       var browser = $scope.browser;
       ramlRepository.loadFile(fileEntry, $scope.switchFile);
       browser.expanded = false;
+    };
+
+    $scope.deleteFile = function (fileEntry) {
+      var current = $scope.file;
+      if ($confirm('Are you sure you want to delete the file: "' + fileEntry.name + '" ?')) {
+        $scope.collapseBrowser();
+        ramlRepository.removeFile(fileEntry, function () {
+          if (current.name === fileEntry.name) {
+            $scope.bootstrap();
+          }
+        });
+      }
     };
 
     eventService.on('event:save', function () {

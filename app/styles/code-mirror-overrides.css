@@ -83,8 +83,8 @@ div[role=raml-editor].light .CodeMirror-code .CodeMirror-hint-ghost {
   transition: ease-in 0.1s;
 }
 
-.CodeMirror-hints {
-  background: rgba(19,33,40,1);
+body.light .CodeMirror-hints {
+  background: white;
   border-radius: 0px;
   transition: ease-in 0.1s;
 }
