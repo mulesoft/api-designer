@@ -72,29 +72,46 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp'])
 
       // this overrides everything else, because the '|' explicitly declares the line as a scalar
       // with a continuation on other lines. This applies to the current line or the parent of the current line
-      if (/\|$/.test(curLineWithoutTabs)) {
+      if(curLineWithoutTabs.indexOf('|') > curLineWithoutTabs.indexOf(':')) {
         _replaceSelection(cm, 1, '');
         return;
       }
 
-      if (/\|$/.test(parentLine)) {
+      if(parentLine && parentLine.indexOf('|') > parentLine.indexOf(':')) {
         _replaceSelection(cm, 0, '');
         return;
       }
 
-      // if it's a sequence (<dash><space><...>)
-      if (/^-\s/.test(curLineWithoutTabs)) {
-        if (/:\s*$/.test(curLineWithoutTabs)) {
-          // we should add another indentation in case of one-key mapping
-          _replaceSelection(cm, 2, '');
-        } else {
-          // or keep the same indentation level in case user wants to keep
-          // entering sequence entries, but with a little help, we start
-          // new line with '- '
-          _replaceSelection(cm, 0, '- ');
-        }
+      if(curLineWithoutTabs.indexOf('-') >= 0 && curLineWithoutTabs.indexOf('---') < 0) {
+
+        _replaceSelection(
+          cm,
+          /^(traits|resourceTypes):/.test(parentLine) ? 2 : 1,
+          ''
+        );
+
+//        if(/^(traits|resourceTypes):/.test(parentLine)) {
+//          _replaceSelection(cm, 2, '');
+//          return;
+//        }
+        //_replaceSelection(cm, 1, '');
+
         return;
       }
+
+//      // if it's a sequence (<dash><space><...>)
+//      if (/^-\s/.test(curLineWithoutTabs)) {
+//        if (/:\s*$/.test(curLineWithoutTabs)) {
+//          // we should add another indentation in case of one-key mapping
+//          _replaceSelection(cm, 2, '');
+//        } else {
+//          // or keep the same indentation level in case user wants to keep
+//          // entering sequence entries, but with a little help, we start
+//          // new line with '- '
+//          _replaceSelection(cm, 0, '- ');
+//        }
+//        return;
+//      }
 
       // if current line or parent line begins with: content, example or schema
       // one indentation level should be added or the same level should be kept if

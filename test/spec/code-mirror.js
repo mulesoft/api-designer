@@ -116,7 +116,7 @@ describe('CodeMirror Service', function () {
 
   });
 
-  describe('enter key', function () {
+  describe('auto indentation', function () {
     it('should keep the same indentation level by default', function (){
       var indentUnit = 2;
       editor = getEditor(
@@ -347,6 +347,49 @@ describe('CodeMirror Service', function () {
 
       editor.setCursor(6, 15);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
+    });
+
+    it('should detect resource types and add an extra indentation level', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        'resourceTypes:\n' +
+        '  - base:\n' +
+        '  - collection:\n' +
+        '    member:\n' +
+        '  name: Tags\n' +
+        '  description: This is a description of tags\n' +
+        '  get:\n' +
+        '    summary: Get a list of recently tagged media\n' +
+        '    description: This is a description of getting tags',
+        { line: 4, ch: 13 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
+
+      editor.setCursor(6, 15);
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
+    });
+
+    it('should detect arrays and add an extra indentation level', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: Test\n' +
+        'baseUri: http://www.api.com/{version}/{company}\n' +
+        'version: v1.1\n' +
+        'documentation:\n' +
+        '  - title:',
+        { line: 4, ch: 10 },
+        { indentUnit: indentUnit });
+
+      codeMirrorService.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
+
+//      editor.setCursor(6, 16);
+//      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
     it.skip('should use a mocked ramHint service', inject(function () {
@@ -658,7 +701,7 @@ describe('CodeMirror Service', function () {
       );
 
       codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit) + '- ');
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
     it('should not allow folding of scalars even when having spaces after it (RT-325)', function (){
