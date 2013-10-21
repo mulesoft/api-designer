@@ -1,16 +1,22 @@
 'use strict';
 
-var codeMirrorService, editor;
+var editor;
 
 function sp (i) {
   return new Array(i + 1).join(' ');
 }
 
+
 describe('CodeMirror Service', function () {
+  var codeMirror;
+
+  beforeEach(module('codeMirror'));
+
   beforeEach(function () {
-    var $injector = angular.injector(['codeMirror']);
-    codeMirrorService = $injector.get('codeMirror');
-    codeMirrorService.should.be.ok;
+    inject(function (_codeMirror_) {
+      codeMirror = _codeMirror_;
+      codeMirror.should.be.ok;
+    });
   });
 
   describe('tab key', function () {
@@ -23,7 +29,7 @@ describe('CodeMirror Service', function () {
         {line: 3, ch: 0},
         {indentUnit: indentUnit});
 
-      codeMirrorService.tabKey(editor);
+      codeMirror.tabKey(editor);
       editor.spacesToInsert.should.be.equal(sp(indentUnit));
     });
 
@@ -37,9 +43,8 @@ describe('CodeMirror Service', function () {
         {line: 3, ch: 0},
         {indentUnit: indentUnit});
 
-      codeMirrorService.tabKey(editor);
+      codeMirror.tabKey(editor);
       editor.spacesToInsert.should.be.equal(sp(indentUnit - incompleteIndent));
-
     });
 
     it('should tab normally with non-whitespace', function () {
@@ -52,7 +57,7 @@ describe('CodeMirror Service', function () {
         {line: 3, ch: 0},
         {indentUnit: indentUnit});
 
-      codeMirrorService.tabKey(editor);
+      codeMirror.tabKey(editor);
       editor.spacesToInsert.should.be.equal(sp(indentUnit));
     });
   });
@@ -68,7 +73,7 @@ describe('CodeMirror Service', function () {
         {line: 3, ch: 0},
         {indentUnit: indentUnit});
 
-      codeMirrorService.backspaceKey(editor);
+      codeMirror.backspaceKey(editor);
       editor.deleteOffset.should.be.equal(-1);
     });
 
@@ -82,7 +87,7 @@ describe('CodeMirror Service', function () {
         {line: 3, ch: 3},
         {indentUnit: indentUnit});
 
-      codeMirrorService.backspaceKey(editor);
+      codeMirror.backspaceKey(editor);
       editor.deleteOffset.should.be.equal(-2);
     });
 
@@ -96,7 +101,7 @@ describe('CodeMirror Service', function () {
         {line: 3, ch: indentUnit - 1},
         {indentUnit: indentUnit});
 
-      codeMirrorService.backspaceKey(editor);
+      codeMirror.backspaceKey(editor);
       editor.deleteOffset.should.be.equal(-indentUnit);
     });
 
@@ -110,7 +115,7 @@ describe('CodeMirror Service', function () {
         {line: 3, ch: 0},
         {indentUnit: indentUnit});
 
-      codeMirrorService.backspaceKey(editor);
+      codeMirror.backspaceKey(editor);
       editor.deleteOffset.should.be.equal(-1);
     });
 
@@ -128,7 +133,7 @@ describe('CodeMirror Service', function () {
         { line: 4, ch: 19},
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
     });
 
@@ -142,7 +147,7 @@ describe('CodeMirror Service', function () {
         { line: 3, ch: 6},
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n');
     });
 
@@ -161,7 +166,7 @@ describe('CodeMirror Service', function () {
         { line: 6, ch: 0 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
@@ -181,7 +186,7 @@ describe('CodeMirror Service', function () {
         { line: 6, ch: 15 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
@@ -201,7 +206,7 @@ describe('CodeMirror Service', function () {
         { line: 6, ch: 18 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
@@ -221,7 +226,7 @@ describe('CodeMirror Service', function () {
         { line: 9, ch: 17 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
@@ -241,7 +246,7 @@ describe('CodeMirror Service', function () {
         { line: 4, ch: 2 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
     });
 
@@ -261,7 +266,7 @@ describe('CodeMirror Service', function () {
         { line: 4, ch: 2 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(3));
     });
 
@@ -280,7 +285,7 @@ describe('CodeMirror Service', function () {
         { line: 5, ch: 46 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
@@ -300,7 +305,7 @@ describe('CodeMirror Service', function () {
         { line: 6, ch: 22 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
@@ -320,7 +325,7 @@ describe('CodeMirror Service', function () {
         { line: 6, ch: 22 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
@@ -342,7 +347,7 @@ describe('CodeMirror Service', function () {
         { line: 4, ch: 13 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
 
       editor.setCursor(6, 15);
@@ -368,276 +373,8 @@ describe('CodeMirror Service', function () {
         { line: 4, ch: 2 },
         { indentUnit: indentUnit });
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(3));
-    });
-  });
-
-  describe('code folding', function () {
-    it('should detect fold ranges of only one line', function (){
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        '/tags:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '  post:\n' +
-        '    summary: Create a new tagged media\n' +
-        '    description: This is a description of creating tags',
-        { line: 6, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 6 });
-      foldRange.should.deep.equal({ from: { line: 6, ch: 6 }, to: { line: 7, ch: 48} });
-    });
-
-    it('should detect fold range for root nodes', function () {
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        '/tags:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '    description: This is a description of getting tags\n' +
-        '  post:\n' +
-        '    summary: Create a new tagged media\n' +
-        '    description: This is a description of creating tags',
-        { line: 6, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 3 });
-      foldRange.should.deep.equal({ from: { line: 3, ch: 6 }, to: { line: 11, ch: 55} });
-    });
-
-    it('should detect fold range for first level nodes', function () {
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        '/tags:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '    description: This is a description of getting tags\n' +
-        '  post:\n' +
-        '    summary: Create a new tagged media\n' +
-        '    description: This is a description of creating tags',
-        { line: 6, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 6 });
-      foldRange.should.deep.equal({ from: { line: 6, ch: 6 }, to: { line: 8, ch: 54} });
-
-      foldRange = codeMirrorService.getFoldRange(editor, { line: 9 });
-      foldRange.should.deep.equal({ from: { line: 9, ch: 7 }, to: { line: 11, ch: 55} });
-    });
-
-    it('should detect fold ranges for elements with children with more than one indentation level (traits, resourceTypes, etc)', function () {
-      var indentUnit = 2;
-      editor = getEditor(
-        '#%RAML 0.2\n' +
-        '---\n' +
-        'title: Example API\n' +
-        'baseUri: http://localhost:3000/api/{company}/\n' +
-        'version: 1.0\n' +
-        'traits:\n' +
-        '  - secured:\n' +
-        '      displayName: Secured\n' +
-        '      securitySchemes:',
-        { line: 7, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 6 });
-      foldRange.should.deep.equal({ from: { line: 6, ch: 12 }, to: { line: 8, ch: 22} });
-    });
-
-    it('should not detect ranges for empty lines', function (){
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        'documentation:\n' +
-        ' - title: this is the title\n' +
-        '   content: |\n' +
-        '     this is some content\n' +
-        '     with multiple lines\n' +
-        '     with the same indentations\n' +
-        '     that should be ignored\n' +
-        '\n' +
-        '       empty lines to\n' +
-        '/tags:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '    description: This is a description of getting tags\n' +
-        '  post:\n' +
-        '    summary: Create a new tagged media\n' +
-        '    description: This is a description of creating tags',
-        { line: 0, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 10 });
-      should.equal(foldRange, undefined);
-    });
-
-    it('should not detect ranges inside content blocks', function () {
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        'documentation:\n' +
-        ' - title: this is the title\n' +
-        '   content: |\n' +
-        '     this is some content\n' +
-        '     with multiple lines\n' +
-        '     with the same indentation\n' +
-        '     that should be ignored\n' +
-        '     \n' +
-        '     empty lines to\n' +
-        '/tags:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '    description: This is a description of getting tags\n' +
-        '  post:\n' +
-        '    summary: Create a new tagged media\n' +
-        '    description: This is a description of creating tags',
-        { line: 0, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 7 });
-      should.equal(foldRange, undefined);
-    });
-
-    it('should not detect ranges for items with more than one indentation level and no children (traits, resourceTypes, etc)', function (){
-      var indentUnit = 2;
-      editor = getEditor(
-        '#%RAML 0.2\n' +
-        '---\n' +
-        'title: Example API\n' +
-        'baseUri: http://localhost:3000/api/{company}/\n' +
-        'version: 1.0\n' +
-        'traits:\n' +
-        '  - secured:\n' +
-        '      displayName: Secured\n' +
-        '      securitySchemes:',
-        { line: 7, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 7 });
-      should.equal(foldRange, undefined);
-    });
-
-    it('should ignore empty lines inside content blocks', function () {
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        'documentation:\n' +
-        ' - title: this is the title\n' +
-        '   content: |\n' +
-        '     this is some content\n' +
-        '     with multiple lines\n' +
-        '     with the same indentations\n' +
-        '     that should be ignored\n' +
-        '\n' +
-        '     empty lines to\n' +
-        '     as long as they are inside a content element\n' +
-        '/tags:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '    description: This is a description of getting tags\n' +
-        '  post:\n' +
-        '    summary: Create a new tagged media\n' +
-        '    description: This is a description of creating tags',
-        { line: 0, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 5 });
-      foldRange.should.deep.equal({ from: { line: 5, ch: 13 }, to: { line: 12, ch: 49} });
-    });
-
-    it('should not detect ranges inside schema or examples', function (){
-      var indentUnit = 2;
-      editor = getEditor(
-        'title: Test\n' +
-        'baseUri: http://www.api.com/{version}/{company}\n' +
-        'version: v1.1\n' +
-        '/tags:\n' +
-        '  displayName: Tags\n' +
-        '  get:\n' +
-        '    body:\n' +
-        '      application/json:\n' +
-        '        schema: |\n' +
-        '          {\n' +
-        '            "$schema": "http://json-schema.org/draft-03/schema",\n' +
-        '            "properties": {\n' +
-        '            "input": {\n' +
-        '              "required": false,\n' +
-        '                "type": "string"\n' +
-        '            }\n' +
-        '          },\n' +
-        '            "required": false,\n' +
-        '            "type": "object"\n' +
-        '          }\n' +
-        '        example: |\n' +
-        '          [\n' +
-        '            {\n' +
-        '              "name": "job name"\n' +
-        '              "description": "job description"\n' +
-        '            },\n' +
-        '            {\n' +
-        '              "name": "job name"\n' +
-        '              "description": "job description"\n' +
-        '            }\n' +
-        '          ]\n',
-        { line: 0, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 9 });
-      should.equal(foldRange, undefined);
-
-      foldRange = codeMirrorService.getFoldRange(editor, { line: 12 });
-      should.equal(foldRange, undefined);
-
-      foldRange = codeMirrorService.getFoldRange(editor, { line: 21 });
-      should.equal(foldRange, undefined);
-    });
-
-    it('should keep the same indentation level for document start marker (RT-156)', function () {
-      var indentUnit = 2;
-      var editor = getEditor(
-        [
-          '---'
-        ].join('\n'),
-        {
-          line: 0,
-          ch: 3
-        },
-        {
-          indentUnit: indentUnit
-        }
-      );
-
-      codeMirrorService.enterKey(editor);
-      editor.spacesToInsert.should.be.equal('\n');
     });
 
     it('should keep the same indentation level for sequence of entries with a little help', function () {
@@ -657,34 +394,28 @@ describe('CodeMirror Service', function () {
         }
       );
 
-      codeMirrorService.enterKey(editor);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit) + '- ');
     });
-
-    it('should not allow folding of scalars even when having spaces after it (RT-325)', function (){
-      var indentUnit = 2;
-      editor = getEditor([
-        '#%RAML 0.8',
-        '---',
-        'title: Test',
-        'resourceTypes:   ',
-        '  - base:',
-        '      is: [hola]',
-        '      get:',
-        'traits:',
-        '  - hola:',
-        '      displayName: HOL',
-        '/tags:',
-        '  type:',
-        '    base:',
-        '  displayName: Tags',
-        '  get:'
-        ].join('\n'),
-        { line: 7, ch: 0 },
-        { indentUnit: indentUnit });
-
-      var foldRange = codeMirrorService.getFoldRange(editor, { line: 2 });
-      should.not.exist(foldRange);
-    });
   });
+
+  it('should keep the same indentation level for document start marker (RT-156)', function () {
+    var indentUnit = 2;
+    var editor = getEditor(
+      [
+        '---'
+      ].join('\n'),
+      {
+        line: 0,
+        ch: 3
+      },
+      {
+        indentUnit: indentUnit
+      }
+    );
+
+    codeMirror.enterKey(editor);
+    editor.spacesToInsert.should.be.equal('\n');
+  });
+
 });
