@@ -282,7 +282,7 @@ describe('code folding', function () {
     should.not.exist(foldRange);
   });
 
-  it('should fold spaces inside the last fold level', function (){
+  it('should fold spaces inside the last fold level (RT-113)', function (){
     var indentUnit = 2,
         foldRange;
 
