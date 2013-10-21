@@ -214,7 +214,7 @@ describe('Lightweight Parse Module', function () {
         3: [7]
       });
     });
-    it('shoudl not fail when there is an invalid indent levels', function () {
+    it('should not fail when there are invalid indent levels', function () {
       var text = [
         'title: hello',
         'version: v1.0',
