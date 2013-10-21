@@ -56,23 +56,6 @@ angular.module('utils', [])
 
     return throttle;
   })
-  .factory('getLineIndent', function (indentUnit) {
-    return function (string, indentSize) {
-      var result = /^(\s*)(.*)$/.exec(string);
-
-      if (!string) {
-        return {tabCount: 0, spaceCount: 0, content: ''};
-      }
-
-      indentSize = indentSize || indentUnit;
-
-      return {
-        tabCount: Math.floor((result[1] || '').length / indentSize),
-        content: result[2] || '',
-        spaceCount: (result[1] || '').length
-      };
-    };
-  })
   .value('generateSpaces', function (spaceCount) {
     spaceCount = spaceCount || 0;
     return new Array(spaceCount + 1).join(' ');
@@ -83,11 +66,6 @@ angular.module('utils', [])
       tabs = tabs || 0;
       return new Array(tabs + 1).join(generateSpaces(indentUnit));
     };
-  })
-  .value('extractKey', function (value) {
-    value = value || '';
-    var match = /^(.+):( .*$|$)/.exec(value);
-    return match && match.length > 1 ? match[1] : '';
   })
   .value('$prompt', function (message, value) {
     return window.prompt(message, value);
