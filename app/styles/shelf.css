@@ -123,7 +123,7 @@ div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
   letter-spacing: 0.3px;
   list-style-type: none;
   margin: 2px 0;
-  padding: 5px;
+  padding: 5px 7px 4px 6px;
   text-shadow: 0 0;
   text-transform: none;
   transition: background-color 0.1s;
@@ -189,17 +189,14 @@ ul[role=items] > li > i{
 
 /* Category colors */
 /* TODO: extract color on less files */
-li.parameters > ul[role=items] > li > i.icon-reply {
+/*li.parameters > ul[role=items] > li > i.icon-reply {
   color: #1f77b4;
 }
-
 li.security > ul[role=items] > li > i.icon-reply {
   color: #ff7f0e;
 }
-
 li.root > ul[role=items] > li > i.icon-reply {
   color: #2ca02c;
-
 }
 li.docs > ul[role=items] > li > i.icon-reply {
   color: #d62728;
@@ -215,4 +212,34 @@ li.resources > ul[role=items] > li > i.icon-reply {
 }
 li.traits-and-types ul[role=items] > li > i.icon-reply {
   color: #17becf;
+}*/
+li.main > ul[role=items] > li > i.icon-reply {
+  color: #859900;
+}
+li.parameters > ul[role=items] > li > i.icon-reply {
+  color: #17becf;
+}
+li.security > ul[role=items] > li > i.icon-reply {
+  color: #d33682;
+}
+li.root > ul[role=items] > li > i.icon-reply {
+  color: #ff7f0e;
+}
+li.docs > ul[role=items] > li > i.icon-reply {
+  color: #ff7f0e;
+}
+li.methods > ul[role=items] > li > i.icon-reply {
+  color: #1f77b4;
+}
+li.responses > ul[role=items] > li > i.icon-reply {
+  color: #17becf;
+}
+li.body > ul[role=items] > li > i.icon-reply {
+  color: #17becf;
+}
+li.resources > ul[role=items] > li > i.icon-reply {
+  color: #d62728;
+}
+li.traits-and-types ul[role=items] > li > i.icon-reply {
+  color: #d33682;
 }

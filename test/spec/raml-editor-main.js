@@ -43,7 +43,8 @@ describe('RAML Editor Main Controller', function () {
       bootstrap: function () {},
       createFile: function () {},
       getDirectory: function () {},
-      loadFile: function () {}
+      loadFile: function () {},
+      removeFile: function () {}
     };
 
     params = {
@@ -471,6 +472,67 @@ describe('RAML Editor Main Controller', function () {
 
     });
 
+  });
+
+  describe('deleting files', function () {
+    var file1 = { name: 'api.raml', path: '/', contents: 'file1' };
+    var file2 = { name: 'traits.raml', path: '/', contents: 'file2' };
+
+    it('should be able to delete a file', function () {
+      //arrange
+      sinon.stub(params, '$confirm').returns(true);
+      ctrl = $controller('ramlMain', params);
+      sinon.stub(ramlRepository, 'removeFile').yields();
+      scope.file = file2;
+
+      //act
+      scope.deleteFile(file1);
+
+      //assert
+      ramlRepository.removeFile.calledWith(file1).should.be.ok;
+      scope.browser.expanded.should.be.equal(false);
+
+      //restore
+      ramlRepository.removeFile.restore();
+    });
+
+    it('should be re-bootstrap the editor if the deleted file is open', function () {
+      //arrange
+      sinon.stub(params, '$confirm').returns(true);
+      ctrl = $controller('ramlMain', params);
+      sinon.stub(ramlRepository, 'removeFile').yields();
+      sinon.stub(scope, 'bootstrap');
+      scope.file = file1;
+
+      //act
+      scope.deleteFile(file1);
+
+      //assert
+      ramlRepository.removeFile.calledWith(file1).should.be.ok;
+      scope.bootstrap.calledOnce.should.be.ok;
+
+      //restore
+      ramlRepository.removeFile.restore();
+      scope.bootstrap.restore();
+    });
+
+    it('should not delete the file if the user cancels', function () {
+      //arrange
+      sinon.stub(params, '$confirm').returns(false);
+      ctrl = $controller('ramlMain', params);
+      sinon.stub(ramlRepository, 'removeFile').yields();
+      scope.file = file2;
+
+      //act
+      scope.deleteFile(file1);
+
+      //assert
+      ramlRepository.removeFile.called.should.not.be.ok;
+      scope.browser.expanded.should.be.equal(false);
+
+      //restore
+      ramlRepository.removeFile.restore();
+    });
   });
 
   describe('applySuggestion', function () {

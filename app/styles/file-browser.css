@@ -7,12 +7,14 @@ div[role=browser] {
   cursor: pointer;
   color: grey;
   padding-bottom: 10px;
+  padding-right: 30px;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  z-index: 50;
 }
 
 div[role=raml-editor].light div[role=browser] {
@@ -36,7 +38,6 @@ div[role=browser] > ul[role=file-list] {
   list-style: none;
   font-size: 13px;
   border-radius: 0px 3px 3px 0px;
-  z-index: 50;
   min-width: 140px;
   background-color: white;
   box-shadow: 2px 2px 7px -2px #333;
@@ -48,6 +49,7 @@ div[role=browser] > ul[role=file-list] {
 
 div[role=browser].expanded > ul[role=file-list] {
   display: block;
+  transition: ease-in 0.1s;
 }
 
 div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
@@ -59,9 +61,11 @@ div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
 }
 
 div[role=browser] > ul[role=file-list] > li {
-  padding: 2px 13px;
+  padding: 2px 40px 2px 13px;
   cursor: pointer;
   line-height: 18px;
+  position: relative;
+  white-space: nowrap;
 }
 
 div[role=browser] > ul[role=file-list] > li.read-only {
@@ -80,5 +84,11 @@ div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.rea
 
 div[role=browser] > ul[role=file-list] > li > i {
   padding-right: 8px;
-  /*color: #888;*/
+}
+
+div[role=browser] > ul[role=file-list] > li > i.icon-trash {
+  position: absolute;
+  right: 7px;
+  top: 4px;
+  font-size: 14px;
 }
