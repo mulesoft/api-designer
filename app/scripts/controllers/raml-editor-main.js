@@ -2,7 +2,7 @@
 
 angular.module('ramlEditorApp')
   .constant('AUTOSAVE_INTERVAL', 60000)
-  .constant('UPDATE_RESPONSIVENESS_INTERVAL', 300)
+  .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
   .constant('REFRESH_FILES_INTERVAL', 5000)
   .constant('DEFAULT_PATH', '/')
   .value('afterBootstrap', function () { })
@@ -17,7 +17,7 @@ angular.module('ramlEditorApp')
       config.set('theme', theme);
       config.save();
       $scope.theme = $rootScope.theme = theme;
-      safeApply();
+      safeApply($scope);
     };
     $window.setTheme = $scope.setTheme;
 
@@ -72,7 +72,7 @@ angular.module('ramlEditorApp')
       $scope.version = definition.version;
       eventService.broadcast('event:raml-operation-list-published', definition);
       $scope.hasErrors = false;
-      safeApply();
+      safeApply($scope);
     });
 
     eventService.on('event:raml-parser-error', function (e, args) {
@@ -83,7 +83,7 @@ angular.module('ramlEditorApp')
       annotations.push({ message: error.message, line: line + 1, column: column + 1});
       codeMirrorErrors.displayAnnotations(annotations);
       $scope.hasErrors = true;
-      safeApply();
+      safeApply($scope);
     });
 
     $scope.bootstrap = function () {
@@ -172,7 +172,7 @@ angular.module('ramlEditorApp')
 
     $scope.listFiles = throttle(function () {
       $scope.files = ramlRepository.getDirectory(DEFAULT_PATH, function () {
-        safeApply();
+        safeApply($scope);
       });
     }, REFRESH_FILES_INTERVAL);
 
@@ -253,7 +253,7 @@ angular.module('ramlEditorApp')
     $scope._saveFile = function() {
       $scope.file.contents = editor.getValue();
       ramlRepository.saveFile($scope.file, function () {
-        safeApply();
+        safeApply($scope);
         if (saveTimer) {
           clearTimeout(saveTimer);
         }
