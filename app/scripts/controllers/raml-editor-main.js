@@ -11,8 +11,6 @@ angular.module('ramlEditorApp')
     ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap, config, $prompt, $confirm) {
     var CodeMirror = codeMirror.CodeMirror, editor, saveTimer, currentUpdateTimer;
 
-    $scope.consoleSettings = { displayTryIt: false };
-
     $scope.setTheme = function (theme) {
       config.set('theme', theme);
       config.save();
