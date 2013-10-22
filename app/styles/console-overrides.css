@@ -97,9 +97,23 @@ div[role=console] section[role=response] p {
   font-size: 13px;
 }
 
-div[role=console] article #api-title {
+div[role=console] > raml-console > article {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+div[role=console] > raml-console > article > #api-title {
   font-size: 19px;
-  margin: 17px 0;
+  margin: 0;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+div[role=console] > raml-console > article > #content {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 div[role=console] .labelled-inline .control-group label {
