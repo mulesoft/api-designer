@@ -1,7 +1,17 @@
 'use strict';
 
 angular.module('raml')
-  .factory('ramlSnippets', function () {
+  .value('snippets', {
+    get: ['', 'get:\n', '  description: <<insert text or markdown here>>\n'],
+    post: ['', 'post:\n', '  description: <<insert text or markdown here>>\n'],
+    put: ['', 'put:\n', '  description: <<insert text or markdown here>>\n'],
+    'delete': ['', 'delete:\n', '  description: <<insert text or markdown here>>\n'],
+    'new resource': ['', '/newResource:\n', '  displayName: resourceName\n'],
+    title: ['', 'title: My API\n'],
+    version: ['', 'version: v0.1\n'],
+    baseuri: ['', 'baseUri: http://server/api/{version}\n']
+  })
+  .factory('ramlSnippets', function (snippets) {
     var service = {};
 
     service.getEmptyRaml = function () {
@@ -13,49 +23,10 @@ angular.module('raml')
       var snippetName = suggestion.name;
       var ind = '{{padding}}';
 
-      if (snippetName.toLowerCase() === 'get') {
-        return '' +
-          ind + 'get:\n' +
-          ind + '  description: <<insert text or markdown here>>\n';
-      }
+      var snippetToSuggest = snippets[snippetName.toLowerCase()];
 
-      if (snippetName.toLowerCase() === 'post') {
-        return '' +
-          ind + 'post:\n' +
-          ind + '  description: <<insert text or markdown here>>\n';
-      }
-
-      if (snippetName.toLowerCase() === 'put') {
-        return '' +
-          ind + 'put:\n' +
-          ind + '  description: <<insert text or markdown here>>\n';
-      }
-
-      if (snippetName.toLowerCase() === 'delete') {
-        return '' +
-          ind + 'delete:\n' +
-          ind + '  description: <<insert text or markdown here>>\n';
-      }
-
-      if (snippetName.toLowerCase() === 'new resource') {
-        return '' +
-          ind + '/newResource:\n' +
-          ind + '  displayName: resourceName\n';
-      }
-
-      if (snippetName.toLowerCase() === 'title') {
-        return '' +
-          ind + 'title: My API\n';
-      }
-
-      if (snippetName.toLowerCase() === 'version') {
-        return '' +
-          ind + 'version: v0.1\n';
-      }
-
-      if (snippetName.toLowerCase() === 'baseuri') {
-        return '' +
-          ind + 'baseUri: http://server/api/{version}\n';
+      if (snippetToSuggest) {
+        return snippetToSuggest.join(ind);
       }
 
       if (suggestion.isText) {
