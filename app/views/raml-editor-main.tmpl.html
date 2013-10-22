@@ -1,6 +1,8 @@
 <div role="raml-editor" class="{{theme}}" ng-controller="ramlMain">
   <header>
-    <h1><strong>API</strong>designer</h1>
+    <h1>
+      <strong>API</strong>designer
+    </h1>
     <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
     <div role="saveas-button" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()">Save As</div>
   </header>
@@ -31,6 +33,9 @@
     <div role="code" style="height:inherit"><textarea id="code" name="code" style="display: none;"></textarea></div>
   </div>
   <div role="preview" class="bootstrap">
-    <raml-console></raml-console>
+    <div role="console">
+      <raml-console></raml-console>
+    </div>
+    <div role="logo"><a href="http://mulesoft.com"><img src="images/powered-by-mulesoft.png" width="178" height="31" /></a></div>
   </div>
 </div>

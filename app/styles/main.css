@@ -210,8 +210,9 @@ div[role=preview] {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
   background: rgb(230,231,235);
+  border-bottom: 41px solid rgb(230,231,235);
 }
 
 div[role=preview] > header > h2 {
@@ -235,12 +236,18 @@ div[role=preview] > div[role=title] {
 }
 
 div[role=preview] > div[role=console] {
-  padding-top: 10px;
-  padding-left: 12px;
-  padding-right: 13px;
   overflow-y: scroll;
   overflow-x: hidden;
-  height: 90%;
+  height: 100%;
 }
 
+div[role=preview] > div[role=console] raml-console > article {
+  margin-bottom: 0px;
+}
 
+div[role=preview] div[role=logo] {
+  position: absolute;
+  bottom: 5px;
+  right: 20px;
+  height: 31px;
+}
