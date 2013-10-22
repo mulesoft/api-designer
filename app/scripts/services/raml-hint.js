@@ -17,7 +17,7 @@ angular.module('ramlEditorApp')
       }
 
       var lineNumbers = [lineNumber];
-      var lineIndent = getLineIndent(editor.getLine(lineNumber));
+      var lineIndent = getLineIndent(editor.getLine(lineNumber).slice(0, editor.getCursor().ch + 1));
       var linesCount = editor.lineCount();
       var i;
       var nextLine;
@@ -82,6 +82,7 @@ angular.module('ramlEditorApp')
       var
           editorState = hinter.getEditorState(editor),
           line = editorState.cur.line, textAsList,
+          ch = editorState.cur.ch,
           lines;
 
       if (line === 0) {
@@ -89,6 +90,9 @@ angular.module('ramlEditorApp')
       }
 
       textAsList = getEditorTextAsArrayOfLines(editor).slice(0, line + 1).reverse();
+      if (textAsList[0].trim() === '') {
+        textAsList[0] = textAsList[0].slice(0, ch + 1);
+      }
 
       // It should have at least one element
       if (!textAsList.length) {
