@@ -10452,7 +10452,7 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "        </div>\n" +
     "      </section>\n" +
     "    </tab>\n" +
-    "    <tab heading=\"Try It\" active=\"documentation.tryItActive\">\n" +
+    "    <tab role=\"try-it\" heading=\"Try It\" active=\"documentation.tryItActive\" disabled=\"!api.baseUri\">\n" +
     "      <try-it></try-it>\n" +
     "    </tab>\n" +
     "  </tabset>\n" +
