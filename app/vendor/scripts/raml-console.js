@@ -8830,12 +8830,12 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 
 /**
 * vkBeautify - javascript plugin to pretty-print or minify text in XML, JSON, CSS and SQL formats.
-*
-* Version - 0.99.00.beta
+*  
+* Version - 0.99.00.beta 
 * Copyright (c) 2012 Vadim Kiryukhin
 * vkiryukhin @ gmail.com
 * http://www.eslinstructor.net/vkbeautify/
-*
+* 
 * Dual licensed under the MIT and GPL licenses:
 *   http://www.opensource.org/licenses/mit-license.php
 *   http://www.gnu.org/licenses/gpl.html
@@ -8880,7 +8880,7 @@ if ( typeof window === "object" && typeof window.document === "object" ) {
 function createShiftArr(step) {
 
 	var space = '    ';
-
+	
 	if ( isNaN(parseInt(step)) ) {  // argument is string
 		space = step;
 	} else { // argument is integer
@@ -8902,7 +8902,7 @@ function createShiftArr(step) {
 
 	var shift = ['\n']; // array of shifts
 	for(ix=0;ix<100;ix++){
-		shift.push(shift[ix]+space);
+		shift.push(shift[ix]+space); 
 	}
 	return shift;
 }
@@ -8928,67 +8928,67 @@ vkbeautify.prototype.xml = function(text,step) {
 
 		for(ix=0;ix<len;ix++) {
 			// start comment or <![CDATA[...]]> or <!DOCTYPE //
-			if(ar[ix].search(/<!/) > -1) {
+			if(ar[ix].search(/<!/) > -1) { 
 				str += shift[deep]+ar[ix];
-				inComment = true;
+				inComment = true; 
 				// end comment  or <![CDATA[...]]> //
-				if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1 || ar[ix].search(/!DOCTYPE/) > -1 ) {
-					inComment = false;
+				if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1 || ar[ix].search(/!DOCTYPE/) > -1 ) { 
+					inComment = false; 
 				}
-			} else
+			} else 
 			// end comment  or <![CDATA[...]]> //
-			if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1) {
+			if(ar[ix].search(/-->/) > -1 || ar[ix].search(/\]>/) > -1) { 
 				str += ar[ix];
-				inComment = false;
-			} else
+				inComment = false; 
+			} else 
 			// <elm></elm> //
 			if( /^<\w/.exec(ar[ix-1]) && /^<\/\w/.exec(ar[ix]) &&
-				/^<[\w:\-\.\,]+/.exec(ar[ix-1]) == /^<\/[\w:\-\.\,]+/.exec(ar[ix])[0].replace('/','')) {
+				/^<[\w:\-\.\,]+/.exec(ar[ix-1]) == /^<\/[\w:\-\.\,]+/.exec(ar[ix])[0].replace('/','')) { 
 				str += ar[ix];
 				if(!inComment) deep--;
 			} else
 			 // <elm> //
 			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) == -1 && ar[ix].search(/\/>/) == -1 ) {
 				str = !inComment ? str += shift[deep++]+ar[ix] : str += ar[ix];
-			} else
+			} else 
 			 // <elm>...</elm> //
 			if(ar[ix].search(/<\w/) > -1 && ar[ix].search(/<\//) > -1) {
 				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
-			} else
+			} else 
 			// </elm> //
-			if(ar[ix].search(/<\//) > -1) {
+			if(ar[ix].search(/<\//) > -1) { 
 				str = !inComment ? str += shift[--deep]+ar[ix] : str += ar[ix];
-			} else
+			} else 
 			// <elm/> //
-			if(ar[ix].search(/\/>/) > -1 ) {
+			if(ar[ix].search(/\/>/) > -1 ) { 
 				str = !inComment ? str += shift[deep]+ar[ix] : str += ar[ix];
-			} else
+			} else 
 			// <? xml ... ?> //
-			if(ar[ix].search(/<\?/) > -1) {
+			if(ar[ix].search(/<\?/) > -1) { 
 				str += shift[deep]+ar[ix];
-			} else
+			} else 
 			// xmlns //
-			if( ar[ix].search(/xmlns\:/) > -1  || ar[ix].search(/xmlns\=/) > -1) {
+			if( ar[ix].search(/xmlns\:/) > -1  || ar[ix].search(/xmlns\=/) > -1) { 
 				str += shift[deep]+ar[ix];
-			}
-
+			} 
+			
 			else {
 				str += ar[ix];
 			}
 		}
-
+		
 	return  (str[0] == '\n') ? str.slice(1) : str;
 }
 
 vkbeautify.prototype.json = function(text,step) {
 
 	var step = step ? step : this.step;
-
-	if (typeof JSON === 'undefined' ) return text;
-
+	
+	if (typeof JSON === 'undefined' ) return text; 
+	
 	if ( typeof text === "string" ) return JSON.stringify(JSON.parse(text), null, step);
 	if ( typeof text === "object" ) return JSON.stringify(text, null, step);
-
+		
 	return text; // text is not string nor object
 }
 
@@ -9007,16 +9007,16 @@ vkbeautify.prototype.css = function(text, step) {
 		str = '',
 		ix = 0,
 		shift = step ? createShiftArr(step) : this.shift;
-
+		
 		for(ix=0;ix<len;ix++) {
 
-			if( /\{/.exec(ar[ix]))  {
+			if( /\{/.exec(ar[ix]))  { 
 				str += shift[deep++]+ar[ix];
-			} else
-			if( /\}/.exec(ar[ix]))  {
+			} else 
+			if( /\}/.exec(ar[ix]))  { 
 				str += shift[--deep]+ar[ix];
 			} else
-			if( /\*\\/.exec(ar[ix]))  {
+			if( /\*\\/.exec(ar[ix]))  { 
 				str += shift[deep]+ar[ix];
 			}
 			else {
@@ -9046,13 +9046,13 @@ function split_sql(str, tab) {
 				.replace(/ HAVING /ig,"~::~HAVING ")
 				//.replace(/ SET /ig," SET~::~")
 				.replace(/ IN /ig," IN ")
-
+				
 				.replace(/ JOIN /ig,"~::~JOIN ")
 				.replace(/ CROSS~::~{1,}JOIN /ig,"~::~CROSS JOIN ")
 				.replace(/ INNER~::~{1,}JOIN /ig,"~::~INNER JOIN ")
 				.replace(/ LEFT~::~{1,}JOIN /ig,"~::~LEFT JOIN ")
 				.replace(/ RIGHT~::~{1,}JOIN /ig,"~::~RIGHT JOIN ")
-
+				
 				.replace(/ ON /ig,"~::~"+tab+"ON ")
 				.replace(/ OR /ig,"~::~"+tab+tab+"OR ")
 				.replace(/ ORDER\s{1,}BY/ig,"~::~ORDER BY ")
@@ -9060,21 +9060,21 @@ function split_sql(str, tab) {
 
 				.replace(/\(\s{0,}SELECT /ig,"~::~(SELECT ")
 				.replace(/\)\s{0,}SELECT /ig,")~::~SELECT ")
-
+				
 				.replace(/ THEN /ig," THEN~::~"+tab+"")
 				.replace(/ UNION /ig,"~::~UNION~::~")
 				.replace(/ USING /ig,"~::~USING ")
 				.replace(/ WHEN /ig,"~::~"+tab+"WHEN ")
 				.replace(/ WHERE /ig,"~::~WHERE ")
 				.replace(/ WITH /ig,"~::~WITH ")
-
+				
 				//.replace(/\,\s{0,}\(/ig,",~::~( ")
 				//.replace(/\,/ig,",~::~"+tab+tab+"")
 
 				.replace(/ ALL /ig," ALL ")
 				.replace(/ AS /ig," AS ")
-				.replace(/ ASC /ig," ASC ")
-				.replace(/ DESC /ig," DESC ")
+				.replace(/ ASC /ig," ASC ")	
+				.replace(/ DESC /ig," DESC ")	
 				.replace(/ DISTINCT /ig," DISTINCT ")
 				.replace(/ EXISTS /ig," EXISTS ")
 				.replace(/ NOT /ig," NOT ")
@@ -9083,7 +9083,7 @@ function split_sql(str, tab) {
 				.replace(/\s{0,}SELECT /ig,"SELECT ")
 				.replace(/\s{0,}UPDATE /ig,"UPDATE ")
 				.replace(/ SET /ig," SET ")
-
+							
 				.replace(/~::~{1,}/g,"~::~")
 				.split('~::~');
 }
@@ -9111,36 +9111,36 @@ vkbeautify.prototype.sql = function(text,step) {
 				ar = ar.concat(split_sql(ar_by_quote[ix], tab) );
 			}
 		}
-
+		
 		len = ar.length;
 		for(ix=0;ix<len;ix++) {
-
+			
 			parenthesisLevel = isSubquery(ar[ix], parenthesisLevel);
-
-			if( /\s{0,}\s{0,}SELECT\s{0,}/.exec(ar[ix]))  {
+			
+			if( /\s{0,}\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
 				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
-			}
-
-			if( /\s{0,}\s{0,}SET\s{0,}/.exec(ar[ix]))  {
+			} 
+			
+			if( /\s{0,}\s{0,}SET\s{0,}/.exec(ar[ix]))  { 
 				ar[ix] = ar[ix].replace(/\,/g,",\n"+tab+tab+"")
-			}
-
-			if( /\s{0,}\(\s{0,}SELECT\s{0,}/.exec(ar[ix]))  {
+			} 
+			
+			if( /\s{0,}\(\s{0,}SELECT\s{0,}/.exec(ar[ix]))  { 
 				deep++;
 				str += shift[deep]+ar[ix];
-			} else
-			if( /\'/.exec(ar[ix]) )  {
+			} else 
+			if( /\'/.exec(ar[ix]) )  { 
 				if(parenthesisLevel<1 && deep) {
 					deep--;
 				}
 				str += ar[ix];
 			}
-			else  {
+			else  { 
 				str += shift[deep]+ar[ix];
 				if(parenthesisLevel<1 && deep) {
 					deep--;
 				}
-			}
+			} 
 			var junk = 0;
 		}
 
@@ -9154,19 +9154,19 @@ vkbeautify.prototype.xmlmin = function(text, preserveComments) {
 	var str = preserveComments ? text
 							   : text.replace(/\<![ \r\n\t]*(--([^\-]|[\r\n]|-[^\-])*--[ \r\n\t]*)\>/g,"")
 									 .replace(/[ \r\n\t]{1,}xmlns/g, ' xmlns');
-	return  str.replace(/>\s{0,}</g,"><");
+	return  str.replace(/>\s{0,}</g,"><"); 
 }
 
 vkbeautify.prototype.jsonmin = function(text) {
 
-	if (typeof JSON === 'undefined' ) return text;
-
-	return JSON.stringify(JSON.parse(text), null, 0);
-
+	if (typeof JSON === 'undefined' ) return text; 
+	
+	return JSON.stringify(JSON.parse(text), null, 0); 
+				
 }
 
 vkbeautify.prototype.cssmin = function(text, preserveComments) {
-
+	
 	var str = preserveComments ? text
 							   : text.replace(/\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//g,"") ;
 
@@ -9187,6 +9187,8 @@ window.vkbeautify = new vkbeautify();
 })();
 
 
+'use strict';
+
 RAML.Inspector = (function() {
   var exports = {};
 
@@ -9194,8 +9196,7 @@ RAML.Inspector = (function() {
     securitySchemes = securitySchemes || [];
 
     var securitySchemeFor = function(method, schemeType) {
-      var required = undefined,
-          securedBy = method.securedBy || [];
+      var required, securedBy = method.securedBy || [];
 
       securitySchemes.forEach(function(scheme) {
         securedBy.forEach(function(type) {
@@ -9206,21 +9207,21 @@ RAML.Inspector = (function() {
       });
 
       return required;
-    }
+    };
 
     method.requiresBasicAuthentication = function() {
-      return securitySchemeFor(this, "Basic Authentication");
-    }
+      return securitySchemeFor(this, 'Basic Authentication');
+    };
 
     method.requiresOauth2 = function() {
-      return securitySchemeFor(this, "OAuth 2.0");
-    }
+      return securitySchemeFor(this, 'OAuth 2.0');
+    };
   }
 
   function extractResources(basePathSegments, api, securitySchemes) {
-    var resources = [];
+    var resources = [], apiResources = api.resources || [];
 
-    (api.resources || []).forEach(function(resource) {
+    apiResources.forEach(function(resource) {
       var pathSegments = basePathSegments.concat(resource.relativeUri);
       var overview = exports.resourceOverviewSource(pathSegments, resource);
       overview.methods.forEach(function(method) {
@@ -9230,7 +9231,7 @@ RAML.Inspector = (function() {
       resources.push(overview);
 
       if (resource.resources) {
-        extracted = extractResources(pathSegments, resource, securitySchemes);
+        var extracted = extractResources(pathSegments, resource, securitySchemes);
         extracted.forEach(function(resource) {
           resources.push(resource);
         });
@@ -9238,7 +9239,7 @@ RAML.Inspector = (function() {
     });
 
     return resources;
-  };
+  }
 
   exports.resourceOverviewSource = function(pathSegments, resource) {
     var methods = (resource.methods || []);
@@ -9250,7 +9251,7 @@ RAML.Inspector = (function() {
       traits: resource.is,
       resourceType: resource.type,
       uriParameters: resource.uriParameters
-    }
+    };
   };
 
   exports.create = function(api) {
@@ -9274,19 +9275,19 @@ RAML.Inspector = (function() {
     if (match) {
       this.parameterName = match[1];
     }
-  }
+  };
 
   PathSegment.prototype.toString = function() {
     return this.templated ? this.text.replace(/[\/{}]/g, '') : this.text;
-  }
+  };
 
   PathSegment.prototype.replaceWith = function(value) {
-     if (this.templated) {
-       return "/" + value;
-     } else {
-       return this.toString();
-     }
-  }
+    if (this.templated) {
+      return '/' + value;
+    } else {
+      return this.toString();
+    }
+  };
 
   function convertPathSegment(pathSegment) {
     return new PathSegment(pathSegment);
@@ -9298,30 +9299,32 @@ RAML.Inspector = (function() {
 
       return pathSegments.map(function(pathSegment) {
         return pathSegment.replaceWith(context[pathSegment.parameterName]);
-      }).join("");
-    }
+      }).join('');
+    };
 
     template.segments = pathSegments;
 
-    return template
+    return template;
   }
 
   RAML.Inspector.PathBuilder = {
     create: function(pathSegments) {
       return createTemplate(pathSegments.map(convertPathSegment));
     }
-  }
+  };
 })();
 
+'use strict';
+
 (function() {
-  var CONTENT_TYPE = "content-type";
+  var CONTENT_TYPE = 'content-type';
 
   var Client = function(parsed) {
     this.securitySchemes = parsed.securitySchemes;
-  }
+  };
 
   Client.prototype.securityScheme = function(name) {
-    var result = undefined;
+    var result;
 
     this.securitySchemes.forEach(function(scheme) {
       if (scheme[name]) {
@@ -9332,49 +9335,49 @@ RAML.Inspector = (function() {
     if (result !== undefined) {
       return result;
     } else {
-      throw new Error("Undefined Security Scheme: " + name);
+      throw new Error('Undefined Security Scheme: ' + name);
     }
   };
 
   var RequestDsl = function(options) {
     this.data = function(data) {
       options.data = data;
-    }
+    };
 
     this.queryParam = function(name, value) {
       options.data = options.data || {};
       options.data[name] = value;
-    }
+    };
 
     this.header = function(name, value) {
       options.headers = options.headers || {};
       options.headers[name] = value;
 
-      if (name.toLowerCase() == CONTENT_TYPE) {
+      if (name.toLowerCase() === CONTENT_TYPE) {
         options.contentType = value;
       }
-    }
+    };
 
     this.headers = function(headers) {
       options.headers = {};
       options.contentType = undefined;
 
       for (var name in headers) {
-        this.header(name, headers[name])
+        this.header(name, headers[name]);
       }
-    }
+    };
 
     this.toOptions = function() {
       return options;
-    }
-  }
+    };
+  };
 
   Client.prototype.createRequest = function(url, method) {
     var request = {};
     RequestDsl.call(request, { url: url, type: method });
 
     return request;
-  }
+  };
 
 
   RAML.Client = {
@@ -9386,16 +9389,19 @@ RAML.Inspector = (function() {
 
 RAML.Client.AuthStrategies = {};
 
+'use strict';
+
 (function() {
   var NO_OP_TOKEN = {
     sign: function() {}
   };
 
-  var Anonymous = function() {}
+  var Anonymous = function() {};
+
   Anonymous.prototype.authenticate = function() {
     return {
       then: function(success) { success(NO_OP_TOKEN); }
-    }
+    };
   };
 
   var anonymous = new Anonymous();
@@ -9403,9 +9409,12 @@ RAML.Client.AuthStrategies = {};
   RAML.Client.AuthStrategies.Anonymous = Anonymous;
   RAML.Client.AuthStrategies.anonymous = function() {
     return anonymous;
-  }
+  };
 })();
 
+/* jshint bitwise: false */
+
+'use strict';
 
 RAML.Client.AuthStrategies.base64 = (function () {
   var keyStr = 'ABCDEFGHIJKLMNOP' +
@@ -9416,53 +9425,53 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
   return {
     encode: function (input) {
-     var output = "";
-     var chr1, chr2, chr3 = "";
-     var enc1, enc2, enc3, enc4 = "";
-     var i = 0;
+      var output = '';
+      var chr1, chr2, chr3 = '';
+      var enc1, enc2, enc3, enc4 = '';
+      var i = 0;
 
-     do {
-      chr1 = input.charCodeAt(i++);
-      chr2 = input.charCodeAt(i++);
-      chr3 = input.charCodeAt(i++);
+      do {
+        chr1 = input.charCodeAt(i++);
+        chr2 = input.charCodeAt(i++);
+        chr3 = input.charCodeAt(i++);
 
-      enc1 = chr1 >> 2;
-      enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-      enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
-      enc4 = chr3 & 63;
+        enc1 = chr1 >> 2;
+        enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+        enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+        enc4 = chr3 & 63;
 
-      if (isNaN(chr2)) {
-        enc3 = enc4 = 64;
-      } else if (isNaN(chr3)) {
-        enc4 = 64;
-      }
+        if (isNaN(chr2)) {
+          enc3 = enc4 = 64;
+        } else if (isNaN(chr3)) {
+          enc4 = 64;
+        }
 
-      output = output +
-      keyStr.charAt(enc1) +
-      keyStr.charAt(enc2) +
-      keyStr.charAt(enc3) +
-      keyStr.charAt(enc4);
-      chr1 = chr2 = chr3 = "";
-      enc1 = enc2 = enc3 = enc4 = "";
-    } while (i < input.length);
+        output = output +
+        keyStr.charAt(enc1) +
+        keyStr.charAt(enc2) +
+        keyStr.charAt(enc3) +
+        keyStr.charAt(enc4);
+        chr1 = chr2 = chr3 = '';
+        enc1 = enc2 = enc3 = enc4 = '';
+      } while (i < input.length);
 
-    return output;
-  },
+      return output;
+    },
 
-  decode: function (input) {
-    var output = "";
-    var chr1, chr2, chr3 = "";
-    var enc1, enc2, enc3, enc4 = "";
-    var i = 0;
+    decode: function (input) {
+      var output = '';
+      var chr1, chr2, chr3 = '';
+      var enc1, enc2, enc3, enc4 = '';
+      var i = 0;
 
       // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
       var base64test = /[^A-Za-z0-9\+\/\=]/g;
       if (base64test.exec(input)) {
-        alert("There were invalid base64 characters in the input text.\n" +
-          "Valid base64 characters are A-Z, a-z, 0-9, '+', '/',and '='\n" +
-          "Expect errors in decoding.");
+        window.alert('There were invalid base64 characters in the input text.\n' +
+          'Valid base64 characters are A-Z, a-z, 0-9, '+', \'/\',and \'=\'\n' +
+          'Expect errors in decoding.');
       }
-      input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+      input = input.replace(/[^A-Za-z0-9\+\/\=]/g, '');
 
       do {
         enc1 = keyStr.indexOf(input.charAt(i++));
@@ -9476,15 +9485,15 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
         output = output + String.fromCharCode(chr1);
 
-        if (enc3 != 64) {
+        if (enc3 !== 64) {
           output = output + String.fromCharCode(chr2);
         }
-        if (enc4 != 64) {
+        if (enc4 !== 64) {
           output = output + String.fromCharCode(chr3);
         }
 
-        chr1 = chr2 = chr3 = "";
-        enc1 = enc2 = enc3 = enc4 = "";
+        chr1 = chr2 = chr3 = '';
+        enc1 = enc2 = enc3 = enc4 = '';
 
       } while (i < input.length);
 
@@ -9493,24 +9502,26 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 })();
 
+'use strict';
+
 (function() {
   var base64 = RAML.Client.AuthStrategies.base64;
 
   var Basic = function(scheme, credentials) {
     this.token = new Basic.Token(credentials);
-  }
+  };
 
   Basic.prototype.authenticate = function() {
     var token = this.token;
 
     return {
       then: function(success) { success(token); }
-    }
-  }
+    };
+  };
 
   Basic.Token = function(credentials) {
-    this.encoded = base64.encode(credentials.username + ":" + credentials.password);
-  }
+    this.encoded = base64.encode(credentials.username + ':' + credentials.password);
+  };
 
   Basic.Token.prototype.sign = function(request) {
     request.header('Authorization', 'Basic ' + this.encoded);
@@ -9519,8 +9530,12 @@ RAML.Client.AuthStrategies.base64 = (function () {
   RAML.Client.AuthStrategies.Basic = Basic;
   RAML.Client.AuthStrategies.basicAuth = function(credentials) {
     return new Basic(null, credentials);
-  }
+  };
 })();
+
+/* jshint camelcase: false */
+
+'use strict';
 
 (function() {
   var WINDOW_NAME = 'raml-console-oauth2';
@@ -9528,23 +9543,22 @@ RAML.Client.AuthStrategies.base64 = (function () {
   var Oauth2 = function(scheme, credentials) {
     this.settings = scheme.settings;
     this.credentialsManager = Oauth2.credentialsManager(credentials);
-  }
+  };
 
   Oauth2.prototype.authenticate = function() {
     var authorizationRequest = Oauth2.authorizationRequest(this.settings, this.credentialsManager);
     var accessTokenRequest = Oauth2.accessTokenRequest(this.settings, this.credentialsManager);
 
     return authorizationRequest.then(accessTokenRequest);
-  }
-
+  };
 
   Oauth2.credentialsManager = function(credentials) {
     return {
       authorizationUrl : function(baseUrl) {
-         return baseUrl +
-           '?client_id=' + credentials.clientId +
-           '&response_type=code' +
-           '&redirect_uri=' + RAML.Settings.oauth2RedirectUri;
+        return baseUrl +
+          '?client_id=' + credentials.clientId +
+          '&response_type=code' +
+          '&redirect_uri=' + RAML.Settings.oauth2RedirectUri;
       },
 
       accessTokenParameters: function(code) {
@@ -9554,23 +9568,23 @@ RAML.Client.AuthStrategies.base64 = (function () {
           code: code,
           grant_type: 'authorization_code',
           redirect_uri: RAML.Settings.oauth2RedirectUri
-        }
+        };
       }
-    }
-  }
+    };
+  };
 
   Oauth2.authorizationRequest = function(settings, credentialsManager) {
-    var authorizationUrl = credentialsManager.authorizationUrl(settings.authorizationUrl);
+    var authorizationUrl = credentialsManager.authorizationUrl(settings.authorizationUri);
     window.open(authorizationUrl, WINDOW_NAME);
 
     var deferred = $.Deferred();
-    window.RAML.authorizationSuccess = function(code) { deferred.resolve(code) }
+    window.RAML.authorizationSuccess = function(code) { deferred.resolve(code); };
     return deferred.promise();
-  }
+  };
 
   Oauth2.accessTokenRequest = function(settings, credentialsManager) {
     return function(code) {
-      var url = settings.accessTokenUrl;
+      var url = settings.accessTokenUri;
       if (RAML.Settings.proxy) {
         url = RAML.Settings.proxy + url;
       }
@@ -9581,30 +9595,34 @@ RAML.Client.AuthStrategies.base64 = (function () {
         data: credentialsManager.accessTokenParameters(code)
       };
 
-      var createToken = function(data, textStatus, jqXhr) {
+      var createToken = function(data) {
         return new Oauth2.Token(data.access_token);
       };
       return $.ajax(requestOptions).then(createToken);
-    }
-  }
+    };
+  };
 
-  Oauth2.Token = function(access_token) {
-    this.access_token = access_token;
-  }
+  Oauth2.Token = function(token) {
+    this.accessToken = token;
+  };
 
   Oauth2.Token.prototype.sign = function(request) {
-    request.queryParam('access_token', this.access_token);
-  }
+    request.queryParam('access_token', this.accessToken);
+  };
 
   RAML.Client.AuthStrategies.Oauth2 = Oauth2;
   RAML.Client.AuthStrategies.oauth2 = function(scheme, credentials) {
-    return new Oauth2(scheme, credentials)
-  }
+    return new Oauth2(scheme, credentials);
+  };
 })();
+
+'use strict';
 
 (function() {
   RAML.Controllers = {};
 })();
+
+'use strict';
 
 (function() {
 
@@ -9624,7 +9642,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 
   controller.prototype.addTab = function(tab) {
-    if (this.tabs.every(function(tab) { return tab.disabled }) || tab.active) {
+    if (this.tabs.every(function(tab) { return tab.disabled; }) || tab.active) {
       this.select(tab);
     }
     this.tabs.push(tab);
@@ -9634,11 +9652,15 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
 })();
 
+'use strict';
+
 (function() {
   function parseHeaders(headers) {
     var parsed = {}, key, val, i;
 
-    if (!headers) return parsed;
+    if (!headers) {
+      return parsed;
+    }
 
     headers.split('\n').forEach(function(line) {
       i = line.indexOf(':');
@@ -9662,10 +9684,10 @@ RAML.Client.AuthStrategies.base64 = (function () {
   var apply;
 
   function isEmpty(object) {
-    return Object.keys(object || {}).length == 0;
+    return Object.keys(object || {}).length === 0;
   }
 
-  TryIt = function($scope) {
+  var TryIt = function($scope) {
     this.baseUri = $scope.api.baseUri || '';
     if (this.baseUri.match(/\{version\}/) && $scope.api.version) {
       this.baseUri = this.baseUri.replace(/\{version\}/g, $scope.api.version);
@@ -9687,12 +9709,12 @@ RAML.Client.AuthStrategies.base64 = (function () {
       this.oauth2 = {};
     }
 
-    for (mediaType in $scope.method.body) {
+    for (var mediaType in $scope.method.body) {
       this.supportsMediaType = true;
 
-      if (mediaType == FORM_URLENCODED) {
+      if (mediaType === FORM_URLENCODED) {
         this.supportsFormUrlencoded = true;
-      } else if (mediaType == FORM_DATA) {
+      } else if (mediaType === FORM_DATA) {
         this.supportsFormData = true;
       } else {
         this.supportsCustomBody = true;
@@ -9700,7 +9722,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
     }
 
     $scope.apiClient = this;
-    this.client = $scope.client = RAML.Client.create($scope.api)
+    this.client = $scope.client = RAML.Client.create($scope.api);
 
     apply = function() {
       $scope.$apply.apply($scope, arguments);
@@ -9709,23 +9731,23 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
   TryIt.prototype.showBody = function() {
     return this.supportsCustomBody && !this.showUrlencodedForm() && !this.showMultipartForm();
-  }
+  };
 
   TryIt.prototype.showUrlencodedForm = function() {
     if (this.mediaType) {
-      return this.mediaType == FORM_URLENCODED;
+      return this.mediaType === FORM_URLENCODED;
     } else {
       return (!this.supportsCustomBody && this.supportsFormUrlencoded);
     }
-  }
+  };
 
   TryIt.prototype.showMultipartForm = function() {
     if (this.mediaType) {
-      return this.mediaType == FORM_DATA
+      return this.mediaType === FORM_DATA;
     } else  {
       return (!this.supportsCustomBody && !this.supportsFormUrlencoded && this.supportsFormData);
     }
-  }
+  };
 
   TryIt.prototype.execute = function() {
     var response = this.response = {};
@@ -9759,7 +9781,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
     }
 
     if (this.mediaType) {
-      request.header("Content-Type", this.mediaType);
+      request.header('Content-Type', this.mediaType);
       if (this.showBody()) { request.data(this.body); }
     }
 
@@ -9783,6 +9805,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
   RAML.Controllers.TryIt = TryIt;
 })();
 
+'use strict';
+
 (function() {
   RAML.Directives = {};
 })();
@@ -9796,9 +9820,11 @@ RAML.Client.AuthStrategies.base64 = (function () {
       restrict: 'E',
       templateUrl: 'views/api_resources.tmpl.html',
       replace: true
-    }
-  }
+    };
+  };
 })();
+
+'use strict';
 
 (function() {
   RAML.Directives.basicAuth = function() {
@@ -9809,21 +9835,21 @@ RAML.Client.AuthStrategies.base64 = (function () {
       scope: {
         credentials: '='
       }
-    }
-  }
+    };
+  };
 })();
 
 (function() {
   'use strict';
 
   var formatters = {
-    "application/json" : function(code) {
+    'application/json' : function(code) {
       return vkbeautify.json(code);
     },
-    "text/xml" : function(code) {
+    'text/xml' : function(code) {
       return vkbeautify.xml(code);
     },
-    "default" : function(code) {
+    'default' : function(code) {
       return code;
     }
   };
@@ -9840,20 +9866,20 @@ RAML.Client.AuthStrategies.base64 = (function () {
   var Controller = function($scope, $element) {
     sanitize($scope);
 
-    this.editor = CodeMirror($element[0], {
+    this.editor = new CodeMirror($element[0], {
       mode: $scope.mode,
-      readOnly: "nocursor",
+      readOnly: true,
       value: $scope.code,
       lineNumbers: true,
       indentUnit: 4
     });
 
-    this.editor.setSize("100%", "100%");
+    this.editor.setSize('100%', '100%');
   };
 
   Controller.prototype.refresh = function(options) {
     sanitize(options);
-    this.editor.setOption("mode", options.mode);
+    this.editor.setOption('mode', options.mode);
     this.editor.setValue(options.code);
 
     this.editor.refresh();
@@ -9874,12 +9900,12 @@ RAML.Client.AuthStrategies.base64 = (function () {
       replace: true,
       controller: Controller,
       scope: {
-        code: "=codeMirror",
-        visible: "=",
-        mode: "@?"
+        code: '=codeMirror',
+        visible: '=',
+        mode: '@?'
       }
-    }
-  }
+    };
+  };
 
   RAML.Directives.codeMirror.Controller = Controller;
 })();
@@ -9904,35 +9930,35 @@ RAML.Client.AuthStrategies.base64 = (function () {
           }
         }
       }
-    }
+    };
   };
 
   RAML.Directives.collapsibleToggle = function() {
     return {
       require: '^collapsible',
       restrict: 'EA',
-      link: function(scope, element, attrs, controller) {
+      link: function(scope, element) {
         element.bind('click', function() {
           scope.$apply(function() {
             scope.collapsed = !scope.collapsed;
           });
         });
       }
-    }
+    };
   };
 
   RAML.Directives.collapsibleContent = function() {
     return {
       require: '^collapsible',
       restrict: 'EA',
-      link: function(scope, element, attrs) {
+      link: function(scope, element) {
         scope.$watch('collapsed', function(collapsed) {
-          element.css("display", collapsed ? "none" : "block");
-          element.parent().removeClass("collapsed expanded");
-          element.parent().addClass(collapsed ? "collapsed" : "expanded");
+          element.css('display', collapsed ? 'none' : 'block');
+          element.parent().removeClass('collapsed expanded');
+          element.parent().addClass(collapsed ? 'collapsed' : 'expanded');
         });
       }
-    }
+    };
   };
 
 })();
@@ -9941,7 +9967,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
   'use strict';
 
   function isEmpty(object) {
-    return Object.keys(object || {}).length == 0;
+    return Object.keys(object || {}).length === 0;
   }
 
   var FORM_MIME_TYPES = ['application/x-www-form-urlencoded', 'multipart/form-data'];
@@ -9953,8 +9979,9 @@ RAML.Client.AuthStrategies.base64 = (function () {
       for (var i = 0; i < FORM_MIME_TYPES.length; i++) {
         var type = FORM_MIME_TYPES[i];
 
-        if (body[type] && !isEmpty(body[type].formParameters))
-          return true
+        if (body[type] && !isEmpty(body[type].formParameters)) {
+          return true;
+        }
       }
     }
     return false;
@@ -9966,8 +9993,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
     var method = $scope.method;
 
-    this.hasParameterDocumentation = $scope.resource.uriParameters || method.queryParameters
-      || method.headers || hasFormParameters(method);
+    this.hasParameterDocumentation = $scope.resource.uriParameters ||
+      method.queryParameters || method.headers || hasFormParameters(method);
     this.hasRequestDocumentation = !isEmpty(method.body);
     this.hasResponseDocumentation = !isEmpty(method.responses);
   };
@@ -9978,8 +10005,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
       restrict: 'E',
       templateUrl: 'views/documentation.tmpl.html',
       replace: true
-    }
-  }
+    };
+  };
 })();
 
 (function() {
@@ -9988,10 +10015,10 @@ RAML.Client.AuthStrategies.base64 = (function () {
   RAML.Directives.markdown = function($sanitize) {
     var converter = new Showdown.converter();
 
-    var link = function($scope, $element, $attrs) {
-      var result = converter.makeHtml($scope.markdown || '');
+    var link = function(scope, element) {
+      var result = converter.makeHtml(scope.markdown || '');
 
-      $element.html($sanitize(result));
+      element.html($sanitize(result));
     };
 
     return {
@@ -10000,7 +10027,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
       scope: {
         markdown: '='
       }
-    }
+    };
   };
 })();
 
@@ -10021,9 +10048,11 @@ RAML.Client.AuthStrategies.base64 = (function () {
       restrict: 'E',
       templateUrl: 'views/method.tmpl.html',
       replace: true
-    }
-  }
+    };
+  };
 })();
+
+'use strict';
 
 (function() {
   RAML.Directives.namedParameters = function() {
@@ -10037,9 +10066,11 @@ RAML.Client.AuthStrategies.base64 = (function () {
         parameters: '=',
         requestData: '='
       }
-    }
-  }
+    };
+  };
 })();
+
+'use strict';
 
 (function() {
   RAML.Directives.oauth2 = function() {
@@ -10050,29 +10081,24 @@ RAML.Client.AuthStrategies.base64 = (function () {
       scope: {
         credentials: '='
       }
-    }
-  }
+    };
+  };
 })();
 
 (function() {
   'use strict';
 
   RAML.Directives.parameterTable = function() {
-
-    var link = function($scope, $element, $attrs) {
-    }
-
     return {
       restrict: 'E',
-      link: link,
       templateUrl: 'views/parameter_table.tmpl.html',
       replace: true,
       scope: {
         heading: '@',
         parameters: '='
       }
-    }
-  }
+    };
+  };
 })();
 
 (function() {
@@ -10080,20 +10106,16 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
   var Controller = function($scope) {
     $scope.pathBuilder = $scope.method.pathBuilder = new RAML.Inspector.PathBuilder.create($scope.resource.pathSegments);
-  }
+  };
 
   RAML.Directives.pathBuilder = function() {
-
-    var link = function($scope, $element, $attrs) { }
-
     return {
       restrict: 'E',
-      link: link,
       controller: Controller,
       templateUrl: 'views/path_builder.tmpl.html',
       replace: true
-    }
-  }
+    };
+  };
 })();
 
 (function() {
@@ -10109,12 +10131,12 @@ RAML.Client.AuthStrategies.base64 = (function () {
     var success = function(raml) {
       $scope.api = this.api = RAML.Inspector.create(raml);
       $scope.$apply();
-    }
+    };
 
     var error = function(error) {
       $scope.parseError = error;
       $scope.$apply();
-    }
+    };
 
     if ($scope.src) {
       ramlParser.loadFile($scope.src).then(success.bind(this), error);
@@ -10129,14 +10151,14 @@ RAML.Client.AuthStrategies.base64 = (function () {
     return this.withRootDocumentation && this.api && this.api.documentation && this.api.documentation.length > 0;
   };
 
-  RAML.Directives.ramlConsole = function(ramlParser) {
+  RAML.Directives.ramlConsole = function() {
 
     var link = function ($scope, $el, $attrs, controller) {
       // FIXME: move this to the app on module('ramlConsoleApp').run...
       $scope.$on('event:raml-parsed', function(e, raml) {
         $scope.api = controller.api = RAML.Inspector.create(raml);
       });
-    }
+    };
 
     return {
       restrict: 'E',
@@ -10146,7 +10168,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
         src: '@'
       },
       link: link
-    }
+    };
   };
 })();
 
@@ -10156,21 +10178,21 @@ RAML.Client.AuthStrategies.base64 = (function () {
   RAML.Directives.ramlConsoleInitializer = function() {
     var controller = function($scope) {
       $scope.consoleLoader = this;
-    }
+    };
 
     controller.prototype.load = function() {
       this.locationSet = true;
     };
 
     var link = function($scope, $element, $attrs, controller) {
-      if (document.location.search.indexOf("?raml=") != -1) {
-        controller.location = document.location.search.replace("?raml=", '');
+      if (document.location.search.indexOf('?raml=') !== -1) {
+        controller.location = document.location.search.replace('?raml=', '');
         controller.locationSet = true;
       }
-    }
+    };
 
-    return { restrict: 'E', controller: controller, link: link }
-  }
+    return { restrict: 'E', controller: controller, link: link };
+  };
 })();
 
 (function() {
@@ -10195,22 +10217,23 @@ RAML.Client.AuthStrategies.base64 = (function () {
       templateUrl: 'views/resource_summary.tmpl.html',
       replace: true,
       controller: controller
-    }
-  }
+    };
+  };
 })();
 
 (function() {
   'use strict';
 
   RAML.Directives.rootDocumentation = function() {
-
     return {
       restrict: 'E',
       templateUrl: 'views/root_documentation.tmpl.html',
       replace: true
-    }
-  }
+    };
+  };
 })();
+
+'use strict';
 
 (function() {
   RAML.Directives.securitySchemes = function() {
@@ -10222,8 +10245,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
         method: '=',
         keychain: '='
       }
-    }
-  }
+    };
+  };
 })();
 
 (function() {
@@ -10240,7 +10263,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
       transclude: true,
       controller: RAML.Controllers.tabset,
       templateUrl: 'views/tabset.tmpl.html'
-    }
+    };
   };
 
   ////////////////
@@ -10248,11 +10271,10 @@ RAML.Client.AuthStrategies.base64 = (function () {
   ///////////////
 
   var link = function($scope, $element, $attrs, tabsetCtrl) {
-    tabsetCtrl.addTab($scope)
+    tabsetCtrl.addTab($scope);
   };
 
   RAML.Directives.tab = function() {
-
     return {
       restrict: 'E',
       require: '^tabset',
@@ -10265,8 +10287,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
         active: '=?',
         disabled: '=?'
       }
-    }
-
+    };
   };
 })();
 
@@ -10279,8 +10300,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
       templateUrl: 'views/try_it.tmpl.html',
       replace: true,
       controller: RAML.Controllers.TryIt
-    }
-  }
+    };
+  };
 })();
 
 RAML.Filters = {};
@@ -10292,8 +10313,10 @@ RAML.Filters = {};
     return function(input) {
       return input ? 'Yes' : 'No';
     };
-  }
+  };
 })();
+
+'use strict';
 
 (function() {
   RAML.Settings = RAML.Settings || {};
@@ -10304,14 +10327,18 @@ RAML.Filters = {};
   RAML.Settings.oauth2RedirectUri = RAML.Settings.oauth2RedirectUri || uri;
 })();
 
+'use strict';
+
 (function() {
-  var module = angular.module('raml', [])
+  var module = angular.module('raml', []);
 
   module.factory('ramlParser', function () {
     return RAML.Parser;
   });
 
 })();
+
+'use strict';
 
 (function() {
   var module = angular.module('ramlConsoleApp', ['raml', 'ngSanitize']);
