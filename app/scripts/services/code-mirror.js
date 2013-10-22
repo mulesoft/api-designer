@@ -2,9 +2,10 @@
 
 var CodeMirror = window.CodeMirror;
 
-angular.module('codeMirror', ['raml', 'ramlEditorApp'])
+
+angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
   .factory('codeMirror', function (ramlHint, codeMirrorHighLight, eventService,
-    getLineIndent, generateSpaces, generateTabs) {
+    getLineIndent, generateSpaces, generateTabs, getParentLine, getFoldRange) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
@@ -68,7 +69,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp'])
       var indentUnit = cm.getOption('indentUnit');
       var indent = editorState.currLineTabCount;
       var curLineWithoutTabs = service.removeTabs(editorState.curLine, indentUnit);
-      var parentLine = _getParentLine(cm, editorState.start.line, indent);
+      var parentLine = getParentLine(cm, editorState.start.line, indent);
 
       // this overrides everything else, because the '|' explicitly declares the line as a scalar
       // with a continuation on other lines. This applies to the current line or the parent of the current line
@@ -83,35 +84,14 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp'])
       }
 
       if(curLineWithoutTabs.indexOf('-') >= 0 && curLineWithoutTabs.indexOf('---') < 0) {
-
         _replaceSelection(
           cm,
           /^(traits|resourceTypes):/.test(parentLine) ? 2 : 1,
           ''
         );
 
-//        if(/^(traits|resourceTypes):/.test(parentLine)) {
-//          _replaceSelection(cm, 2, '');
-//          return;
-//        }
-        //_replaceSelection(cm, 1, '');
-
         return;
       }
-
-//      // if it's a sequence (<dash><space><...>)
-//      if (/^-\s/.test(curLineWithoutTabs)) {
-//        if (/:\s*$/.test(curLineWithoutTabs)) {
-//          // we should add another indentation in case of one-key mapping
-//          _replaceSelection(cm, 2, '');
-//        } else {
-//          // or keep the same indentation level in case user wants to keep
-//          // entering sequence entries, but with a little help, we start
-//          // new line with '- '
-//          _replaceSelection(cm, 0, '- ');
-//        }
-//        return;
-//      }
 
       // if current line or parent line begins with: content, example or schema
       // one indentation level should be added or the same level should be kept if
@@ -154,40 +134,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp'])
       editor.replaceSelection(spaces, 'end', '+input');
     }
 
-    function _getParentLineNumber (cm, lineNumber, indentLevel) {
-      var potentialParents = ramlHint.getScopes(cm).scopeLevels[indentLevel > 0 ? (indentLevel - 1) : 0];
-      var parent = null;
-
-      if (potentialParents) {
-        parent = potentialParents.filter(function (line) {
-          return line < lineNumber;
-        }).pop();
-      }
-
-      return parent;
-    }
-
-    function _getParentLine (cm, lineNumber, indentLevel) {
-      return cm.getLine(_getParentLineNumber(cm, lineNumber, indentLevel));
-    }
-
-    function _hasParent(pattern, cm, lineNumber) {
-      if(lineNumber === 0 || !lineNumber) {
-        return false;
-      }
-
-      var line = cm.getLine(lineNumber);
-      var indent = getLineIndent(line).tabCount;
-
-      var parentLineNumber = _getParentLineNumber(cm, lineNumber, indent);
-
-      if (pattern.test(cm.getLine(parentLineNumber))) {
-        return true;
-      } else {
-        return _hasParent (pattern, cm, parentLineNumber);
-      }
-    }
-
     function _currentNodeHasChildren(cm) {
       var editorState = ramlHint.getEditorState(cm);
 
@@ -201,53 +147,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp'])
 
       return !!firstChild;
     }
-
-    service.getFoldRange = function (cm, start) {
-      var line = cm.getLine(start.line);
-
-      if(line.length === 0) {
-        return;
-      }
-
-      var nextLine = cm.getLine(start.line + 1);
-      if (!nextLine) {
-        return;
-      }
-      var
-        indent = getLineIndent(line).tabCount,
-        nextLineIndent = getLineIndent(nextLine).tabCount;
-
-      if(/(content|schema|example):(\s?)\|/.test(_getParentLine(cm, start.line, indent))) {
-        return;
-      }
-
-      if(_hasParent(/(content|schema|example):(\s?)\|/, cm, start.line)){
-        return;
-      }
-
-      if(nextLineIndent > indent) {
-        for(var i = start.line + 2, end = cm.lineCount(); i < end; ++i) {
-          nextLine = cm.getLine(i);
-          nextLineIndent = getLineIndent(nextLine).tabCount;
-
-          if(nextLineIndent <= indent && nextLine.length > 0) {
-            nextLine = cm.getLine(i-1);
-            return {
-              from: CodeMirror.Pos(start.line, line.length),
-              to: CodeMirror.Pos(i - 1, nextLine.length)
-            };
-          }
-
-          if (i === end - 1) {
-            nextLine = cm.getLine(end - 1);
-            return {
-              from: CodeMirror.Pos(start.line, line.length),
-              to: CodeMirror.Pos(end - 1, nextLine.length)
-            };
-          }
-        }
-      }
-    };
 
     service.initEditor = function () {
 
@@ -270,7 +169,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp'])
       CodeMirror.defineMIME('text/x-raml', 'raml');
 
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
-      CodeMirror.registerHelper('fold', 'indent', service.getFoldRange);
+      CodeMirror.registerHelper('fold', 'indent', getFoldRange);
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         mode: 'raml',

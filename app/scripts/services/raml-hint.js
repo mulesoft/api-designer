@@ -71,21 +71,12 @@ angular.module('ramlEditorApp')
       });
     };
   })
-  .factory('ramlHint', function (getLineIndent, generateTabs, getKeysToErase) {
+  .factory('ramlHint', function (getLineIndent, generateTabs, getKeysToErase,
+    getScopes, getEditorTextAsArrayOfLines) {
     var hinter = {};
     var WORD = /[^\s]+|[$]+/;
 
     hinter.suggestRAML = suggestRAML;
-
-    function getEditorTextAsArrayOfLines(editor, limit) {
-      var textAsList = [], i;
-
-      for (i = limit; i > 0; i--) {
-        textAsList.push(editor.getLine(i));
-      }
-
-      return textAsList;
-    }
 
     hinter.computePath = function (editor) {
       var
@@ -97,7 +88,7 @@ angular.module('ramlEditorApp')
         return null;
       }
 
-      textAsList = getEditorTextAsArrayOfLines(editor, line);
+      textAsList = getEditorTextAsArrayOfLines(editor).slice(0, line + 1).reverse();
 
       // It should have at least one element
       if (!textAsList.length) {
@@ -190,53 +181,8 @@ angular.module('ramlEditorApp')
     };
 
     hinter.getScopes = function (editor) {
-      var
-        total = editor.lineCount(), i, line,
-        zipValues = [], currentIndexes = {}, lineWithoutTabs, tabCount,
-        lineIndentInfo;
-
-      for (i = 0; i < total; i++) {
-        line = editor.getLine(i);
-        lineIndentInfo = getLineIndent(line);
-        tabCount = lineIndentInfo.tabCount;
-        lineWithoutTabs = lineIndentInfo.content;
-
-        zipValues.push([tabCount, lineWithoutTabs, i]);
-      }
-
-      var levelTable = zipValues.reduce(function (x,y) {
-        var currentArray = currentIndexes[y[0] - 1],
-          lastArrayIndex, currentIndex;
-
-        if (currentArray) {
-          lastArrayIndex = currentArray.length - 1;
-          currentIndex = currentIndexes[y[0] - 1][lastArrayIndex];
-        } else if (y[0] > 1) {
-          // Case for lists, we fetch a level lower
-          currentArray = currentIndexes[y[0] - 2];
-          lastArrayIndex = currentArray.length - 1;
-          currentIndex = currentIndexes[y[0] - 2][lastArrayIndex];
-
-          x[currentIndex] = x[currentIndex] || [];
-          x[currentIndex].push([y[2], y[1]]);
-
-          currentIndexes[y[0] - 1] = currentIndexes[y[0] - 1] || [];
-          currentIndexes[y[0] - 1].push(y[2]);
-          return x;
-        } else {
-          // Case of the first element of the first level
-          currentIndex = 0;
-        }
-
-        x[currentIndex] = x[currentIndex] || [];
-        x[currentIndex].push([y[2], y[1]]);
-
-        currentIndexes[y[0]] = currentIndexes[y[0]] || [];
-        currentIndexes[y[0]].push(y[2]);
-        return x;
-      }, {});
-
-      return {scopeLevels: currentIndexes, scopesByLine: levelTable};
+      var arrayOfLines = getEditorTextAsArrayOfLines(editor);
+      return getScopes(arrayOfLines);
     };
 
     hinter.selectiveCloneAlternatives = function (oldAlternatives, keysToErase) {

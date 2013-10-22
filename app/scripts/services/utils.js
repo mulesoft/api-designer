@@ -56,23 +56,6 @@ angular.module('utils', [])
 
     return throttle;
   })
-  .factory('getLineIndent', function (indentUnit) {
-    return function (string, indentSize) {
-      var result = /^(\s*)(.*)$/.exec(string);
-
-      if (!string) {
-        return {tabCount: 0, spaceCount: 0, content: ''};
-      }
-
-      indentSize = indentSize || indentUnit;
-
-      return {
-        tabCount: Math.floor((result[1] || '').length / indentSize),
-        content: result[2] || '',
-        spaceCount: (result[1] || '').length
-      };
-    };
-  })
   .value('generateSpaces', function (spaceCount) {
     spaceCount = spaceCount || 0;
     return new Array(spaceCount + 1).join(' ');
@@ -84,11 +67,6 @@ angular.module('utils', [])
       return new Array(tabs + 1).join(generateSpaces(indentUnit));
     };
   })
-  .value('extractKey', function (value) {
-    value = value || '';
-    var match = /^(.+):( .*$|$)/.exec(value);
-    return match && match.length > 1 ? match[1] : '';
-  })
   .value('$prompt', function (message, value) {
     return window.prompt(message, value);
   })
@@ -98,20 +76,30 @@ angular.module('utils', [])
   .directive('ngMouseenter', ['$parse', function($parse) {
     return function(scope, element, attr) {
       var fn = $parse(attr.ngBlur);
-      element.bind('mouseenter', function(event) {
+      element.bind('mouseenter', function (event) {
         scope.$apply(function() {
           fn(scope, {$event:event});
         });
       });
     };
   }])
-  .directive('ngMouseleave', ['$parse', function($parse) {
+  .directive('ngMouseleave', ['$parse', function ($parse) {
     return function(scope, element, attr) {
       var fn = $parse(attr.ngBlur);
-      element.bind('mouseleave', function(event) {
+      element.bind('mouseleave', function (event) {
         scope.$apply(function() {
           fn(scope, {$event:event});
         });
       });
     };
-  }]);
+  }])
+  .directive('ngPreventDefault', function () {
+    return function (scope, element) {
+      var preventDefaultHandler = function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      };
+      element[0].addEventListener('click', preventDefaultHandler, false);
+    };
+  });

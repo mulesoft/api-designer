@@ -792,7 +792,7 @@ suggestionTree = transverse(TreeMapToSuggestionTree, root);
 
 versionSuggestion = new SimpleSuggestion({
   "#%RAML 0.8": new SuggestItem(null, "#%RAML 0.8", {
-    category: "root",
+    category: "main",
     isText: true
   })
 });
