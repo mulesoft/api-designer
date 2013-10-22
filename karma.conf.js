@@ -34,6 +34,7 @@ module.exports = function(config) {
     'app/vendor/scripts/show-hint.js',
     'app/vendor/scripts/raml-parser.js',
     'app/vendor/scripts/showdown.min.js',
+    'app/scripts/services/event.js',
     'app/vendor/scripts/raml-console.js',
     'app/scripts/app.js',
     'app/scripts/services/utils.js',
