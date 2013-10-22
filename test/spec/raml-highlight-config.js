@@ -3,15 +3,16 @@
 var codeMirrorHighLight, mode, CodeMirror;
 
 describe('RAML Highlight Config', function (){
-  beforeEach(function (){
-    var $injector = angular.injector(['codeMirror']);
-    codeMirrorHighLight = $injector.get('codeMirrorHighLight');
-    CodeMirror = $injector.get('codeMirror').CodeMirror;
+  beforeEach(module('codeMirror'));
+
+  beforeEach(inject(function (codeMirror, _codeMirrorHighLight_){
+    CodeMirror = codeMirror.CodeMirror;
+    codeMirrorHighLight = _codeMirrorHighLight_;
     codeMirrorHighLight.should.be.ok;
 
     mode = codeMirrorHighLight.highlight({});
     mode.should.be.ok;
-  });
+  }));
 
   it('should call yaml token by default', function (){
     var stream = new CodeMirror.StringStream(
