@@ -3,19 +3,19 @@
 angular.module('utils', [])
   .value('indentUnit', 2)
   .factory('safeApply', function ($rootScope) {
-    function safeApply($rootScope, fn) {
-      var phase = $rootScope.$root.$$phase;
+    function safeApply(scope, fn) {
+      var phase = scope.$root.$$phase;
       if(phase === '$apply' || phase === '$digest') {
         if(fn && (typeof(fn) === 'function')) {
           fn();
         }
       } else {
-        $rootScope.$apply(fn);
+        scope.$apply(fn);
       }
     }
 
-    return function (fn) {
-      safeApply($rootScope, fn);
+    return function (scope, fn) {
+      safeApply(scope || $rootScope, fn);
     };
   })
   .factory('getTime', function () {

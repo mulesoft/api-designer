@@ -13,7 +13,7 @@ angular.module('fs')
 
       request = requestQueue.pop();
 
-      safeApply(function () {
+      safeApply(null, function () {
         $http({
           method: request.method,
           data: request.data,

@@ -55,7 +55,7 @@ angular.module('ramlEditorApp')
       model.path = suggestions.path;
       $scope.model = model;
 
-      safeApply();
+      safeApply($scope);
     };
 
     $scope.orderSections = function (section) {

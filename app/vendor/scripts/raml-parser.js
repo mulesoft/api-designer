@@ -8066,7 +8066,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./composer":12,"./construct":15,"./joiner":16,"./parser":19,"./protocols":26,"./reader":18,"./resolver":21,"./resourceTypes":24,"./scanner":20,"./schemas":25,"./securitySchemes":27,"./traits":23,"./transformations":28,"./util":4,"./validator":22}],13:[function(require,module,exports){
+},{"./composer":12,"./construct":15,"./joiner":16,"./parser":20,"./protocols":26,"./reader":18,"./resolver":21,"./resourceTypes":24,"./scanner":19,"./schemas":25,"./securitySchemes":27,"./traits":23,"./transformations":28,"./util":4,"./validator":22}],13:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, unique_id, _ref, _ref1, _ref2,
     __hasProp = {}.hasOwnProperty,
@@ -8356,7 +8356,107 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1}],19:[function(require,module,exports){
+},{"./errors":1}],26:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, url, util, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  url = require('url');
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  util = require('./util');
+
+  /*
+  The Protocols throws these.
+  */
+
+
+  this.ProtocolError = (function(_super) {
+    __extends(ProtocolError, _super);
+
+    function ProtocolError() {
+      _ref = ProtocolError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return ProtocolError;
+
+  })(MarkedYAMLError);
+
+  /*
+  The Protocols class deals with applying protocols to methods according to the spec
+  */
+
+
+  this.Protocols = (function() {
+    function Protocols() {
+      this.apply_protocols = __bind(this.apply_protocols, this);
+    }
+
+    Protocols.prototype.apply_protocols = function(node) {
+      var protocols;
+      if (protocols = this.apply_protocols_to_root(node)) {
+        return this.apply_protocols_to_resources(node, protocols);
+      }
+    };
+
+    Protocols.prototype.apply_protocols_to_root = function(node) {
+      var baseUri, parsedBaseUri, protocol, protocols;
+      if (this.has_property(node, 'protocols')) {
+        return this.get_property(node, 'protocols');
+      }
+      if (!(baseUri = this.property_value(node, /^baseUri$/))) {
+        return;
+      }
+      parsedBaseUri = url.parse(baseUri);
+      protocol = (parsedBaseUri.protocol || 'http:').slice(0, -1).toUpperCase();
+      protocols = [new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', node.start_mark, node.end_mark), new nodes.SequenceNode('tag:yaml.org,2002:seq', [new nodes.ScalarNode('tag:yaml.org,2002:str', protocol, node.start_mark, node.end_mark)], node.start_mark, node.end_mark)];
+      node.value.push(protocols);
+      return protocols[1];
+    };
+
+    Protocols.prototype.apply_protocols_to_resources = function(node, protocols) {
+      var resource, _i, _len, _ref1, _results;
+      _ref1 = this.child_resources(node);
+      _results = [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        resource = _ref1[_i];
+        this.apply_protocols_to_resources(resource, protocols);
+        _results.push(this.apply_protocols_to_methods(resource, protocols));
+      }
+      return _results;
+    };
+
+    Protocols.prototype.apply_protocols_to_methods = function(node, protocols) {
+      var method, _i, _len, _ref1, _results;
+      _ref1 = this.child_methods(node[1]);
+      _results = [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        method = _ref1[_i];
+        if (!this.has_property(method[1], 'protocols')) {
+          if (!util.isMapping(method[1])) {
+            method[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], method[1].start_mark, method[1].end_mark);
+          }
+          _results.push(method[1].value.push([new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', method[0].start_mark, method[0].end_mark), protocols.clone()]));
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    return Protocols;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":13,"./util":4,"url":7}],20:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, tokens, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9081,107 +9181,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1}],26:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, url, util, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  url = require('url');
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  util = require('./util');
-
-  /*
-  The Protocols throws these.
-  */
-
-
-  this.ProtocolError = (function(_super) {
-    __extends(ProtocolError, _super);
-
-    function ProtocolError() {
-      _ref = ProtocolError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return ProtocolError;
-
-  })(MarkedYAMLError);
-
-  /*
-  The Protocols class deals with applying protocols to methods according to the spec
-  */
-
-
-  this.Protocols = (function() {
-    function Protocols() {
-      this.apply_protocols = __bind(this.apply_protocols, this);
-    }
-
-    Protocols.prototype.apply_protocols = function(node) {
-      var protocols;
-      if (protocols = this.apply_protocols_to_root(node)) {
-        return this.apply_protocols_to_resources(node, protocols);
-      }
-    };
-
-    Protocols.prototype.apply_protocols_to_root = function(node) {
-      var baseUri, parsedBaseUri, protocol, protocols;
-      if (this.has_property(node, 'protocols')) {
-        return this.get_property(node, 'protocols');
-      }
-      if (!(baseUri = this.property_value(node, /^baseUri$/))) {
-        return;
-      }
-      parsedBaseUri = url.parse(baseUri);
-      protocol = (parsedBaseUri.protocol || 'http:').slice(0, -1).toUpperCase();
-      protocols = [new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', node.start_mark, node.end_mark), new nodes.SequenceNode('tag:yaml.org,2002:seq', [new nodes.ScalarNode('tag:yaml.org,2002:str', protocol, node.start_mark, node.end_mark)], node.start_mark, node.end_mark)];
-      node.value.push(protocols);
-      return protocols[1];
-    };
-
-    Protocols.prototype.apply_protocols_to_resources = function(node, protocols) {
-      var resource, _i, _len, _ref1, _results;
-      _ref1 = this.child_resources(node);
-      _results = [];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        resource = _ref1[_i];
-        this.apply_protocols_to_resources(resource, protocols);
-        _results.push(this.apply_protocols_to_methods(resource, protocols));
-      }
-      return _results;
-    };
-
-    Protocols.prototype.apply_protocols_to_methods = function(node, protocols) {
-      var method, _i, _len, _ref1, _results;
-      _ref1 = this.child_methods(node[1]);
-      _results = [];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        method = _ref1[_i];
-        if (!this.has_property(method[1], 'protocols')) {
-          if (!util.isMapping(method[1])) {
-            method[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], method[1].start_mark, method[1].end_mark);
-          }
-          _results.push(method[1].value.push([new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', method[0].start_mark, method[0].end_mark), protocols.clone()]));
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-
-    return Protocols;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":13,"./util":4,"url":7}],21:[function(require,module,exports){
+},{"./errors":1}],21:[function(require,module,exports){
 (function() {
   var YAMLError, nodes, util, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -9440,11 +9440,11 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       var allTypes,
         _this = this;
       this.load_default_media_type(node);
-      if (this.has_property(node, "resourceTypes")) {
-        allTypes = this.property_value(node, "resourceTypes");
-        if (allTypes && typeof allTypes === "object") {
+      if (this.has_property(node, 'resourceTypes')) {
+        allTypes = this.property_value(node, 'resourceTypes');
+        if (allTypes && typeof allTypes === 'object') {
           return allTypes.forEach(function(type_item) {
-            if (type_item && typeof type_item === "object" && typeof type_item.value === "object") {
+            if (type_item && typeof type_item === 'object' && typeof type_item.value === 'object') {
               return type_item.value.forEach(function(type) {
                 return _this.declaredTypes[type[0].value] = type;
               });
@@ -9455,7 +9455,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
     };
 
     ResourceTypes.prototype.has_types = function(node) {
-      if (Object.keys(this.declaredTypes).length === 0 && this.has_property(node, "resourceTypes")) {
+      if (Object.keys(this.declaredTypes).length === 0 && this.has_property(node, 'resourceTypes')) {
         this.load_types(node);
       }
       return Object.keys(this.declaredTypes).length > 0;
@@ -9479,8 +9479,8 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         return resources.forEach(function(resource) {
           var type;
           _this.apply_default_media_type_to_resource(resource[1]);
-          if (_this.has_property(resource[1], "type")) {
-            type = _this.get_property(resource[1], "type");
+          if (_this.has_property(resource[1], 'type')) {
+            type = _this.get_property(resource[1], 'type');
             _this.apply_type(resourceUri + resource[0].value, resource, type);
           }
           return _this.apply_types(resource[1], resourceUri + resource[0].value);
@@ -9516,7 +9516,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         if (parentTypeName in compiledTypes) {
           pathToCircularRef = typesToApply.concat(parentTypeName).join(' -> ');
           childTypeProperty = this.get_type(childTypeName)[0];
-          throw new exports.ResourceTypeError('while aplying resourceTypes', null, "circular reference of \"" + parentTypeName + "\" has been detected: " + pathToCircularRef, childTypeProperty.start_mark);
+          throw new exports.ResourceTypeError('while applying resourceTypes', null, "circular reference of \"" + parentTypeName + "\" has been detected: " + pathToCircularRef, childTypeProperty.start_mark);
         }
         parentType = this.apply_parameters_to_type(resourceUri, parentTypeName, typeKey);
         this.apply_default_media_type_to_resource(parentType);
@@ -9538,7 +9538,10 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
     ResourceTypes.prototype.apply_parameters_to_type = function(resourceUri, typeName, typeKey) {
       var parameters, type;
-      type = (this.get_type(typeName))[1].clone();
+      if (!(type = this.get_type(typeName))) {
+        throw new exports.ResourceTypeError('while applying parameters', null, "there is no resource type named " + typeName, typeKey.start_mark);
+      }
+      type = type[1].clone();
       parameters = this._get_parameters_from_type_key(resourceUri, typeKey);
       this.apply_parameters(type, parameters, typeKey);
       return type;
@@ -9558,10 +9561,10 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         parameters[0][1].value.forEach(function(parameter) {
           var _ref1;
           if (!util.isScalar(parameter[1])) {
-            throw new exports.ResourceTypeError('while aplying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
+            throw new exports.ResourceTypeError('while applying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
           }
           if ((_ref1 = parameter[1].value) === "methodName" || _ref1 === "resourcePath" || _ref1 === "resourcePathName") {
-            throw new exports.ResourceTypeError('while aplying parameters', null, 'invalid parameter name "methodName", "resourcePath" are reserved parameter names "resourcePathName"', parameter[1].start_mark);
+            throw new exports.ResourceTypeError('while applying parameters', null, 'invalid parameter name "methodName", "resourcePath" are reserved parameter names "resourcePathName"', parameter[1].start_mark);
           }
           return result[parameter[0].value] = parameter[1].value;
         });
@@ -9575,7 +9578,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":13,"./util":4}],20:[function(require,module,exports){
+},{"./errors":1,"./nodes":13,"./util":4}],19:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, SimpleKey, tokens, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11820,7 +11823,7 @@ function decode(str) {
 
 }).call(this);
 
-},{"./composer":12,"./construct":15,"./errors":1,"./events":2,"./loader":17,"./nodes":13,"./parser":19,"./reader":18,"./resolver":21,"./scanner":20,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],28:[function(require,module,exports){
+},{"./composer":12,"./construct":15,"./errors":1,"./events":2,"./loader":17,"./nodes":13,"./parser":20,"./reader":18,"./resolver":21,"./scanner":19,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],28:[function(require,module,exports){
 (function() {
   var nodes, uritemplate, url, util,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -12424,7 +12427,7 @@ function decode(str) {
           for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
             scheme = _ref2[_j];
             if (!util.isMapping(scheme[1])) {
-              throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme.start_mark);
+              throw new exports.ValidationError('while validating securitySchemes', null, 'invalid security scheme property, it must be a map', scheme[0].start_mark);
             }
             _results1.push(this.validate_security_scheme(scheme[1]));
           }
@@ -12497,39 +12500,39 @@ function decode(str) {
     };
 
     Validator.prototype.validate_oauth2_settings = function(settings) {
-      var accessTokenUrl, authorizationUrl, property, settingProperties, _i, _len, _ref1;
-      authorizationUrl = false;
-      accessTokenUrl = false;
+      var property, propertyName, settingProperties, _i, _j, _len, _len1, _ref1, _ref2, _results;
       settingProperties = {};
       _ref1 = settings[1].value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         property = _ref1[_i];
         this.trackRepeatedProperties(settingProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "setting with the same name already exists");
         switch (property[0].value) {
-          case "authorizationUrl":
+          case "authorizationUri":
             if (!util.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', property[0].start_mark);
+              throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', property[0].start_mark);
             }
             break;
-          case "accessTokenUrl":
+          case "accessTokenUri":
             if (!util.isString(property[1])) {
-              throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', property[0].start_mark);
+              throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUri must be a URL', property[0].start_mark);
             }
         }
       }
-      if (!("accessTokenUrl" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'accessTokenUrl must be a URL', settings.start_mark);
+      _ref2 = ['accessTokenUri', 'authorizationUri'];
+      _results = [];
+      for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+        propertyName = _ref2[_j];
+        if (!(propertyName in settingProperties)) {
+          throw new exports.ValidationError('while validating security scheme', null, "OAuth 2.0 settings must have " + propertyName + " property", settings[0].start_mark);
+        } else {
+          _results.push(void 0);
+        }
       }
-      if (!("authorizationUrl" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUrl must be a URL', settings.start_mark);
-      }
+      return _results;
     };
 
     Validator.prototype.validate_oauth1_settings = function(settings) {
-      var authorizationUri, property, requestTokenUri, settingProperties, tokenCredentialsUri, _i, _len, _ref1;
-      requestTokenUri = false;
-      authorizationUri = false;
-      tokenCredentialsUri = false;
+      var property, propertyName, settingProperties, _i, _j, _len, _len1, _ref1, _ref2, _results;
       settingProperties = {};
       _ref1 = settings[1].value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
@@ -12540,30 +12543,29 @@ function decode(str) {
             if (!util.isString(property[1])) {
               throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', property[0].start_mark);
             }
-            requestTokenUri = true;
             break;
           case "authorizationUri":
             if (!util.isString(property[1])) {
               throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', property[0].start_mark);
             }
-            authorizationUri = true;
             break;
           case "tokenCredentialsUri":
             if (!util.isString(property[1])) {
               throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', property[0].start_mark);
             }
-            tokenCredentialsUri = true;
         }
       }
-      if (!("requestTokenUri" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'requestTokenUri must be a URL', settings.start_mark);
+      _ref2 = ['requestTokenUri', 'authorizationUri', 'tokenCredentialsUri'];
+      _results = [];
+      for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+        propertyName = _ref2[_j];
+        if (!(propertyName in settingProperties)) {
+          throw new exports.ValidationError('while validating security scheme', null, "OAuth 1.0 settings must have " + propertyName + " property", settings[0].start_mark);
+        } else {
+          _results.push(void 0);
+        }
       }
-      if (!("authorizationUri" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'authorizationUri must be a URL', settings.start_mark);
-      }
-      if (!("tokenCredentialsUri" in settingProperties)) {
-        throw new exports.ValidationError('while validating security scheme', null, 'tokenCredentialsUri must be a URL', settings.start_mark);
-      }
+      return _results;
     };
 
     Validator.prototype.validate_root_schemas = function(schemas) {
@@ -13938,7 +13940,7 @@ function decode(str) {
       var plainParameters, temp, trait, traitName;
       traitName = this.key_or_value(useKey);
       if (!(trait = this.get_trait(traitName))) {
-        throw new exports.TraitError('while aplying trait', null, "there is no trait named " + traitName, useKey.start_mark);
+        throw new exports.TraitError('while applying trait', null, "there is no trait named " + traitName, useKey.start_mark);
       }
       plainParameters = this.get_parameters_from_is_key(resourceUri, method[0].value, useKey);
       temp = trait.cloneForTrait();
@@ -13957,7 +13959,7 @@ function decode(str) {
       _results = [];
       for (parameterName in parameters) {
         if (!usedParameters[parameterName]) {
-          throw new exports.ParameterError('while aplying parameters', null, "unused parameter: " + parameterName, useKey.start_mark);
+          throw new exports.ParameterError('while applying parameters', null, "unused parameter: " + parameterName, useKey.start_mark);
         } else {
           _results.push(void 0);
         }
@@ -13978,7 +13980,7 @@ function decode(str) {
             parameterName = parameter != null ? (_ref2 = parameter.trim()) != null ? _ref2.replace(/[<>]+/g, '').trim() : void 0 : void 0;
             _ref3 = parameterName.split(/\s*\|\s*/), parameterName = _ref3[0], method = _ref3[1];
             if (!(parameterName in parameters)) {
-              throw new exports.ParameterError('while aplying parameters', null, "value was not provided for parameter: " + parameterName, useKey.start_mark);
+              throw new exports.ParameterError('while applying parameters', null, "value was not provided for parameter: " + parameterName, useKey.start_mark);
             }
             value = parameters[parameterName];
             usedParameters[parameterName] = true;
@@ -14024,10 +14026,10 @@ function decode(str) {
       parameters[0][1].value.forEach(function(parameter) {
         var _ref2;
         if (!util.isScalar(parameter[1])) {
-          throw new exports.TraitError('while aplying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
+          throw new exports.TraitError('while applying parameters', null, 'parameter value is not a scalar', parameter[1].start_mark);
         }
         if ((_ref2 = parameter[1].value) === "methodName" || _ref2 === "resourcePath" || _ref2 === "resourcePathName") {
-          throw new exports.TraitError('while aplying parameters', null, 'invalid parameter name "methodName", "resourcePath" are reserved parameter names "resourcePathName"', parameter[1].start_mark);
+          throw new exports.TraitError('while applying parameters', null, 'invalid parameter name "methodName", "resourcePath" are reserved parameter names "resourcePathName"', parameter[1].start_mark);
         }
         return result[parameter[0].value] = parameter[1].value;
       });
@@ -16780,14 +16782,13 @@ exports.format = function(f) {
 
 },{"events":36}],40:[function(require,module,exports){
 var Stream = require('stream');
-var util = require('util');
 
 var Response = module.exports = function (res) {
     this.offset = 0;
     this.readable = true;
 };
 
-util.inherits(Response, Stream);
+Response.prototype = new Stream;
 
 var capable = {
     streaming : true,
@@ -16900,12 +16901,11 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":38,"util":39}],37:[function(require,module,exports){
+},{"stream":38}],37:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream');
 var Base64 = require('Base64');
-var util = require('util');
 
 var Request = module.exports = function (xhr, params) {
     var self = this;
@@ -16958,7 +16958,7 @@ var Request = module.exports = function (xhr, params) {
     };
 };
 
-util.inherits(Request, Stream);
+Request.prototype = new Stream;
 
 Request.prototype.setHeader = function (key, value) {
     if (isArray(value)) {
@@ -17034,11 +17034,11 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":40,"Base64":42,"concat-stream":41,"stream":38,"util":39}],42:[function(require,module,exports){
+},{"./response":40,"Base64":42,"concat-stream":41,"stream":38}],42:[function(require,module,exports){
 ;(function () {
 
   var
-    object = typeof exports != 'undefined' ? exports : this, // #8: web workers
+    object = typeof exports != 'undefined' ? exports : window,
     chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
     INVALID_CHARACTER_ERR = (function () {
       // fabricate a suitable error object
@@ -17214,11 +17214,6 @@ function get_length(targets) {
   return size
 }
 
-},{}],50:[function(require,module,exports){
-module.exports = function(size) {
-  return new Uint8Array(size)
-}
-
 },{}],49:[function(require,module,exports){
 module.exports = copy
 
@@ -17271,6 +17266,11 @@ function slow_copy(from, to, j, i, jend) {
   for(; i < iend; ++i, ++x) {
     to[j++] = tmp[x]
   }
+}
+
+},{}],50:[function(require,module,exports){
+module.exports = function(size) {
+  return new Uint8Array(size)
 }
 
 },{}],51:[function(require,module,exports){
@@ -17731,5 +17731,5 @@ function reduced(list) {
   return out
 }
 
-},{}]},{},[10,12,15,1,16,2,17,13,19,11,26,18,21,24,20,25,3,23,27,28,4,22,6])
+},{}]},{},[10,12,15,1,2,16,17,13,20,26,11,18,21,24,19,25,3,27,23,28,4,22,6])
 ;
