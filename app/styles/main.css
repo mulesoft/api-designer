@@ -202,45 +202,39 @@ div[role=actions] div[role=new-button]:hover {
 
 /* Preview - Console */
 
-div[role=preview] {
-  width: 40%;
+div[role=preview-wrapper] {
   float: left;
-  padding: 0;
+  width: 40%;
+  height: 100%;
+  padding: 10px;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
-  height: 100%;
   overflow: hidden;
   background: rgb(230,231,235);
 }
 
-div[role=preview] > header > h2 {
-  height: auto;
-  padding: 0 0 10px 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
-  font-size: 20px;
-  margin: 0;
-  font-weight: normal;
+div[role=preview] {
+  position: relative;
+  height: 100%;
 }
 
-div[role=preview] > div[role=title] {
-  height: 40px;
+div[role=preview] div[role=title] {
   font-size: 18px;
-  line-height: 40px;
   color: rgb(36,39,42);
-  padding-left: 17px;
   overflow: hidden;
+  padding-bottom: 10px;
 }
 
-div[role=preview] > div[role=console] {
-  padding-top: 10px;
-  padding-left: 12px;
-  padding-right: 13px;
+div[role=preview] div[role=console] {
   overflow-y: scroll;
   overflow-x: hidden;
-  height: 90%;
+  height: calc(100% - 70px);
 }
 
-
+div[role=preview] div[role=logo] {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  height: 31px;
+}
