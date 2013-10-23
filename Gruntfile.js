@@ -41,6 +41,10 @@ module.exports = function (grunt) {
           '{.tmp,<%= yeoman.app %>}/vendor/scripts/{,*/}*.js',
           '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
         ]
+      },
+      less: {
+        files: '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.less',
+        tasks: 'less'
       }
     },
     connect: {
@@ -232,6 +236,15 @@ module.exports = function (grunt) {
         src: 'app/views/**/*.html',
         dest: 'dist/templates.js'
       }
+    },
+    less: {
+      files: {
+        expand: true,
+        flatten: true,
+        src: 'app/styles/less/*.less',
+        dest: 'app/styles/css',
+        ext: '.css'
+      }
     }
   });
 
@@ -264,6 +277,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'clean:dist',
     'jshint',
+    'less',
     'useminPrepare',
     'ngtemplates',
     'concat',
