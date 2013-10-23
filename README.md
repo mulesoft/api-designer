@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/mulesoft/api-designer.png)](https://travis-ci.org/mulesoft/api-designer)
 
-This is a standalone/embeddable editor for RAML (Restful Api Modeling language) written in JavaScript.
+This is a standalone/embeddable editor for [RAML](http://raml.org) (Restful Api Modeling language) written in JavaScript.
 
 ## Build and Run
 
@@ -29,5 +29,9 @@ grunt test
 
 Build the application
 ```
-grunt build
+grunt
 ```
+
+## License
+
+Copyright 2013 MuleSoft, Inc. Licensed under the Common Public Attribution License (CPAL), Version 1.0
