@@ -23,7 +23,7 @@ angular.module('utils', [])
       return new Date().getTime();
     });
   })
-  .factory('throttle', function (getTime) {
+  .factory('throttle', function (getTime, $timeout) {
     function throttle(func, wait, options) {
       var context, args, result;
       var timeout = null;
@@ -43,12 +43,12 @@ angular.module('utils', [])
         context = this;
         args = arguments;
         if (remaining <= 0) {
-          clearTimeout(timeout);
+          $timeout.cancel(timeout);
           timeout = null;
           previous = now;
           result = func.apply(context, args);
         } else if (!timeout && options.trailing !== false) {
-          timeout = setTimeout(later, remaining);
+          timeout = $timeout(later, remaining);
         }
         return result;
       };
