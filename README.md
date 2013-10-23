@@ -1,6 +1,6 @@
 # RAML Editor
 
-[![Build Status](https://travis-ci.org/mulesot/api-designer.png)](https://travis-ci.org/mulesoft/api-designer)
+[![Build Status](https://travis-ci.org/mulesoft/api-designer.png)](https://travis-ci.org/mulesoft/api-designer)
 
 This is a standalone/embeddable editor for RAML (Restful Api Modeling language) written in JavaScript.
 
