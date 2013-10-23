@@ -1,68 +1,132 @@
-/* Console overrides */
-
-section[role=api-operation-list] {
-  padding: 0px;
-  margin-bottom: 7px;
+div[role=console] div.accordion-body {
+  font-size: 12px;
 }
 
-section[role=api-operation-details-section-parameters] {
-  padding-bottom: 0px;
+div[role=console] div[role=resourceSummary] {
+  font-size: 12px;
+  padding: 7px 12px;
 }
 
-section[role=api-operation-details-section-parameters] > section[role=parameter-list] > table {
-  margin-bottom: 0px;
+div[role=console] div[role=resourceSummary] h2 {
+  font-size: 12px;
+  margin-bottom: 4px;
 }
 
-section[role=api-operation-details-section-parameters] > section[role=parameter-list] > header > h1 {
+div[role=console] div[role=methodSummary] {
+  padding: 6px 8px;
+  min-height: 24px;
+  line-height: 24px;
+}
+
+div[role=console] div[role=methodSummary] > i {
+  font-size: 12px;
+  margin-right: 0px;
+  line-height: 12px;
+  width: 8px;
+}
+
+div[role=console] div[role=methodSummary] span[role=verb] {
+  font-style: normal;
+  font-size: 12px;
+  margin-right: 2px;
+}
+
+div[role=console] ul[role=methods] li {
+  padding: 1px 8px;
+  font-size: 11px;
+}
+
+div[role=console] .byline span[role=resourceType] {
+  text-transform: none;
+}
+
+div[role=console] span[role=segment] input[type=text] {
+  font-size: 12px;
+  padding: 1px 3px;
+}
+
+div[role=console] section[role=documentation] {
+  padding: 12px 10px;
+}
+
+div[role=console] div[role=resource] {
+  margin-bottom: 5px;
+  background-color: white;
+}
+
+div[role=console] .accordion[role=resources] {
+  background-color: transparent;
+}
+
+div[role=console] div.tab-pane {
+  padding: 15px 15px;
+}
+
+div[role=console] article #api-reference h4, raml-console article #api-reference legend {
+  font-size: 15px;
+  margin-bottom: 8px;
+  margin-top: 5px !important;
+}
+
+div[role=console] article #api-reference h4 i {
+  line-height: 19px;
+}
+
+div[role=console] article #api-reference h5 {
+  margin-top: 4px !important;
   font-size: 14px;
 }
 
-section[role=api-operation-details-section-request] > section[role=codes-list] > header > h1 {
-  font-size: 14px;
+div[role=console] article #api-reference h4 {
+  margin-top: 5px;
 }
 
-section[role=api-operation-details-section-request] {
-  padding-bottom: 0px;
+div[role=console] code[role=display-name] {
+  font-size: 13px;
 }
 
-section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li,
-section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li {
-  padding: 4px 12px;
+div[role=console] [role="parameter"] .constraints {
+  font-size: 12px;
 }
 
-section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:before,
-section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:before {
-  bottom: -17px;
+div[role=console] [role=try-it] {
+  font-size: 12px;
 }
 
-section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active:after,
-section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] > li.active:after {
-  bottom: -17px;
+div[role=console] section[role=response] p {
+  font-size: 13px;
 }
 
-section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > a:after,
-section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > span:after,
-section[role=api-operation].active > header > div[role=summary] > ul[role=operations] > li.active > p:after {
-  bottom: -17px;
+div[role=console] > raml-console > article {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-section[role=api-operation].active > header > div[role=summary] > ul[role=operations],
-section[role=api-operation].active:hover > header > div[role=summary] > ul[role=operations] {
-  margin-top: 42px;
+div[role=console] > raml-console > article > #api-title {
+  font-size: 19px;
+  margin: 0;
+  margin-bottom: 20px;
+  padding: 0;
 }
 
-section[role=api-operation].active > header > div[role=summary] > ul[role=traits],
-section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] {
-  /*display: block;*/
+div[role=console] > raml-console > article > #content {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
-section[role=api-operation].active > header > div[role=summary] > ul[role=traits] > li,
-section[role=api-operation].active:hover > header > div[role=summary] > ul[role=traits] > li {
-  color: #555;
+div[role=console] .labelled-inline .control-group label {
+  text-transform: none;
+  font-size: 12px;
 }
 
-section[role=api-operation-details-section-response] > section[role=codes-list] > table > tbody > tr > td > pre,
-section[role=api-operation-details-section-request] > section[role=codes-list] > table > tbody > tr > td > pre {
-  width: 100%;
-  padding: 3px 0px;
+div[role=console] section.parameterTable {
+  margin-bottom: 15px;
+}
+
+div[role=console] section.parameterTable h4 {
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 4px;
+  margin-bottom: 10px !important;
 }

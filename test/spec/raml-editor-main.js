@@ -535,22 +535,4 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('applySuggestion', function () {
-    it('should insert snippet at right place when cursor is in one-key mapping', function () {
-      var editor = getEditor(
-        [
-          'traits:',           //
-          '  - hola:',         //
-          '      displayName:' // <--
-        ].join('\n'),
-        {
-          line: 2,
-          ch: -1
-        }
-      );
-
-      applySuggestion(editor, {name: 'description'});
-      editor.replaceRangeArguments[0].should.be.equal('      description:\n');
-    });
-  });
 });

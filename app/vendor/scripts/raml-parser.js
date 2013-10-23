@@ -8356,107 +8356,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1}],26:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, url, util, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  url = require('url');
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  util = require('./util');
-
-  /*
-  The Protocols throws these.
-  */
-
-
-  this.ProtocolError = (function(_super) {
-    __extends(ProtocolError, _super);
-
-    function ProtocolError() {
-      _ref = ProtocolError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return ProtocolError;
-
-  })(MarkedYAMLError);
-
-  /*
-  The Protocols class deals with applying protocols to methods according to the spec
-  */
-
-
-  this.Protocols = (function() {
-    function Protocols() {
-      this.apply_protocols = __bind(this.apply_protocols, this);
-    }
-
-    Protocols.prototype.apply_protocols = function(node) {
-      var protocols;
-      if (protocols = this.apply_protocols_to_root(node)) {
-        return this.apply_protocols_to_resources(node, protocols);
-      }
-    };
-
-    Protocols.prototype.apply_protocols_to_root = function(node) {
-      var baseUri, parsedBaseUri, protocol, protocols;
-      if (this.has_property(node, 'protocols')) {
-        return this.get_property(node, 'protocols');
-      }
-      if (!(baseUri = this.property_value(node, /^baseUri$/))) {
-        return;
-      }
-      parsedBaseUri = url.parse(baseUri);
-      protocol = (parsedBaseUri.protocol || 'http:').slice(0, -1).toUpperCase();
-      protocols = [new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', node.start_mark, node.end_mark), new nodes.SequenceNode('tag:yaml.org,2002:seq', [new nodes.ScalarNode('tag:yaml.org,2002:str', protocol, node.start_mark, node.end_mark)], node.start_mark, node.end_mark)];
-      node.value.push(protocols);
-      return protocols[1];
-    };
-
-    Protocols.prototype.apply_protocols_to_resources = function(node, protocols) {
-      var resource, _i, _len, _ref1, _results;
-      _ref1 = this.child_resources(node);
-      _results = [];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        resource = _ref1[_i];
-        this.apply_protocols_to_resources(resource, protocols);
-        _results.push(this.apply_protocols_to_methods(resource, protocols));
-      }
-      return _results;
-    };
-
-    Protocols.prototype.apply_protocols_to_methods = function(node, protocols) {
-      var method, _i, _len, _ref1, _results;
-      _ref1 = this.child_methods(node[1]);
-      _results = [];
-      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-        method = _ref1[_i];
-        if (!this.has_property(method[1], 'protocols')) {
-          if (!util.isMapping(method[1])) {
-            method[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], method[1].start_mark, method[1].end_mark);
-          }
-          _results.push(method[1].value.push([new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', method[0].start_mark, method[0].end_mark), protocols.clone()]));
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-
-    return Protocols;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":13,"./util":4,"url":7}],20:[function(require,module,exports){
+},{"./errors":1}],20:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, tokens, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9067,7 +8967,107 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./events":2,"./tokens":3}],18:[function(require,module,exports){
+},{"./errors":1,"./events":2,"./tokens":3}],26:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, url, util, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  url = require('url');
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  util = require('./util');
+
+  /*
+  The Protocols throws these.
+  */
+
+
+  this.ProtocolError = (function(_super) {
+    __extends(ProtocolError, _super);
+
+    function ProtocolError() {
+      _ref = ProtocolError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return ProtocolError;
+
+  })(MarkedYAMLError);
+
+  /*
+  The Protocols class deals with applying protocols to methods according to the spec
+  */
+
+
+  this.Protocols = (function() {
+    function Protocols() {
+      this.apply_protocols = __bind(this.apply_protocols, this);
+    }
+
+    Protocols.prototype.apply_protocols = function(node) {
+      var protocols;
+      if (protocols = this.apply_protocols_to_root(node)) {
+        return this.apply_protocols_to_resources(node, protocols);
+      }
+    };
+
+    Protocols.prototype.apply_protocols_to_root = function(node) {
+      var baseUri, parsedBaseUri, protocol, protocols;
+      if (this.has_property(node, 'protocols')) {
+        return this.get_property(node, 'protocols');
+      }
+      if (!(baseUri = this.property_value(node, /^baseUri$/))) {
+        return;
+      }
+      parsedBaseUri = url.parse(baseUri);
+      protocol = (parsedBaseUri.protocol || 'http:').slice(0, -1).toUpperCase();
+      protocols = [new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', node.start_mark, node.end_mark), new nodes.SequenceNode('tag:yaml.org,2002:seq', [new nodes.ScalarNode('tag:yaml.org,2002:str', protocol, node.start_mark, node.end_mark)], node.start_mark, node.end_mark)];
+      node.value.push(protocols);
+      return protocols[1];
+    };
+
+    Protocols.prototype.apply_protocols_to_resources = function(node, protocols) {
+      var resource, _i, _len, _ref1, _results;
+      _ref1 = this.child_resources(node);
+      _results = [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        resource = _ref1[_i];
+        this.apply_protocols_to_resources(resource, protocols);
+        _results.push(this.apply_protocols_to_methods(resource, protocols));
+      }
+      return _results;
+    };
+
+    Protocols.prototype.apply_protocols_to_methods = function(node, protocols) {
+      var method, _i, _len, _ref1, _results;
+      _ref1 = this.child_methods(node[1]);
+      _results = [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        method = _ref1[_i];
+        if (!this.has_property(method[1], 'protocols')) {
+          if (!util.isMapping(method[1])) {
+            method[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], method[1].start_mark, method[1].end_mark);
+          }
+          _results.push(method[1].value.push([new nodes.ScalarNode('tag:yaml.org,2002:str', 'protocols', method[0].start_mark, method[0].end_mark), protocols.clone()]));
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    return Protocols;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":13,"./util":4,"url":7}],18:[function(require,module,exports){
 (function() {
   var Mark, YAMLError, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -16782,13 +16782,14 @@ exports.format = function(f) {
 
 },{"events":36}],40:[function(require,module,exports){
 var Stream = require('stream');
+var util = require('util');
 
 var Response = module.exports = function (res) {
     this.offset = 0;
     this.readable = true;
 };
 
-Response.prototype = new Stream;
+util.inherits(Response, Stream);
 
 var capable = {
     streaming : true,
@@ -16901,11 +16902,12 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":38}],37:[function(require,module,exports){
+},{"stream":38,"util":39}],37:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream');
 var Base64 = require('Base64');
+var util = require('util');
 
 var Request = module.exports = function (xhr, params) {
     var self = this;
@@ -16958,7 +16960,7 @@ var Request = module.exports = function (xhr, params) {
     };
 };
 
-Request.prototype = new Stream;
+util.inherits(Request, Stream);
 
 Request.prototype.setHeader = function (key, value) {
     if (isArray(value)) {
@@ -17034,11 +17036,11 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":40,"Base64":42,"concat-stream":41,"stream":38}],42:[function(require,module,exports){
+},{"./response":40,"Base64":42,"concat-stream":41,"stream":38,"util":39}],42:[function(require,module,exports){
 ;(function () {
 
   var
-    object = typeof exports != 'undefined' ? exports : window,
+    object = typeof exports != 'undefined' ? exports : this, // #8: web workers
     chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
     INVALID_CHARACTER_ERR = (function () {
       // fabricate a suitable error object
@@ -17570,7 +17572,82 @@ function to_base64(buf) {
 }
 
 
-},{"base64-js":54,"to-utf8":55}],54:[function(require,module,exports){
+},{"base64-js":54,"to-utf8":55}],55:[function(require,module,exports){
+module.exports = to_utf8
+
+var out = []
+  , col = []
+  , fcc = String.fromCharCode
+  , mask = [0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]
+  , unmask = [
+      0x00
+    , 0x01
+    , 0x02 | 0x01
+    , 0x04 | 0x02 | 0x01
+    , 0x08 | 0x04 | 0x02 | 0x01
+    , 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+    , 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+    , 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
+  ]
+
+function to_utf8(bytes, start, end) {
+  start = start === undefined ? 0 : start
+  end = end === undefined ? bytes.length : end
+
+  var idx = 0
+    , hi = 0x80
+    , collecting = 0
+    , pos
+    , by
+
+  col.length =
+  out.length = 0
+
+  while(idx < bytes.length) {
+    by = bytes[idx]
+    if(!collecting && by & hi) {
+      pos = find_pad_position(by)
+      collecting += pos
+      if(pos < 8) {
+        col[col.length] = by & unmask[6 - pos]
+      }
+    } else if(collecting) {
+      col[col.length] = by & unmask[6]
+      --collecting
+      if(!collecting && col.length) {
+        out[out.length] = fcc(reduced(col, pos))
+        col.length = 0
+      }
+    } else { 
+      out[out.length] = fcc(by)
+    }
+    ++idx
+  }
+  if(col.length && !collecting) {
+    out[out.length] = fcc(reduced(col, pos))
+    col.length = 0
+  }
+  return out.join('')
+}
+
+function find_pad_position(byt) {
+  for(var i = 0; i < 7; ++i) {
+    if(!(byt & mask[i])) {
+      break
+    }
+  }
+  return i
+}
+
+function reduced(list) {
+  var out = 0
+  for(var i = 0, len = list.length; i < len; ++i) {
+    out |= list[i] << ((len - i - 1) * 6)
+  }
+  return out
+}
+
+},{}],54:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -17656,80 +17733,5 @@ function to_base64(buf) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}],55:[function(require,module,exports){
-module.exports = to_utf8
-
-var out = []
-  , col = []
-  , fcc = String.fromCharCode
-  , mask = [0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01]
-  , unmask = [
-      0x00
-    , 0x01
-    , 0x02 | 0x01
-    , 0x04 | 0x02 | 0x01
-    , 0x08 | 0x04 | 0x02 | 0x01
-    , 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-    , 0x40 | 0x20 | 0x10 | 0x08 | 0x04 | 0x02 | 0x01
-  ]
-
-function to_utf8(bytes, start, end) {
-  start = start === undefined ? 0 : start
-  end = end === undefined ? bytes.length : end
-
-  var idx = 0
-    , hi = 0x80
-    , collecting = 0
-    , pos
-    , by
-
-  col.length =
-  out.length = 0
-
-  while(idx < bytes.length) {
-    by = bytes[idx]
-    if(!collecting && by & hi) {
-      pos = find_pad_position(by)
-      collecting += pos
-      if(pos < 8) {
-        col[col.length] = by & unmask[6 - pos]
-      }
-    } else if(collecting) {
-      col[col.length] = by & unmask[6]
-      --collecting
-      if(!collecting && col.length) {
-        out[out.length] = fcc(reduced(col, pos))
-        col.length = 0
-      }
-    } else { 
-      out[out.length] = fcc(by)
-    }
-    ++idx
-  }
-  if(col.length && !collecting) {
-    out[out.length] = fcc(reduced(col, pos))
-    col.length = 0
-  }
-  return out.join('')
-}
-
-function find_pad_position(byt) {
-  for(var i = 0; i < 7; ++i) {
-    if(!(byt & mask[i])) {
-      break
-    }
-  }
-  return i
-}
-
-function reduced(list) {
-  var out = 0
-  for(var i = 0, len = list.length; i < len; ++i) {
-    out |= list[i] << ((len - i - 1) * 6)
-  }
-  return out
-}
-
-},{}]},{},[10,12,15,1,2,16,17,13,20,26,11,18,21,24,19,25,3,27,23,28,4,22,6])
+},{}]},{},[10,12,15,1,2,16,17,13,20,26,11,18,21,24,19,25,27,3,23,28,4,22,6])
 ;

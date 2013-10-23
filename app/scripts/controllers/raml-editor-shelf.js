@@ -6,9 +6,16 @@ angular.module('ramlEditorApp')
       var cursor = editor.getCursor();
       var code = ramlSnippets.getSnippet(suggestion);
       var line = editor.getLine(cursor.line);
-      var padding = generateTabs(getLineIndent(line).tabCount);
+      var ch = cursor.ch;
+      var padding;
       var rangeLine = cursor.line;
       var rangeEndChar = 0;
+
+      if (line.trim() === '') {
+        padding = generateTabs(getLineIndent(line.slice(0, ch + 1)).tabCount);
+      } else {
+        padding = generateTabs(getLineIndent(line).tabCount);
+      }
 
       if (code) {
         code = code.replace(/\{\{padding\}\}/g, padding);
