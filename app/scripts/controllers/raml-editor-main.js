@@ -139,7 +139,7 @@ angular.module('ramlEditorApp')
         editor.setValue($scope.file.contents);
         editor.setCursor({line: 1, ch: 0});
 
-        clearTimeout(saveTimer);
+        $timeout.cancel(saveTimer);
       }
     };
 
@@ -214,9 +214,9 @@ angular.module('ramlEditorApp')
 
       editor.on('change', function () {
         if (currentUpdateTimer) {
-          clearTimeout(currentUpdateTimer);
+          $timeout.cancel(currentUpdateTimer);
         }
-        currentUpdateTimer = setTimeout(function () {
+        currentUpdateTimer = $timeout(function () {
           $scope.sourceUpdated();
           currentUpdateTimer = undefined;
         }, UPDATE_RESPONSIVENESS_INTERVAL);
@@ -253,9 +253,9 @@ angular.module('ramlEditorApp')
       ramlRepository.saveFile($scope.file, function () {
         safeApply($scope);
         if (saveTimer) {
-          clearTimeout(saveTimer);
+          $timeout.cancel(saveTimer);
         }
-        saveTimer = setTimeout($scope.save, AUTOSAVE_INTERVAL);
+        saveTimer = $timeout($scope.save, AUTOSAVE_INTERVAL);
       });
     };
   });

@@ -2,7 +2,7 @@
 
 angular.module('raml')
   .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
-  .factory('mockFileSystem', function (LOCAL_PERSISTENCE_KEY) {
+  .factory('mockFileSystem', function (LOCAL_PERSISTENCE_KEY, $timeout) {
     var service = {};
     var files = [];
     var delay = 500;
@@ -24,7 +24,7 @@ angular.module('raml')
           return f.name;
         });
 
-      setTimeout(function () {
+      $timeout(function () {
         if (path === 'error') {
           errorCallback('Error reading files');
         } else {
@@ -42,7 +42,7 @@ angular.module('raml')
           return f.contents;
         });
 
-      setTimeout(function () {
+      $timeout(function () {
         if (name === 'error') {
           errorCallback('Error reading file');
         } else {
@@ -57,7 +57,7 @@ angular.module('raml')
           return f.path === path && f.name === name;
         });
 
-      setTimeout(function () {
+      $timeout(function () {
         var removed = entries[0];
         if (name === 'error') {
           errorCallback('Error reading file');
@@ -76,7 +76,7 @@ angular.module('raml')
           return f.path === path && f.name === name;
         });
 
-      setTimeout(function () {
+      $timeout(function () {
         var found = entries[0];
         if (name === 'error') {
           errorCallback('Error reading file');
