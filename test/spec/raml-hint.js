@@ -268,6 +268,40 @@ describe('RAML Hint Service', function () {
         newAlternatives.keys.should.not.include('title');
         newAlternatives.keys.length.should.be.equal(3);
       });
+      
+      it('should provide options on spaces only line depending where the cursor is', function () {
+        var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
+        var suggestRAMLStub = sinon.stub(ramlHint, 'suggestRAML');
+        suggestRAMLStub.withArgs([]).returns(alternatives);
+        suggestRAMLStub.withArgs(['/hello']).returns({suggestions: {x: {}, y: {}, z:{}}, category: 'y'});
+        var editor = getEditor(
+          'title: hello\n' +
+          '/hello:\n' +
+          '         ',
+          {line: 2, ch: 0});
+
+        var newAlternatives = ramlHint.getAlternatives(editor);
+        
+        should.not.exist(newAlternatives.values.title);
+        newAlternatives.keys.should.be.deep.equal(['a', 'b', 'c']);
+        
+        suggestRAMLStub.firstCall.calledWith([]).should.be.equal(true);
+
+        editor.setCursor(2, 2);
+
+        newAlternatives = ramlHint.getAlternatives(editor);
+        newAlternatives.keys.should.be.deep.equal(['x', 'y', 'z']);
+
+        suggestRAMLStub.secondCall.calledWith(['/hello']).should.be.equal(true);
+        
+        editor.setCursor(2, 4);
+        
+        newAlternatives = ramlHint.getAlternatives(editor);
+        newAlternatives.keys.should.be.deep.equal([]);
+        
+        ramlHint.suggestRAML.restore();
+
+      });
 
       it('should return empty list when using empty alternatives', function () {
         var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
@@ -625,7 +659,7 @@ describe('RAML Hint Service', function () {
         ].join('\n'),
         {
           line: 1,
-          ch: 0
+          ch: 2
         }
       );
 
@@ -666,7 +700,7 @@ describe('RAML Hint Service', function () {
         ].join('\n'),
         {
           line: 3,
-          ch: 0
+          ch: 2
         }
       );
 
