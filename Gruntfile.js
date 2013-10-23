@@ -193,7 +193,7 @@ module.exports = function (grunt) {
             'bower_components/angular/angular.js',
             'bower_components/angular/angular-resource.js',
             'bower_components/angular/angular-sanitize.js',
-            'bower_components/raml-parser/dist/raml-parser.js'
+            'bower_components/raml-js-parser/dist/raml-parser.js'
           ]
         }]
       }
