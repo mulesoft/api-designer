@@ -213,13 +213,17 @@ angular.module('ramlEditorApp')
       editor = codeMirror.initEditor();
 
       editor.on('change', function () {
+        config.loadFromLocalStorage();
+        var updateResponsivenessInterval = config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL);
+
         if (currentUpdateTimer) {
           $timeout.cancel(currentUpdateTimer);
         }
+        
         currentUpdateTimer = $timeout(function () {
           $scope.sourceUpdated();
           currentUpdateTimer = undefined;
-        }, UPDATE_RESPONSIVENESS_INTERVAL);
+        }, updateResponsivenessInterval);
       });
 
       editor.on('change', function (cm) {

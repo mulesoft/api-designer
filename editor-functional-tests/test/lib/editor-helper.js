@@ -14,7 +14,7 @@ EditorHelper.prototype.getErrorLineMessage = function () {
     this.ptor.wait(function() {
         return that.ptor.driver.isElementPresent(protractor.By.css('.CodeMirror-lint-marker-error')); 
     }).then(function () {
-        that.driver.executeScript(function () {
+        that.ptor.executeScript(function () {
             var querySelectorMarkerError = document.querySelector(".CodeMirror-lint-marker-error");
             return [
                 querySelectorMarkerError.getAttribute("data-marker-line"),
@@ -50,15 +50,17 @@ EditorHelper.prototype.getErrorLine = function (){
 }
 
 EditorHelper.prototype.setLine = function (line, text) {
-    return this.driver.executeScript('window.editor.setLine('+line+',"'+text+'")');
+    return this.ptor.executeScript('window.editor.setLine('+line+',"'+text+'")');
 };
 
 EditorHelper.prototype.getLine = function (line) {
-    return this.driver.executeScript('return window.editor.getLine('+line+')');
+    return this.ptor.executeScript('return window.editor.getLine('+line+')').then(function (text) {
+        return text;      
+    });
 };
 
 EditorHelper.prototype.setValue = function (text) {
-    return this.driver.executeScript('window.editor.setValue("'+text+'")');
+    return this.ptor.executeScript('window.editor.setValue("'+text+'")');
 }; 
 
 exports.EditorHelper = EditorHelper;

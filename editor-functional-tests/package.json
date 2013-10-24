@@ -2,17 +2,15 @@
   "name": "editor-functional-tests",
   "version": "0.0.1",
   "dependencies": {
-     "selenium-webdriver": ">=2.35.0",
-     "minijasminenode": "~0.2.4"
-    },
+    "selenium-webdriver": ">=2.35.0"
+  },
   "devDependencies": {
-    "protractor": ">=0.9.0",
+    "protractor": ">=0.10.0",
     "selenium-webdriver": ">=2.35.1",
     "webdriverjs": ">=0.7.13",
     "mocha": ">=1.9.0",
     "jasmine-node": ">=1.9.0",
     "expect.js": ">=0.2.0",
-    "util":">=0.4.9",
     "phantomjs": ">=1.9.2-1"
   },
   "engines": {
