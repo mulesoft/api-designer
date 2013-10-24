@@ -1,6 +1,7 @@
-var util = require('util');
+'use strict';
+
 var expect = require('expect.js');
-var protractor = require('../../node_modules/protractor/lib/protractor.js');
+var protractor = require('protractor');
 var webdriver = require('selenium-webdriver');
 var EditorHelper = require('../lib/editor-helper.js').EditorHelper;
 var j0hnQa = 'https://j0hnqa.mulesoft.org/';
@@ -8,23 +9,17 @@ var ramlUrl = require('../config').url;
 
 
 describe('RAMLeditor - Parser errors validation',function(){
-    this.timeout(80000);
     var driver, ptor, editorHelper;
-  
+
     before(function(){
-        driver = new webdriver.Builder().usingServer('http://localhost:4444/wd/hub').withCapabilities(webdriver.Capabilities.chrome()).build();
-        // driver = new webdriver.Builder().usingServer('http://localhost:4444/wd/hub').withCapabilities(webdriver.Capabilities.phantomjs()).build();
-        driver.manage().timeouts().setScriptTimeout(80000);
-        ptor = protractor.wrapDriver(driver);
+        ptor = this.ptor;
+        driver = ptor.driver;
+        ptor.driver.manage().timeouts().setScriptTimeout(80000);
         editorHelper = new EditorHelper(ptor, driver);
      });
 
-    after(function(done){      
-        driver.quit().then(function(){done()});   
-    });
-    
     beforeEach(function(){
-        ptor.get(ramlUrl);  
+        ptor.get(ramlUrl);
         ptor.executeScript(function () {
             localStorage['config.updateResponsivenessInterval'] = 1;
         });
@@ -41,13 +36,13 @@ describe('RAMLeditor - Parser errors validation',function(){
             editorHelper.setValue(definition);
             editorHelper.getErrorLineMessage().then(function (list){
                     var line = list[0], message = list[1];
-                    expect(message).to.eql("detected circular !include of example.raml");
-                    expect(line).to.eql("3");
-                    done(); 
-            });            
+                    expect(message).to.eql('detected circular !include of example.raml');
+                    expect(line).to.eql('3');
+                    done();
+            });
         });
 
-        it('should fail: file name/URL cannot be null', function(done) {            
+        it('should fail: file name/URL cannot be null', function(done) {
             var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -56,9 +51,9 @@ describe('RAMLeditor - Parser errors validation',function(){
             editorHelper.setValue(definition);
             editorHelper.getErrorLineMessage().then(function (list){
                     var line = list[0], message = list[1];
-                    expect(message).to.eql("file name/URL cannot be null");
-                    expect(line).to.eql("3");
-                    done(); 
+                    expect(message).to.eql('file name/URL cannot be null');
+                    expect(line).to.eql('3');
+                    done();
             });
         });
 
@@ -70,31 +65,31 @@ describe('RAMLeditor - Parser errors validation',function(){
             ].join('\\n');
             editorHelper.setValue(definition);
             editorHelper.getErrorLineMessage().then(function (list){
-                var line = list[0], message = list[1];                
+                var line = list[0], message = list[1];
                 expect(message).to.match(/cannot fetch http:\/\/some.broken.link.com ([^)]+)/);
-                expect(line).to.eql("3");
-                done(); 
+                expect(line).to.eql('3');
+                done();
             });
         });
 
     }); //include
-  
-    describe('Editor Error validation', function() {      
-                                                                
+
+    describe('Editor Error validation', function() {
+
             describe('Root Section', function(){
-            
+
                 it('should fail: unsupported raml version #%RAML 0.1', function(done) {
                     var definition = [
-                        '#%RAML 0.1'       
-                    ].join('\\n');                  
+                        '#%RAML 0.1'
+                    ].join('\\n');
                     editorHelper.setValue(definition);
                     editorHelper.getErrorLineMessage().then(function (list){
                         var line = list[0], message = list[1];
-                        expect(message).to.eql("Unsupported RAML version: '#%RAML 0.1'");
-                        expect(line).to.eql("1");
-                        done(); 
-                    });                  
-                });                 
+                        expect(message).to.eql('Unsupported RAML version: \'#%RAML 0.1\'');
+                        expect(line).to.eql('1');
+                        done();
+                    });
+                });
 
                 it('should fail: document must be a map---', function(done) {
                     var definition = [
@@ -104,10 +99,10 @@ describe('RAMLeditor - Parser errors validation',function(){
                     editorHelper.setValue(definition);
                     editorHelper.getErrorLineMessage().then(function (list){
                         var line = list[0], message = list[1];
-                        expect(message).to.eql("document must be a map");
-                        expect(line).to.eql("2");
-                        done();                         
-                    });         
+                        expect(message).to.eql('document must be a map');
+                        expect(line).to.eql('2');
+                        done();
+                    });
                 });
 
                 it('should fail: document must be a map(titl)', function(done){
@@ -115,29 +110,29 @@ describe('RAMLeditor - Parser errors validation',function(){
                         '#%RAML 0.8',
                         '---',
                         'titl'
-                    ].join('\\n');                                              
+                    ].join('\\n');
                     editorHelper.setValue(definition);
                     editorHelper.getErrorLineMessage().then(function (list){
                         var line = list[0], message = list[1];
-                        expect(message).to.eql("document must be a map");
-                        expect(line).to.eql("3");
-                        done(); 
-                    }); 
+                        expect(message).to.eql('document must be a map');
+                        expect(line).to.eql('3');
+                        done();
+                    });
                 });
-                
+
                 it('should fail: empty document (only comments)', function(done){
                     var definition = [
                         '#%RAML 0.8',
                         '#---'
                     ].join('\\n');
-                    
-                    editorHelper.setValue(definition); 
+
+                    editorHelper.setValue(definition);
                     editorHelper.getErrorLineMessage().then(function (list){
                         var line = list[0], message = list[1];
-                        expect(message).to.eql("empty document");
-                        expect(line).to.eql("1");
-                        done(); 
-                    }); 
+                        expect(message).to.eql('empty document');
+                        expect(line).to.eql('1');
+                        done();
+                    });
                 });
 
                 it('should fail: block map end ...', function(done){
@@ -148,31 +143,31 @@ describe('RAMLeditor - Parser errors validation',function(){
                         '...',
                         'version: 1.0'
                     ].join('\\n');
-                    editorHelper.setValue(definition); 
+                    editorHelper.setValue(definition);
                     editorHelper.getErrorLineMessage().then(function (list){
                         var line = list[0], message = list[1];
-                        expect(message).to.eql("expected '<document start>', but found <block mapping end>");
-                        expect(line).to.eql("5");
-                        done(); 
-                    }); 
+                        expect(message).to.eql('expected \'<document start>\', but found <block mapping end>');
+                        expect(line).to.eql('5');
+                        done();
+                    });
                 });
 
                 describe('title',function(){
 
-                    it('should fail: root property already used title', function(done){                       
+                    it('should fail: root property already used title', function(done){
                         var definition = [
                             '#%RAML 0.8',
                             '---',
-                            'title: My API',                                                        
+                            'title: My API',
                             'title:'
                         ].join('\\n');
-                        editorHelper.setValue(definition);   
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'title'");
-                            expect(line).to.eql("4");
-                            done(); 
-                        }); 
+                            expect(message).to.eql('root property already used: \'title\'');
+                            expect(line).to.eql('4');
+                            done();
+                        });
                     });
 
                     it('should fail: missing title', function(done){
@@ -184,10 +179,10 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("missing title");
-                            expect(line).to.eql("3");
-                            done(); 
-                        }); 
+                            expect(message).to.eql('missing title');
+                            expect(line).to.eql('3');
+                            done();
+                        });
                     });
 
                 }); //Title
@@ -205,31 +200,31 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'version'");
-                            expect(line).to.eql("5");
-                            done(); 
+                            expect(message).to.eql('root property already used: \'version\'');
+                            expect(line).to.eql('5');
+                            done();
                         });
                     });
-                                      
+
                     it('should fail: missing version', function(done){
                         var definition = [
                             '#%RAML 0.8',
                             '---',
-                            'title: hola',                          
-                            'baseUri: http://server/api/{version}'                          
+                            'title: hola',
+                            'baseUri: http://server/api/{version}'
                         ].join('\\n');
 
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("missing version");
-                            expect(line).to.eql("3");
-                            done(); 
-                        });        
+                            expect(message).to.eql('missing version');
+                            expect(line).to.eql('3');
+                            done();
+                        });
                     });
 
                 }); //Version
-    
+
                 describe('baseUri',function(){
 
                     it('should fail: root property already used baseUri', function(done){
@@ -240,12 +235,12 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'baseUri: http://www.myapi.com',
                             'baseUri:'
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'baseUri'");
-                            expect(line).to.eql("5");
-                            done(); 
+                            expect(message).to.eql('root property already used: \'baseUri\'');
+                            expect(line).to.eql('5');
+                            done();
                         });
                     });
 
@@ -256,12 +251,12 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'title: My API',
                             'baseUri:'
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("baseUri must have a value");
-                            expect(line).to.eql("4");
-                            done(); 
+                            expect(message).to.eql('baseUri must have a value');
+                            expect(line).to.eql('4');
+                            done();
                         });
                     });
 
@@ -277,12 +272,12 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'baseUriParameters:',
                             'baseUriParameters:'
                         ].join('\\n');
-                        editorHelper.setValue(definition);  
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'baseUriParameters'");
-                            expect(line).to.eql("5");
-                            done(); 
+                            expect(message).to.eql('root property already used: \'baseUriParameters\'');
+                            expect(line).to.eql('5');
+                            done();
                         });
                     });
 
@@ -297,13 +292,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '  uri1: ',
                             '    require'
                         ].join('\\n');
-                        editorHelper.setValue(definition);                        
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("URI parameter must be a map");
-                            expect(line).to.eql("7");
-                            done(); 
-                        });                     
+                            expect(message).to.eql('URI parameter must be a map');
+                            expect(line).to.eql('7');
+                            done();
+                        });
                     });
 
                     it('should fail: baseUriParameter - version parameter not allowed here', function(done){
@@ -319,10 +314,10 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("version parameter not allowed here");
-                            expect(line).to.eql("7");
-                            done(); 
-                        });      
+                            expect(message).to.eql('version parameter not allowed here');
+                            expect(line).to.eql('7');
+                            done();
+                        });
                     });
 
                     it('should fail when no baseUri is defined', function(done){
@@ -332,15 +327,15 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'title: my title',
                             'baseUriParameters:',
                             '  hols:',
-                            '    displayName: hola'                         
+                            '    displayName: hola'
                         ].join('\\n');
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("uri parameters defined when there is no baseUri");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });      
+                            expect(message).to.eql('uri parameters defined when there is no baseUri');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: uri parameter unused', function(done){
@@ -350,19 +345,19 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'title: my title',
                             'baseUri: http://www.myapi.com/',
                             'baseUriParameters:',
-                            '  hola:'                       
+                            '  hola:'
                         ].join('\\n');
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("hola uri parameter unused");
-                            expect(line).to.eql("6");
-                            done(); 
-                        });      
+                            expect(message).to.eql('hola uri parameter unused');
+                            expect(line).to.eql('6');
+                            done();
+                        });
                     });
 
                 }); //baseUriParameters
-    
+
                 describe('mediaType',function(){
 
                     it('should fail: root property already used mediaType', function(done){
@@ -370,19 +365,19 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '#%RAML 0.8',
                             '---',
                             'title: My API',
-                            'mediaType: hola',                          
+                            'mediaType: hola',
                             'mediaType:'
                         ].join('\\n');
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'mediaType'");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });   
+                            expect(message).to.eql('root property already used: \'mediaType\'');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
-                }); //mediaType             
+                }); //mediaType
 
                 describe('Documentation',function(){
 
@@ -393,13 +388,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'title: My API',
                             'Documentation:'
                         ].join('\\n');
-                        editorHelper.setValue(definition);      
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("unknown property Documentation");
-                            expect(line).to.eql("4");
-                            done(); 
-                        }); 
+                            expect(message).to.eql('unknown property Documentation');
+                            expect(line).to.eql('4');
+                            done();
+                        });
                     });
 
                     it('should fail: documentation must be an array', function(done){
@@ -409,15 +404,15 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'title: My API',
                             'documentation:'
                         ].join('\\n');
-                        editorHelper.setValue(definition);    
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("documentation must be an array");
-                            expect(line).to.eql("4");
-                            done(); 
-                        }); 
+                            expect(message).to.eql('documentation must be an array');
+                            expect(line).to.eql('4');
+                            done();
+                        });
                     });
-                    
+
                     it('should fail: each documentation section must be a map', function(done){
                         var definition = [
                             '#%RAML 0.8',
@@ -426,13 +421,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'documentation:',
                             '  -'
                         ].join('\\n');
-                        editorHelper.setValue(definition);    
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("each documentation section must be a map");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });                 
+                            expect(message).to.eql('each documentation section must be a map');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: title must be a string', function(done){
@@ -446,10 +441,10 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("title must be a string");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });     
+                            expect(message).to.eql('title must be a string');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: content must be a string', function(done){
@@ -460,13 +455,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'documentation:',
                             '  - content:'
                         ].join('\\n');
-                        editorHelper.setValue(definition);   
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("content must be a string");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });                     
+                            expect(message).to.eql('content must be a string');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: a documentation entry must have a content property', function(done){
@@ -477,13 +472,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'documentation:',
                             '  - title: hola'
                         ].join('\\n');
-                        editorHelper.setValue(definition);    
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("a documentation entry must have content property");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });                     
+                            expect(message).to.eql('a documentation entry must have content property');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: a documentation entry must have title property', function(done){
@@ -494,13 +489,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'documentation:',
                             '  - content: hola'
                         ].join('\\n');
-                        editorHelper.setValue(definition);   
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("a documentation entry must have title property");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });                         
+                            expect(message).to.eql('a documentation entry must have title property');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: root property already used documentation', function(done){
@@ -516,10 +511,10 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'documentation'");
-                            expect(line).to.eql("7");
-                            done(); 
-                        });                         
+                            expect(message).to.eql('root property already used: \'documentation\'');
+                            expect(line).to.eql('7');
+                            done();
+                        });
                     });
 
                     it('should fail: property already used title', function(done){
@@ -530,15 +525,15 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'documentation:',
                             '  - title: hola',
                             '    title:',
-                            '    content: my content'                           
+                            '    content: my content'
                         ].join('\\n');
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("property already used: 'title'");
-                            expect(line).to.eql("6");
-                            done(); 
-                        });                                             
+                            expect(message).to.eql('property already used: \'title\'');
+                            expect(line).to.eql('6');
+                            done();
+                        });
                     });
 
                     it('should fail: property already used content', function(done){
@@ -549,15 +544,15 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'documentation:',
                             '  - title: hola',
                             '    content: my content',
-                            '    content:'                          
+                            '    content:'
                         ].join('\\n');
-                        editorHelper.setValue(definition);     
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("property already used: 'content'");
-                            expect(line).to.eql("7");
-                            done(); 
-                        });                                         
+                            expect(message).to.eql('property already used: \'content\'');
+                            expect(line).to.eql('7');
+                            done();
+                        });
                     });
 
                 }); //Documentation
@@ -575,9 +570,9 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'traits'");
-                            expect(line).to.eql("5");
-                            done(); 
+                            expect(message).to.eql('root property already used: \'traits\'');
+                            expect(line).to.eql('5');
+                            done();
                         });
                     });
 
@@ -592,13 +587,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("parameter key cannot be used as a trait name");
-                            expect(line).to.eql("5");
-                            done(); 
+                            expect(message).to.eql('parameter key cannot be used as a trait name');
+                            expect(line).to.eql('5');
+                            done();
                         });
                     });
 
-                    it('should fail: array as key - trait []', function(done){ 
+                    it('should fail: array as key - trait []', function(done){
                         var definition = [
                             '#%RAML 0.8',
                             'title: hola',
@@ -619,13 +614,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("only scalar map keys are allowed in RAML");
-                            expect(line).to.eql("12");
-                            done(); 
-                        });  
+                            expect(message).to.eql('only scalar map keys are allowed in RAML');
+                            expect(line).to.eql('12');
+                            done();
+                        });
                     });
-                    
-                    it('should fail: array as key - trait {}', function(done){ 
+
+                    it('should fail: array as key - trait {}', function(done){
                         var definition = [
                             '#%RAML 0.8',
                             'title: hola',
@@ -646,10 +641,10 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("only scalar map keys are allowed in RAML");
-                            expect(line).to.eql("12");
-                            done(); 
-                        });  
+                            expect(message).to.eql('only scalar map keys are allowed in RAML');
+                            expect(line).to.eql('12');
+                            done();
+                        });
                     });
 
                     describe('protocols', function(){
@@ -664,13 +659,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 '      protocols: []',
                                 '      protocols:'
                             ].join('\\n');
-                            editorHelper.setValue(definition); 
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'protocols'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });  
+                                expect(message).to.eql('property already used: \'protocols\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
 
 
@@ -683,13 +678,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 '  - hola:',
                                 '      protocols:'
                             ].join('\\n');
-                            editorHelper.setValue(definition); 
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property must be an array");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });  
+                                expect(message).to.eql('property must be an array');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
 
 
@@ -703,13 +698,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 '      protocols:',
                                 '        - '
                             ].join('\\n');
-                            editorHelper.setValue(definition); 
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("value must be a string");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });  
+                                expect(message).to.eql('value must be a string');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
 
                         it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -717,18 +712,18 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 '#%RAML 0.8',
                                 '---',
                                 'title: My API',
-                                'traits:',                            
+                                'traits:',
                                 '  - hola:',
                                 '      protocols:',
                                 '        - htt'
                             ].join('\\n');
-                            editorHelper.setValue(definition); 
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });  
+                                expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
 
                     }); // protocols
@@ -746,13 +741,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '  - hola:',
                             '      protocols:'
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("property: 'protocols' is invalid in a resource type");
-                            expect(line).to.eql("6");
-                            done(); 
-                        });  
+                            expect(message).to.eql('property: \'protocols\' is invalid in a resource type');
+                            expect(line).to.eql('6');
+                            done();
+                        });
                     });
 
                     it('should fail: root property already used resourceTypes', function(done){
@@ -766,9 +761,9 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'resourceTypes'");
-                            expect(line).to.eql("5");
-                            done(); 
+                            expect(message).to.eql('root property already used: \'resourceTypes\'');
+                            expect(line).to.eql('5');
+                            done();
                         });
                     });
 
@@ -783,17 +778,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("parameter key cannot be used as a resource type name");
-                            expect(line).to.eql("5");
-                            done(); 
+                            expect(message).to.eql('parameter key cannot be used as a resource type name');
+                            expect(line).to.eql('5');
+                            done();
                         });
                     });
 
-                    it('should fail: unused parameter pp_declared on a RT', function(done){                 
+                    it('should fail: unused parameter pp_declared on a RT', function(done){
                         var definition = [
                             '#%RAML 0.8',
-                            '---',              
-                            'title: miapi', 
+                            '---',
+                            'title: miapi',
                             'resourceTypes:',
                             '  - base:',
                             '      get:',
@@ -803,14 +798,14 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '          pp: hola',
                             '/r1:',
                             '  type: collection'
-                        ].join('\\n'); 
-                        editorHelper.setValue(definition);                       
+                        ].join('\\n');
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("unused parameter: pp");
-                            expect(line).to.eql("9");
-                            done(); 
-                        });                         
+                            expect(message).to.eql('unused parameter: pp');
+                            expect(line).to.eql('9');
+                            done();
+                        });
                     });
 
                     it('should fail: it must be a mapping_diccionary', function(done){
@@ -822,13 +817,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '  - member: {}',
                             '    member2: '
                         ].join('\\n');
-                        editorHelper.setValue(definition);   
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("invalid resourceType definition, it must be a map");
-                            expect(line).to.eql("6");
-                            done(); 
-                        });                                     
+                            expect(message).to.eql('invalid resourceType definition, it must be a map');
+                            expect(line).to.eql('6');
+                            done();
+                        });
                     });
 
                     it('should fail: it must be a map', function(done){
@@ -837,15 +832,15 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '---',
                             'title: My API',
                             'resourceTypes:',
-                            '  - member:'                           
+                            '  - member:'
                         ].join('\\n');
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("invalid resourceType definition, it must be a map");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });                                     
+                            expect(message).to.eql('invalid resourceType definition, it must be a map');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: circular reference - between resource', function(done){
@@ -860,17 +855,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '  - rt2:',
                             '      type: rt2',
                             '/res1:',
-                            '  type: rt1'                           
+                            '  type: rt1'
                         ].join('\\n');
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("circular reference of \"rt2\" has been detected: rt1 -> rt2 -> rt2");
-                            expect(line).to.eql("8");
-                            done(); 
-                        });                                     
-                    }); 
-                  
+                            expect(message).to.eql('circular reference of \'rt2\' has been detected: rt1 -> rt2 -> rt2');
+                            expect(line).to.eql('8');
+                            done();
+                        });
+                    });
+
                     it('should fail: property protocols is invalid in a resourceType', function(done){
                         var definition = [
                             '#%RAML 0.8',
@@ -883,14 +878,14 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("property: 'protocols' is invalid in a resource type");
-                            expect(line).to.eql("6");
-                            done(); 
-                        });                                     
-                    }); 
-                    
+                            expect(message).to.eql('property: \'protocols\' is invalid in a resource type');
+                            expect(line).to.eql('6');
+                            done();
+                        });
+                    });
+
                     describe('is', function(){
-                        
+
                         it('should fail: property is must be an array', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -903,14 +898,14 @@ describe('RAMLeditor - Parser errors validation',function(){
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property 'is' must be an array");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                                     
-                        }); 
-                        
-                        
-                        
+                                expect(message).to.eql('property \'is\' must be an array');
+                                expect(line).to.eql('6');
+                                done();
+                            });
+                        });
+
+
+
                         it('should fail: there is not trait named ...', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -918,20 +913,20 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'title: My API',
                                 'resourceTypes:',
                                 '  - rt1:',
-                                '      is: [h]'                                                         
+                                '      is: [h]'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("there is no trait named h");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                                     
-                        }); 
+                                expect(message).to.eql('there is no trait named h');
+                                expect(line).to.eql('6');
+                                done();
+                            });
+                        });
 
 
-                    }); // is    
-                    
+                    }); // is
+
                     describe('property already used', function(){
 
                         it('should fail: property already used: is', function(done){
@@ -947,12 +942,12 @@ describe('RAMLeditor - Parser errors validation',function(){
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'is'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'is\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: property already used: usage', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -966,12 +961,12 @@ describe('RAMLeditor - Parser errors validation',function(){
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'usage'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'usage\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: property already used: description', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -985,12 +980,12 @@ describe('RAMLeditor - Parser errors validation',function(){
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'description'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'description\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: property already used: type', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1001,17 +996,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 '      type: rt2',
                                 '      type:',
                                 '  - rt2:',
-                                '      description: hola'                                                         
+                                '      description: hola'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'type'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'type\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: property already used: securedBy', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1020,17 +1015,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      securedBy: []',
-                                '      securedBy:'                                                       
+                                '      securedBy:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'securedBy'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'securedBy\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: property already used: baseUriParameters', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1040,17 +1035,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      baseUriParameters:',
-                                '      baseUriParameters:'                                                       
+                                '      baseUriParameters:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'baseUriParameters'");
-                                expect(line).to.eql("8");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'baseUriParameters\'');
+                                expect(line).to.eql('8');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: property already used: uriParameters', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1059,17 +1054,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      uriParameters:',
-                                '      uriParameters:'                                                       
+                                '      uriParameters:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'uriParameters'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'uriParameters\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: property already used: displayName', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1078,20 +1073,20 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      displayName:',
-                                '      displayName:'                                                       
+                                '      displayName:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property already used: 'displayName'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('property already used: \'displayName\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
                     }); // property already used
-                    
+
                     describe('method already declared', function(){
-                        
+
                         it('should fail: method already declared: get', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1100,17 +1095,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      get:',
-                                '      get:'                                                       
+                                '      get:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'get'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('method already declared: \'get\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-            
+
                         it('should fail: method already declared: post', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1119,17 +1114,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      post:',
-                                '      post:'                                                       
+                                '      post:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'post'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('method already declared: \'post\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: method already declared: put', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1138,17 +1133,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      put:',
-                                '      put:'                                                       
+                                '      put:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'put'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('method already declared: \'put\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: method already declared: delete', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1157,17 +1152,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      delete:',
-                                '      delete:'                                                       
+                                '      delete:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'delete'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('method already declared: \'delete\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: method already declared: head', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1176,17 +1171,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      head:',
-                                '      head:'                                                       
+                                '      head:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'head'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('method already declared: \'head\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: method already declared: patch', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1195,17 +1190,17 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      patch:',
-                                '      patch:'                                                       
+                                '      patch:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'patch'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('method already declared: \'patch\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
-                        
+
                         it('should fail: method already declared: options', function(done){
                             var definition = [
                                 '#%RAML 0.8',
@@ -1214,19 +1209,19 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 'resourceTypes:',
                                 '  - rt1:',
                                 '      options:',
-                                '      options:'                                                       
+                                '      options:'
                             ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'options'");
-                                expect(line).to.eql("7");
-                                done(); 
-                            });                                     
+                                expect(message).to.eql('method already declared: \'options\'');
+                                expect(line).to.eql('7');
+                                done();
+                            });
                         });
 
                     }); // method already declared
-                    
+
                     describe('resourceTypes - Methods', function(){
 
                         describe('get',function(){
@@ -1243,13 +1238,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols: []',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property already used: 'protocols'");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property already used: \'protocols\'');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol property must be an array', function(done){
@@ -1262,13 +1257,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '      get:',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property must be an array");
-                                        expect(line).to.eql("7");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property must be an array');
+                                        expect(line).to.eql('7');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol value must be a string', function(done){
@@ -1282,13 +1277,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - '
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("value must be a string");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('value must be a string');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1302,19 +1297,19 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - htt'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                             }); // protocols
 
                         }); // get
-                        
+
                         describe('post',function(){
 
                             describe('protocols', function(){
@@ -1329,13 +1324,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols: []',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property already used: 'protocols'");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property already used: \'protocols\'');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol property must be an array', function(done){
@@ -1348,13 +1343,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '      post:',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property must be an array");
-                                        expect(line).to.eql("7");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property must be an array');
+                                        expect(line).to.eql('7');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol value must be a string', function(done){
@@ -1368,13 +1363,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - '
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("value must be a string");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('value must be a string');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1388,13 +1383,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - htt'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                             }); // protocols
@@ -1415,13 +1410,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols: []',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property already used: 'protocols'");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property already used: \'protocols\'');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol property must be an array', function(done){
@@ -1434,13 +1429,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '      put:',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property must be an array");
-                                        expect(line).to.eql("7");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property must be an array');
+                                        expect(line).to.eql('7');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol value must be a string', function(done){
@@ -1454,13 +1449,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - '
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("value must be a string");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('value must be a string');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1474,13 +1469,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - htt'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                             }); // protocols
@@ -1501,13 +1496,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols: []',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property already used: 'protocols'");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property already used: \'protocols\'');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol property must be an array', function(done){
@@ -1520,13 +1515,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '      delete:',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property must be an array");
-                                        expect(line).to.eql("7");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property must be an array');
+                                        expect(line).to.eql('7');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol value must be a string', function(done){
@@ -1540,13 +1535,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - '
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("value must be a string");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('value must be a string');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1560,13 +1555,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - htt'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                             }); // protocols
@@ -1587,13 +1582,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols: []',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property already used: 'protocols'");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property already used: \'protocols\'');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol property must be an array', function(done){
@@ -1606,13 +1601,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '      head:',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property must be an array");
-                                        expect(line).to.eql("7");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property must be an array');
+                                        expect(line).to.eql('7');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol value must be a string', function(done){
@@ -1626,13 +1621,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - '
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("value must be a string");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('value must be a string');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1646,13 +1641,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - htt'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                             }); // protocols
@@ -1673,13 +1668,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols: []',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property already used: 'protocols'");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property already used: \'protocols\'');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol property must be an array', function(done){
@@ -1692,13 +1687,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '      patch:',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property must be an array");
-                                        expect(line).to.eql("7");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property must be an array');
+                                        expect(line).to.eql('7');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol value must be a string', function(done){
@@ -1712,13 +1707,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - '
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("value must be a string");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('value must be a string');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1732,19 +1727,19 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - htt'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                             }); // protocols
 
                         }); // patch
-                        
+
                         describe('options',function(){
 
                             describe('protocols', function(){
@@ -1759,13 +1754,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols: []',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property already used: 'protocols'");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property already used: \'protocols\'');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol property must be an array', function(done){
@@ -1778,13 +1773,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '      options:',
                                         '        protocols:'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("property must be an array");
-                                        expect(line).to.eql("7");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('property must be an array');
+                                        expect(line).to.eql('7');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: RTMethods-protocol value must be a string', function(done){
@@ -1798,13 +1793,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - '
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("value must be a string");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('value must be a string');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                                 it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1818,13 +1813,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                         '        protocols:',
                                         '          - htt'
                                     ].join('\\n');
-                                    editorHelper.setValue(definition); 
+                                    editorHelper.setValue(definition);
                                     editorHelper.getErrorLineMessage().then(function (list){
                                         var line = list[0], message = list[1];
-                                        expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                        expect(line).to.eql("8");
-                                        done(); 
-                                    });  
+                                        expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                        expect(line).to.eql('8');
+                                        done();
+                                    });
                                 });
 
                             }); // protocols
@@ -1843,14 +1838,14 @@ describe('RAMLeditor - Parser errors validation',function(){
                             '---',
                             'title: Test',
                             'schemas:'
-                        ].join('\\n');            
-                        editorHelper.setValue(definition);                                           
+                        ].join('\\n');
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("schemas property must be an array");
-                            expect(line).to.eql("4");
-                            done(); 
-                        });  
+                            expect(message).to.eql('schemas property must be an array');
+                            expect(line).to.eql('4');
+                            done();
+                        });
                     });
 
                     it('should fail: root property already used schemas', function(done){
@@ -1864,10 +1859,10 @@ describe('RAMLeditor - Parser errors validation',function(){
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'schemas'");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });  
+                            expect(message).to.eql('root property already used: \'schemas\'');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                 }); //schemas
@@ -1882,13 +1877,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'securitySchemes: []',
                             'securitySchemes:'
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'securitySchemes'");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });                 
+                            expect(message).to.eql('root property already used: \'securitySchemes\'');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                 }); //securitySchemes
@@ -1903,13 +1898,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'protocols: []',
                             'protocols:'
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("root property already used: 'protocols'");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });  
+                            expect(message).to.eql('root property already used: \'protocols\'');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
 
@@ -1920,13 +1915,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'title: My API',
                             'protocols:'
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("property must be an array");
-                            expect(line).to.eql("4");
-                            done(); 
-                        });  
+                            expect(message).to.eql('property must be an array');
+                            expect(line).to.eql('4');
+                            done();
+                        });
                     });
 
 
@@ -1938,13 +1933,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'protocols:',
                             '  - '
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("value must be a string");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });  
+                            expect(message).to.eql('value must be a string');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                     it('should fail: only HTTP and HTTPS values are allowed', function(done){
@@ -1955,30 +1950,30 @@ describe('RAMLeditor - Parser errors validation',function(){
                             'protocols:',
                             '  - htt'
                         ].join('\\n');
-                        editorHelper.setValue(definition); 
+                        editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });  
+                            expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                            expect(line).to.eql('5');
+                            done();
+                        });
                     });
 
                 }); //protocols
 
-            }); //describeRootSection 
+            }); //describeRootSection
 
             describe('Resource', function(){
 
                 describe('Resource attributes', function(){
-                    
+
                     describe('type',function(){
 
                         it('should fail: unused parameter param1_called from a resource', function(done){
                              var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi', 
+                                '---',
+                                'title: miapi',
                                 'resourceTypes:',
                                 '  - base:',
                                 '      get:',
@@ -1990,80 +1985,80 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 '/r1:',
                                 '  type: ',
                                 '    typedCollection:',
-                                '      param1:'                                                     
-                            ].join('\\n');                          
-                            editorHelper.setValue(definition);                                               
+                                '      param1:'
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("unused parameter: param1");
-                                expect(line).to.eql("14");
-                                done(); 
-                            });                 
+                                expect(message).to.eql('unused parameter: param1');
+                                expect(line).to.eql('14');
+                                done();
+                            });
                         });
 
                     }); //type
-                        
+
                     it('should fail: property protocols is invalid in a resource', function(done){
                         var definition = [
                             '#%RAML 0.8',
                             '---',
                             'title: My API',
                             '/rt1:',
-                            '  protocols:'                        
+                            '  protocols:'
                         ].join('\\n');
                         editorHelper.setValue(definition);
                         editorHelper.getErrorLineMessage().then(function (list){
                             var line = list[0], message = list[1];
-                            expect(message).to.eql("property: 'protocols' is invalid in a resource");
-                            expect(line).to.eql("5");
-                            done(); 
-                        });                                     
-                    }); 
+                            expect(message).to.eql('property: \'protocols\' is invalid in a resource');
+                            expect(line).to.eql('5');
+                            done();
+                        });
+                    });
 
                 }); // Resource attributes
-                    
+
                 describe('Methods', function(){
 
                     describe('get', function(){
 
-                        it('should fail with displayName property', function(done){                        
+                        it('should fail with displayName property', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  get:',
                                 '    displayName:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property: 'displayName' is invalid in a method");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('property: \'displayName\' is invalid in a method');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
 
-                        it('should fail: method already declared: get', function(done){                        
+                        it('should fail: method already declared: get', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  get:',
                                 '  get:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                    
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'get'");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('method already declared: \'get\'');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
-                        
+
                          describe('protocols', function(){
-                            
+
                             it('should fail: Rget-protocols property already used protocol', function(done){
                                 var definition = [
                                     '#%RAML 0.8',
@@ -2074,13 +2069,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols: []',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property already used: 'protocols'");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property already used: \'protocols\'');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rget-protocol property must be an array', function(done){
@@ -2092,13 +2087,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '  get:',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property must be an array");
-                                    expect(line).to.eql("6");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property must be an array');
+                                    expect(line).to.eql('6');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rget-protocol value must be a string', function(done){
@@ -2111,13 +2106,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - '
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("value must be a string");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('value must be a string');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rget-protocols only HTTP and HTTPS values are allowed', function(done){
@@ -2130,13 +2125,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - htt'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                         }); // protocols
@@ -2146,45 +2141,45 @@ describe('RAMLeditor - Parser errors validation',function(){
 
                     describe('put',function(){
 
-                        it('should fail with displayName property', function(done){                         
+                        it('should fail with displayName property', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  put:',
                                 '    displayName:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property: 'displayName' is invalid in a method");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('property: \'displayName\' is invalid in a method');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
 
-                        it('should fail: method already declared: put', function(done){                         
+                        it('should fail: method already declared: put', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  put:',
                                 '  put:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
-                            //ptor.sleep(500);  
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
+                            //ptor.sleep(500);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'put'");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('method already declared: \'put\'');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
-                        
+
                         describe('protocols', function(){
-                            
+
                             it('should fail: Rput-protocols property already used protocol', function(done){
                                 var definition = [
                                     '#%RAML 0.8',
@@ -2195,13 +2190,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols: []',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property already used: 'protocols'");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property already used: \'protocols\'');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rput-protocol property must be an array', function(done){
@@ -2213,13 +2208,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '  put:',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property must be an array");
-                                    expect(line).to.eql("6");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property must be an array');
+                                    expect(line).to.eql('6');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rput-protocol value must be a string', function(done){
@@ -2232,13 +2227,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - '
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("value must be a string");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('value must be a string');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rput-protocols only HTTP and HTTPS values are allowed', function(done){
@@ -2251,13 +2246,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - htt'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                         }); // protocols
@@ -2266,44 +2261,44 @@ describe('RAMLeditor - Parser errors validation',function(){
 
                     describe('head',function(){
 
-                        it('should fail with displayName property', function(done){                     
+                        it('should fail with displayName property', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  head:',
                                 '    displayName:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property: 'displayName' is invalid in a method");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('property: \'displayName\' is invalid in a method');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
 
-                        it('should fail: method already declared: head', function(done){                          
+                        it('should fail: method already declared: head', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  head:',
                                 '  head:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'head'");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('method already declared: \'head\'');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
-                       
+
                         describe('protocols', function(){
-                            
+
                             it('should fail: Rhead-protocols property already used protocol', function(done){
                                 var definition = [
                                     '#%RAML 0.8',
@@ -2314,13 +2309,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols: []',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property already used: 'protocols'");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property already used: \'protocols\'');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rhead-protocols property must be an array', function(done){
@@ -2332,13 +2327,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '  head:',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property must be an array");
-                                    expect(line).to.eql("6");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property must be an array');
+                                    expect(line).to.eql('6');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rhead-protocol value must be a string', function(done){
@@ -2351,13 +2346,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - '
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("value must be a string");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('value must be a string');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rhead-protocols only HTTP and HTTPS values are allowed', function(done){
@@ -2370,13 +2365,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - htt'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                         }); // protocols
@@ -2385,44 +2380,44 @@ describe('RAMLeditor - Parser errors validation',function(){
 
                     describe('options',function(){
 
-                        it('should fail with displayName property', function(done){                         
+                        it('should fail with displayName property', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  options:',
                                 '    displayName:'
-                            ].join('\\n'); 
+                            ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property: 'displayName' is invalid in a method");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('property: \'displayName\' is invalid in a method');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
 
-                        it('should fail: method already declared: options', function(done){                     
+                        it('should fail: method already declared: options', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  options:',
                                 '  options:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                            
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'options'");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('method already declared: \'options\'');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
-                       
+
                         describe('protocols', function(){
-                            
+
                             it('should fail: Roptions-protocols property already used protocol', function(done){
                                 var definition = [
                                     '#%RAML 0.8',
@@ -2433,13 +2428,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols: []',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property already used: 'protocols'");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property already used: \'protocols\'');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Roptions-protocol property must be an array', function(done){
@@ -2451,13 +2446,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '  options:',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property must be an array");
-                                    expect(line).to.eql("6");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property must be an array');
+                                    expect(line).to.eql('6');
+                                    done();
+                                });
                             });
 
                             it('should fail: Roptions-protocol value must be a string', function(done){
@@ -2470,13 +2465,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - '
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("value must be a string");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('value must be a string');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Roptions-protocols only HTTP and HTTPS values are allowed', function(done){
@@ -2489,13 +2484,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - htt'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                         }); // protocols
@@ -2504,44 +2499,44 @@ describe('RAMLeditor - Parser errors validation',function(){
 
                     describe('post',function(){
 
-                        it('should fail with displayName property', function(done){                        
+                        it('should fail with displayName property', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  post:',
                                 '    displayName:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                                         
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property: 'displayName' is invalid in a method");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('property: \'displayName\' is invalid in a method');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
 
-                        it('should fail: method already declared: post', function(done){                      
+                        it('should fail: method already declared: post', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  post:',
                                 '  post:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'post'");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('method already declared: \'post\'');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
-                        
+
                         describe('protocols', function(){
-                            
+
                             it('should fail: Rpost-protocols property already used protocol', function(done){
                                 var definition = [
                                     '#%RAML 0.8',
@@ -2552,13 +2547,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols: []',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property already used: 'protocols'");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property already used: \'protocols\'');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rpost-protocol property must be an array', function(done){
@@ -2570,13 +2565,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '  post:',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property must be an array");
-                                    expect(line).to.eql("6");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property must be an array');
+                                    expect(line).to.eql('6');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rpost-protocol value must be a string', function(done){
@@ -2589,13 +2584,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - '
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("value must be a string");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('value must be a string');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rpost-protocols only HTTP and HTTPS values are allowed', function(done){
@@ -2608,13 +2603,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - htt'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                         }); // protocols
@@ -2623,44 +2618,44 @@ describe('RAMLeditor - Parser errors validation',function(){
 
                     describe('delete',function(){
 
-                        it('should fail with displayName property', function(done){                          
+                        it('should fail with displayName property', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  delete:',
                                 '    displayName:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property: 'displayName' is invalid in a method");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('property: \'displayName\' is invalid in a method');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
 
-                        it('should fail: method already declared: delete', function(done){                         
+                        it('should fail: method already declared: delete', function(done){
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
-                                'title: miapi',                                             
+                                '---',
+                                'title: miapi',
                                 '/r1:',
                                 '  delete:',
                                 '  delete:'
-                            ].join('\\n'); 
-                            editorHelper.setValue(definition);                       
+                            ].join('\\n');
+                            editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'delete'");
-                                expect(line).to.eql("6");
-                                done(); 
-                            });                     
+                                expect(message).to.eql('method already declared: \'delete\'');
+                                expect(line).to.eql('6');
+                                done();
+                            });
                         });
-                        
+
                         describe('protocols', function(){
-                            
+
                             it('should fail: Rdelete-protocols property already used protocol', function(done){
                                 var definition = [
                                     '#%RAML 0.8',
@@ -2671,13 +2666,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols: []',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property already used: 'protocols'");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property already used: \'protocols\'');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rdelete-protocol property must be an array', function(done){
@@ -2689,13 +2684,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '  delete:',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property must be an array");
-                                    expect(line).to.eql("6");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property must be an array');
+                                    expect(line).to.eql('6');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rdelete-protocol value must be a string', function(done){
@@ -2708,13 +2703,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - '
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("value must be a string");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('value must be a string');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rdelete-protocols only HTTP and HTTPS values are allowed', function(done){
@@ -2727,13 +2722,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - htt'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                         }); // protocols
@@ -2741,21 +2736,21 @@ describe('RAMLeditor - Parser errors validation',function(){
 
                     describe('patch',function(){
 
-                        it('should fail with displayName property', function(done){ //RT-300                         
+                        it('should fail with displayName property', function(done){ //RT-300
                             var definition = [
                                 '#%RAML 0.8',
-                                '---',              
+                                '---',
                                 'title: miapi',
                                 '/r1:',
                                 '  patch:',
                                 '    displayName:'
-                            ].join('\\n'); 
+                            ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("property: 'displayName' is invalid in a method");
-                                expect(line).to.eql("6");
-                                done(); 
+                                expect(message).to.eql('property: \'displayName\' is invalid in a method');
+                                expect(line).to.eql('6');
+                                done();
                             });
                         });
 
@@ -2767,18 +2762,18 @@ describe('RAMLeditor - Parser errors validation',function(){
                                 '/r1:',
                                 '  patch:',
                                 '  patch:'
-                            ].join('\\n'); 
+                            ].join('\\n');
                             editorHelper.setValue(definition);
                             editorHelper.getErrorLineMessage().then(function (list){
                                 var line = list[0], message = list[1];
-                                expect(message).to.eql("method already declared: 'patch'");
-                                expect(line).to.eql("6");
-                                done(); 
+                                expect(message).to.eql('method already declared: \'patch\'');
+                                expect(line).to.eql('6');
+                                done();
                             });
                         });
 
                         describe('protocols', function(){
-                            
+
                             it('should fail: Rpatch-protocols property already used protocol', function(done){
                                 var definition = [
                                     '#%RAML 0.8',
@@ -2789,13 +2784,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols: []',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property already used: 'protocols'");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property already used: \'protocols\'');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rpatch-protocol property must be an array', function(done){
@@ -2807,13 +2802,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '  patch:',
                                     '    protocols:'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("property must be an array");
-                                    expect(line).to.eql("6");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('property must be an array');
+                                    expect(line).to.eql('6');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rpatch-protocol value must be a string', function(done){
@@ -2826,13 +2821,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - '
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("value must be a string");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('value must be a string');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                             it('should fail: Rpatch-protocols only HTTP and HTTPS values are allowed', function(done){
@@ -2845,13 +2840,13 @@ describe('RAMLeditor - Parser errors validation',function(){
                                     '    protocols:',
                                     '      - htt'
                                 ].join('\\n');
-                                editorHelper.setValue(definition); 
+                                editorHelper.setValue(definition);
                                 editorHelper.getErrorLineMessage().then(function (list){
                                     var line = list[0], message = list[1];
-                                    expect(message).to.eql("only HTTP and HTTPS values are allowed");
-                                    expect(line).to.eql("7");
-                                    done(); 
-                                });  
+                                    expect(message).to.eql('only HTTP and HTTPS values are allowed');
+                                    expect(line).to.eql('7');
+                                    done();
+                                });
                             });
 
                         }); // protocols
@@ -2862,6 +2857,6 @@ describe('RAMLeditor - Parser errors validation',function(){
 
             }); //Resource
 
-        }); //Editor Error validation   
+        }); //Editor Error validation
 
 });//RAMLeditor - Parser errors validation

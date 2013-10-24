@@ -245,6 +245,19 @@ module.exports = function (grunt) {
         dest: 'app/styles/css',
         ext: '.css'
       }
+    },
+    mochaProtractor: {
+      options: {
+        reporter: 'Spec',
+        sauceSession: 'RAML Tooling Editor',
+        browsers: [{
+          base: 'SauceLabs',
+          browserName: 'Chrome',
+          platform: 'Windows 7',
+          version: 27
+        }]
+      },
+      files: ['editor-functional-tests/test/e2e/**/*.js']
     }
   });
 
@@ -255,6 +268,7 @@ module.exports = function (grunt) {
 
     grunt.task.run([
       'clean:server',
+      'less',
       'configureProxies',
       'connect:livereload',
       'open',
@@ -286,6 +300,13 @@ module.exports = function (grunt) {
     'ngmin',
     'rev',
     'usemin'
+  ]);
+
+  grunt.registerTask('scenario', [
+    'clean:server',
+    'less',
+    'connect:test',
+    'mochaProtractor'
   ]);
 
   grunt.registerTask('default', [
