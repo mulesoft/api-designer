@@ -425,7 +425,7 @@ mediaType = new Tuple(new ConstantString('mediaType'), new Alternatives(stringNo
 
 chapter = new Alternatives(title, new Tuple(new ConstantString('content'), stringNode));
 
-documentation = new Tuple(new ConstantString('documentation'), new Multiple(chapter), rootCategory);
+documentation = new Tuple(new ConstantString('documentation'), new Multiple(chapter), docsCategory);
 
 example = new Tuple(new ConstantString('example'), stringNode, docsCategory);
 
