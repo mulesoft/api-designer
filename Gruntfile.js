@@ -36,10 +36,12 @@ module.exports = function (grunt) {
         },
         files: [
           '<%= yeoman.app %>/{,*/}*.html',
-          '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css',
           '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
+          '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css',
+          '{.tmp,<%= yeoman.app %>}/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
           '{.tmp,<%= yeoman.app %>}/vendor/scripts/{,*/}*.js',
-          '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
+          '{.tmp,<%= yeoman.app %>}/vendor/styles/{,*/}*.css',
+          '{.tmp,<%= yeoman.app %>}/vendor/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
         ]
       },
       less: {
@@ -134,8 +136,7 @@ module.exports = function (grunt) {
           src: [
             '<%= yeoman.dist %>/scripts/{,*/}*.js',
             '<%= yeoman.dist %>/styles/{,*/}*.css',
-            '<%= yeoman.dist %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
-            '<%= yeoman.dist %>/styles/fonts/*'
+            '<%= yeoman.dist %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
           ]
         }
       }
@@ -166,40 +167,42 @@ module.exports = function (grunt) {
     // Put files not handled in other tasks here
     copy: {
       dist: {
-        files: [{
-          expand: true,
-          dot: true,
-          cwd: '<%= yeoman.app %>',
-          dest: '<%= yeoman.dist %>',
-          src: [
-            '*.{ico,png,txt}',
-            '.htaccess',
-            'images/{,*/}*.{gif,webp,svg}',
-            'styles/fonts/*'
-          ]
-        }, {
-          expand: true,
-          cwd: '.tmp/images',
-          dest: '<%= yeoman.dist %>/images',
-          src: [
-            'generated/*'
-          ]
-        }]
+        files: [
+          {
+            expand: true,
+            dot: true,
+            cwd: '<%= yeoman.app %>',
+            dest: '<%= yeoman.dist %>',
+            src: [
+              '*.{ico,png,txt}',
+              '.htaccess',
+              'images/{,*/}*.{gif,webp,svg}'
+            ]
+          },
+          {
+            expand: true,
+            cwd: '<%= yeoman.app %>/vendor/font/',
+            dest: '<%= yeoman.dist %>/font/',
+            src: ['*']
+          }
+        ]
       },
       updatelibs: {
-        files: [{
-          expand: true,
-          dot: false,
-          cwd: '<%= yeoman.root %>',
-          dest: '<%= yeoman.app %>/vendor/scripts',
-          flatten: true,
-          src: [
-            'bower_components/angular/angular.js',
-            'bower_components/angular/angular-resource.js',
-            'bower_components/angular/angular-sanitize.js',
-            'bower_components/raml-js-parser/dist/raml-parser.js'
-          ]
-        }]
+        files: [
+          {
+            expand: true,
+            dot: false,
+            cwd: '<%= yeoman.root %>',
+            dest: '<%= yeoman.app %>/vendor/scripts',
+            flatten: true,
+            src: [
+              'bower_components/angular/angular.js',
+              'bower_components/angular/angular-resource.js',
+              'bower_components/angular/angular-sanitize.js',
+              'bower_components/raml-js-parser/dist/raml-parser.js'
+            ]
+          }
+        ]
       }
     },
     karma: {
@@ -210,12 +213,14 @@ module.exports = function (grunt) {
     },
     ngmin: {
       dist: {
-        files: [{
-          expand: true,
-          cwd: '<%= yeoman.dist %>/scripts',
-          src: '*.js',
-          dest: '<%= yeoman.dist %>/scripts'
-        }]
+        files: [
+          {
+            expand: true,
+            cwd: '<%= yeoman.dist %>/scripts',
+            src: '*.js',
+            dest: '<%= yeoman.dist %>/scripts'
+          }
+        ]
       }
     },
     uglify: {

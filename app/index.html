@@ -6,7 +6,9 @@
     <title>API Designer</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
+
     <!-- build:css({.tmp,app}) styles/main.css -->
+    <link rel="stylesheet" href="vendor/styles/font-awesome.css">
     <link rel="stylesheet" href="vendor/styles/raml-console.css">
     <link rel="stylesheet" href="vendor/styles/codemirror.css">
     <link rel="stylesheet" href="vendor/styles/solarized.css">
@@ -18,7 +20,6 @@
     <link rel="stylesheet" href="styles/css/console-overrides.css">
     <link rel="stylesheet" href="styles/css/code-mirror-overrides.css">
     <!-- endbuild -->
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
   </head>
   <body ng-app="ramlEditorApp" class="{{$root.theme}}">
     <div class="container" ng-include src="'views/raml-editor-main.tmpl.html'"></div>
@@ -42,6 +43,7 @@
     <script src="vendor/scripts/showdown.min.js"></script>
     <script src="vendor/scripts/raml-console.js"></script>
     <!-- endbuild -->
+
     <!-- build:js({.tmp,app}) scripts/scripts.js -->
     <script src="scripts/services/utils.js"></script>
     <script src="scripts/app.js"></script>
