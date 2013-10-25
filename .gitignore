@@ -1,9 +1,8 @@
 node_modules
+bower_components
 dist
-app/styles/css/
 .tmp
 .sass-cache
-bower_components
 .DS_Store
 *.orig
 *.log
