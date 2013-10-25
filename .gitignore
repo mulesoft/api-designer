@@ -1,8 +1,8 @@
 node_modules
+bower_components
 dist
 .tmp
 .sass-cache
-bower_components
 .DS_Store
 *.orig
 *.log
@@ -13,3 +13,4 @@ selenium
 editor-functional-tests/test/config.js
 test-results.xml
 keyfile
+app/styles/css

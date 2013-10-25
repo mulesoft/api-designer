@@ -5,8 +5,8 @@
     "angular": "PatternConsulting/bower-angular#1.1.5",
     "json3": "~3.2.4",
     "es5-shim": "~2.0.8",
-    "raml-parser": "git@github.com:restful-api-modeling-lang/javascript-parser.git",
-    "raml-console": "git@github.com:restful-api-modeling-lang/console.git",
+    "raml-js-parser": "git@github.com:raml-org/raml-js-parser.git",
+    "api-console": "git@github.com:mulesoft/api-console.git",
     "CodeMirror": "git@github.com:marijnh/CodeMirror.git"
   },
   "devDependencies": {

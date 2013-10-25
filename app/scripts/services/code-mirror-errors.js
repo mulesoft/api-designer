@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('codeMirror')
-  .factory('codeMirrorErrors', function (codeMirror) {
+  .factory('codeMirrorErrors', function (codeMirror, $timeout) {
     var CodeMirror = codeMirror.CodeMirror;
     var GUTTER_ID = 'CodeMirror-lint-markers';
     var SEVERITIES = /^(?:error|warning)$/;
@@ -43,7 +43,7 @@ angular.module('codeMirror')
         rm(tt);
       }
       tt.style.opacity = 0;
-      setTimeout(function () { rm(tt); }, 200);
+      $timeout(function () { rm(tt); }, 200);
     }
 
     function showTooltipFor (e, content, node) {
