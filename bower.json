@@ -14,8 +14,5 @@
     "angular-scenario": "PatternConsulting/bower-angular#1.1.5",
     "angular-cookies": "PatternConsulting/bower-angular#1.1.5",
     "sinonjs": "~1.7.1"
-  },
-  "resolutions": {
-    "angular": "1.1.5"
   }
 }
