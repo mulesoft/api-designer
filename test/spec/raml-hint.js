@@ -138,11 +138,7 @@ describe('RAML Hint Service', function () {
         should.not.exist(res);
       });
 
-      it.skip('should handle variable indentUnits', function () {
-        //TODO Add test when decoupling indentUnit
-      });
     });
-
 
     describe('getEditorState', function () {
       it('should be consistent with editor state', function () {

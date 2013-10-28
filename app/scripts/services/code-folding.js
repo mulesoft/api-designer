@@ -2,10 +2,57 @@
 
 /* globals CodeMirror */
 
-angular.module('codeFolding', ['lightweightParse'])
-  .factory('getParentLineNumber', function (getScopes, getEditorTextAsArrayOfLines) {
-    return function (cm, lineNumber, indentLevel) {
-      var potentialParents = getScopes(getEditorTextAsArrayOfLines(cm)).scopeLevels[indentLevel > 0 ? (indentLevel - 1) : 0];
+angular.module('codeFolding', ['raml', 'lightweightParse'])
+  .value('hasParentWith', function(getParentLineNumber){
+    var hasParentWith = function(pattern, cm, lineNumber){
+      if(lineNumber === 0 || !lineNumber) {
+        return false;
+      }
+
+      var parentLineNumber = getParentLineNumber(cm, lineNumber);
+
+      if (pattern.test(cm.getLine(parentLineNumber))) {
+        return true;
+      } else {
+        return hasParentWith (pattern, cm, parentLineNumber);
+      }
+    };
+
+    return hasParentWith;
+  })
+  .factory('isArrayElement', function (isArrayStarter, getParentLineNumber, getFirstChildLine){
+    return function(cm, lineNumber){
+      var line = cm.getLine(lineNumber);
+      if(isArrayStarter(line)) {
+        return true;
+      }
+
+      var parentLineNumber = getParentLineNumber(cm, lineNumber);
+      var firstChild = getFirstChildLine(cm, parentLineNumber);
+
+      return isArrayStarter(firstChild);
+    };
+  })
+  .factory('hasChildren', function(ramlHint){
+    return function (cm){
+      var editorState = ramlHint.getEditorState(cm);
+
+      var potentialChildren = ramlHint.getScopes(cm).scopeLevels[editorState.currLineTabCount > 0 ? editorState.currLineTabCount + 1 : 1], firstChild;
+
+      if(potentialChildren) {
+        firstChild = potentialChildren.filter(function(line) {
+          return line === editorState.start.line + 1;
+        }).pop();
+      }
+
+      return !!firstChild;
+    };
+  })
+  .factory('getParentLineNumber', function (getScopes, getEditorTextAsArrayOfLines, getLineIndent, isArrayStarter) {
+    var getParentLineNumber = function (cm, lineNumber) {
+      var tabCount = getLineIndent(cm.getLine(lineNumber)).tabCount;
+
+      var potentialParents = getScopes(getEditorTextAsArrayOfLines(cm)).scopeLevels[tabCount > 0 ? (tabCount - 1) : 0];
       var parent = null;
 
       if (potentialParents) {
@@ -14,15 +61,39 @@ angular.module('codeFolding', ['lightweightParse'])
         }).pop();
       }
 
+      if(isArrayStarter(cm.getLine(parent))) {
+        return getParentLineNumber(cm, parent);
+      }
+
       return parent;
     };
+
+    return getParentLineNumber;
   })
   .factory('getParentLine', function (getParentLineNumber) {
-    return function (cm, lineNumber, indentLevel) {
-      return cm.getLine(getParentLineNumber(cm, lineNumber, indentLevel));
+    return function (cm, lineNumber) {
+      var parentLineNumber = getParentLineNumber(cm, lineNumber);
+      return cm.getLine(parentLineNumber);
     };
+  })
+  .factory('getFirstChildLineNumber', function (getScopes, getLineIndent, getEditorTextAsArrayOfLines) {
+    return function (cm, lineNumber){
+      var scopes = getScopes(getEditorTextAsArrayOfLines(cm));
 
-
+      var scopesByLine = scopes.scopesByLine[lineNumber];
+      if(scopesByLine && scopesByLine.length >= 2) {
+        var firstChild = scopes.scopesByLine[lineNumber][1];
+        if(firstChild) {
+          return firstChild[0];
+        }
+      }
+    };
+  })
+  .factory('getFirstChildLine', function (getFirstChildLineNumber){
+    return function(cm, lineNumber) {
+      var firstChildLineNumber = getFirstChildLineNumber(cm, lineNumber);
+      return cm.getLine(firstChildLineNumber);
+    };
   })
   .factory('getFoldRange', function (getParentLine, getParentLineNumber, getLineIndent) {
     function _hasParent(pattern, cm, lineNumber) {
@@ -30,10 +101,7 @@ angular.module('codeFolding', ['lightweightParse'])
         return false;
       }
 
-      var line = cm.getLine(lineNumber);
-      var indent = getLineIndent(line).tabCount;
-
-      var parentLineNumber = getParentLineNumber(cm, lineNumber, indent);
+      var parentLineNumber = getParentLineNumber(cm, lineNumber);
 
       if (pattern.test(cm.getLine(parentLineNumber))) {
         return true;
@@ -55,11 +123,11 @@ angular.module('codeFolding', ['lightweightParse'])
       if (!nextLine) {
         return;
       }
-      var
-        indent = lineIndentInfo.tabCount,
-        nextLineIndent = getLineIndent(nextLine).tabCount;
 
-      if(/(content|schema|example):(\s?)\|/.test(getParentLine(cm, start.line, indent))) {
+      var indent = lineIndentInfo.tabCount;
+      var nextLineIndent = getLineIndent(nextLine).tabCount;
+
+      if(/(content|schema|example):(\s?)\|/.test(getParentLine(cm, start.line))) {
         return;
       }
 

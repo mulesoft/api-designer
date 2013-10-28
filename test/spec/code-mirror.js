@@ -309,7 +309,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    if('should keep the same indentation level if the cursor is at the beginning of a sentence', function (){
+    it('should keep the same indentation level if the cursor is at the beginning of a sentence', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -338,12 +338,7 @@ describe('CodeMirror Service', function () {
         'traits:\n' +
         '  - trait-one:\n' +
         '  - trait-two:\n' +
-        '    trait-three:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '    description: This is a description of getting tags',
+        '    trait-three:',
         { line: 4, ch: 13 },
         { indentUnit: indentUnit });
 
@@ -351,9 +346,11 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
 
       editor.setCursor(5, 13);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
 
       editor.setCursor(6, 15);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
@@ -366,19 +363,15 @@ describe('CodeMirror Service', function () {
         'resourceTypes:\n' +
         '  - base:\n' +
         '  - collection:\n' +
-        '    member:\n' +
-        '  name: Tags\n' +
-        '  description: This is a description of tags\n' +
-        '  get:\n' +
-        '    summary: Get a list of recently tagged media\n' +
-        '    description: This is a description of getting tags',
+        '    member:',
         { line: 4, ch: 13 },
         { indentUnit: indentUnit });
 
       codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
 
-      editor.setCursor(6, 15);
+      editor.setCursor(6, 11);
+      codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
@@ -389,7 +382,7 @@ describe('CodeMirror Service', function () {
         'baseUri: http://www.api.com/{version}/{company}\n' +
         'version: v1.1\n' +
         'documentation:\n' +
-        '  - title:',
+        '  - title:\n',
         { line: 4, ch: 10 },
         { indentUnit: indentUnit });
 
@@ -397,10 +390,56 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it.skip('should use a mocked ramHint service', inject(function () {
-    }));
+    it('should keep the same indentation level for sequence of entries with a little help', function () {
+      var indentUnit = 2;
+      var editor = getEditor(
+        [
+          'key1:',
+          '  - value1:',
+          '  - value2:',
+          '    value3:'
+        ].join('\n'),
+        {
+          line: 2,
+          ch: -1
+        },
+        {
+          indentUnit: indentUnit
+        }
+      );
 
-    it.skip('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
+      codeMirror.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
+
+      editor.setCursor(2, -1);
+      codeMirror.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
+
+      editor.setCursor(3, -1);
+      codeMirror.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
+    });
+
+    it('should keep the same indentation level for document start marker (RT-156)', function () {
+      var indentUnit = 2;
+      var editor = getEditor(
+        [
+          '---'
+        ].join('\n'),
+        {
+          line: 0,
+          ch: 3
+        },
+        {
+          indentUnit: indentUnit
+        }
+      );
+
+      codeMirror.enterKey(editor);
+      editor.spacesToInsert.should.be.equal('\n');
+    });
+
+    it('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -420,46 +459,6 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(3));
     });
 
-    it('should keep the same indentation level for sequence of entries with a little help', function () {
-      var indentUnit = 2;
-      var editor = getEditor(
-        [
-          'key1:',
-          '  - value 1',
-          '  - value 2'
-        ].join('\n'),
-        {
-          line: 2,
-          ch: -1
-        },
-        {
-          indentUnit: indentUnit
-        }
-      );
-
-      codeMirror.enterKey(editor);
-      editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
-
-    });
-  });
-
-  it('should keep the same indentation level for document start marker (RT-156)', function () {
-    var indentUnit = 2;
-    var editor = getEditor(
-      [
-        '---'
-      ].join('\n'),
-      {
-        line: 0,
-        ch: 3
-      },
-      {
-        indentUnit: indentUnit
-      }
-    );
-
-    codeMirror.enterKey(editor);
-    editor.spacesToInsert.should.be.equal('\n');
   });
 
 });
