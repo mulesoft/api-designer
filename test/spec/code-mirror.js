@@ -354,10 +354,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
-    it.skip('should use a mocked ramHint service', inject(function () {
-    }));
-
-    it.skip('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
+    it('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +

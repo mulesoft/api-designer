@@ -137,10 +137,6 @@ describe('RAML Hint Service', function () {
         var res = ramlHint.computePath(editor);
         should.not.exist(res);
       });
-
-      it.skip('should handle variable indentUnits', function () {
-        //TODO Add test when decoupling indentUnit
-      });
     });
 
 
@@ -268,7 +264,7 @@ describe('RAML Hint Service', function () {
         newAlternatives.keys.should.not.include('title');
         newAlternatives.keys.length.should.be.equal(3);
       });
-      
+
       it('should provide options on spaces only line depending where the cursor is', function () {
         var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
         var suggestRAMLStub = sinon.stub(ramlHint, 'suggestRAML');
@@ -281,10 +277,10 @@ describe('RAML Hint Service', function () {
           {line: 2, ch: 0});
 
         var newAlternatives = ramlHint.getAlternatives(editor);
-        
+
         should.not.exist(newAlternatives.values.title);
         newAlternatives.keys.should.be.deep.equal(['a', 'b', 'c']);
-        
+
         suggestRAMLStub.firstCall.calledWith([]).should.be.equal(true);
 
         editor.setCursor(2, 2);
@@ -293,12 +289,12 @@ describe('RAML Hint Service', function () {
         newAlternatives.keys.should.be.deep.equal(['x', 'y', 'z']);
 
         suggestRAMLStub.secondCall.calledWith(['/hello']).should.be.equal(true);
-        
+
         editor.setCursor(2, 4);
-        
+
         newAlternatives = ramlHint.getAlternatives(editor);
         newAlternatives.keys.should.be.deep.equal([]);
-        
+
         ramlHint.suggestRAML.restore();
 
       });
