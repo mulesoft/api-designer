@@ -25,7 +25,8 @@ module.exports = function (grunt) {
 
   try {
     yeomanConfig.app = require('./bower.json').appPath || yeomanConfig.app;
-  } catch (e) {}
+  } catch (e) {
+  }
 
   grunt.initConfig({
     yeoman: yeomanConfig,
@@ -102,23 +103,27 @@ module.exports = function (grunt) {
     },
     clean: {
       dist: {
-        files: [{
-          dot: true,
-          src: [
-            '.tmp',
-            '<%= yeoman.dist %>/*',
-            '!<%= yeoman.dist %>/.git*'
-          ]
-        }]
+        files: [
+          {
+            dot: true,
+            src: [
+              '.tmp',
+              '<%= yeoman.dist %>/*',
+              '!<%= yeoman.dist %>/.git*'
+            ]
+          }
+        ]
       },
       server: '.tmp',
       updatelibs: {
-        files: [{
-          dot: true,
-          src: ['<%= yeoman.app %>/vendor/scripts/angular.js',
-            '<%= yeoman.app %>/vendor/scripts/raml-parser.js'
-          ]
-        }]
+        files: [
+          {
+            dot: true,
+            src: ['<%= yeoman.app %>/vendor/scripts/angular.js',
+              '<%= yeoman.app %>/vendor/scripts/raml-parser.js'
+            ]
+          }
+        ]
       }
     },
     jshint: {
@@ -156,12 +161,14 @@ module.exports = function (grunt) {
     },
     htmlmin: {
       dist: {
-        files: [{
-          expand: true,
-          cwd: '<%= yeoman.app %>',
-          src: ['*.html'],
-          dest: '<%= yeoman.dist %>'
-        }]
+        files: [
+          {
+            expand: true,
+            cwd: '<%= yeoman.app %>',
+            src: ['*.html'],
+            dest: '<%= yeoman.dist %>'
+          }
+        ]
       }
     },
     // Put files not handled in other tasks here
@@ -176,7 +183,8 @@ module.exports = function (grunt) {
             src: [
               '*.{ico,png,txt}',
               '.htaccess',
-              'images/{,*/}*.{gif,webp,svg}'
+              'images/{,*/}*.{gif,webp,svg}',
+              'styles/fonts/*'
             ]
           },
           {
@@ -252,17 +260,33 @@ module.exports = function (grunt) {
       }
     },
     mochaProtractor: {
-      options: {
-        reporter: 'Spec',
-        sauceSession: 'RAML Tooling Editor',
-        browsers: [{
-          base: 'SauceLabs',
-          browserName: 'Chrome',
-          platform: 'Windows 7',
-          version: 27
-        }]
+      local: {
+        options: {
+          reporter: 'spec',
+          browsers: ['Chrome']
+        },
+        files: {
+//          src: 'scenario/test/e2e/raml-example/muse-console.js'
+          src: 'scenario/test/e2e/editor-parser.js'
+        }
       },
-      files: ['editor-functional-tests/test/e2e/**/*.js']
+      saucelabs: {
+        options: {
+          reporter: 'Spec',
+          sauceSession: 'RAML Tooling Editor',
+          browsers: [
+            {
+              base: 'SauceLabs',
+              browserName: 'Chrome',
+              platform: 'Windows 7',
+              version: 27
+            }
+          ]
+        },
+        files: {
+          src: 'scenario/test/e2e/editor-parser.js'
+        }
+      }
     }
   });
 
@@ -311,7 +335,14 @@ module.exports = function (grunt) {
     'clean:server',
     'less',
     'connect:test',
-    'mochaProtractor'
+    'mochaProtractor:local'
+  ]);
+
+  grunt.registerTask('saucelabs', [
+    'clean:server',
+    'less',
+    'connect:test',
+    'mochaProtractor:saucelabs'
   ]);
 
   grunt.registerTask('default', [

@@ -1,1 +1,1 @@
-exports.url = 'http://localhost:9013';
+exports.url = 'http://localhost:9013/';

@@ -25,7 +25,6 @@ describe('Request Builder', function () {
       method: 'PATCH',
       path: '/my/crazy/path',
       data: 'payload',
-      withCredentials: true,
       success: sinon.stub(),
       error: sinon.stub()
     }, dataToSetKeys = Object.keys(dataToSet);

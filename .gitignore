@@ -14,3 +14,4 @@ editor-functional-tests/test/config.js
 test-results.xml
 keyfile
 app/styles/css
+scenario/Sauce-Connect-latest
