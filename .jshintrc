@@ -25,6 +25,7 @@
     "should": false,
     "it": false,
     "beforeEach": false,
+    "afterEach": false,
     "inject": false,
     "mock": false,
     "sinon": false,
