@@ -8491,6 +8491,47 @@ RAML.Client.AuthStrategies.base64 = (function () {
   RAML.Client.AuthStrategies.Oauth2 = Oauth2;
 })();
 
+(function() {
+  'use strict';
+
+  var VALIDATIONS = {
+    required: function(value) { return value !== null && value !== undefined && value !== ''; }
+  };
+
+  function Validator(validations) {
+    this.validations = validations;
+  }
+
+  Validator.prototype.validate = function(value) {
+    var errors;
+
+    for (var validation in this.validations) {
+      if (!this.validations[validation](value)) {
+        errors = errors || [];
+        errors.push(validation);
+      }
+    }
+
+    return errors;
+  };
+
+  Validator.from = function(definition) {
+    if (!definition) {
+      throw new Error('definition is required!');
+    }
+
+    var validations = {};
+
+    if (definition.required) {
+      validations.required = VALIDATIONS.required;
+    }
+
+    return new Validator(validations);
+  };
+
+  RAML.Client.Validator = Validator;
+})();
+
 'use strict';
 
 (function() {
@@ -9234,6 +9275,55 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 })();
 
+(function() {
+  'use strict';
+
+  var Controller = function($scope) {
+    this.model = $scope.bindTo;
+    this.name = $scope.name;
+    this.invalidClass = $scope.invalidClass || 'warning';
+    this.validator = RAML.Client.Validator.from($scope.constraints);
+
+    $scope.input = this;
+  };
+
+  Controller.prototype.currentValue = function() {
+    return this.model[this.name];
+  };
+
+  Controller.prototype.validate = function() {
+    var errors = this.validator.validate(this.currentValue());
+
+    if (errors) {
+      this.status = this.invalidClass;
+    }
+  };
+
+  RAML.Directives.validatedInput = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'views/validated_input.tmpl.html',
+      replace: true,
+      scope: {
+        bindTo: '=',
+        constraints: '=',
+        placeholder: '@',
+        invalidClass: '@?',
+        name: '@'
+      },
+      controller: Controller,
+      link: function(scope, el, attrs) {
+        scope.type = attrs.type || 'text';
+
+        var input = el.find('input');
+        input.on('blur', function() {
+          scope.$apply('input.validate()');
+        });
+      }
+    };
+  };
+})();
+
 RAML.Filters = {};
 
 (function() {
@@ -9297,6 +9387,7 @@ RAML.Filters = {};
   module.directive('tab', RAML.Directives.tab);
   module.directive('tabset', RAML.Directives.tabset);
   module.directive('tryIt', RAML.Directives.tryIt);
+  module.directive('validatedInput', RAML.Directives.validatedInput);
 
   module.controller('TryItController', RAML.Controllers.tryIt);
 
@@ -9674,6 +9765,18 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    </div>\n" +
     "  </div>\n" +
     "</section>\n"
+  );
+
+  $templateCache.put("views/validated_input.tmpl.html",
+    "<div>\n" +
+    "  <input \n" +
+    "    name=\"{{name}}\"\n" +
+    "    type=\"{{type}}\"\n" +
+    "    placeholder=\"{{placeholder}}\"\n" +
+    "    ng-model=\"bindTo[name]\"\n" +
+    "    ng-class=\"input.status\"\n" +
+    "  />\n" +
+    "</div>\n"
   );
 
 }]);

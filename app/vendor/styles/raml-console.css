@@ -2351,6 +2351,12 @@ raml-console article#raml-console .try-it .response {
 raml-console article#raml-console .try-it .response .response-value {
   font-family: monospace;
 }
+raml-console article#raml-console input.warning {
+  border-color: #c09853;
+}
+raml-console article#raml-console input.error {
+  border-color: #b94a48;
+}
 raml-console article#raml-console [role=documentation] {
   padding: 20px;
 }
