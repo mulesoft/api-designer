@@ -4,8 +4,18 @@ var CodeMirror = window.CodeMirror;
 
 
 angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
-  .factory('codeMirror', function (ramlHint, codeMirrorHighLight, eventService,
-    getLineIndent, generateSpaces, generateTabs, getParentLine, getFoldRange) {
+  .factory('replaceSelection', function (ramlHint, generateTabs){
+    return function(editor, offset, whitespace){
+      var editorState = ramlHint.getEditorState(editor);
+
+      var spaces = '\n' + generateTabs(editorState.currLineTabCount + offset) + whitespace;
+      editor.replaceSelection(spaces, 'end', '+input');
+    };
+  })
+  .factory('codeMirror', function (
+    ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
+    getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
+    hasChildren, replaceSelection) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
@@ -67,33 +77,18 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     service.enterKey = function (cm) {
       var editorState = ramlHint.getEditorState(cm);
       var indentUnit = cm.getOption('indentUnit');
-      var indent = editorState.currLineTabCount;
       var curLineWithoutTabs = service.removeTabs(editorState.curLine, indentUnit);
-      var parentLine = getParentLine(cm, editorState.start.line, indent);
+      var parentLine = getParentLine(cm, editorState.start.line);
 
       // this overrides everything else, because the '|' explicitly declares the line as a scalar
       // with a continuation on other lines. This applies to the current line or the parent of the current line
-      if (/\|$/.test(curLineWithoutTabs)) {
-        _replaceSelection(cm, 1, '');
+      if(curLineWithoutTabs.indexOf('|') > curLineWithoutTabs.indexOf(':')) {
+        replaceSelection(cm, 1, '');
         return;
       }
 
-      if (/\|$/.test(parentLine)) {
-        _replaceSelection(cm, 0, '');
-        return;
-      }
-
-      // if it's a sequence (<dash><space><...>)
-      if (/^-\s/.test(curLineWithoutTabs)) {
-        if (/:\s*$/.test(curLineWithoutTabs)) {
-          // we should add another indentation in case of one-key mapping
-          _replaceSelection(cm, 2, '');
-        } else {
-          // or keep the same indentation level in case user wants to keep
-          // entering sequence entries, but with a little help, we start
-          // new line with '- '
-          _replaceSelection(cm, 0, '- ');
-        }
+      if(parentLine && parentLine.indexOf('|') > parentLine.indexOf(':')) {
+        replaceSelection(cm, 0, '');
         return;
       }
 
@@ -101,18 +96,30 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       // one indentation level should be added or the same level should be kept if
       // the cursor is not on the first line
       if (/^(content|example|schema):/.test(curLineWithoutTabs)) {
-        _replaceSelection(cm, 1, '');
+        replaceSelection(cm, 1, '');
         return;
       }
 
       if (/^(\s+)?(content|example|schema):/.test(parentLine)) {
-        _replaceSelection(cm, 0, '');
+        replaceSelection(cm, 0, '');
+        return;
+      }
+
+      //if current line is inside a traits or resourceTypes array,
+      //some exception applies...
+      if(parentLine && /^(traits|resourceTypes):/.test(parentLine)){
+        replaceSelection(cm, isArrayStarter(curLineWithoutTabs) ? 2 : 1, '');
+        return;
+      }
+
+      if(isArrayElement(cm, editorState.start.line)) {
+        replaceSelection(cm, isArrayStarter(curLineWithoutTabs) ? 1 : 0, '');
         return;
       }
 
       var offset = 0;
       if (curLineWithoutTabs.replace(' ', '').length > 0) {
-        if (_currentNodeHasChildren(cm)) {
+        if (hasChildren(cm)) {
           offset = 1;
         }
       }
@@ -128,30 +135,8 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         extraWhitespace = leadingWhitespace[0];
       }
 
-      _replaceSelection (cm, offset, extraWhitespace);
+      replaceSelection (cm, offset, extraWhitespace);
     };
-
-    function _replaceSelection(editor, offset, whitespace) {
-      var editorState = ramlHint.getEditorState(editor);
-
-      var spaces = '\n' + generateTabs(editorState.currLineTabCount + offset) + whitespace;
-      editor.replaceSelection(spaces, 'end', '+input');
-    }
-
-
-    function _currentNodeHasChildren(cm) {
-      var editorState = ramlHint.getEditorState(cm);
-
-      var potentialChildren = ramlHint.getScopes(cm).scopeLevels[editorState.currLineTabCount > 0 ? editorState.currLineTabCount + 1 : 1], firstChild;
-
-      if(potentialChildren) {
-        firstChild = potentialChildren.filter(function(line) {
-          return line === editorState.start.line + 1;
-        }).pop();
-      }
-
-      return !!firstChild;
-    }
 
     service.initEditor = function () {
 

@@ -1,13 +1,79 @@
 'use strict';
 
 describe('code folding', function () {
-  var getFoldRange, editor;
+  var getFoldRange, getParentLine, editor;
 
   beforeEach(module('codeFolding'));
 
-  beforeEach(inject(function (_getFoldRange_) {
+  beforeEach(inject(function (_getFoldRange_, _getParentLine_) {
     getFoldRange = _getFoldRange_;
+    getParentLine = _getParentLine_;
   }));
+
+  describe('document traversing', function (){
+    it('should detect parent correctly for trait items with and without dash', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: document transversing\n' +
+        'traits:\n' +
+        '  - trait-one:\n' +
+        '  - trait-two:\n' +
+        '    trait-three:',
+        {line: 0, ch: 0},
+        { indentUnit: indentUnit });
+
+      var parentLine = getParentLine(editor, 2, 1);
+      parentLine.should.equal('traits:');
+
+      var parentLine = getParentLine(editor, 3, 1);
+      parentLine.should.equal('traits:');
+
+      var parentLine = getParentLine(editor, 4, 1);
+      parentLine.should.equal('traits:');
+    });
+
+    it('should detect parent correctly for resourceType items with and without dash', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: document transversing\n' +
+        'resourceTypes:\n' +
+        '  - base:\n' +
+        '  - image:\n' +
+        '    video:',
+        {line: 0, ch: 0},
+        { indentUnit: indentUnit });
+
+      var parentLine = getParentLine(editor, 2, 1);
+      parentLine.should.equal('resourceTypes:');
+
+      var parentLine = getParentLine(editor, 3, 1);
+      parentLine.should.equal('resourceTypes:');
+
+      var parentLine = getParentLine(editor, 4, 2);
+      parentLine.should.equal('resourceTypes:');
+    });
+
+    it('should detect parent correctly for array items with and without dash', function (){
+      var indentUnit = 2;
+      editor = getEditor(
+        'title: document transversing\n' +
+        'key:\n' +
+        '  - base:\n' +
+        '  - image:\n' +
+        '    video:',
+        {line: 0, ch: 0},
+        { indentUnit: indentUnit });
+
+      var parentLine = getParentLine(editor, 2, 1);
+      parentLine.should.equal('key:');
+
+      var parentLine = getParentLine(editor, 3, 1);
+      parentLine.should.equal('key:');
+
+      var parentLine = getParentLine(editor, 4, 2);
+      parentLine.should.equal('key:');
+    });
+  });
 
   it('should detect fold ranges of only one line', function (){
     var indentUnit = 2;

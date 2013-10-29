@@ -139,7 +139,6 @@ describe('RAML Hint Service', function () {
       });
     });
 
-
     describe('getEditorState', function () {
       it('should be consistent with editor state', function () {
         var editor = getEditor(
