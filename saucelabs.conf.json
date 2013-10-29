@@ -1,0 +1,17 @@
+{
+  "options": {
+    "reporter": "Spec",
+    "sauceSession": "RAML Tooling Editor",
+    "browsers": [
+      {
+        "base": "SauceLabs",
+        "browserName": "Chrome",
+        "platform": "Windows 7",
+        "version": 27
+      }
+    ]
+  },
+  "files": {
+    "src": "scenario/test/e2e/editor-parser.js"
+  }
+}

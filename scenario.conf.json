@@ -1,0 +1,9 @@
+{
+ "options": {
+    "reporter": "spec",
+    "browsers": ["Chrome"]
+  },
+  "files": {
+    "src": "scenario/test/e2e/editor-parser.js"
+  }
+}

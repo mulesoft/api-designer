@@ -260,33 +260,8 @@ module.exports = function (grunt) {
       }
     },
     mochaProtractor: {
-      local: {
-        options: {
-          reporter: 'spec',
-          browsers: ['Chrome']
-        },
-        files: {
-//          src: 'scenario/test/e2e/raml-example/muse-console.js'
-          src: 'scenario/test/e2e/editor-parser.js'
-        }
-      },
-      saucelabs: {
-        options: {
-          reporter: 'Spec',
-          sauceSession: 'RAML Tooling Editor',
-          browsers: [
-            {
-              base: 'SauceLabs',
-              browserName: 'Chrome',
-              platform: 'Windows 7',
-              version: 27
-            }
-          ]
-        },
-        files: {
-          src: 'scenario/test/e2e/editor-parser.js'
-        }
-      }
+      local: grunt.file.readJSON('scenario.conf.json'),
+      saucelabs: grunt.file.readJSON('saucelabs.conf.json')
     }
   });
 
