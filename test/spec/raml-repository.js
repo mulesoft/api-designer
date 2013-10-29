@@ -5,13 +5,21 @@ describe('RAML Repository', function () {
 
   beforeEach(module('fs'));
 
-  beforeEach(function () {
-    module('fs');
-  });
-  
   beforeEach(inject(function (_ramlRepository_) {
     ramlRepository = _ramlRepository_;
   }));
+
+  function extractProperties (obj) {
+    var extractedProperies = {}, i, currentPropertyKey;
+    
+    for (i = 1; i < arguments.length; i++) {
+      currentPropertyKey = arguments[i];
+      extractedProperies[currentPropertyKey] = obj[currentPropertyKey];
+    }
+
+    return extractedProperies;
+    
+  }
 
   describe('getDirectory', function () {
 
@@ -25,20 +33,22 @@ describe('RAML Repository', function () {
 
       // Act
       var directoryList = ramlRepository.getDirectory('/', success, error);
+      var oldDirectoryList = extractProperties(directoryList, 'loading', 'length', 'error');
+      directoryExpectation.firstCall.args[1](files);
 
       // Assert
-      directoryList.loading.should.be.equal(true);
-      directoryList.length.should.be.equal(0);
-      should.not.exist(directoryList.error);
+      oldDirectoryList.loading.should.be.equal(true);
+      oldDirectoryList.length.should.be.equal(0);
+      should.not.exist(oldDirectoryList.error);
 
-      directoryExpectation.firstCall.args[1](files);
       
       directoryList.loading.should.be.equal(false);
       directoryList.length.should.be.equal(1);
       should.not.exist(directoryList.error);
 
       success.calledOnce.should.be.equal(true);
-      success.firstCall.args[0][0].should.be.deep.equal(directoryList[0]);
+      var successCallFirstArgument = success.firstCall.args[0];
+      successCallFirstArgument.should.be.deep.equal(directoryList);
       directoryList[0].path.should.be.equal('/');
       directoryList[0].name.should.be.equal(files[0]);
 
@@ -59,14 +69,14 @@ describe('RAML Repository', function () {
 
       // Act
       var directoryList = ramlRepository.getDirectory('/', success, error);
+      var oldDirectoryList = extractProperties(directoryList, 'loading', 'length', 'error');
+      directoryExpectation.firstCall.args[2](errorData);
 
       // Assert
-      directoryList.loading.should.be.equal(true);
-      directoryList.length.should.be.equal(0);
-      should.not.exist(directoryList.error);
+      oldDirectoryList.loading.should.be.equal(true);
+      oldDirectoryList.length.should.be.equal(0);
+      should.not.exist(oldDirectoryList.error);
 
-      directoryExpectation.firstCall.args[2](errorData);
-      
       directoryList.loading.should.be.equal(false);
       directoryList.length.should.be.equal(0);
       directoryList.error.should.be.equal(errorData);
@@ -93,11 +103,11 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.loadFile(fileMock, success, error);
+      var oldFileMock = extractProperties(fileMock, 'loading');
+      loadExpectation.firstCall.args[2](fileContent);
 
       // Assert
-      fileMock.loading.should.be.equal(true);
-
-      loadExpectation.firstCall.args[2](fileContent);
+      oldFileMock.loading.should.be.equal(true);
       
       success.calledOnce.should.be.equal(true);
       var file = success.firstCall.args[0];
@@ -126,11 +136,12 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.loadFile(fileMock, success, error);
+      var oldFileMock = extractProperties(fileMock, 'loading');
+      loadExpectation.firstCall.args[3](errorData);
 
       // Assert
-      fileMock.loading.should.be.equal(true);
+      oldFileMock.loading.should.be.equal(true);
 
-      loadExpectation.firstCall.args[3](errorData);
       
       error.firstCall.args[0].should.be.equal(errorData);
       
@@ -159,11 +170,11 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.removeFile(fileMock, success, error);
+      var oldFileMock = extractProperties(fileMock, 'loading');
+      removeExpectation.firstCall.args[2](fileContent);
 
       // Assert
-      fileMock.loading.should.be.equal(true);
-
-      removeExpectation.firstCall.args[2](fileContent);
+      oldFileMock.loading.should.be.equal(true);
       
       success.calledOnce.should.be.equal(true);
       var file = success.firstCall.args[0];
@@ -192,11 +203,11 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.removeFile(fileMock, success, error);
+      var oldFileMock = extractProperties(fileMock, 'loading');
+      removeExpectation.firstCall.args[3](errorData);
 
       // Assert
-      fileMock.loading.should.be.equal(true);
-
-      removeExpectation.firstCall.args[3](errorData);
+      oldFileMock.loading.should.be.equal(true);
       
       error.firstCall.args[0].should.be.equal(errorData);
       
@@ -243,11 +254,11 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.saveFile(fileMock, success, error);
+      var oldFileMock = extractProperties(fileMock, 'loading');
+      saveExpectation.firstCall.args[3](fileContent);
 
       // Assert
-      fileMock.loading.should.be.equal(true);
-
-      saveExpectation.firstCall.args[3](fileContent);
+      oldFileMock.loading.should.be.equal(true);
       
       success.calledOnce.should.be.equal(true);
       var file = success.firstCall.args[0];
@@ -277,11 +288,11 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.saveFile(fileMock, success, error);
+      var oldFileMock = extractProperties(fileMock, 'loading');
+      saveExpectation.firstCall.args[4](errorData);
 
       // Assert
-      fileMock.loading.should.be.equal(true);
-
-      saveExpectation.firstCall.args[4](errorData);
+      oldFileMock.loading.should.be.equal(true);
       
       error.firstCall.args[0].should.be.equal(errorData);
       
@@ -326,13 +337,11 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.bootstrap(then);
-
-      // Assert
       then.called.should.be.equal(false);
-      
-      getDirectoryStub.firstCall.args[1]([fileMock]);
+      getDirectoryStub.firstCall.args[1]([fileMock, {someotherfile: 'file'}, {somefile: 'file'}]);
       loadFileStub.firstCall.args[1]();
 
+      // Assert
       then.called.should.be.equal(true);
       then.firstCall.args[0].should.be.equal(fileMock);
       
@@ -354,12 +363,10 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.bootstrap(then);
-
-      // Assert
       then.called.should.be.equal(false);
-      
       getDirectoryStub.firstCall.args[1]([]);
 
+      // Assert
       then.called.should.be.equal(true);
       then.firstCall.args[0].should.be.equal(newFileContent);
       
@@ -382,12 +389,10 @@ describe('RAML Repository', function () {
 
       // Act
       ramlRepository.bootstrap(then);
-
-      // Assert
       then.called.should.be.equal(false);
-      
       getDirectoryStub.firstCall.args[2]();
 
+      // Assert
       then.called.should.be.equal(true);
       then.firstCall.args[0].should.be.equal(newFileContent);
       
