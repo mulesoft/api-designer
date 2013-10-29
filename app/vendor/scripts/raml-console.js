@@ -1,5 +1,5 @@
 /*!
- * jQuery JavaScript Library v2.0.3
+ * jQuery JavaScript Library v2.0.3 -wrap,-ajax/script,-ajax/jsonp,-effects,-offset,-dimensions,-deprecated
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -9,7 +9,7 @@
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2013-07-03T13:30Z
+ * Date: 2013-10-22T20:25Z
  */
 (function( window, undefined ) {
 
@@ -46,7 +46,7 @@ var
 	// List of deleted data cache ids, so we can reuse them
 	core_deletedIds = [],
 
-	core_version = "2.0.3",
+	core_version = "2.0.3 -wrap,-ajax/script,-ajax/jsonp,-effects,-offset,-dimensions,-deprecated",
 
 	// Save a reference to some core methods
 	core_concat = core_deletedIds.concat,
@@ -5986,75 +5986,6 @@ function fixInput( src, dest ) {
 		dest.defaultValue = src.defaultValue;
 	}
 }
-jQuery.fn.extend({
-	wrapAll: function( html ) {
-		var wrap;
-
-		if ( jQuery.isFunction( html ) ) {
-			return this.each(function( i ) {
-				jQuery( this ).wrapAll( html.call(this, i) );
-			});
-		}
-
-		if ( this[ 0 ] ) {
-
-			// The elements to wrap the target around
-			wrap = jQuery( html, this[ 0 ].ownerDocument ).eq( 0 ).clone( true );
-
-			if ( this[ 0 ].parentNode ) {
-				wrap.insertBefore( this[ 0 ] );
-			}
-
-			wrap.map(function() {
-				var elem = this;
-
-				while ( elem.firstElementChild ) {
-					elem = elem.firstElementChild;
-				}
-
-				return elem;
-			}).append( this );
-		}
-
-		return this;
-	},
-
-	wrapInner: function( html ) {
-		if ( jQuery.isFunction( html ) ) {
-			return this.each(function( i ) {
-				jQuery( this ).wrapInner( html.call(this, i) );
-			});
-		}
-
-		return this.each(function() {
-			var self = jQuery( this ),
-				contents = self.contents();
-
-			if ( contents.length ) {
-				contents.wrapAll( html );
-
-			} else {
-				self.append( html );
-			}
-		});
-	},
-
-	wrap: function( html ) {
-		var isFunction = jQuery.isFunction( html );
-
-		return this.each(function( i ) {
-			jQuery( this ).wrapAll( isFunction ? html.call(this, i) : html );
-		});
-	},
-
-	unwrap: function() {
-		return this.parent().each(function() {
-			if ( !jQuery.nodeName( this, "body" ) ) {
-				jQuery( this ).replaceWith( this.childNodes );
-			}
-		}).end();
-	}
-});
 var curCSS, iframe,
 	// swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
 	// see here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
@@ -7604,143 +7535,6 @@ function ajaxConvert( s, response, jqXHR, isSuccess ) {
 
 	return { state: "success", data: response };
 }
-// Install script dataType
-jQuery.ajaxSetup({
-	accepts: {
-		script: "text/javascript, application/javascript, application/ecmascript, application/x-ecmascript"
-	},
-	contents: {
-		script: /(?:java|ecma)script/
-	},
-	converters: {
-		"text script": function( text ) {
-			jQuery.globalEval( text );
-			return text;
-		}
-	}
-});
-
-// Handle cache's special case and crossDomain
-jQuery.ajaxPrefilter( "script", function( s ) {
-	if ( s.cache === undefined ) {
-		s.cache = false;
-	}
-	if ( s.crossDomain ) {
-		s.type = "GET";
-	}
-});
-
-// Bind script tag hack transport
-jQuery.ajaxTransport( "script", function( s ) {
-	// This transport only deals with cross domain requests
-	if ( s.crossDomain ) {
-		var script, callback;
-		return {
-			send: function( _, complete ) {
-				script = jQuery("<script>").prop({
-					async: true,
-					charset: s.scriptCharset,
-					src: s.url
-				}).on(
-					"load error",
-					callback = function( evt ) {
-						script.remove();
-						callback = null;
-						if ( evt ) {
-							complete( evt.type === "error" ? 404 : 200, evt.type );
-						}
-					}
-				);
-				document.head.appendChild( script[ 0 ] );
-			},
-			abort: function() {
-				if ( callback ) {
-					callback();
-				}
-			}
-		};
-	}
-});
-var oldCallbacks = [],
-	rjsonp = /(=)\?(?=&|$)|\?\?/;
-
-// Default jsonp settings
-jQuery.ajaxSetup({
-	jsonp: "callback",
-	jsonpCallback: function() {
-		var callback = oldCallbacks.pop() || ( jQuery.expando + "_" + ( ajax_nonce++ ) );
-		this[ callback ] = true;
-		return callback;
-	}
-});
-
-// Detect, normalize options and install callbacks for jsonp requests
-jQuery.ajaxPrefilter( "json jsonp", function( s, originalSettings, jqXHR ) {
-
-	var callbackName, overwritten, responseContainer,
-		jsonProp = s.jsonp !== false && ( rjsonp.test( s.url ) ?
-			"url" :
-			typeof s.data === "string" && !( s.contentType || "" ).indexOf("application/x-www-form-urlencoded") && rjsonp.test( s.data ) && "data"
-		);
-
-	// Handle iff the expected data type is "jsonp" or we have a parameter to set
-	if ( jsonProp || s.dataTypes[ 0 ] === "jsonp" ) {
-
-		// Get callback name, remembering preexisting value associated with it
-		callbackName = s.jsonpCallback = jQuery.isFunction( s.jsonpCallback ) ?
-			s.jsonpCallback() :
-			s.jsonpCallback;
-
-		// Insert callback into url or form data
-		if ( jsonProp ) {
-			s[ jsonProp ] = s[ jsonProp ].replace( rjsonp, "$1" + callbackName );
-		} else if ( s.jsonp !== false ) {
-			s.url += ( ajax_rquery.test( s.url ) ? "&" : "?" ) + s.jsonp + "=" + callbackName;
-		}
-
-		// Use data converter to retrieve json after script execution
-		s.converters["script json"] = function() {
-			if ( !responseContainer ) {
-				jQuery.error( callbackName + " was not called" );
-			}
-			return responseContainer[ 0 ];
-		};
-
-		// force json dataType
-		s.dataTypes[ 0 ] = "json";
-
-		// Install callback
-		overwritten = window[ callbackName ];
-		window[ callbackName ] = function() {
-			responseContainer = arguments;
-		};
-
-		// Clean-up function (fires after converters)
-		jqXHR.always(function() {
-			// Restore preexisting value
-			window[ callbackName ] = overwritten;
-
-			// Save back as free
-			if ( s[ callbackName ] ) {
-				// make sure that re-using the options doesn't screw things around
-				s.jsonpCallback = originalSettings.jsonpCallback;
-
-				// save the callback name for future use
-				oldCallbacks.push( callbackName );
-			}
-
-			// Call if it was a function and we have a response
-			if ( responseContainer && jQuery.isFunction( overwritten ) ) {
-				overwritten( responseContainer[ 0 ] );
-			}
-
-			responseContainer = overwritten = undefined;
-		});
-
-		// Delegate to script
-		return "script";
-	}
-});
 jQuery.ajaxSettings.xhr = function() {
 	try {
 		return new XMLHttpRequest();
@@ -7852,955 +7646,6 @@ jQuery.ajaxTransport(function( options ) {
 		};
 	}
 });
-var fxNow, timerId,
-	rfxtypes = /^(?:toggle|show|hide)$/,
-	rfxnum = new RegExp( "^(?:([+-])=|)(" + core_pnum + ")([a-z%]*)$", "i" ),
-	rrun = /queueHooks$/,
-	animationPrefilters = [ defaultPrefilter ],
-	tweeners = {
-		"*": [function( prop, value ) {
-			var tween = this.createTween( prop, value ),
-				target = tween.cur(),
-				parts = rfxnum.exec( value ),
-				unit = parts && parts[ 3 ] || ( jQuery.cssNumber[ prop ] ? "" : "px" ),
-
-				// Starting value computation is required for potential unit mismatches
-				start = ( jQuery.cssNumber[ prop ] || unit !== "px" && +target ) &&
-					rfxnum.exec( jQuery.css( tween.elem, prop ) ),
-				scale = 1,
-				maxIterations = 20;
-
-			if ( start && start[ 3 ] !== unit ) {
-				// Trust units reported by jQuery.css
-				unit = unit || start[ 3 ];
-
-				// Make sure we update the tween properties later on
-				parts = parts || [];
-
-				// Iteratively approximate from a nonzero starting point
-				start = +target || 1;
-
-				do {
-					// If previous iteration zeroed out, double until we get *something*
-					// Use a string for doubling factor so we don't accidentally see scale as unchanged below
-					scale = scale || ".5";
-
-					// Adjust and apply
-					start = start / scale;
-					jQuery.style( tween.elem, prop, start + unit );
-
-				// Update scale, tolerating zero or NaN from tween.cur()
-				// And breaking the loop if scale is unchanged or perfect, or if we've just had enough
-				} while ( scale !== (scale = tween.cur() / target) && scale !== 1 && --maxIterations );
-			}
-
-			// Update tween properties
-			if ( parts ) {
-				start = tween.start = +start || +target || 0;
-				tween.unit = unit;
-				// If a +=/-= token was provided, we're doing a relative animation
-				tween.end = parts[ 1 ] ?
-					start + ( parts[ 1 ] + 1 ) * parts[ 2 ] :
-					+parts[ 2 ];
-			}
-
-			return tween;
-		}]
-	};
-
-// Animations created synchronously will run synchronously
-function createFxNow() {
-	setTimeout(function() {
-		fxNow = undefined;
-	});
-	return ( fxNow = jQuery.now() );
-}
-
-function createTween( value, prop, animation ) {
-	var tween,
-		collection = ( tweeners[ prop ] || [] ).concat( tweeners[ "*" ] ),
-		index = 0,
-		length = collection.length;
-	for ( ; index < length; index++ ) {
-		if ( (tween = collection[ index ].call( animation, prop, value )) ) {
-
-			// we're done with this property
-			return tween;
-		}
-	}
-}
-
-function Animation( elem, properties, options ) {
-	var result,
-		stopped,
-		index = 0,
-		length = animationPrefilters.length,
-		deferred = jQuery.Deferred().always( function() {
-			// don't match elem in the :animated selector
-			delete tick.elem;
-		}),
-		tick = function() {
-			if ( stopped ) {
-				return false;
-			}
-			var currentTime = fxNow || createFxNow(),
-				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
-				// archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
-				temp = remaining / animation.duration || 0,
-				percent = 1 - temp,
-				index = 0,
-				length = animation.tweens.length;
-
-			for ( ; index < length ; index++ ) {
-				animation.tweens[ index ].run( percent );
-			}
-
-			deferred.notifyWith( elem, [ animation, percent, remaining ]);
-
-			if ( percent < 1 && length ) {
-				return remaining;
-			} else {
-				deferred.resolveWith( elem, [ animation ] );
-				return false;
-			}
-		},
-		animation = deferred.promise({
-			elem: elem,
-			props: jQuery.extend( {}, properties ),
-			opts: jQuery.extend( true, { specialEasing: {} }, options ),
-			originalProperties: properties,
-			originalOptions: options,
-			startTime: fxNow || createFxNow(),
-			duration: options.duration,
-			tweens: [],
-			createTween: function( prop, end ) {
-				var tween = jQuery.Tween( elem, animation.opts, prop, end,
-						animation.opts.specialEasing[ prop ] || animation.opts.easing );
-				animation.tweens.push( tween );
-				return tween;
-			},
-			stop: function( gotoEnd ) {
-				var index = 0,
-					// if we are going to the end, we want to run all the tweens
-					// otherwise we skip this part
-					length = gotoEnd ? animation.tweens.length : 0;
-				if ( stopped ) {
-					return this;
-				}
-				stopped = true;
-				for ( ; index < length ; index++ ) {
-					animation.tweens[ index ].run( 1 );
-				}
-
-				// resolve when we played the last frame
-				// otherwise, reject
-				if ( gotoEnd ) {
-					deferred.resolveWith( elem, [ animation, gotoEnd ] );
-				} else {
-					deferred.rejectWith( elem, [ animation, gotoEnd ] );
-				}
-				return this;
-			}
-		}),
-		props = animation.props;
-
-	propFilter( props, animation.opts.specialEasing );
-
-	for ( ; index < length ; index++ ) {
-		result = animationPrefilters[ index ].call( animation, elem, props, animation.opts );
-		if ( result ) {
-			return result;
-		}
-	}
-
-	jQuery.map( props, createTween, animation );
-
-	if ( jQuery.isFunction( animation.opts.start ) ) {
-		animation.opts.start.call( elem, animation );
-	}
-
-	jQuery.fx.timer(
-		jQuery.extend( tick, {
-			elem: elem,
-			anim: animation,
-			queue: animation.opts.queue
-		})
-	);
-
-	// attach callbacks from options
-	return animation.progress( animation.opts.progress )
-		.done( animation.opts.done, animation.opts.complete )
-		.fail( animation.opts.fail )
-		.always( animation.opts.always );
-}
-
-function propFilter( props, specialEasing ) {
-	var index, name, easing, value, hooks;
-
-	// camelCase, specialEasing and expand cssHook pass
-	for ( index in props ) {
-		name = jQuery.camelCase( index );
-		easing = specialEasing[ name ];
-		value = props[ index ];
-		if ( jQuery.isArray( value ) ) {
-			easing = value[ 1 ];
-			value = props[ index ] = value[ 0 ];
-		}
-
-		if ( index !== name ) {
-			props[ name ] = value;
-			delete props[ index ];
-		}
-
-		hooks = jQuery.cssHooks[ name ];
-		if ( hooks && "expand" in hooks ) {
-			value = hooks.expand( value );
-			delete props[ name ];
-
-			// not quite $.extend, this wont overwrite keys already present.
-			// also - reusing 'index' from above because we have the correct "name"
-			for ( index in value ) {
-				if ( !( index in props ) ) {
-					props[ index ] = value[ index ];
-					specialEasing[ index ] = easing;
-				}
-			}
-		} else {
-			specialEasing[ name ] = easing;
-		}
-	}
-}
-
-jQuery.Animation = jQuery.extend( Animation, {
-
-	tweener: function( props, callback ) {
-		if ( jQuery.isFunction( props ) ) {
-			callback = props;
-			props = [ "*" ];
-		} else {
-			props = props.split(" ");
-		}
-
-		var prop,
-			index = 0,
-			length = props.length;
-
-		for ( ; index < length ; index++ ) {
-			prop = props[ index ];
-			tweeners[ prop ] = tweeners[ prop ] || [];
-			tweeners[ prop ].unshift( callback );
-		}
-	},
-
-	prefilter: function( callback, prepend ) {
-		if ( prepend ) {
-			animationPrefilters.unshift( callback );
-		} else {
-			animationPrefilters.push( callback );
-		}
-	}
-});
-
-function defaultPrefilter( elem, props, opts ) {
-	/* jshint validthis: true */
-	var prop, value, toggle, tween, hooks, oldfire,
-		anim = this,
-		orig = {},
-		style = elem.style,
-		hidden = elem.nodeType && isHidden( elem ),
-		dataShow = data_priv.get( elem, "fxshow" );
-
-	// handle queue: false promises
-	if ( !opts.queue ) {
-		hooks = jQuery._queueHooks( elem, "fx" );
-		if ( hooks.unqueued == null ) {
-			hooks.unqueued = 0;
-			oldfire = hooks.empty.fire;
-			hooks.empty.fire = function() {
-				if ( !hooks.unqueued ) {
-					oldfire();
-				}
-			};
-		}
-		hooks.unqueued++;
-
-		anim.always(function() {
-			// doing this makes sure that the complete handler will be called
-			// before this completes
-			anim.always(function() {
-				hooks.unqueued--;
-				if ( !jQuery.queue( elem, "fx" ).length ) {
-					hooks.empty.fire();
-				}
-			});
-		});
-	}
-
-	// height/width overflow pass
-	if ( elem.nodeType === 1 && ( "height" in props || "width" in props ) ) {
-		// Make sure that nothing sneaks out
-		// Record all 3 overflow attributes because IE9-10 do not
-		// change the overflow attribute when overflowX and
-		// overflowY are set to the same value
-		opts.overflow = [ style.overflow, style.overflowX, style.overflowY ];
-
-		// Set display property to inline-block for height/width
-		// animations on inline elements that are having width/height animated
-		if ( jQuery.css( elem, "display" ) === "inline" &&
-				jQuery.css( elem, "float" ) === "none" ) {
-
-			style.display = "inline-block";
-		}
-	}
-
-	if ( opts.overflow ) {
-		style.overflow = "hidden";
-		anim.always(function() {
-			style.overflow = opts.overflow[ 0 ];
-			style.overflowX = opts.overflow[ 1 ];
-			style.overflowY = opts.overflow[ 2 ];
-		});
-	}
-
-
-	// show/hide pass
-	for ( prop in props ) {
-		value = props[ prop ];
-		if ( rfxtypes.exec( value ) ) {
-			delete props[ prop ];
-			toggle = toggle || value === "toggle";
-			if ( value === ( hidden ? "hide" : "show" ) ) {
-
-				// If there is dataShow left over from a stopped hide or show and we are going to proceed with show, we should pretend to be hidden
-				if ( value === "show" && dataShow && dataShow[ prop ] !== undefined ) {
-					hidden = true;
-				} else {
-					continue;
-				}
-			}
-			orig[ prop ] = dataShow && dataShow[ prop ] || jQuery.style( elem, prop );
-		}
-	}
-
-	if ( !jQuery.isEmptyObject( orig ) ) {
-		if ( dataShow ) {
-			if ( "hidden" in dataShow ) {
-				hidden = dataShow.hidden;
-			}
-		} else {
-			dataShow = data_priv.access( elem, "fxshow", {} );
-		}
-
-		// store state if its toggle - enables .stop().toggle() to "reverse"
-		if ( toggle ) {
-			dataShow.hidden = !hidden;
-		}
-		if ( hidden ) {
-			jQuery( elem ).show();
-		} else {
-			anim.done(function() {
-				jQuery( elem ).hide();
-			});
-		}
-		anim.done(function() {
-			var prop;
-
-			data_priv.remove( elem, "fxshow" );
-			for ( prop in orig ) {
-				jQuery.style( elem, prop, orig[ prop ] );
-			}
-		});
-		for ( prop in orig ) {
-			tween = createTween( hidden ? dataShow[ prop ] : 0, prop, anim );
-
-			if ( !( prop in dataShow ) ) {
-				dataShow[ prop ] = tween.start;
-				if ( hidden ) {
-					tween.end = tween.start;
-					tween.start = prop === "width" || prop === "height" ? 1 : 0;
-				}
-			}
-		}
-	}
-}
-
-function Tween( elem, options, prop, end, easing ) {
-	return new Tween.prototype.init( elem, options, prop, end, easing );
-}
-jQuery.Tween = Tween;
-
-Tween.prototype = {
-	constructor: Tween,
-	init: function( elem, options, prop, end, easing, unit ) {
-		this.elem = elem;
-		this.prop = prop;
-		this.easing = easing || "swing";
-		this.options = options;
-		this.start = this.now = this.cur();
-		this.end = end;
-		this.unit = unit || ( jQuery.cssNumber[ prop ] ? "" : "px" );
-	},
-	cur: function() {
-		var hooks = Tween.propHooks[ this.prop ];
-
-		return hooks && hooks.get ?
-			hooks.get( this ) :
-			Tween.propHooks._default.get( this );
-	},
-	run: function( percent ) {
-		var eased,
-			hooks = Tween.propHooks[ this.prop ];
-
-		if ( this.options.duration ) {
-			this.pos = eased = jQuery.easing[ this.easing ](
-				percent, this.options.duration * percent, 0, 1, this.options.duration
-			);
-		} else {
-			this.pos = eased = percent;
-		}
-		this.now = ( this.end - this.start ) * eased + this.start;
-
-		if ( this.options.step ) {
-			this.options.step.call( this.elem, this.now, this );
-		}
-
-		if ( hooks && hooks.set ) {
-			hooks.set( this );
-		} else {
-			Tween.propHooks._default.set( this );
-		}
-		return this;
-	}
-};
-
-Tween.prototype.init.prototype = Tween.prototype;
-
-Tween.propHooks = {
-	_default: {
-		get: function( tween ) {
-			var result;
-
-			if ( tween.elem[ tween.prop ] != null &&
-				(!tween.elem.style || tween.elem.style[ tween.prop ] == null) ) {
-				return tween.elem[ tween.prop ];
-			}
-
-			// passing an empty string as a 3rd parameter to .css will automatically
-			// attempt a parseFloat and fallback to a string if the parse fails
-			// so, simple values such as "10px" are parsed to Float.
-			// complex values such as "rotate(1rad)" are returned as is.
-			result = jQuery.css( tween.elem, tween.prop, "" );
-			// Empty strings, null, undefined and "auto" are converted to 0.
-			return !result || result === "auto" ? 0 : result;
-		},
-		set: function( tween ) {
-			// use step hook for back compat - use cssHook if its there - use .style if its
-			// available and use plain properties where available
-			if ( jQuery.fx.step[ tween.prop ] ) {
-				jQuery.fx.step[ tween.prop ]( tween );
-			} else if ( tween.elem.style && ( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null || jQuery.cssHooks[ tween.prop ] ) ) {
-				jQuery.style( tween.elem, tween.prop, tween.now + tween.unit );
-			} else {
-				tween.elem[ tween.prop ] = tween.now;
-			}
-		}
-	}
-};
-
-// Support: IE9
-// Panic based approach to setting things on disconnected nodes
-
-Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
-	set: function( tween ) {
-		if ( tween.elem.nodeType && tween.elem.parentNode ) {
-			tween.elem[ tween.prop ] = tween.now;
-		}
-	}
-};
-
-jQuery.each([ "toggle", "show", "hide" ], function( i, name ) {
-	var cssFn = jQuery.fn[ name ];
-	jQuery.fn[ name ] = function( speed, easing, callback ) {
-		return speed == null || typeof speed === "boolean" ?
-			cssFn.apply( this, arguments ) :
-			this.animate( genFx( name, true ), speed, easing, callback );
-	};
-});
-
-jQuery.fn.extend({
-	fadeTo: function( speed, to, easing, callback ) {
-
-		// show any hidden elements after setting opacity to 0
-		return this.filter( isHidden ).css( "opacity", 0 ).show()
-
-			// animate to the value specified
-			.end().animate({ opacity: to }, speed, easing, callback );
-	},
-	animate: function( prop, speed, easing, callback ) {
-		var empty = jQuery.isEmptyObject( prop ),
-			optall = jQuery.speed( speed, easing, callback ),
-			doAnimation = function() {
-				// Operate on a copy of prop so per-property easing won't be lost
-				var anim = Animation( this, jQuery.extend( {}, prop ), optall );
-
-				// Empty animations, or finishing resolves immediately
-				if ( empty || data_priv.get( this, "finish" ) ) {
-					anim.stop( true );
-				}
-			};
-			doAnimation.finish = doAnimation;
-
-		return empty || optall.queue === false ?
-			this.each( doAnimation ) :
-			this.queue( optall.queue, doAnimation );
-	},
-	stop: function( type, clearQueue, gotoEnd ) {
-		var stopQueue = function( hooks ) {
-			var stop = hooks.stop;
-			delete hooks.stop;
-			stop( gotoEnd );
-		};
-
-		if ( typeof type !== "string" ) {
-			gotoEnd = clearQueue;
-			clearQueue = type;
-			type = undefined;
-		}
-		if ( clearQueue && type !== false ) {
-			this.queue( type || "fx", [] );
-		}
-
-		return this.each(function() {
-			var dequeue = true,
-				index = type != null && type + "queueHooks",
-				timers = jQuery.timers,
-				data = data_priv.get( this );
-
-			if ( index ) {
-				if ( data[ index ] && data[ index ].stop ) {
-					stopQueue( data[ index ] );
-				}
-			} else {
-				for ( index in data ) {
-					if ( data[ index ] && data[ index ].stop && rrun.test( index ) ) {
-						stopQueue( data[ index ] );
-					}
-				}
-			}
-
-			for ( index = timers.length; index--; ) {
-				if ( timers[ index ].elem === this && (type == null || timers[ index ].queue === type) ) {
-					timers[ index ].anim.stop( gotoEnd );
-					dequeue = false;
-					timers.splice( index, 1 );
-				}
-			}
-
-			// start the next in the queue if the last step wasn't forced
-			// timers currently will call their complete callbacks, which will dequeue
-			// but only if they were gotoEnd
-			if ( dequeue || !gotoEnd ) {
-				jQuery.dequeue( this, type );
-			}
-		});
-	},
-	finish: function( type ) {
-		if ( type !== false ) {
-			type = type || "fx";
-		}
-		return this.each(function() {
-			var index,
-				data = data_priv.get( this ),
-				queue = data[ type + "queue" ],
-				hooks = data[ type + "queueHooks" ],
-				timers = jQuery.timers,
-				length = queue ? queue.length : 0;
-
-			// enable finishing flag on private data
-			data.finish = true;
-
-			// empty the queue first
-			jQuery.queue( this, type, [] );
-
-			if ( hooks && hooks.stop ) {
-				hooks.stop.call( this, true );
-			}
-
-			// look for any active animations, and finish them
-			for ( index = timers.length; index--; ) {
-				if ( timers[ index ].elem === this && timers[ index ].queue === type ) {
-					timers[ index ].anim.stop( true );
-					timers.splice( index, 1 );
-				}
-			}
-
-			// look for any animations in the old queue and finish them
-			for ( index = 0; index < length; index++ ) {
-				if ( queue[ index ] && queue[ index ].finish ) {
-					queue[ index ].finish.call( this );
-				}
-			}
-
-			// turn off finishing flag
-			delete data.finish;
-		});
-	}
-});
-
-// Generate parameters to create a standard animation
-function genFx( type, includeWidth ) {
-	var which,
-		attrs = { height: type },
-		i = 0;
-
-	// if we include width, step value is 1 to do all cssExpand values,
-	// if we don't include width, step value is 2 to skip over Left and Right
-	includeWidth = includeWidth? 1 : 0;
-	for( ; i < 4 ; i += 2 - includeWidth ) {
-		which = cssExpand[ i ];
-		attrs[ "margin" + which ] = attrs[ "padding" + which ] = type;
-	}
-
-	if ( includeWidth ) {
-		attrs.opacity = attrs.width = type;
-	}
-
-	return attrs;
-}
-
-// Generate shortcuts for custom animations
-jQuery.each({
-	slideDown: genFx("show"),
-	slideUp: genFx("hide"),
-	slideToggle: genFx("toggle"),
-	fadeIn: { opacity: "show" },
-	fadeOut: { opacity: "hide" },
-	fadeToggle: { opacity: "toggle" }
-}, function( name, props ) {
-	jQuery.fn[ name ] = function( speed, easing, callback ) {
-		return this.animate( props, speed, easing, callback );
-	};
-});
-
-jQuery.speed = function( speed, easing, fn ) {
-	var opt = speed && typeof speed === "object" ? jQuery.extend( {}, speed ) : {
-		complete: fn || !fn && easing ||
-			jQuery.isFunction( speed ) && speed,
-		duration: speed,
-		easing: fn && easing || easing && !jQuery.isFunction( easing ) && easing
-	};
-
-	opt.duration = jQuery.fx.off ? 0 : typeof opt.duration === "number" ? opt.duration :
-		opt.duration in jQuery.fx.speeds ? jQuery.fx.speeds[ opt.duration ] : jQuery.fx.speeds._default;
-
-	// normalize opt.queue - true/undefined/null -> "fx"
-	if ( opt.queue == null || opt.queue === true ) {
-		opt.queue = "fx";
-	}
-
-	// Queueing
-	opt.old = opt.complete;
-
-	opt.complete = function() {
-		if ( jQuery.isFunction( opt.old ) ) {
-			opt.old.call( this );
-		}
-
-		if ( opt.queue ) {
-			jQuery.dequeue( this, opt.queue );
-		}
-	};
-
-	return opt;
-};
-
-jQuery.easing = {
-	linear: function( p ) {
-		return p;
-	},
-	swing: function( p ) {
-		return 0.5 - Math.cos( p*Math.PI ) / 2;
-	}
-};
-
-jQuery.timers = [];
-jQuery.fx = Tween.prototype.init;
-jQuery.fx.tick = function() {
-	var timer,
-		timers = jQuery.timers,
-		i = 0;
-
-	fxNow = jQuery.now();
-
-	for ( ; i < timers.length; i++ ) {
-		timer = timers[ i ];
-		// Checks the timer has not already been removed
-		if ( !timer() && timers[ i ] === timer ) {
-			timers.splice( i--, 1 );
-		}
-	}
-
-	if ( !timers.length ) {
-		jQuery.fx.stop();
-	}
-	fxNow = undefined;
-};
-
-jQuery.fx.timer = function( timer ) {
-	if ( timer() && jQuery.timers.push( timer ) ) {
-		jQuery.fx.start();
-	}
-};
-
-jQuery.fx.interval = 13;
-
-jQuery.fx.start = function() {
-	if ( !timerId ) {
-		timerId = setInterval( jQuery.fx.tick, jQuery.fx.interval );
-	}
-};
-
-jQuery.fx.stop = function() {
-	clearInterval( timerId );
-	timerId = null;
-};
-
-jQuery.fx.speeds = {
-	slow: 600,
-	fast: 200,
-	// Default speed
-	_default: 400
-};
-
-// Back Compat <1.8 extension point
-jQuery.fx.step = {};
-
-if ( jQuery.expr && jQuery.expr.filters ) {
-	jQuery.expr.filters.animated = function( elem ) {
-		return jQuery.grep(jQuery.timers, function( fn ) {
-			return elem === fn.elem;
-		}).length;
-	};
-}
-jQuery.fn.offset = function( options ) {
-	if ( arguments.length ) {
-		return options === undefined ?
-			this :
-			this.each(function( i ) {
-				jQuery.offset.setOffset( this, options, i );
-			});
-	}
-
-	var docElem, win,
-		elem = this[ 0 ],
-		box = { top: 0, left: 0 },
-		doc = elem && elem.ownerDocument;
-
-	if ( !doc ) {
-		return;
-	}
-
-	docElem = doc.documentElement;
-
-	// Make sure it's not a disconnected DOM node
-	if ( !jQuery.contains( docElem, elem ) ) {
-		return box;
-	}
-
-	// If we don't have gBCR, just use 0,0 rather than error
-	// BlackBerry 5, iOS 3 (original iPhone)
-	if ( typeof elem.getBoundingClientRect !== core_strundefined ) {
-		box = elem.getBoundingClientRect();
-	}
-	win = getWindow( doc );
-	return {
-		top: box.top + win.pageYOffset - docElem.clientTop,
-		left: box.left + win.pageXOffset - docElem.clientLeft
-	};
-};
-
-jQuery.offset = {
-
-	setOffset: function( elem, options, i ) {
-		var curPosition, curLeft, curCSSTop, curTop, curOffset, curCSSLeft, calculatePosition,
-			position = jQuery.css( elem, "position" ),
-			curElem = jQuery( elem ),
-			props = {};
-
-		// Set position first, in-case top/left are set even on static elem
-		if ( position === "static" ) {
-			elem.style.position = "relative";
-		}
-
-		curOffset = curElem.offset();
-		curCSSTop = jQuery.css( elem, "top" );
-		curCSSLeft = jQuery.css( elem, "left" );
-		calculatePosition = ( position === "absolute" || position === "fixed" ) && ( curCSSTop + curCSSLeft ).indexOf("auto") > -1;
-
-		// Need to be able to calculate position if either top or left is auto and position is either absolute or fixed
-		if ( calculatePosition ) {
-			curPosition = curElem.position();
-			curTop = curPosition.top;
-			curLeft = curPosition.left;
-
-		} else {
-			curTop = parseFloat( curCSSTop ) || 0;
-			curLeft = parseFloat( curCSSLeft ) || 0;
-		}
-
-		if ( jQuery.isFunction( options ) ) {
-			options = options.call( elem, i, curOffset );
-		}
-
-		if ( options.top != null ) {
-			props.top = ( options.top - curOffset.top ) + curTop;
-		}
-		if ( options.left != null ) {
-			props.left = ( options.left - curOffset.left ) + curLeft;
-		}
-
-		if ( "using" in options ) {
-			options.using.call( elem, props );
-
-		} else {
-			curElem.css( props );
-		}
-	}
-};
-
-
-jQuery.fn.extend({
-
-	position: function() {
-		if ( !this[ 0 ] ) {
-			return;
-		}
-
-		var offsetParent, offset,
-			elem = this[ 0 ],
-			parentOffset = { top: 0, left: 0 };
-
-		// Fixed elements are offset from window (parentOffset = {top:0, left: 0}, because it is it's only offset parent
-		if ( jQuery.css( elem, "position" ) === "fixed" ) {
-			// We assume that getBoundingClientRect is available when computed position is fixed
-			offset = elem.getBoundingClientRect();
-
-		} else {
-			// Get *real* offsetParent
-			offsetParent = this.offsetParent();
-
-			// Get correct offsets
-			offset = this.offset();
-			if ( !jQuery.nodeName( offsetParent[ 0 ], "html" ) ) {
-				parentOffset = offsetParent.offset();
-			}
-
-			// Add offsetParent borders
-			parentOffset.top += jQuery.css( offsetParent[ 0 ], "borderTopWidth", true );
-			parentOffset.left += jQuery.css( offsetParent[ 0 ], "borderLeftWidth", true );
-		}
-
-		// Subtract parent offsets and element margins
-		return {
-			top: offset.top - parentOffset.top - jQuery.css( elem, "marginTop", true ),
-			left: offset.left - parentOffset.left - jQuery.css( elem, "marginLeft", true )
-		};
-	},
-
-	offsetParent: function() {
-		return this.map(function() {
-			var offsetParent = this.offsetParent || docElem;
-
-			while ( offsetParent && ( !jQuery.nodeName( offsetParent, "html" ) && jQuery.css( offsetParent, "position") === "static" ) ) {
-				offsetParent = offsetParent.offsetParent;
-			}
-
-			return offsetParent || docElem;
-		});
-	}
-});
-
-
-// Create scrollLeft and scrollTop methods
-jQuery.each( {scrollLeft: "pageXOffset", scrollTop: "pageYOffset"}, function( method, prop ) {
-	var top = "pageYOffset" === prop;
-
-	jQuery.fn[ method ] = function( val ) {
-		return jQuery.access( this, function( elem, method, val ) {
-			var win = getWindow( elem );
-
-			if ( val === undefined ) {
-				return win ? win[ prop ] : elem[ method ];
-			}
-
-			if ( win ) {
-				win.scrollTo(
-					!top ? val : window.pageXOffset,
-					top ? val : window.pageYOffset
-				);
-
-			} else {
-				elem[ method ] = val;
-			}
-		}, method, val, arguments.length, null );
-	};
-});
-
-function getWindow( elem ) {
-	return jQuery.isWindow( elem ) ? elem : elem.nodeType === 9 && elem.defaultView;
-}
-// Create innerHeight, innerWidth, height, width, outerHeight and outerWidth methods
-jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
-	jQuery.each( { padding: "inner" + name, content: type, "": "outer" + name }, function( defaultExtra, funcName ) {
-		// margin is only for outerHeight, outerWidth
-		jQuery.fn[ funcName ] = function( margin, value ) {
-			var chainable = arguments.length && ( defaultExtra || typeof margin !== "boolean" ),
-				extra = defaultExtra || ( margin === true || value === true ? "margin" : "border" );
-
-			return jQuery.access( this, function( elem, type, value ) {
-				var doc;
-
-				if ( jQuery.isWindow( elem ) ) {
-					// As of 5/8/2012 this will yield incorrect results for Mobile Safari, but there
-					// isn't a whole lot we can do. See pull request at this URL for discussion:
-					// https://github.com/jquery/jquery/pull/764
-					return elem.document.documentElement[ "client" + name ];
-				}
-
-				// Get document width or height
-				if ( elem.nodeType === 9 ) {
-					doc = elem.documentElement;
-
-					// Either scroll[Width/Height] or offset[Width/Height] or client[Width/Height],
-					// whichever is greatest
-					return Math.max(
-						elem.body[ "scroll" + name ], doc[ "scroll" + name ],
-						elem.body[ "offset" + name ], doc[ "offset" + name ],
-						doc[ "client" + name ]
-					);
-				}
-
-				return value === undefined ?
-					// Get width or height on the element, requesting but not forcing parseFloat
-					jQuery.css( elem, type, extra ) :
-
-					// Set width or height on the element
-					jQuery.style( elem, type, value, extra );
-			}, type, chainable ? margin : undefined, chainable, null );
-		};
-	});
-});
-// Limit scope pollution from any deprecated API
-// (function() {
-
-// The number of elements contained in the matched element set
-jQuery.fn.size = function() {
-	return this.length;
-};
-
-jQuery.fn.andSelf = jQuery.fn.addBack;
-
-// })();
 if ( typeof module === "object" && module && typeof module.exports === "object" ) {
 	// Expose jQuery as module.exports in loaders that implement the Node
 	// module pattern (including browserify). Do not create the global, since
@@ -9222,8 +8067,9 @@ RAML.Inspector = (function() {
     var resources = [], apiResources = api.resources || [];
 
     apiResources.forEach(function(resource) {
-      var pathSegments = basePathSegments.concat(resource.relativeUri);
-      var overview = exports.resourceOverviewSource(pathSegments, resource);
+      var relativePathSegments = resource.relativeUri.match(/\/[^\/]*/g);
+      var resourcePathSegments = basePathSegments.concat(relativePathSegments);
+      var overview = exports.resourceOverviewSource(resourcePathSegments, resource);
       overview.methods.forEach(function(method) {
         extendMethod(method, securitySchemes);
       });
@@ -9231,7 +8077,7 @@ RAML.Inspector = (function() {
       resources.push(overview);
 
       if (resource.resources) {
-        var extracted = extractResources(pathSegments, resource, securitySchemes);
+        var extracted = extractResources(resourcePathSegments, resource, securitySchemes);
         extracted.forEach(function(resource) {
           resources.push(resource);
         });
@@ -9241,21 +8087,37 @@ RAML.Inspector = (function() {
     return resources;
   }
 
-  exports.resourceOverviewSource = function(pathSegments, resource) {
-    var methods = (resource.methods || []);
+  function groupResources(resources) {
+    var currentPrefix, resourceGroups = [];
 
-    return {
-      pathSegments: pathSegments,
-      name: resource.displayName,
-      methods: methods,
-      traits: resource.is,
-      resourceType: resource.type,
-      uriParameters: resource.uriParameters
-    };
+    (resources || []).forEach(function(resource) {
+      if (resource.pathSegments[0] !== currentPrefix) {
+        currentPrefix = resource.pathSegments[0];
+        resourceGroups.push([]);
+      }
+      resourceGroups[resourceGroups.length-1].push(resource);
+    });
+
+    return resourceGroups;
+  }
+
+  exports.resourceOverviewSource = function(pathSegments, resource) {
+    resource.name = resource.displayName;
+    delete resource.displayName;
+    resource.traits = resource.is;
+    delete resource.is;
+    resource.resourceType = resource.type;
+    delete resource.type;
+    resource.pathSegments = pathSegments;
+    resource.methods = (resource.methods || []);
+
+    return resource;
   };
 
   exports.create = function(api) {
     api.resources = extractResources([], api, api.securitySchemes);
+    api.resourceGroups = groupResources(api.resources);
+
     return api;
   };
 
@@ -9387,7 +8249,26 @@ RAML.Inspector = (function() {
   };
 })();
 
-RAML.Client.AuthStrategies = {};
+(function() {
+  'use strict';
+
+  RAML.Client.AuthStrategies = {
+    for: function(scheme, credentials) {
+      if (!scheme) {
+        return RAML.Client.AuthStrategies.anonymous();
+      }
+
+      switch(scheme.type) {
+      case 'Basic Authentication':
+        return new RAML.Client.AuthStrategies.Basic(scheme, credentials);
+      case 'OAuth 2.0':
+        return new RAML.Client.AuthStrategies.Oauth2(scheme, credentials);
+      default:
+        throw new Error('Unknown authentication strategy: ' + scheme.type);
+      }
+    }
+  };
+})();
 
 'use strict';
 
@@ -9528,9 +8409,6 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 
   RAML.Client.AuthStrategies.Basic = Basic;
-  RAML.Client.AuthStrategies.basicAuth = function(credentials) {
-    return new Basic(null, credentials);
-  };
 })();
 
 /* jshint camelcase: false */
@@ -9611,15 +8489,42 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 
   RAML.Client.AuthStrategies.Oauth2 = Oauth2;
-  RAML.Client.AuthStrategies.oauth2 = function(scheme, credentials) {
-    return new Oauth2(scheme, credentials);
-  };
 })();
 
 'use strict';
 
 (function() {
   RAML.Controllers = {};
+})();
+
+'use strict';
+
+(function() {
+  function isEmpty(object) {
+    return Object.keys(object || {}).length === 0;
+  }
+
+  var FORM_MIME_TYPES = ['application/x-www-form-urlencoded', 'multipart/form-data'];
+
+  function hasFormParameters(method) {
+    return FORM_MIME_TYPES.some(function(type) {
+      return method.body && method.body[type] && !isEmpty(method.body[type].formParameters);
+    });
+  }
+
+  var controller = function($scope) {
+    $scope.documentation = this;
+
+    var method = $scope.method;
+
+    this.hasParameterDocumentation = !!($scope.resource.uriParameters ||
+      method.queryParameters || method.headers || hasFormParameters(method));
+    this.hasRequestDocumentation = !isEmpty(method.body);
+    this.hasResponseDocumentation = !isEmpty(method.responses);
+    this.hasTryIt = !!$scope.api.baseUri;
+  };
+
+  RAML.Controllers.Documentation = controller;
 })();
 
 'use strict';
@@ -9655,6 +8560,10 @@ RAML.Client.AuthStrategies.base64 = (function () {
 'use strict';
 
 (function() {
+  function isEmpty(object) {
+    return Object.keys(object || {}).length === 0;
+  }
+
   function parseHeaders(headers) {
     var parsed = {}, key, val, i;
 
@@ -9664,7 +8573,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
     headers.split('\n').forEach(function(line) {
       i = line.indexOf(':');
-      key = line.substr(0, i).trim();
+      key = line.substr(0, i).trim().toLowerCase();
       val = line.substr(i + 1).trim();
 
       if (key) {
@@ -9679,13 +8588,26 @@ RAML.Client.AuthStrategies.base64 = (function () {
     return parsed;
   }
 
+  function securitySchemesFrom(client, method) {
+    var schemes = {}, securedBy = (method.securedBy || []).filter(function(name) { return name !== null; });
+    if (securedBy.length === 0) {
+      return;
+    }
+
+    securedBy.forEach(function(name) {
+      if (typeof name === 'object') {
+        return;
+      }
+      var scheme = client.securityScheme(name);
+      schemes[name] = scheme;
+    });
+
+    return schemes;
+  }
+
   var FORM_URLENCODED = 'application/x-www-form-urlencoded';
   var FORM_DATA = 'multipart/form-data';
   var apply;
-
-  function isEmpty(object) {
-    return Object.keys(object || {}).length === 0;
-  }
 
   var TryIt = function($scope) {
     this.baseUri = $scope.api.baseUri || '';
@@ -9699,15 +8621,6 @@ RAML.Client.AuthStrategies.base64 = (function () {
     this.queryParameters = {};
     this.formParameters = {};
     this.supportsCustomBody = this.supportsFormUrlencoded = this.supportsFormData = false;
-
-    if ($scope.method.requiresBasicAuthentication()) {
-      this.basicauth = {};
-    }
-
-    if ($scope.method.requiresOauth2()) {
-      this.securityScheme = $scope.method.requiresOauth2();
-      this.oauth2 = {};
-    }
 
     for (var mediaType in $scope.method.body) {
       this.supportsMediaType = true;
@@ -9723,6 +8636,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
     $scope.apiClient = this;
     this.client = $scope.client = RAML.Client.create($scope.api);
+    this.securitySchemes = securitySchemesFrom(this.client, $scope.method);
+    this.keychain = $scope.ramlConsole.keychain;
 
     apply = function() {
       $scope.$apply.apply($scope, arguments);
@@ -9762,8 +8677,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
       response.status = jqXhr.status,
       response.headers = parseHeaders(jqXhr.getAllResponseHeaders());
 
-      if (response.headers['Content-Type']) {
-        response.contentType = response.headers['Content-Type'].split(';')[0];
+      if (response.headers['content-type']) {
+        response.contentType = response.headers['content-type'].split(';')[0];
       }
       apply();
     }
@@ -9785,12 +8700,14 @@ RAML.Client.AuthStrategies.base64 = (function () {
       if (this.showBody()) { request.data(this.body); }
     }
 
-    var authStrategy = RAML.Client.AuthStrategies.anonymous();
+    var authStrategy;
 
-    if (this.basicauth) {
-      authStrategy = RAML.Client.AuthStrategies.basicAuth(this.basicauth);
-    } else if (this.oauth2) {
-      authStrategy = RAML.Client.AuthStrategies.oauth2(this.securityScheme, this.oauth2);
+    try {
+      var scheme = this.securitySchemes && this.securitySchemes[this.keychain.selectedScheme];
+      var credentials = this.keychain[this.keychain.selectedScheme];
+      authStrategy = RAML.Client.AuthStrategies.for(scheme, credentials);
+    } catch (e) {
+      // custom straegies aren't supported yet.
     }
 
     authStrategy.authenticate().then(function(token) {
@@ -9966,42 +8883,9 @@ RAML.Client.AuthStrategies.base64 = (function () {
 (function() {
   'use strict';
 
-  function isEmpty(object) {
-    return Object.keys(object || {}).length === 0;
-  }
-
-  var FORM_MIME_TYPES = ['application/x-www-form-urlencoded', 'multipart/form-data'];
-
-  function hasFormParameters(method) {
-    var body = method.body;
-
-    if (body) {
-      for (var i = 0; i < FORM_MIME_TYPES.length; i++) {
-        var type = FORM_MIME_TYPES[i];
-
-        if (body[type] && !isEmpty(body[type].formParameters)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-
-  var controller = function($scope) {
-    $scope.documentation = this;
-
-    var method = $scope.method;
-
-    this.hasParameterDocumentation = $scope.resource.uriParameters ||
-      method.queryParameters || method.headers || hasFormParameters(method);
-    this.hasRequestDocumentation = !isEmpty(method.body);
-    this.hasResponseDocumentation = !isEmpty(method.responses);
-  };
-
   RAML.Directives.documentation = function() {
     return {
-      controller: controller,
+      controller: RAML.Controllers.Documentation,
       restrict: 'E',
       templateUrl: 'views/documentation.tmpl.html',
       replace: true
@@ -10012,21 +8896,20 @@ RAML.Client.AuthStrategies.base64 = (function () {
 (function() {
   'use strict';
 
-  RAML.Directives.markdown = function($sanitize) {
+  RAML.Directives.markdown = function($sanitize, $parse) {
     var converter = new Showdown.converter();
 
-    var link = function(scope, element) {
-      var result = converter.makeHtml(scope.markdown || '');
+    var link = function(scope, element, attrs) {
+      var markdown = $parse(attrs.markdown)(scope);
+
+      var result = converter.makeHtml(markdown || '');
 
       element.html($sanitize(result));
     };
 
     return {
       restrict: 'A',
-      link: link,
-      scope: {
-        markdown: '='
-      }
+      link: link
     };
   };
 })();
@@ -10101,6 +8984,17 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 })();
 
+'use strict';
+
+(function() {
+  RAML.Directives.parameters = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'views/parameters.tmpl.html'
+    };
+  };
+})();
+
 (function() {
   'use strict';
 
@@ -10129,8 +9023,12 @@ RAML.Client.AuthStrategies.base64 = (function () {
     }
 
     var success = function(raml) {
-      $scope.api = this.api = RAML.Inspector.create(raml);
-      $scope.$apply();
+      try {
+        $scope.api = this.api = RAML.Inspector.create(raml);
+        $scope.$apply();
+      } catch (e) {
+        console.error(e);
+      }
     };
 
     var error = function(error) {
@@ -10141,6 +9039,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
     if ($scope.src) {
       ramlParser.loadFile($scope.src).then(success.bind(this), error);
     }
+
+    this.keychain = {};
   };
 
   Controller.prototype.gotoView = function(view) {
@@ -10195,8 +9095,27 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 })();
 
+'use strict';
+
+(function() {
+  RAML.Directives.requests = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'views/requests.tmpl.html'
+    };
+  };
+})();
+
 (function() {
   'use strict';
+
+  function stringForDisplay(objectOrString) {
+    if (angular.isObject(objectOrString)) {
+      return Object.keys(objectOrString)[0];
+    } else {
+      return objectOrString;
+    }
+  }
 
   var controller = function($scope) {
     $scope.resourceSummary = this;
@@ -10204,11 +9123,11 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 
   controller.prototype.type = function() {
-    if (angular.isObject(this.resource.resourceType)) {
-      return Object.keys(this.resource.resourceType)[0];
-    } else {
-      return this.resource.resourceType;
-    }
+    return stringForDisplay(this.resource.resourceType);
+  };
+
+  controller.prototype.traits = function() {
+    return (this.resource.traits || []).map(stringForDisplay);
   };
 
   RAML.Directives.resourceSummary = function() {
@@ -10217,6 +9136,17 @@ RAML.Client.AuthStrategies.base64 = (function () {
       templateUrl: 'views/resource_summary.tmpl.html',
       replace: true,
       controller: controller
+    };
+  };
+})();
+
+'use strict';
+
+(function() {
+  RAML.Directives.responses = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'views/responses.tmpl.html'
     };
   };
 })();
@@ -10242,7 +9172,7 @@ RAML.Client.AuthStrategies.base64 = (function () {
       templateUrl: 'views/security_schemes.tmpl.html',
       replace: true,
       scope: {
-        method: '=',
+        schemes: '=',
         keychain: '='
       }
     };
@@ -10355,10 +9285,13 @@ RAML.Filters = {};
   module.directive('namedParameters', RAML.Directives.namedParameters);
   module.directive('oauth2', RAML.Directives.oauth2);
   module.directive('parameterTable', RAML.Directives.parameterTable);
+  module.directive('parameters', RAML.Directives.parameters);
   module.directive('pathBuilder', RAML.Directives.pathBuilder);
   module.directive('ramlConsole', RAML.Directives.ramlConsole);
   module.directive('ramlConsoleInitializer', RAML.Directives.ramlConsoleInitializer);
+  module.directive('requests', RAML.Directives.requests);
   module.directive('resourceSummary', RAML.Directives.resourceSummary);
+  module.directive('responses', RAML.Directives.responses);
   module.directive('rootDocumentation', RAML.Directives.rootDocumentation);
   module.directive('securitySchemes', RAML.Directives.securitySchemes);
   module.directive('tab', RAML.Directives.tab);
@@ -10373,13 +9306,26 @@ RAML.Filters = {};
 angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache) {
 
   $templateCache.put("views/api_resources.tmpl.html",
-    "<div id=\"api-reference\" class='accordion' role=\"resources\">\n" +
-    "  <div ng-class=\"{expanded: resource.isOpen}\" class='accordion-group' role=\"resource\" ng-repeat=\"resource in api.resources\">\n" +
-    "    <resource-summary class='accordion-heading accordion-toggle' ng-click='resource.isOpen = !resource.isOpen'></resource-summary>\n" +
-    "    <div class='accordion-body' ng-show='resource.isOpen'>\n" +
-    "      <div class='accordion-inner'>\n" +
-    "        <div class='accordion' role=\"methods\">\n" +
-    "          <method ng-repeat=\"method in resource.methods\"></method>\n" +
+    "<div id=\"raml-console-api-reference\" class='accordion' role=\"resources\">\n" +
+    "  <div class=\"resourceGroup\" ng-repeat=\"resourceGroup in api.resourceGroups\">\n" +
+    "    <div ng-class=\"{expanded: resource.isOpen}\"\n" +
+    "         class='accordion-group'\n" +
+    "         role=\"resource\"\n" +
+    "         ng-repeat=\"resource in resourceGroup\">\n" +
+    "\n" +
+    "      <resource-summary class='accordion-heading accordion-toggle'\n" +
+    "                        ng-click='resource.isOpen = !resource.isOpen'>\n" +
+    "      </resource-summary>\n" +
+    "      <div class='accordion-body' ng-if='resource.isOpen'>\n" +
+    "        <div class='accordion-inner'>\n" +
+    "          <div role='description'\n" +
+    "               class='description'\n" +
+    "               ng-if='resource.description'\n" +
+    "               markdown='resource.description'>\n" +
+    "          </div>\n" +
+    "          <div class='accordion' role=\"methods\">\n" +
+    "            <method ng-repeat=\"method in resource.methods\"></method>\n" +
+    "          </div>\n" +
     "        </div>\n" +
     "      </div>\n" +
     "    </div>\n" +
@@ -10389,7 +9335,6 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
 
   $templateCache.put("views/basic_auth.tmpl.html",
     "<fieldset class=\"labelled-inline\" role=\"basic\">\n" +
-    "  <legend>Basic Authentication</legend>\n" +
     "  <div class=\"control-group\">\n" +
     "    <label for=\"username\">username</label>\n" +
     "    <input type=\"text\" name=\"username\" ng-model='credentials.username'/>\n" +
@@ -10404,55 +9349,22 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
 
   $templateCache.put("views/documentation.tmpl.html",
     "<section role='documentation'>\n" +
-    "  <p ng-show=\"method.description\">Description: {{method.description}}</p>\n" +
+    "  <div role=\"description\"\n" +
+    "       ng-if=\"method.description\"\n" +
+    "       markdown=\"method.description\">\n" +
+    "  </div>\n" +
     "\n" +
     "  <tabset>\n" +
     "    <tab role='documentation-parameters' heading=\"Parameters\" disabled=\"!documentation.hasParameterDocumentation\">\n" +
-    "      <parameter-table heading='Headers' role='headers' parameters='method.headers'></parameter-table>\n" +
-    "      <parameter-table heading='URI Parameters' role='uri-parameters' parameters='resource.uriParameters'></parameter-table>\n" +
-    "      <parameter-table heading='Query Parameters' role='query-parameters' parameters='method.queryParameters'></parameter-table>\n" +
-    "      <parameter-table heading='Form Parameters' role='form-parameters' parameters='method.body[\"application/x-www-form-urlencoded\"].formParameters'></parameter-table>\n" +
-    "      <parameter-table heading='Multipart Form Parameters' role='multipart-form-parameters' parameters='method.body[\"multipart/form-data\"].formParameters'></parameter-table>\n" +
-    "\n" +
+    "      <parameters></parameters>\n" +
     "    </tab>\n" +
     "    <tab role='documentation-requests' heading=\"Requests\" active='documentation.requestsActive' disabled=\"!documentation.hasRequestDocumentation\">\n" +
-    "      <section ng-repeat=\"(mediaType, definition) in method.body track by mediaType\">\n" +
-    "        <h4>{{mediaType}}</h4>\n" +
-    "        <section ng-if=\"definition.schema\">\n" +
-    "          <h5>Schema</h5>\n" +
-    "          <div class=\"code\" code-mirror=\"definition.schema\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
-    "        </section>\n" +
-    "        <section ng-if=\"definition.example\">\n" +
-    "          <h5>Example</h5>\n" +
-    "          <div class=\"code\" code-mirror=\"definition.example\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
-    "        </section>\n" +
-    "      </section>\n" +
+    "      <requests></requests>\n" +
     "    </tab>\n" +
     "    <tab role='documentation-responses' heading=\"Responses\" active='documentation.responsesActive' disabled='!documentation.hasResponseDocumentation'>\n" +
-    "      <section collapsible ng-repeat='(responseCode, response) in method.responses'>\n" +
-    "        <h4 collapsible-toggle>\n" +
-    "          <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
-    "          {{responseCode}}\n" +
-    "        </h4>\n" +
-    "        <div collapsible-content>\n" +
-    "          <section role='response'>\n" +
-    "            <p markdown='response.description'></p>\n" +
-    "            <section ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
-    "              <h5>{{mediaType}}</h5>\n" +
-    "              <section ng-if=\"definition.schema\">\n" +
-    "                <h6>Schema</h6>\n" +
-    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
-    "              </section>\n" +
-    "              <section ng-if=\"definition.example\">\n" +
-    "                <h6>Example</h6>\n" +
-    "                <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
-    "              </section>\n" +
-    "            </section>\n" +
-    "          </section>\n" +
-    "        </div>\n" +
-    "      </section>\n" +
+    "      <responses></responses>\n" +
     "    </tab>\n" +
-    "    <tab role=\"try-it\" heading=\"Try It\" active=\"documentation.tryItActive\" disabled=\"!api.baseUri\">\n" +
+    "    <tab role=\"try-it\" heading=\"Try It\" active=\"documentation.tryItActive\" disabled=\"!documentation.hasTryIt\">\n" +
     "      <try-it></try-it>\n" +
     "    </tab>\n" +
     "  </tabset>\n" +
@@ -10486,7 +9398,6 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
 
   $templateCache.put("views/oauth2.tmpl.html",
     "<fieldset class=\"labelled-inline\" role=\"oauth2\">\n" +
-    "  <legend>OAuth Credentials</legend>\n" +
     "  <div class=\"control-group\">\n" +
     "    <label for=\"clientId\">Client ID</label>\n" +
     "    <input type=\"text\" name=\"clientId\" ng-model='credentials.clientId'/>\n" +
@@ -10536,6 +9447,14 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "</section>\n"
   );
 
+  $templateCache.put("views/parameters.tmpl.html",
+    "<parameter-table heading='Headers' role='headers' parameters='method.headers'></parameter-table>\n" +
+    "<parameter-table heading='URI Parameters' role='uri-parameters' parameters='resource.uriParameters'></parameter-table>\n" +
+    "<parameter-table heading='Query Parameters' role='query-parameters' parameters='method.queryParameters'></parameter-table>\n" +
+    "<parameter-table heading='Form Parameters' role='form-parameters' parameters='method.body[\"application/x-www-form-urlencoded\"].formParameters'></parameter-table>\n" +
+    "<parameter-table heading='Multipart Form Parameters' role='multipart-form-parameters' parameters='method.body[\"multipart/form-data\"].formParameters'></parameter-table>\n"
+  );
+
   $templateCache.put("views/path_builder.tmpl.html",
     "<span role=\"path\">\n" +
     "  <span role='segment' ng-repeat='segment in pathBuilder.segments'>\n" +
@@ -10546,19 +9465,19 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   );
 
   $templateCache.put("views/raml-console.tmpl.html",
-    "<article role=\"api-console\">\n" +
+    "<article role=\"api-console\" id=\"raml-console\">\n" +
     "  <section role=\"error\" ng-if=\"parseError\">\n" +
     "    {{parseError}}\n" +
     "  </section>\n" +
     "\n" +
-    "  <h1 id=\"api-title\">{{api.title}}</h1>\n" +
+    "  <h1 id=\"raml-console-api-title\">{{api.title}}</h1>\n" +
     "\n" +
-    "  <nav id=\"main-nav\" ng-if='ramlConsole.showRootDocumentation()' ng-switch='ramlConsole.view'>\n" +
+    "  <nav id=\"raml-console-main-nav\" ng-if='ramlConsole.showRootDocumentation()' ng-switch='ramlConsole.view'>\n" +
     "    <a class=\"btn inverted\" ng-switch-when='rootDocumentation' role=\"view-api-reference\" ng-click='ramlConsole.gotoView(\"apiReference\")'>&larr; API Reference</a>\n" +
     "    <a class=\"btn inverted\" ng-switch-default role=\"view-root-documentation\" ng-click='ramlConsole.gotoView(\"rootDocumentation\")'>Documentation &rarr;</a>\n" +
     "  </nav>\n" +
     "\n" +
-    "  <div id=\"content\" ng-switch='ramlConsole.view'>\n" +
+    "  <div id=\"raml-console-content\" ng-switch='ramlConsole.view'>\n" +
     "    <div ng-switch-when='rootDocumentation'>\n" +
     "      <root-documentation></root-documentation>\n" +
     "    </div>\n" +
@@ -10569,10 +9488,24 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "</article>\n"
   );
 
+  $templateCache.put("views/requests.tmpl.html",
+    "<section ng-repeat=\"(mediaType, definition) in method.body track by mediaType\">\n" +
+    "  <h4>{{mediaType}}</h4>\n" +
+    "  <section ng-if=\"definition.schema\">\n" +
+    "    <h5>Schema</h5>\n" +
+    "    <div class=\"code\" code-mirror=\"definition.schema\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
+    "  </section>\n" +
+    "  <section ng-if=\"definition.example\">\n" +
+    "    <h5>Example</h5>\n" +
+    "    <div class=\"code\" code-mirror=\"definition.example\" mode=\"{{mediaType}}\" visible=\"methodView.expanded && documentation.requestsActive\"></div>\n" +
+    "  </section>\n" +
+    "</section>\n"
+  );
+
   $templateCache.put("views/resource_summary.tmpl.html",
     "<div role='resourceSummary'>\n" +
     "  <ul role=\"traits\">\n" +
-    "    <li role=\"trait\" ng-repeat=\"trait in resource.traits\">{{trait}}</li>\n" +
+    "    <li role=\"trait\" ng-repeat=\"trait in resourceSummary.traits()\">{{trait}}</li>\n" +
     "  </ul>\n" +
     "  <h2>\n" +
     "    <span role='segment' ng-repeat='segment in resource.pathSegments'>{{segment}} </span>\n" +
@@ -10593,6 +9526,31 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "</div>\n"
   );
 
+  $templateCache.put("views/responses.tmpl.html",
+    "<section collapsible ng-repeat='(responseCode, response) in method.responses'>\n" +
+    "  <h4 collapsible-toggle>\n" +
+    "    <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
+    "    {{responseCode}}\n" +
+    "  </h4>\n" +
+    "  <div collapsible-content>\n" +
+    "    <section role='response'>\n" +
+    "      <p markdown='response.description'></p>\n" +
+    "      <section ng-repeat=\"(mediaType, definition) in response.body track by mediaType\">\n" +
+    "        <h5>{{mediaType}}</h5>\n" +
+    "        <section ng-if=\"definition.schema\">\n" +
+    "          <h6>Schema</h6>\n" +
+    "          <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.schema\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "        </section>\n" +
+    "        <section ng-if=\"definition.example\">\n" +
+    "          <h6>Example</h6>\n" +
+    "          <div class=\"code\" mode='{{mediaType}}' code-mirror=\"definition.example\" visible=\"methodView.expanded && documentation.responsesActive\"></div>\n" +
+    "        </section>\n" +
+    "      </section>\n" +
+    "    </section>\n" +
+    "  </div>\n" +
+    "</section>\n"
+  );
+
   $templateCache.put("views/root_documentation.tmpl.html",
     "<div role=\"root-documentation\">\n" +
     "  <section collapsible collapsed ng-repeat=\"document in api.documentation\">\n" +
@@ -10605,9 +9563,31 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   );
 
   $templateCache.put("views/security_schemes.tmpl.html",
-    "<div>\n" +
-    "  <basic-auth ng-if=\"method.requiresBasicAuthentication()\" credentials='keychain.basicauth'></basic-auth>\n" +
-    "  <oauth2 ng-if=\"method.requiresOauth2()\" credentials='keychain.oauth2'></oauth2>\n" +
+    "<div class=\"authentication\">\n" +
+    "  <fieldset class=\"labelled-radio-group\">\n" +
+    "    <legend>Authentication</legend>\n" +
+    "    <label for=\"scheme\">type</label>\n" +
+    "\n" +
+    "    <div class=\"radio-group\">\n" +
+    "      <label class=\"radio\">\n" +
+    "        <input type=\"radio\" name=\"scheme\" value=\"anonymous\" ng-model=\"keychain.selectedScheme\"> Anonymous </input>\n" +
+    "      </label>\n" +
+    "      <label class=\"radio\" ng-repeat=\"(name, scheme) in schemes\">\n" +
+    "        <input type=\"radio\" name=\"scheme\" value=\"{{name}}\" ng-model=\"keychain.selectedScheme\"> {{ name }} </input>\n" +
+    "      </label>\n" +
+    "    </div>\n" +
+    "  </fieldset>\n" +
+    "\n" +
+    "  <fieldset>\n" +
+    "    <div ng-repeat=\"(name, scheme) in schemes\">\n" +
+    "      <div ng-show=\"keychain.selectedScheme == name\">\n" +
+    "        <div ng-switch=\"scheme.type\">\n" +
+    "          <basic-auth ng-switch-when=\"Basic Authentication\" credentials='keychain[name]'></basic-auth>\n" +
+    "          <oauth2 ng-switch-when=\"OAuth 2.0\" credentials='keychain[name]'></oauth2>\n" +
+    "        </div>\n" +
+    "      </div>\n" +
+    "    </div>\n" +
+    "  </fieldset>\n" +
     "</div>\n"
   );
 
@@ -10633,16 +9613,18 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "<section class=\"try-it\">\n" +
     "\n" +
     "  <form>\n" +
-    "    <security-schemes method=\"method\" keychain=\"apiClient\"></security-schemes>\n" +
+    "    <security-schemes ng-if=\"apiClient.securitySchemes\" schemes=\"apiClient.securitySchemes\" keychain=\"ramlConsole.keychain\"></security-schemes>\n" +
     "    <named-parameters heading=\"Headers\" parameters=\"method.headers\" request-data=\"apiClient.headers\"></named-parameters>\n" +
     "    <named-parameters heading=\"Query Parameters\" parameters=\"method.queryParameters\" request-data=\"apiClient.queryParameters\"></named-parameters>\n" +
     "\n" +
-    "    <fieldset class=\"media-types\" ng-show=\"apiClient.supportsMediaType\">\n" +
-    "      <span class=\"radio-group-label\">Content Type</span>\n" +
-    "      <label class=\"radio\" ng-repeat=\"(mediaType, _) in method.body track by mediaType\">\n" +
-    "        <input type=\"radio\" name=\"media-type\" value=\"{{mediaType}}\" ng-model=\"apiClient.mediaType\">\n" +
-    "        {{mediaType}}\n" +
-    "      </label>\n" +
+    "    <fieldset class=\"labelled-radio-group media-types\" ng-show=\"apiClient.supportsMediaType\">\n" +
+    "      <label>Content Type</label>\n" +
+    "      <div class=\"radio-group\">\n" +
+    "        <label class=\"radio\" ng-repeat=\"(mediaType, _) in method.body track by mediaType\">\n" +
+    "          <input type=\"radio\" name=\"media-type\" value=\"{{mediaType}}\" ng-model=\"apiClient.mediaType\">\n" +
+    "          {{mediaType}}\n" +
+    "        </label>\n" +
+    "      </div>\n" +
     "    </fieldset>\n" +
     "    <div class=\"request-body\" ng-show=\"method.body\">\n" +
     "      <fieldset ng-show=\"apiClient.showBody()\">\n" +
