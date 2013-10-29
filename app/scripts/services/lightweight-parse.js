@@ -15,17 +15,13 @@ angular.module('lightweightParse', ['utils'])
     var match = /^(.+):( .*$|$)/.exec(value);
     return match && match.length > 1 ? match[1] : '';
   })
-  .value('removeIndentation', function(line){
-    var tabRegExp = new RegExp('( )', 'g');
-    return line.replace(tabRegExp, '');
-  })
-  .factory('isArrayStarter', function(removeIndentation) {
+  .factory('isArrayStarter', function(getLineIndent) {
     return function(line) {
       if(!line) {
         return false;
       }
 
-      var lineWithoutIndentation = removeIndentation(line);
+      var lineWithoutIndentation = getLineIndent(line).content;
       return lineWithoutIndentation.indexOf('-') === 0 && lineWithoutIndentation.indexOf('---') < 0;
     };
   })
