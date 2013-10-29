@@ -16,17 +16,60 @@ raml-console article#raml-console {
     overflow-y: auto;
   }
 
+  #raml-console-api-reference {
+    h4,
+    legend {
+      font-size: 15px;
+      margin-bottom: 8px;
+      margin-top: 5px !important;
+    }
+
+    h4 {
+      i {
+        line-height: 19px;
+      }
+    }
+
+    h5 {
+      margin-top: 4px !important;
+      font-size: 14px;
+    }
+
+    .resourceGroup {
+      margin: 0;
+      padding: 0;
+
+      &:last-child {
+        div[role=resource]:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+
   div.accordion-body {
     font-size: 12px;
   }
 
-  div[role=resourceSummary] {
-    font-size: 12px;
-    padding: 7px 12px;
+  div[role=resource] {
+    margin-bottom: 5px;
+    border-top: none;
 
-    h2 {
+    div[role=resourceSummary] {
       font-size: 12px;
-      margin-bottom: 4px;
+      border-top-width: 0;
+      border-bottom-width: 0;
+
+      h2 {
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+    }
+  }
+
+  div[role=resource].expanded {
+    div[role=resourceSummary] {
+      border-bottom-width: 1px;
     }
   }
 
@@ -37,7 +80,7 @@ raml-console article#raml-console {
 
     > i {
       font-size: 12px;
-      margin-right: 0px;
+      margin-right: 0;
       line-height: 12px;
       width: 8px;
     }
@@ -46,13 +89,6 @@ raml-console article#raml-console {
       font-style: normal;
       font-size: 12px;
       margin-right: 2px;
-    }
-  }
-
-  ul[role=methods] {
-    li {
-      padding: 1px 8px;
-      font-size: 11px;
     }
   }
 
@@ -73,35 +109,12 @@ raml-console article#raml-console {
     padding: 12px 10px;
   }
 
-  div[role=resource] {
-    margin-bottom: 5px;
-    background-color: white;
-  }
-
   .accordion[role=resources] {
     background-color: transparent;
   }
 
   div.tab-pane {
     padding: 15px 15px;
-  }
-
-  #api-reference {
-    h4,
-    legend {
-      font-size: 15px;
-      margin-bottom: 8px;
-      margin-top: 5px !important;
-    }
-
-    h4 i {
-      line-height: 19px;
-    }
-
-    h5 {
-      margin-top: 4px !important;
-      font-size: 14px;
-    }
   }
 
   code[role=display-name] {
