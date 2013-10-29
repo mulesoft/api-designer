@@ -3,23 +3,6 @@
 /* globals CodeMirror */
 
 angular.module('codeFolding', ['raml', 'lightweightParse'])
-  .value('hasParentWith', function(getParentLineNumber){
-    var hasParentWith = function(pattern, cm, lineNumber){
-      if(lineNumber === 0 || !lineNumber) {
-        return false;
-      }
-
-      var parentLineNumber = getParentLineNumber(cm, lineNumber);
-
-      if (pattern.test(cm.getLine(parentLineNumber))) {
-        return true;
-      } else {
-        return hasParentWith (pattern, cm, parentLineNumber);
-      }
-    };
-
-    return hasParentWith;
-  })
   .factory('isArrayElement', function (isArrayStarter, getParentLineNumber, getFirstChildLine){
     return function(cm, lineNumber){
       var line = cm.getLine(lineNumber);
