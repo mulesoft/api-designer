@@ -15,6 +15,16 @@ angular.module('lightweightParse', ['utils'])
     var match = /^(.+):( .*$|$)/.exec(value);
     return match && match.length > 1 ? match[1] : '';
   })
+  .factory('isArrayStarter', function(getLineIndent) {
+    return function(line) {
+      if(!line) {
+        return false;
+      }
+
+      var lineWithoutIndentation = getLineIndent(line).content;
+      return lineWithoutIndentation.indexOf('-') === 0 && lineWithoutIndentation.indexOf('---') < 0;
+    };
+  })
   .factory('getLineIndent', function (indentUnit) {
     return function (string, indentSize) {
       var result = /^(\s*)(.*)$/.exec(string);

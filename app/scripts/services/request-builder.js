@@ -16,7 +16,6 @@ angular.module('fs')
       this.values.host = host;
       this.values.method = method;
       this.values.path = path;
-      this.values.withCredentials = true;
 
       this.call = function call() {
         requestExecutor.add(this.values);
@@ -50,12 +49,6 @@ angular.module('fs')
 
     RequestBuilder.prototype.data = function setData(data) {
       this.values.data = data;
-      return this;
-    };
-
-    RequestBuilder.prototype.withCredentials =
-      function setWithCredentials(withCredentials) {
-      this.values.withCredentials = withCredentials;
       return this;
     };
 
