@@ -53,10 +53,12 @@ EditorHelper.prototype.getErrorLine = function () {
 };
 
 EditorHelper.prototype.setLine = function (line, text) {
+  line --;
   return this.ptor.executeScript('window.editor.setLine(' + line + ',"' + text + '")');
 };
 
 EditorHelper.prototype.getLine = function (line) {
+  line --;
   return this.ptor.executeScript('return window.editor.getLine(' + line + ')').then(function (text) {
     return text;
   });
@@ -65,5 +67,15 @@ EditorHelper.prototype.getLine = function (line) {
 EditorHelper.prototype.setValue = function (text) {
   return this.ptor.executeScript('window.editor.setValue(\'' + text + '\')');
 };
+
+
+EditorHelper.prototype.setCursor = function (line, char) {
+  line --;
+  char --;
+
+  this.ptor.executeScript('window.editor.setCursor('+ line +','+ char +')');
+
+};
+
 
 exports.EditorHelper = EditorHelper;

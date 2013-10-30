@@ -266,6 +266,8 @@ module.exports = function (grunt) {
           browsers: ['Chrome']
         },
         files: {
+//          src: 'scenario/test/e2e/editor-shelf.js'
+//          src: 'scenario/test/e2e/raml-example/quizlet-e2e.js'
 //          src: 'scenario/test/e2e/raml-example/muse-console.js'
           src: 'scenario/test/e2e/editor-parser.js'
         }
