@@ -1,7 +1,8 @@
 {
-  "name": "raml-editor",
+  "name": "raml-api-designer",
   "version": "0.0.1",
   "dependencies": {},
+  "license": "CPAL 1.0",
   "devDependencies": {
     "connect-livereload": "~0.2.0",
     "expect.js": "~0.2.0",
@@ -40,5 +41,9 @@
   },
   "scripts": {
     "test": "grunt --verbose"
+  },
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/mulesoft/api-designer.git"
   }
 }
