@@ -1,9 +1,11 @@
 {
  "options": {
     "reporter": "spec",
-    "browsers": ["Chrome"]
+    "browsers": ["Chrome"],
+    "bail": false
   },
   "files": {
-    "src": "scenario/test/e2e/editor-parser.js"
+    "src": "scenario/test/e2e/console/muse.js"
+
   }
 }

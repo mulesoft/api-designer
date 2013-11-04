@@ -1,31 +1,17 @@
 'use strict';
-
 var expect = require('expect.js');
-//var protractor = require('protractor');
-var EditorHelper = require('../lib/editor-helper.js').EditorHelper;
 var ramlUrl = require('../config').url;
-var AssertsHelper = require('../lib/asserts-helper.js').AssertsHelper;
 
-
-describe('RAMLeditor - Parser errors validation', function () {
-  var driver, ptor, editorHelper, assertsHelper;
-
-  before(function () {
-    ptor = this.ptor;
-    driver = ptor.driver;
-    ptor.driver.manage().timeouts().setScriptTimeout(80000);
-    editorHelper = new EditorHelper(ptor, driver);
-    assertsHelper = new AssertsHelper(ptor, driver);
-
-  });
+describe('editor-parser', function () {
 
   beforeEach(function () {
-    ptor.get(ramlUrl);
-    ptor.executeScript(function () {
+    browser.get(ramlUrl);
+    browser.waitForAngular();
+    browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
     });
-    ptor.wait(function(){
-      return editorHelper.getLine(2).then(function(text) {
+    browser.wait(function(){
+      return editorGetLine(2).then(function(text) {
         return text === 'title:';
       });
     });
@@ -33,42 +19,37 @@ describe('RAMLeditor - Parser errors validation', function () {
 
   describe('include', function () {
 
-    it('should fail: file circular reference', function (done) {
+    it('should fail: file circular reference', function () {
       var definition = [
         '#%RAML 0.8',
         '---',
         'title: !include example.raml'
       ].join('\\n');
-      editorHelper.setValue(definition);
-      assertsHelper.editorParserErrorAssertions(editorHelper,3, 'detected circular !include of example.raml').then(function(){
-        done();
-      });
+      editorSetValue(definition);
+      editorParserErrorAssertions(3, 'detected circular !include of example.raml');
     });
 
-    it('should fail: file name/URL cannot be null', function (done) {
+    it('should fail: file name/URL cannot be null', function () {
       var definition = [
         '#%RAML 0.8',
         '---',
         'title: !include'
       ].join('\\n');
-      editorHelper.setValue(definition);
-      assertsHelper.editorParserErrorAssertions(editorHelper,3, 'file name/URL cannot be null').then(function(){
-        done();
-      });
+      editorSetValue(definition);
+      editorParserErrorAssertions(3, 'file name/URL cannot be null');
     });
 
-    it('should fail: test ', function (done) {
+    it('should fail: test ', function () {
       var definition = [
         '#%RAML 0.8',
         '---',
         'title: !include http://some.broken.link.com'
       ].join('\\n');
-      editorHelper.setValue(definition);
-      editorHelper.getErrorLineMessage().then(function (list) {
+      editorSetValue(definition);
+      editorGetErrorLineMessage().then(function (list) {
         var line = list[0], message = list[1];
         expect(message).to.match(/cannot fetch http:\/\/some.broken.link.com ([^)]+)/);
         expect(line).to.eql('3');
-        done();
       });
     });
 
@@ -78,59 +59,49 @@ describe('RAMLeditor - Parser errors validation', function () {
 
     describe('Root Section', function () {
 
-      it('should fail: The first line must be: #%RAML 0.8', function(done){
+      it('should fail: The first line must be: #%RAML 0.8', function(){
         var definition = '';
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserErrorAssertions(editorHelper,1,'The first line must be: \'#%RAML 0.8\'').then(function(){
-          done();
-        });
+        editorSetValue(definition);
+        editorParserErrorAssertions(1,'The first line must be: \'#%RAML 0.8\'');
       });
 
-      it('should fail: unsupported raml version #%RAML 0.1', function (done) {
+      it('should fail: unsupported raml version #%RAML 0.1', function () {
         var definition = [
           '#%RAML 0.1'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserErrorAssertions(editorHelper,1,'Unsupported RAML version: \'#%RAML 0.1\'').then(function(){
-          done();
-        });
+        editorSetValue(definition);
+        editorParserErrorAssertions(1,'Unsupported RAML version: \'#%RAML 0.1\'');
       });
 
-      it('should fail: document must be a map---', function (done) {
+      it('should fail: document must be a map---', function () {
         var definition = [
           '#%RAML 0.8',
           '---'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserErrorAssertions(editorHelper,2,'document must be a map').then(function(){
-          done();
-        });
+        editorSetValue(definition);
+        editorParserErrorAssertions(2,'document must be a map');
       });
 
-      it('should fail: document must be a map(titl)', function (done) {
+      it('should fail: document must be a map(titl)', function () {
         var definition = [
           '#%RAML 0.8',
           '---',
           'titl'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserErrorAssertions(editorHelper,3,'document must be a map').then(function(){
-          done();
-        });
+        editorSetValue(definition);
+        editorParserErrorAssertions(3,'document must be a map');
       });
 
-      it('should fail: empty document (only comments)', function (done) {
+      it('should fail: empty document (only comments)', function () {
         var definition = [
           '#%RAML 0.8',
           '#---'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserErrorAssertions(editorHelper,1,'empty document').then(function(){
-          done();
-        });
+        editorSetValue(definition);
+        editorParserErrorAssertions(1,'empty document');
       });
 
-      it('should fail: block map end ...', function (done) {
+      it('should fail: block map end ...', function () {
         var definition = [
           '#%RAML 0.8',
           '---',
@@ -138,44 +109,38 @@ describe('RAMLeditor - Parser errors validation', function () {
           '...',
           'version: 1.0'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserErrorAssertions(editorHelper,5,'expected \'<document start>\', but found <block mapping end>').then(function(){
-          done();
-        });
+        editorSetValue(definition);
+        editorParserErrorAssertions(5,'expected \'<document start>\', but found <block mapping end>');
       });
 
       describe('title', function () {
 
-        it('should fail: root property already used title', function (done) {
+        it('should fail: root property already used title', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'title: My API',
             'title:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,4,'root property already used: \'title\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(4,'root property already used: \'title\'');
         });
 
-        it('should fail: missing title', function (done) {
+        it('should fail: missing title', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'version: v1'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,3,'missing title').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(3,'missing title');
         });
 
       }); //Title
 
       describe('version', function () {
 
-        it('**** should fail: root property already used version', function (done) {
+        it('**** should fail: root property already used version', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -183,30 +148,26 @@ describe('RAMLeditor - Parser errors validation', function () {
             'version: v1',
             'version:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'version\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'version\'');
         });
 
-        it('should fail: missing version', function (done) {
+        it('should fail: missing version', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'title: hola',
             'baseUri: http://server/api/{version}'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,3,'missing version').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(3,'missing version');
         });
 
       }); //Version
 
       describe('baseUri', function () {
 
-        it('should fail: root property already used baseUri', function (done) {
+        it('should fail: root property already used baseUri', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -214,30 +175,26 @@ describe('RAMLeditor - Parser errors validation', function () {
             'baseUri: http://www.myapi.com',
             'baseUri:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'baseUri\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'baseUri\'');
         });
 
-        it('should fail: baseUri must have a value', function (done) {
+        it('should fail: baseUri must have a value', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'title: My API',
             'baseUri:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,4,'baseUri must have a value').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(4,'baseUri must have a value');
         });
 
       }); //baseUri
 
       describe('baseUriParameters', function () {
 
-        it('should fail: root property already used baseUriParameters', function (done) {
+        it('should fail: root property already used baseUriParameters', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -245,13 +202,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'baseUriParameters:',
             'baseUriParameters:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'baseUriParameters\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'baseUriParameters\'');
         });
 
-        it('should fail: invalid map - baseUriParameters/Uri1/{require}', function (done) {
+        it('should fail: invalid map - baseUriParameters/Uri1/{require}', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -262,13 +217,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '  uri1: ',
             '    require'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,7,'URI parameter must be a map').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(7,'URI parameter must be a map');
         });
 
-        it('should fail: baseUriParameter - version parameter not allowed here', function (done) {
+        it('should fail: baseUriParameter - version parameter not allowed here', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -278,13 +231,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'baseUriParameters:',
             '  version:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,7,'version parameter not allowed here').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(7,'version parameter not allowed here');
         });
 
-        it('should fail when no baseUri is defined', function (done) {
+        it('should fail when no baseUri is defined', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -293,13 +244,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '  hols:',
             '    displayName: hola'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'uri parameters defined when there is no baseUri').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'uri parameters defined when there is no baseUri');
         });
 
-        it('should fail: uri parameter unused', function (done) {
+        it('should fail: uri parameter unused', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -308,17 +257,15 @@ describe('RAMLeditor - Parser errors validation', function () {
             'baseUriParameters:',
             '  hola:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,6,'hola uri parameter unused').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(6,'hola uri parameter unused');
         });
 
       }); //baseUriParameters
 
       describe('mediaType', function () {
 
-        it('should fail: root property already used mediaType', function (done) {
+        it('should fail: root property already used mediaType', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -326,43 +273,37 @@ describe('RAMLeditor - Parser errors validation', function () {
             'mediaType: hola',
             'mediaType:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'mediaType\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'mediaType\'');
         });
 
       }); //mediaType
 
       describe('Documentation', function () {
 
-        it('should fail: Documentation - unkown property Documentation', function (done) {
+        it('should fail: Documentation - unkown property Documentation', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'title: My API',
             'Documentation:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,4,'unknown property Documentation').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(4,'unknown property Documentation');
         });
 
-        it('should fail: documentation must be an array', function (done) {
+        it('should fail: documentation must be an array', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'title: My API',
             'documentation:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,4,'documentation must be an array').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(4,'documentation must be an array');
         });
 
-        it('should fail: each documentation section must be a map', function (done) {
+        it('should fail: each documentation section must be a map', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -370,13 +311,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'documentation:',
             '  -'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'each documentation section must be a map').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'each documentation section must be a map');
         });
 
-        it('should fail: title must be a string', function (done) {
+        it('should fail: title must be a string', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -384,13 +323,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'documentation:',
             '  - title:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'title must be a string').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'title must be a string');
         });
 
-        it('should fail: content must be a string', function (done) {
+        it('should fail: content must be a string', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -398,13 +335,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'documentation:',
             '  - content:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'content must be a string').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'content must be a string');
         });
 
-        it('should fail: a documentation entry must have a content property', function (done) {
+        it('should fail: a documentation entry must have a content property', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -412,13 +347,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'documentation:',
             '  - title: hola'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'a documentation entry must have content property').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'a documentation entry must have content property');
         });
 
-        it('should fail: a documentation entry must have title property', function (done) {
+        it('should fail: a documentation entry must have title property', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -426,13 +359,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'documentation:',
             '  - content: hola'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'a documentation entry must have title property').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'a documentation entry must have title property');
         });
 
-        it('should fail: root property already used documentation', function (done) {
+        it('should fail: root property already used documentation', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -442,13 +373,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '    content: my content',
             'documentation:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,7,'root property already used: \'documentation\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(7,'root property already used: \'documentation\'');
         });
 
-        it('should fail: property already used title', function (done) {
+        it('should fail: property already used title', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -458,13 +387,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '    title:',
             '    content: my content'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,6,'property already used: \'title\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(6,'property already used: \'title\'');
         });
 
-        it('should fail: property already used content', function (done) {
+        it('should fail: property already used content', function (){
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -474,17 +401,15 @@ describe('RAMLeditor - Parser errors validation', function () {
             '    content: my content',
             '    content:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'content\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(7,'property already used: \'content\'');
         });
 
       }); //Documentation
 
       describe('traits', function () {
 
-        it('should fail: root property already used traits', function (done) {
+        it('should fail: root property already used traits', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -492,13 +417,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'traits: []',
             'traits:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'traits\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'traits\'');
         });
 
-        it('should fail: parameter key cannot be used as a trait name', function (done) {
+        it('should fail: parameter key cannot be used as a trait name', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -506,13 +429,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'traits:',
             '  - <<name>>:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'parameter key cannot be used as a trait name').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'parameter key cannot be used as a trait name');
         });
 
-        it('should fail: array as key - trait []', function (done) {
+        it('should fail: array as key - trait []', function () {
           var definition = [
             '#%RAML 0.8',
             'title: hola',
@@ -530,13 +451,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '/resourc:',
             '  type: member3'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,12,'only scalar map keys are allowed in RAML').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(12,'only scalar map keys are allowed in RAML');
         });
 
-        it('should fail: array as key - trait {}', function (done) {
+        it('should fail: array as key - trait {}', function () {
           var definition = [
             '#%RAML 0.8',
             'title: hola',
@@ -554,15 +473,13 @@ describe('RAMLeditor - Parser errors validation', function () {
             '/resourc:',
             '  type: member3'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,12,'only scalar map keys are allowed in RAML').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(12,'only scalar map keys are allowed in RAML');
         });
 
         describe('protocols', function () {
 
-          it('should fail: traits-protocols property already used protocol', function (done) {
+          it('should fail: traits-protocols property already used protocol', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -572,13 +489,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      protocols: []',
               '      protocols:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'protocols\'');
           });
 
-          it('should fail: protocol property must be an array', function (done) {
+          it('should fail: protocol property must be an array', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -587,13 +502,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  - hola:',
               '      protocols:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property must be an array');
           });
 
-          it('should fail: protocol value must be a string', function (done) {
+          it('should fail: protocol value must be a string', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -603,13 +516,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      protocols:',
               '        - '
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'value must be a string');
           });
 
-          it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+          it('should fail: only HTTP and HTTPS values are allowed', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -619,10 +530,8 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      protocols:',
               '        - htt'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
           });
 
         }); // protocols
@@ -631,7 +540,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
       describe('resourceTyoes', function () {
 
-        it('should fail: property protocols is invalid in a resourceType', function (done) {
+        it('should fail: property protocols is invalid in a resourceType', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -640,13 +549,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '  - hola:',
             '      protocols:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'protocols\' is invalid in a resource type').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(6,'property: \'protocols\' is invalid in a resource type');
         });
 
-        it('should fail: root property already used resourceTypes', function (done) {
+        it('should fail: root property already used resourceTypes', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -654,13 +561,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'resourceTypes: []',
             'resourceTypes:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'resourceTypes\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'resourceTypes\'');
         });
 
-        it('should fail: parameter key cannot be used as a resource type name', function (done) {
+        it('should fail: parameter key cannot be used as a resource type name', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -668,13 +573,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'resourceTypes:',
             '  - <<name>>:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'parameter key cannot be used as a resource type name').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'parameter key cannot be used as a resource type name');
         });
 
-        it('should fail: unused parameter pp_declared on a RT', function (done) {
+        it('should fail: unused parameter pp_declared on a RT', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -689,13 +592,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '/r1:',
             '  type: collection'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,9,'unused parameter: pp').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(9,'unused parameter: pp');
         });
 
-        it('should fail: it must be a mapping_diccionary', function (done) {
+        it('should fail: it must be a mapping_diccionary', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -704,13 +605,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '  - member: {}',
             '    member2: '
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,6,'invalid resourceType definition, it must be a map').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(6,'invalid resourceType definition, it must be a map');
         });
 
-        it('should fail: it must be a map', function (done) {
+        it('should fail: it must be a map', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -718,13 +617,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'resourceTypes:',
             '  - member:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'invalid resourceType definition, it must be a map').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'invalid resourceType definition, it must be a map');
         });
 
-        it('should fail: circular reference - between resource', function (done) {
+        it('should fail: circular reference - between resource', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -738,13 +635,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             '/res1:',
             '  type: rt1'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,8,'circular reference of "rt2" has been detected: rt1 -> rt2 -> rt2').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(8,'circular reference of "rt2" has been detected: rt1 -> rt2 -> rt2');
         });
 
-        it('should fail: property protocols is invalid in a resourceType', function (done) {
+        it('should fail: property protocols is invalid in a resourceType', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -753,15 +648,13 @@ describe('RAMLeditor - Parser errors validation', function () {
             '  - rt1:',
             '      protocols:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'protocols\' is invalid in a resource type').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(6,'property: \'protocols\' is invalid in a resource type');
         });
 
         describe('is', function () {
 
-          it('should fail: property is must be an array', function (done) {
+          it('should fail: property is must be an array', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -770,14 +663,12 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  - rt1:',
               '      is:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property \'is\' must be an array').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property \'is\' must be an array');
           });
 
 
-          it('should fail: there is not trait named ...', function (done) {
+          it('should fail: there is not trait named ...', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -786,10 +677,8 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  - rt1:',
               '      is: [h]'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'there is no trait named h').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'there is no trait named h');
           });
 
 
@@ -797,7 +686,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('property already used', function () {
 
-          it('should fail: property already used: is', function (done) {
+          it('should fail: property already used: is', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -807,13 +696,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      is: []',
               '      is:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'is\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'is\'');
           });
 
-          it('should fail: property already used: usage', function (done) {
+          it('should fail: property already used: usage', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -823,13 +710,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      usage: ',
               '      usage:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'usage\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'usage\'');
           });
 
-          it('should fail: property already used: description', function (done) {
+          it('should fail: property already used: description', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -839,13 +724,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      description: ',
               '      description:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'description\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'description\'');
           });
 
-          it('should fail: property already used: type', function (done) {
+          it('should fail: property already used: type', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -857,13 +740,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  - rt2:',
               '      description: hola'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'type\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'type\'');
           });
 
-          it('should fail: property already used: securedBy', function (done) {
+          it('should fail: property already used: securedBy', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -873,13 +754,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      securedBy: []',
               '      securedBy:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'securedBy\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'securedBy\'');
           });
 
-          it('should fail: property already used: baseUriParameters', function (done) {
+          it('should fail: property already used: baseUriParameters', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -890,13 +769,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      baseUriParameters:',
               '      baseUriParameters:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'baseUriParameters\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(8,'property already used: \'baseUriParameters\'');
           });
 
-          it('should fail: property already used: uriParameters', function (done) {
+          it('should fail: property already used: uriParameters', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -906,13 +783,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      uriParameters:',
               '      uriParameters:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'uriParameters\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'uriParameters\'');
           });
 
-          it('should fail: property already used: displayName', function (done) {
+          it('should fail: property already used: displayName', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -922,16 +797,14 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      displayName:',
               '      displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'displayName\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'property already used: \'displayName\'');
           });
         }); // property already used
 
         describe('method already declared', function () {
 
-          it('should fail: method already declared: get', function (done) {
+          it('should fail: method already declared: get', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -941,13 +814,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      get:',
               '      get:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'method already declared: \'get\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'method already declared: \'get\'');
           });
 
-          it('should fail: method already declared: post', function (done) {
+          it('should fail: method already declared: post', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -957,13 +828,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      post:',
               '      post:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'method already declared: \'post\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'method already declared: \'post\'');
           });
 
-          it('should fail: method already declared: put', function (done) {
+          it('should fail: method already declared: put', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -973,13 +842,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      put:',
               '      put:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'method already declared: \'put\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'method already declared: \'put\'');
           });
 
-          it('should fail: method already declared: delete', function (done) {
+          it('should fail: method already declared: delete', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -989,13 +856,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      delete:',
               '      delete:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'method already declared: \'delete\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'method already declared: \'delete\'');
           });
 
-          it('should fail: method already declared: head', function (done) {
+          it('should fail: method already declared: head', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1005,13 +870,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      head:',
               '      head:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'method already declared: \'head\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'method already declared: \'head\'');
           });
 
-          it('should fail: method already declared: patch', function (done) {
+          it('should fail: method already declared: patch', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1021,13 +884,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      patch:',
               '      patch:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'method already declared: \'patch\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'method already declared: \'patch\'');
           });
 
-          it('should fail: method already declared: options', function (done) {
+          it('should fail: method already declared: options', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1037,10 +898,8 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      options:',
               '      options:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,7,'method already declared: \'options\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(7,'method already declared: \'options\'');
           });
 
         }); // method already declared
@@ -1050,7 +909,7 @@ describe('RAMLeditor - Parser errors validation', function () {
           describe('get', function () {
 
             describe('protocols', function () {
-              it('should fail: RTMethods-protocols property already used protocol', function (done) {
+              it('should fail: RTMethods-protocols property already used protocol', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1061,13 +920,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols: []',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'protocols\'').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'property already used: \'protocols\'');
               });
 
-              it('should fail: RTMethods-protocol property must be an array', function (done) {
+              it('should fail: RTMethods-protocol property must be an array', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1077,13 +934,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '      get:',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,7,'property must be an array').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(7,'property must be an array');
               });
 
-              it('should fail: RTMethods-protocol value must be a string', function (done) {
+              it('should fail: RTMethods-protocol value must be a string', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1094,13 +949,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - '
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'value must be a string').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'value must be a string');
               });
 
-              it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+              it('should fail: only HTTP and HTTPS values are allowed', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1111,10 +964,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - htt'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'only HTTP and HTTPS values are allowed').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'only HTTP and HTTPS values are allowed');
               });
 
             }); // protocols
@@ -1124,7 +975,7 @@ describe('RAMLeditor - Parser errors validation', function () {
           describe('post', function () {
 
             describe('protocols', function () {
-              it('should fail: RTMethods-protocols property already used protocol', function (done) {
+              it('should fail: RTMethods-protocols property already used protocol', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1135,13 +986,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols: []',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'protocols\'').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'property already used: \'protocols\'');
               });
 
-              it('should fail: RTMethods-protocol property must be an array', function (done) {
+              it('should fail: RTMethods-protocol property must be an array', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1151,13 +1000,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '      post:',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,7,'property must be an array').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(7,'property must be an array');
               });
 
-              it('should fail: RTMethods-protocol value must be a string', function (done) {
+              it('should fail: RTMethods-protocol value must be a string', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1168,13 +1015,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - '
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'value must be a string').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'value must be a string');
               });
 
-              it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+              it('should fail: only HTTP and HTTPS values are allowed', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1185,10 +1030,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - htt'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'only HTTP and HTTPS values are allowed').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'only HTTP and HTTPS values are allowed');
               });
 
             }); // protocols
@@ -1198,7 +1041,7 @@ describe('RAMLeditor - Parser errors validation', function () {
           describe('put', function () {
 
             describe('protocols', function () {
-              it('should fail: RTMethods-protocols property already used protocol', function (done) {
+              it('should fail: RTMethods-protocols property already used protocol', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1209,13 +1052,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols: []',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'protocols\'').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'property already used: \'protocols\'');
               });
 
-              it('should fail: RTMethods-protocol property must be an array', function (done) {
+              it('should fail: RTMethods-protocol property must be an array', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1225,13 +1066,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '      put:',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,7,'property must be an array').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(7,'property must be an array');
               });
 
-              it('should fail: RTMethods-protocol value must be a string', function (done) {
+              it('should fail: RTMethods-protocol value must be a string', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1242,13 +1081,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - '
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'value must be a string').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'value must be a string');
               });
 
-              it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+              it('should fail: only HTTP and HTTPS values are allowed', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1259,10 +1096,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - htt'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'only HTTP and HTTPS values are allowed').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'only HTTP and HTTPS values are allowed');
               });
 
             }); // protocols
@@ -1272,7 +1107,7 @@ describe('RAMLeditor - Parser errors validation', function () {
           describe('delete', function () {
 
             describe('protocols', function () {
-              it('should fail: RTMethods-protocols property already used protocol', function (done) {
+              it('should fail: RTMethods-protocols property already used protocol', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1283,13 +1118,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols: []',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'protocols\'').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'property already used: \'protocols\'');
               });
 
-              it('should fail: RTMethods-protocol property must be an array', function (done) {
+              it('should fail: RTMethods-protocol property must be an array', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1299,13 +1132,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '      delete:',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,7,'property must be an array').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(7,'property must be an array');
               });
 
-              it('should fail: RTMethods-protocol value must be a string', function (done) {
+              it('should fail: RTMethods-protocol value must be a string', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1316,13 +1147,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - '
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'value must be a string').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'value must be a string');
               });
 
-              it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+              it('should fail: only HTTP and HTTPS values are allowed', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1333,10 +1162,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - htt'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'only HTTP and HTTPS values are allowed').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'only HTTP and HTTPS values are allowed');
               });
 
             }); // protocols
@@ -1346,7 +1173,7 @@ describe('RAMLeditor - Parser errors validation', function () {
           describe('head', function () {
 
             describe('protocols', function () {
-              it('should fail: RTMethods-protocols property already used protocol', function (done) {
+              it('should fail: RTMethods-protocols property already used protocol', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1357,13 +1184,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols: []',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'protocols\'').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'property already used: \'protocols\'');
               });
 
-              it('should fail: RTMethods-protocol property must be an array', function (done) {
+              it('should fail: RTMethods-protocol property must be an array', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1373,13 +1198,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '      head:',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,7,'property must be an array').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(7,'property must be an array');
               });
 
-              it('should fail: RTMethods-protocol value must be a string', function (done) {
+              it('should fail: RTMethods-protocol value must be a string', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1390,13 +1213,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - '
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'value must be a string').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'value must be a string');
               });
 
-              it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+              it('should fail: only HTTP and HTTPS values are allowed', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1407,10 +1228,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - htt'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'only HTTP and HTTPS values are allowed').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'only HTTP and HTTPS values are allowed');
               });
 
             }); // protocols
@@ -1420,7 +1239,7 @@ describe('RAMLeditor - Parser errors validation', function () {
           describe('patch', function () {
 
             describe('protocols', function () {
-              it('should fail: RTMethods-protocols property already used protocol', function (done) {
+              it('should fail: RTMethods-protocols property already used protocol', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1431,13 +1250,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols: []',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'protocols\'').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'property already used: \'protocols\'');
               });
 
-              it('should fail: RTMethods-protocol property must be an array', function (done) {
+              it('should fail: RTMethods-protocol property must be an array', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1447,13 +1264,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '      patch:',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,7,'property must be an array').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(7,'property must be an array');
               });
 
-              it('should fail: RTMethods-protocol value must be a string', function (done) {
+              it('should fail: RTMethods-protocol value must be a string', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1464,13 +1279,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - '
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'value must be a string').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'value must be a string');
               });
 
-              it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+              it('should fail: only HTTP and HTTPS values are allowed', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1481,10 +1294,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - htt'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'only HTTP and HTTPS values are allowed').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'only HTTP and HTTPS values are allowed');
               });
 
             }); // protocols
@@ -1494,7 +1305,7 @@ describe('RAMLeditor - Parser errors validation', function () {
           describe('options', function () {
 
             describe('protocols', function () {
-              it('should fail: RTMethods-protocols property already used protocol', function (done) {
+              it('should fail: RTMethods-protocols property already used protocol', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1505,13 +1316,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols: []',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'property already used: \'protocols\'').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'property already used: \'protocols\'');
               });
 
-              it('should fail: RTMethods-protocol property must be an array', function (done) {
+              it('should fail: RTMethods-protocol property must be an array', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1521,13 +1330,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '      options:',
                   '        protocols:'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,7,'property must be an array').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(7,'property must be an array');
               });
 
-              it('should fail: RTMethods-protocol value must be a string', function (done) {
+              it('should fail: RTMethods-protocol value must be a string', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1538,13 +1345,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - '
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'value must be a string').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'value must be a string');
               });
 
-              it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+              it('should fail: only HTTP and HTTPS values are allowed', function () {
                 var definition = [
                   '#%RAML 0.8',
                   '---',
@@ -1555,10 +1360,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                   '        protocols:',
                   '          - htt'
                 ].join('\\n');
-                editorHelper.setValue(definition);
-                assertsHelper.editorParserErrorAssertions(editorHelper,8,'only HTTP and HTTPS values are allowed').then(function(){
-                  done();
-                });
+                editorSetValue(definition);
+                editorParserErrorAssertions(8,'only HTTP and HTTPS values are allowed');
               });
 
             }); // protocols
@@ -1571,20 +1374,18 @@ describe('RAMLeditor - Parser errors validation', function () {
 
       describe('schemas', function () {
 
-        it('should fail: schemas property must be an array', function (done) {
+        it('should fail: schemas property must be an array', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'title: Test',
             'schemas:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,4,'schemas property must be an array').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(4,'schemas property must be an array');
         });
 
-        it('should fail: root property already used schemas', function (done) {
+        it('should fail: root property already used schemas', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -1592,17 +1393,15 @@ describe('RAMLeditor - Parser errors validation', function () {
             'schemas: []',
             'schemas:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'schemas\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'schemas\'');
         });
 
       }); //schemas
 
       describe('securitySchemes', function () {
 
-        it('should fail: root property already used securitySchemes', function (done) {
+        it('should fail: root property already used securitySchemes', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -1610,17 +1409,15 @@ describe('RAMLeditor - Parser errors validation', function () {
             'securitySchemes: []',
             'securitySchemes:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'securitySchemes\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'securitySchemes\'');
         });
 
       }); //securitySchemes
 
       describe('protocols', function () {
 
-        it('should fail: root property already used protocol', function (done) {
+        it('should fail: root property already used protocol', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -1628,28 +1425,24 @@ describe('RAMLeditor - Parser errors validation', function () {
             'protocols: []',
             'protocols:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'root property already used: \'protocols\'').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'root property already used: \'protocols\'');
         });
 
 
-        it('should fail: protocol property must be an array', function (done) {
+        it('should fail: protocol property must be an array', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
             'title: My API',
             'protocols:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,4,'property must be an array').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(4,'property must be an array');
         });
 
 
-        it('should fail: protocol value must be a string', function (done) {
+        it('should fail: protocol value must be a string', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -1657,13 +1450,11 @@ describe('RAMLeditor - Parser errors validation', function () {
             'protocols:',
             '  - '
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'value must be a string').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'value must be a string');
         });
 
-        it('should fail: only HTTP and HTTPS values are allowed', function (done) {
+        it('should fail: only HTTP and HTTPS values are allowed', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -1671,10 +1462,8 @@ describe('RAMLeditor - Parser errors validation', function () {
             'protocols:',
             '  - htt'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'only HTTP and HTTPS values are allowed').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'only HTTP and HTTPS values are allowed');
         });
 
       }); //protocols
@@ -1687,7 +1476,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('type', function () {
 
-          it('should fail: unused parameter param1_called from a resource', function (done) {
+          it('should fail: unused parameter param1_called from a resource', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1705,13 +1494,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '    typedCollection:',
               '      param1:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,14,'unused parameter: param1').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(14,'unused parameter: param1');
           });
 
-          it.skip('RT-327 -should fail: invalid type name send as parameter', function (done) {
+          xit('RT-327 -should fail: invalid type name send as parameter', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1736,13 +1523,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '    type1:',
               '      typeName: type'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,22,'there is no resource type named type').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(22,'there is no resource type named type');
           });
 
-          it.skip('RT-327 -should fail: invalid type name send as parameter', function (done) {
+          xit('RT-327 -should fail: invalid type name send as parameter', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1771,13 +1556,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      typeName: type3',
               '      hol: y'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,21,'there is no trait named yr').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(21,'there is no trait named yr');
           });
 
-          it.skip('RT-327 -should fail: invalid type name send as parameter', function (done) {
+          xit('RT-327 -should fail: invalid type name send as parameter', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1801,16 +1584,14 @@ describe('RAMLeditor - Parser errors validation', function () {
               '      typeName: type2',
               '      hol: '
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,21,'??').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(21,'??');
           });
         }); //type
 
         describe('is', function(){
 
-          it('should fail: invalid trait name sent as parameter ', function (done) {
+          it('should fail: invalid trait name sent as parameter ', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1829,14 +1610,12 @@ describe('RAMLeditor - Parser errors validation', function () {
               '        ',
               '  get:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,13,'value was not provided for parameter: param1').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(13,'value was not provided for parameter: param1');
           });
         });
 
-        it('should fail: property protocols is invalid in a resource', function (done) {
+        it('should fail: property protocols is invalid in a resource', function () {
           var definition = [
             '#%RAML 0.8',
             '---',
@@ -1844,10 +1623,8 @@ describe('RAMLeditor - Parser errors validation', function () {
             '/rt1:',
             '  protocols:'
           ].join('\\n');
-          editorHelper.setValue(definition);
-          assertsHelper.editorParserErrorAssertions(editorHelper,5,'property: \'protocols\' is invalid in a resource').then(function(){
-            done();
-          });
+          editorSetValue(definition);
+          editorParserErrorAssertions(5,'property: \'protocols\' is invalid in a resource');
         });
 
       }); // Resource attributes
@@ -1856,7 +1633,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('get', function () {
 
-          it('should fail with displayName property', function (done) {
+          it('should fail with displayName property', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1865,13 +1642,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  get:',
               '    displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'displayName\' is invalid in a method').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property: \'displayName\' is invalid in a method');
           });
 
-          it('should fail: method already declared: get', function (done) {
+          it('should fail: method already declared: get', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1880,15 +1655,13 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  get:',
               '  get:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'method already declared: \'get\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'method already declared: \'get\'');
           });
 
           describe('protocols', function () {
 
-            it('should fail: Rget-protocols property already used protocol', function (done) {
+            it('should fail: Rget-protocols property already used protocol', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -1898,13 +1671,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols: []',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'property already used: \'protocols\'');
             });
 
-            it('should fail: Rget-protocol property must be an array', function (done) {
+            it('should fail: Rget-protocol property must be an array', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -1913,13 +1684,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '  get:',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(6,'property must be an array');
             });
 
-            it('should fail: Rget-protocol value must be a string', function (done) {
+            it('should fail: Rget-protocol value must be a string', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -1929,13 +1698,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'value must be a string');
             });
 
-            it('should fail: Rget-protocols only HTTP and HTTPS values are allowed', function (done) {
+            it('should fail: Rget-protocols only HTTP and HTTPS values are allowed', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -1945,10 +1712,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - htt'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
             });
 
           }); // protocols
@@ -1958,7 +1723,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('put', function () {
 
-          it('should fail with displayName property', function (done) {
+          it('should fail with displayName property', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1967,13 +1732,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  put:',
               '    displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'displayName\' is invalid in a method').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property: \'displayName\' is invalid in a method');
           });
 
-          it('should fail: method already declared: put', function (done) {
+          it('should fail: method already declared: put', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -1982,15 +1745,13 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  put:',
               '  put:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'method already declared: \'put\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'method already declared: \'put\'');
           });
 
           describe('protocols', function () {
 
-            it('should fail: Rput-protocols property already used protocol', function (done) {
+            it('should fail: Rput-protocols property already used protocol', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2000,13 +1761,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols: []',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'property already used: \'protocols\'');
             });
 
-            it('should fail: Rput-protocol property must be an array', function (done) {
+            it('should fail: Rput-protocol property must be an array', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2015,13 +1774,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '  put:',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(6,'property must be an array');
             });
 
-            it('should fail: Rput-protocol value must be a string', function (done) {
+            it('should fail: Rput-protocol value must be a string', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2031,13 +1788,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'value must be a string');
             });
 
-            it('should fail: Rput-protocols only HTTP and HTTPS values are allowed', function (done) {
+            it('should fail: Rput-protocols only HTTP and HTTPS values are allowed', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2047,10 +1802,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - htt'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
             });
 
           }); // protocols
@@ -2059,7 +1812,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('head', function () {
 
-          it('should fail with displayName property', function (done) {
+          it('should fail with displayName property', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2068,13 +1821,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  head:',
               '    displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'displayName\' is invalid in a method').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property: \'displayName\' is invalid in a method');
           });
 
-          it('should fail: method already declared: head', function (done) {
+          it('should fail: method already declared: head', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2083,15 +1834,13 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  head:',
               '  head:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'method already declared: \'head\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'method already declared: \'head\'');
           });
 
           describe('protocols', function () {
 
-            it('should fail: Rhead-protocols property already used protocol', function (done) {
+            it('should fail: Rhead-protocols property already used protocol', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2101,13 +1850,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols: []',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'property already used: \'protocols\'');
             });
 
-            it('should fail: Rhead-protocols property must be an array', function (done) {
+            it('should fail: Rhead-protocols property must be an array', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2116,13 +1863,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '  head:',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(6,'property must be an array');
             });
 
-            it('should fail: Rhead-protocol value must be a string', function (done) {
+            it('should fail: Rhead-protocol value must be a string', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2132,13 +1877,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'value must be a string');
             });
 
-            it('should fail: Rhead-protocols only HTTP and HTTPS values are allowed', function (done) {
+            it('should fail: Rhead-protocols only HTTP and HTTPS values are allowed', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2148,10 +1891,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - htt'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
             });
 
           }); // protocols
@@ -2160,7 +1901,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('options', function () {
 
-          it('should fail with displayName property', function (done) {
+          it('should fail with displayName property', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2169,13 +1910,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  options:',
               '    displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'displayName\' is invalid in a method').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property: \'displayName\' is invalid in a method');
           });
 
-          it('should fail: method already declared: options', function (done) {
+          it('should fail: method already declared: options', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2184,15 +1923,13 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  options:',
               '  options:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'method already declared: \'options\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'method already declared: \'options\'');
           });
 
           describe('protocols', function () {
 
-            it('should fail: Roptions-protocols property already used protocol', function (done) {
+            it('should fail: Roptions-protocols property already used protocol', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2202,13 +1939,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols: []',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'property already used: \'protocols\'');
             });
 
-            it('should fail: Roptions-protocol property must be an array', function (done){
+            it('should fail: Roptions-protocol property must be an array', function (){
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2217,13 +1952,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '  options:',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(6,'property must be an array');
             });
 
-            it('should fail: Roptions-protocol value must be a string', function (done) {
+            it('should fail: Roptions-protocol value must be a string', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2233,13 +1966,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'value must be a string');
             });
 
-            it('should fail: Roptions-protocols only HTTP and HTTPS values are allowed', function (done) {
+            it('should fail: Roptions-protocols only HTTP and HTTPS values are allowed', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2249,10 +1980,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - htt'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
             });
 
           }); // protocols
@@ -2261,7 +1990,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('post', function () {
 
-          it('should fail with displayName property', function (done) {
+          it('should fail with displayName property', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2270,13 +1999,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  post:',
               '    displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'displayName\' is invalid in a method').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property: \'displayName\' is invalid in a method');
           });
 
-          it('should fail: method already declared: post', function (done) {
+          it('should fail: method already declared: post', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2285,15 +2012,13 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  post:',
               '  post:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'method already declared: \'post\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'method already declared: \'post\'');
           });
 
           describe('protocols', function () {
 
-            it('should fail: Rpost-protocols property already used protocol', function (done) {
+            it('should fail: Rpost-protocols property already used protocol', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2303,13 +2028,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols: []',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'property already used: \'protocols\'');
             });
 
-            it('should fail: Rpost-protocol property must be an array', function (done) {
+            it('should fail: Rpost-protocol property must be an array', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2318,13 +2041,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '  post:',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(6,'property must be an array');
             });
 
-            it('should fail: Rpost-protocol value must be a string', function (done) {
+            it('should fail: Rpost-protocol value must be a string', function (){
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2334,13 +2055,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'value must be a string');
             });
 
-            it('should fail: Rpost-protocols only HTTP and HTTPS values are allowed', function (done) {
+            it('should fail: Rpost-protocols only HTTP and HTTPS values are allowed', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2350,10 +2069,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - htt'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
             });
 
           }); // protocols
@@ -2362,7 +2079,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('delete', function () {
 
-          it('should fail with displayName property', function (done) {
+          it('should fail with displayName property', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2371,13 +2088,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  delete:',
               '    displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'displayName\' is invalid in a method').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property: \'displayName\' is invalid in a method');
           });
 
-          it('should fail: method already declared: delete', function (done) {
+          it('should fail: method already declared: delete', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2386,15 +2101,13 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  delete:',
               '  delete:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'method already declared: \'delete\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'method already declared: \'delete\'');
           });
 
           describe('protocols', function () {
 
-            it('should fail: Rdelete-protocols property already used protocol', function (done) {
+            it('should fail: Rdelete-protocols property already used protocol', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2404,13 +2117,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols: []',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'property already used: \'protocols\'');
             });
 
-            it('should fail: Rdelete-protocol property must be an array', function (done) {
+            it('should fail: Rdelete-protocol property must be an array', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2419,13 +2130,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '  delete:',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(6,'property must be an array');
             });
 
-            it('should fail: Rdelete-protocol value must be a string', function (done) {
+            it('should fail: Rdelete-protocol value must be a string', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2435,13 +2144,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'value must be a string');
             });
 
-            it('should fail: Rdelete-protocols only HTTP and HTTPS values are allowed', function (done) {
+            it('should fail: Rdelete-protocols only HTTP and HTTPS values are allowed', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2451,10 +2158,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - htt'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
             });
 
           }); // protocols
@@ -2462,7 +2167,7 @@ describe('RAMLeditor - Parser errors validation', function () {
 
         describe('patch', function () {
 
-          it('should fail with displayName property', function (done) { //RT-300
+          it('should fail with displayName property', function () { //RT-300
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2471,13 +2176,11 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  patch:',
               '    displayName:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'property: \'displayName\' is invalid in a method').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'property: \'displayName\' is invalid in a method');
           });
 
-          it('should fail: method already declared: patch', function (done) {
+          it('should fail: method already declared: patch', function () {
             var definition = [
               '#%RAML 0.8',
               '---',
@@ -2486,15 +2189,13 @@ describe('RAMLeditor - Parser errors validation', function () {
               '  patch:',
               '  patch:'
             ].join('\\n');
-            editorHelper.setValue(definition);
-            assertsHelper.editorParserErrorAssertions(editorHelper,6,'method already declared: \'patch\'').then(function(){
-              done();
-            });
+            editorSetValue(definition);
+            editorParserErrorAssertions(6,'method already declared: \'patch\'');
           });
 
           describe('protocols', function () {
 
-            it('should fail: Rpatch-protocols property already used protocol', function (done) {
+            it('should fail: Rpatch-protocols property already used protocol', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2504,13 +2205,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols: []',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'property already used: \'protocols\'').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'property already used: \'protocols\'');
             });
 
-            it('should fail: Rpatch-protocol property must be an array', function (done) {
+            it('should fail: Rpatch-protocol property must be an array', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2519,13 +2218,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '  patch:',
                 '    protocols:'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,6,'property must be an array').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(6,'property must be an array');
             });
 
-            it('should fail: Rpatch-protocol value must be a string', function (done) {
+            it('should fail: Rpatch-protocol value must be a string', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2535,13 +2232,11 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'value must be a string').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'value must be a string');
             });
 
-            it('should fail: Rpatch-protocols only HTTP and HTTPS values are allowed', function (done) {
+            it('should fail: Rpatch-protocols only HTTP and HTTPS values are allowed', function () {
               var definition = [
                 '#%RAML 0.8',
                 '---',
@@ -2551,10 +2246,8 @@ describe('RAMLeditor - Parser errors validation', function () {
                 '    protocols:',
                 '      - htt'
               ].join('\\n');
-              editorHelper.setValue(definition);
-              assertsHelper.editorParserErrorAssertions(editorHelper,7,'only HTTP and HTTPS values are allowed').then(function(){
-                done();
-              });
+              editorSetValue(definition);
+              editorParserErrorAssertions(7,'only HTTP and HTTPS values are allowed');
             });
 
           }); // protocols

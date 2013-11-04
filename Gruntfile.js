@@ -16,6 +16,7 @@ var mountFolder = function (connect, dir) {
 module.exports = function (grunt) {
   // load all grunt tasks
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
+  require('./tasks/protractor.js')(grunt);
 
   // configurable paths
   var yeomanConfig = {
@@ -259,9 +260,18 @@ module.exports = function (grunt) {
         ext: '.css'
       }
     },
-    mochaProtractor: {
-      local: grunt.file.readJSON('scenario.conf.json'),
-      saucelabs: grunt.file.readJSON('saucelabs.conf.json')
+//    mochaProtractor: {
+//      local: grunt.file.readJSON('scenario.conf.json'),
+//      saucelabs: grunt.file.readJSON('saucelabs.conf.json')
+//    }
+    protractor: {
+      scenario: {
+        configFile: 'scenario/support/protractor.conf.js'
+      },
+      debug: {
+        configFile: 'scenario/support/protractor.conf.js',
+        debug: true
+      }
     }
   });
 
@@ -310,14 +320,16 @@ module.exports = function (grunt) {
     'clean:server',
     'less',
     'connect:test',
-    'mochaProtractor:local'
+//    'mochaProtractor:local',
+    'protractor'
   ]);
 
   grunt.registerTask('saucelabs', [
     'clean:server',
     'less',
-    'connect:test',
-    'mochaProtractor:saucelabs'
+    'connect:test'
+//    'mochaProtractor:saucelabs',
+//    'protractor'
   ]);
 
   grunt.registerTask('default', [

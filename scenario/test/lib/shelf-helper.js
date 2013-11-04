@@ -1,34 +1,54 @@
 'use strict';
-
-var protractor = require('protractor');
-var elementsRootLevel = ['title','version','schemas','baseUri','mediaType','protocols', 'documentation',
+(function() {
+//  var protractor = require('protractor');
+  var elementsVersion = ['#%RAML 0.8'];
+  var elementsRootLevel = ['title','version','schemas','baseUri','mediaType','protocols', 'documentation',
   'baseUriParameters','securitySchemes','securedBy','New resource','traits','resourceTypes'];
-var elementsRootLevelRoot = ['title','version','schemas','baseUri','mediaType','protocols'];
-var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];
-function ShelfHelper (ptor, driver) {
-  this.ptor = ptor;
-  this.driver = driver;
-}
+  var elementsRootLevelRoot = ['title','version','schemas','baseUri','mediaType','protocols'];
+  var elementsRootLevelDocs = ['documentation'];
+  var elementsRootLevelParameters = ['baseUriParameters'];
+  var elementsRootLevelSecurity = ['securitySchemes', 'securedBy'];
+  var elementsRootLevelResources = ['New resource'];
+  var elementsRootLevelTraitsAndTypes = [ 'traits', 'resourceTypes'];
 
 
+  var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];
 
-ShelfHelper.prototype = {};
 
-ShelfHelper.prototype.getElementsRootLevel = function(){
-  return elementsRootLevel;
-};
-ShelfHelper.prototype.getElementsRootLevelRoot = function(){
-  return elementsRootLevelRoot;
-};
-ShelfHelper.prototype.getElementsResourceLevel = function(){
-  return elementsResourceLevel;
-};
-ShelfHelper.prototype.getElementsFromShelf = function () {
-  return this.ptor.findElements(protractor.By.css('[ng-repeat=\'item in section.items\'] span'));
-};
+  global.shelfGetElementsRootLevel = function(){
+    return elementsRootLevel;
+  };
+  global.shelfGetElementsRootLevelRoot = function(){
+    return elementsRootLevelRoot;
+  };
+  global.shelfGetElementsRootLevelDocs = function(){
+    return elementsRootLevelDocs;
+  };
+  global.shelfGetElementsRootLevelParameters = function(){
+    return elementsRootLevelParameters;
+  };
+  global.shelfGetElementsRootLevelSecurity = function(){
+    return elementsRootLevelSecurity;
+  };
+  global.shelfGetElementsRootLevelResources = function(){
+    return elementsRootLevelResources;
+  };
+  global.shelfGetElementsRootLevelTraitsAndTypes = function(){
+    return elementsRootLevelTraitsAndTypes;
+  };
 
-ShelfHelper.prototype.getElementsFromShelfByGroup = function (group) {
-  return this.ptor.findElements(protractor.By.css('.'+group+' ul li span'));
-};
 
-exports.ShelfHelper = ShelfHelper;
+  global.shelfGetElementsResourceLevel = function(){
+    return elementsResourceLevel;
+  };
+  global.shelfGetElementsVersion = function(){
+    return elementsVersion;
+  };
+  global.shelfGetElementsFromShelf = function () {
+    return browser.findElements(by.css('[ng-repeat=\'item in section.items\'] span'));
+  };
+  global.shelfGetElementsFromShelfByGroup = function (group) {
+    return browser.findElements(by.css('.'+group+' ul li span'));
+  };
+
+})();
