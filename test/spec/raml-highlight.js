@@ -23,6 +23,12 @@ describe('RAML Syntax Highlight', function () {
         var stream = new CodeMirror.StringStream('#%RAML 0.8');
         token(stream, {}).should.be.equal('raml-tag');
       });
+
+      it('should properly mark supported HTTP methods', function () {
+        ['options', 'get', 'head', 'post', 'put', 'delete', 'trace', 'connect', 'patch'].forEach(function (httpMethod) {
+          token(new CodeMirror.StringStream(httpMethod + ':'), {}).should.be.equal('method-title');
+        });
+      });
     });
   });
 });

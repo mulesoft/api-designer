@@ -4,29 +4,24 @@ describe('RAML Snippets', function () {
   var ramlSnippets;
 
   beforeEach(module('raml'));
-
   beforeEach(inject(function (_ramlSnippets_) {
     ramlSnippets = _ramlSnippets_;
   }));
 
-  it('should provide snippets for "get", "post", "put", "delete" methods', function () {
-
-    function generateMethodTemplate (name) {
-      return ['{{padding}}' + name + ':',
+  it('should provide snippets for all supported HTTP methods', function () {
+    function generateMethodTemplate (httpMethod) {
+      return ['{{padding}}' + httpMethod + ':',
       '{{padding}}  description: <<insert text or markdown here>>',
       ''].join('\n');
     }
 
-    var methods = ['get', 'post', 'put', 'delete'];
-
-    methods.forEach(function (method) {
-      ramlSnippets.getSnippet({name: method}).should.be.equal(
-        generateMethodTemplate(method)
+    ['options', 'get', 'head', 'post', 'put', 'delete', 'trace', 'connect', 'patch'].forEach(function (httpMethod) {
+      ramlSnippets.getSnippet({name: httpMethod}).should.be.equal(
+        generateMethodTemplate(httpMethod)
       );
     });
-
   });
-  
+
   it('should provide snippets for "title", "baseUri", "version" root level elements', function () {
     ramlSnippets.getSnippet({name: 'title'}).should.be.equal([
       '{{padding}}title: My API',
@@ -37,7 +32,7 @@ describe('RAML Snippets', function () {
       '{{padding}}version: v0.1',
       ''
     ].join('\n'));
-    
+
     ramlSnippets.getSnippet({name: 'baseUri'}).should.be.equal([
       '{{padding}}baseUri: http://server/api/{version}',
       ''
@@ -58,7 +53,7 @@ describe('RAML Snippets', function () {
       'title:'
     ].join('\n'));
   });
-  
+
   it('should add ":" at the end if key was not recognized', function () {
     ramlSnippets.getSnippet({name: 'foo'}).should.be.equal('{{padding}}foo:');
   });
