@@ -45,19 +45,40 @@ div[role=raml-editor] > header {
 }
 
 div[role=raml-editor] > header > div[role=notifications] {
-  background-color: infobackground;
+  background-color: #caccd4;
   position: absolute;
-  top: 10px;
-  margin-left: -200px;
-  left: 50%;
-  width: 400px;
+  top: 0px;
+  left: 200px;
+  right: 200px;
   color: infotext;
   font-size: 10pt;
-  padding: 10px 13px;
+  padding: 7px 13px;
   text-align: center;
-  border-radius: 2px;
-  font-family: monospace;
-  box-shadow: 1px 1px 1px 0px black;
+  letter-spacing: 0.7px;
+
+  .disable-selection;
+  
+  > i {
+    position: absolute;
+    display: block;
+    right: 0px;
+    top: 0px;
+    padding: 7px 13px;
+    font-size: 15px;
+    color: gray;
+    cursor: pointer;
+
+    &:hover {
+      color: white;
+    }
+  }
+
+
+  &.hidden {
+    transition: 0.2s ease-out;
+    opacity: 0;
+    top: -26px;
+  }
 }
 
 div[role=raml-editor] > header > h1 {
