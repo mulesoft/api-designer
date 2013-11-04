@@ -260,10 +260,6 @@ module.exports = function (grunt) {
         ext: '.css'
       }
     },
-//    mochaProtractor: {
-//      local: grunt.file.readJSON('scenario.conf.json'),
-//      saucelabs: grunt.file.readJSON('saucelabs.conf.json')
-//    }
     protractor: {
       scenario: {
         configFile: 'scenario/support/protractor.conf.js'
@@ -320,16 +316,7 @@ module.exports = function (grunt) {
     'clean:server',
     'less',
     'connect:test',
-//    'mochaProtractor:local',
     'protractor'
-  ]);
-
-  grunt.registerTask('saucelabs', [
-    'clean:server',
-    'less',
-    'connect:test'
-//    'mochaProtractor:saucelabs',
-//    'protractor'
   ]);
 
   grunt.registerTask('default', [
