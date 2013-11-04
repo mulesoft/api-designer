@@ -1,17 +1,15 @@
+@import "utils.less";
+
 html {
   height: 100%;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
 }
 
 body {
   background: #fafafa;
   color: #333;
   height: 100%;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   margin: 0;
   padding-bottom: 0;
   font-family: Ubuntu, sans-serif;
@@ -19,9 +17,7 @@ body {
 
 div.container {
   height: inherit;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
 }
 
 div[role=raml-editor] {
@@ -29,17 +25,13 @@ div[role=raml-editor] {
   height: 100%;
   padding-top: 60px;
   padding-left: 4px;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   position: relative;
   background: rgb(52,52,54);
 }
 
 div[role=raml-editor] > header {
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   position: absolute;
   top: 0;
   left: 0;
@@ -71,12 +63,10 @@ div[role=raml-editor] > header > div[role=notifications] {
 div[role=raml-editor] > header > h1 {
   padding: 0;
   margin: 5px 0 10px 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   font-size: 24px;
   font-weight: lighter;
-  text-shadow: -1px 0 4px #222;
+  .text-shadow(-1px 0 4px #222);
   color: white;
   letter-spacing: 1px;
   position: relative;
@@ -114,9 +104,7 @@ div[role=editor] {
   height: 100%;
   float: left;
   padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   position: relative;
   transition: padding-bottom .05s ease-in;
   padding-top: 32px;
@@ -140,9 +128,7 @@ div[role=tabs] {
   position: absolute;
   top: 3px;
   left: 53px;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
 }
 
 div[role=tab] {
@@ -152,11 +138,9 @@ div[role=tab] {
   float:left;
   margin:0 -10px 0 0;
   position: relative;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   color: #839496;
-  text-shadow: #002b36 0 1px;
+  .text-shadow(#002b36 0 1px);
   font-size: 12px;
   line-height: 32px;
   padding-left: 21px;
@@ -170,18 +154,12 @@ div[role=tab-box] {
   border:1px solid rgb(42,44,51);
   border-top-width: 2px;
   margin:0 8px 0;
-  -moz-transform: perspective(100px) rotateX(20deg);
-  -ms-transform: perspective(100px) rotateX(20deg);
-  -o-transform: perspective(100px) rotateX(20deg);
-  -webkit-transform: perspective(100px) rotateX(20deg);
-  transform: perspective(100px) rotateX(20deg);
+  .transform(perspective(100px) rotateX(20deg));
   position: absolute;
   top: 0;
   left: 0;
   width: 140px;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   z-index: -1;
 }
 
@@ -222,9 +200,7 @@ div[role=preview-wrapper] {
   width: 40%;
   height: 100%;
   float: left;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
+  .box-sizing(border-box);
   background: rgb(230,231,235);
   padding: 20px 20px 10px 20px;
 }
