@@ -10,6 +10,7 @@
   var elementsRootLevelSecurity = ['securitySchemes', 'securedBy'];
   var elementsRootLevelResources = ['New resource'];
   var elementsRootLevelTraitsAndTypes = [ 'traits', 'resourceTypes'];
+//  var elementR
 
 
   var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];

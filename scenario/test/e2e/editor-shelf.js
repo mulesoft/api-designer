@@ -157,17 +157,100 @@ describe('editor-shelf',function(){
           shelfElementsAssertion(list, shelfGetElementsResourceLevel());
         });
       });
-    });
+
+    });// resource level
 
     describe('by groups', function(){
 
+//      it('ROOT - group elements', function(){
+//        var definition = [
+//          '#%RAML 0.8',
+//          'title: My api',
+//          '/res:',
+//          '   '
+//        ].join('\\n');
+//        editorSetValue(definition);
+//        editorSetCursor(4,3);
+//        shelfGetElementsFromShelf().then(function(list){
+//          shelfElementsAssertion(list, );
+//        });
+//      });
+//
+//      it('METHODS - group elements', function(){
+//        var definition = [
+//          '#%RAML 0.8',
+//          'title: My api',
+//          '/res:',
+//          '   '
+//        ].join('\\n');
+//        editorSetValue(definition);
+//        editorSetCursor(4,3);
+//        shelfGetElementsFromShelf().then(function(list){
+//          shelfElementsAssertion(list, );
+//        });
+//      });
+//
+//      it('PARAMETERS - group elements', function(){
+//        var definition = [
+//          '#%RAML 0.8',
+//          'title: My api',
+//          '/res:',
+//          '   '
+//        ].join('\\n');
+//        editorSetValue(definition);
+//        editorSetCursor(4,3);
+//        shelfGetElementsFromShelf().then(function(list){
+//          shelfElementsAssertion(list, );
+//        });
+//      });
+//
+//      it('SECURITY - group elements', function(){
+//        var definition = [
+//          '#%RAML 0.8',
+//          'title: My api',
+//          '/res:',
+//          '   '
+//        ].join('\\n');
+//        editorSetValue(definition);
+//        editorSetCursor(4,3);
+//        shelfGetElementsFromShelf().then(function(list){
+//          shelfElementsAssertion(list, );
+//        });
+//      });
+//
+//      it('RESOURCES - group elements', function(){
+//        var definition = [
+//          '#%RAML 0.8',
+//          'title: My api',
+//          '/res:',
+//          '   '
+//        ].join('\\n');
+//        editorSetValue(definition);
+//        editorSetCursor(4,3);
+//        shelfGetElementsFromShelf().then(function(list){
+//          shelfElementsAssertion(list, );
+//        });
+//      });
+//
+//      it('TRAITS AND TYPES - group elements', function(){
+//        var definition = [
+//          '#%RAML 0.8',
+//          'title: My api',
+//          '/res:',
+//          '   '
+//        ].join('\\n');
+//        editorSetValue(definition);
+//        editorSetCursor(4,3);
+//        shelfGetElementsFromShelf().then(function(list){
+//          shelfElementsAssertion(list, );
+//        });
+//      });
 
-
-    });
+    }); // by group
 
     describe('methods', function(){
 
-    });
+    }); // by method
 
 
 
