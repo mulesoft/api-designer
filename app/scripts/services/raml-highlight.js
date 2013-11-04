@@ -75,6 +75,7 @@ angular.module('codeMirror')
       /* pairs (associative arrays) -> key */
       if (!state.pair && stream.match(/^\s*([a-z0-9\?\/\{\}\._\-])+(?=\s*:)/i)) {
         var key = stream.string.replace(/^\s+|\s+$/g, '').split(':')[0];
+        var sanitizedKey = key.slice(-1) === '?' ? key.slice(0, -1) : key;
         var level = getLineIndent(stream.string).tabCount;
 
         state.pair = true;
@@ -86,12 +87,9 @@ angular.module('codeMirror')
           state.insideMethod = false;
         }
 
-        if ('get|get?|put|put?|post|post?|patch|patch?|delete|delete?|head|head?|options|options?'.indexOf(key) >= 0) {
+        if (['options', 'get', 'head', 'post', 'put', 'delete', 'trace', 'connect', 'patch'].indexOf(sanitizedKey) !== -1) {
           state.methodLevel = level;
           state.insideMethod = true;
-        }
-
-        if ('get|get?|put|put?|post|post?|patch|patch?|delete|delete?|head|head?|options|options?'.indexOf(key) >= 0) {
           return 'method-title';
         }
 
