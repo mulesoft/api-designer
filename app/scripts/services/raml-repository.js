@@ -1,25 +1,7 @@
 'use strict';
 
-angular.module('fs', ['raml', 'utils', 'ngCookies'])
-  .factory('fileSystem', function ($injector, config) {
-    var fsFactory = config.get('fsFactory');
-
-    if (!fsFactory) {
-      fsFactory = 'mockFileSystem';
-
-      if (window.location.origin === 'https://j0hn.mulesoft.org') {
-        fsFactory = 'remoteFileSystem';
-      }
-
-      config.set('fsFactory', fsFactory);
-    }
-
-
-    config.save();
-
-    return $injector.get(fsFactory);
-  })
-  .factory('ramlRepository', function (ramlSnippets, fileSystem) {
+angular.module('fs', ['ngCookies', 'raml', 'utils'])
+  .factory('ramlRepository', function ($q, ramlSnippets, fileSystem) {
     var service = {};
     var defaultPath = '/';
     var defaultName = 'untitled.raml';
@@ -30,147 +12,107 @@ angular.module('fs', ['raml', 'utils', 'ngCookies'])
       this.contents = typeof contents === 'string' ? contents : null;
 
       this.dirty = !name;
-      this.removed = false;
-      this.loading = false;
       this.persisted = false;
     }
 
     RamlFile.prototype = {
-      reload: function () {
-        service.loadFile(this);
-      },
-      remove: function () {
-        service.removeFile(this);
-      },
       save: function () {
-        service.saveFile(this);
+        return service.saveFile(this);
       },
+
+      reload: function () {
+        return service.loadFile(this);
+      },
+
+      remove: function () {
+        return service.removeFile(this);
+      },
+
       hasContents: function () {
-        return this.contents !== null;
+        return !!this.contents;
       }
     };
 
-    service.loadFile = function (file, callback, errorCallback) {
-      file.loading = true;
-
-      fileSystem.load(file.path, file.name,
-        function (data) {
-          file.contents = data;
-          file.loading = file.dirty = file.removed = false;
-          file.persisted = true;
-
-          if (callback) {
-            callback(file);
-          }
-        },
-        function (error) {
-          file.error = error;
-          file.loading = file.dirty = file.removed = false;
-          file.persisted = true;
-
-          if (errorCallback) {
-            errorCallback(error);
-          }
-        });
-    };
-
-    service.getDirectory = function (path, callback, errorCallback) {
-      var entries = [];
-
+    service.getDirectory = function (path) {
       path = path || defaultPath;
-      entries.loading = true;
-
-      fileSystem.directory(path,
-        function (data) {
-          data.forEach(function (f) {
-            entries.push(new RamlFile(f, path));
-          });
-          entries.loading = false;
-          if (callback) {
-            callback(entries);
-          }
-        },
-        function (error) {
-          entries.error = error;
-          entries.loading = false;
-          if (errorCallback) {
-            errorCallback(error);
-          }
+      return fileSystem.directory(path).then(function (entries) {
+        return entries.map(function (e) {
+          return new RamlFile(e, path);
         });
-
-      return entries;
+      });
     };
 
-    service.removeFile = function (file, callback, errorCallback) {
-      file.loading = true;
-
-      fileSystem.remove(file.path, file.name,
+    service.saveFile = function (file) {
+      return fileSystem.save(file.path, file.name, file.contents).then(
+        // success
         function () {
-          file.loading = file.dirty = false;
-          file.removed = true;
-
-          if (callback) {
-            callback(file);
-          }
-        },
-        function (error) {
-          file.error = error;
-          file.loading = file.removed = false;
-
-          if (errorCallback) {
-            errorCallback(error);
-          }
-        });
-    };
-
-    service.saveFile = function (file, callback, errorCallback) {
-      if (!file.dirty) {
-        return;
-      }
-
-      file.loading = true;
-
-      fileSystem.save(file.path, file.name, file.contents,
-        function () {
-          file.loading = file.dirty = file.removed = false;
+          file.dirty = false;
           file.persisted = true;
 
-          if (callback) {
-            callback(file);
-          }
+          return file;
         },
+
+        // failure
         function (error) {
           file.error = error;
-          file.loading = false;
 
-          if (errorCallback) {
-            errorCallback(error);
-          }
-        });
+          throw error;
+        }
+      );
+    };
+
+    service.loadFile = function (file) {
+      return fileSystem.load(file.path, file.name).then(
+        // success
+        function (data) {
+          file.dirty = false;
+          file.persisted = true;
+          file.contents  = data;
+
+          return file;
+        },
+
+        // failure
+        function (error) {
+          file.dirty = false;
+          file.persisted = true;
+          file.error     = error;
+
+          throw error;
+        }
+      );
+    };
+
+    service.removeFile = function (file) {
+      return fileSystem.remove(file.path, file.name).then(
+        // success
+        function () {
+          file.dirty = false;
+
+          return file;
+        },
+
+        // failure
+        function (error) {
+          file.error = error;
+
+          throw error;
+        }
+      );
     };
 
     service.createFile = function () {
-      var file = new RamlFile(null, defaultPath, ramlSnippets.getEmptyRaml());
-      return file;
+      return new RamlFile(null, defaultPath, ramlSnippets.getEmptyRaml());
     };
 
-    service.bootstrap = function (callback) {
-      var path = defaultPath;
-
-      service.getDirectory(path,
-        function (entries) {
-          if (entries && entries.length) {
-            service.loadFile(entries[0], function () {
-              callback(entries[0]);
-            });
-          } else {
-            callback(service.createFile());
-          }
-        },
-        function () {
-          var file = service.createFile();
-          callback(file);
-        });
+    service.bootstrap = function () {
+      return service.getDirectory(defaultPath).then(function (files) {
+        if (files.length) {
+          return service.loadFile(files[0]);
+        } else {
+          return service.createFile();
+        }
+      });
     };
 
     return service;

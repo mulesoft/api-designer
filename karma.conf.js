@@ -15,6 +15,7 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
     'test/lib/sinon.js',
+    'app/vendor/scripts/es5-shim.js',
     'app/vendor/scripts/suggest.js',
     'app/vendor/scripts/angular.js',
     'app/vendor/scripts/angular-resource.js',
@@ -52,6 +53,7 @@ module.exports = function(config) {
     'app/scripts/services/raml-repository.js',
     'app/scripts/services/request-executor.js',
     'app/scripts/services/request-builder.js',
+    'app/scripts/services/file-system.js',
     'app/scripts/services/mock-file-system.js',
     'app/scripts/services/remote-file-system.js',
     'app/scripts/controllers/raml-editor-main.js',

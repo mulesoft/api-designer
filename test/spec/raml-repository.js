@@ -1,407 +1,277 @@
 'use strict';
 
 describe('RAML Repository', function () {
+  var $rootScope;
+  var $q;
   var ramlRepository;
+  var fileSystem;
 
   beforeEach(module('fs'));
-
-  beforeEach(inject(function (_ramlRepository_) {
-    ramlRepository = _ramlRepository_;
+  beforeEach(function () {
+    module(function($exceptionHandlerProvider) {
+      $exceptionHandlerProvider.mode('log');
+    });
+  });
+  beforeEach(inject(function ($injector) {
+    $rootScope = $injector.get('$rootScope');
+    $q = $injector.get('$q');
+    ramlRepository = $injector.get('ramlRepository');
+    fileSystem = $injector.get('fileSystem');
   }));
 
-  function extractProperties (obj) {
-    var extractedProperies = {}, i, currentPropertyKey;
-    
-    for (i = 1; i < arguments.length; i++) {
-      currentPropertyKey = arguments[i];
-      extractedProperies[currentPropertyKey] = obj[currentPropertyKey];
-    }
-
-    return extractedProperies;
-    
-  }
-
   describe('getDirectory', function () {
-
-    it('should reflect the contents of a directory on success', inject(function (fileSystem) {
+    it('should reflect the contents of a directory on success', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          files = ['myfile'],
-          directoryExpectation = fileSystemMock.expects('directory').once(),
-          success = sinon.stub(),
-          error = sinon.stub();
+      var directoryDeferred = $q.defer();
+      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+      var success = sinon.stub();
+      var files = ['myfile'];
 
       // Act
-      var directoryList = ramlRepository.getDirectory('/', success, error);
-      var oldDirectoryList = extractProperties(directoryList, 'loading', 'length', 'error');
-      directoryExpectation.firstCall.args[1](files);
+      ramlRepository.getDirectory('/').then(success);
+
+      directoryDeferred.resolve(files);
+      $rootScope.$apply();
 
       // Assert
-      oldDirectoryList.loading.should.be.equal(true);
-      oldDirectoryList.length.should.be.equal(0);
-      should.not.exist(oldDirectoryList.error);
-
-      
-      directoryList.loading.should.be.equal(false);
-      directoryList.length.should.be.equal(1);
-      should.not.exist(directoryList.error);
-
-      success.calledOnce.should.be.equal(true);
-      var successCallFirstArgument = success.firstCall.args[0];
-      successCallFirstArgument.should.be.deep.equal(directoryList);
-      directoryList[0].path.should.be.equal('/');
-      directoryList[0].name.should.be.equal(files[0]);
-
-      error.called.should.be.equal(false);
+      success.firstCall.args[0][0].path.should.be.equal('/');
+      success.firstCall.args[0][0].name.should.be.equal(files[0]);
 
       // Restore
-      fileSystemMock.verify();
+      directoryStub.restore();
+    });
 
-    }));
-    
-    it('should handle errors', inject(function (fileSystem) {
+    it('should handle errors', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          directoryExpectation = fileSystemMock.expects('directory').once(),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          errorData = {message: 'Error occurred'};
+      var directoryDeferred = $q.defer();
+      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+      var error = sinon.stub();
+      var errorData = {message: 'Error occurred'};
 
       // Act
-      var directoryList = ramlRepository.getDirectory('/', success, error);
-      var oldDirectoryList = extractProperties(directoryList, 'loading', 'length', 'error');
-      directoryExpectation.firstCall.args[2](errorData);
+      ramlRepository.getDirectory('/').then(function () {}, error);
+
+      directoryDeferred.reject(errorData);
+      $rootScope.$apply();
 
       // Assert
-      oldDirectoryList.loading.should.be.equal(true);
-      oldDirectoryList.length.should.be.equal(0);
-      should.not.exist(oldDirectoryList.error);
-
-      directoryList.loading.should.be.equal(false);
-      directoryList.length.should.be.equal(0);
-      directoryList.error.should.be.equal(errorData);
-
-      error.calledOnce.should.be.equal(true);
       error.firstCall.args[0].should.be.deep.equal(errorData);
 
-      success.called.should.be.equal(false);
-
       // Restore
-      fileSystemMock.verify();
-    }));
+      directoryStub.restore();
+    });
   });
-  
+
   describe('loadFile', function () {
-    it('should reflect the content of a file on success', inject(function (fileSystem) {
+    it('should reflect the content of a file on success', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          fileContent = 'this is the file content',
-          loadExpectation = fileSystemMock.expects('load').once(),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          fileMock = {};
+      var loadDeferred = $q.defer();
+      var loadStub = sinon.stub(fileSystem, 'load').returns(loadDeferred.promise);
+      var success = sinon.stub();
+      var fileContent = 'this is the file content';
+      var file;
 
       // Act
-      ramlRepository.loadFile(fileMock, success, error);
-      var oldFileMock = extractProperties(fileMock, 'loading');
-      loadExpectation.firstCall.args[2](fileContent);
+      ramlRepository.loadFile({}).then(success);
+
+      loadDeferred.resolve(fileContent);
+      $rootScope.$apply();
 
       // Assert
-      oldFileMock.loading.should.be.equal(true);
-      
-      success.calledOnce.should.be.equal(true);
-      var file = success.firstCall.args[0];
-
-      file.should.be.equal(fileMock);
-      
-      file.loading.should.be.equal(false);
+      file = success.firstCall.args[0];
       file.dirty.should.be.equal(false);
       file.contents.should.be.equal(fileContent);
       should.not.exist(file.error);
 
-      error.called.should.be.equal(false);
-
       // Restore
-      fileSystemMock.verify();
-    }));
+      loadStub.restore();
+    });
 
-    it('should handle errors', inject(function (fileSystem) {
+    it('should handle errors', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          loadExpectation = fileSystemMock.expects('load').once(),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          fileMock = {},
-          errorData = {message: 'This is the error description'};
+      var loadDeferred = $q.defer();
+      var loadStub = sinon.stub(fileSystem, 'load').returns(loadDeferred.promise);
+      var error = sinon.stub();
+      var errorData = {message: 'Error occurred'};
+      var fileMock = {};
 
       // Act
-      ramlRepository.loadFile(fileMock, success, error);
-      var oldFileMock = extractProperties(fileMock, 'loading');
-      loadExpectation.firstCall.args[3](errorData);
+      ramlRepository.loadFile(fileMock).then(function () {}, error);
+
+      loadDeferred.reject(errorData);
+      $rootScope.$apply();
 
       // Assert
-      oldFileMock.loading.should.be.equal(true);
-
-      
       error.firstCall.args[0].should.be.equal(errorData);
-      
-      error.calledOnce.should.be.equal(true);
 
-      fileMock.loading.should.be.equal(false);
       fileMock.dirty.should.be.equal(false);
       fileMock.error.should.be.equal(errorData);
 
-      success.called.should.be.equal(false);
-
       // Restore
-      fileSystemMock.verify();
-    }));
+      loadStub.restore();
+    });
   });
-  
+
   describe('removeFile', function () {
-    it('should update file on success', inject(function (fileSystem) {
+    it('should update file on success', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          fileContent = 'this is the file content',
-          removeExpectation = fileSystemMock.expects('remove').once(),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          fileMock = {};
+      var removeDeferred = $q.defer();
+      var removeStub = sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
+      var success = sinon.stub();
+      var fileMock = {};
 
       // Act
-      ramlRepository.removeFile(fileMock, success, error);
-      var oldFileMock = extractProperties(fileMock, 'loading');
-      removeExpectation.firstCall.args[2](fileContent);
+      ramlRepository.removeFile(fileMock).then(success);
+
+      removeDeferred.resolve();
+      $rootScope.$apply();
 
       // Assert
-      oldFileMock.loading.should.be.equal(true);
-      
-      success.calledOnce.should.be.equal(true);
-      var file = success.firstCall.args[0];
-
-      file.should.be.equal(fileMock);
-      
-      file.loading.should.be.equal(false);
-      file.dirty.should.be.equal(false);
-      file.removed.should.be.equal(true);
-      should.not.exist(file.error);
-
-      error.called.should.be.equal(false);
+      fileMock.dirty.should.be.equal(false);
+      should.not.exist(fileMock.error);
 
       // Restore
-      fileSystemMock.verify();
-    }));
-    
-    it('should handle errors', inject(function (fileSystem) {
+      removeStub.restore();
+    });
+
+    it('should handle errors', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          removeExpectation = fileSystemMock.expects('remove').once(),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          fileMock = {},
-          errorData = {message: 'This is the error description'};
+      var removeDeferred = $q.defer();
+      var removeStub = sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
+      var error = sinon.stub();
+      var fileMock = {};
+      var errorData = {message: 'This is the error description'};
 
       // Act
-      ramlRepository.removeFile(fileMock, success, error);
-      var oldFileMock = extractProperties(fileMock, 'loading');
-      removeExpectation.firstCall.args[3](errorData);
+      ramlRepository.removeFile(fileMock).then(function () {}, error);
+
+      removeDeferred.reject(errorData);
+      $rootScope.$apply();
 
       // Assert
-      oldFileMock.loading.should.be.equal(true);
-      
       error.firstCall.args[0].should.be.equal(errorData);
-      
-      error.calledOnce.should.be.equal(true);
 
-      fileMock.loading.should.be.equal(false);
-      fileMock.removed.should.be.equal(false);
       fileMock.error.should.be.equal(errorData);
 
-      success.called.should.be.equal(false);
-
       // Restore
-      fileSystemMock.verify();
-    }));
+      removeStub.restore();
+    });
   });
-  
+
   describe('saveFile', function () {
-    it('should do nothing when file is not dirty', inject(function (fileSystem) {
+    it('should update file state on success', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          fileMock = {dirty: false};
+      var saveDeferred = $q.defer();
+      var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
+      var success = sinon.stub();
+      var fileMock = {dirty: true};
+      var file;
 
       // Act
-      ramlRepository.saveFile(fileMock, success, error);
+      ramlRepository.saveFile(fileMock).then(success);
+
+      saveDeferred.resolve();
+      $rootScope.$apply();
 
       // Assert
-      success.called.should.be.equal(false);
-      error.called.should.be.equal(false);
-
-      // Restore
-      fileSystemMock.verify();
-    }));
-
-    it('should update file state on success', inject(function (fileSystem) {
-      // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          fileContent = 'this is the file content',
-          saveExpectation = fileSystemMock.expects('save').once(),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          fileMock = {dirty: true};
-
-      // Act
-      ramlRepository.saveFile(fileMock, success, error);
-      var oldFileMock = extractProperties(fileMock, 'loading');
-      saveExpectation.firstCall.args[3](fileContent);
-
-      // Assert
-      oldFileMock.loading.should.be.equal(true);
-      
-      success.calledOnce.should.be.equal(true);
-      var file = success.firstCall.args[0];
-
-      file.should.be.equal(fileMock);
-      
-      file.loading.should.be.equal(false);
+      file = success.firstCall.args[0];
       file.dirty.should.be.equal(false);
-      file.removed.should.be.equal(false);
       file.persisted.should.be.equal(true);
       should.not.exist(file.error);
 
-      error.called.should.be.equal(false);
-
       // Restore
-      fileSystemMock.verify();
-    }));
-    
-    it('should handle errors', inject(function (fileSystem) {
+      saveStub.restore();
+    });
+
+    it('should handle errors', function () {
       // Arrange
-      var fileSystemMock = sinon.mock(fileSystem),
-          saveExpectation = fileSystemMock.expects('save').once(),
-          success = sinon.stub(),
-          error = sinon.stub(),
-          fileMock = {dirty: true},
-          errorData = {message: 'This is the error description'};
+      var saveDeferred = $q.defer();
+      var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
+      var error = sinon.stub();
+      var fileMock = {dirty: true};
+      var errorData = {message: 'This is the error description'};
 
       // Act
-      ramlRepository.saveFile(fileMock, success, error);
-      var oldFileMock = extractProperties(fileMock, 'loading');
-      saveExpectation.firstCall.args[4](errorData);
+      ramlRepository.saveFile(fileMock).then(function () {}, error);
+
+      saveDeferred.reject(errorData);
+      $rootScope.$apply();
 
       // Assert
-      oldFileMock.loading.should.be.equal(true);
-      
       error.firstCall.args[0].should.be.equal(errorData);
-      
-      error.calledOnce.should.be.equal(true);
 
-      fileMock.loading.should.be.equal(false);
       fileMock.error.should.be.equal(errorData);
 
-      success.called.should.be.equal(false);
-
       // Restore
-      fileSystemMock.verify();
-    }));
+      saveStub.restore();
+    });
   });
-  
+
   describe('createFile', function () {
     it('should return a new file with snippet content', inject(function (ramlSnippets) {
       // Arrange
-      var snippetsMock = sinon.mock(ramlSnippets),
-          fileContent = 'This is an empty RAML file content';
-      snippetsMock.expects('getEmptyRaml').once().returns(fileContent);
+      var snippet = 'This is an empty RAML file content';
+      var getEmptyRamlStub = sinon.stub(ramlSnippets, 'getEmptyRaml').returns(snippet);
+      var file;
 
       // Act
-      var file = ramlRepository.createFile();
+      file = ramlRepository.createFile();
 
       // Assert
-      file.contents.should.be.equal(fileContent);
-      file.name.should.be.equal('untitled.raml');
       file.path.should.be.equal('/');
+      file.name.should.be.equal('untitled.raml');
+      file.contents.should.be.equal(snippet);
 
-      snippetsMock.verify();
+      // Restore
+      getEmptyRamlStub.restore();
     }));
   });
-  
+
   describe('bootstrap', function () {
-    it('should open the first file entry if there are file entries', inject(function () {
+    it('should create a new file if there are not file entries', function () {
       // Arrange
-      var then = sinon.stub(),
-          getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory'),
-          loadFileStub = sinon.stub(ramlRepository, 'loadFile'),
-          fileMock = {};
+      var getDirectoryDeferred = $q.defer();
+      var getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory').returns(getDirectoryDeferred.promise);
+      var newFileContent = 'content';
+      var createFileStub = sinon.stub(ramlRepository, 'createFile').returns(newFileContent);
+      var success = sinon.stub();
 
       // Act
-      ramlRepository.bootstrap(then);
-      then.called.should.be.equal(false);
-      getDirectoryStub.firstCall.args[1]([fileMock, {someotherfile: 'file'}, {somefile: 'file'}]);
-      loadFileStub.firstCall.args[1]();
+      ramlRepository.bootstrap().then(success);
+
+      getDirectoryDeferred.resolve([]);
+      $rootScope.$apply();
 
       // Assert
-      then.called.should.be.equal(true);
-      then.firstCall.args[0].should.be.equal(fileMock);
-      
-      ramlRepository.getDirectory.calledOnce.should.be.equal(true);
-      ramlRepository.loadFile.calledOnce.should.be.equal(true);
+      success.firstCall.args[0].should.be.equal(newFileContent);
 
+      // Restore
       getDirectoryStub.restore();
-      loadFileStub.restore();
-    }));
-    it('should create a new file if there are not file entries', inject(function () {
-      // Arrange
-      var then = sinon.stub(),
-          getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory'),
-          loadFileStub = sinon.stub(ramlRepository, 'loadFile'),
-          createFileStub = sinon.stub(ramlRepository, 'createFile'),
-          newFileContent = 'This is a new file';
-
-      createFileStub.returns(newFileContent);
-
-      // Act
-      ramlRepository.bootstrap(then);
-      then.called.should.be.equal(false);
-      getDirectoryStub.firstCall.args[1]([]);
-
-      // Assert
-      then.called.should.be.equal(true);
-      then.firstCall.args[0].should.be.equal(newFileContent);
-      
-      ramlRepository.getDirectory.calledOnce.should.be.equal(true);
-      ramlRepository.loadFile.called.should.be.equal(false);
-
-      getDirectoryStub.restore();
-      loadFileStub.restore();
       createFileStub.restore();
-    }));
-    it('should create a new file on fail', inject(function () {
-      // Arrange
-      var then = sinon.stub(),
-          getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory'),
-          loadFileStub = sinon.stub(ramlRepository, 'loadFile'),
-          createFileStub = sinon.stub(ramlRepository, 'createFile'),
-          newFileContent = 'This is a new file';
+    });
 
-      createFileStub.returns(newFileContent);
+    it('should open the first file entry if there are file entries', function () {
+      // Arrange
+      var getDirectoryDeferred = $q.defer();
+      var getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory').returns(getDirectoryDeferred.promise);
+      var loadFileDeferred = $q.defer();
+      var loadFileStub = sinon.stub(ramlRepository, 'loadFile').returns(loadFileDeferred.promise);
+      var success = sinon.stub();
+      var fileMock = {};
 
       // Act
-      ramlRepository.bootstrap(then);
-      then.called.should.be.equal(false);
-      getDirectoryStub.firstCall.args[2]();
+      ramlRepository.bootstrap().then(success);
+
+      getDirectoryDeferred.resolve([fileMock]);
+      loadFileDeferred.resolve(fileMock);
+      $rootScope.$apply();
 
       // Assert
-      then.called.should.be.equal(true);
-      then.firstCall.args[0].should.be.equal(newFileContent);
-      
-      ramlRepository.getDirectory.calledOnce.should.be.equal(true);
-      ramlRepository.loadFile.called.should.be.equal(false);
+      success.firstCall.args[0].should.be.equal(fileMock);
 
+      // Restore
       getDirectoryStub.restore();
       loadFileStub.restore();
-      createFileStub.restore();
-    }));
+    });
   });
 });
