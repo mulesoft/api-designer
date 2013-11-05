@@ -4,7 +4,6 @@ var ramlUrl = require('../config').url;
 
 describe('editor-shelf',function(){
 
-
   beforeEach(function () {
     browser.get(ramlUrl);
     browser.executeScript(function () {
@@ -43,108 +42,68 @@ describe('editor-shelf',function(){
     }); //RAML version
 
     describe('root section', function(){
-      it('options offer root level empty document - including raml version', function(){
+      it('root section by group', function(){
         var definition = [
           '#%RAML 0.8',
           ''
         ].join('\\n');
         editorSetValue(definition);
         editorSetCursor(2,1);
-        shelfGetElementsFromShelf().then(function(list){
-          shelfElementsAssertion(list, shelfGetElementsRootLevel());
-        });
+        shelfElementsRootByGroupAssertion();
       });
 
-      describe('by groups', function(){
+      describe('Not displayed after select', function(){
 
-        it('ROOT group elements', function (){
+        it('title is no longer displayed on the shelf', function(){
           var definition = [
             '#%RAML 0.8',
-            ''
+            'title: ',
+            ' '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(2,1);
-          shelfGetElementsFromShelfByGroup('root').then(function(list){
-            shelfElementsAssertion(list, shelfGetElementsRootLevelRoot());
+          editorSetCursor(3,1);
+          shelfGetElementsFromShelf().then(function(list){
+            var list2 =['title'];
+            return noShelfElementsAssertion(list,shelfGetElementsRootLevel(),list2);
           });
         });
 
-        xit('Root label and number of items validation - In progress', function(){
-          var definition = [
-            '#%RAML 0.8',
-            ''
-          ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(2,1);
-        });
 
-        it('DOCS group elements', function(){
+        it('varsion is no longer displayed on the shelf', function(){
           var definition = [
             '#%RAML 0.8',
-            ''
+            'version: ',
+            ' '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(2,1);
-          shelfGetElementsFromShelfByGroup('docs').then(function(list){
-            shelfElementsAssertion(list, shelfGetElementsRootLevelDocs());
+          editorSetCursor(3,1);
+          shelfGetElementsFromShelf().then(function(list){
+            var list2 =['version'];
+            return noShelfElementsAssertion(list,shelfGetElementsRootLevel(),list2);
           });
         });
 
-        it('PARAMETERS group elements', function(){
+        it('varsion is no longer displayed on the shelf', function(){
           var definition = [
             '#%RAML 0.8',
-            ''
+            'schemas: ',
+            ' '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(2,1);
-          shelfGetElementsFromShelfByGroup('parameters').then(function(list){
-            shelfElementsAssertion(list, shelfGetElementsRootLevelParameters());
+          editorSetCursor(3,1);
+          shelfGetElementsFromShelf().then(function(list){
+            var list2 =['schemas'];
+            return noShelfElementsAssertion(list,shelfGetElementsRootLevel(),list2);
           });
         });
 
-        it('SECURITY group elements', function (){
-          var definition = [
-            '#%RAML 0.8',
-            ''
-          ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(2,1);
-          shelfGetElementsFromShelfByGroup('security').then(function(list){
-            shelfElementsAssertion(list, shelfGetElementsRootLevelSecurity());
-          });
-        });
-
-        it('RESOURCES group elements', function (){
-          var definition = [
-            '#%RAML 0.8',
-            ''
-          ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(2,1);
-          shelfGetElementsFromShelfByGroup('resources').then(function(list){
-            shelfElementsAssertion(list, shelfGetElementsRootLevelResources());
-          });
-        });
-
-        it('TRAITS AND TYPES group elements', function (){
-          var definition = [
-            '#%RAML 0.8',
-            ''
-          ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(2,1);
-          shelfGetElementsFromShelfByGroup('traits-and-types').then(function(list){
-            shelfElementsAssertion(list, shelfGetElementsRootLevelTraitsAndTypes());
-          });
-        });
-
-      });//by groups
+      }); // Not displayed after select
 
     }); // root section
 
     describe('resource level', function(){
 
-      it('resource level - offer valid options on the shelf', function(){
+      it('resource shelf elements by group', function(){
         var definition = [
           '#%RAML 0.8',
           'title: My api',
@@ -153,107 +112,107 @@ describe('editor-shelf',function(){
         ].join('\\n');
         editorSetValue(definition);
         editorSetCursor(4,3);
-        shelfGetElementsFromShelf().then(function(list){
-          shelfElementsAssertion(list, shelfGetElementsResourceLevel());
-        });
+        shelfElementsResourceByGroupAssertion();
+
       });
 
     });// resource level
 
-    describe('by groups', function(){
-
-//      it('ROOT - group elements', function(){
-//        var definition = [
-//          '#%RAML 0.8',
-//          'title: My api',
-//          '/res:',
-//          '   '
-//        ].join('\\n');
-//        editorSetValue(definition);
-//        editorSetCursor(4,3);
-//        shelfGetElementsFromShelf().then(function(list){
-//          shelfElementsAssertion(list, );
-//        });
-//      });
-//
-//      it('METHODS - group elements', function(){
-//        var definition = [
-//          '#%RAML 0.8',
-//          'title: My api',
-//          '/res:',
-//          '   '
-//        ].join('\\n');
-//        editorSetValue(definition);
-//        editorSetCursor(4,3);
-//        shelfGetElementsFromShelf().then(function(list){
-//          shelfElementsAssertion(list, );
-//        });
-//      });
-//
-//      it('PARAMETERS - group elements', function(){
-//        var definition = [
-//          '#%RAML 0.8',
-//          'title: My api',
-//          '/res:',
-//          '   '
-//        ].join('\\n');
-//        editorSetValue(definition);
-//        editorSetCursor(4,3);
-//        shelfGetElementsFromShelf().then(function(list){
-//          shelfElementsAssertion(list, );
-//        });
-//      });
-//
-//      it('SECURITY - group elements', function(){
-//        var definition = [
-//          '#%RAML 0.8',
-//          'title: My api',
-//          '/res:',
-//          '   '
-//        ].join('\\n');
-//        editorSetValue(definition);
-//        editorSetCursor(4,3);
-//        shelfGetElementsFromShelf().then(function(list){
-//          shelfElementsAssertion(list, );
-//        });
-//      });
-//
-//      it('RESOURCES - group elements', function(){
-//        var definition = [
-//          '#%RAML 0.8',
-//          'title: My api',
-//          '/res:',
-//          '   '
-//        ].join('\\n');
-//        editorSetValue(definition);
-//        editorSetCursor(4,3);
-//        shelfGetElementsFromShelf().then(function(list){
-//          shelfElementsAssertion(list, );
-//        });
-//      });
-//
-//      it('TRAITS AND TYPES - group elements', function(){
-//        var definition = [
-//          '#%RAML 0.8',
-//          'title: My api',
-//          '/res:',
-//          '   '
-//        ].join('\\n');
-//        editorSetValue(definition);
-//        editorSetCursor(4,3);
-//        shelfGetElementsFromShelf().then(function(list){
-//          shelfElementsAssertion(list, );
-//        });
-//      });
-
-    }); // by group
-
     describe('methods', function(){
 
-    }); // by method
+      it('get - check section', function(){
+        var definition = [
+          '#%RAML 0.8',
+          'title: My api',
+          '/res:',
+          '  get:',
+          '     '
+        ].join('\\n');
+        editorSetValue(definition);
+        editorSetCursor(5,7);
+        shelfElementsMethodsByGroupAssertion();
+      });
 
+      it('post - check section', function(){
+        var definition = [
+          '#%RAML 0.8',
+          'title: My api',
+          '/res:',
+          '  post:',
+          '     '
+        ].join('\\n');
+        editorSetValue(definition);
+        editorSetCursor(5,7);
+        shelfElementsMethodsByGroupAssertion();
+      });
 
+      it('put - check section', function(){
+        var definition = [
+          '#%RAML 0.8',
+          'title: My api',
+          '/res:',
+          '  put:',
+          '     '
+        ].join('\\n');
+        editorSetValue(definition);
+        editorSetCursor(5,7);
+        shelfElementsMethodsByGroupAssertion();
+      });
 
-  }); //verify shelf elements
+      it('delete - check section', function(){
+        var definition = [
+          '#%RAML 0.8',
+          'title: My api',
+          '/res:',
+          '  delete:',
+          '     '
+        ].join('\\n');
+        editorSetValue(definition);
+        editorSetCursor(5,7);
+        shelfElementsMethodsByGroupAssertion();
+      });
+
+      it('head - check section', function(){
+        var definition = [
+          '#%RAML 0.8',
+          'title: My api',
+          '/res:',
+          '  head:',
+          '     '
+        ].join('\\n');
+        editorSetValue(definition);
+        editorSetCursor(5,7);
+        shelfElementsMethodsByGroupAssertion();
+      });
+
+      it('patch - check section', function(){
+        var definition = [
+          '#%RAML 0.8',
+          'title: My api',
+          '/res:',
+          '  patch:',
+          '     '
+        ].join('\\n');
+        editorSetValue(definition);
+        editorSetCursor(5,7);
+        shelfElementsMethodsByGroupAssertion();
+      });
+
+      it('options - check section', function(){
+        var definition = [
+          '#%RAML 0.8',
+          'title: My api',
+          '/res:',
+          '  options:',
+          '     '
+        ].join('\\n');
+        editorSetValue(definition);
+        editorSetCursor(5,7);
+        shelfElementsMethodsByGroupAssertion();
+      });
+
+    }); // method
+
+  });//verify shelf elements
 
 });//RAMLeditor - Parser errors validation

@@ -111,6 +111,44 @@
     });
   };
 
+  global.shefGetElementsByGroupAssertion = function(groupInfo, byGroup){
+    var i = 0;
+    ShelfGetSectionsFromShelf().then(function(sections){
+//      console.log(sections.length);
+      sections.forEach(function(section){
+        var t = i++;
+        section.getText().then(function(text){
+          expect(text).to.eql(groupInfo[t]);
+        }).then(function(){
+            section.findElements(by.css(itemsInSection())).then(function(items){
+              shelfElementsAssertion(items, byGroup[t]);
+            });
+          });
+      });
+      expect(i).to.eql(sections.length);
+    });
+
+
+  };
+
+  global.shelfElementsRootByGroupAssertion = function(){
+    var byGroup = [shelfGetElementsRootLevelRoot(),shelfGetElementsRootLevelDocs(),shelfGetElementsRootLevelParameters(),shelfGetElementsRootLevelSecurity(),shelfGetElementsRootLevelResources(),shelfGetElementsRootLevelTraitsAndTypes()];
+    var groupInfo = ['ROOT (6)\ntitle\nversion\nschemas\nbaseUri\nmediaType\nprotocols','DOCS (1)\ndocumentation','PARAMETERS (1)\nbaseUriParameters','SECURITY (2)\nsecuritySchemes\nsecuredBy','RESOURCES (1)\nNew resource','TRAITS AND TYPES (2)\ntraits\nresourceTypes'];
+    shefGetElementsByGroupAssertion(groupInfo, byGroup);
+  };
+
+  global.shelfElementsResourceByGroupAssertion = function(){
+    var byGroup =[shelfGetElementsResourceLevelDocs(),shelfGetElementsResourceLevelMethods(),shelfGetElementsResourceLevelParameters(),shelfGetElementsResourceLevelSecurity(), shelfGetElementsResourceLevelResources(),shelfGetElementsResourceLevelTraitsAndTypes()];
+    var groupInfo = ['DOCS (1)\ndisplayName','METHODS (7)\nget\npost\nput\ndelete\nhead\npatch\noptions','PARAMETERS (2)\nuriParameters\nbaseUriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\nNew resource','TRAITS AND TYPES (2)\nis\ntype'];
+    shefGetElementsByGroupAssertion(groupInfo, byGroup);
+  };
+  global.shelfElementsMethodsByGroupAssertion = function(){
+    var byGroup = [shelfGetElemMethodLevelRoot(),shelfGetElemMethodLevelDocs(),shelfGetElemMethodLevelParameters(), shelfGetElemMethodLevelResponses(),shelfGetElemMethodLevelSecurity(),shelfGetElemMethodLevelTraitsAndTypes(), shelfGetElemMethodLevelBody()];
+    var groupInfo = ['ROOT (1)\nprotocols','DOCS (1)\ndescription','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (1)\nis','BODY (1)\nbody'];
+    shefGetElementsByGroupAssertion(groupInfo, byGroup);
+  };
+
+
 //Shelf ends
 
 })();
