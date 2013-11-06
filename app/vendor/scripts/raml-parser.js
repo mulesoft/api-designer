@@ -9048,11 +9048,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4,"url":7}],28:[function(require,module,exports){
-window.RAML = {}
-
-window.RAML.Parser = require('../lib/raml')
-},{"../lib/raml":12}],17:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4,"url":7}],17:[function(require,module,exports){
 (function() {
   var Mark, MarkedYAMLError, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -11059,7 +11055,11 @@ window.RAML.Parser = require('../lib/raml')
 
 }).call(this);
 
-},{"./errors":1,"./tokens":3,"./util":4}],24:[function(require,module,exports){
+},{"./errors":1,"./tokens":3,"./util":4}],28:[function(require,module,exports){
+window.RAML = {}
+
+window.RAML.Parser = require('../lib/raml')
+},{"../lib/raml":12}],24:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11798,7 +11798,512 @@ function decode(str) {
 
 }).call(this);
 
-},{"./composer":10,"./construct":14,"./errors":1,"./events":2,"./loader":16,"./nodes":11,"./parser":19,"./reader":17,"./resolver":20,"./scanner":18,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],21:[function(require,module,exports){
+},{"./composer":10,"./construct":14,"./errors":1,"./events":2,"./loader":16,"./nodes":11,"./parser":19,"./reader":17,"./resolver":20,"./scanner":18,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],27:[function(require,module,exports){
+(function() {
+  var nodes, uritemplate, url, util,
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  uritemplate = require('uritemplate');
+
+  nodes = require('./nodes');
+
+  url = require('url');
+
+  util = require('./util');
+
+  /*
+     Applies transformations to the RAML
+  */
+
+
+  this.Transformations = (function() {
+    function Transformations() {
+      this.isContentTypeString = __bind(this.isContentTypeString, this);
+      this.add_key_value_to_node = __bind(this.add_key_value_to_node, this);
+      this.apply_default_media_type_to_resource = __bind(this.apply_default_media_type_to_resource, this);
+      this.get_media_type = __bind(this.get_media_type, this);
+      this.load_default_media_type = __bind(this.load_default_media_type, this);
+      this.applyAstTransformations = __bind(this.applyAstTransformations, this);
+      this.applyTransformations = __bind(this.applyTransformations, this);
+      this.declaredSchemas = {};
+    }
+
+    Transformations.prototype.applyTransformations = function(rootObject) {
+      var resources;
+      this.applyTransformationsToRoot(rootObject);
+      resources = rootObject.resources;
+      return this.applyTransformationsToResources(rootObject, resources);
+    };
+
+    Transformations.prototype.applyAstTransformations = function(document) {
+      return this.transform_document(document);
+    };
+
+    Transformations.prototype.load_default_media_type = function(node) {
+      if (!util.isMapping(node || (node != null ? node.value : void 0))) {
+        return;
+      }
+      return this.mediaType = this.property_value(node, "mediaType");
+    };
+
+    Transformations.prototype.get_media_type = function() {
+      return this.mediaType;
+    };
+
+    Transformations.prototype.applyTransformationsToRoot = function(rootObject) {
+      var expressions, template;
+      if (rootObject.baseUri) {
+        template = uritemplate.parse(rootObject.baseUri);
+        expressions = template.expressions.filter(function(expr) {
+          return 'templateText' in expr;
+        }).map(function(expression) {
+          return expression.templateText;
+        });
+        if (expressions.length) {
+          if (!rootObject.baseUriParameters) {
+            rootObject.baseUriParameters = {};
+          }
+        }
+        return expressions.forEach(function(parameterName) {
+          if (!(parameterName in rootObject.baseUriParameters)) {
+            rootObject.baseUriParameters[parameterName] = {
+              type: "string",
+              required: true,
+              displayName: parameterName
+            };
+            if (parameterName === "version") {
+              return rootObject.baseUriParameters[parameterName]["enum"] = [rootObject.version];
+            }
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.applyTransformationsToResources = function(rootObject, resources) {
+      var expressions, inheritedSecScheme, method, parameterName, pathParts, relativeUri, resource, template, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
+      if (resources != null ? resources.length : void 0) {
+        _results = [];
+        for (_i = 0, _len = resources.length; _i < _len; _i++) {
+          resource = resources[_i];
+          inheritedSecScheme = resource.securedBy ? resource.securedBy : rootObject != null ? rootObject.securedBy : void 0;
+          if ((_ref = resource.methods) != null ? _ref.length : void 0) {
+            _ref1 = resource.methods;
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              method = _ref1[_j];
+              if (!("securedBy" in method)) {
+                if (inheritedSecScheme) {
+                  method.securedBy = inheritedSecScheme;
+                }
+              }
+            }
+          }
+          relativeUri = url.parse(resource.relativeUri);
+          pathParts = relativeUri.path.split('\/');
+          while (!pathParts[0] && pathParts.length) {
+            pathParts.shift();
+          }
+          resource.relativeUriPathSegments = pathParts;
+          template = uritemplate.parse(resource.relativeUri);
+          expressions = template.expressions.filter(function(expr) {
+            return 'templateText' in expr;
+          }).map(function(expression) {
+            return expression.templateText;
+          });
+          if (expressions.length) {
+            if (!resource.uriParameters) {
+              resource.uriParameters = {};
+            }
+          }
+          for (_k = 0, _len2 = expressions.length; _k < _len2; _k++) {
+            parameterName = expressions[_k];
+            if (!(parameterName in resource.uriParameters)) {
+              resource.uriParameters[parameterName] = {
+                type: "string",
+                required: true,
+                displayName: parameterName
+              };
+            }
+          }
+          _results.push(this.applyTransformationsToResources(rootObject, resource.resources));
+        }
+        return _results;
+      }
+    };
+
+    /*
+    Media Type pivot when using default mediaType property
+    */
+
+
+    Transformations.prototype.apply_default_media_type_to_resource = function(resource) {
+      var methods,
+        _this = this;
+      if (!this.mediaType) {
+        return;
+      }
+      if (!util.isMapping(resource)) {
+        return;
+      }
+      methods = this.child_methods(resource);
+      return methods.forEach(function(method) {
+        return _this.apply_default_media_type_to_method(method[1]);
+      });
+    };
+
+    Transformations.prototype.apply_default_media_type_to_method = function(method) {
+      var responses,
+        _this = this;
+      if (!this.mediaType) {
+        return;
+      }
+      if (!util.isMapping(method)) {
+        return;
+      }
+      if (this.has_property(method, "body")) {
+        this.apply_default_media_type_to_body(this.get_property(method, "body"));
+      }
+      if (this.has_property(method, "responses")) {
+        responses = this.get_property(method, "responses");
+        return responses.value.forEach(function(response) {
+          if (_this.has_property(response[1], "body")) {
+            return _this.apply_default_media_type_to_body(_this.get_property(response[1], "body"));
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.apply_default_media_type_to_body = function(body) {
+      var key, responseType, responseTypeKey, _ref, _ref1, _ref2;
+      if (!util.isMapping(body)) {
+        return;
+      }
+      if (body != null ? (_ref = body.value) != null ? (_ref1 = _ref[0]) != null ? (_ref2 = _ref1[0]) != null ? _ref2.value : void 0 : void 0 : void 0 : void 0) {
+        key = body.value[0][0].value;
+        if (!key.match(/\//)) {
+          responseType = new nodes.MappingNode('tag:yaml.org,2002:map', [], body.start_mark, body.end_mark);
+          responseTypeKey = new nodes.ScalarNode('tag:yaml.org,2002:str', this.mediaType, body.start_mark, body.end_mark);
+          responseType.value.push([responseTypeKey, body.clone()]);
+          return body.value = responseType.value;
+        }
+      }
+    };
+
+    Transformations.prototype.noop = function() {};
+
+    Transformations.prototype.transform_types = function(typeProperty) {
+      var types,
+        _this = this;
+      types = typeProperty.value;
+      return types.forEach(function(type_entry) {
+        return type_entry.value.forEach(function(type) {
+          return _this.transform_resource(type, true);
+        });
+      });
+    };
+
+    Transformations.prototype.transform_traits = function(traitProperty) {
+      var traits,
+        _this = this;
+      traits = traitProperty.value;
+      return traits.forEach(function(trait_entry) {
+        return trait_entry.value.forEach(function(trait) {
+          return _this.transform_method(trait[1], true);
+        });
+      });
+    };
+
+    Transformations.prototype.transform_named_params = function(property, allowParameterKeys, requiredByDefault) {
+      var _this = this;
+      if (requiredByDefault == null) {
+        requiredByDefault = true;
+      }
+      if (util.isNull(property[1])) {
+        return;
+      }
+      return property[1].value.forEach(function(param) {
+        if (util.isNull(param[1])) {
+          param[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], param[1].start_mark, param[1].end_mark);
+        }
+        return _this.transform_common_parameter_properties(param[0].value, param[1], allowParameterKeys, requiredByDefault);
+      });
+    };
+
+    Transformations.prototype.transform_common_parameter_properties = function(parameterName, node, allowParameterKeys, requiredByDefault) {
+      var _this = this;
+      if (util.isSequence(node)) {
+        return node.value.forEach(function(parameter) {
+          return _this.transform_named_parameter(parameterName, parameter, allowParameterKeys, requiredByDefault);
+        });
+      } else {
+        return this.transform_named_parameter(parameterName, node, allowParameterKeys, requiredByDefault);
+      }
+    };
+
+    Transformations.prototype.transform_named_parameter = function(parameterName, node, allowParameterKeys, requiredByDefault) {
+      var hasDisplayName, hasRequired, hasType,
+        _this = this;
+      hasDisplayName = false;
+      hasRequired = false;
+      hasType = false;
+      node.value.forEach(function(childNode) {
+        var canonicalPropertyName;
+        if (allowParameterKeys && _this.isParameterKey(childNode)) {
+          return;
+        }
+        canonicalPropertyName = _this.canonicalizePropertyName(childNode[0].value, allowParameterKeys);
+        switch (canonicalPropertyName) {
+          case "pattern":
+            return _this.noop();
+          case "default":
+            return _this.noop();
+          case "enum":
+            return _this.noop();
+          case "description":
+            return _this.noop();
+          case "example":
+            return _this.noop();
+          case "minLength":
+            return _this.noop();
+          case "maxLength":
+            return _this.noop();
+          case "minimum":
+            return _this.noop();
+          case "maximum":
+            return _this.noop();
+          case "repeat":
+            return _this.noop();
+          case "displayName":
+            return hasDisplayName = true;
+          case "type":
+            return hasType = true;
+          case "required":
+            return hasRequired = true;
+          default:
+            return _this.noop();
+        }
+      });
+      if (!hasDisplayName) {
+        this.add_key_value_to_node(node, 'displayName', 'tag:yaml.org,2002:str', this.canonicalizePropertyName(parameterName, allowParameterKeys));
+      }
+      if (!hasRequired) {
+        if (requiredByDefault) {
+          this.add_key_value_to_node(node, 'required', 'tag:yaml.org,2002:bool', 'true');
+        }
+      }
+      if (!hasType) {
+        return this.add_key_value_to_node(node, 'type', 'tag:yaml.org,2002:str', 'string');
+      }
+    };
+
+    Transformations.prototype.add_key_value_to_node = function(node, keyName, valueTag, value) {
+      var propertyName, propertyValue;
+      propertyName = new nodes.ScalarNode('tag:yaml.org,2002:str', keyName, node.start_mark, node.end_mark);
+      propertyValue = new nodes.ScalarNode(valueTag, value, node.start_mark, node.end_mark);
+      return node.value.push([propertyName, propertyValue]);
+    };
+
+    Transformations.prototype.transform_document = function(node) {
+      var _this = this;
+      if (node != null ? node.value : void 0) {
+        return node.value.forEach(function(property) {
+          var _ref;
+          switch (property[0].value) {
+            case "title":
+              return _this.noop();
+            case "securitySchemes":
+              return _this.noop();
+            case "schemas":
+              return _this.noop();
+            case "version":
+              return _this.noop();
+            case "documentation":
+              return _this.noop();
+            case "mediaType":
+              return _this.noop();
+            case "securedBy":
+              return _this.noop();
+            case "baseUri":
+              return _this.noop();
+            case "traits":
+              return _this.transform_traits(property[1]);
+            case "baseUriParameters":
+              return _this.transform_named_params(property, false);
+            case "resourceTypes":
+              return _this.transform_types(property[1]);
+            case "resources":
+              return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
+                return _this.transform_resource(resource);
+              }) : void 0;
+            default:
+              return _this.noop();
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.transform_resource = function(resource, allowParameterKeys) {
+      var _this = this;
+      if (allowParameterKeys == null) {
+        allowParameterKeys = false;
+      }
+      if (resource.value) {
+        return resource.value.forEach(function(property) {
+          var canonicalKey, isKnownCommonProperty, _ref, _ref1;
+          isKnownCommonProperty = _this.transform_common_properties(property, allowParameterKeys);
+          if (!isKnownCommonProperty) {
+            if (_this.isHttpMethod(property[0].value, allowParameterKeys)) {
+              return _this.transform_method(property[1], allowParameterKeys);
+            } else {
+              canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+              switch (canonicalKey) {
+                case "type":
+                  return _this.noop();
+                case "usage":
+                  return _this.noop();
+                case "securedBy":
+                  return _this.noop();
+                case "uriParameters":
+                  return _this.transform_named_params(property, allowParameterKeys);
+                case "baseUriParameters":
+                  return _this.transform_named_params(property, allowParameterKeys);
+                case "resources":
+                  return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
+                    return _this.transform_resource(resource);
+                  }) : void 0;
+                case "methods":
+                  return (_ref1 = property[1]) != null ? _ref1.value.forEach(function(method) {
+                    return _this.transform_method(method, allowParameterKeys);
+                  }) : void 0;
+                default:
+                  return _this.noop();
+              }
+            }
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.transform_method = function(method, allowParameterKeys) {
+      var _this = this;
+      if (util.isNull(method)) {
+        return;
+      }
+      return method.value.forEach(function(property) {
+        var canonicalKey;
+        if (_this.transform_common_properties(property, allowParameterKeys)) {
+          return;
+        }
+        canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+        switch (canonicalKey) {
+          case "securedBy":
+            return _this.noop();
+          case "usage":
+            return _this.noop();
+          case "headers":
+            return _this.transform_named_params(property, allowParameterKeys);
+          case "queryParameters":
+            return _this.transform_named_params(property, allowParameterKeys, false);
+          case "baseUriParameters":
+            return _this.transform_named_params(property, allowParameterKeys);
+          case "body":
+            return _this.transform_body(property, allowParameterKeys);
+          case "responses":
+            return _this.transform_responses(property, allowParameterKeys);
+          default:
+            return _this.noop();
+        }
+      });
+    };
+
+    Transformations.prototype.transform_responses = function(responses, allowParameterKeys) {
+      var _this = this;
+      if (util.isNull(responses[1])) {
+        return;
+      }
+      return responses[1].value.forEach(function(response) {
+        return _this.transform_response(response, allowParameterKeys);
+      });
+    };
+
+    Transformations.prototype.transform_response = function(response, allowParameterKeys) {
+      var _this = this;
+      if (util.isMapping(response[1])) {
+        return response[1].value.forEach(function(property) {
+          var canonicalKey;
+          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+          switch (canonicalKey) {
+            case "description":
+              return _this.noop();
+            case "body":
+              return _this.transform_body(property, allowParameterKeys);
+            case "headers":
+              return _this.transform_named_params(property, allowParameterKeys);
+            default:
+              return _this.noop();
+          }
+        });
+      }
+    };
+
+    Transformations.prototype.isContentTypeString = function(value) {
+      return value != null ? value.match(/^[^\/]+\/[^\/]+$/) : void 0;
+    };
+
+    Transformations.prototype.transform_body = function(property, allowParameterKeys) {
+      var _ref,
+        _this = this;
+      if (util.isNull(property[1])) {
+        return;
+      }
+      return (_ref = property[1].value) != null ? _ref.forEach(function(bodyProperty) {
+        var canonicalProperty;
+        if (_this.isParameterKey(bodyProperty)) {
+          return _this.noop();
+        } else if (_this.isContentTypeString(bodyProperty[0].value)) {
+          return _this.transform_body(bodyProperty, allowParameterKeys);
+        } else {
+          canonicalProperty = _this.canonicalizePropertyName(bodyProperty[0].value, allowParameterKeys);
+          switch (canonicalProperty) {
+            case "example":
+              return _this.noop();
+            case "schema":
+              return _this.noop();
+            case "formParameters":
+              return _this.transform_named_params(bodyProperty, allowParameterKeys, false);
+            default:
+              return _this.noop();
+          }
+        }
+      }) : void 0;
+    };
+
+    Transformations.prototype.transform_common_properties = function(property, allowParameterKeys) {
+      var canonicalProperty;
+      if (this.isParameterKey(property)) {
+        return true;
+      } else {
+        canonicalProperty = this.canonicalizePropertyName(property[0].value, allowParameterKeys);
+        switch (canonicalProperty) {
+          case "displayName":
+            return true;
+          case "description":
+            return true;
+          case "is":
+            return true;
+          default:
+            this.noop();
+        }
+      }
+      return false;
+    };
+
+    return Transformations;
+
+  })();
+
+}).call(this);
+
+},{"./nodes":11,"./util":4,"uritemplate":30,"url":7}],21:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, traits, uritemplate, url, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -13292,770 +13797,7 @@ function decode(str) {
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./traits":22,"./util":4,"uritemplate":30,"url":7}],27:[function(require,module,exports){
-(function() {
-  var nodes, uritemplate, url, util,
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  uritemplate = require('uritemplate');
-
-  nodes = require('./nodes');
-
-  url = require('url');
-
-  util = require('./util');
-
-  /*
-     Applies transformations to the RAML
-  */
-
-
-  this.Transformations = (function() {
-    function Transformations() {
-      this.isContentTypeString = __bind(this.isContentTypeString, this);
-      this.add_key_value_to_node = __bind(this.add_key_value_to_node, this);
-      this.apply_default_media_type_to_resource = __bind(this.apply_default_media_type_to_resource, this);
-      this.get_media_type = __bind(this.get_media_type, this);
-      this.load_default_media_type = __bind(this.load_default_media_type, this);
-      this.applyAstTransformations = __bind(this.applyAstTransformations, this);
-      this.applyTransformations = __bind(this.applyTransformations, this);
-      this.declaredSchemas = {};
-    }
-
-    Transformations.prototype.applyTransformations = function(rootObject) {
-      var resources;
-      this.applyTransformationsToRoot(rootObject);
-      resources = rootObject.resources;
-      return this.applyTransformationsToResources(rootObject, resources);
-    };
-
-    Transformations.prototype.applyAstTransformations = function(document) {
-      return this.transform_document(document);
-    };
-
-    Transformations.prototype.load_default_media_type = function(node) {
-      if (!util.isMapping(node || (node != null ? node.value : void 0))) {
-        return;
-      }
-      return this.mediaType = this.property_value(node, "mediaType");
-    };
-
-    Transformations.prototype.get_media_type = function() {
-      return this.mediaType;
-    };
-
-    Transformations.prototype.applyTransformationsToRoot = function(rootObject) {
-      var expressions, template;
-      if (rootObject.baseUri) {
-        template = uritemplate.parse(rootObject.baseUri);
-        expressions = template.expressions.filter(function(expr) {
-          return 'templateText' in expr;
-        }).map(function(expression) {
-          return expression.templateText;
-        });
-        if (expressions.length) {
-          if (!rootObject.baseUriParameters) {
-            rootObject.baseUriParameters = {};
-          }
-        }
-        return expressions.forEach(function(parameterName) {
-          if (!(parameterName in rootObject.baseUriParameters)) {
-            rootObject.baseUriParameters[parameterName] = {
-              type: "string",
-              required: true,
-              displayName: parameterName
-            };
-            if (parameterName === "version") {
-              return rootObject.baseUriParameters[parameterName]["enum"] = [rootObject.version];
-            }
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.applyTransformationsToResources = function(rootObject, resources) {
-      var expressions, inheritedSecScheme, method, parameterName, pathParts, relativeUri, resource, template, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _results;
-      if (resources != null ? resources.length : void 0) {
-        _results = [];
-        for (_i = 0, _len = resources.length; _i < _len; _i++) {
-          resource = resources[_i];
-          inheritedSecScheme = resource.securedBy ? resource.securedBy : rootObject != null ? rootObject.securedBy : void 0;
-          if ((_ref = resource.methods) != null ? _ref.length : void 0) {
-            _ref1 = resource.methods;
-            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-              method = _ref1[_j];
-              if (!("securedBy" in method)) {
-                if (inheritedSecScheme) {
-                  method.securedBy = inheritedSecScheme;
-                }
-              }
-            }
-          }
-          relativeUri = url.parse(resource.relativeUri);
-          pathParts = relativeUri.path.split('\/');
-          while (!pathParts[0] && pathParts.length) {
-            pathParts.shift();
-          }
-          resource.relativeUriPathSegments = pathParts;
-          template = uritemplate.parse(resource.relativeUri);
-          expressions = template.expressions.filter(function(expr) {
-            return 'templateText' in expr;
-          }).map(function(expression) {
-            return expression.templateText;
-          });
-          if (expressions.length) {
-            if (!resource.uriParameters) {
-              resource.uriParameters = {};
-            }
-          }
-          for (_k = 0, _len2 = expressions.length; _k < _len2; _k++) {
-            parameterName = expressions[_k];
-            if (!(parameterName in resource.uriParameters)) {
-              resource.uriParameters[parameterName] = {
-                type: "string",
-                required: true,
-                displayName: parameterName
-              };
-            }
-          }
-          _results.push(this.applyTransformationsToResources(rootObject, resource.resources));
-        }
-        return _results;
-      }
-    };
-
-    /*
-    Media Type pivot when using default mediaType property
-    */
-
-
-    Transformations.prototype.apply_default_media_type_to_resource = function(resource) {
-      var methods,
-        _this = this;
-      if (!this.mediaType) {
-        return;
-      }
-      if (!util.isMapping(resource)) {
-        return;
-      }
-      methods = this.child_methods(resource);
-      return methods.forEach(function(method) {
-        return _this.apply_default_media_type_to_method(method[1]);
-      });
-    };
-
-    Transformations.prototype.apply_default_media_type_to_method = function(method) {
-      var responses,
-        _this = this;
-      if (!this.mediaType) {
-        return;
-      }
-      if (!util.isMapping(method)) {
-        return;
-      }
-      if (this.has_property(method, "body")) {
-        this.apply_default_media_type_to_body(this.get_property(method, "body"));
-      }
-      if (this.has_property(method, "responses")) {
-        responses = this.get_property(method, "responses");
-        return responses.value.forEach(function(response) {
-          if (_this.has_property(response[1], "body")) {
-            return _this.apply_default_media_type_to_body(_this.get_property(response[1], "body"));
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.apply_default_media_type_to_body = function(body) {
-      var key, responseType, responseTypeKey, _ref, _ref1, _ref2;
-      if (!util.isMapping(body)) {
-        return;
-      }
-      if (body != null ? (_ref = body.value) != null ? (_ref1 = _ref[0]) != null ? (_ref2 = _ref1[0]) != null ? _ref2.value : void 0 : void 0 : void 0 : void 0) {
-        key = body.value[0][0].value;
-        if (!key.match(/\//)) {
-          responseType = new nodes.MappingNode('tag:yaml.org,2002:map', [], body.start_mark, body.end_mark);
-          responseTypeKey = new nodes.ScalarNode('tag:yaml.org,2002:str', this.mediaType, body.start_mark, body.end_mark);
-          responseType.value.push([responseTypeKey, body.clone()]);
-          return body.value = responseType.value;
-        }
-      }
-    };
-
-    Transformations.prototype.noop = function() {};
-
-    Transformations.prototype.transform_types = function(typeProperty) {
-      var types,
-        _this = this;
-      types = typeProperty.value;
-      return types.forEach(function(type_entry) {
-        return type_entry.value.forEach(function(type) {
-          return _this.transform_resource(type, true);
-        });
-      });
-    };
-
-    Transformations.prototype.transform_traits = function(traitProperty) {
-      var traits,
-        _this = this;
-      traits = traitProperty.value;
-      return traits.forEach(function(trait_entry) {
-        return trait_entry.value.forEach(function(trait) {
-          return _this.transform_method(trait[1], true);
-        });
-      });
-    };
-
-    Transformations.prototype.transform_named_params = function(property, allowParameterKeys, requiredByDefault) {
-      var _this = this;
-      if (requiredByDefault == null) {
-        requiredByDefault = true;
-      }
-      if (util.isNull(property[1])) {
-        return;
-      }
-      return property[1].value.forEach(function(param) {
-        if (util.isNull(param[1])) {
-          param[1] = new nodes.MappingNode('tag:yaml.org,2002:map', [], param[1].start_mark, param[1].end_mark);
-        }
-        return _this.transform_common_parameter_properties(param[0].value, param[1], allowParameterKeys, requiredByDefault);
-      });
-    };
-
-    Transformations.prototype.transform_common_parameter_properties = function(parameterName, node, allowParameterKeys, requiredByDefault) {
-      var _this = this;
-      if (util.isSequence(node)) {
-        return node.value.forEach(function(parameter) {
-          return _this.transform_named_parameter(parameterName, parameter, allowParameterKeys, requiredByDefault);
-        });
-      } else {
-        return this.transform_named_parameter(parameterName, node, allowParameterKeys, requiredByDefault);
-      }
-    };
-
-    Transformations.prototype.transform_named_parameter = function(parameterName, node, allowParameterKeys, requiredByDefault) {
-      var hasDisplayName, hasRequired, hasType,
-        _this = this;
-      hasDisplayName = false;
-      hasRequired = false;
-      hasType = false;
-      node.value.forEach(function(childNode) {
-        var canonicalPropertyName;
-        if (allowParameterKeys && _this.isParameterKey(childNode)) {
-          return;
-        }
-        canonicalPropertyName = _this.canonicalizePropertyName(childNode[0].value, allowParameterKeys);
-        switch (canonicalPropertyName) {
-          case "pattern":
-            return _this.noop();
-          case "default":
-            return _this.noop();
-          case "enum":
-            return _this.noop();
-          case "description":
-            return _this.noop();
-          case "example":
-            return _this.noop();
-          case "minLength":
-            return _this.noop();
-          case "maxLength":
-            return _this.noop();
-          case "minimum":
-            return _this.noop();
-          case "maximum":
-            return _this.noop();
-          case "repeat":
-            return _this.noop();
-          case "displayName":
-            return hasDisplayName = true;
-          case "type":
-            return hasType = true;
-          case "required":
-            return hasRequired = true;
-          default:
-            return _this.noop();
-        }
-      });
-      if (!hasDisplayName) {
-        this.add_key_value_to_node(node, 'displayName', 'tag:yaml.org,2002:str', this.canonicalizePropertyName(parameterName, allowParameterKeys));
-      }
-      if (!hasRequired) {
-        if (requiredByDefault) {
-          this.add_key_value_to_node(node, 'required', 'tag:yaml.org,2002:bool', 'true');
-        }
-      }
-      if (!hasType) {
-        return this.add_key_value_to_node(node, 'type', 'tag:yaml.org,2002:str', 'string');
-      }
-    };
-
-    Transformations.prototype.add_key_value_to_node = function(node, keyName, valueTag, value) {
-      var propertyName, propertyValue;
-      propertyName = new nodes.ScalarNode('tag:yaml.org,2002:str', keyName, node.start_mark, node.end_mark);
-      propertyValue = new nodes.ScalarNode(valueTag, value, node.start_mark, node.end_mark);
-      return node.value.push([propertyName, propertyValue]);
-    };
-
-    Transformations.prototype.transform_document = function(node) {
-      var _this = this;
-      if (node != null ? node.value : void 0) {
-        return node.value.forEach(function(property) {
-          var _ref;
-          switch (property[0].value) {
-            case "title":
-              return _this.noop();
-            case "securitySchemes":
-              return _this.noop();
-            case "schemas":
-              return _this.noop();
-            case "version":
-              return _this.noop();
-            case "documentation":
-              return _this.noop();
-            case "mediaType":
-              return _this.noop();
-            case "securedBy":
-              return _this.noop();
-            case "baseUri":
-              return _this.noop();
-            case "traits":
-              return _this.transform_traits(property[1]);
-            case "baseUriParameters":
-              return _this.transform_named_params(property, false);
-            case "resourceTypes":
-              return _this.transform_types(property[1]);
-            case "resources":
-              return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
-                return _this.transform_resource(resource);
-              }) : void 0;
-            default:
-              return _this.noop();
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.transform_resource = function(resource, allowParameterKeys) {
-      var _this = this;
-      if (allowParameterKeys == null) {
-        allowParameterKeys = false;
-      }
-      if (resource.value) {
-        return resource.value.forEach(function(property) {
-          var canonicalKey, isKnownCommonProperty, _ref, _ref1;
-          isKnownCommonProperty = _this.transform_common_properties(property, allowParameterKeys);
-          if (!isKnownCommonProperty) {
-            if (_this.isHttpMethod(property[0].value, allowParameterKeys)) {
-              return _this.transform_method(property[1], allowParameterKeys);
-            } else {
-              canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-              switch (canonicalKey) {
-                case "type":
-                  return _this.noop();
-                case "usage":
-                  return _this.noop();
-                case "securedBy":
-                  return _this.noop();
-                case "uriParameters":
-                  return _this.transform_named_params(property, allowParameterKeys);
-                case "baseUriParameters":
-                  return _this.transform_named_params(property, allowParameterKeys);
-                case "resources":
-                  return (_ref = property[1]) != null ? _ref.value.forEach(function(resource) {
-                    return _this.transform_resource(resource);
-                  }) : void 0;
-                case "methods":
-                  return (_ref1 = property[1]) != null ? _ref1.value.forEach(function(method) {
-                    return _this.transform_method(method, allowParameterKeys);
-                  }) : void 0;
-                default:
-                  return _this.noop();
-              }
-            }
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.transform_method = function(method, allowParameterKeys) {
-      var _this = this;
-      if (util.isNull(method)) {
-        return;
-      }
-      return method.value.forEach(function(property) {
-        var canonicalKey;
-        if (_this.transform_common_properties(property, allowParameterKeys)) {
-          return;
-        }
-        canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-        switch (canonicalKey) {
-          case "securedBy":
-            return _this.noop();
-          case "usage":
-            return _this.noop();
-          case "headers":
-            return _this.transform_named_params(property, allowParameterKeys);
-          case "queryParameters":
-            return _this.transform_named_params(property, allowParameterKeys, false);
-          case "baseUriParameters":
-            return _this.transform_named_params(property, allowParameterKeys);
-          case "body":
-            return _this.transform_body(property, allowParameterKeys);
-          case "responses":
-            return _this.transform_responses(property, allowParameterKeys);
-          default:
-            return _this.noop();
-        }
-      });
-    };
-
-    Transformations.prototype.transform_responses = function(responses, allowParameterKeys) {
-      var _this = this;
-      if (util.isNull(responses[1])) {
-        return;
-      }
-      return responses[1].value.forEach(function(response) {
-        return _this.transform_response(response, allowParameterKeys);
-      });
-    };
-
-    Transformations.prototype.transform_response = function(response, allowParameterKeys) {
-      var _this = this;
-      if (util.isMapping(response[1])) {
-        return response[1].value.forEach(function(property) {
-          var canonicalKey;
-          canonicalKey = _this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-          switch (canonicalKey) {
-            case "description":
-              return _this.noop();
-            case "body":
-              return _this.transform_body(property, allowParameterKeys);
-            case "headers":
-              return _this.transform_named_params(property, allowParameterKeys);
-            default:
-              return _this.noop();
-          }
-        });
-      }
-    };
-
-    Transformations.prototype.isContentTypeString = function(value) {
-      return value != null ? value.match(/^[^\/]+\/[^\/]+$/) : void 0;
-    };
-
-    Transformations.prototype.transform_body = function(property, allowParameterKeys) {
-      var _ref,
-        _this = this;
-      if (util.isNull(property[1])) {
-        return;
-      }
-      return (_ref = property[1].value) != null ? _ref.forEach(function(bodyProperty) {
-        var canonicalProperty;
-        if (_this.isParameterKey(bodyProperty)) {
-          return _this.noop();
-        } else if (_this.isContentTypeString(bodyProperty[0].value)) {
-          return _this.transform_body(bodyProperty, allowParameterKeys);
-        } else {
-          canonicalProperty = _this.canonicalizePropertyName(bodyProperty[0].value, allowParameterKeys);
-          switch (canonicalProperty) {
-            case "example":
-              return _this.noop();
-            case "schema":
-              return _this.noop();
-            case "formParameters":
-              return _this.transform_named_params(bodyProperty, allowParameterKeys, false);
-            default:
-              return _this.noop();
-          }
-        }
-      }) : void 0;
-    };
-
-    Transformations.prototype.transform_common_properties = function(property, allowParameterKeys) {
-      var canonicalProperty;
-      if (this.isParameterKey(property)) {
-        return true;
-      } else {
-        canonicalProperty = this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-        switch (canonicalProperty) {
-          case "displayName":
-            return true;
-          case "description":
-            return true;
-          case "is":
-            return true;
-          default:
-            this.noop();
-        }
-      }
-      return false;
-    };
-
-    return Transformations;
-
-  })();
-
-}).call(this);
-
-},{"./nodes":11,"./util":4,"uritemplate":30,"url":7}],22:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, inflection, nodes, util, _ref, _ref1,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  inflection = require('inflection');
-
-  util = require('./util');
-
-  /*
-  The Traits throws these.
-  */
-
-
-  this.TraitError = (function(_super) {
-    __extends(TraitError, _super);
-
-    function TraitError() {
-      _ref = TraitError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return TraitError;
-
-  })(MarkedYAMLError);
-
-  /*
-  */
-
-
-  this.ParameterError = (function(_super) {
-    __extends(ParameterError, _super);
-
-    function ParameterError() {
-      _ref1 = ParameterError.__super__.constructor.apply(this, arguments);
-      return _ref1;
-    }
-
-    return ParameterError;
-
-  })(MarkedYAMLError);
-
-  /*
-  The Traits class deals with applying traits to resources according to the spec
-  */
-
-
-  this.Traits = (function() {
-    function Traits() {
-      this.declaredTraits = {};
-    }
-
-    Traits.prototype.load_traits = function(node) {
-      var allTraits,
-        _this = this;
-      if (this.has_property(node, /^traits$/)) {
-        allTraits = this.property_value(node, /^traits$/);
-        if (allTraits && typeof allTraits === "object") {
-          return allTraits.forEach(function(trait_item) {
-            if (trait_item && typeof trait_item === "object" && typeof trait_item.value === "object") {
-              return trait_item.value.forEach(function(trait) {
-                return _this.declaredTraits[trait[0].value] = trait;
-              });
-            }
-          });
-        }
-      }
-    };
-
-    Traits.prototype.has_traits = function(node) {
-      if (this.declaredTraits.length === 0 && this.has_property(node, /^traits$/)) {
-        this.load_traits(node);
-      }
-      return Object.keys(this.declaredTraits).length > 0;
-    };
-
-    Traits.prototype.get_trait = function(traitName) {
-      if (traitName in this.declaredTraits) {
-        return this.declaredTraits[traitName][1];
-      }
-      return null;
-    };
-
-    Traits.prototype.apply_traits = function(node, resourceUri, removeQs) {
-      var resources,
-        _this = this;
-      if (resourceUri == null) {
-        resourceUri = "";
-      }
-      if (removeQs == null) {
-        removeQs = true;
-      }
-      if (!util.isMapping(node)) {
-        return;
-      }
-      if (this.has_traits(node)) {
-        resources = this.child_resources(node);
-        return resources.forEach(function(resource) {
-          return _this.apply_traits_to_resource(resourceUri + resource[0].value, resource[1], removeQs);
-        });
-      }
-    };
-
-    Traits.prototype.apply_traits_to_resource = function(resourceUri, resource, removeQs) {
-      var methods, uses,
-        _this = this;
-      if (!util.isMapping(resource)) {
-        return;
-      }
-      methods = this.child_methods(resource);
-      if (this.has_property(resource, /^is$/)) {
-        uses = this.property_value(resource, /^is$/);
-        uses.forEach(function(use) {
-          return methods.forEach(function(method) {
-            return _this.apply_trait(resourceUri, method, use);
-          });
-        });
-      }
-      methods.forEach(function(method) {
-        if (_this.has_property(method[1], /^is$/)) {
-          uses = _this.property_value(method[1], /^is$/);
-          return uses.forEach(function(use) {
-            return _this.apply_trait(resourceUri, method, use);
-          });
-        }
-      });
-      if (removeQs) {
-        resource.remove_question_mark_properties();
-      }
-      return this.apply_traits(resource, resourceUri, removeQs);
-    };
-
-    Traits.prototype.apply_trait = function(resourceUri, method, useKey) {
-      var plainParameters, temp, trait, traitName;
-      traitName = this.key_or_value(useKey);
-      if (!(traitName != null ? traitName.trim() : void 0)) {
-        throw new exports.TraitError('while applying trait', null, 'trait name must be provided', useKey.start_mark);
-      }
-      if (!(trait = this.get_trait(traitName))) {
-        throw new exports.TraitError('while applying trait', null, "there is no trait named " + traitName, useKey.start_mark);
-      }
-      plainParameters = this.get_parameters_from_is_key(resourceUri, method[0].value, useKey);
-      temp = trait.cloneForTrait();
-      this.apply_parameters(temp, plainParameters, useKey);
-      this.apply_default_media_type_to_method(temp);
-      temp.combine(method[1]);
-      return method[1] = temp;
-    };
-
-    Traits.prototype.apply_parameters = function(resource, parameters, useKey) {
-      var parameterName, usedParameters, _results;
-      this._apply_parameters(resource, parameters, useKey, usedParameters = {
-        resourcePath: true,
-        resourcePathName: true,
-        methodName: true
-      });
-      _results = [];
-      for (parameterName in parameters) {
-        if (!usedParameters[parameterName]) {
-          throw new exports.ParameterError('while applying parameters', null, "unused parameter: " + parameterName, useKey.start_mark);
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-
-    Traits.prototype._apply_parameters = function(resource, parameters, useKey, usedParameters) {
-      var parameterUse,
-        _this = this;
-      if (!resource) {
-        return;
-      }
-      if (util.isString(resource)) {
-        if (parameterUse = resource.value.match(/<<\s*([^\|\s>]+)\s*(\|.*)?\s*>>/g)) {
-          parameterUse.forEach(function(parameter) {
-            var method, parameterName, value, _ref2, _ref3;
-            parameterName = parameter != null ? (_ref2 = parameter.trim()) != null ? _ref2.replace(/[<>]+/g, '').trim() : void 0 : void 0;
-            _ref3 = parameterName.split(/\s*\|\s*/), parameterName = _ref3[0], method = _ref3[1];
-            if (!(parameterName in parameters)) {
-              throw new exports.ParameterError('while applying parameters', null, "value was not provided for parameter: " + parameterName, useKey.start_mark);
-            }
-            value = parameters[parameterName];
-            usedParameters[parameterName] = true;
-            if (method) {
-              if (method.match(/!\s*singularize/)) {
-                value = inflection.singularize(value);
-              } else if (method.match(/!\s*pluralize/)) {
-                value = inflection.pluralize(value);
-              } else {
-                throw new exports.ParameterError('while validating parameter', null, 'unknown function applied to parameter', resource.start_mark);
-              }
-            }
-            return resource.value = resource.value.replace(parameter, value);
-          });
-        }
-        return;
-      }
-      if (util.isSequence(resource)) {
-        resource.value.forEach(function(node) {
-          return _this._apply_parameters(node, parameters, useKey, usedParameters);
-        });
-        return;
-      }
-      if (util.isMapping(resource)) {
-        resource.value.forEach(function(property) {
-          _this._apply_parameters(property[0], parameters, useKey, usedParameters);
-          return _this._apply_parameters(property[1], parameters, useKey, usedParameters);
-        });
-      }
-    };
-
-    Traits.prototype.get_parameters_from_is_key = function(resourceUri, methodName, typeKey) {
-      var parameter, parameters, reserved, result, _i, _len, _ref2;
-      result = {};
-      reserved = {
-        methodName: methodName,
-        resourcePath: resourceUri.replace(/\/\/*/g, '/'),
-        resourcePathName: this.extractResourcePathName(resourceUri)
-      };
-      if (util.isMapping(typeKey)) {
-        parameters = this.value_or_undefined(typeKey);
-        if (util.isMapping(parameters[0][1])) {
-          _ref2 = parameters[0][1].value;
-          for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-            parameter = _ref2[_i];
-            if (parameter[0].value in reserved) {
-              throw new exports.TraitError('while applying parameters', null, "invalid parameter name: " + parameter[0].value + " is reserved", parameter[0].start_mark);
-            }
-            result[parameter[0].value] = parameter[1].value;
-          }
-        }
-      }
-      return util.extend(result, reserved);
-    };
-
-    Traits.prototype.extractResourcePathName = function(resourceUri) {
-      var pathSegments, segment;
-      pathSegments = resourceUri.split(/\//);
-      while (segment = pathSegments.pop()) {
-        if (!(typeof segment !== "undefined" && segment !== null ? segment.match(/[{}]/) : void 0)) {
-          return segment;
-        }
-      }
-      return "";
-    };
-
-    return Traits;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":11,"./util":4,"inflection":31}],29:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./traits":22,"./util":4,"uritemplate":30,"url":7}],29:[function(require,module,exports){
 (function(process,Buffer){/**
  * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
  *
@@ -14621,7 +14363,283 @@ exports.XMLHttpRequest = function() {
 };
 
 })(require("__browserify_process"),require("__browserify_buffer").Buffer)
-},{"__browserify_buffer":13,"__browserify_process":5,"child_process":32,"fs":9,"http":33,"https":34,"url":7}],30:[function(require,module,exports){
+},{"__browserify_buffer":13,"__browserify_process":5,"child_process":31,"fs":9,"http":32,"https":33,"url":7}],22:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, inflection, nodes, util, _ref, _ref1,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  inflection = require('inflection');
+
+  util = require('./util');
+
+  /*
+  The Traits throws these.
+  */
+
+
+  this.TraitError = (function(_super) {
+    __extends(TraitError, _super);
+
+    function TraitError() {
+      _ref = TraitError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return TraitError;
+
+  })(MarkedYAMLError);
+
+  /*
+  */
+
+
+  this.ParameterError = (function(_super) {
+    __extends(ParameterError, _super);
+
+    function ParameterError() {
+      _ref1 = ParameterError.__super__.constructor.apply(this, arguments);
+      return _ref1;
+    }
+
+    return ParameterError;
+
+  })(MarkedYAMLError);
+
+  /*
+  The Traits class deals with applying traits to resources according to the spec
+  */
+
+
+  this.Traits = (function() {
+    function Traits() {
+      this.declaredTraits = {};
+    }
+
+    Traits.prototype.load_traits = function(node) {
+      var allTraits,
+        _this = this;
+      if (this.has_property(node, /^traits$/)) {
+        allTraits = this.property_value(node, /^traits$/);
+        if (allTraits && typeof allTraits === "object") {
+          return allTraits.forEach(function(trait_item) {
+            if (trait_item && typeof trait_item === "object" && typeof trait_item.value === "object") {
+              return trait_item.value.forEach(function(trait) {
+                return _this.declaredTraits[trait[0].value] = trait;
+              });
+            }
+          });
+        }
+      }
+    };
+
+    Traits.prototype.has_traits = function(node) {
+      if (this.declaredTraits.length === 0 && this.has_property(node, /^traits$/)) {
+        this.load_traits(node);
+      }
+      return Object.keys(this.declaredTraits).length > 0;
+    };
+
+    Traits.prototype.get_trait = function(traitName) {
+      if (traitName in this.declaredTraits) {
+        return this.declaredTraits[traitName][1];
+      }
+      return null;
+    };
+
+    Traits.prototype.apply_traits = function(node, resourceUri, removeQs) {
+      var resources,
+        _this = this;
+      if (resourceUri == null) {
+        resourceUri = "";
+      }
+      if (removeQs == null) {
+        removeQs = true;
+      }
+      if (!util.isMapping(node)) {
+        return;
+      }
+      if (this.has_traits(node)) {
+        resources = this.child_resources(node);
+        return resources.forEach(function(resource) {
+          return _this.apply_traits_to_resource(resourceUri + resource[0].value, resource[1], removeQs);
+        });
+      }
+    };
+
+    Traits.prototype.apply_traits_to_resource = function(resourceUri, resource, removeQs) {
+      var methods, uses,
+        _this = this;
+      if (!util.isMapping(resource)) {
+        return;
+      }
+      methods = this.child_methods(resource);
+      if (this.has_property(resource, /^is$/)) {
+        uses = this.property_value(resource, /^is$/);
+        uses.forEach(function(use) {
+          return methods.forEach(function(method) {
+            return _this.apply_trait(resourceUri, method, use);
+          });
+        });
+      }
+      methods.forEach(function(method) {
+        if (_this.has_property(method[1], /^is$/)) {
+          uses = _this.property_value(method[1], /^is$/);
+          return uses.forEach(function(use) {
+            return _this.apply_trait(resourceUri, method, use);
+          });
+        }
+      });
+      if (removeQs) {
+        resource.remove_question_mark_properties();
+      }
+      return this.apply_traits(resource, resourceUri, removeQs);
+    };
+
+    Traits.prototype.apply_trait = function(resourceUri, method, useKey) {
+      var plainParameters, temp, trait, traitName;
+      traitName = this.key_or_value(useKey);
+      if (!(traitName != null ? traitName.trim() : void 0)) {
+        throw new exports.TraitError('while applying trait', null, 'trait name must be provided', useKey.start_mark);
+      }
+      if (!(trait = this.get_trait(traitName))) {
+        throw new exports.TraitError('while applying trait', null, "there is no trait named " + traitName, useKey.start_mark);
+      }
+      plainParameters = this.get_parameters_from_is_key(resourceUri, method[0].value, useKey);
+      temp = trait.cloneForTrait();
+      this.apply_parameters(temp, plainParameters, useKey);
+      this.apply_default_media_type_to_method(temp);
+      temp.combine(method[1]);
+      return method[1] = temp;
+    };
+
+    Traits.prototype.apply_parameters = function(resource, parameters, useKey) {
+      var parameterName, usedParameters, _results;
+      this._apply_parameters(resource, parameters, useKey, usedParameters = {
+        resourcePath: true,
+        resourcePathName: true,
+        methodName: true
+      });
+      _results = [];
+      for (parameterName in parameters) {
+        if (!usedParameters[parameterName]) {
+          throw new exports.ParameterError('while applying parameters', null, "unused parameter: " + parameterName, useKey.start_mark);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Traits.prototype._apply_parameters = function(resource, parameters, useKey, usedParameters) {
+      var parameterUse,
+        _this = this;
+      if (!resource) {
+        return;
+      }
+      if (util.isString(resource)) {
+        if (parameterUse = resource.value.match(/<<\s*([^\|\s>]+)\s*(\|.*)?\s*>>/g)) {
+          parameterUse.forEach(function(parameter) {
+            var method, parameterName, value, _ref2, _ref3;
+            parameterName = parameter != null ? (_ref2 = parameter.trim()) != null ? _ref2.replace(/[<>]+/g, '').trim() : void 0 : void 0;
+            _ref3 = parameterName.split(/\s*\|\s*/), parameterName = _ref3[0], method = _ref3[1];
+            if (!(parameterName in parameters)) {
+              throw new exports.ParameterError('while applying parameters', null, "value was not provided for parameter: " + parameterName, useKey.start_mark);
+            }
+            value = parameters[parameterName];
+            usedParameters[parameterName] = true;
+            if (method) {
+              if (method.match(/!\s*singularize/)) {
+                value = inflection.singularize(value);
+              } else if (method.match(/!\s*pluralize/)) {
+                value = inflection.pluralize(value);
+              } else {
+                throw new exports.ParameterError('while validating parameter', null, 'unknown function applied to parameter', resource.start_mark);
+              }
+            }
+            return resource.value = resource.value.replace(parameter, value);
+          });
+        }
+        return;
+      }
+      if (util.isSequence(resource)) {
+        resource.value.forEach(function(node) {
+          return _this._apply_parameters(node, parameters, useKey, usedParameters);
+        });
+        return;
+      }
+      if (util.isMapping(resource)) {
+        resource.value.forEach(function(property) {
+          _this._apply_parameters(property[0], parameters, useKey, usedParameters);
+          return _this._apply_parameters(property[1], parameters, useKey, usedParameters);
+        });
+      }
+    };
+
+    Traits.prototype.get_parameters_from_is_key = function(resourceUri, methodName, typeKey) {
+      var parameter, parameters, reserved, result, _i, _len, _ref2;
+      result = {};
+      reserved = {
+        methodName: methodName,
+        resourcePath: resourceUri.replace(/\/\/*/g, '/'),
+        resourcePathName: this.extractResourcePathName(resourceUri)
+      };
+      if (util.isMapping(typeKey)) {
+        parameters = this.value_or_undefined(typeKey);
+        if (util.isMapping(parameters[0][1])) {
+          _ref2 = parameters[0][1].value;
+          for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+            parameter = _ref2[_i];
+            if (parameter[0].value in reserved) {
+              throw new exports.TraitError('while applying parameters', null, "invalid parameter name: " + parameter[0].value + " is reserved", parameter[0].start_mark);
+            }
+            result[parameter[0].value] = parameter[1].value;
+          }
+        }
+      }
+      return util.extend(result, reserved);
+    };
+
+    Traits.prototype.extractResourcePathName = function(resourceUri) {
+      var pathSegments, segment;
+      pathSegments = resourceUri.split(/\//);
+      while (segment = pathSegments.pop()) {
+        if (!(typeof segment !== "undefined" && segment !== null ? segment.match(/[{}]/) : void 0)) {
+          return segment;
+        }
+      }
+      return "";
+    };
+
+    return Traits;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":11,"./util":4,"inflection":34}],31:[function(require,module,exports){
+exports.spawn = function () {};
+exports.exec = function () {};
+
+},{}],33:[function(require,module,exports){
+var http = require('http');
+
+var https = module.exports;
+
+for (var key in http) {
+    if (http.hasOwnProperty(key)) https[key] = http[key];
+};
+
+https.request = function (params, cb) {
+    if (!params) params = {};
+    params.scheme = 'https';
+    return http.request.call(this, params, cb);
+}
+},{"http":32}],30:[function(require,module,exports){
 (function(global){/*global unescape, module, define, window, global*/
 
 /*
@@ -15509,27 +15527,7 @@ var UriTemplate = (function () {
 ));
 
 })(window)
-},{}],32:[function(require,module,exports){
-exports.spawn = function () {};
-exports.exec = function () {};
-
-},{}],34:[function(require,module,exports){
-var http = require('http');
-
-var https = module.exports;
-
-for (var key in http) {
-    if (http.hasOwnProperty(key)) https[key] = http[key];
-};
-
-https.request = function (params, cb) {
-    if (!params) params = {};
-    params.scheme = 'https';
-    return http.request.call(this, params, cb);
-}
-},{"http":33}],31:[function(require,module,exports){
-module.exports = require( './lib/inflection' );
-},{"./lib/inflection":35}],36:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -15726,7 +15724,9 @@ EventEmitter.listenerCount = function(emitter, type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":5}],33:[function(require,module,exports){
+},{"__browserify_process":5}],34:[function(require,module,exports){
+module.exports = require( './lib/inflection' );
+},{"./lib/inflection":36}],32:[function(require,module,exports){
 var http = module.exports;
 var EventEmitter = require('events').EventEmitter;
 var Request = require('./lib/request');
@@ -15788,7 +15788,7 @@ var xhrHttp = (function () {
     }
 })();
 
-},{"./lib/request":37,"events":36}],35:[function(require,module,exports){
+},{"./lib/request":37,"events":35}],36:[function(require,module,exports){
 /*!
  * inflection
  * Copyright(c) 2011 Ben Lin <ben@dreamerslab.com>
@@ -16446,7 +16446,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":36,"util":39}],39:[function(require,module,exports){
+},{"events":35,"util":39}],39:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -16793,16 +16793,15 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":36}],40:[function(require,module,exports){
+},{"events":35}],40:[function(require,module,exports){
 var Stream = require('stream');
-var util = require('util');
 
 var Response = module.exports = function (res) {
     this.offset = 0;
     this.readable = true;
 };
 
-util.inherits(Response, Stream);
+Response.prototype = new Stream;
 
 var capable = {
     streaming : true,
@@ -16915,12 +16914,11 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":38,"util":39}],37:[function(require,module,exports){
+},{"stream":38}],37:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream');
 var Base64 = require('Base64');
-var util = require('util');
 
 var Request = module.exports = function (xhr, params) {
     var self = this;
@@ -16973,7 +16971,7 @@ var Request = module.exports = function (xhr, params) {
     };
 };
 
-util.inherits(Request, Stream);
+Request.prototype = new Stream;
 
 Request.prototype.setHeader = function (key, value) {
     if (isArray(value)) {
@@ -17049,11 +17047,11 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":40,"Base64":41,"concat-stream":42,"stream":38,"util":39}],41:[function(require,module,exports){
+},{"./response":40,"Base64":42,"concat-stream":41,"stream":38}],42:[function(require,module,exports){
 ;(function () {
 
   var
-    object = typeof exports != 'undefined' ? exports : this, // #8: web workers
+    object = typeof exports != 'undefined' ? exports : window,
     chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
     INVALID_CHARACTER_ERR = (function () {
       // fabricate a suitable error object
@@ -17106,7 +17104,7 @@ var indexOf = function (xs, x) {
 
 }());
 
-},{}],42:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 var stream = require('stream')
 var bops = require('bops')
 var util = require('util')
@@ -17487,45 +17485,7 @@ function get(target) {
   return out
 }
 
-},{}],45:[function(require,module,exports){
-module.exports = to
-
-var base64 = require('base64-js')
-  , toutf8 = require('to-utf8')
-
-var encoders = {
-    hex: to_hex
-  , utf8: to_utf
-  , base64: to_base64
-}
-
-function to(buf, encoding) {
-  return encoders[encoding || 'utf8'](buf)
-}
-
-function to_hex(buf) {
-  var str = ''
-    , byt
-
-  for(var i = 0, len = buf.length; i < len; ++i) {
-    byt = buf[i]
-    str += ((byt & 0xF0) >>> 4).toString(16)
-    str += (byt & 0x0F).toString(16)
-  }
-
-  return str
-}
-
-function to_utf(buf) {
-  return toutf8(buf)
-}
-
-function to_base64(buf) {
-  return base64.fromByteArray(buf)
-}
-
-
-},{"base64-js":54,"to-utf8":55}],44:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = from
 
 var base64 = require('base64-js')
@@ -17671,7 +17631,45 @@ function from_base64(str) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}],55:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
+module.exports = to
+
+var base64 = require('base64-js')
+  , toutf8 = require('to-utf8')
+
+var encoders = {
+    hex: to_hex
+  , utf8: to_utf
+  , base64: to_base64
+}
+
+function to(buf, encoding) {
+  return encoders[encoding || 'utf8'](buf)
+}
+
+function to_hex(buf) {
+  var str = ''
+    , byt
+
+  for(var i = 0, len = buf.length; i < len; ++i) {
+    byt = buf[i]
+    str += ((byt & 0xF0) >>> 4).toString(16)
+    str += (byt & 0x0F).toString(16)
+  }
+
+  return str
+}
+
+function to_utf(buf) {
+  return toutf8(buf)
+}
+
+function to_base64(buf) {
+  return base64.fromByteArray(buf)
+}
+
+
+},{"base64-js":54,"to-utf8":55}],55:[function(require,module,exports){
 module.exports = to_utf8
 
 var out = []

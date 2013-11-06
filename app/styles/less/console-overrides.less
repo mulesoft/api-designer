@@ -7,7 +7,6 @@ raml-console article#raml-console {
     font-size: 19px;
     margin: 0;
     margin-bottom: 20px;
-    padding: 0;
   }
 
   #raml-console-content {
@@ -32,13 +31,9 @@ raml-console article#raml-console {
 
     h5 {
       margin-top: 4px !important;
-      font-size: 14px;
     }
 
-    .resourceGroup {
-      margin: 0;
-      padding: 0;
-
+    .resource-group {
       &:last-child {
         div[role=resource]:last-child {
           margin-bottom: 0;
@@ -52,49 +47,12 @@ raml-console article#raml-console {
   }
 
   div[role=resource] {
-    margin-bottom: 5px;
-    border-top: none;
-
     div[role=resourceSummary] {
       font-size: 12px;
-      border-top-width: 0;
-      border-bottom-width: 0;
 
       h2 {
         font-size: 12px;
-        margin-bottom: 4px;
       }
-    }
-  }
-
-  div[role=resource].expanded {
-    div[role=resourceSummary] {
-      border-bottom-width: 1px;
-    }
-  }
-
-  div[role=methodSummary] {
-    padding: 6px 8px;
-    min-height: 24px;
-    line-height: 24px;
-
-    > i {
-      font-size: 12px;
-      margin-right: 0;
-      line-height: 12px;
-      width: 8px;
-    }
-
-    span[role=verb] {
-      font-style: normal;
-      font-size: 12px;
-      margin-right: 2px;
-    }
-  }
-
-  .byline {
-    span[role=resourceType] {
-      text-transform: none;
     }
   }
 
@@ -109,10 +67,6 @@ raml-console article#raml-console {
     padding: 12px 10px;
   }
 
-  .accordion[role=resources] {
-    background-color: transparent;
-  }
-
   div.tab-pane {
     padding: 15px 15px;
   }
@@ -123,18 +77,12 @@ raml-console article#raml-console {
 
   [role=parameter] {
     .constraints {
-      font-size: 12px;
+      font-size: 12px !important;
     }
   }
 
   [role=try-it] {
     font-size: 12px;
-  }
-
-  section[role=response] {
-    p {
-      font-size: 13px;
-    }
   }
 
   .labelled-inline {
