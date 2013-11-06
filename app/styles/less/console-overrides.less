@@ -34,8 +34,18 @@ raml-console article#raml-console {
     }
 
     .resource-group {
+      &:first-child {
+        > h2 {
+          margin-top: 0;
+        }
+      }
+
       &:last-child {
         div[role=resource]:last-child {
+          margin-bottom: 0;
+        }
+
+        > h2 {
           margin-bottom: 0;
         }
       }
