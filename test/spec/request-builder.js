@@ -13,10 +13,10 @@ describe('Request Builder', function () {
     });
   }));
 
-  beforeEach(inject(function (_requestBuilder_, _requestExecutor_) {
+  beforeEach(inject(function ($injector) {
     mockShouldProcess = sinon.stub().returns(true);
-    requestBuilder = _requestBuilder_(mockShouldProcess);
-    mockRequestExecutor = _requestExecutor_;
+    requestBuilder = $injector.get('requestBuilder')(mockShouldProcess);
+    mockRequestExecutor = $injector.get('requestExecutor');
   }));
 
   it('should correctly set the data into values dictionary', function () {
@@ -41,14 +41,13 @@ describe('Request Builder', function () {
     mockRequestExecutor.process.called.should.be.equal(false);
 
     requestBuilder.call();
-    
+
     mockShouldProcess.calledOnce.should.be.equal(true);
 
     mockRequestExecutor.add.calledOnce.should.be.equal(true);
     mockRequestExecutor.add.getCall(0).args[0].should.be.deep.equal(dataToSet);
     mockRequestExecutor.process.calledOnce.should.be.equal(true);
   });
-
 });
 
 describe('Request Token Builder', function () {
@@ -88,11 +87,10 @@ describe('Request Token Builder', function () {
       TOKEN_COOKIE_KEY = $injector.get('TOKEN_COOKIE_KEY');
       $cookies[TOKEN_COOKIE_KEY] = undefined;
     });
-
   });
 
   describe('init', function () {
-    it('should use existing token if found', function (done) {
+    it('should use existing token if found', function () {
       var fakeToken = 'thisisthetoken';
       config.get = sinon.stub().returns(fakeToken);
 
@@ -101,11 +99,9 @@ describe('Request Token Builder', function () {
       $cookies[TOKEN_COOKIE_KEY].should.be.equal(fakeToken);
 
       requestTokenBuilder().should.be.equal(requestBuilderMock);
-
-      done();
     });
 
-    it('should create token if not found', function (done) {
+    it('should create token if not found', function () {
       config.get = sinon.stub().returns(undefined);
 
       requestTokenBuilder.init();
@@ -126,12 +122,9 @@ describe('Request Token Builder', function () {
       requestBuilderMock.error.calledOnce.should.be.equal(true);
 
       requestBuilderMock.call.calledOnce.should.be.equal(true);
-
-      done();
-
     });
 
-    it('should execute success callback on success', function (done) {
+    it('should execute success callback on success', function () {
       var success, newToken = 'newToken:)';
 
       config.get = sinon.stub().returns(undefined);
@@ -151,11 +144,9 @@ describe('Request Token Builder', function () {
       config.set.calledWith('token', newToken).should.be.equal(true);
 
       config.save.calledOnce.should.be.equal(true);
-
-      done();
     });
 
-    it('should execute error callback on error', function (done) {
+    it('should execute error callback on error', function () {
       var error, newToken = 'newToken:)';
 
       config.get = sinon.stub().returns(undefined);
@@ -179,38 +170,25 @@ describe('Request Token Builder', function () {
 
       config.set.callCount.should.be.equal(0);
       config.save.callCount.should.be.equal(0);
-
-      done();
-
     });
-
   });
 
   describe('shouldExecute', function () {
-    it('should filter requests while token is being retrieved', function (done) {
+    it('should filter requests while token is being retrieved', function () {
       requestTokenBuilder.shouldExecute({path: 'somepath', method: 'GET'}).should.be.equal(false);
-
-      done();
     });
 
-    it('should not block token requests', function (done) {
+    it('should not block token requests', function () {
       requestTokenBuilder.shouldExecute({path: 'token', method: 'POST'}).should.be.equal(true);
-
-      done();
     });
 
-    it('should allow requests after token was retrieved', function (done) {
+    it('should allow requests after token was retrieved', function () {
       var fakeToken = 'thisisthetoken';
       config.get = sinon.stub().returns(fakeToken);
 
       requestTokenBuilder.init();
 
       requestTokenBuilder.shouldExecute({path: 'files', method: 'POST'}).should.be.equal(true);
-
-      done();
-
     });
   });
-
-
 });

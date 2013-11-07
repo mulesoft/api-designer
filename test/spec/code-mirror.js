@@ -1,23 +1,16 @@
 'use strict';
 
-var editor;
-
 function sp (i) {
   return new Array(i + 1).join(' ');
 }
 
-
 describe('CodeMirror Service', function () {
-  var codeMirror;
+  var editor, codeMirror;
 
   beforeEach(module('codeMirror'));
-
-  beforeEach(function () {
-    inject(function (_codeMirror_) {
-      codeMirror = _codeMirror_;
-      codeMirror.should.be.ok;
-    });
-  });
+  beforeEach(inject(function ($injector) {
+    codeMirror = $injector.get('codeMirror');
+  }));
 
   describe('tab key', function () {
     it('should not be hardcoded (indentUnit)', function () {
@@ -118,11 +111,10 @@ describe('CodeMirror Service', function () {
       codeMirror.backspaceKey(editor);
       editor.deleteOffset.should.be.equal(-1);
     });
-
   });
 
   describe('auto indentation', function () {
-    it('should keep the same indentation level by default', function (){
+    it('should keep the same indentation level by default', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: hello\n' +
@@ -230,7 +222,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
-    it('should keep the same indentation level if the current line is all tabs', function (){
+    it('should keep the same indentation level if the current line is all tabs', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -250,7 +242,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit));
     });
 
-    it('should keep the same indentation level if the current line is all tabs, preserving any extra whitespace', function (){
+    it('should keep the same indentation level if the current line is all tabs, preserving any extra whitespace', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -270,7 +262,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(3));
     });
 
-    it('should add one indentation level if the cursor is in the middle of a sentence.', function (){
+    it('should add one indentation level if the cursor is in the middle of a sentence.', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -289,7 +281,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it('should keep the same indentation level if the cursor is in the middle of a sentence and not on the first line.', function (){
+    it('should keep the same indentation level if the cursor is in the middle of a sentence and not on the first line.', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -309,7 +301,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it('should keep the same indentation level if the cursor is at the beginning of a sentence', function (){
+    it('should keep the same indentation level if the cursor is at the beginning of a sentence', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -329,7 +321,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 2));
     });
 
-    it('should detect traits and add an extra indentation level', function (){
+    it('should detect traits and add an extra indentation level', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -354,7 +346,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
-    it('should detect resource types and add an extra indentation level', function (){
+    it('should detect resource types and add an extra indentation level', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -375,7 +367,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n' + sp(indentUnit * 3));
     });
 
-    it('should detect arrays and add an extra indentation level', function (){
+    it('should detect arrays and add an extra indentation level', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -439,7 +431,7 @@ describe('CodeMirror Service', function () {
       editor.spacesToInsert.should.be.equal('\n');
     });
 
-    it('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function (){
+    it('should keep the same indentation level and any extra whitespace for lines that are \"rubbish\"', function () {
       var indentUnit = 2;
       editor = getEditor(
         'title: Test\n' +
@@ -458,7 +450,5 @@ describe('CodeMirror Service', function () {
       codeMirror.enterKey(editor);
       editor.spacesToInsert.should.be.equal('\n' + sp(3));
     });
-
   });
-
 });

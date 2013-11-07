@@ -4,9 +4,8 @@ describe('Shelf controller', function () {
   var applySuggestion;
 
   beforeEach(module('ramlEditorApp'));
-
-  beforeEach(inject(function (_applySuggestion_) {
-    applySuggestion = _applySuggestion_;
+  beforeEach(inject(function ($injector) {
+    applySuggestion = $injector.get('applySuggestion');
   }));
 
   describe('applySuggestion', function () {
@@ -43,7 +42,6 @@ describe('Shelf controller', function () {
 
       applySuggestion(editor, {name: 'description'});
       editor.replaceRangeArguments[0].should.be.equal('      description:');
-
     });
 
     it('should not insert suggestion in the cursor position on non-empty line', function () {
@@ -61,9 +59,6 @@ describe('Shelf controller', function () {
 
       applySuggestion(editor, {name: 'description'});
       editor.replaceRangeArguments[0].should.be.equal('      description:\n');
-
     });
-
   });
-
 });

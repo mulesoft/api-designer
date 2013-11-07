@@ -6,14 +6,14 @@ describe('Utils module', function () {
   describe('generateSpaces', function () {
     var generateSpaces;
 
-    beforeEach(inject(function (_generateSpaces_) {
-      generateSpaces = _generateSpaces_;
+    beforeEach(inject(function ($injector) {
+      generateSpaces = $injector.get('generateSpaces');
     }));
 
     it('should not generate spaces when using 0 as input', function () {
       generateSpaces(0).should.be.equal('');
     });
-    
+
     it('should generate the required spaces', function () {
       generateSpaces(3).should.be.equal('   ');
     });
@@ -22,13 +22,13 @@ describe('Utils module', function () {
       generateSpaces(undefined).should.be.equal('');
       generateSpaces(null).should.be.equal('');
     });
-    
   });
+
   describe('generateTabs', function () {
     var generateTabs;
 
-    beforeEach(inject(function(_generateTabs_) {
-      generateTabs = _generateTabs_;
+    beforeEach(inject(function($injector) {
+      generateTabs = $injector.get('generateTabs');
     }));
 
     it('should generate no tabs when input is 0, undefined or null', function () {
@@ -36,7 +36,7 @@ describe('Utils module', function () {
       generateTabs(null).should.be.equal('');
       generateTabs(0).should.be.equal('');
     });
-    
+
     it('should generate the right amount of tabs', function () {
       generateTabs(3).should.be.equal('      ');
     });

@@ -133,7 +133,9 @@ module.exports = function (grunt) {
       },
       all: [
         'Gruntfile.js',
-        '<%= yeoman.app %>/scripts/{,*/}*.js'
+        '<%= yeoman.app %>/scripts/{,*/}*.js',
+        'test/mocks/{,*/}*.js',
+        'test/spec/{,*/}*.js'
       ]
     },
     rev: {
@@ -273,11 +275,16 @@ module.exports = function (grunt) {
 
   grunt.registerTask('server', function (target) {
     if (target === 'dist') {
-      return grunt.task.run(['build', 'open', 'connect:dist:keepalive']);
+      return grunt.task.run([
+        'build',
+        'connect:dist:keepalive',
+        'open'
+      ]);
     }
 
     grunt.task.run([
       'clean:server',
+      'jshint',
       'less',
       'configureProxies',
       'connect:livereload',
@@ -288,8 +295,8 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'clean:server',
-    'connect:test',
     'jshint',
+    'connect:test',
     'karma'
   ]);
 

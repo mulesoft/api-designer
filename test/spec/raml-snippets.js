@@ -4,8 +4,8 @@ describe('RAML Snippets', function () {
   var ramlSnippets;
 
   beforeEach(module('raml'));
-  beforeEach(inject(function (_ramlSnippets_) {
-    ramlSnippets = _ramlSnippets_;
+  beforeEach(inject(function ($injector) {
+    ramlSnippets = $injector.get('ramlSnippets');
   }));
 
   it('should provide snippets for all supported HTTP methods', function () {
@@ -61,5 +61,4 @@ describe('RAML Snippets', function () {
   it('should not add ":" at the end if suggestion is a text node', function () {
     ramlSnippets.getSnippet({name: 'foo', isText: true}).should.be.equal('{{padding}}foo\n');
   });
-
 });

@@ -1,15 +1,13 @@
 'use strict';
 
-describe('RAML Hint Service', function () {
+describe('ramlEditorApp', function () {
   beforeEach(module('ramlEditorApp'));
 
   describe('ramlHint', function () {
-    /* jshint camelcase: false */
     var ramlHint;
-    beforeEach(inject(function (_ramlHint_) {
-      ramlHint = _ramlHint_;
+    beforeEach(inject(function ($injector) {
+      ramlHint = $injector.get('ramlHint');
     }));
-    /* jshint camelcase: true */
 
     describe('computePath', function () {
       it('should handle root level paths', function () {
@@ -246,7 +244,6 @@ describe('RAML Hint Service', function () {
         alternatives.suggestions.should.be.deep.equal(newAlternatives.values.suggestions);
 
         newAlternatives.keys.length.should.be.equal(3);
-
       });
 
       it('should not provide existing keys', function () {
@@ -295,7 +292,6 @@ describe('RAML Hint Service', function () {
         newAlternatives.keys.should.be.deep.equal([]);
 
         ramlHint.suggestRAML.restore();
-
       });
 
       it('should return empty list when using empty alternatives', function () {
@@ -319,7 +315,7 @@ describe('RAML Hint Service', function () {
       });
 
       it('should provide suggestRAML alternatives when path is null', function () {
-        var alternatives = {suggestions: {"#%RAML 0.8": {a:1}}, category: 'x'};
+        var alternatives = {suggestions: {'#%RAML 0.8': {a:1}}, category: 'x'};
         var editor = getEditor(
               'title: hello\n',
               {line: 0, ch: 0});
@@ -327,7 +323,8 @@ describe('RAML Hint Service', function () {
         ramlHint.suggestRAML = function() {
           return alternatives;
         };
-        ramlHint.computePath = function(editorRef) {
+
+        ramlHint.computePath = function() {
           return null;
         };
 
@@ -380,7 +377,6 @@ describe('RAML Hint Service', function () {
         shelfSuggestions.forEach(function (shelfSuggestion) {
           shelfSuggestionKeys[shelfSuggestion.name] = shelfSuggestion;
         });
-
 
         /* Check that all the alternatives are rendered correctly */
         Object.keys(alternatives.suggestions).forEach(function (suggestion) {
@@ -514,12 +510,10 @@ describe('RAML Hint Service', function () {
   });
 
   describe('getKeysToErase', function () {
-    /* jshint camelcase: false */
     var getKeysToErase;
-    beforeEach(inject(function (_getKeysToErase_) {
-      getKeysToErase = _getKeysToErase_;
+    beforeEach(inject(function ($injector) {
+      getKeysToErase = $injector.get('getKeysToErase');
     }));
-    /* jshint camelcase: true */
 
     it('should list the keys at the same level with the same parent', function () {
       var editor = getEditor(
@@ -561,12 +555,10 @@ describe('RAML Hint Service', function () {
   });
 
   describe('getNeighborLines', function () {
-    /* jshint camelcase: false */
     var getNeighborLines;
-    beforeEach(inject(function (_getNeighborLines_) {
-      getNeighborLines = _getNeighborLines_;
+    beforeEach(inject(function ($injector) {
+      getNeighborLines = $injector.get('getNeighborLines');
     }));
-    /* jshint camelcase: true */
 
     it('should return expected neighbor lines #1', function () {
       var editor = getEditor(

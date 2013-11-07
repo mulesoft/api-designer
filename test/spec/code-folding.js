@@ -5,14 +5,16 @@ describe('code folding', function () {
 
   beforeEach(module('codeFolding'));
 
-  beforeEach(inject(function (_getFoldRange_, _getParentLine_) {
-    getFoldRange = _getFoldRange_;
-    getParentLine = _getParentLine_;
+  beforeEach(inject(function ($injector) {
+    getFoldRange = $injector.get('getFoldRange');
+    getParentLine = $injector.get('getParentLine');
   }));
 
-  describe('document traversing', function (){
-    it('should detect parent correctly for trait items with and without dash', function (){
+  describe('document traversing', function () {
+    it('should detect parent correctly for trait items with and without dash', function () {
       var indentUnit = 2;
+      var parentLine;
+
       editor = getEditor(
         'title: document transversing\n' +
         'traits:\n' +
@@ -22,18 +24,20 @@ describe('code folding', function () {
         {line: 0, ch: 0},
         { indentUnit: indentUnit });
 
-      var parentLine = getParentLine(editor, 2, 1);
+      parentLine = getParentLine(editor, 2, 1);
       parentLine.should.equal('traits:');
 
-      var parentLine = getParentLine(editor, 3, 1);
+      parentLine = getParentLine(editor, 3, 1);
       parentLine.should.equal('traits:');
 
-      var parentLine = getParentLine(editor, 4, 1);
+      parentLine = getParentLine(editor, 4, 1);
       parentLine.should.equal('traits:');
     });
 
-    it('should detect parent correctly for resourceType items with and without dash', function (){
+    it('should detect parent correctly for resourceType items with and without dash', function () {
       var indentUnit = 2;
+      var parentLine;
+
       editor = getEditor(
         'title: document transversing\n' +
         'resourceTypes:\n' +
@@ -43,18 +47,20 @@ describe('code folding', function () {
         {line: 0, ch: 0},
         { indentUnit: indentUnit });
 
-      var parentLine = getParentLine(editor, 2, 1);
+      parentLine = getParentLine(editor, 2, 1);
       parentLine.should.equal('resourceTypes:');
 
-      var parentLine = getParentLine(editor, 3, 1);
+      parentLine = getParentLine(editor, 3, 1);
       parentLine.should.equal('resourceTypes:');
 
-      var parentLine = getParentLine(editor, 4, 2);
+      parentLine = getParentLine(editor, 4, 2);
       parentLine.should.equal('resourceTypes:');
     });
 
-    it('should detect parent correctly for array items with and without dash', function (){
+    it('should detect parent correctly for array items with and without dash', function () {
       var indentUnit = 2;
+      var parentLine;
+
       editor = getEditor(
         'title: document transversing\n' +
         'key:\n' +
@@ -64,18 +70,18 @@ describe('code folding', function () {
         {line: 0, ch: 0},
         { indentUnit: indentUnit });
 
-      var parentLine = getParentLine(editor, 2, 1);
+      parentLine = getParentLine(editor, 2, 1);
       parentLine.should.equal('key:');
 
-      var parentLine = getParentLine(editor, 3, 1);
+      parentLine = getParentLine(editor, 3, 1);
       parentLine.should.equal('key:');
 
-      var parentLine = getParentLine(editor, 4, 2);
+      parentLine = getParentLine(editor, 4, 2);
       parentLine.should.equal('key:');
     });
   });
 
-  it('should detect fold ranges of only one line', function (){
+  it('should detect fold ranges of only one line', function () {
     var indentUnit = 2;
     editor = getEditor(
       'title: Test\n' +
@@ -340,9 +346,9 @@ describe('code folding', function () {
       '    base:',
       '  displayName: Tags',
       '  get:'
-      ].join('\n'),
-      { line: 7, ch: 0 },
-      { indentUnit: indentUnit });
+    ].join('\n'),
+    { line: 7, ch: 0 },
+    { indentUnit: indentUnit });
 
     var foldRange = getFoldRange(editor, { line: 2 });
     should.not.exist(foldRange);
@@ -372,9 +378,9 @@ describe('code folding', function () {
       '      ',
       '        ',
       '  '
-      ].join('\n'),
-      { line: 7, ch: 0 },
-      { indentUnit: indentUnit });
+    ].join('\n'),
+    { line: 7, ch: 0 },
+    { indentUnit: indentUnit });
 
     foldRange = getFoldRange(editor, { line: 11 });
     foldRange.should.deep.equal({ from: { line: 11, ch: 7 }, to: { line: 18, ch: 2} });
@@ -382,7 +388,7 @@ describe('code folding', function () {
     foldRange = getFoldRange(editor, { line: 13 });
     should.not.exist(foldRange);
   });
-  
+
   it('should ignore spaces and include them on the parent fold', function (){
     var indentUnit = 2,
         foldRange;
@@ -410,13 +416,13 @@ describe('code folding', function () {
       '/foo:',
       '  /bar:',
       '    /ggg:'
-      ].join('\n'),
-      { line: 7, ch: 0 },
-      { indentUnit: indentUnit });
+    ].join('\n'),
+    { line: 7, ch: 0 },
+    { indentUnit: indentUnit });
 
     foldRange = getFoldRange(editor, { line: 10 });
     foldRange.should.deep.equal({ from: { line: 10, ch: 6 }, to: { line: 18, ch: 2} });
-    
+
     foldRange = getFoldRange(editor, { line: 19 });
     foldRange.should.deep.equal({ from: { line: 19, ch: 5 }, to: { line: 21, ch: 9} });
 

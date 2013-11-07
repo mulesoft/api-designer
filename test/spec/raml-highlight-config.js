@@ -1,20 +1,17 @@
 'use strict';
 
-var codeMirrorHighLight, mode, CodeMirror;
+describe('RAML Highlight Config', function () {
+  var codeMirrorHighLight, mode, CodeMirror;
 
-describe('RAML Highlight Config', function (){
   beforeEach(module('codeMirror'));
-
-  beforeEach(inject(function (codeMirror, _codeMirrorHighLight_){
+  beforeEach(inject(function ($injector, codeMirror) {
     CodeMirror = codeMirror.CodeMirror;
-    codeMirrorHighLight = _codeMirrorHighLight_;
-    codeMirrorHighLight.should.be.ok;
+    codeMirrorHighLight = $injector.get('codeMirrorHighLight');
 
     mode = codeMirrorHighLight.highlight({});
-    mode.should.be.ok;
   }));
 
-  it('should call yaml token by default', function (){
+  it('should call yaml token by default', function () {
     var stream = new CodeMirror.StringStream(
       'title: Test',
       2);
@@ -29,7 +26,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._yaml);
   });
 
-  it('should call xml if there are no exceptions when on xml mode', function (){
+  it('should call xml if there are no exceptions when on xml mode', function () {
     var stream = new CodeMirror.StringStream(
       '              <xs:complexType>',
       2);
@@ -47,7 +44,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._xml);
   });
 
-  it('should call json if there are no exceptions when on json mode', function (){
+  it('should call json if there are no exceptions when on json mode', function () {
     var stream = new CodeMirror.StringStream(
       '              \"description\": \"job description\"',
       2);
@@ -65,7 +62,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._json);
   });
 
-  it('should call markdown if there are no exceptions when on markdown mode', function (){
+  it('should call markdown if there are no exceptions when on markdown mode', function () {
     var stream = new CodeMirror.StringStream(
       '  - [ ] Incomplete task list item',
       2);
@@ -83,7 +80,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._markdown);
   });
 
-  it('should call yaml token on documentation key, and set markdown as next token', function (){
+  it('should call yaml token on documentation key, and set markdown as next token', function () {
     var stream = new CodeMirror.StringStream(
       'content: |',
       2);
@@ -98,7 +95,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._markdown);
   });
 
-  it('should call yaml token on \'text/xml\' key, and set xml as next token', function (){
+  it('should call yaml token on \'text/xml\' key, and set xml as next token', function () {
     var stream = new CodeMirror.StringStream(
       '      text/xml:',
       2);
@@ -113,7 +110,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._xml);
   });
 
-  it('should call yaml token on \'application/json\' key, and set json as next token', function (){
+  it('should call yaml token on \'application/json\' key, and set json as next token', function () {
     var stream = new CodeMirror.StringStream(
       '      application/json:',
       2);
@@ -128,7 +125,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._json);
   });
 
-  it('should call yaml on \'schema\' key when on xml mode without changing the mode', function (){
+  it('should call yaml on \'schema\' key when on xml mode without changing the mode', function () {
     var stream = new CodeMirror.StringStream(
       '        schema: |',
       2);
@@ -146,7 +143,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._xml);
   });
 
-  it('should call yaml on \'example\' key when on xml mode without changing the mode', function (){
+  it('should call yaml on \'example\' key when on xml mode without changing the mode', function () {
     var stream = new CodeMirror.StringStream(
       '        example: |',
       2);
@@ -164,7 +161,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._xml);
   });
 
-  it('should call yaml on \'schema\' key when on json mode without changing the mode', function (){
+  it('should call yaml on \'schema\' key when on json mode without changing the mode', function () {
     var stream = new CodeMirror.StringStream(
       '        schema: |',
       2);
@@ -182,7 +179,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._json);
   });
 
-  it('should call yaml on \'example\' key when on json mode without changing the mode', function (){
+  it('should call yaml on \'example\' key when on json mode without changing the mode', function () {
     var stream = new CodeMirror.StringStream(
       '        example: |',
       2);
@@ -200,7 +197,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._json);
   });
 
-  it('should restore yaml mode when indentation changes when on xml mode', function (){
+  it('should restore yaml mode when indentation changes when on xml mode', function () {
     var stream = new CodeMirror.StringStream(
       '/tags:',
       2);
@@ -219,7 +216,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._yaml);
   });
 
-  it('should restore yaml mode when indentation changes when on json mode', function (){
+  it('should restore yaml mode when indentation changes when on json mode', function () {
     var stream = new CodeMirror.StringStream(
       '/tags:',
       2);
@@ -238,7 +235,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._yaml);
   });
 
-  it('should restore yaml mode when indentation changes when on markdown mode', function (){
+  it('should restore yaml mode when indentation changes when on markdown mode', function () {
     var stream = new CodeMirror.StringStream(
       '/tags:',
       2);
@@ -257,9 +254,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._yaml);
   });
 
-  it('should preserve highlight mode when encountering an empty line' +
-     'or an all spaces line', function() {
-
+  it('should preserve highlight mode when encountering an empty line or an all spaces line', function () {
     var stream = new CodeMirror.StringStream(
       '',
       2);
@@ -274,7 +269,7 @@ describe('RAML Highlight Config', function (){
     state.token.should.equal(codeMirrorHighLight._markdown);
   });
 
-  it('should preserve highlight mode when encountering a line with just spaces', function() {
+  it('should preserve highlight mode when encountering a line with just spaces', function () {
     var stream = new CodeMirror.StringStream(
       '  ',
       2);

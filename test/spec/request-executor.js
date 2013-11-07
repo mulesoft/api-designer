@@ -4,10 +4,9 @@ describe('Request Executor', function () {
   var requestExecutor, $httpBackend;
 
   beforeEach(module('fs'));
-
-  beforeEach(inject(function ( _requestExecutor_, _$httpBackend_) {
-    requestExecutor = _requestExecutor_;
-    $httpBackend = _$httpBackend_;
+  beforeEach(inject(function ($injector) {
+    requestExecutor = $injector.get('requestExecutor');
+    $httpBackend = $injector.get('$httpBackend');
 
     $httpBackend.when('POST','http://myhost/some/path').respond(201, '');
     $httpBackend.when('POST','http://myhost/some/failing/path').respond(404, '');
@@ -29,12 +28,12 @@ describe('Request Executor', function () {
       success: success,
       error: error
     });
-    
+
     requestQueue.should.not.be.deep.equal([]);
 
     // Act
     requestExecutor.process();
-    
+
     // Assert
     requestQueue.should.be.deep.equal([]);
 
@@ -43,11 +42,11 @@ describe('Request Executor', function () {
     success.calledOnce.should.be.equal(true);
     error.called.should.be.equal(false);
   }));
-  
+
   it('should call error callback if $http request fails', inject(function (requestQueue) {
     // Assert
     var success = sinon.stub(), error = sinon.stub();
-    
+
     requestExecutor.add({
       method: 'POST',
       data: 'my data',
@@ -56,12 +55,12 @@ describe('Request Executor', function () {
       success: success,
       error: error
     });
-    
+
     requestQueue.should.not.be.deep.equal([]);
 
     // Act
     requestExecutor.process();
-    
+
     // Assert
     requestQueue.should.be.deep.equal([]);
 
@@ -70,5 +69,4 @@ describe('Request Executor', function () {
     success.called.should.be.equal(false);
     error.calledOnce.should.be.equal(true);
   }));
-  
 });
