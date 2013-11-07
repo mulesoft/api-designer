@@ -111,24 +111,54 @@
     });
   };
 
+
   global.shefGetElementsByGroupAssertion = function(groupInfo, byGroup){
+    var j, dic1 = {}, dic2 = {} ;
+    var d = webdriver.promise.defer();
     var i = 0;
+//    console.log('groupinfo: '+groupInfo.length);
+//    console.log('bygroup'+byGroup.length);
+    for (j = 0; j < groupInfo.length; j++) {
+      dic1[groupInfo[j]] = false;
+    }
+    for (j = 0; j < byGroup.length; j++) {
+      dic2[byGroup[j]] = false;
+    }
+
+    function afterAllThens(){
+//      console.log('in after all thens');
+      var key1, value1, key2, value2;
+      for (key1 in dic1) {
+        value1 = dic1[key1];
+//        console.log(JSON.stringify(dic1));
+        expect(value1).to.eql(true);
+      }
+      for (key2 in dic2){
+        value2 = dic2[key2];
+//        console.log(JSON.stringify(dic2));
+        expect(value2).to.eql(true);
+      }
+      return d.fulfill();
+    }
+
     ShelfGetSectionsFromShelf().then(function(sections){
-//      console.log(sections.length);
       sections.forEach(function(section){
         var t = i++;
         section.getText().then(function(text){
-          expect(text).to.eql(groupInfo[t]);
+//          console.log(text);
+          dic1[text] = true;
         }).then(function(){
             section.findElements(by.css(itemsInSection())).then(function(items){
+              dic2[byGroup[t]]=true;
               shelfElementsAssertion(items, byGroup[t]);
+              if (t === sections.length){
+                afterAllThens();
+              }
             });
           });
       });
-      expect(i).to.eql(sections.length);
+      expect(sections.length).to.eql(byGroup.length);
     });
-
-
   };
 
   global.shelfElementsRootByGroupAssertion = function(){
@@ -139,7 +169,7 @@
 
   global.shelfElementsResourceByGroupAssertion = function(){
     var byGroup =[shelfGetElementsResourceLevelDocs(),shelfGetElementsResourceLevelMethods(),shelfGetElementsResourceLevelParameters(),shelfGetElementsResourceLevelSecurity(), shelfGetElementsResourceLevelResources(),shelfGetElementsResourceLevelTraitsAndTypes()];
-    var groupInfo = ['DOCS (1)\ndisplayName','METHODS (7)\nget\npost\nput\ndelete\nhead\npatch\noptions','PARAMETERS (2)\nuriParameters\nbaseUriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\nNew resource','TRAITS AND TYPES (2)\nis\ntype'];
+    var groupInfo = ['DOCS (1)\ndisplayName','METHODS (7)\nget\npost\nput\ndelete\nhead\npatch\noptions\ntrace\nconnect','PARAMETERS (2)\nuriParameters\nbaseUriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\nNew resource','TRAITS AND TYPES (2)\nis\ntype'];
     shefGetElementsByGroupAssertion(groupInfo, byGroup);
   };
   global.shelfElementsMethodsByGroupAssertion = function(){
@@ -148,6 +178,17 @@
     shefGetElementsByGroupAssertion(groupInfo, byGroup);
   };
 
+  global.shelfElemNamedParametersByGroupAssertion = function(){
+    var byGroup = [shelfGetElemNamedParametersLevelDocs(),shelfGetElemNamedParametersLevelParameters()];
+    var groupInfo = ['DOCS (2)\ndisplayName\ndescription','PARAMETERS (9)\ntype\nenum\npattern\nminLength\nmaxLength\nmaximum\nminimum\nrequired\ndefault'];
+    shefGetElementsByGroupAssertion(groupInfo, byGroup);
+  };
+
+
+
+  global.validateNamedParameters = function () {
+
+  };
 
 //Shelf ends
 
