@@ -12,9 +12,9 @@
   var elementsRootLevelResources = ['New resource'];
   var elementsRootLevelTraitsAndTypes = [ 'traits', 'resourceTypes'];
 //  Resource level
-  var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];
+  var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','trace', 'connect','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];
   var elementsResourceLevelDocs = ['displayName'];
-  var elementsResourceLevelMethods = ['get','post','put','delete','head','patch','options'];
+  var elementsResourceLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
   var elementsResourceLevelParameters = ['uriParameters','baseUriParameters'];
   var elementsResourceLevelSecurity = ['securedBy'];
   var elementsResourceLevelResources = ['New resource'];
@@ -30,9 +30,12 @@
   var elemMethodLevelTraitsAndTypes = ['is'];
   var elemMethodLevelBody = ['body'];
 
+//Named Parameter
+  var elemNamedParametersLevel = ['displayName', 'description', 'example', 'type','enum', 'pattern', 'minLength', 'maxLength', 'maximum','minimum','required','default'];
+  var elemNamedParametersLevelDocs = ['displayName', 'description', 'example'];
+  var elemNamedParametersLevelParameters = ['type','enum', 'pattern', 'minLength', 'maxLength', 'maximum','minimum','required','default'];
 
 //Root
-
   global.shelfGetElementsRootLevel = function(){
     return elementsRootLevel;
   };
@@ -107,6 +110,18 @@
   global.shelfGetElemMethodLevelBody = function(){
     return elemMethodLevelBody;
   };
+
+// Named Parameters
+  global.shelfGetElemNamedParametersLevel = function(){
+    return elemNamedParametersLevel;
+  };
+  global.shelfGetElemNamedParametersLevelDocs = function(){
+    return elemNamedParametersLevelDocs;
+  };
+  global.shelfGetElemNamedParametersLevelParameters = function(){
+    return elemNamedParametersLevelParameters;
+  };
+
 
   global.shelfGetElementsVersion = function(){
     return elementsVersion;
