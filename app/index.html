@@ -26,6 +26,7 @@
     <div class="container" ng-include src="'views/raml-editor-main.tmpl.html'"></div>
 
     <!-- build:js({.tmp,app}) scripts/vendor.js -->
+    <script src="vendor/scripts/es5-shim.js"></script>
     <script src="vendor/scripts/suggest.js"></script>
     <script src="vendor/scripts/angular.js"></script>
     <script src="vendor/scripts/angular-resource.js"></script>
@@ -61,9 +62,10 @@
     <script src="scripts/services/raml-highlight-config.js"></script>
     <script src="scripts/services/raml-highlight.js"></script>
     <script src="scripts/services/raml-repository.js"></script>
-    <script src="scripts/services/mock-file-system.js"></script>
     <script src="scripts/services/request-executor.js"></script>
     <script src="scripts/services/request-builder.js"></script>
+    <script src="scripts/services/file-system.js"></script>
+    <script src="scripts/services/mock-file-system.js"></script>
     <script src="scripts/services/remote-file-system.js"></script>
     <script src="scripts/controllers/raml-editor-main.js"></script>
     <script src="scripts/controllers/raml-editor-shelf.js"></script>

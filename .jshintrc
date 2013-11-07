@@ -24,6 +24,7 @@
     "describe": false,
     "should": false,
     "it": false,
+    "after": false,
     "beforeEach": false,
     "afterEach": false,
     "inject": false,

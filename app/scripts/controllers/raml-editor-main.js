@@ -5,10 +5,9 @@ angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
   .constant('REFRESH_FILES_INTERVAL', 5000)
   .constant('DEFAULT_PATH', '/')
-  .value('afterBootstrap', function () { })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
-    ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, afterBootstrap, config, $prompt, $confirm) {
+    ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm) {
     var CodeMirror = codeMirror.CodeMirror, editor, saveTimer, currentUpdateTimer;
 
     $scope.setTheme = function (theme) {
@@ -85,11 +84,11 @@ angular.module('ramlEditorApp')
     });
 
     $scope.bootstrap = function () {
-      ramlRepository.bootstrap($scope.switchFile);
+      ramlRepository.bootstrap().then($scope.switchFile);
     };
 
     $scope.switchFile = function (file) {
-      if( !$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
+      if (!$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
         $scope.file = file;
         $scope.firstLoad = true;
         editor.setValue($scope.file.contents);
@@ -107,44 +106,40 @@ angular.module('ramlEditorApp')
     };
 
     $scope.save = function () {
-      if(!$scope.canSave()) {
+      if (!$scope.canSave()) {
         return;
       }
 
-      if(!$scope.file.persisted) {
-        if(!$scope._promptForFileName()) {
+      if (!$scope.file.persisted) {
+        if (!$scope._promptForFileName()) {
           return;
         }
       }
 
-      $scope._saveFile();
+      $scope.saveFile();
     };
 
-    $scope.saveAs = function(){
-      if(!$scope.file.persisted) {
+    $scope.saveAs = function() {
+      if (!$scope.file.persisted) {
         return;
       }
 
-      if(!$scope._promptForFileName()) {
+      if (!$scope._promptForFileName()) {
         return;
       }
 
       $scope.file.dirty = true;
-      $scope._saveFile();
+      $scope.saveFile();
     };
 
-    $scope.newFile = function (){
-      if( !$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
+    $scope.newFile = function () {
+      if (!$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
         $scope.file = ramlRepository.createFile();
         editor.setValue($scope.file.contents);
         editor.setCursor({line: 1, ch: 0});
 
         $timeout.cancel(saveTimer);
       }
-    };
-
-    $scope.isShelfCollapsed = function () {
-      return $scope.shelf.collapsed;
     };
 
     $scope.toggleShelf = function () {
@@ -163,33 +158,68 @@ angular.module('ramlEditorApp')
     $scope.toggleBrowser = function () {
       var browser = $scope.browser;
       browser.expanded = !browser.expanded;
+
       if (browser.expanded) {
         $scope.listFiles();
       }
     };
 
     $scope.listFiles = throttle(function () {
-      $scope.files = ramlRepository.getDirectory(DEFAULT_PATH, function () {
-        safeApply($scope);
-      });
+      $scope.files.loading = true;
+      ramlRepository.getDirectory(DEFAULT_PATH)
+        .then(function (files) {
+          $scope.files = files;
+          safeApply($scope);
+        })
+        .always(function () {
+          delete $scope.files.loading;
+        })
+      ;
     }, REFRESH_FILES_INTERVAL);
+
+    $scope.saveFile = function() {
+      $scope.file.contents = editor.getValue();
+      ramlRepository.saveFile($scope.file).then(function () {
+        safeApply($scope);
+
+        if (saveTimer) {
+          $timeout.cancel(saveTimer);
+        }
+
+        saveTimer = $timeout($scope.save, AUTOSAVE_INTERVAL);
+      });
+    };
 
     $scope.loadFile = function (fileEntry) {
       var browser = $scope.browser;
-      ramlRepository.loadFile(fileEntry, $scope.switchFile);
       browser.expanded = false;
+
+      ramlRepository.loadFile(fileEntry).then($scope.switchFile);
     };
 
-    $scope.deleteFile = function (fileEntry) {
-      var current = $scope.file;
-      if ($confirm('Are you sure you want to delete the file: "' + fileEntry.name + '" ?')) {
-        $scope.collapseBrowser();
-        ramlRepository.removeFile(fileEntry, function () {
-          if (current.name === fileEntry.name) {
-            $scope.bootstrap();
-          }
-        });
+    $scope.deleteFile = function (file) {
+      var currentFile = $scope.file;
+      var fileIndex = $scope.files.indexOf(file);
+
+      if (! $confirm('Are you sure you want to delete the file: "' + file.name + '" ?')) {
+        return;
       }
+
+      ramlRepository.removeFile(file).then(function () {
+        $scope.files.splice(fileIndex, 1);
+
+        if (currentFile.name !== file.name) {
+          return;
+        }
+
+        if ($scope.files.length) {
+          $scope.loadFile($scope.files[0]);
+        } else {
+          $scope.switchFile(ramlRepository.createFile());
+        }
+      });
+
+      $scope.collapseBrowser();
     };
 
     eventService.on('event:save', function () {
@@ -207,6 +237,7 @@ angular.module('ramlEditorApp')
       $scope.theme = $rootScope.theme = config.get('theme', 'dark');
       $scope.shelf = {};
       $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', false));
+      $scope.files = [];
       $scope.browser = {};
       $scope.browser.expanded = false;
 
@@ -219,7 +250,7 @@ angular.module('ramlEditorApp')
         if (currentUpdateTimer) {
           $timeout.cancel(currentUpdateTimer);
         }
-        
+
         currentUpdateTimer = $timeout(function () {
           $scope.sourceUpdated();
           currentUpdateTimer = undefined;
@@ -232,11 +263,7 @@ angular.module('ramlEditorApp')
 
       $timeout(function () {
         eventService.broadcast('event:raml-editor-initialized', editor);
-      });
-
-      $timeout(function () {
         $scope.bootstrap();
-        afterBootstrap();
       });
     };
 
@@ -250,16 +277,5 @@ angular.module('ramlEditorApp')
 
     $scope._confirmLoseChanges = function () {
       return $confirm('Are you sure you want to lose your unsaved changes?');
-    };
-
-    $scope._saveFile = function() {
-      $scope.file.contents = editor.getValue();
-      ramlRepository.saveFile($scope.file, function () {
-        safeApply($scope);
-        if (saveTimer) {
-          $timeout.cancel(saveTimer);
-        }
-        saveTimer = $timeout($scope.save, AUTOSAVE_INTERVAL);
-      });
     };
   });

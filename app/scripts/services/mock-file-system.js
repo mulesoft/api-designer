@@ -1,11 +1,11 @@
 'use strict';
 
-angular.module('raml')
+angular.module('fs')
   .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
-  .factory('mockFileSystem', function (LOCAL_PERSISTENCE_KEY, $timeout) {
+  .factory('mockFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY) {
     var service = {};
-    var files = [];
-    var delay = 500;
+    var files   = [];
+    var delay   = 500;
 
     if (localStorage[LOCAL_PERSISTENCE_KEY]) {
       try {
@@ -15,86 +15,87 @@ angular.module('raml')
       }
     }
 
-    service.directory = function (path, callback, errorCallback) {
-      var entries = files
+    service.directory = function (path) {
+      var deferred = $q.defer();
+      var entries  = files
         .filter(function (f) {
           return f.path === path;
         })
         .map(function (f) {
           return f.name;
-        });
+        })
+      ;
 
       $timeout(function () {
-        if (path === 'error') {
-          errorCallback('Error reading files');
-        } else {
-          callback(entries);
-        }
+        deferred.resolve(entries);
       }, delay);
+
+      return deferred.promise;
     };
 
-    service.load = function (path, name, callback, errorCallback) {
-      var entries = files
+    service.save = function (path, name, content) {
+      var deferred = $q.defer();
+      var entries  = files
+        .filter(function (f) {
+          return f.path === path && f.name === name;
+        })
+      ;
+
+      $timeout(function () {
+        var entry = entries[0];
+        if (entry) {
+          entry.content = content;
+        } else {
+          files.push({
+            path: path,
+            name: name,
+            content: content
+          });
+        }
+
+        localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
+        deferred.resolve();
+      }, delay);
+
+      return deferred.promise;
+    };
+
+    service.load = function (path, name) {
+      var deferred = $q.defer();
+      var entries  = files
         .filter(function (f) {
           return f.path === path && f.name === name;
         })
         .map(function (f) {
-          return f.contents;
-        });
+          return f.content;
+        })
+      ;
 
       $timeout(function () {
-        if (name === 'error') {
-          errorCallback('Error reading file');
-        } else {
-          callback(entries[0] || '');
-        }
+        deferred.resolve(entries[0] || '');
       }, delay);
+
+      return deferred.promise;
     };
 
-    service.remove = function (path, name, callback, errorCallback) {
-      var entries = files
+    service.remove = function (path, name) {
+      var deferred = $q.defer();
+      var entries  = files
         .filter(function (f) {
           return f.path === path && f.name === name;
-        });
+        })
+      ;
 
       $timeout(function () {
         var removed = entries[0];
-        if (name === 'error') {
-          errorCallback('Error reading file');
-        } else {
-          if (removed) {
-            files.splice(files.indexOf(removed), 1);
-            callback();
-          }
+        if (removed) {
+          files.splice(files.indexOf(removed), 1);
         }
+
+        deferred.resolve();
       }, delay);
-    };
 
-    service.save = function (path, name, contents, callback, errorCallback) {
-      var entries = files
-        .filter(function (f) {
-          return f.path === path && f.name === name;
-        });
-
-      $timeout(function () {
-        var found = entries[0];
-        if (name === 'error') {
-          errorCallback('Error reading file');
-        } else {
-          if (found) {
-            found.contents = contents;
-          } else {
-            files.push({
-              path: path,
-              name: name,
-              contents: contents
-            });
-          }
-
-          localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
-          callback();
-        }
-      }, delay);
+      return deferred.promise;
     };
 
     return service;

@@ -1,27 +1,20 @@
 'use strict';
 
-var remoteFileSystem;
 
-describe('Remote File Persistence Service', function () {
-
+describe('remoteFileSystem', function () {
+  var $rootScope;
   var tokenBuilderMock;
+  var remoteFileSystem;
 
   beforeEach(module('fs'));
   beforeEach(function () {
-
     module(function ($provide) {
       $provide.value('shouldAutoRunInit', false);
-      $provide.decorator('requestTokenBuilder', function ($delegate, requestBuilder) {
-        var requestBuilderInstance = requestBuilder(),
-        key;
-        tokenBuilderMock = sinon.mock(requestBuilder);
-
-        for (key in requestBuilderInstance) {
-          var value = requestBuilderInstance[key];
-          if (typeof value === 'function') {
-            tokenBuilderMock[key] = sinon.stub().returns(tokenBuilderMock);
-          }
-        }
+      $provide.factory('requestTokenBuilder', function () {
+        tokenBuilderMock = {};
+        ['host', 'method', 'path', 'data', 'success', 'error', 'call'].forEach(function (name) {
+          tokenBuilderMock[name] = sinon.stub().returns(tokenBuilderMock);
+        });
 
         return function () {
           return tokenBuilderMock;
@@ -33,349 +26,297 @@ describe('Remote File Persistence Service', function () {
   describe('directory', function () {
     var files;
 
-    beforeEach(
-      inject(function ($injector) {
-        remoteFileSystem = $injector.get('remoteFileSystem');
-        files = $injector.get('files');
-      })
-    );
-    it('should generate the right request', function (done) {
-      var success = function () {}, error = function () {};
-      remoteFileSystem.directory('/', success, error);
-      tokenBuilderMock.path.calledWith('files').should.be.equal(true);
-      tokenBuilderMock.path.calledOnce.should.be.equal(true);
+    beforeEach(inject(function ($injector) {
+      $rootScope = $injector.get('$rootScope');
+      remoteFileSystem = $injector.get('remoteFileSystem');
+      files = $injector.get('files');
+    }));
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
+    it('should generate the right request', function () {
+      remoteFileSystem.directory('/');
 
-      tokenBuilderMock.error.calledOnce.should.be.equal(true);
-      tokenBuilderMock.error.calledWith(error).should.be.equal(true);
-
-      tokenBuilderMock.call.calledOnce.should.be.equal(true);
-
-      done();
+      tokenBuilderMock.method.calledWith('GET').should.be.true;
+      tokenBuilderMock.path.calledWith('files').should.be.true;
     });
 
-    it('provided success function should populate files object', function (done) {
-      var FILE_NAME = 'my_file', success,
-        ANOTHER_FILE_NAME = 'another_file',
-        data = [{entry: FILE_NAME, content: 'some raml'},
-        {entry: 'another_file', content: 'another raml file'}], error = function () {};
+    it('should populate files object', function (done) {
+      var data = [
+        {entry: 'my_file',      content: 'some raml'},
+        {entry: 'another_file', content: 'another raml file'}
+      ];
 
       Object.keys(files).length.should.be.equal(0);
 
-      remoteFileSystem.directory('/', function (data) {
-
+      remoteFileSystem.directory('/').then(function (data) {
         Object.keys(files).length.should.be.equal(2);
-
         Object.keys(files).should.be.deep.equal(data);
 
-        files[FILE_NAME].content.should.be.equal('some raml');
-        files[ANOTHER_FILE_NAME].content.should.be.equal('another raml file');
-
-        done();
-      }, error);
-
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      success = tokenBuilderMock.success.getCall(0).args[0];
-      success(data);
-    });
-
-    it('should call the error function if empty array returned', function (done) {
-      var success;
-
-      remoteFileSystem.directory('/', undefined, function () {
         done();
       });
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      success = tokenBuilderMock.success.getCall(0).args[0];
-      success([]);
+      tokenBuilderMock.success.firstCall.args[0](data);
+      $rootScope.$apply();
     });
 
     it('should call the error function on error', function (done) {
-      var error;
+      remoteFileSystem.directory('/').then(
+        // success
+        function () {},
 
-      remoteFileSystem.directory('/', undefined, function () {
-        done();
-      });
+        // failure
+        function () {
+          done();
+        }
+      );
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      error = tokenBuilderMock.error.getCall(0).args[0];
-      error();
-
+      tokenBuilderMock.error.firstCall.args[0]();
+      $rootScope.$apply();
     });
-
   });
 
   describe('load', function () {
     var files;
+
     beforeEach(function () {
       files = {myfile: {id: 'myid'}};
       module(function ($provide) {
         $provide.value('files', files);
       });
     });
-    beforeEach(
-      inject(function ($injector) {
-        remoteFileSystem = $injector.get('remoteFileSystem');
-      })
-    );
 
-    it('should generate the right request', function (done) {
-      var success = function () {}, error = function () {};
-      remoteFileSystem.load('/', 'myfile', success, error);
+    beforeEach(inject(function ($injector) {
+      $rootScope = $injector.get('$rootScope');
+      remoteFileSystem = $injector.get('remoteFileSystem');
+    }));
 
-      tokenBuilderMock.path.calledOnce.should.be.ok;
-      tokenBuilderMock.path.calledWith('files', 'myid').should.be.ok;
+    it('should generate the right request', function () {
+      remoteFileSystem.load('/', 'myfile');
 
-      tokenBuilderMock.error.calledOnce.should.be.equal(true);
-      tokenBuilderMock.error.calledWith(error).should.be.ok;
-
-      tokenBuilderMock.call.calledOnce.should.be.equal(true);
-
-      done();
+      tokenBuilderMock.method.calledWith('GET');
+      tokenBuilderMock.path.calledWith('files', 'myid');
     });
 
     it('should call the success callback with the content of the file', function (done) {
-      var content = 'this is the content of the file', success;
-      remoteFileSystem.load('/', 'myfile', function (data) {
-        data.should.be.equal(content);
-        done();
-      }, undefined);
+      var file = {
+        entry  : 'myfile',
+        content: 'this is the content of the file'
+      };
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      success = tokenBuilderMock.success.getCall(0).args[0];
-      success({entry: 'myfile', content: content});
-    });
-
-    it('should call the error callback on error', function (done) {
-      var error;
-
-      remoteFileSystem.load('/', 'myfile', undefined, function () {
+      remoteFileSystem.load('/', 'myfile').then(function (data) {
+        data.should.be.equal(file.content);
         done();
       });
 
-      tokenBuilderMock.error.calledOnce.should.be.equal(true);
-      error = tokenBuilderMock.error.getCall(0).args[0];
-      error();
+      tokenBuilderMock.success.firstCall.args[0](file);
+      $rootScope.$apply();
     });
 
+    it('should call the error callback on error', function (done) {
+      remoteFileSystem.load('/', 'myfile').then(
+        // success
+        function () {},
+
+        // failure
+        function () {
+          done();
+        }
+      );
+
+      tokenBuilderMock.error.firstCall.args[0]();
+      $rootScope.$apply();
+    });
   });
 
   describe('remove', function () {
     var files;
+
     beforeEach(function () {
       files = {myfile: {id: 'myid'}};
       module(function ($provide) {
         $provide.value('files', files);
       });
     });
-    beforeEach(
-      inject(function ($injector) {
-        remoteFileSystem = $injector.get('remoteFileSystem');
-      })
-    );
 
-    it('should generate the right request', function (done) {
-      var success = function () {}, error = function () {};
-      remoteFileSystem.remove('/', 'myfile', success, error);
+    beforeEach(inject(function ($injector) {
+      $rootScope = $injector.get('$rootScope');
+      remoteFileSystem = $injector.get('remoteFileSystem');
+    }));
 
-      tokenBuilderMock.method.calledOnce.should.be.ok;
-      tokenBuilderMock.method.calledWith('DELETE').should.be.ok;
+    it('should generate the right request', function () {
+      remoteFileSystem.remove('/', 'myfile');
 
-      tokenBuilderMock.path.calledOnce.should.be.ok;
-      tokenBuilderMock.path.calledWith('files', 'myid').should.be.ok;
-
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-
-      tokenBuilderMock.error.calledOnce.should.be.equal(true);
-      tokenBuilderMock.error.calledWith(error).should.be.ok;
-
-      tokenBuilderMock.call.calledOnce.should.be.equal(true);
-
-      done();
+      tokenBuilderMock.method.calledWith('DELETE');
+      tokenBuilderMock.path.calledWith('files', 'myid');
     });
 
     it('should call the error callback if file not found locally', function (done) {
-      var success = function () {};
-      remoteFileSystem.remove('/', 'filedoesnotexist', success, function () {
-        tokenBuilderMock.method.called.should.be.equal(false);
-        tokenBuilderMock.path.called.should.be.equal(false);
-        tokenBuilderMock.success.called.should.be.equal(false);
-        tokenBuilderMock.error.calledOnce.should.be.equal(false);
-        tokenBuilderMock.call.calledOnce.should.be.equal(false);
+      remoteFileSystem.remove('/', 'filedoesnotexist').then(
+        // success
+        function () {},
 
-        done();
-      });
+        // failure
+        function () {
+          ['method', 'path', 'success', 'error', 'call'].forEach(function (name) {
+            tokenBuilderMock[name].called.should.be.equal(false);
+          });
 
+          done();
+        }
+      );
 
+      $rootScope.$apply();
     });
 
     it('should call the success callback and remove the file from files on success', function (done) {
-      var success, FILE_NAME = 'myfile';
+      var FILE_NAME = 'myfile';
 
-      remoteFileSystem.remove('/', FILE_NAME, function () {
+      remoteFileSystem.remove('/', FILE_NAME).then(function () {
         should.not.exist(files[FILE_NAME]);
-        done();
-      }, undefined);
-
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      success = tokenBuilderMock.success.getCall(0).args[0];
-      success();
-    });
-
-    it('should call the error callback and preserve the file on error', function (done) {
-      var error, FILE_NAME = 'myfile';
-
-      remoteFileSystem.remove('/', FILE_NAME, undefined, function () {
-        files[FILE_NAME].should.be.ok;
         done();
       });
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      error = tokenBuilderMock.error.getCall(0).args[0];
-      error();
+      tokenBuilderMock.success.firstCall.args[0]();
+      $rootScope.$apply();
     });
 
+    it('should call the error callback and preserve the file on error', function (done) {
+      var FILE_NAME = 'myfile';
+
+      remoteFileSystem.remove('/', FILE_NAME).then(
+        // success
+        function () {},
+
+        // failure
+        function () {
+          files[FILE_NAME].should.exist;
+          done();
+        }
+      );
+
+      tokenBuilderMock.error.firstCall.args[0]();
+      $rootScope.$apply();
+    });
   });
 
   describe('save', function () {
     var files;
+
     beforeEach(function () {
       files = {myfile: {id: 'myid'}};
       module(function ($provide) {
         $provide.value('files', files);
       });
     });
-    beforeEach(
-      inject(function ($injector) {
-        remoteFileSystem = $injector.get('remoteFileSystem');
-      })
-    );
 
-    it('should generate the right request for existing file', function (done) {
-      var success = function () {}, error = function () {};
+    beforeEach(inject(function ($injector) {
+      $rootScope = $injector.get('$rootScope');
+      remoteFileSystem = $injector.get('remoteFileSystem');
+    }));
 
-      remoteFileSystem.save('/', 'myfile', 'some content', success, error);
+    it('should generate the right request for new file', function () {
+      var file = {entry: 'newfile', content: 'some content'};
+      remoteFileSystem.save('/', file.entry, file.content);
 
-      tokenBuilderMock.method.calledOnce.should.be.ok;
-      tokenBuilderMock.method.calledWith('PUT').should.be.ok;
-
-      tokenBuilderMock.path.calledOnce.should.be.ok;
-      tokenBuilderMock.path.calledWith('files', 'myid').should.be.ok;
-
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-
-      tokenBuilderMock.error.calledOnce.should.be.equal(true);
-      tokenBuilderMock.error.calledWith(error).should.be.ok;
-
-      tokenBuilderMock.data.calledOnce.should.be.equal(true);
-      tokenBuilderMock.data.calledWith({entry: 'myfile', content: 'some content'}).should.be.ok;
-
-      tokenBuilderMock.call.calledOnce.should.be.equal(true);
-
-      done();
-
+      tokenBuilderMock.method.calledWith('POST');
+      tokenBuilderMock.path.calledWith('files');
+      tokenBuilderMock.data.calledWith(file);
     });
 
-    it('should generate the right request for new file', function (done) {
-      var success = function () {}, error = function () {};
+    it('should generate the right request for existing file', function () {
+      var file = {entry: 'myfile', content: 'some content'};
+      remoteFileSystem.save('/', file.entry, file.content);
 
-      remoteFileSystem.save('/', 'newfile', 'some content', success, error);
-
-      tokenBuilderMock.method.calledOnce.should.be.ok;
-      tokenBuilderMock.method.calledWith('POST').should.be.ok;
-
-      tokenBuilderMock.path.calledOnce.should.be.ok;
-      tokenBuilderMock.path.calledWith('files').should.be.ok;
-
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-
-      tokenBuilderMock.error.calledOnce.should.be.equal(true);
-      tokenBuilderMock.error.calledWith(error).should.be.ok;
-
-      tokenBuilderMock.data.calledOnce.should.be.equal(true);
-      tokenBuilderMock.data.calledWith({entry: 'newfile', content: 'some content'}).should.be.ok;
-
-      tokenBuilderMock.call.calledOnce.should.be.equal(true);
-
-      done();
-
+      tokenBuilderMock.method.calledWith('PUT');
+      tokenBuilderMock.path.calledWith('files', 'myid');
+      tokenBuilderMock.data.calledWith(file);
     });
 
     it('should call the success callback on success on existing file', function (done) {
-      var success;
-
-      remoteFileSystem.save('/', 'myfile', 'some content', function () {
+      remoteFileSystem.save('/', 'myfile', 'some content').then(function () {
         done();
-      }, undefined);
+      });
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      success = tokenBuilderMock.success.getCall(0).args[0];
-      success();
-
+      tokenBuilderMock.success.firstCall.args[0]();
+      $rootScope.$apply();
     });
 
     it('should call the error callback on error on existing file', function (done) {
-      var error;
+      remoteFileSystem.save('/', 'myfile', 'some content').then(
+        // success
+        function () {},
 
-      remoteFileSystem.save('/', 'myfile', 'some content', undefined, function () {
-        done();
-      });
+        // failure
+        function () {
+          done();
+        }
+      );
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      error = tokenBuilderMock.error.getCall(0).args[0];
-      error();
+      tokenBuilderMock.error.firstCall.args[0]();
+      $rootScope.$apply();
     });
 
     it('should call the success callback on success on new file', function (done) {
-      var success, id = 'newfileid', FILE_NAME = 'newfile', content = 'some content';
+      var id = 'newfileid';
+      var fileName = 'newfile';
+      var content = 'some content';
 
-      remoteFileSystem.save('/', 'newfile', content, function () {
-        files[FILE_NAME].content.should.be.equal(content);
-        done();
-      }, undefined);
-
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      success = tokenBuilderMock.success.getCall(0).args[0];
-      success(JSON.stringify(id));
-    });
-
-    it('should call the error callback on error on new file', function (done) {
-      var error, FILE_NAME = 'newfile';
-
-      remoteFileSystem.save('/', FILE_NAME, 'some content', undefined, function () {
-        should.not.exist(files[FILE_NAME]);
+      remoteFileSystem.save('/', fileName, content).then(function () {
+        files[fileName].content.should.be.equal(content);
         done();
       });
 
-      tokenBuilderMock.success.calledOnce.should.be.equal(true);
-      error = tokenBuilderMock.error.getCall(0).args[0];
-      error();
+      tokenBuilderMock.success.firstCall.args[0](JSON.stringify(id));
+      $rootScope.$apply();
     });
+
+    it('should call the error callback on error on new file', function (done) {
+      var fileName = 'newfile';
+
+      remoteFileSystem.save('/', fileName, 'some content').then(
+        // success
+        function () {},
+
+        // failure
+        function () {
+          should.not.exist(files[fileName]);
+          done();
+        }
+      );
+
+      tokenBuilderMock.error.firstCall.args[0]();
+      $rootScope.$apply();
+    });
+
     it('should not lose references if callbacks arrive in different order', function (done) {
-      var success1, success2, id = 'newfileid', content1 = 'some content',
-        content2 = 'some other content', callback2Executed = false, FILE_NAME_1 = 'newfile1',
-        FILE_NAME_2 = 'newfile2';
+      var success1;
+      var success2;
+      var id = 'newfileid';
+      var content1 = 'some content';
+      var content2 = 'some other content';
+      var callback2Executed = false;
+      var fileName1 = 'newfile1';
+      var fileName2 = 'newfile2';
 
-      remoteFileSystem.save('/', 'newfile1', content1, function () {
-        files[FILE_NAME_1].content.should.be.equal(content1);
-        files[FILE_NAME_2].content.should.be.equal(content2);
+      remoteFileSystem.save('/', 'newfile1', content1).then(function () {
+        files[fileName1].content.should.be.equal(content1);
+        files[fileName2].content.should.be.equal(content2);
+
         callback2Executed.should.be.equal(true);
+
         done();
-      }, undefined);
+      });
 
-      remoteFileSystem.save('/', 'newfile2', content2, function () {
+      remoteFileSystem.save('/', 'newfile2', content2).then(function () {
         callback2Executed = true;
-      }, undefined);
-
-      tokenBuilderMock.success.calledTwice.should.be.equal(true);
+      });
 
       success2 = tokenBuilderMock.success.getCall(1).args[0];
       success2(JSON.stringify(id + '2'));
 
       success1 = tokenBuilderMock.success.getCall(0).args[0];
       success1(JSON.stringify(id + '1'));
+
+      $rootScope.$apply();
     });
   });
 });

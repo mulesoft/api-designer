@@ -2,90 +2,105 @@
 
 angular.module('fs')
   .value('files', {})
-  .service('remoteFileSystem', function (requestTokenBuilder, files) {
+  .service('remoteFileSystem', function ($q, requestTokenBuilder, files) {
     var service = {};
 
-    function removeInitialSlash (s) {
+    function removeInitialSlash(s) {
       return s.indexOf('/') === 0 ? s.slice(1) : s;
     }
 
-    service.directory = function (path, callback, errorCallback) {
+    service.directory = function () {
+      var deferred = $q.defer();
+
       requestTokenBuilder()
+        .method('GET')
         .path('files')
         .success(function (data) {
-          if(data.length) {
-            data.forEach(function (e) {
-              files[e.entry] = e;
-            });
-            callback(Object.keys(files));
-          } else {
-            errorCallback();
-          }
-        })
-        .error(errorCallback)
-        .call();
+          Object.keys(files).forEach(function (key) {
+            delete files[key];
+          });
 
+          data.forEach(function (d) {
+            files[d.entry] = d;
+          });
+
+          deferred.resolve(Object.keys(files));
+        })
+        .error(deferred.reject.bind(deferred))
+      .call();
+
+      return deferred.promise;
     };
 
-    service.load = function (path, name, callback, errorCallback) {
+    service.save = function (path, name, content) {
+      var deferred = $q.defer();
+      var fullPath = removeInitialSlash(path + name);
+      var fileId   = files[fullPath] && files[fullPath].id;
+
+      // Existing file
+      if (fileId) {
+        requestTokenBuilder()
+          .method('PUT')
+          .path('files', fileId)
+          .data({entry: fullPath, content: content})
+          .success(deferred.resolve.bind(deferred))
+          .error(deferred.reject.bind(deferred))
+        .call();
+
+      // New File
+      } else {
+        requestTokenBuilder()
+          .method('POST')
+          .path('files')
+          .data({entry: fullPath, content: content})
+          .success(function (data) {
+            var id = JSON.parse(data);
+            files[fullPath] = {entry: fullPath, content: content, id: id};
+            deferred.resolve(files[fullPath]);
+          })
+          .error(deferred.reject.bind(deferred))
+        .call();
+      }
+
+      return deferred.promise;
+    };
+
+    service.load = function (path, name) {
+      var deferred = $q.defer();
       var fullPath = removeInitialSlash(path + name);
 
       requestTokenBuilder()
+        .method('GET')
         .path('files', files[fullPath].id)
         .success(function (data) {
-          callback(data.content);
+          deferred.resolve(data.content);
         })
-        .error(errorCallback)
-        .call();
+        .error(deferred.reject.bind(deferred))
+      .call();
+
+      return deferred.promise;
     };
 
-    service.remove = function (path, name, callback, errorCallback) {
+    service.remove = function (path, name) {
+      var deferred = $q.defer();
       var fullPath = removeInitialSlash(path + name);
 
       if (!files[fullPath]) {
-        errorCallback();
-        return;
+        deferred.reject();
+        return deferred.promise;
       }
 
       requestTokenBuilder()
         .method('DELETE')
         .path('files', files[fullPath].id)
         .success(function () {
-          files[fullPath] = undefined;
-          callback();
+          delete files[fullPath];
+          deferred.resolve();
         })
-        .error(errorCallback)
-        .call();
-    };
+        .error(deferred.reject.bind(deferred))
+      .call();
 
-    service.save = function (path, name, content, callback, errorCallback) {
-      var fullPath = removeInitialSlash(path + name),
-        fileId = files[fullPath] && files[fullPath].id;
-
-      // Existing file
-      if (fileId) {
-        requestTokenBuilder()
-          .method('PUT')
-          .data({entry: fullPath, content: content})
-          .path('files', fileId)
-          .success(callback)
-          .error(errorCallback)
-          .call();
-
-      // New File
-      } else {
-        requestTokenBuilder()
-          .method('POST')
-          .data({entry: fullPath, content: content})
-          .path('files')
-          .success(function (data) {
-            var id = JSON.parse(data);
-            files[fullPath] = {entry: fullPath, content: content, id: id};
-            callback();
-          })
-          .error(errorCallback)
-          .call();
-      }
+      return deferred.promise;
     };
 
     return service;
