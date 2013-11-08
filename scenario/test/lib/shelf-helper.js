@@ -122,10 +122,56 @@
     return elemNamedParametersLevelParameters;
   };
 
-
   global.shelfGetElementsVersion = function(){
     return elementsVersion;
   };
+
+  // traits
+  var elementsTraitsLevel = ['protocols','displayName', 'description','baseUriParameters', 'headers', 'queryParameters','responses', 'securedBy', 'body'];
+  var elementsTraitsLevelRoot =['protocols'];
+  var elementsTraitsLevelDocs = ['displayName', 'description']; //missing usage option
+  var elementsTraitsLevelParameters = ['baseUriParameters', 'headers', 'queryParameters'];
+  var elementsTraitsLevelResponses = ['responses'];
+  var elementsTraitsLevelSecurity = ['securedBy'];
+  var elementsTraitsLevelBody = ['body'];
+
+  global.shelfGetElementsTraitsLevel = function(){
+    return elementsTraitsLevel;
+  };
+  global.shelfGetElementsTraitsLevelRoot = function(){
+    return elementsTraitsLevelRoot;
+  };
+  global.shelfGetElementsTraitsLevelDocs = function(){
+    return elementsTraitsLevelDocs;
+  };
+  global.shelfGetElementsTraitsLevelParameters = function(){
+    return elementsTraitsLevelParameters;
+  };
+  global.shelfGetElementsTraitsLevelResponses = function(){
+    return elementsTraitsLevelResponses;
+  };
+  global.shelfGetElementsTraitsLevelSecurity = function(){
+    return elementsTraitsLevelSecurity;
+  };
+  global.shelfGetElementsTraitsLevelBody = function(){
+    return elementsTraitsLevelBody;
+  };
+
+//Responses
+  var elementsResponsesLevel = ['description', 'body'];
+  var elementsResponsesLevelDocs = ['description'];
+  var elementsResponsesLevelBody = ['body'];
+
+  global.shelfGetElementsResponseLevel = function(){
+    return elementsResponsesLevel;
+  };
+  global.shelfGetElementsResponseLevelDocs = function(){
+    return elementsResponsesLevelDocs;
+  };
+  global.shelfGetElementsResponseLevelBody = function(){
+    return elementsResponsesLevelBody;
+  };
+
   global.shelfGetElementsFromShelf = function () {
     return browser.findElements(by.css('[ng-repeat=\'item in section.items\'] span'));
   };
