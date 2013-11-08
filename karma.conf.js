@@ -58,6 +58,7 @@ module.exports = function(config) {
     'app/scripts/services/remote-file-system.js',
     'app/scripts/controllers/raml-editor-main.js',
     'app/scripts/controllers/raml-editor-shelf.js',
+    'app/scripts/controllers/notifications.js',
     'test/mocks/**/*.js',
     'test/spec/**/*.js'
     ],

@@ -3,7 +3,9 @@
     <h1>
       <strong>API</strong> Designer
     </h1>
-    <div role="notifications" ng-controller="notifications" ng-class="{hidden: shouldDisplayNotifications}"><div>Please login to save your RAML.</div>
+    <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
+      {{message}}
+    <div></div>
     <i class="icon-ok" ng-click="hideNotifications()"> </i></div>
     <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
     <div role="saveas-button" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()">Save As</div>

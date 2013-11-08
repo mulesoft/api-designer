@@ -56,8 +56,10 @@ div[role=raml-editor] > header > div[role=notifications] {
   text-align: center;
   letter-spacing: 0.7px;
 
+  transition: 0.2s ease-out;
+
   .disable-selection;
-  
+
   > i {
     position: absolute;
     display: block;
@@ -75,7 +77,6 @@ div[role=raml-editor] > header > div[role=notifications] {
 
 
   &.hidden {
-    transition: 0.2s ease-out;
     opacity: 0;
     top: -26px;
   }
