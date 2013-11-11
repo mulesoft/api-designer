@@ -1,4 +1,39 @@
-@import url(https://fonts.googleapis.com/css?family=Open+Sans:400italic,600italic,700italic,400,600,700);
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Open Sans'), local('OpenSans'), url(../font/OpenSans.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Open Sans Semibold'), local('OpenSans-Semibold'), url(../font/OpenSans-Semibold.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Open Sans Bold'), local('OpenSans-Bold'), url(../font/OpenSans-Bold.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 400;
+  src: local('Open Sans Italic'), local('OpenSans-Italic'), url(../font/OpenSans-Italic.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 600;
+  src: local('Open Sans Semibold Italic'), local('OpenSans-SemiboldItalic'), url(../font/OpenSans-SemiboldItalic.woff) format('woff');
+}
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 700;
+  src: local('Open Sans Bold Italic'), local('OpenSans-BoldItalic'), url(../font/OpenSans-BoldItalic.woff) format('woff');
+}
 body#raml-console-unembedded {
   margin: 0;
 }
@@ -1843,6 +1878,15 @@ raml-console article#raml-console .CodeMirror span {
 raml-console article#raml-console .CodeMirror .CodeMirror-cursor {
   visibility: hidden;
 }
+raml-console article#raml-console .CodeMirror .cm-string {
+  color: #d33682;
+}
+raml-console article#raml-console .CodeMirror .cm-tag {
+  color: #6c71c4;
+}
+raml-console article#raml-console .CodeMirror .cm-attribute {
+  color: #2aa198;
+}
 raml-console article#raml-console .icon-spinner {
   width: auto;
   height: auto;
@@ -1884,29 +1928,108 @@ raml-console article#raml-console [collapsible-toggle] {
 raml-console article#raml-console .hidden {
   visibility: hidden;
 }
-raml-console article#raml-console h2 {
+raml-console article#raml-console h1,
+raml-console article#raml-console h2,
+raml-console article#raml-console h3,
+raml-console article#raml-console h4,
+raml-console article#raml-console h5,
+raml-console article#raml-console h6 {
+  font-weight: normal;
+  color: #a2a4aa;
+}
+raml-console article#raml-console h1 {
+  font-size: 19px;
+  font-weight: 300;
   line-height: 20px;
+}
+raml-console article#raml-console h2 {
+  font-size: 17px;
+  line-height: 20px;
+  font-weight: 400;
+}
+raml-console article#raml-console h3 {
+  font-size: 15px;
+  line-height: 15px;
+}
+raml-console article#raml-console h4,
+raml-console article#raml-console h5 {
+  line-height: 1.15em;
+  margin-bottom: 5px;
+}
+raml-console article#raml-console h4 {
+  color: #18191d;
+  font-size: 15px;
+  font-weight: 700;
+}
+raml-console article#raml-console h5 {
+  font-size: 13px;
+}
+raml-console article#raml-console h6 {
+  font-size: 11px;
 }
 raml-console article#raml-console ul {
   list-style-type: none;
   margin: 0;
   padding: 0;
 }
-raml-console article#raml-console [markdown] > p {
-  margin: 0;
+raml-console article#raml-console code {
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+  padding: 0;
+  color: #333;
+  font-size: 11px;
+  background: transparent;
+  border: none;
+}
+raml-console article#raml-console .well,
+raml-console article#raml-console [markdown] code {
+  background-color: #F8F7E6;
+  display: inline-block;
+  padding: 0 3px;
+}
+raml-console article#raml-console [markdown] {
+  line-height: 17px;
 }
 raml-console article#raml-console [markdown] ul {
   list-style-type: disc;
   margin: 1em 0;
   padding-left: 40px;
 }
-raml-console article#raml-console code {
-  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
-  padding: 0;
-  color: #333;
-  background: transparent;
-  border: none;
-  font-size: inherit;
+raml-console article#raml-console [markdown] h1,
+raml-console article#raml-console [markdown] h2,
+raml-console article#raml-console [markdown] h3,
+raml-console article#raml-console [markdown] h4,
+raml-console article#raml-console [markdown] h5,
+raml-console article#raml-console [markdown] h6 {
+  margin: 15px 0 0 0;
+  color: #56585d;
+}
+raml-console article#raml-console [markdown] h1 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-top: 30px;
+}
+raml-console article#raml-console [markdown] h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 30px;
+}
+raml-console article#raml-console [markdown] h3 {
+  font-size: 15px;
+  font-weight: 400;
+}
+raml-console article#raml-console [markdown] h4 {
+  font-size: 13px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+raml-console article#raml-console [markdown] h5 {
+  font-size: 13px;
+  font-weight: 400;
+}
+raml-console article#raml-console [markdown] h6 {
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 700;
 }
 raml-console article#raml-console .tabbable,
 raml-console article#raml-console .nav,
@@ -1928,7 +2051,7 @@ raml-console article#raml-console .nav-tabs:after {
   clear: both;
 }
 raml-console article#raml-console .nav-tabs {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #c0c2c9;
 }
 raml-console article#raml-console .nav-tabs > li {
   float: left;
@@ -1948,7 +2071,7 @@ raml-console article#raml-console .nav-tabs > li > a {
 }
 raml-console article#raml-console .nav-tabs > li > a:hover,
 raml-console article#raml-console .nav-tabs > li > a:focus {
-  border-color: #eeeeee #eeeeee #dddddd;
+  border-color: #c0c2c9;
 }
 raml-console article#raml-console .nav-tabs > .active > a,
 raml-console article#raml-console .nav-tabs > .active > a:hover,
@@ -1956,7 +2079,7 @@ raml-console article#raml-console .nav-tabs > .active > a:focus {
   color: #555555;
   cursor: default;
   background-color: #ffffff;
-  border: 1px solid #ddd;
+  border: 1px solid #c0c2c9;
   border-bottom-color: transparent;
 }
 raml-console article#raml-console .nav > .disabled > a {
@@ -1969,11 +2092,14 @@ raml-console article#raml-console .nav > .disabled > a:focus {
   background-color: transparent;
 }
 raml-console article#raml-console .tab-pane {
-  padding: 20px;
+  margin-top: 30px;
 }
 raml-console article#raml-console form legend {
-  border-bottom: none;
-  margin-bottom: 10px;
+  padding: 0;
+  font-size: 17px;
+  line-height: 20px;
+  font-weight: 400;
+  color: #a2a4aa;
 }
 raml-console article#raml-console form .form-actions {
   padding: 15px 0 10px;
@@ -1984,10 +2110,23 @@ raml-console article#raml-console form .form-actions {
 raml-console article#raml-console fieldset {
   padding: 0;
   margin: 0;
-  border: 0;
+  border: none;
+}
+raml-console article#raml-console fieldset.bordered {
+  margin-top: 30px;
+}
+raml-console article#raml-console fieldset.bordered legend {
+  background-color: #f3f3f6;
+  font-size: 13px;
+  width: 100%;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  padding: 2px 0 2px 10px;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
 }
 raml-console article#raml-console .label {
-  color: #bbb;
+  color: #56585d;
   font-size: 11.844px;
   font-weight: bold;
   text-transform: uppercase;
@@ -1995,41 +2134,33 @@ raml-console article#raml-console .label {
   background: none;
   padding: 0 5px 0 0;
 }
-raml-console article#raml-console label {
-  display: block;
-  line-height: 20px;
-}
 raml-console article#raml-console input {
   display: inline-block;
-  height: 20px;
-  padding: 4px 6px;
-  margin-bottom: 10px;
-  font-size: 14px;
-  line-height: 20px;
-  color: #555555;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
-  vertical-align: middle;
-  width: 206px;
-  background-color: #ffffff;
-  border: 1px solid #cccccc;
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-  -webkit-transition: border linear 0.2s, box-shadow linear 0.2s;
-  -moz-transition: border linear 0.2s, box-shadow linear 0.2s;
-  -o-transition: border linear 0.2s, box-shadow linear 0.2s;
-  transition: border linear 0.2s, box-shadow linear 0.2s;
 }
-raml-console article#raml-console input[type="file"],
-raml-console article#raml-console input[type="image"],
-raml-console article#raml-console input[type="submit"],
-raml-console article#raml-console input[type="reset"],
-raml-console article#raml-console input[type="button"],
-raml-console article#raml-console input[type="radio"],
-raml-console article#raml-console input[type="checkbox"] {
-  width: auto;
+raml-console article#raml-console input,
+raml-console article#raml-console textarea {
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+  font-size: 13px;
+  color: #18191d;
+  vertical-align: baseline;
+}
+raml-console article#raml-console textarea {
+  line-height: 16px;
+  padding: 8px;
+}
+raml-console article#raml-console input[type="text"],
+raml-console article#raml-console input[type="password"],
+raml-console article#raml-console textarea {
+  border-radius: 4px;
+  border: 1px solid #c0c2c9;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+raml-console article#raml-console input[type="text"],
+raml-console article#raml-console input[type="password"] {
+  padding: 4px 8px;
+  width: 206px;
+  height: 20px;
+  line-height: 20px;
 }
 raml-console article#raml-console input.warning {
   border-color: #c09853;
@@ -2037,27 +2168,24 @@ raml-console article#raml-console input.warning {
 raml-console article#raml-console input.error {
   border-color: #b94a48;
 }
-raml-console article#raml-console .labelled-inline legend + .control-group {
-  margin-top: 0;
+raml-console article#raml-console .control-group {
+  margin-bottom: 6px;
 }
-raml-console article#raml-console .labelled-inline .control-group {
-  display: inline-block;
-  padding-right: 10px;
-  margin-bottom: 0;
-}
-raml-console article#raml-console .labelled-inline .control-group label {
-  text-transform: uppercase;
-  font-weight: bold;
-  font-size: 10px;
-  margin-bottom: 0;
-  margin-left: 1px;
-}
+raml-console article#raml-console .labelled-inline label,
 raml-console article#raml-console .labelled-radio-group > label {
-  text-transform: uppercase;
+  display: inline-block;
+  width: 150px;
+  text-align: right;
   font-weight: bold;
-  font-size: 10px;
-  margin-bottom: 0;
-  margin-left: 1px;
+  margin-right: 2px;
+}
+raml-console article#raml-console .labelled-radio-group .radio-group {
+  display: inline-block;
+  margin-bottom: 6px;
+  line-height: 30px;
+}
+raml-console article#raml-console .labelled-radio-group input[type="radio"] {
+  margin-left: 0;
 }
 raml-console article#raml-console .labelled-radio-group label {
   display: inline-block;
@@ -2068,31 +2196,232 @@ raml-console article#raml-console .labelled-radio-group label {
 raml-console article#raml-console .btn {
   display: inline-block;
   padding: 4px 12px;
-  font-size: 14px;
+  min-width: 100px;
+  font-size: 13px;
   line-height: 20px;
   cursor: pointer;
-  border-width: 1px;
-  border-style: solid;
-  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
+  border: 1px solid #a2a4aa;
+  color: #f3f3f6;
   border-radius: 4px;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
   text-transform: uppercase;
-  text-shadow: none;
-  background-color: #1998C6;
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.75);
-  -webkit-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
-  -moz-box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #a7a9af;
+  background-image: -moz-linear-gradient(top, #bdbec2, #878a92);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#bdbec2), to(#878a92));
+  background-image: -webkit-linear-gradient(top, #bdbec2, #878a92);
+  background-image: -o-linear-gradient(top, #bdbec2, #878a92);
+  background-image: linear-gradient(to bottom, #bdbec2, #878a92);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffbdbec2', endColorstr='#ff878a92', GradientType=0);
 }
-raml-console article#raml-console .btn.inverted {
-  color: #1998C6;
-  background-color: #E9EEF2;
+raml-console article#raml-console .btn-get {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #63a8e2;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #6cade4;
+  background-image: -moz-linear-gradient(top, #8ec0ea, #3890da);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#8ec0ea), to(#3890da));
+  background-image: -webkit-linear-gradient(top, #8ec0ea, #3890da);
+  background-image: -o-linear-gradient(top, #8ec0ea, #3890da);
+  background-image: linear-gradient(to bottom, #8ec0ea, #3890da);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff8ec0ea', endColorstr='#ff3890da', GradientType=0);
 }
-raml-console article#raml-console .resource-group > h2 {
-  font-size: 17px;
-  color: #c0c2c9;
-  font-weight: normal;
+raml-console article#raml-console .btn-post {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #6cbd7d;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #74bf84;
+  background-image: -moz-linear-gradient(top, #8fcd9c, #4caa60);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#8fcd9c), to(#4caa60));
+  background-image: -webkit-linear-gradient(top, #8fcd9c, #4caa60);
+  background-image: -o-linear-gradient(top, #8fcd9c, #4caa60);
+  background-image: linear-gradient(to bottom, #8fcd9c, #4caa60);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff8fcd9c', endColorstr='#ff4caa60', GradientType=0);
+}
+raml-console article#raml-console .btn-put {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #22bac4;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #2eb9c2;
+  background-image: -moz-linear-gradient(top, #3cd3dd, #1a9199);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#3cd3dd), to(#1a9199));
+  background-image: -webkit-linear-gradient(top, #3cd3dd, #1a9199);
+  background-image: -o-linear-gradient(top, #3cd3dd, #1a9199);
+  background-image: linear-gradient(to bottom, #3cd3dd, #1a9199);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff3cd3dd', endColorstr='#ff1a9199', GradientType=0);
+}
+raml-console article#raml-console .btn-patch {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #cd9356;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #cc9861;
+  background-image: -moz-linear-gradient(top, #d9ac7d, #b97a37);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#d9ac7d), to(#b97a37));
+  background-image: -webkit-linear-gradient(top, #d9ac7d, #b97a37);
+  background-image: -o-linear-gradient(top, #d9ac7d, #b97a37);
+  background-image: linear-gradient(to bottom, #d9ac7d, #b97a37);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffd9ac7d', endColorstr='#ffb97a37', GradientType=0);
+}
+raml-console article#raml-console .btn-delete {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #d26460;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #d46c68;
+  background-image: -moz-linear-gradient(top, #dd8b88, #c73d38);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#dd8b88), to(#c73d38));
+  background-image: -webkit-linear-gradient(top, #dd8b88, #c73d38);
+  background-image: -o-linear-gradient(top, #dd8b88, #c73d38);
+  background-image: linear-gradient(to bottom, #dd8b88, #c73d38);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffdd8b88', endColorstr='#ffc73d38', GradientType=0);
+}
+raml-console article#raml-console .btn-head {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #9f5594;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #9e6095;
+  background-image: -moz-linear-gradient(top, #b473aa, #7e4375);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#b473aa), to(#7e4375));
+  background-image: -webkit-linear-gradient(top, #b473aa, #7e4375);
+  background-image: -o-linear-gradient(top, #b473aa, #7e4375);
+  background-image: linear-gradient(to bottom, #b473aa, #7e4375);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffb473aa', endColorstr='#ff7e4375', GradientType=0);
+}
+raml-console article#raml-console .btn-options {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #a1bd1f;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #a4bf27;
+  background-image: -moz-linear-gradient(top, #bfdd32, #7c9118);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#bfdd32), to(#7c9118));
+  background-image: -webkit-linear-gradient(top, #bfdd32, #7c9118);
+  background-image: -o-linear-gradient(top, #bfdd32, #7c9118);
+  background-image: linear-gradient(to bottom, #bfdd32, #7c9118);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffbfdd32', endColorstr='#ff7c9118', GradientType=0);
+}
+raml-console article#raml-console .btn-trace {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #63c2ee;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #6cc6ef;
+  background-image: -moz-linear-gradient(top, #91d4f3, #35b0e9);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#91d4f3), to(#35b0e9));
+  background-image: -webkit-linear-gradient(top, #91d4f3, #35b0e9);
+  background-image: -o-linear-gradient(top, #91d4f3, #35b0e9);
+  background-image: linear-gradient(to bottom, #91d4f3, #35b0e9);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff91d4f3', endColorstr='#ff35b0e9', GradientType=0);
+}
+raml-console article#raml-console .btn-connect {
+  display: inline-block;
+  padding: 4px 12px;
+  min-width: 100px;
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+  border: 1px solid #ccac15;
+  color: #f3f3f6;
+  border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 1px rgba(86, 88, 93, 0.5);
+  background-color: #cbad20;
+  background-image: -moz-linear-gradient(top, #e9c82b, #9e8510);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#e9c82b), to(#9e8510));
+  background-image: -webkit-linear-gradient(top, #e9c82b, #9e8510);
+  background-image: -o-linear-gradient(top, #e9c82b, #9e8510);
+  background-image: linear-gradient(to bottom, #e9c82b, #9e8510);
+  background-repeat: repeat-x;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffe9c82b', endColorstr='#ff9e8510', GradientType=0);
 }
 raml-console article#raml-console .resource {
   background-color: #f3f3f6;
@@ -2110,6 +2439,14 @@ raml-console article#raml-console .resource .summary {
   cursor: pointer;
   *zoom: 1;
 }
+raml-console article#raml-console .resource .summary .path {
+  float: left;
+  margin: 10px 0 10px 15px;
+}
+raml-console article#raml-console .resource .summary .path span:last-child {
+  font-weight: bold;
+  color: #18191d;
+}
 raml-console article#raml-console .resource .summary:before,
 raml-console article#raml-console .resource .summary:after {
   display: table;
@@ -2119,19 +2456,10 @@ raml-console article#raml-console .resource .summary:after {
   clear: both;
 }
 raml-console article#raml-console .resource .description {
-  margin: 0 0 0 15px;
+  margin-left: 15px;
 }
-raml-console article#raml-console .resource .path {
-  float: left;
-  margin: 10px 0 10px 15px;
-  line-height: 24px;
-  font-size: 15px;
-  color: #a2a4aa;
-  font-weight: normal;
-}
-raml-console article#raml-console .resource .path span:last-child {
-  font-weight: bold;
-  color: #18191d;
+raml-console article#raml-console .resource .description p:first-child {
+  margin: 10px 0 20px 0;
 }
 raml-console article#raml-console .resource .methods {
   float: right;
@@ -2145,6 +2473,7 @@ raml-console article#raml-console .resource .methods li {
 }
 raml-console article#raml-console ul.modifiers {
   font-size: 0px;
+  margin: 1px 0 0 1px;
 }
 raml-console article#raml-console ul.modifiers li {
   display: inline-block;
@@ -2152,15 +2481,15 @@ raml-console article#raml-console ul.modifiers li {
   font-size: 11px;
   padding: 0px 6px;
   margin-right: 5px;
-  line-height: 22px;
+  line-height: 18px;
 }
 raml-console article#raml-console ul.modifiers li.resource-type {
   background-color: #a2a4aa;
   color: #f3f3f6;
 }
 raml-console article#raml-console ul.modifiers li.trait {
-  background-color: #c0c2c9;
-  color: #56585d;
+  background-color: #dee0e7;
+  color: #96989f;
 }
 raml-console article#raml-console .get {
   background-color: #63a8e2;
@@ -2170,7 +2499,7 @@ raml-console article#raml-console .get.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .get.method-summary:hover {
-  background-color: #d8e9f8;
+  background-color: #eff6fc;
 }
 raml-console article#raml-console .post {
   background-color: #6cbd7d;
@@ -2180,7 +2509,7 @@ raml-console article#raml-console .post.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .post.method-summary:hover {
-  background-color: #daefdf;
+  background-color: #f0f8f2;
 }
 raml-console article#raml-console .put {
   background-color: #22bac4;
@@ -2190,7 +2519,7 @@ raml-console article#raml-console .put.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .put.method-summary:hover {
-  background-color: #c8eef0;
+  background-color: #e9f8f9;
 }
 raml-console article#raml-console .patch {
   background-color: #cd9356;
@@ -2200,7 +2529,7 @@ raml-console article#raml-console .patch.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .patch.method-summary:hover {
-  background-color: #f3e4d5;
+  background-color: #faf4ee;
 }
 raml-console article#raml-console .delete {
   background-color: #d26460;
@@ -2210,27 +2539,27 @@ raml-console article#raml-console .delete.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .delete.method-summary:hover {
-  background-color: #f4d8d7;
+  background-color: #fbf0ef;
 }
 raml-console article#raml-console .head {
-  background-color: #a453a3;
-  border-color: #a453a3;
+  background-color: #9f5594;
+  border-color: #9f5594;
 }
 raml-console article#raml-console .head.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .head.method-summary:hover {
-  background-color: #e8d4e8;
+  background-color: #f5eef4;
 }
 raml-console article#raml-console .options {
-  background-color: #81b128;
-  border-color: #81b128;
+  background-color: #a1bd1f;
+  border-color: #a1bd1f;
 }
 raml-console article#raml-console .options.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .options.method-summary:hover {
-  background-color: #e0ecc9;
+  background-color: #f6f8e9;
 }
 raml-console article#raml-console .trace {
   background-color: #63c2ee;
@@ -2240,17 +2569,17 @@ raml-console article#raml-console .trace.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .trace.method-summary:hover {
-  background-color: #d8f0fb;
+  background-color: #eff9fd;
 }
 raml-console article#raml-console .connect {
-  background-color: #cfbc47;
-  border-color: #cfbc47;
+  background-color: #ccac15;
+  border-color: #ccac15;
 }
 raml-console article#raml-console .connect.method-summary {
   background-color: #f3f3f6;
 }
 raml-console article#raml-console .connect.method-summary:hover {
-  background-color: #f3eed1;
+  background-color: #faf7e8;
 }
 raml-console article#raml-console .method-name {
   font-size: 11px;
@@ -2275,6 +2604,12 @@ raml-console article#raml-console .method.expanded {
   border-radius: 0 0 5px 5px;
   background: white;
 }
+raml-console article#raml-console .method .description {
+  margin-left: 0;
+}
+raml-console article#raml-console .method .description p:first-child {
+  margin-top: 0px;
+}
 raml-console article#raml-console .method-summary {
   overflow: hidden;
   cursor: pointer;
@@ -2287,7 +2622,7 @@ raml-console article#raml-console .method-summary .filler {
   width: auto;
 }
 raml-console article#raml-console .method-summary .description {
-  padding: 0 10px;
+  padding: 0 20px 0 10px;
   border: 1px solid #c0c2c9;
   border-left: none;
   border-radius: 0 5px 5px 0;
@@ -2319,6 +2654,42 @@ raml-console article#raml-console .method-summary:after {
 raml-console article#raml-console .method-summary:after {
   clear: both;
 }
+raml-console article#raml-console .documentation .description {
+  margin-bottom: 20px;
+}
+raml-console article#raml-console .documentation .named-parameters {
+  border-bottom: 1px solid #f3f3f6;
+}
+raml-console article#raml-console .documentation .named-parameters:last-child {
+  border-bottom: none;
+}
+raml-console article#raml-console .documentation .named-parameters > h2 {
+  margin-top: 25px;
+}
+raml-console article#raml-console .documentation .named-parameters .parameter {
+  margin-bottom: 25px;
+}
+raml-console article#raml-console .documentation .named-parameters .parameter [markdown] p:first-child {
+  margin: -2px 0 0 0;
+}
+raml-console article#raml-console .documentation .named-parameters .parameter [markdown] p:last-child {
+  margin: 0 0 1px 0;
+}
+raml-console article#raml-console .documentation .named-parameters .parameter .constraints {
+  color: #a2a4aa;
+  font-weight: normal;
+  font-style: italic;
+  margin-left: 5px;
+  font-size: 13px;
+}
+raml-console article#raml-console .documentation .named-parameters .parameter .info {
+  margin-left: 0px;
+  line-height: 21px;
+  vertical-align: middle;
+}
+raml-console article#raml-console .documentation .named-parameters .parameter .info [markdown] {
+  margin: 5px 0 0 0;
+}
 raml-console article#raml-console [role=root-documentation] section {
   background-color: white;
   padding: 10px 20px;
@@ -2344,33 +2715,10 @@ raml-console article#raml-console [role=root-documentation] section > h2:before 
   font-family: "FontAwesome";
   display: inline-block;
   font-size: 25px;
-  vertical-align: 2px;
+  vertical-align: -2px;
   padding-right: 10px;
   color: #bbb;
   width: 15px;
-}
-raml-console article#raml-console [role=root-documentation] section .content h1 {
-  font-size: 24.5px;
-}
-raml-console article#raml-console [role=root-documentation] section .content h2 {
-  font-size: 17.5px;
-}
-raml-console article#raml-console [role=root-documentation] section .content h3 {
-  font-size: 14px;
-}
-raml-console article#raml-console [role=root-documentation] section .content h4,
-raml-console article#raml-console [role=root-documentation] section .content h5,
-raml-console article#raml-console [role=root-documentation] section .content h6 {
-  font-size: 11.9px;
-}
-raml-console article#raml-console [role=root-documentation] section .content h1,
-raml-console article#raml-console [role=root-documentation] section .content h2,
-raml-console article#raml-console [role=root-documentation] section .content h3,
-raml-console article#raml-console [role=root-documentation] section .content h4,
-raml-console article#raml-console [role=root-documentation] section .content h5,
-raml-console article#raml-console [role=root-documentation] section .content h6 {
-  line-height: 1.15em;
-  margin-top: 1.5em;
 }
 raml-console article#raml-console .try-it {
   *zoom: 1;
@@ -2382,6 +2730,19 @@ raml-console article#raml-console .try-it:after {
 }
 raml-console article#raml-console .try-it:after {
   clear: both;
+}
+raml-console article#raml-console .try-it .path {
+  display: block;
+  font-size: 0px;
+  margin-bottom: 30px;
+}
+raml-console article#raml-console .try-it .path .segment {
+  font-size: 15px;
+}
+raml-console article#raml-console .try-it .path input {
+  margin: 0 5px 0 2px;
+  font-size: 15px;
+  width: 9em;
 }
 raml-console article#raml-console .try-it form {
   margin-bottom: 0;
@@ -2397,30 +2758,11 @@ raml-console article#raml-console .try-it form input.error {
   border-color: #d26460;
 }
 raml-console article#raml-console .try-it form textarea[name=body] {
-  -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   width: 100%;
   font-family: monospace;
   height: 7em;
-}
-raml-console article#raml-console .try-it form fieldset:first-of-type {
-  margin-top: 0;
-}
-raml-console article#raml-console .try-it form fieldset {
-  margin-top: 10px;
-}
-raml-console article#raml-console .try-it form legend {
-  margin-bottom: 0;
-}
-raml-console article#raml-console .try-it form .uri {
-  display: block;
-}
-raml-console article#raml-console .try-it form .uri div {
-  display: inline;
-}
-raml-console article#raml-console .try-it form .authentication fieldset {
-  margin-top: 0;
 }
 raml-console article#raml-console .try-it form .request-body {
   margin-top: -5px;
@@ -2459,33 +2801,6 @@ raml-console article#raml-console #raml-console-api-title {
   line-height: 1em;
   margin: 20px 0;
 }
-raml-console article#raml-console #raml-console-api-reference section:first-of-type > h4,
-raml-console article#raml-console #raml-console-api-reference section:first-of-type > h5,
-raml-console article#raml-console #raml-console-api-reference section:first-of-type > h6 {
-  margin-top: 0;
-}
-raml-console article#raml-console #raml-console-api-reference h4,
-raml-console article#raml-console #raml-console-api-reference h5,
-raml-console article#raml-console #raml-console-api-reference legend {
-  font-weight: 700;
-  line-height: 1.15em;
-}
-raml-console article#raml-console #raml-console-api-reference h4,
-raml-console article#raml-console #raml-console-api-reference legend {
-  font-size: 18px;
-  margin-bottom: 5px;
-}
-raml-console article#raml-console #raml-console-api-reference h4 {
-  margin-top: 25px;
-}
-raml-console article#raml-console #raml-console-api-reference h5 {
-  font-size: 14px;
-  margin-top: 20px;
-  margin-bottom: 5px;
-}
-raml-console article#raml-console #raml-console-api-reference h6 {
-  font-size: 11.9px;
-}
 raml-console article#raml-console #raml-console-main-nav {
   float: right;
   margin-right: 10px;
@@ -2512,17 +2827,4 @@ raml-console article#raml-console [role=documentation] [role=documentation-respo
 raml-console article#raml-console .code {
   border: 1px solid #CDCDCC;
   padding: 10px;
-}
-raml-console article#raml-console .parameterTable [role="parameter"] h4 [role="display-name"] {
-  font-family: monospace;
-}
-raml-console article#raml-console .parameterTable [role="parameter"] .constraints {
-  color: #bbb;
-  font-weight: normal;
-  font-style: italic;
-  margin-left: 5px;
-  font-size: 14px;
-}
-raml-console article#raml-console .parameterTable [role="parameter"] .info {
-  margin-left: 0px;
 }
