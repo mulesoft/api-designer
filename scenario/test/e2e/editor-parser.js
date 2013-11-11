@@ -9,6 +9,7 @@ describe('editor-parser', function () {
     browser.waitForAngular();
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
+      window.onbeforeunload = null;
     });
     browser.wait(function(){
       return editorGetLine(2).then(function(text) {
