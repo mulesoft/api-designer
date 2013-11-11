@@ -276,6 +276,7 @@ module.exports = function (grunt) {
   grunt.registerTask('server', function (target) {
     if (target === 'dist') {
       return grunt.task.run([
+        'jshint',
         'build',
         'connect:dist:keepalive',
         'open'
@@ -307,7 +308,6 @@ module.exports = function (grunt) {
 
   grunt.registerTask('build', [
     'clean:dist',
-    'jshint',
     'less',
     'useminPrepare',
     'ngtemplates',
@@ -321,13 +321,13 @@ module.exports = function (grunt) {
 
   grunt.registerTask('scenario', [
     'clean:server',
-    'jshint',
     'connect:livereload',
     'protractor'
   ]);
-  
+
   grunt.registerTask('default', [
     'test',
+    'jshint',
     'build'
   ]);
 };
