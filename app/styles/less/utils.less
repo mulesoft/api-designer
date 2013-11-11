@@ -13,7 +13,7 @@
   -moz-box-sizing: @value;
   box-sizing: @value;
 }
-  
+
 .transform (@value) {
   -moz-transform: @value;
   -ms-transform: @value;
@@ -23,7 +23,7 @@
 }
 
 .text-shadow (@value) {
-  text-shadow: 0 0 2px #000; /* horizontal-offset vertical-offset 'blur' colour */
-  -moz-text-shadow: 0 0 2px #000;
-  -webkit-text-shadow: 0 0 2px #000;
+  text-shadow: @value; /* horizontal-offset vertical-offset 'blur' colour */
+  -moz-text-shadow: @value;
+  -webkit-text-shadow: @value;
 }
