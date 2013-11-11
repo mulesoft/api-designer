@@ -13,7 +13,7 @@
 //  var elementR
 
 
-  var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];
+  var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','trace','connect','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];
 
 
   global.shelfGetElementsRootLevel = function(){
