@@ -321,11 +321,11 @@ module.exports = function (grunt) {
 
   grunt.registerTask('scenario', [
     'clean:server',
-    'less',
-    'connect:test',
+    'jshint',
+    'connect:livereload',
     'protractor'
   ]);
-
+  
   grunt.registerTask('default', [
     'test',
     'build'
