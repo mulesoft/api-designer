@@ -9,6 +9,7 @@ describe('editor-parser', function () {
     browser.waitForAngular();
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
+      window.onbeforeunload = null;
     });
     browser.wait(function(){
       return editorGetLine(2).then(function(text) {
@@ -19,7 +20,7 @@ describe('editor-parser', function () {
 
   describe('include', function () {
 
-    it('should fail: file circular reference', function () {
+    xit('should fail: file circular reference', function () {
       var definition = [
         '#%RAML 0.8',
         '---',
