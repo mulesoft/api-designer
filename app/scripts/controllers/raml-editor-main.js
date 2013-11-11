@@ -180,6 +180,8 @@ angular.module('ramlEditorApp')
     $scope.saveFile = function() {
       $scope.file.contents = editor.getValue();
       ramlRepository.saveFile($scope.file).then(function () {
+        eventService.broadcast('event:notification',
+          {message: 'File saved.', expires: true});
         safeApply($scope);
 
         if (saveTimer) {
