@@ -14,8 +14,6 @@ angular.module('fs')
       config.set('fsFactory', fsFactory);
     }
 
-    config.save();
-
     return $injector.get(fsFactory);
   })
 ;
