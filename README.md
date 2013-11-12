@@ -32,6 +32,69 @@ Build the application
 grunt
 ```
 
+## Embedding
+
+The following example details how to embed the API Designer:
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>My App</title>
+    <link rel="stylesheet" href="styles/20dea081.main.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+  </head>
+  <body ng-app="ramlEditorApp">
+    <div class="container" ng-include="" src="'views/raml-editor-main.tmpl.html'"></div>
+
+    <script src="scripts/d78281b9.vendor.js"></script>
+    <script src="scripts/8a9fbe21.scripts.js"></script>
+    <script>
+      // This part is needed only if you want to provide your own Persistance Implementation
+      // Create an Angular module named 
+      angular.module('ramlEditorApp')
+      .factory('MyFileSystem', function (config, eventService) {
+        var service = {};
+    
+        service.directory = function (path, callback, errorCallback) {
+          // Your magic goes here
+        };
+    
+        service.load = function (path, name, callback, errorCallback) {
+          // Your magic goes here
+        };
+    
+        service.remove = function (path, name, callback, errorCallback) {
+          // Your magic goes here
+        };
+    
+        service.save = function (path, name, contents, callback, errorCallback) {
+          // Your magic goes here
+        };
+    
+        return service;
+      })
+      .run(function (MyFileSystem, config, eventService) {
+        // Set MyFileSystem as the filesystem to use
+        config.set('fsFactory', 'APIHubFileSystem');
+        
+        // In case you want to send notifications to the user
+        // (for instance, that he must login to save). 
+        // The expires flags means whether
+        // it should be hidden after a period of time or the
+        // user should dismiss it manually.
+        eventService.broadcast('event:notification',
+          {message: 'File saved.', expires: true});
+
+      });
+
+    </script>
+  </body>
+</html>
+```
+
+
 
 ## Deployment Process
 The Designer dependencies are:
