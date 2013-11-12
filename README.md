@@ -77,7 +77,7 @@ The following example details how to embed the API Designer:
       })
       .run(function (MyFileSystem, config, eventService) {
         // Set MyFileSystem as the filesystem to use
-        config.set('fsFactory', 'APIHubFileSystem');
+        config.set('fsFactory', 'MyFileSystem');
         
         // In case you want to send notifications to the user
         // (for instance, that he must login to save). 
@@ -93,40 +93,6 @@ The following example details how to embed the API Designer:
   </body>
 </html>
 ```
-
-
-
-## Deployment Process
-The Designer dependencies are:
-  * RAML Javascript Parser
-  * API Console
-
-Those dependencies Javascripts should be placed in the `app/vendor/scripts/` folder and their styles in `app/vendor/styles`. and are currently stored in the git repo. After that, the build should be run by doing:
-```
-  grunt
-```
-
-If the build succeeds then the files to deploy are found in the `dist/scripts` and `dist/styles` folders. The html that embed the Designer should look like this:
-```html
-<!doctype html>
-<html>
-  <head>
-    <!-- Include the compiled styles -->
-    <link rel="stylesheet" href="styles/07edc556.main.css">
-  </head>
-  <!-- The ng-app scopes Angular in the html. It can be in any tag (not necessary the body) -->
-  <body ng-app="ramlEditorApp">
-  
-    <!-- This is the App entry point -->
-    <div class="container" ng-include="" src="'views/raml-editor-main.tmpl.html'"></div>
-
-    <!-- Compiled Javascripts containing the files found in dist -->
-    <script src="scripts/d8772085.vendor.js"></script>
-    <script src="scripts/736fe450.scripts.js"></script>
-  </body>
-</html>
-```
-
 
 ## License
 
