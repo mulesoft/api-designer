@@ -52,7 +52,7 @@ The following example details how to embed the API Designer:
     <script src="scripts/8a9fbe21.scripts.js"></script>
     <script>
       // This part is needed only if you want to provide your own Persistance Implementation
-      // Create an Angular module named 
+      // Angular Module must match "ramlEditorApp"
       angular.module('ramlEditorApp')
       .factory('MyFileSystem', function (config, eventService) {
         var service = {};
