@@ -21,7 +21,7 @@ describe('shelf',function(){
 
     describe('RAML version', function(){
 
-      xit('should offer RAML version on line 1', function(){
+      it('should offer RAML version on line 1', function(){
         var definition = '';
         editorSetValue(definition);
         shelfGetElementsFromShelf().then(function(list){

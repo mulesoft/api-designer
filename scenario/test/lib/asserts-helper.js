@@ -75,7 +75,6 @@
     });
   };
 
-
   global.noShelfElementsAssertion = function (list, expList, list2){
     var i, dic = {}, counter = 0;
     var d = webdriver.promise.defer();
@@ -89,13 +88,11 @@
       var key, value, i;
       for (i=0; i< list2.length; i++){
         value = dic[list2[i]];
-//          console.log(JSON.stringify(dic));
         expect(value).to.eql(false);
         dic[list2[i]]=true;
       }
       for (key in dic) {
         value = dic[key];
-//          console.log(JSON.stringify(dic));
         expect(value).to.eql(true);
       }
       return d.fulfill();

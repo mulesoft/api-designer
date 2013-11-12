@@ -1,6 +1,7 @@
 exports.config = {
 
   seleniumAddress: 'http://localhost:4444/wd/hub',
+  
   capabilities: {
     'browserName': 'chrome'
   },
@@ -13,8 +14,6 @@ exports.config = {
     '../test/e2e/editor-shelf/root.js',
     '../test/e2e/editor-shelf/traits.js',
     '../test/e2e/editor-parser.js' ,
-//    '../test/e2e/editor-console.js',
-//    '../test/e2e/raml-example/quizlet-e2e.js',
     '../test/lib/*.js'
   ],
 
