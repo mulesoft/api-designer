@@ -54,23 +54,47 @@ The following example details how to embed the API Designer:
       // This part is needed only if you want to provide your own Persistance Implementation
       // Angular Module must match "ramlEditorApp"
       angular.module('ramlEditorApp')
-      .factory('MyFileSystem', function (config, eventService) {
+      .factory('MyFileSystem', function ($q, config, eventService) {
         var service = {};
     
-        service.directory = function (path, callback, errorCallback) {
-          // Your magic goes here
+        service.directory = function (path) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
         };
     
-        service.load = function (path, name, callback, errorCallback) {
-          // Your magic goes here
+        service.load = function (path, name) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
         };
     
-        service.remove = function (path, name, callback, errorCallback) {
-          // Your magic goes here
+        service.remove = function (path, name) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
         };
     
-        service.save = function (path, name, contents, callback, errorCallback) {
-          // Your magic goes here
+        service.save = function (path, name, contents) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
         };
     
         return service;
