@@ -7,7 +7,7 @@ angular.module('fs')
     if (!fsFactory) {
       fsFactory = 'mockFileSystem';
 
-      if ($window.location.origin === 'https://j0hn.mulesoft.org') {
+      if ($window.location.hostname === 'j0hnqa.mulesoft.org') {
         fsFactory = 'remoteFileSystem';
       }
 
