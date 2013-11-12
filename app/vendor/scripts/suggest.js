@@ -1,4 +1,4 @@
-;(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+;(function(e,t,n){function i(n,s){if(!t[n]){if(!e[n]){var o=typeof require=="function"&&require;if(!s&&o)return o(n,!0);if(r)return r(n,!0);throw new Error("Cannot find module '"+n+"'")}var u=t[n]={exports:{}};e[n][0].call(u.exports,function(t){var r=e[n][1][t];return i(r?r:t)},u,u.exports)}return t[n].exports}var r=typeof require=="function"&&require;for(var s=0;s<n.length;s++)i(n[s]);return i})({1:[function(require,module,exports){
 var Alternatives, Boolean, ConstantString, Include, Integer, JSONSchema, ListNode, Markdown, Multiple, Node, NodeMap, PostposedExecution, Regex, StringNode, TreeMap, Tuple, XMLSchema, action, actionDefinition, actionName, baseUri, baseUriParameters, body, bodyCategory, bodySchema, boolean, cache, chapter, d3fault, describedBy, description, docsCategory, documentation, enum2, example, formParameterDefinition, formParameters, header, headers, include, integer, isTrait, jsonSchema, listNode, markdown, maxLength, maximum, mediaType, methodsCategory, mimeType, mimeTypeParameters, minLength, minimum, model, name, notImplemented, parameterProperty, parameterType, parametersCategory, pattern, postposedResource, protocols, protocolsAlternatives, queryParameterDefinition, queryParameters, regex, required, resource, resourceDefinition, resourceTypes, resourceTypesDefinition, resourcesCategory, responseCode, responses, responsesCategory, root, rootCategory, rootElement, schemas, schemasCategory, securedBy, securityCategory, securitySchemes, securitySchemesDefinition, securityType, settingAlternative, settings, stringNode, title, traits, traitsAndResourceTypesCategory, traitsDefinition, transverse, transversePrimitive, typ3, type, uriParameter, uriParameters, version, xmlSchema, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8,
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
@@ -361,7 +361,8 @@ responsesCategory = {
 };
 
 methodsCategory = {
-  category: 'methods'
+  category: 'methods',
+  canBeOptional: true
 };
 
 securityCategory = {
@@ -558,7 +559,8 @@ this.integer = integer;
 },{"./utils.coffee":3}],2:[function(require,module,exports){
 var IntegerWildcard, InvalidState, NodeMap, OpenSuggestion, SimpleSuggestion, StringWildcard, SuggestItem, Suggestion, SuggestionNode, SuggestionNodeMap, TreeMap, TreeMapToSuggestionTree, functionize, integer, integerWildcard, invalidState, root, stringWilcard, suggest, suggestRAML, suggestionTree, transverse, transversePrimitive, type, versionSuggestion, _ref, _ref1, _ref2,
   __hasProp = {}.hasOwnProperty,
-  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+  __slice = [].slice;
 
 type = require('./utils.coffee').typ3;
 
@@ -798,7 +800,7 @@ versionSuggestion = new SimpleSuggestion({
 });
 
 suggest = function(root, index, path) {
-  var currentSuggestion, key, suggestions, val;
+  var baseKey, currentSuggestion, key, modifier, possibleSuggestion, suggestions, val, _i, _ref3;
   if (path === null) {
     return versionSuggestion;
   } else if (path === void 0) {
@@ -813,6 +815,14 @@ suggest = function(root, index, path) {
     currentSuggestion = suggestions[key];
   } else {
     currentSuggestion = void 0;
+  }
+  baseKey = 2 <= key.length ? __slice.call(key, 0, _i = key.length - 1) : (_i = 0, []), modifier = key[_i++];
+  baseKey = baseKey.join('');
+  if (modifier === '?') {
+    possibleSuggestion = suggestions[baseKey];
+    if (possibleSuggestion != null ? (_ref3 = possibleSuggestion.metadata) != null ? _ref3.canBeOptional : void 0 : void 0) {
+      currentSuggestion = possibleSuggestion;
+    }
   }
   val = (function() {
     if (currentSuggestion) {
