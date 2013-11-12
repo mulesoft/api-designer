@@ -1,10 +1,13 @@
 'use strict';
 (function() {
+
+  var webdriver = require('selenium-webdriver');
 //  var protractor = require('protractor');
   var elementsVersion = ['#%RAML 0.8'];
 //  Root Level
   var elementsRootLevel = ['title','version','schemas','baseUri','mediaType','protocols', 'documentation',
   'baseUriParameters','securitySchemes','securedBy','New resource','traits','resourceTypes'];
+
   var elementsRootLevelRoot = ['title','version','schemas','baseUri','mediaType','protocols'];
   var elementsRootLevelDocs = ['documentation'];
   var elementsRootLevelParameters = ['baseUriParameters'];
@@ -23,7 +26,7 @@
   var groupsForMethods = 7;
   var elemMethodLevel = ['protocols','description','baseUriParameters','headers','queryParameters','responses','securedBy','is','body'];
   var elemMethodLevelRoot = ['protocols'];
-  var elemMethodLevelDocs = ['description'];
+  var elemMethodLevelDocs = ['description']; // for resource Types need to be added usage option
   var elemMethodLevelParameters = ['baseUriParameters','headers','queryParameters'];
   var elemMethodLevelResponses = ['responses'];
   var elemMethodLevelSecurity = ['securedBy'];
@@ -38,6 +41,10 @@
 //Root
   global.shelfGetElementsRootLevel = function(){
     return elementsRootLevel;
+  };
+
+  global.shelfGetElementsRootLevelWithoutNewResource = function(){
+    return  shelfGetElementsRootLevelRoot().concat(shelfGetElementsRootLevelDocs(), shelfGetElementsRootLevelParameters(),shelfGetElementsRootLevelSecurity(),shelfGetElementsRootLevelTraitsAndTypes());
   };
   global.shelfGetElementsRootLevelRoot = function(){
     return elementsRootLevelRoot;
@@ -60,6 +67,9 @@
 //  Resource
   global.shelfGetElementsResourceLevel = function(){
     return elementsResourceLevel;
+  };
+  global.shelfGetElementsResourceLevelWithoutNewResoource = function(){
+    return shelfGetElementsResourceLevelDocs().concat(shelfGetElementsResourceLevelMethods(),shelfGetElementsResourceLevelParameters(),shelfGetElementsResourceLevelSecurity(),shelfGetElementsResourceLevelTraitsAndTypes());
   };
   global.shelfGetElementsResourceLevelDocs = function(){
     return elementsResourceLevelDocs;
@@ -89,12 +99,18 @@
   global.shelfGetElemMethodLevel = function(){
     return elemMethodLevel;
   };
+//  global.shelfGetelemResourceTypeMethodLevel = function (){
+//    return shelfGetElemMethodLevel().concat(['usage']);
+//  };
   global.shelfGetElemMethodLevelRoot = function(){
     return elemMethodLevelRoot;
   };
   global.shelfGetElemMethodLevelDocs = function(){
     return elemMethodLevelDocs;
   };
+//  global.shelfGetElemResourceTypeMethodLevelDoc = function(){
+//    return shelfGetElemMethodLevelDocs().concat(['usage']);
+//  };
   global.shelfGetElemMethodLevelParameters = function(){
     return elemMethodLevelParameters;
   };
@@ -156,6 +172,36 @@
   global.shelfGetElementsTraitsLevelBody = function(){
     return elementsTraitsLevelBody;
   };
+//Resource Types - root
+  var elemResourceTypesLevel = ['description', 'displayName','get','post','put','delete','head','patch','options','trace', 'connect','uriParameters','baseUriParameters','securedBy','is','type']; // missing usage
+  var elemResourceTypesLevelDocs = ['description', 'displayName']; // missing usage
+  var elemResourceTypesLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
+  var elemResourceTypesLevelParameters = ['uriParameters','baseUriParameters'];
+  var elemResourceTypesLevelSecurity = ['securedBy'];
+  var elemResourceTypesLevelTraitsAndTypes = ['is', 'type'];
+
+  global.shelfGetElemResourceTypesLevel = function (){
+    return elemResourceTypesLevel;
+  };
+  global.shelfGetElemResourceTypesLevelDocs = function (){
+    return elemResourceTypesLevelDocs;
+  };
+  global.shelfGetElemResourceTypesLevelMethods = function (){
+    return elemResourceTypesLevelMethods;
+  };
+  global.shelfGetElemResourceTypesLevelParameters = function (){
+    return elemResourceTypesLevelParameters;
+  };
+  global.shelfGetElemResourceTypesLevelSecurity = function (){
+    return elemResourceTypesLevelSecurity;
+  };
+  global.shelfGetElemResourceTypesLevelTraitsAndTypes = function (){
+    return elemResourceTypesLevelTraitsAndTypes;
+  };
+
+// rtMethods
+
+
 
 //Responses
   var elementsResponsesLevel = ['description', 'body'];
@@ -175,11 +221,36 @@
   global.shelfGetElementsFromShelf = function () {
     return browser.findElements(by.css('[ng-repeat=\'item in section.items\'] span'));
   };
+
+  global.shelfGetListOfElementsFromShelf = function (){
+    var d = webdriver.promise.defer();
+
+    function afterAllThens(items){
+      d.fulfill(items);
+    }
+
+    shelfGetElementsFromShelf().then(function(list){
+      var items=[];
+      var i=0;
+      list.forEach(function (item) {
+        var t= i++;
+        item.getText().then(function(text){
+          items[t]=text;
+          if (t === list.length-1){
+            afterAllThens(items);
+          }
+        });
+      });
+    });
+
+    return d;
+  };
+
   global.shelfGetElementsFromShelfByGroup = function (group) {
     return browser.findElements(by.css('.'+group+' ul li span'));
   };
 
-  global.ShelfGetSectionsFromShelf = function(){
+  global.shelfGetSectionsFromShelf = function(){
     return browser.findElements(by.css('[role=\'section\']'));
   };
 

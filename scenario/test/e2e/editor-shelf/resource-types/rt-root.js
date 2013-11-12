@@ -16,44 +16,44 @@ describe('shelf',function(){
     });
   });
 
-  describe('resource-root elements',function(){
-
+  describe('resourceTypes elements',function(){
     it('resource shelf elements by group', function(){
       var definition = [
         '#%RAML 0.8',
         'title: My api',
-        '/res:',
-        '    '
+        'resourceTypes:',
+        '  - rt1: ',
+        '        '
       ].join('\\n');
       editorSetValue(definition);
-      editorSetCursor(4,3);
-      shelfElementsResourceByGroupAssertion();
-
+      editorSetCursor(5,6);
+      shelfElemResourceTypesByGroupAssertion();
     });
 
     describe('not displayed after being selected', function(){
 
       it('property is no longer displayed on the shelf', function(){
-        var options = shelfGetElementsResourceLevelWithoutNewResoource();
+        var options = shelfGetElemResourceTypesLevel();
         options.forEach(function(option){
           var definition = [
             '#%RAML 0.8',
             'title: My api',
-            '/res:',
-            '  '+option+': ',
-            '   '
+            'resourceTypes:',
+            '  - rt1: ',
+            '      '+option+':',
+            '          '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(5,3);
+          editorSetCursor(6,6);
           var list2 =[option];
           var listPromise = shelfGetListOfElementsFromShelf();
           listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfGetElementsResourceLevel(),list2);
+            noShelfElementsAssertion(list, shelfGetElemResourceTypesLevel(),list2);
           });
         });
       });
 
-    }); //not displayed after being selected
+    }); // not displayed after being selected.
 
     xdescribe('uriParameters - Named Parameter', function(){ // https://www.pivotaltracker.com/story/show/60351064
 
@@ -61,14 +61,14 @@ describe('shelf',function(){
         var definition = [
           '#%RAML 0.8',
           'title: My api',
-          'baseUri: http://www.theapi.com/',
-          '/{hola}:',
-          '  uriParameters: ',
-          '    hola:',
-          '        '
+          'resourceTypes:',
+          '  - rt1: ',
+          '      uriParameters: ',
+          '        hola:',
+          '           '
         ].join('\\n');
         editorSetValue(definition);
-        editorSetCursor(7,7);
+        editorSetCursor(7,9);
         shelfElemNamedParametersByGroupAssertion();
       });
 
@@ -80,15 +80,15 @@ describe('shelf',function(){
             var definition = [
               '#%RAML 0.8',
               'title: My api',
-              'baseUri: http://www.theapi.com/',
-              '/{hola}:',
-              '  baseUriParameters: ',
-              '    hola:',
-              '      '+option+':',
-              '        '
+              'resourceTypes:',
+              '  - rt1: ',
+              '      uriParameters: ',
+              '        hola:',
+              '          '+option+':',
+              '              '
             ].join('\\n');
             editorSetValue(definition);
-            editorSetCursor(7,7);
+            editorSetCursor(8,13);
             var list2 =[option];
             var listPromise = shelfGetListOfElementsFromShelf();
             listPromise.then(function (list) {
@@ -97,9 +97,7 @@ describe('shelf',function(){
           });
         });
       }); // Not displayed after being selected
-
     }); //uriParameters
-
 
     xdescribe('baseUriParameters - Named Parameter' , function(){ // https://www.pivotaltracker.com/story/show/60351064
 
@@ -107,14 +105,14 @@ describe('shelf',function(){
         var definition = [
           '#%RAML 0.8',
           'title: My api',
-          'baseUri: http://www.theapi.com/{hola}',
-          '/res:',
-          '  baseUriParameters: ',
-          '    hola: ',
-          '        '
+          'resourceTypes:',
+          '  - rt1: ',
+          '      baseUriParameters: ',
+          '        hola: ',
+          '          '
         ].join('\\n');
         editorSetValue(definition);
-        editorSetCursor(7,7);
+        editorSetCursor(7,9);
         shelfElemNamedParametersByGroupAssertion();
       });
 
@@ -126,15 +124,15 @@ describe('shelf',function(){
             var definition = [
               '#%RAML 0.8',
               'title: My api',
-              'baseUri: http://www.theapi.com/{hola}',
-              '/res:',
-              '  baseUriParameters: ',
-              '    hola:',
-              '      '+option+':',
-              '         '
+              'resourceTypes:',
+              '  - rt1: ',
+              '      baseUriParameters: ',
+              '        hola: ',
+              '          '+option+':',
+              '           '
             ].join('\\n');
             editorSetValue(definition);
-            editorSetCursor(7,7);
+            editorSetCursor(8,13);
             var list2 =[option];
             var listPromise = shelfGetListOfElementsFromShelf();
             listPromise.then(function (list) {
@@ -147,5 +145,6 @@ describe('shelf',function(){
 
     }); //baseUriParameters
 
-  });//resource-root elements
+
+  });//resourceTypes elements
 }); // shelf

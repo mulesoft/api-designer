@@ -7,6 +7,7 @@ describe('shelf',function(){
     browser.get(ramlUrl);
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
+      window.onbeforeunload = null;
     });
     browser.wait(function(){
       return editorGetLine(2).then(function(text) {
@@ -15,13 +16,12 @@ describe('shelf',function(){
     });
   });
 
-var methods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
+  var methods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
 
   describe('resource-Methods elements',function(){
 
     it('Methods - check section', function(){
       methods.forEach(function(method){
-        console.log(method);
         var definition = [
           '#%RAML 0.8',
           'title: My api',
@@ -60,7 +60,6 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
 
         it('displayName is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -74,16 +73,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['displayName'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['displayName'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('description is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -97,16 +96,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['description'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['description'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('example is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -120,16 +119,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['example'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['example'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('type is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -143,16 +142,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['type'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['type'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('enum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -166,16 +165,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['enum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['enum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('pattern is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -189,16 +188,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['pattern'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['pattern'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minLength is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -212,16 +211,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maxLength is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -235,16 +234,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maxLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maxLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maximum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -258,16 +257,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maximum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maximum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minimum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -281,16 +280,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minimum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minimum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('required is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -304,16 +303,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['required'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['required'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('default is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -327,9 +326,10 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['default'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['default'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
@@ -341,7 +341,6 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
 
       it('NamedParameters displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -362,7 +361,6 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
 
         it('displayName is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -376,16 +374,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['displayName'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['displayName'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('description is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -399,16 +397,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['description'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['description'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('example is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -422,16 +420,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['example'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['example'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('type is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -445,16 +443,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['type'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['type'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('enum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -468,16 +466,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['enum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['enum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('pattern is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -491,16 +489,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['pattern'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['pattern'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minLength is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -514,16 +512,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maxLength is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -537,16 +535,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maxLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maxLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maximum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -560,16 +558,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maximum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maximum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minimum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -583,16 +581,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minimum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minimum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('required is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -606,16 +604,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['required'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['required'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('default is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -629,9 +627,10 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['default'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['default'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
@@ -644,7 +643,6 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
 
       it('NamedParameters displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -665,7 +663,6 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
 
         it('displayName is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -679,16 +676,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['displayName'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['displayName'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('description is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -702,16 +699,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['description'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['description'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('example is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -725,16 +722,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['example'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['example'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('type is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -748,16 +745,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['type'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['type'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('enum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -771,16 +768,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['enum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['enum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('pattern is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -794,16 +791,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['pattern'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['pattern'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minLength is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -817,16 +814,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maxLength is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -840,16 +837,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maxLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maxLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maximum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -863,16 +860,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maximum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maximum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minimum is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -886,16 +883,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minimum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minimum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('required is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -909,16 +906,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['required'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['required'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('default is no longer displayed on the shelf', function(){
           methods.forEach(function(method){
-            console.log(method);
             var definition = [
               '#%RAML 0.8',
               'title: My api',
@@ -932,9 +929,10 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(9,9);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['default'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['default'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
@@ -955,7 +953,6 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
 
       it('protocols is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -966,16 +963,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['protocols'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['protocols'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('description is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -986,16 +983,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['description'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['description'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('baseUriParameters is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -1006,16 +1003,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['baseUriParameters'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['baseUriParameters'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('headers is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -1026,16 +1023,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['headers'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['headers'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('queryParameters is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -1046,16 +1043,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['queryParameters'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['queryParameters'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('responses is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -1066,16 +1063,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['responses'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['responses'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('securedBy is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -1086,16 +1083,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['securedBy'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['securedBy'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('IS is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -1106,16 +1103,16 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['is'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['is'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });
 
       it('body is no longer displayed on the shelf', function(){
         methods.forEach(function(method){
-          console.log(method);
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -1126,9 +1123,10 @@ var methods = ['get','post','put','delete','head','patch','options','trace', 'co
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,5);
-          shelfGetElementsFromShelf().then(function(list){
-            var list2 =['body'];
-            return noShelfElementsAssertion(list,shelfGetElemMethodLevel(),list2);
+          var list2 =['body'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
           });
         });
       });

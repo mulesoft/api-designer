@@ -7,6 +7,7 @@ describe('shelf',function(){
     browser.get(ramlUrl);
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
+      window.onbeforeunload = null;
     });
     browser.wait(function(){
       return editorGetLine(2).then(function(text) {
@@ -20,6 +21,7 @@ describe('shelf',function(){
   describe('traits elements',function(){
 
     it('check elements at trait level', function (){
+//      browser.executeScript('location.reload()');
       var definition = [
         '#%RAML 0.8',
         'title: The API',
@@ -36,7 +38,6 @@ describe('shelf',function(){
 
       it('displayed on the shelf', function(){
         namedParameters.forEach(function(namedParameter){
-//          console.log(namedParameter);
           var definition = [
             '#%RAML 0.8',
             'title: The API',
@@ -56,7 +57,6 @@ describe('shelf',function(){
 
         it('displayName is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -69,16 +69,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['displayName'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['displayName'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('description is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -91,16 +91,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['description'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['description'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('example is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -113,17 +113,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-//              console.log(list.length);
-              var list2 =['example'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['example'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('type is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -136,16 +135,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['type'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['type'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('enum is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -158,16 +157,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['enum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['enum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('pattern is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -180,16 +179,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['pattern'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['pattern'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minLength is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -202,16 +201,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maxLength is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -224,16 +223,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maxLength'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maxLength'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('maximum is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -246,16 +245,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['maximum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['maximum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('minimum is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -268,16 +267,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['minimum'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['minimum'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('required is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -290,16 +289,16 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['required'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['required'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
 
         it('default is no longer displayed on the shelf', function(){
           namedParameters.forEach(function(namedParameter){
-//            console.log(namedParameter);
             var definition = [
               '#%RAML 0.8',
               'title: The API',
@@ -312,9 +311,10 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['default'];
-              return noShelfElementsAssertion(list,shelfGetElemNamedParametersLevel(),list2);
+            var list2 =['default'];
+            var listPromise = shelfGetListOfElementsFromShelf();
+            listPromise.then(function (list) {
+              noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
             });
           });
         });
@@ -354,199 +354,63 @@ describe('shelf',function(){
             '          description: ',
             '             '
           ].join('\\n');
-            editorSetValue(definition);
-            editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['description'];
-              return noShelfElementsAssertion(list,shelfGetElementsResponseLevel(),list2);
-            });
+          editorSetValue(definition);
+          editorSetCursor(8,10);
+          var list2 =['description'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElementsResponseLevel(),list2);
           });
+        });
 
-          it('displayName is no longer displayed on the shelf', function(){
-            var definition = [
-              '#%RAML 0.8',
-              'title: The API',
-              'traits: ',
-              '  - trait1: ',
-              '      responses: ',
-              '        200: ',
-              '          body: ',
-              '             '
-            ].join('\\n');
-            editorSetValue(definition);
-            editorSetCursor(8,10);
-            shelfGetElementsFromShelf().then(function(list){
-              var list2 =['body'];
-              return noShelfElementsAssertion(list,shelfGetElementsResponseLevel(),list2);
-            });
+        it('displayName is no longer displayed on the shelf', function(){
+          var definition = [
+            '#%RAML 0.8',
+            'title: The API',
+            'traits: ',
+            '  - trait1: ',
+            '      responses: ',
+            '        200: ',
+            '          body: ',
+            '             '
+          ].join('\\n');
+          editorSetValue(definition);
+          editorSetCursor(8,10);
+          var list2 =['body'];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElementsResponseLevel(),list2);
           });
+        });
 
-        }); // Not displayed after select
+      }); // Not displayed after select
 
-
-
-
-        }); //response
+    }); //response
 
     describe('body', function(){
 
     }); //body
 
+    describe('Not displayed after select', function(){
 
-
-   describe('Not displayed after select', function(){
-
-      it('protocols is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      protocols: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['protocols'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-      it('displayName is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      displayName: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['displayName'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-      it('description is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      description: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['description'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-      it('baseUriParameters is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      baseUriParameters: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['baseUriParameters'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-
-      it('headers is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      headers: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['headers'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-      it('queryParameters is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      queryParameters: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['queryParameters'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-      it('responses is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      responses: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['responses'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-      it('securedBy is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      securedBy: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['securedBy'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
-        });
-      });
-
-      it('body is no longer displayed on the shelf', function(){
-        var definition = [
-          '#%RAML 0.8',
-          'title: The API',
-          'traits: ',
-          '  - trait1: ',
-          '      body: ',
-          '        '
-        ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(6,7);
-        shelfGetElementsFromShelf().then(function(list){
-          var list2 =['body'];
-          return noShelfElementsAssertion(list,shelfGetElementsTraitsLevel(),list2);
+      it('property is no longer displayed on the shelf', function(){
+        var options = shelfGetElementsTraitsLevel();
+        options.forEach(function(option){
+          var definition = [
+            '#%RAML 0.8',
+            'title: The API',
+            'traits: ',
+            '  - trait1: ',
+            '      '+option+': ',
+            '        '
+          ].join('\\n');
+          editorSetValue(definition);
+          editorSetCursor(6,7);
+          var list2 =[option];
+          var listPromise = shelfGetListOfElementsFromShelf();
+          listPromise.then(function (list) {
+            noShelfElementsAssertion(list, shelfGetElementsTraitsLevel(),list2);
+          });
         });
       });
 

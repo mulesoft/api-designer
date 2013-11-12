@@ -1,16 +1,18 @@
 exports.config = {
 
   seleniumAddress: 'http://localhost:4444/wd/hub',
-
-
   capabilities: {
     'browserName': 'chrome'
   },
 
-
   specs: [
-    '../test/e2e/editor-shelf.js',
-//    '../test/e2e/editor-parser.js' ,
+    '../test/e2e/editor-shelf/resource/resource-methods.js',
+    '../test/e2e/editor-shelf/resource-types/rt-methods.js',
+    '../test/e2e/editor-shelf/resource/resource-root.js',
+    '../test/e2e/editor-shelf/resource-types/rt-root.js',
+    '../test/e2e/editor-shelf/root.js',
+    '../test/e2e/editor-shelf/traits.js',
+    '../test/e2e/editor-parser.js' ,
 //    '../test/e2e/editor-console.js',
 //    '../test/e2e/raml-example/quizlet-e2e.js',
     '../test/lib/*.js'
@@ -20,7 +22,7 @@ exports.config = {
     showColors: true,
     defaultTimeoutInterval: 80000,
     onComplete: null,
-    isVerbose: true,
+    isVerbose: false,
     includeStackTrace: true
 
   }
