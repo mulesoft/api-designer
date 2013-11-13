@@ -1,10 +1,11 @@
 'use strict';
 var expect = require('expect.js');
 var ramlUrl = require('../../config').url;
+var ShelfElements = require ('../../lib/shelf-elements.js').ShelfElements;
 
 describe('shelf',function(){
-
-  beforeEach(function () {
+  var  shelfElements= new ShelfElements();
+//  beforeEach(function () {
     browser.get(ramlUrl);
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
@@ -15,7 +16,8 @@ describe('shelf',function(){
         return text === 'title:';
       });
     });
-  });
+
+//  });
 
   describe('root elements',function(){
 
@@ -38,6 +40,7 @@ describe('shelf',function(){
         shelfGetElementsFromShelf().then(function(list){
           expect(list.length).to.eql(0);
         });
+
       });
 
     }); //RAML version
@@ -75,10 +78,9 @@ describe('shelf',function(){
         });
 
         describe('Not displayed after select', function(){
-
-          it('NamedParameter attribute is no longer displayed on the shelf', function(){
-            var options = shelfGetElemNamedParametersLevel();
-            options.forEach(function(option){
+          var options = shelfElements.getElemNamedParametersLevel();
+          options.forEach(function(option){
+            it(option+': NamedParameter attribute is no longer displayed on the shelf', function(){
               var definition = [
                 '#%RAML 0.8',
                 'title: The API',
@@ -103,10 +105,9 @@ describe('shelf',function(){
       }); //baseUriParameters
 
       describe('Not displayed after select', function(){
-
-        it('property is no longer displayed on the shelf', function(){
-          var options = shelfGetElementsRootLevelWithoutNewResource();
-          options.forEach(function(option){
+        var options = shelfElements.getRootLevelWithoutNewResource();
+        options.forEach(function(option){
+          it(option+': property is no longer displayed on the shelf', function(){
             var definition = [
               '#%RAML 0.8',
               ''+option+': ',
@@ -121,11 +122,7 @@ describe('shelf',function(){
             });
           });
         });
-        //no test is added for New Resource
-        // need to be automated added from the shelf and then verify the shelf status
-
       }); // Not displayed after select
-
     }); // root section
   }); // root elements
 
