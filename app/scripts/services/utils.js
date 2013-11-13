@@ -2,20 +2,28 @@
 
 angular.module('utils', [])
   .value('indentUnit', 2)
-  .factory('safeApply', function ($rootScope) {
-    function safeApply(scope, fn) {
-      var phase = scope.$root.$$phase;
-      if(phase === '$apply' || phase === '$digest') {
-        if(fn && (typeof(fn) === 'function')) {
-          fn();
+  .factory('safeApply', function safeApplyFactory($rootScope, $exceptionHandler) {
+    return function safeApply(scope, expr) {
+      scope = scope || $rootScope;
+      if (['$apply', '$digest'].indexOf(scope.$root.$$phase) !== -1) {
+        try {
+          return scope.$eval(expr);
+        } catch (e) {
+          $exceptionHandler(e);
         }
       } else {
-        scope.$apply(fn);
+        return scope.$apply(expr);
       }
-    }
-
-    return function (scope, fn) {
-      safeApply(scope || $rootScope, fn);
+    };
+  })
+  .factory('safeApplyWrapper', function safeApplyWrapperFactory(safeApply) {
+    return function safeApplyWrapper(scope, expr) {
+      return function safeApplyWrapperInner1() {
+        var args = Array.prototype.slice.call(arguments, 0);
+        return safeApply(scope, function safeApplyWrapperInner2() {
+          return expr.apply(this, args);
+        });
+      };
     };
   })
   .factory('getTime', function () {
