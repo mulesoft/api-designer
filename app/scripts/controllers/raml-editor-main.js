@@ -12,7 +12,6 @@ angular.module('ramlEditorApp')
 
     $scope.setTheme = function (theme) {
       config.set('theme', theme);
-      config.save();
       $scope.theme = $rootScope.theme = theme;
       safeApply($scope);
     };
@@ -145,7 +144,6 @@ angular.module('ramlEditorApp')
     $scope.toggleShelf = function () {
       $scope.shelf.collapsed = !$scope.shelf.collapsed;
       config.set('shelf.collapsed', $scope.shelf.collapsed);
-      config.save();
     };
 
     $scope.collapseBrowser = function () {
@@ -246,7 +244,6 @@ angular.module('ramlEditorApp')
       editor = codeMirror.initEditor();
 
       editor.on('change', function () {
-        config.loadFromLocalStorage();
         var updateResponsivenessInterval = config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL);
 
         if (currentUpdateTimer) {

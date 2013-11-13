@@ -32,38 +32,91 @@ Build the application
 grunt
 ```
 
+## Embedding
 
-## Deployment Process
-The Designer dependencies are:
-  * RAML Javascript Parser
-  * API Console
+The following example details how to embed the API Designer:
 
-Those dependencies Javascripts should be placed in the `app/vendor/scripts/` folder and their styles in `app/vendor/styles`. and are currently stored in the git repo. After that, the build should be run by doing:
-```
-  grunt
-```
-
-If the build succeeds then the files to deploy are found in the `dist/scripts` and `dist/styles` folders. The html that embed the Designer should look like this:
 ```html
 <!doctype html>
 <html>
   <head>
-    <!-- Include the compiled styles -->
-    <link rel="stylesheet" href="styles/07edc556.main.css">
+    <meta charset="utf-8">
+    <title>My App</title>
+    <link rel="stylesheet" href="styles/20dea081.main.css">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
   </head>
-  <!-- The ng-app scopes Angular in the html. It can be in any tag (not necessary the body) -->
   <body ng-app="ramlEditorApp">
-  
-    <!-- This is the App entry point -->
     <div class="container" ng-include="" src="'views/raml-editor-main.tmpl.html'"></div>
 
-    <!-- Compiled Javascripts containing the files found in dist -->
-    <script src="scripts/d8772085.vendor.js"></script>
-    <script src="scripts/736fe450.scripts.js"></script>
+    <script src="scripts/d78281b9.vendor.js"></script>
+    <script src="scripts/8a9fbe21.scripts.js"></script>
+    <script>
+      // This part is needed only if you want to provide your own Persistance Implementation
+      // Angular Module must match "ramlEditorApp"
+      angular.module('ramlEditorApp')
+      .factory('MyFileSystem', function ($q, config, eventService) {
+        var service = {};
+    
+        service.directory = function (path) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
+        };
+    
+        service.load = function (path, name) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
+        };
+    
+        service.remove = function (path, name) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
+        };
+    
+        service.save = function (path, name, contents) {
+          var deferred = $q.defer();
+          
+          // Your magic goes here:
+           // Do deferred.resolve(data); to fulfull the promise or
+           // deferred.reject(error); to reject it.
+           
+           return deferred.promise;
+        };
+    
+        return service;
+      })
+      .run(function (MyFileSystem, config, eventService) {
+        // Set MyFileSystem as the filesystem to use
+        config.set('fsFactory', 'MyFileSystem');
+        
+        // In case you want to send notifications to the user
+        // (for instance, that he must login to save). 
+        // The expires flags means whether
+        // it should be hidden after a period of time or the
+        // user should dismiss it manually.
+        eventService.broadcast('event:notification',
+          {message: 'File saved.', expires: true});
+
+      });
+
+    </script>
   </body>
 </html>
 ```
-
 
 ## License
 

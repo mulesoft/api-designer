@@ -63,7 +63,6 @@
   global.editorSetCursor = function (line, char) {
     line --;
     char --;
-
     browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
 
   };
