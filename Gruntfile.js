@@ -263,12 +263,18 @@ module.exports = function (grunt) {
       }
     },
     protractor: {
+      local: {
+        configFile: 'scenario/support/local.conf.js',
+        chromeDriver: false
+      },
       scenario: {
-        configFile: 'scenario/support/protractor.conf.js'
+        configFile: 'scenario/support/protractor.conf.js',
+        chromeDriver: true
       },
       debug: {
         configFile: 'scenario/support/protractor.conf.js',
-        debug: true
+        debug: true,
+        chromeDriver: true
       }
     }
   });
@@ -319,13 +325,19 @@ module.exports = function (grunt) {
     'usemin'
   ]);
 
-  grunt.registerTask('scenario', [
+  grunt.registerTask('localScenario', [
     'clean:server',
     'jshint',
     'connect:livereload',
-    'protractor'
+    'protractor:local'
   ]);
-  
+
+  grunt.registerTask('scenario', [
+    'clean:server',
+    'jshint',
+    'protractor:scenario'
+  ]);
+
   grunt.registerTask('default', [
     'test',
     'build'

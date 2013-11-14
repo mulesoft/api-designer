@@ -1,10 +1,9 @@
 'use strict';
-var ramlUrl = require('../../../config').url;
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
   var  shelfElements= new ShelfElements();
 //  beforeEach(function () {
-    browser.get(ramlUrl);
+    browser.get('/');
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
       window.onbeforeunload = null;

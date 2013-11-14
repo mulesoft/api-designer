@@ -34,14 +34,14 @@
     "matchdep": "~0.1.2",
     "mocha": "~1.12.0",
     "jasmine-node": "~1.9.0",
-    "protractor": "~0.12.0",
+    "protractor": "0.12.0",
     "selenium-webdriver": "*"
   },
   "engines": {
     "node": ">=0.8.0"
   },
   "scripts": {
-    "test": "grunt --verbose"
+    "test": "grunt --verbose && grunt localScenario"
   },
   "repository": {
     "type" : "git",

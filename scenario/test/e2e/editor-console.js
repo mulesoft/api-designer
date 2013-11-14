@@ -1,11 +1,10 @@
 'use strict';
 var expect = require('expect.js');
-var ramlUrl = require('../config').url;
 
 describe('editor-console',function(){
 
   beforeEach(function () {
-    browser.get(ramlUrl);
+    browser.get('/');
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
     });

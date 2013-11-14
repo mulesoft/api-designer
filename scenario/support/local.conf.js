@@ -2,13 +2,12 @@ exports.config = {
 
 
   capabilities: {
-    'browserName': 'chrome'
+    'browserName': 'phantomjs'
   },
 
+  baseUrl: 'http://localhost:9013/',
+  
   seleniumServerJar: './selenium/selenium-server-standalone-2.35.0.jar',
-  chromeDriver: './selenium/chromedriver',
-
-  baseUrl: 'https://ramltooling:ram10ve@j0hnqa.mulesoft.org/',
 
   specs: [
     '../test/e2e/editor-shelf/resource/resource-methods.js',
@@ -24,9 +23,7 @@ exports.config = {
   jasmineNodeOpts: {
     showColors: true,
     defaultTimeoutInterval: 15000,
-    onComplete: null,
     isVerbose: true,
     includeStackTrace: true
-
   }
 };

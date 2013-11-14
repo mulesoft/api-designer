@@ -1,5 +1,4 @@
 'use strict';
-var ramlUrl = require('../config').url;
 
 describe('editor-parser', function () {
 
