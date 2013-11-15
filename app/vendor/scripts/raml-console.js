@@ -8065,29 +8065,11 @@ RAML.Inspector = (function() {
     };
   }
 
-  var PARAMETER_EXTRACTOR = /\{([^}]*)\}/;
-  function toAnnotatedPathSegments(uriParameters) {
-    return function uriParametersFrom(segment) {
-      var match = PARAMETER_EXTRACTOR.exec(segment);
-      if (!match) {
-        return segment;
-      }
-
-      var uriParameter = uriParameters[match[1]];
-      uriParameter.parameterName = match[1];
-      uriParameter.toString = function() { return segment; };
-
-      return uriParameter;
-    };
-  }
-
   function extractResources(basePathSegments, api, securitySchemes) {
     var resources = [], apiResources = api.resources || [];
 
     apiResources.forEach(function(resource) {
-      var annotater = toAnnotatedPathSegments(resource.uriParameters);
-      var segments = resource.relativeUri.match(/\/[^\/]*/g).map(annotater);
-      var resourcePathSegments = basePathSegments.concat(segments);
+      var resourcePathSegments = basePathSegments.concat(RAML.Client.PathSegment.fromRAML(resource));
       var overview = exports.resourceOverviewSource(resourcePathSegments, resource);
 
       overview.methods.forEach(function(method) {
@@ -8111,7 +8093,7 @@ RAML.Inspector = (function() {
     var currentPrefix, resourceGroups = [];
 
     (resources || []).forEach(function(resource) {
-      if (resource.pathSegments[0].toString() !== currentPrefix) {
+      if (resource.pathSegments[0].toString().indexOf(currentPrefix) !== 0) {
         currentPrefix = resource.pathSegments[0].toString();
         resourceGroups.push([]);
       }
@@ -8151,62 +8133,9 @@ RAML.Inspector = (function() {
   return exports;
 })();
 
-(function () {
-  'use strict';
-
-  var PathSegment = function() {};
-
-  function convertPathSegment(pathSegment) {
-    PathSegment.prototype = pathSegment;
-    var clone = new PathSegment();
-
-    clone.text = pathSegment.toString();
-    clone.parameterName = pathSegment.parameterName;
-    clone.templated = !!clone.parameterName;
-    clone.toString = function() {
-      return this.templated ? this.parameterName : this.text;
-    };
-
-    clone.replaceWith = function(value) {
-      if (this.templated) {
-        if (value === undefined || value === '') {
-          throw new Error('Missing template data');
-        }
-        return '/' + value;
-      } else {
-        return this.toString();
-      }
-    };
-
-    return clone;
-  }
-
-  function createTemplate(pathSegments) {
-    var template = function(context) {
-      context = context || {};
-
-      return pathSegments.map(function(pathSegment) {
-        return pathSegment.replaceWith(context[pathSegment.parameterName]);
-      }).join('');
-    };
-
-    template.segments = pathSegments;
-
-    return template;
-  }
-
-  RAML.Inspector.PathBuilder = {
-    create: function(pathSegments) {
-      return createTemplate(pathSegments.map(convertPathSegment));
-    }
-  };
-})();
-
 'use strict';
 
 (function() {
-  var CONTENT_TYPE = 'content-type';
-
   var Client = function(parsed) {
     this.securitySchemes = parsed.securitySchemes;
   };
@@ -8226,47 +8155,6 @@ RAML.Inspector = (function() {
       throw new Error('Undefined Security Scheme: ' + name);
     }
   };
-
-  var RequestDsl = function(options) {
-    this.data = function(data) {
-      options.data = data;
-    };
-
-    this.queryParam = function(name, value) {
-      options.data = options.data || {};
-      options.data[name] = value;
-    };
-
-    this.header = function(name, value) {
-      options.headers = options.headers || {};
-      options.headers[name] = value;
-
-      if (name.toLowerCase() === CONTENT_TYPE) {
-        options.contentType = value;
-      }
-    };
-
-    this.headers = function(headers) {
-      options.headers = {};
-      options.contentType = undefined;
-
-      for (var name in headers) {
-        this.header(name, headers[name]);
-      }
-    };
-
-    this.toOptions = function() {
-      return options;
-    };
-  };
-
-  Client.prototype.createRequest = function(url, method) {
-    var request = {};
-    RequestDsl.call(request, { url: url, type: method });
-
-    return request;
-  };
-
 
   RAML.Client = {
     create: function(parsed) {
@@ -8437,21 +8325,31 @@ RAML.Client.AuthStrategies.base64 = (function () {
   RAML.Client.AuthStrategies.Basic = Basic;
 })();
 
-/* jshint camelcase: false */
-
-'use strict';
-
 (function() {
+  /* jshint camelcase: false */
+  'use strict';
+
+  function tokenConstructorFor(scheme) {
+    var describedBy = scheme.describedBy || {},
+        queryParameters = describedBy.queryParameters || {};
+
+    if (queryParameters.access_token) {
+      return Oauth2.QueryParameterToken;
+    }
+
+    return Oauth2.HeaderToken;
+  }
+
   var WINDOW_NAME = 'raml-console-oauth2';
 
   var Oauth2 = function(scheme, credentials) {
-    this.settings = scheme.settings;
+    this.scheme = scheme;
     this.credentialsManager = Oauth2.credentialsManager(credentials);
   };
 
   Oauth2.prototype.authenticate = function() {
-    var authorizationRequest = Oauth2.authorizationRequest(this.settings, this.credentialsManager);
-    var accessTokenRequest = Oauth2.accessTokenRequest(this.settings, this.credentialsManager);
+    var authorizationRequest = Oauth2.authorizationRequest(this.scheme, this.credentialsManager);
+    var accessTokenRequest = Oauth2.accessTokenRequest(this.scheme, this.credentialsManager);
 
     return authorizationRequest.then(accessTokenRequest);
   };
@@ -8477,7 +8375,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
     };
   };
 
-  Oauth2.authorizationRequest = function(settings, credentialsManager) {
+  Oauth2.authorizationRequest = function(scheme, credentialsManager) {
+    var settings = scheme.settings;
     var authorizationUrl = credentialsManager.authorizationUrl(settings.authorizationUri);
     window.open(authorizationUrl, WINDOW_NAME);
 
@@ -8486,7 +8385,9 @@ RAML.Client.AuthStrategies.base64 = (function () {
     return deferred.promise();
   };
 
-  Oauth2.accessTokenRequest = function(settings, credentialsManager) {
+  Oauth2.accessTokenRequest = function(scheme, credentialsManager) {
+    var settings = scheme.settings;
+    var TokenConstructor = tokenConstructorFor(scheme);
     return function(code) {
       var url = settings.accessTokenUri;
       if (RAML.Settings.proxy) {
@@ -8500,18 +8401,26 @@ RAML.Client.AuthStrategies.base64 = (function () {
       };
 
       var createToken = function(data) {
-        return new Oauth2.Token(data.access_token);
+        return new TokenConstructor(data.access_token);
       };
       return $.ajax(requestOptions).then(createToken);
     };
   };
 
-  Oauth2.Token = function(token) {
+  Oauth2.QueryParameterToken = function(token) {
     this.accessToken = token;
   };
 
-  Oauth2.Token.prototype.sign = function(request) {
+  Oauth2.QueryParameterToken.prototype.sign = function(request) {
     request.queryParam('access_token', this.accessToken);
+  };
+
+  Oauth2.HeaderToken = function(token) {
+    this.accessToken = token;
+  };
+
+  Oauth2.HeaderToken.prototype.sign = function(request) {
+    request.header('Authorization', 'Bearer ' + this.accessToken);
   };
 
   RAML.Client.AuthStrategies.Oauth2 = Oauth2;
@@ -8520,9 +8429,236 @@ RAML.Client.AuthStrategies.base64 = (function () {
 (function() {
   'use strict';
 
+  RAML.Client.PathBuilder = {
+    create: function(pathSegments) {
+      return function pathBuilder(contexts) {
+        contexts = contexts || [];
+
+        return pathSegments.map(function(pathSegment, index) {
+          return pathSegment.render(contexts[index]);
+        }).join('');
+      };
+    }
+  };
+})();
+
+(function() {
+  'use strict';
+
+  var templateMatcher = /\{([^}]*)\}/g;
+
+  function tokenize(template) {
+    var tokens = template.slice(1).split(templateMatcher);
+
+    return tokens.filter(function(token) {
+      return token.length > 0;
+    });
+  }
+
+  function rendererFor(template, uriParameters) {
+    var requiredParameters = Object.keys(uriParameters || {}).filter(function(name) {
+      return uriParameters[name].required;
+    });
+
+    return function renderer(context) {
+      context = context || {};
+
+      requiredParameters.forEach(function(name) {
+        if (!context[name]) {
+          throw new Error('Missing required uri parameter: ' + name);
+        }
+      });
+
+      var templated = template.replace(templateMatcher, function(match, parameterName) {
+        return context[parameterName] || '';
+      });
+
+      return templated;
+    };
+  }
+
+  var PathSegment = function(template, uriParameters) {
+    var name = template.slice(1);
+
+    this.name = name.replace(templateMatcher, '$1');
+    this.templated = this.name !== name;
+    this.parameters = uriParameters;
+    this.tokens = tokenize(template);
+    this.render = rendererFor(template, uriParameters);
+    this.toString = function() { return template; };
+  };
+
+  RAML.Client.PathSegment = {
+    fromRAML: function(raml) {
+      return new PathSegment(raml.relativeUri, raml.uriParameters);
+    }
+  };
+})();
+
+(function() {
+  'use strict';
+
+  var CONTENT_TYPE = 'content-type';
+
+  var RequestDsl = function(options) {
+    this.data = function(data) {
+      options.data = data;
+    };
+
+    this.queryParam = function(name, value) {
+      options.data = options.data || {};
+      options.data[name] = value;
+    };
+
+    this.header = function(name, value) {
+      options.headers = options.headers || {};
+      options.headers[name] = value;
+
+      if (name.toLowerCase() === CONTENT_TYPE) {
+        options.contentType = value;
+      }
+    };
+
+    this.headers = function(headers) {
+      options.headers = {};
+      options.contentType = undefined;
+
+      for (var name in headers) {
+        this.header(name, headers[name]);
+      }
+    };
+
+    this.toOptions = function() {
+      return options;
+    };
+  };
+
+  RAML.Client.Request = {
+    create: function(url, method) {
+      var request = {};
+      RequestDsl.call(request, { url: url, type: method });
+
+      return request;
+    }
+  };
+})();
+
+(function() {
+  'use strict';
+
+  // number regular expressions from http://yaml.org/spec/1.2/spec.html#id2804092
+
+  var RFC1123 = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;
+
   var VALIDATIONS = {
     required: function(value) { return value !== null && value !== undefined && value !== ''; },
-    boolean: function(value) { return value === 'true' || value === 'false' || value === ''; }
+    boolean: function(value) { return value === 'true' || value === 'false' || value === ''; },
+    enum: function(enumeration) {
+      return function(value) {
+        return value === '' || enumeration.some(function(item) { return item === value; });
+      };
+    },
+    integer: function(value) { return value === '' || !!/^-?(0|[1-9][0-9]*)$/.exec(value); },
+    number: function(value) { return value === '' || !!/^-?(0|[1-9][0-9]*)(\.[0-9]*)?([eE][-+]?[0-9]+)?$/.exec(value); },
+    minimum: function(minimum) {
+      return function(value) {
+        return value === '' || value >= minimum;
+      };
+    },
+    maximum: function(maximum) {
+      return function(value) {
+        return value === '' || value <= maximum;
+      };
+    },
+    minLength: function(minimum) {
+      return function(value) {
+        return value === '' || value.length >= minimum;
+      };
+    },
+    maxLength: function(maximum) {
+      return function(value) {
+        return value === '' || value.length <= maximum;
+      };
+    },
+    pattern: function(pattern) {
+      var regex = new RegExp(pattern);
+
+      return function(value) {
+        return value === '' || !!regex.exec(value);
+      };
+    },
+    date: function(value) { return value === '' || !!RFC1123.exec(value); }
+  };
+
+  function baseValidations(definition) {
+    var validations = {};
+
+    if (definition.required) {
+      validations.required = VALIDATIONS.required;
+    }
+
+    return validations;
+  }
+
+  function numberValidations(validations, definition) {
+    if (definition.minimum) {
+      validations.minimum = VALIDATIONS.minimum(definition.minimum);
+    }
+
+    if (definition.maximum) {
+      validations.maximum = VALIDATIONS.maximum(definition.maximum);
+    }
+  }
+
+  // function copyValidations(validations, types) {
+  //   Object.keys(types).forEach(function(type) {
+  //     validations[type] = VALIDATIONS[type](types[type]);
+  //   });
+  // }
+
+  var VALIDATIONS_FOR_TYPE = {
+    string: function(definition) {
+      var validations = baseValidations(definition);
+      if (definition.enum) {
+        validations.enum = VALIDATIONS.enum(definition.enum);
+      }
+      if (definition.minLength) {
+        validations.minLength = VALIDATIONS.minLength(definition.minLength);
+      }
+      if (definition.maxLength) {
+        validations.maxLength = VALIDATIONS.maxLength(definition.maxLength);
+      }
+      if (definition.pattern) {
+        validations.pattern = VALIDATIONS.pattern(definition.pattern);
+      }
+      return validations;
+    },
+
+    integer: function(definition) {
+      var validations = baseValidations(definition);
+      validations.integer = VALIDATIONS.integer;
+      numberValidations(validations, definition);
+      return validations;
+    },
+
+    number: function(definition) {
+      var validations = baseValidations(definition);
+      validations.number = VALIDATIONS.number;
+      numberValidations(validations, definition);
+      return validations;
+    },
+
+    boolean: function(definition) {
+      var validations = baseValidations(definition);
+      validations.boolean = VALIDATIONS.boolean;
+      return validations;
+    },
+
+    date: function(definition) {
+      var validations = baseValidations(definition);
+      validations.date = VALIDATIONS.date;
+      return validations;
+    }
   };
 
   function Validator(validations) {
@@ -8547,13 +8683,12 @@ RAML.Client.AuthStrategies.base64 = (function () {
       throw new Error('definition is required!');
     }
 
-    var validations = {};
+    var validations;
 
-    if (definition.required) {
-      validations.required = VALIDATIONS.required;
-    }
-    if (definition.type === 'boolean') {
-      validations.boolean = VALIDATIONS.boolean;
+    if (VALIDATIONS_FOR_TYPE[definition.type]) {
+      validations = VALIDATIONS_FOR_TYPE[definition.type](definition);
+    } else {
+      validations = {};
     }
 
     return new Validator(validations);
@@ -8588,14 +8723,110 @@ RAML.Client.AuthStrategies.base64 = (function () {
 
     var method = $scope.method;
 
-    this.hasParameterDocumentation = !!($scope.resource.uriParameters ||
-      method.queryParameters || method.headers || hasFormParameters(method));
-    this.hasRequestDocumentation = !isEmpty(method.body);
+    var hasParameters = !!($scope.resource.uriParameters || method.queryParameters ||
+      method.headers || hasFormParameters(method));
+
+    this.hasRequestDocumentation = hasParameters || !isEmpty(method.body);
     this.hasResponseDocumentation = !isEmpty(method.responses);
     this.hasTryIt = !!$scope.api.baseUri;
   };
 
   RAML.Controllers.Documentation = controller;
+})();
+
+'use strict';
+
+(function() {
+  var controller = function($scope) {
+    $scope.namedParametersDocumentation = this;
+  };
+
+  controller.prototype.constraints = function(parameter) {
+    var result = '';
+
+    if (parameter.required) {
+      result += 'required, ';
+    }
+
+    if (parameter.enum) {
+      result += 'one of (' + parameter.enum.join(', ') + ')';
+    } else {
+      result += parameter.type;
+    }
+
+    if (parameter.pattern) {
+      result += ' matching ' + parameter.pattern;
+    }
+
+    if (parameter.minLength && parameter.maxLength) {
+      result += ', ' + parameter.minLength + '-' + parameter.maxLength + ' characters';
+    } else if (parameter.minLength && !parameter.maxLength) {
+      result += ', at least ' + parameter.minLength + ' characters';
+    } else if (parameter.maxLength && !parameter.minLength) {
+      result += ', at most ' + parameter.maxLength + ' characters';
+    }
+
+
+    if (parameter.minimum && parameter.maximum) {
+      result += ' between ' + parameter.minimum + '-' + parameter.maximum;
+    } else if (parameter.minimum && !parameter.maximum) {
+      result += ' ≥ ' + parameter.minimum;
+    } else if (parameter.maximum && !parameter.minimum) {
+      result += ' ≤ ' + parameter.maximum;
+    }
+
+    if (parameter.repeat) {
+      result += ', repeatable';
+    }
+
+    if (parameter.default) {
+      result += ', default: ' + parameter.default;
+    }
+
+    return result;
+  };
+
+  RAML.Controllers.NamedParametersDocumentation = controller;
+})();
+
+'use strict';
+
+(function() {
+  function isEmpty(object) {
+    return Object.keys(object || {}).length === 0;
+  }
+
+  var controller = function($scope) {
+    var method = $scope.method;
+    var resource = $scope.resource;
+    var parameterGroups = [];
+
+    if (!isEmpty(method.headers)) {
+      parameterGroups.push(['Headers', method.headers]);
+    }
+    if (!isEmpty(resource.uriParameters)) {
+      parameterGroups.push(['URI Parameters', resource.uriParameters]);
+    }
+    if (!isEmpty(method.queryParameters)) {
+      parameterGroups.push(['Query Parameters', method.queryParameters]);
+    }
+
+    if (method.body) {
+      var normalForm = method.body['application/x-www-form-urlencoded'];
+      var multipartForm = method.body['multipart/form-data'];
+
+      if (normalForm && !isEmpty(normalForm.formParameters)) {
+        parameterGroups.push(['Form Parameters', normalForm.formParameters]);
+      }
+      if (multipartForm && !isEmpty(multipartForm.formParameters)) {
+        parameterGroups.push(['Multipart Form Parameters', multipartForm.formParameters]);
+      }
+    }
+
+    $scope.parameterGroups = parameterGroups;
+  };
+
+  RAML.Controllers.Parameters = controller;
 })();
 
 'use strict';
@@ -8772,11 +9003,11 @@ RAML.Client.AuthStrategies.base64 = (function () {
     }
 
     try {
-      var url = this.response.requestUrl = this.baseUri + pathBuilder(pathBuilder);
+      var url = this.response.requestUrl = this.baseUri + pathBuilder(pathBuilder.contexts);
       if (RAML.Settings.proxy) {
         url = RAML.Settings.proxy + url;
       }
-      var request = this.client.createRequest(url, this.httpMethod);
+      var request = RAML.Client.Request.create(url, this.httpMethod);
 
       if (!isEmpty(this.queryParameters)) {
         request.data(filterEmpty(this.queryParameters));
@@ -9061,6 +9292,23 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 })();
 
+(function() {
+  'use strict';
+
+  RAML.Directives.namedParametersDocumentation = function() {
+    return {
+      restrict: 'E',
+      controller: RAML.Controllers.NamedParametersDocumentation,
+      templateUrl: 'views/named_parameters_documentation.tmpl.html',
+      replace: true,
+      scope: {
+        heading: '@',
+        parameters: '='
+      }
+    };
+  };
+})();
+
 'use strict';
 
 (function() {
@@ -9076,17 +9324,17 @@ RAML.Client.AuthStrategies.base64 = (function () {
   };
 })();
 
-(function() {
-  'use strict';
+'use strict';
 
-  RAML.Directives.parameterTable = function() {
+(function() {
+  RAML.Directives.parameterFields = function() {
     return {
       restrict: 'E',
-      templateUrl: 'views/parameter_table.tmpl.html',
-      replace: true,
+      templateUrl: 'views/parameter_fields.tmpl.html',
+      // replace: true,
       scope: {
-        heading: '@',
-        parameters: '='
+        parameters: '=',
+        requestData: '='
       }
     };
   };
@@ -9098,7 +9346,8 @@ RAML.Client.AuthStrategies.base64 = (function () {
   RAML.Directives.parameters = function() {
     return {
       restrict: 'E',
-      templateUrl: 'views/parameters.tmpl.html'
+      templateUrl: 'views/parameters.tmpl.html',
+      controller: RAML.Controllers.Parameters
     };
   };
 })();
@@ -9107,7 +9356,10 @@ RAML.Client.AuthStrategies.base64 = (function () {
   'use strict';
 
   var Controller = function($scope) {
-    $scope.pathBuilder = new RAML.Inspector.PathBuilder.create($scope.resource.pathSegments);
+    $scope.pathBuilder = new RAML.Client.PathBuilder.create($scope.resource.pathSegments);
+    $scope.pathBuilder.contexts = $scope.resource.pathSegments.map(function() {
+      return {};
+    });
   };
 
   RAML.Directives.pathBuilder = function() {
@@ -9456,8 +9708,9 @@ RAML.Filters = {};
   module.directive('markdown', RAML.Directives.markdown);
   module.directive('method', RAML.Directives.method);
   module.directive('namedParameters', RAML.Directives.namedParameters);
+  module.directive('namedParametersDocumentation', RAML.Directives.namedParametersDocumentation);
   module.directive('oauth2', RAML.Directives.oauth2);
-  module.directive('parameterTable', RAML.Directives.parameterTable);
+  module.directive('parameterFields', RAML.Directives.parameterFields);
   module.directive('parameters', RAML.Directives.parameters);
   module.directive('pathBuilder', RAML.Directives.pathBuilder);
   module.directive('ramlConsole', RAML.Directives.ramlConsole);
@@ -9482,10 +9735,10 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   $templateCache.put("views/api_resources.tmpl.html",
     "<div id=\"raml-console-api-reference\" role=\"resources\">\n" +
     "  <div collapsible role=\"resource-group\" class=\"resource-group\" ng-repeat=\"resourceGroup in api.resourceGroups\">\n" +
-    "    <h2 collapsible-toggle class='path'>\n" +
+    "    <h1 collapsible-toggle class='path'>\n" +
     "      {{resourceGroup[0].pathSegments[0].toString()}}\n" +
     "      <i ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
-    "    </h2>\n" +
+    "    </h1>\n" +
     "\n" +
     "    <div ng-class=\"{expanded: resource.isOpen, collapsed: !resource.isOpen}\"\n" +
     "         collapsible-content class='resource' role=\"resource\"\n" +
@@ -9512,29 +9765,27 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   $templateCache.put("views/basic_auth.tmpl.html",
     "<fieldset class=\"labelled-inline\" role=\"basic\">\n" +
     "  <div class=\"control-group\">\n" +
-    "    <label for=\"username\">username</label>\n" +
+    "    <label for=\"username\">Username:</label>\n" +
     "    <input type=\"text\" name=\"username\" ng-model='credentials.username'/>\n" +
     "  </div>\n" +
     "\n" +
     "  <div class=\"control-group\">\n" +
-    "    <label for=\"password\">password</label>\n" +
+    "    <label for=\"password\">Password:</label>\n" +
     "    <input type=\"password\" name=\"password\" ng-model='credentials.password'/>\n" +
     "  </div>\n" +
     "</fieldset>\n"
   );
 
   $templateCache.put("views/documentation.tmpl.html",
-    "<section role='documentation'>\n" +
-    "  <div role=\"description\"\n" +
+    "<section class='documentation' role='documentation'>\n" +
+    "  <div role=\"description\" class=\"description\"\n" +
     "       ng-if=\"method.description\"\n" +
     "       markdown=\"method.description\">\n" +
     "  </div>\n" +
     "\n" +
     "  <tabset>\n" +
-    "    <tab role='documentation-parameters' heading=\"Parameters\" disabled=\"!documentation.hasParameterDocumentation\">\n" +
+    "    <tab role='documentation-requests' heading=\"Request\" active='documentation.requestsActive' disabled=\"!documentation.hasRequestDocumentation\">\n" +
     "      <parameters></parameters>\n" +
-    "    </tab>\n" +
-    "    <tab role='documentation-requests' heading=\"Requests\" active='documentation.requestsActive' disabled=\"!documentation.hasRequestDocumentation\">\n" +
     "      <requests></requests>\n" +
     "    </tab>\n" +
     "    <tab role='documentation-responses' heading=\"Responses\" active='documentation.responsesActive' disabled='!documentation.hasResponseDocumentation'>\n" +
@@ -9567,96 +9818,85 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   );
 
   $templateCache.put("views/named_parameters.tmpl.html",
-    "<fieldset class='labelled-inline' ng-show=\"parameters\">\n" +
+    "<fieldset class='labelled-inline bordered' ng-show=\"parameters\">\n" +
     "  <legend>{{heading}}</legend>\n" +
-    "  <div class=\"control-group\" ng-repeat=\"(parameterName, parameter) in parameters track by parameterName\">\n" +
-    "    <label for=\"{{parameterName}}\">{{parameter.displayName}}</label>\n" +
-    "\n" +
-    "    <validated-input name=\"{{parameterName}}\" bind-to='requestData' constraints='parameter'></validated-input>\n" +
-    "\n" +
-    "  </div>\n" +
+    "  <parameter-fields parameters=\"parameters\" request-data=\"requestData\"></parameter-fields>\n" +
     "</fieldset>\n"
   );
 
-  $templateCache.put("views/oauth2.tmpl.html",
-    "<fieldset class=\"labelled-inline\" role=\"oauth2\">\n" +
-    "  <div class=\"control-group\">\n" +
-    "    <label for=\"clientId\">Client ID</label>\n" +
-    "    <input type=\"text\" name=\"clientId\" ng-model='credentials.clientId'/>\n" +
-    "  </div>\n" +
-    "\n" +
-    "  <div class=\"control-group\">\n" +
-    "    <label for=\"clientSecret\">Client Secret</label>\n" +
-    "    <input type=\"password\" name=\"clientSecret\" ng-model='credentials.clientSecret'/>\n" +
-    "  </div>\n" +
-    "</fieldset>\n"
-  );
-
-  $templateCache.put("views/parameter_table.tmpl.html",
-    "<section class='parameterTable' ng-show='parameters'>\n" +
-    "  <h4>{{heading}}</h4>\n" +
-    "  <section role='parameter' ng-repeat='param in parameters'>\n" +
-    "    <h5>\n" +
-    "      <code role=\"display-name\">{{param.displayName}}</code>\n" +
-    "    <span class=\"constraints\">\n" +
-    "      <span role=\"required\" ng-if=\"param.required\">required, </span><!--\n" +
-    "      --><span role=\"enum\" ng-if=\"param.enum\">\n" +
-    "        one of\n" +
-    "        (<span ng-repeat=\"option in param.enum\"><!--\n" +
-    "          -->{{option}}<span ng-if=\"!$last\">, </span><!--\n" +
-    "        --></span>)<!--\n" +
-    "      --></span><!--\n" +
-    "      --><span ng-if=\"!param.enum\" role=\"type\">{{param.type}}</span><!--\n" +
-    "      --><span role=\"pattern\" ng-if=\"param.pattern\"> matching {{param.pattern}}</span><!--\n" +
-    "      --><span role=\"length\" ng-if=\"param.minLength && param.maxLength\">, {{param.minLength}}-{{param.maxLength}} characters</span><!--\n" +
-    "      --><span role=\"length\" ng-if=\"param.minLength && !param.maxLength\">, at least {{param.minLength}} characters</span><!--\n" +
-    "      --><span role=\"length\" ng-if=\"param.maxLength && !param.minLength\">, at most {{param.maxLength}} characters</span><!--\n" +
-    "\n" +
-    "      --><span role=\"range\" ng-if=\"param.minimum && param.maximum\"> between {{param.minimum}}-{{param.maximum}}</span><!--\n" +
-    "      --><span role=\"range\" ng-if=\"param.minimum && !param.maximum\"> ≥ {{param.minimum}}</span><!--\n" +
-    "      --><span role=\"range\" ng-if=\"param.maximum && !param.minimum\"> ≤ {{param.maximum}}</span><!--\n" +
-    "      --><span role=\"repeat\" ng-if=\"param.repeat\">, repeatable</span><!--\n" +
-    "      --><span ng-if=\"param.default\">, default: <span role=\"default\">{{param.default}}</span></span>\n" +
-    "\n" +
-    "    </span>\n" +
-    "    </h5>\n" +
+  $templateCache.put("views/named_parameters_documentation.tmpl.html",
+    "<section class='named-parameters' ng-show='parameters'>\n" +
+    "  <h2>{{heading}}</h2>\n" +
+    "  <section role='parameter' class='parameter' ng-repeat='param in parameters'>\n" +
+    "    <h4 class='strip-whitespace'>\n" +
+    "      <span role=\"display-name\">{{param.displayName}}</span>\n" +
+    "      <span class=\"constraints\">{{namedParametersDocumentation.constraints(param)}}</span>\n" +
+    "    </h4>\n" +
     "\n" +
     "    <div class=\"info\">\n" +
+    "      <div ng-if=\"param.example\"><span class=\"label\">Example:</span> <code class=\"well\" role=\"example\">{{param.example}}</code></div>\n" +
     "      <div role=\"description\" markdown=\"param.description\"></div>\n" +
-    "      <div ng-if=\"param.example\"><span class=\"label\">Example</span> <span role=\"example\">{{param.example}}</span></div>\n" +
     "    </div>\n" +
     "  </section>\n" +
     "</section>\n"
   );
 
+  $templateCache.put("views/oauth2.tmpl.html",
+    "<fieldset class=\"labelled-inline\" role=\"oauth2\">\n" +
+    "  <div class=\"control-group\">\n" +
+    "    <label for=\"clientId\">Client ID:</label>\n" +
+    "    <input type=\"text\" name=\"clientId\" ng-model='credentials.clientId'/>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div class=\"control-group\">\n" +
+    "    <label for=\"clientSecret\">Client Secret:</label>\n" +
+    "    <input type=\"password\" name=\"clientSecret\" ng-model='credentials.clientSecret'/>\n" +
+    "  </div>\n" +
+    "</fieldset>\n"
+  );
+
+  $templateCache.put("views/parameter_fields.tmpl.html",
+    "<fieldset>\n" +
+    "  <div class=\"control-group\" ng-repeat=\"(parameterName, parameter) in parameters track by parameterName\">\n" +
+    "    <label for=\"{{parameterName}}\">{{parameter.displayName}}:</label>\n" +
+    "    <validated-input name=\"{{parameterName}}\" bind-to='requestData' placeholder='{{parameter.example}}'constraints='parameter'></validated-input>\n" +
+    "  </div>\n" +
+    "</fieldset>\n"
+  );
+
   $templateCache.put("views/parameters.tmpl.html",
-    "<parameter-table heading='Headers' role='headers' parameters='method.headers'></parameter-table>\n" +
-    "<parameter-table heading='URI Parameters' role='uri-parameters' parameters='resource.uriParameters'></parameter-table>\n" +
-    "<parameter-table heading='Query Parameters' role='query-parameters' parameters='method.queryParameters'></parameter-table>\n" +
-    "<parameter-table heading='Form Parameters' role='form-parameters' parameters='method.body[\"application/x-www-form-urlencoded\"].formParameters'></parameter-table>\n" +
-    "<parameter-table heading='Multipart Form Parameters' role='multipart-form-parameters' parameters='method.body[\"multipart/form-data\"].formParameters'></parameter-table>\n"
+    "<named-parameters-documentation ng-repeat='parameterGroup in parameterGroups' heading='{{parameterGroup[0]}}' role='parameter-group' parameters='parameterGroup[1]'></named-parameters-documentation>\n"
   );
 
   $templateCache.put("views/path_builder.tmpl.html",
-    "<span role=\"path\" class=\"uri\">\n" +
-    "  <span role='segment' ng-repeat='segment in pathBuilder.segments'>\n" +
-    "    <span ng-if='segment.templated'>/<validated-input ng-if='segment.templated' name=\"{{segment.parameterName}}\" bind-to=\"pathBuilder\" placeholder=\"{{segment.toString()}}\" constraints=\"segment\" invalid-class=\"error\"/></span>\n" +
-    "    <span  ng-if='!segment.templated'>{{segment.toString()}}</span>\n" +
+    "<span role=\"path\" class=\"path\">\n" +
+    "  <span role='segment' ng-repeat='segment in resource.pathSegments' ng-init=\"$segmentIndex = $index\">\n" +
+    "    <span class=\"segment\">/</span>\n" +
+    "    <span ng-repeat='token in segment.tokens'>\n" +
+    "      <validated-input ng-if='segment.parameters[token]'\n" +
+    "                        name=\"{{token}}\"\n" +
+    "                        bind-to=\"pathBuilder.contexts[$segmentIndex]\"\n" +
+    "                        placeholder=\"{{token}}\"\n" +
+    "                        constraints=\"segment.parameters[token]\"\n" +
+    "                        invalid-class=\"error\">\n" +
+    "      </validated-input>\n" +
+    "      <span class=\"segment\" ng-if=\"!segment.parameters[token]\">{{token}}</span>\n" +
+    "    </span>\n" +
     "  </span>\n" +
     "</span>\n"
   );
 
   $templateCache.put("views/raml-console.tmpl.html",
     "<article role=\"api-console\" id=\"raml-console\">\n" +
-    "  <section role=\"error\" ng-if=\"parseError\">\n" +
+    "  <div role=\"error\" ng-if=\"parseError\">\n" +
     "    {{parseError}}\n" +
-    "  </section>\n" +
+    "  </div>\n" +
     "\n" +
-    "  <h1 id=\"raml-console-api-title\">{{api.title}}</h1>\n" +
+    "  <header id=\"raml-console-api-title\">{{api.title}}</header>\n" +
     "\n" +
     "  <nav id=\"raml-console-main-nav\" ng-if='ramlConsole.showRootDocumentation()' ng-switch='ramlConsole.view'>\n" +
-    "    <a class=\"btn inverted\" ng-switch-when='rootDocumentation' role=\"view-api-reference\" ng-click='ramlConsole.gotoView(\"apiReference\")'>&larr; API Reference</a>\n" +
-    "    <a class=\"btn inverted\" ng-switch-default role=\"view-root-documentation\" ng-click='ramlConsole.gotoView(\"rootDocumentation\")'>Documentation &rarr;</a>\n" +
+    "    <a class=\"btn\" ng-switch-when='rootDocumentation' role=\"view-api-reference\" ng-click='ramlConsole.gotoView(\"apiReference\")'>&larr; API Reference</a>\n" +
+    "    <a class=\"btn\" ng-switch-default role=\"view-root-documentation\" ng-click='ramlConsole.gotoView(\"rootDocumentation\")'>Documentation &rarr;</a>\n" +
     "  </nav>\n" +
     "\n" +
     "  <div id=\"raml-console-content\" ng-switch='ramlConsole.view'>\n" +
@@ -9691,9 +9931,9 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    <li class=\"trait\" role=\"trait\" ng-repeat=\"trait in resourceSummary.traits()\">{{trait}}</li>\n" +
     "  </ul>\n" +
     "\n" +
-    "  <h2 class=\"path\">\n" +
+    "  <h3 class=\"path\">\n" +
     "    <span role='segment' ng-repeat='segment in resource.pathSegments'>{{segment.toString()}} </span>\n" +
-    "  </h2>\n" +
+    "  </h3>\n" +
     "  <ul class='methods' role=\"methods\" ng-hide=\"resource.isOpen\">\n" +
     "    <li class='method-name' ng-class='method.method' ng-repeat=\"method in resource.methods\">{{method.method}}</li>\n" +
     "  </ul>\n" +
@@ -9738,9 +9978,9 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
 
   $templateCache.put("views/security_schemes.tmpl.html",
     "<div class=\"authentication\">\n" +
-    "  <fieldset class=\"labelled-radio-group\">\n" +
+    "  <fieldset class=\"labelled-radio-group bordered\">\n" +
     "    <legend>Authentication</legend>\n" +
-    "    <label for=\"scheme\">type</label>\n" +
+    "    <label for=\"scheme\">Type:</label>\n" +
     "\n" +
     "    <div class=\"radio-group\">\n" +
     "      <label class=\"radio\">\n" +
@@ -9752,16 +9992,14 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    </div>\n" +
     "  </fieldset>\n" +
     "\n" +
-    "  <fieldset>\n" +
-    "    <div ng-repeat=\"(name, scheme) in schemes\">\n" +
-    "      <div ng-show=\"keychain.selectedScheme == name\">\n" +
-    "        <div ng-switch=\"scheme.type\">\n" +
-    "          <basic-auth ng-switch-when=\"Basic Authentication\" credentials='keychain[name]'></basic-auth>\n" +
-    "          <oauth2 ng-switch-when=\"OAuth 2.0\" credentials='keychain[name]'></oauth2>\n" +
-    "        </div>\n" +
+    "  <div ng-repeat=\"(name, scheme) in schemes\">\n" +
+    "    <div ng-show=\"keychain.selectedScheme == name\">\n" +
+    "      <div ng-switch=\"scheme.type\">\n" +
+    "        <basic-auth ng-switch-when=\"Basic Authentication\" credentials='keychain[name]'></basic-auth>\n" +
+    "        <oauth2 ng-switch-when=\"OAuth 2.0\" credentials='keychain[name]'></oauth2>\n" +
     "      </div>\n" +
     "    </div>\n" +
-    "  </fieldset>\n" +
+    "  </div>\n" +
     "</div>\n"
   );
 
@@ -9793,22 +10031,26 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "    <named-parameters heading=\"Headers\" parameters=\"method.headers\" request-data=\"apiClient.headers\"></named-parameters>\n" +
     "    <named-parameters heading=\"Query Parameters\" parameters=\"method.queryParameters\" request-data=\"apiClient.queryParameters\"></named-parameters>\n" +
     "\n" +
-    "    <fieldset class=\"labelled-radio-group media-types\" ng-show=\"apiClient.supportsMediaType\">\n" +
-    "      <label>Content Type</label>\n" +
-    "      <div class=\"radio-group\">\n" +
-    "        <label class=\"radio\" ng-repeat=\"(mediaType, _) in method.body track by mediaType\">\n" +
-    "          <input type=\"radio\" name=\"media-type\" value=\"{{mediaType}}\" ng-model=\"apiClient.mediaType\">\n" +
-    "          {{mediaType}}\n" +
-    "        </label>\n" +
-    "      </div>\n" +
-    "    </fieldset>\n" +
     "    <div class=\"request-body\" ng-show=\"method.body\">\n" +
-    "      <fieldset ng-show=\"apiClient.showBody()\">\n" +
+    "      <fieldset class=\"bordered\">\n" +
     "        <legend>Body</legend>\n" +
-    "        <textarea name=\"body\" ng-model='apiClient.body' ng-model=\"apiClient.body\"></textarea>\n" +
+    "\n" +
+    "        <fieldset class=\"labelled-radio-group media-types\" ng-show=\"apiClient.supportsMediaType\">\n" +
+    "          <label>Content Type</label>\n" +
+    "          <div class=\"radio-group\">\n" +
+    "            <label class=\"radio\" ng-repeat=\"(mediaType, _) in method.body track by mediaType\">\n" +
+    "              <input type=\"radio\" name=\"media-type\" value=\"{{mediaType}}\" ng-model=\"apiClient.mediaType\">\n" +
+    "              {{mediaType}}\n" +
+    "            </label>\n" +
+    "          </div>\n" +
+    "        </fieldset>\n" +
+    "\n" +
+    "        <textarea name=\"body\" ng-model='apiClient.body' ng-model=\"apiClient.body\" ng-if=\"apiClient.showBody()\"></textarea>\n" +
+    "        <div class=\"labelled-inline\">\n" +
+    "          <parameter-fields parameters='method.body[\"application/x-www-form-urlencoded\"].formParameters' request-data=\"apiClient.formParameters\" ng-if=\"apiClient.showUrlencodedForm()\"></parameter-fields>\n" +
+    "          <parameter-fields parameters='method.body[\"multipart/form-data\"].formParameters' request-data=\"apiClient.formParameters\" ng-if=\"apiClient.showMultipartForm()\"></parameter-fields>\n" +
+    "        </div>\n" +
     "      </fieldset>\n" +
-    "      <named-parameters heading='Form Parameters' parameters='method.body[\"application/x-www-form-urlencoded\"].formParameters' request-data=\"apiClient.formParameters\" ng-if=\"apiClient.showUrlencodedForm()\"></named-parameters>\n" +
-    "      <named-parameters heading='Form Parameters' parameters='method.body[\"multipart/form-data\"].formParameters' request-data=\"apiClient.formParameters\" ng-if=\"apiClient.showMultipartForm()\"></named-parameters>\n" +
     "    </div>\n" +
     "\n" +
     "    <div class=\"form-actions\">\n" +
@@ -9817,8 +10059,8 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
     "      <div role=\"error\" class=\"error\" ng-show=\"apiClient.missingUriParameters\">\n" +
     "        Required URI Parameters must be entered\n" +
     "      </div>\n" +
-    "      <button role=\"try-it\" class=\"btn inverted\" ng-click=\"apiClient.execute()\">\n" +
-    "        Try It\n" +
+    "      <button role=\"try-it\" ng-class=\"'btn-' + method.method\" ng-click=\"apiClient.execute()\">\n" +
+    "        {{method.method}}\n" +
     "      </button>\n" +
     "    </div>\n" +
     "  </form>\n" +
@@ -9856,15 +10098,16 @@ angular.module("ramlConsoleApp").run(["$templateCache", function($templateCache)
   );
 
   $templateCache.put("views/validated_input.tmpl.html",
-    "<div>\n" +
-    "  <input \n" +
+    "<span>\n" +
+    "  <input\n" +
     "    name=\"{{name}}\"\n" +
     "    type=\"{{type}}\"\n" +
     "    placeholder=\"{{placeholder}}\"\n" +
     "    ng-model=\"bindTo[name]\"\n" +
     "    ng-class=\"input.status\"\n" +
+    "    ng-trim=\"false\"\n" +
     "  />\n" +
-    "</div>\n"
+    "</span>\n"
   );
 
 }]);
