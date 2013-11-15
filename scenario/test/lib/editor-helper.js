@@ -5,7 +5,8 @@
     var d = webdriver.promise.defer();
 
     browser.wait(function () {
-      return browser.$('.CodeMirror-lint-marker-error');
+      console.log('wait for error');
+        return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
     }).then(function () {
         browser.executeScript(function () {
           var querySelectorMarkerError = document.querySelector('.CodeMirror-lint-marker-error');
