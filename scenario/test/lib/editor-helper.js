@@ -5,7 +5,6 @@
     var d = webdriver.promise.defer();
 
     browser.wait(function () {
-      console.log('wait for error');
         return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
     }).then(function () {
         browser.executeScript(function () {
