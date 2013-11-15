@@ -11,7 +11,7 @@
   };
 
   global.consoleGetListResourcesNameElement = function () {
-	  return 'div[role=\'resourceSummary\'] h2';
+	  return 'div[role=\'resourceSummary\'] h3';
   };
 
   global.consoleGetListResourcesName = function () {
