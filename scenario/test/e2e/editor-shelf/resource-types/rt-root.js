@@ -1,5 +1,4 @@
 'use strict';
-var expect = require('expect.js');
 var ramlUrl = require('../../../config').url;
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
@@ -17,7 +16,7 @@ describe('shelf',function(){
     });
 //  });
 
-  var namedParameters = [ 'baseUriParameters', 'baseUriParameters'];
+  var namedParameters = ['baseUriParameters', 'uriParameters'];
   var namedParamElems = shelfElements.getNamedParametersLevel();
   var options = shelfElements.getResourceTypeLevel();
 
@@ -32,10 +31,10 @@ describe('shelf',function(){
       ].join('\\n');
       editorSetValue(definition);
       editorSetCursor(5,6);
-      shelfElemResourceTypesByGroupAssertion();
+      shelfElemResourceTypesByGroupAssertion(shelfElements);
     });
 
-    describe('not displayed after being selected', function(){
+    describe('after being selected', function(){
 
       options.forEach(function(option){
         it(option+' is no longer displayed on the shelf', function(){
@@ -48,19 +47,19 @@ describe('shelf',function(){
             '          '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(6,6);
+          editorSetCursor(6,7);
           var list2 =[option];
           var listPromise = shelfGetListOfElementsFromShelf();
           listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfGetElemResourceTypesLevel(),list2);
+            noShelfElementsAssertion(list, shelfElements.getResourceTypeLevel(),list2);
           });
         });
       });
     }); // not displayed after being selected.
 
-    xdescribe('NamedParameters', function(){ // https://www.pivotaltracker.com/story/show/60351064
+    describe('NamedParameters', function(){
       namedParameters.forEach(function(namedParameter){
-        it(namedParameter+'- NamedParameters displayed on the shelf', function(){
+        it(namedParameter+'- attribute displayed on the shelf', function(){
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -68,18 +67,18 @@ describe('shelf',function(){
             '  - rt1: ',
             '      '+namedParameter+': ',
             '        hola:',
-            '           '
+            '            '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(7,9);
-          shelfElemNamedParametersByGroupAssertion();
+          editorSetCursor(7,10);
+          shelfElemNamedParametersByGroupAssertion(shelfElements);
         });
       });
 
-      describe('Not displayed after select', function(){
+      describe('after being  selected', function(){
         namedParameters.forEach(function(namedParameter){
           namedParamElems.forEach(function(namedParamElem){
-            it(namedParameter+'-'+namedParamElem+'NamedParameter attribute is no longer displayed on the shelf', function(){
+            it(namedParameter+'-'+namedParamElem+' attribute is no longer displayed on the shelf', function(){
               var definition = [
                 '#%RAML 0.8',
                 'title: My api',
@@ -95,7 +94,7 @@ describe('shelf',function(){
               var list2 =[namedParamElem];
               var listPromise = shelfGetListOfElementsFromShelf();
               listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
+                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
               });
             });
           });

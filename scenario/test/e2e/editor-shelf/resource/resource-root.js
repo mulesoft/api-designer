@@ -1,5 +1,4 @@
 'use strict';
-var expect = require('expect.js');
 var ramlUrl = require('../../../config').url;
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
@@ -18,7 +17,7 @@ describe('shelf',function(){
 //  });
 
   var options = shelfElements.getResourcelevelWithouNewResource();
-  var namedParameters = [ 'baseUriParameters', 'baseUriParameters'];
+  var namedParameters = [ 'baseUriParameters', 'uriParameters'];
   var namedParamElems = shelfElements.getNamedParametersLevel();
   describe('resource-root elements',function(){
 
@@ -31,7 +30,7 @@ describe('shelf',function(){
       ].join('\\n');
       editorSetValue(definition);
       editorSetCursor(4,3);
-      shelfElementsResourceByGroupAssertion();
+      shelfElementsResourceByGroupAssertion(shelfElements);
 
     });
 
@@ -44,14 +43,14 @@ describe('shelf',function(){
             'title: My api',
             '/res:',
             '  '+option+': ',
-            '   '
+            '    '
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(5,3);
           var list2 =[option];
           var listPromise = shelfGetListOfElementsFromShelf();
           listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfGetElementsResourceLevel(),list2);
+            noShelfElementsAssertion(list, shelfElements.getResourceLevel(),list2);
           });
         });
       });
@@ -59,10 +58,10 @@ describe('shelf',function(){
     }); //not displayed after being selected
 
 
-    xdescribe('Named Parameter' , function(){ // https://www.pivotaltracker.com/story/show/60351064
+    describe('Named Parameter' , function(){
 
       namedParameters.forEach(function(namedParameter){
-        it(namedParameter+' namedParameters are displayed on the shelf', function(){
+        it(namedParameter+' attributes are displayed on the shelf', function(){
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -73,8 +72,8 @@ describe('shelf',function(){
             '        '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(7,7);
-          shelfElemNamedParametersByGroupAssertion();
+          editorSetCursor(7,6);
+          shelfElemNamedParametersByGroupAssertion(shelfElements);
         });
       });
 
@@ -98,7 +97,7 @@ describe('shelf',function(){
               var list2 =[namedParamElem];
               var listPromise = shelfGetListOfElementsFromShelf();
               listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
+                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
               });
             });
           });

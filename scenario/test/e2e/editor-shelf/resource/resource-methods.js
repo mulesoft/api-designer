@@ -1,5 +1,4 @@
 'use strict';
-var expect = require('expect.js');
 var ramlUrl = require('../../../config').url;
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
@@ -18,14 +17,13 @@ describe('shelf',function(){
 //  });
 
   var methods = shelfElements.getResourceLevelMethods();
-  //  var namedParameters = ['baseUriParameters', 'headers', 'queryParameters']; // baseUriParameters is missing example option on the shelf.
-  var options = [ 'headers', 'queryParameters'];
+  var options = ['baseUriParameters', 'headers', 'queryParameters'];
   var parameters = shelfElements.getNamedParametersLevel();
   var methodElems = shelfElements.getMethodsLevel();
   describe('resource-Methods elements',function(){
 
     methods.forEach(function(method){
-      it('Methods - check section', function(){
+      it(method+'- check section', function(){
         var definition = [
           '#%RAML 0.8',
           'title: My api',
@@ -35,7 +33,7 @@ describe('shelf',function(){
         ].join('\\n');
         editorSetValue(definition);
         editorSetCursor(5,5);
-        shelfElementsMethodsByGroupAssertion();
+        shelfElementsMethodsByGroupAssertion(shelfElements);
       });
     });
 
@@ -56,12 +54,12 @@ describe('shelf',function(){
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(8,9);
-            shelfElemNamedParametersByGroupAssertion();
+            shelfElemNamedParametersByGroupAssertion(shelfElements);
           });
         });
       });
 
-      describe('Not displayed after select', function(){
+      describe('after selected', function(){
 
         methods.forEach(function(method){
           options.forEach(function(option){
@@ -83,7 +81,7 @@ describe('shelf',function(){
                 var list2 =[parameter];
                 var listPromise = shelfGetListOfElementsFromShelf();
                 listPromise.then(function (list) {
-                  noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
+                  noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
                 });
               });
             });
@@ -102,7 +100,7 @@ describe('shelf',function(){
 
     }); //body
 
-    describe('Method level - not displayed after being selected', function(){
+    describe('after being selected', function(){
       methods.forEach(function(method){
         methodElems.forEach(function(methodElem){
           it(methods+'-'+methodElem+' is no longer displayed on the shelf', function(){
@@ -112,14 +110,14 @@ describe('shelf',function(){
               '/res:',
               '  '+method+': ',
               '    '+methodElem+': ',
-              '       '
+              '        '
             ].join('\\n');
             editorSetValue(definition);
-            editorSetCursor(5,5);
+            editorSetCursor(6,4);
             var list2 =[methodElem];
             var listPromise = shelfGetListOfElementsFromShelf();
             listPromise.then(function (list) {
-              noShelfElementsAssertion(list, shelfGetElemMethodLevel(),list2);
+              noShelfElementsAssertion(list, shelfElements.getMethodsLevel(),list2);
             });
           });
         });

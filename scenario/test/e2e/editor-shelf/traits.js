@@ -1,5 +1,4 @@
 'use strict';
-var expect = require('expect.js');
 var ramlUrl = require('../../config').url;
 var ShelfElements = require('../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
@@ -18,8 +17,7 @@ describe('shelf',function(){
     });
 //  });
 
-//  var namedParameters = ['baseUriParameters', 'headers', 'queryParameters']; // baseUriParameters is missing example option on the shelf.  
-  var namedParameters = [ 'headers', 'queryParameters'];
+  var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
   describe('traits elements',function(){
 
     it('check elements at trait level', function (){
@@ -32,7 +30,7 @@ describe('shelf',function(){
       ].join('\\n');
       editorSetValue(definition);
       editorSetCursor(5,7);
-      shelfElemTraitsByGroupAssertion();
+      shelfElemTraitsByGroupAssertion(shelfElements);
     });
 
     describe('Named Parameters', function(){
@@ -50,11 +48,11 @@ describe('shelf',function(){
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(7,10);
-          shelfElemNamedParametersByGroupAssertion();
+          shelfElemNamedParametersByGroupAssertion(shelfElements);
         });
       });
 
-      describe('Not displayed after select', function(){
+      describe('after being selected', function(){
         var options = shelfElements.getNamedParametersLevel();
         namedParameters.forEach(function(namedParameter){
           options.forEach(function(option){
@@ -74,7 +72,7 @@ describe('shelf',function(){
               var list2 =[option];
               var listPromise = shelfGetListOfElementsFromShelf();
               listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
+                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
               });
             });
           });
@@ -96,10 +94,10 @@ describe('shelf',function(){
         ].join('\\n');
         editorSetValue(definition);
         editorSetCursor(7,10);
-        shelfElemResponsesByGroupAssertion();
+        shelfElemResponsesByGroupAssertion(shelfElements);
       });
 
-      describe('Not displayed after select', function(){
+      describe('after being selected', function(){
 
         it('displayName is no longer displayed on the shelf', function(){
           var definition = [
@@ -117,7 +115,7 @@ describe('shelf',function(){
           var list2 =['description'];
           var listPromise = shelfGetListOfElementsFromShelf();
           listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfGetElementsResponseLevel(),list2);
+            noShelfElementsAssertion(list, shelfElements.getResponseLevel(),list2);
           });
         });
 
@@ -137,7 +135,7 @@ describe('shelf',function(){
           var list2 =['body'];
           var listPromise = shelfGetListOfElementsFromShelf();
           listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfGetElementsResponseLevel(),list2);
+            noShelfElementsAssertion(list, shelfElements.getResponseLevel(),list2);
           });
         });
 
@@ -149,7 +147,7 @@ describe('shelf',function(){
 
     }); //body
 
-    describe('Not displayed after select', function(){
+    describe('after being selected', function(){
       var options = shelfElements.getTraitsLevel();
       options.forEach(function(option){
         it(option+': property is no longer displayed on the shelf', function(){
@@ -166,7 +164,7 @@ describe('shelf',function(){
           var list2 =[option];
           var listPromise = shelfGetListOfElementsFromShelf();
           listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfGetElementsTraitsLevel(),list2);
+            noShelfElementsAssertion(list, shelfElements.getTraitsLevel(),list2);
           });
         });
       });

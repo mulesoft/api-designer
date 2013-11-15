@@ -1,5 +1,4 @@
 'use strict';
-var expect = require('expect.js');
 var ramlUrl = require('../../config').url;
 var ShelfElements = require ('../../lib/shelf-elements.js').ShelfElements;
 
@@ -27,10 +26,8 @@ describe('shelf',function(){
         var definition = '';
         editorSetValue(definition);
         shelfGetElementsFromShelf().then(function(list){
-          expect(list.length).to.eql(1);
-          list[0].getText().then(function(text){
-          expect(text).to.eql('#%RAML 0.8');
-          });
+          expect(list.length).toEqual(1);
+          expect(list[0].getText()).toEqual(shelfElements.getRamlVersion());
         });
       });
 
@@ -38,7 +35,7 @@ describe('shelf',function(){
         var definition = '#%RAML 0.8';
         editorSetValue(definition);
         shelfGetElementsFromShelf().then(function(list){
-          expect(list.length).to.eql(0);
+          expect(list.length).toEqual(0);
         });
 
       });
@@ -47,21 +44,21 @@ describe('shelf',function(){
 
     describe('root section', function(){
 
-      it('root section by group', function(){
+      it('by group', function(){
         var definition = [
           '#%RAML 0.8',
           '      '
         ].join('\\n');
         editorSetValue(definition);
         editorSetCursor(2,1);
-        shelfElementsRootByGroupAssertion();
+        shelfElementsRootByGroupAssertion(shelfElements);
       });
 
       xdescribe('documentation', function(){
 
       }); //description
 
-      xdescribe('baseUriParameters - NamedParameter', function(){ // Failed due to https://www.pivotaltracker.com/story/show/60351064
+      describe('baseUriParameters - NamedParameter', function(){
 
         it('baseUriParameters - Named Parameters section by group', function(){
           var definition = [
@@ -74,11 +71,11 @@ describe('shelf',function(){
           ].join('\\n');
           editorSetValue(definition);
           editorSetCursor(6,5);
-          shelfElemNamedParametersByGroupAssertion();
+          shelfElemNamedParametersByGroupAssertion(shelfElements);
         });
 
-        describe('Not displayed after select', function(){
-          var options = shelfElements.getElemNamedParametersLevel();
+        describe('after being selected', function(){
+          var options = shelfElements.getNamedParametersLevel();
           options.forEach(function(option){
             it(option+': NamedParameter attribute is no longer displayed on the shelf', function(){
               var definition = [
@@ -95,7 +92,7 @@ describe('shelf',function(){
               var list2 =[option];
               var listPromise = shelfGetListOfElementsFromShelf();
               listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
+                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
               });
             });
           });
@@ -104,7 +101,7 @@ describe('shelf',function(){
 
       }); //baseUriParameters
 
-      describe('Not displayed after select', function(){
+      describe('after being selected', function(){
         var options = shelfElements.getRootLevelWithoutNewResource();
         options.forEach(function(option){
           it(option+': property is no longer displayed on the shelf', function(){
@@ -118,7 +115,7 @@ describe('shelf',function(){
             var list2 =[option];
             var listPromise = shelfGetListOfElementsFromShelf();
             listPromise.then(function (list) {
-              noShelfElementsAssertion(list, shelfGetElementsRootLevel(),list2);
+              noShelfElementsAssertion(list, shelfElements.getRootLevel(),list2);
             });
           });
         });
