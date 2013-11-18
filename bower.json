@@ -2,7 +2,7 @@
   "name": "editor",
   "version": "0.0.1",
   "dependencies": {
-    "CodeMirror": "git@github.com:marijnh/CodeMirror.git",
+    "CodeMirror": "marijnh/CodeMirror",
     "angular": "PatternConsulting/bower-angular#1.1.5",
     "es5-shim": "~2.0.8",
     "json3": "~3.2.4",
