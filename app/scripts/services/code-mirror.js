@@ -166,11 +166,12 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       if (!shouldEnableFoldGutter) {
         foldGutterConfig = false;
       } else {
-        foldGutterConfig = { rangeFinder: CodeMirror.fold.indent };
+        foldGutterConfig = {
+          rangeFinder: CodeMirror.fold.indent,
+          foldOnChangeTimeSpan: 300,
+          updateViewportTimeSpan: 200
+        };
       }
-
-
-      
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         mode: 'raml',
