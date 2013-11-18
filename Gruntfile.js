@@ -115,17 +115,7 @@ module.exports = function (grunt) {
           }
         ]
       },
-      server: '.tmp',
-      updatelibs: {
-        files: [
-          {
-            dot: true,
-            src: ['<%= yeoman.app %>/vendor/scripts/angular.js',
-              '<%= yeoman.app %>/vendor/scripts/raml-parser.js'
-            ]
-          }
-        ]
-      }
+      server: '.tmp'
     },
     jshint: {
       options: {
@@ -195,23 +185,6 @@ module.exports = function (grunt) {
             cwd: '<%= yeoman.app %>/vendor/font/',
             dest: '<%= yeoman.dist %>/font/',
             src: ['*']
-          }
-        ]
-      },
-      updatelibs: {
-        files: [
-          {
-            expand: true,
-            dot: false,
-            cwd: '<%= yeoman.root %>',
-            dest: '<%= yeoman.app %>/vendor/scripts',
-            flatten: true,
-            src: [
-              'bower_components/angular/angular.js',
-              'bower_components/angular/angular-resource.js',
-              'bower_components/angular/angular-sanitize.js',
-              'bower_components/raml-js-parser/dist/raml-parser.js'
-            ]
           }
         ]
       }
@@ -300,11 +273,6 @@ module.exports = function (grunt) {
     'karma'
   ]);
 
-  grunt.registerTask('updatelibs', [
-    'clean:updatelibs',
-    'copy:updatelibs'
-  ]);
-
   grunt.registerTask('build', [
     'clean:dist',
     'jshint',
@@ -325,7 +293,7 @@ module.exports = function (grunt) {
     'connect:livereload',
     'protractor'
   ]);
-  
+
   grunt.registerTask('default', [
     'test',
     'build'

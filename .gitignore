@@ -1,5 +1,5 @@
 node_modules
-bower_components
+app/vendor/bower_components
 dist
 .tmp
 .sass-cache

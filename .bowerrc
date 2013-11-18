@@ -1,3 +1,3 @@
 {
-    "directory": "bower_components"
+    "directory": "app/vendor/bower_components"
 }
