@@ -42,6 +42,9 @@
     },
     focus: function () {
 
+    },
+    getValue: function () {
+      return this.text;
     }
   };
 
