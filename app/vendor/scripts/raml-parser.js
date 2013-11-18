@@ -2523,6 +2523,9 @@ return Q;
 
 })(require("__browserify_process"))
 },{"__browserify_process":5}],7:[function(require,module,exports){
+// nothing to see here... no file methods for the browser
+
+},{}],8:[function(require,module,exports){
 var punycode = { encode : function (s) { return s } };
 
 exports.parse = urlParse;
@@ -3128,14 +3131,12 @@ function parseHost(host) {
   return out;
 }
 
-},{"querystring":8}],9:[function(require,module,exports){
-// nothing to see here... no file methods for the browser
-
-},{}],10:[function(require,module,exports){
+},{"querystring":9}],10:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, events, nodes, raml, util, _ref,
     __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   events = require('./events');
 
@@ -3161,7 +3162,9 @@ function parseHost(host) {
 
   this.Composer = (function() {
     function Composer() {
+      this.composeRamlTree = __bind(this.composeRamlTree, this);
       this.anchors = {};
+      this.filesToRead = [];
     }
 
     Composer.prototype.check_node = function() {
@@ -3182,17 +3185,8 @@ function parseHost(host) {
       }
     };
 
-    Composer.prototype.get_single_node = function(validate, apply, join) {
+    Composer.prototype.getYamlRoot = function() {
       var document, event;
-      if (validate == null) {
-        validate = true;
-      }
-      if (apply == null) {
-        apply = true;
-      }
-      if (join == null) {
-        join = true;
-      }
       this.get_event();
       document = null;
       if (!this.check_event(events.StreamEndEvent)) {
@@ -3203,25 +3197,27 @@ function parseHost(host) {
         throw new exports.ComposerError('document scan', document.start_mark, 'expected a single document in the stream but found another document', event.start_mark);
       }
       this.get_event();
-      if (validate || apply) {
-        this.load_schemas(document);
-        this.load_traits(document);
-        this.load_types(document);
-        this.load_security_schemes(document);
-      }
-      if (validate) {
-        this.validate_document(document);
-      }
-      if (apply) {
-        this.apply_types(document);
-        this.apply_traits(document);
-        this.apply_schemas(document);
-        this.apply_protocols(document);
-      }
-      if (join) {
-        this.join_resources(document);
-      }
       return document;
+    };
+
+    Composer.prototype.composeRamlTree = function(node, settings) {
+      if (settings.validate || settings.transform) {
+        this.load_schemas(node);
+        this.load_traits(node);
+        this.load_types(node);
+        this.load_security_schemes(node);
+      }
+      if (settings.validate) {
+        this.validate_document(node);
+      }
+      if (settings.transform) {
+        this.apply_types(node);
+        this.apply_traits(node);
+        this.apply_schemas(node);
+        this.apply_protocols(node);
+        this.join_resources(node);
+      }
+      return node;
     };
 
     Composer.prototype.compose_document = function() {
@@ -3231,6 +3227,10 @@ function parseHost(host) {
       this.get_event();
       this.anchors = {};
       return node;
+    };
+
+    Composer.prototype.getPendingFilesList = function() {
+      return this.filesToRead;
     };
 
     Composer.prototype.compose_node = function(parent, index) {
@@ -3250,7 +3250,7 @@ function parseHost(host) {
       }
       this.descend_resolver(parent, index);
       if (this.check_event(events.ScalarEvent)) {
-        node = this.compose_scalar_node(anchor);
+        node = this.compose_scalar_node(anchor, parent, index);
       } else if (this.check_event(events.SequenceStartEvent)) {
         node = this.compose_sequence_node(anchor);
       } else if (this.check_event(events.MappingStartEvent)) {
@@ -3270,10 +3270,11 @@ function parseHost(host) {
       return node;
     };
 
-    Composer.prototype.compose_scalar_node = function(anchor) {
-      var event, extension, node, tag;
+    Composer.prototype.compose_scalar_node = function(anchor, parent, key) {
+      var event, extension, fileType, node, tag;
       event = this.get_event();
       tag = event.tag;
+      node = {};
       if (tag === null || tag === '!') {
         tag = this.resolve(nodes.ScalarNode, event.value, event.implicit);
       }
@@ -3281,19 +3282,22 @@ function parseHost(host) {
         if (event.value.match(/^\s*$/)) {
           throw new exports.ComposerError('while composing scalar out of !include', null, "file name/URL cannot be null", event.start_mark);
         }
-        if (this.src != null) {
-          event.value = require('url').resolve(this.src, event.value);
-        }
-        if (this.isInIncludeTagsStack(event.value)) {
-          throw new exports.ComposerError('while composing scalar out of !include', null, "detected circular !include of " + event.value, event.start_mark);
-        }
         extension = event.value.split(".").pop();
         if (extension === 'yaml' || extension === 'yml' || extension === 'raml') {
-          raml.start_mark = event.start_mark;
-          return raml.composeFile(event.value, false, false, false, this);
+          fileType = 'fragment';
+        } else {
+          fileType = 'scalar';
         }
-        raml.start_mark = event.start_mark;
-        node = new nodes.ScalarNode('tag:yaml.org,2002:str', raml.readFile(event.value), event.start_mark, event.end_mark, event.style);
+        this.filesToRead.push({
+          targetUri: event.value,
+          type: fileType,
+          parentNode: parent,
+          parentKey: key,
+          event: event,
+          includingContext: this.src,
+          targetFileUri: event.value
+        });
+        node = void 0;
       } else {
         node = new nodes.ScalarNode(tag, event.value, event.start_mark, event.end_mark, event.style);
       }
@@ -3341,22 +3345,13 @@ function parseHost(host) {
           throw new exports.ComposerError('while composing mapping key', null, "only scalar map keys are allowed in RAML", item_key.start_mark);
         }
         item_value = this.compose_node(node, item_key);
-        node.value.push([item_key, item_value]);
+        if (item_value !== void 0) {
+          node.value.push([item_key, item_value]);
+        }
       }
       end_event = this.get_event();
       node.end_mark = end_event.end_mark;
       return node;
-    };
-
-    Composer.prototype.isInIncludeTagsStack = function(include) {
-      var parent;
-      parent = this;
-      while (parent = parent.parent) {
-        if (parent.src === include) {
-          return true;
-        }
-      }
-      return false;
     };
 
     return Composer;
@@ -3365,7 +3360,7 @@ function parseHost(host) {
 
 }).call(this);
 
-},{"./errors":1,"./events":2,"./nodes":11,"./raml":12,"./util":4,"url":7}],13:[function(require,module,exports){
+},{"./errors":1,"./events":2,"./nodes":11,"./raml":12,"./util":4}],13:[function(require,module,exports){
 require=(function(e,t,n,r){function i(r){if(!n[r]){if(!t[r]){if(e)return e(r);throw new Error("Cannot find module '"+r+"'")}var s=n[r]={exports:{}};t[r][0](function(e){var n=t[r][1][e];return i(n?n:e)},s,s.exports)}return n[r].exports}for(var s=0;s<r.length;s++)i(r[s]);return i})(typeof require!=="undefined"&&require,{1:[function(require,module,exports){
 exports.readIEEE754 = function(buffer, offset, isBE, mLen, nBytes) {
   var e, m,
@@ -7280,49 +7275,6 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
       this.deferred_constructors = [];
     }
 
-    /*
-    Are there more documents available?
-    */
-
-
-    BaseConstructor.prototype.check_data = function() {
-      return this.check_node();
-    };
-
-    /*
-    Construct and return the next document.
-    */
-
-
-    BaseConstructor.prototype.get_data = function() {
-      if (this.check_node()) {
-        return this.construct_document(this.get_node());
-      }
-    };
-
-    /*
-    Ensure that the stream contains a single document and construct it.
-    */
-
-
-    BaseConstructor.prototype.get_single_data = function(validate, apply, join) {
-      var node;
-      if (validate == null) {
-        validate = true;
-      }
-      if (apply == null) {
-        apply = true;
-      }
-      if (join == null) {
-        join = true;
-      }
-      node = this.get_single_node(validate, apply, join);
-      if (node != null) {
-        return this.construct_document(node);
-      }
-      return null;
-    };
-
     BaseConstructor.prototype.construct_document = function(node) {
       var data;
       this.applyAstTransformations(node);
@@ -8033,7 +7985,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
     return (function() {
       var component, components;
 
-      components = [Reader, Scanner, Parser, Composer, Resolver, Validator, Traits, ResourceTypes, Schemas, Protocols, Joiner, Constructor, SecuritySchemes, Transformations];
+      components = [Reader, Scanner, Composer, Transformations, Parser, Resolver, Validator, Traits, ResourceTypes, Schemas, Protocols, Joiner, Constructor, SecuritySchemes];
 
       util.extend.apply(util, [_Class.prototype].concat((function() {
         var _i, _len, _results;
@@ -8045,12 +7997,14 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
         return _results;
       })()));
 
-      function _Class(stream, location, validate, parent) {
+      function _Class(stream, location, settings, parent) {
         var _i, _len, _ref;
-        this.parent = parent;
+        this.parent = parent != null ? parent : null;
         components[0].call(this, stream, location);
-        components[1].call(this, validate);
-        _ref = components.slice(2);
+        components[1].call(this, settings);
+        components[2].call(this, settings);
+        components[3].call(this, settings);
+        _ref = components.slice(4);
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           component = _ref[_i];
           component.call(this);
@@ -9048,7 +9002,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4,"url":7}],17:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4,"url":8}],17:[function(require,module,exports){
 (function() {
   var Mark, MarkedYAMLError, _ref, _ref1,
     __hasProp = {}.hasOwnProperty,
@@ -9360,7 +9314,11 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4}],23:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4}],28:[function(require,module,exports){
+window.RAML = {}
+
+window.RAML.Parser = require('../lib/raml')
+},{"../lib/raml":12}],23:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9549,7 +9507,108 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./util":4}],18:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./util":4}],24:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, nodes, _ref,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
+    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  /*
+  The Schemas throws these.
+  */
+
+
+  this.SchemaError = (function(_super) {
+    __extends(SchemaError, _super);
+
+    function SchemaError() {
+      _ref = SchemaError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return SchemaError;
+
+  })(MarkedYAMLError);
+
+  /*
+    The Schemas class deals with applying schemas to resources according to the spec
+  */
+
+
+  this.Schemas = (function() {
+    function Schemas() {
+      this.get_schemas_used = __bind(this.get_schemas_used, this);
+      this.apply_schemas = __bind(this.apply_schemas, this);
+      this.get_all_schemas = __bind(this.get_all_schemas, this);
+      this.has_schemas = __bind(this.has_schemas, this);
+      this.load_schemas = __bind(this.load_schemas, this);
+      this.declaredSchemas = {};
+    }
+
+    Schemas.prototype.load_schemas = function(node) {
+      var allSchemas,
+        _this = this;
+      if (this.has_property(node, "schemas")) {
+        allSchemas = this.property_value(node, "schemas");
+        if (allSchemas && typeof allSchemas === "object") {
+          return allSchemas.forEach(function(schema_entry) {
+            if (schema_entry && typeof schema_entry === "object" && typeof schema_entry.value === "object") {
+              return schema_entry.value.forEach(function(schema) {
+                return _this.declaredSchemas[schema[0].value] = schema;
+              });
+            }
+          });
+        }
+      }
+    };
+
+    Schemas.prototype.has_schemas = function(node) {
+      if (this.declaredSchemas.length === 0 && this.has_property(node, "schemas")) {
+        this.load_schemas(node);
+      }
+      return Object.keys(this.declaredSchemas).length > 0;
+    };
+
+    Schemas.prototype.get_all_schemas = function() {
+      return this.declaredSchemas;
+    };
+
+    Schemas.prototype.apply_schemas = function(node) {
+      var resources, schemas,
+        _this = this;
+      resources = this.child_resources(node);
+      schemas = this.get_schemas_used(resources);
+      return schemas.forEach(function(schema) {
+        if (schema[1].value in _this.declaredSchemas) {
+          return schema[1].value = _this.declaredSchemas[schema[1].value][1].value;
+        }
+      });
+    };
+
+    Schemas.prototype.get_schemas_used = function(resources) {
+      var schemas,
+        _this = this;
+      schemas = [];
+      resources.forEach(function(resource) {
+        var properties;
+        properties = _this.get_properties(resource[1], "schema");
+        return schemas = schemas.concat(properties);
+      });
+      return schemas;
+    };
+
+    return Schemas;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":11}],18:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, SimpleKey, tokens, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -9648,12 +9707,10 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
     */
 
 
-    function Scanner(validateHeader) {
-      if (validateHeader == null) {
-        validateHeader = false;
-      }
+    function Scanner(settings) {
+      this.settings = settings;
       this.done = false;
-      this.ramlHeaderFound = !validateHeader;
+      this.ramlHeaderFound = !this.settings.validate;
       this.flow_level = 0;
       this.tokens = [];
       this.fetch_stream_start();
@@ -11055,112 +11112,7 @@ SlowBuffer.prototype.writeDoubleBE = Buffer.prototype.writeDoubleBE;
 
 }).call(this);
 
-},{"./errors":1,"./tokens":3,"./util":4}],28:[function(require,module,exports){
-window.RAML = {}
-
-window.RAML.Parser = require('../lib/raml')
-},{"../lib/raml":12}],24:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, nodes, _ref,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; },
-    __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  /*
-  The Schemas throws these.
-  */
-
-
-  this.SchemaError = (function(_super) {
-    __extends(SchemaError, _super);
-
-    function SchemaError() {
-      _ref = SchemaError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return SchemaError;
-
-  })(MarkedYAMLError);
-
-  /*
-    The Schemas class deals with applying schemas to resources according to the spec
-  */
-
-
-  this.Schemas = (function() {
-    function Schemas() {
-      this.get_schemas_used = __bind(this.get_schemas_used, this);
-      this.apply_schemas = __bind(this.apply_schemas, this);
-      this.get_all_schemas = __bind(this.get_all_schemas, this);
-      this.has_schemas = __bind(this.has_schemas, this);
-      this.load_schemas = __bind(this.load_schemas, this);
-      this.declaredSchemas = {};
-    }
-
-    Schemas.prototype.load_schemas = function(node) {
-      var allSchemas,
-        _this = this;
-      if (this.has_property(node, "schemas")) {
-        allSchemas = this.property_value(node, "schemas");
-        if (allSchemas && typeof allSchemas === "object") {
-          return allSchemas.forEach(function(schema_entry) {
-            if (schema_entry && typeof schema_entry === "object" && typeof schema_entry.value === "object") {
-              return schema_entry.value.forEach(function(schema) {
-                return _this.declaredSchemas[schema[0].value] = schema;
-              });
-            }
-          });
-        }
-      }
-    };
-
-    Schemas.prototype.has_schemas = function(node) {
-      if (this.declaredSchemas.length === 0 && this.has_property(node, "schemas")) {
-        this.load_schemas(node);
-      }
-      return Object.keys(this.declaredSchemas).length > 0;
-    };
-
-    Schemas.prototype.get_all_schemas = function() {
-      return this.declaredSchemas;
-    };
-
-    Schemas.prototype.apply_schemas = function(node) {
-      var resources, schemas,
-        _this = this;
-      resources = this.child_resources(node);
-      schemas = this.get_schemas_used(resources);
-      return schemas.forEach(function(schema) {
-        if (schema[1].value in _this.declaredSchemas) {
-          return schema[1].value = _this.declaredSchemas[schema[1].value][1].value;
-        }
-      });
-    };
-
-    Schemas.prototype.get_schemas_used = function(resources) {
-      var schemas,
-        _this = this;
-      schemas = [];
-      resources.forEach(function(resource) {
-        var properties;
-        properties = _this.get_properties(resource[1], "schema");
-        return schemas = schemas.concat(properties);
-      });
-      return schemas;
-    };
-
-    return Schemas;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":11}],26:[function(require,module,exports){
+},{"./errors":1,"./tokens":3,"./util":4}],26:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -11240,7 +11192,7 @@ window.RAML.Parser = require('../lib/raml')
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11}],8:[function(require,module,exports){
+},{"./errors":1,"./nodes":11}],9:[function(require,module,exports){
 
 /**
  * Object#toString() ref for stringify().
@@ -11561,33 +11513,13 @@ function decode(str) {
 
 },{}],12:[function(require,module,exports){
 (function() {
-  var _ref,
+  var defaultSettings, _ref,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-  this.composer = require('./composer');
-
-  this.constructor = require('./construct');
-
   this.errors = require('./errors');
 
-  this.events = require('./events');
-
   this.loader = require('./loader');
-
-  this.nodes = require('./nodes');
-
-  this.parser = require('./parser');
-
-  this.reader = require('./reader');
-
-  this.resolver = require('./resolver');
-
-  this.scanner = require('./scanner');
-
-  this.tokens = require('./tokens');
-
-  this.q = require('q');
 
   this.FileError = (function(_super) {
     __extends(FileError, _super);
@@ -11601,55 +11533,320 @@ function decode(str) {
 
   })(this.errors.MarkedYAMLError);
 
+  this.FileReader = (function() {
+    function FileReader(readFileAsyncOverride) {
+      this.q = require('q');
+      this.url = require('url');
+      if (readFileAsyncOverride) {
+        this.readFileAsyncOverride = readFileAsyncOverride;
+      }
+    }
+
+    /*
+    Read file either locally or from the network.
+    */
+
+
+    FileReader.prototype.readFileAsync = function(file) {
+      var targerUrl;
+      if (this.readFileAsyncOverride) {
+        return this.readFileAsyncOverride(file);
+      }
+      targerUrl = this.url.parse(file);
+      if (targerUrl.protocol != null) {
+        if (!targerUrl.protocol.match(/^https?/i)) {
+          throw new exports.FileError("while reading " + file, null, "unknown protocol " + targerUrl.protocol, this.start_mark);
+        } else {
+          return this.fetchFileAsync(file);
+        }
+      } else {
+        if (typeof window !== "undefined" && window !== null) {
+          return this.fetchFileAsync(file);
+        } else {
+          return this.fetchLocalFileAsync(file);
+        }
+      }
+    };
+
+    /*
+    Read file from the disk.
+    */
+
+
+    FileReader.prototype.fetchLocalFileAsync = function(file) {
+      var deferred,
+        _this = this;
+      deferred = this.q.defer();
+      require('fs').readFile(file, function(err, data) {
+        if (err) {
+          return deferred.reject(new exports.FileError("while reading " + file, null, "cannot read " + file + " (" + err + ")", _this.start_mark));
+        } else {
+          return deferred.resolve(data.toString());
+        }
+      });
+      return deferred.promise;
+    };
+
+    /*
+    Read file from the network.
+    */
+
+
+    FileReader.prototype.fetchFileAsync = function(file) {
+      var deferred, error, xhr,
+        _this = this;
+      deferred = this.q.defer();
+      if (typeof window !== "undefined" && window !== null) {
+        xhr = new XMLHttpRequest();
+      } else {
+        xhr = new (require('xmlhttprequest').XMLHttpRequest)();
+      }
+      try {
+        xhr.open('GET', file, false);
+        xhr.setRequestHeader('Accept', 'application/raml+yaml, */*');
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) {
+            if ((typeof xhr.status === 'number' && xhr.status === 200) || (typeof xhr.status === 'string' && xhr.status.match(/^200/i))) {
+              return deferred.resolve(xhr.responseText);
+            } else {
+              return deferred.reject(new exports.FileError("while fetching " + file, null, "cannot fetch " + file + " (" + xhr.statusText + ")", _this.start_mark));
+            }
+          }
+        };
+        xhr.send(null);
+        return deferred.promise;
+      } catch (_error) {
+        error = _error;
+        throw new exports.FileError("while fetching " + file, null, "cannot fetch " + file + " (" + error + ")", this.start_mark);
+      }
+    };
+
+    return FileReader;
+
+  })();
+
   /*
-  Scan a RAML stream and produce scanning tokens.
+  OO version of the parser, static functions will be removed after consumers move on to use the OO version
+  OO will offer caching
   */
 
 
-  this.scan = function(stream, location) {
-    var loader, _results;
-    loader = new exports.loader.Loader(stream, location, false);
-    _results = [];
-    while (loader.check_token()) {
-      _results.push(loader.get_token());
+  this.RamlParser = (function() {
+    function RamlParser(settings) {
+      this.settings = settings != null ? settings : defaultSettings;
+      this.q = require('q');
+      this.url = require('url');
+      this.nodes = require('./nodes');
+      this.loadDefaultSettings(settings);
     }
-    return _results;
-  };
+
+    RamlParser.prototype.loadDefaultSettings = function(settings) {
+      var _this = this;
+      return Object.keys(defaultSettings).forEach(function(settingName) {
+        if (!(settingName in settings)) {
+          return settings[settingName] = defaultSettings[settingName];
+        }
+      });
+    };
+
+    RamlParser.prototype.loadFile = function(file, settings) {
+      var error,
+        _this = this;
+      if (settings == null) {
+        settings = this.settings;
+      }
+      try {
+        return settings.reader.readFileAsync(file).then(function(stream) {
+          return _this.load(stream, file, settings);
+        });
+      } catch (_error) {
+        error = _error;
+        return this.q.fcall(function() {
+          throw new exports.FileError("while fetching " + file, null, "cannot fetch " + file + " (" + error + ")", null);
+        });
+      }
+    };
+
+    RamlParser.prototype.composeFile = function(file, settings) {
+      var error,
+        _this = this;
+      if (settings == null) {
+        settings = this.settings;
+      }
+      try {
+        return settings.reader.readFileAsync(file).then(function(stream) {
+          return _this.compose(stream, file, settings, parent);
+        });
+      } catch (_error) {
+        error = _error;
+        return this.q.fcall(function() {
+          throw new exports.FileError("while fetching " + file, null, "cannot fetch " + file + " (" + error + ")", null);
+        });
+      }
+    };
+
+    RamlParser.prototype.compose = function(stream, location, settings, parent) {
+      if (settings == null) {
+        settings = this.settings;
+      }
+      if (parent == null) {
+        parent = {
+          src: location
+        };
+      }
+      settings.compose = false;
+      return this.parseStream(stream, location, settings, parent);
+    };
+
+    RamlParser.prototype.load = function(stream, location, settings) {
+      if (settings == null) {
+        settings = this.settings;
+      }
+      settings.compose = true;
+      return this.parseStream(stream, location, settings, {
+        src: location
+      });
+    };
+
+    RamlParser.prototype.parseStream = function(stream, location, settings, parent) {
+      var loader,
+        _this = this;
+      if (settings == null) {
+        settings = this.settings;
+      }
+      loader = new exports.loader.Loader(stream, location, settings, parent);
+      return this.q.fcall(function() {
+        return loader.getYamlRoot();
+      }).then(function(partialTree) {
+        var files;
+        files = loader.getPendingFilesList();
+        return _this.getPendingFiles(loader, partialTree, files);
+      }).then(function(fullyAssembledTree) {
+        loader.composeRamlTree(fullyAssembledTree, settings);
+        if (settings.compose) {
+          if (fullyAssembledTree != null) {
+            return loader.construct_document(fullyAssembledTree);
+          } else {
+            return null;
+          }
+        } else {
+          return fullyAssembledTree;
+        }
+      });
+    };
+
+    RamlParser.prototype.getPendingFiles = function(loader, node, files) {
+      var file, lastVisitedNode, loc, _i, _len,
+        _this = this;
+      loc = [];
+      lastVisitedNode = void 0;
+      for (_i = 0, _len = files.length; _i < _len; _i++) {
+        file = files[_i];
+        loc.push(this.getPendingFile(loader, file).then(function(overwritingnode) {
+          if (overwritingnode && !lastVisitedNode) {
+            return lastVisitedNode = overwritingnode;
+          }
+        }));
+      }
+      return this.q.all(loc).then(function() {
+        if (lastVisitedNode) {
+          return lastVisitedNode;
+        } else {
+          return node;
+        }
+      });
+    };
+
+    RamlParser.prototype.getPendingFile = function(loader, fileInfo) {
+      var error, event, fileUri, key, node,
+        _this = this;
+      node = fileInfo.parentNode;
+      event = fileInfo.event;
+      key = fileInfo.parentKey;
+      fileUri = fileInfo.targetFileUri;
+      if (fileInfo.includingContext) {
+        fileUri = this.url.resolve(fileInfo.includingContext, fileInfo.targetFileUri);
+      }
+      if (loader.parent && this.isInIncludeTagsStack(fileUri, loader)) {
+        throw new exports.FileError('while composing scalar out of !include', null, "detected circular !include of " + event.value, event.start_mark);
+      }
+      try {
+        if (fileInfo.type === 'fragment') {
+          return this.settings.reader.readFileAsync(fileUri).then(function(result) {
+            return _this.compose(result, fileUri, {
+              validate: false,
+              transform: false,
+              compose: true
+            }, loader);
+          }).then(function(value) {
+            return _this.appendNewNodeToParent(node, key, value);
+          })["catch"](function(error) {
+            return _this.addContextToError(error, event);
+          });
+        } else {
+          return this.settings.reader.readFileAsync(fileUri).then(function(result) {
+            var value;
+            value = new _this.nodes.ScalarNode('tag:yaml.org,2002:str', result, event.start_mark, event.end_mark, event.style);
+            return _this.appendNewNodeToParent(node, key, value);
+          })["catch"](function(error) {
+            return _this.addContextToError(error, event);
+          });
+        }
+      } catch (_error) {
+        error = _error;
+        return this.addContextToError(error, event);
+      }
+    };
+
+    RamlParser.prototype.addContextToError = function(error, event) {
+      if (error.constructor.name === "FileError") {
+        if (!error.problem_mark) {
+          error.problem_mark = event.start_mark;
+        }
+        throw error;
+      } else {
+        throw new exports.FileError('while reading file', null, "error: " + error, event.start_mark);
+      }
+    };
+
+    RamlParser.prototype.isInIncludeTagsStack = function(include, parent) {
+      while (parent = parent.parent) {
+        if (parent.src === include) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    RamlParser.prototype.appendNewNodeToParent = function(node, key, value) {
+      var item;
+      if (node) {
+        if (key != null) {
+          item = [key, value];
+        } else {
+          item = [value];
+        }
+        node.value.push(item);
+        return null;
+      } else {
+        return value;
+      }
+    };
+
+    return RamlParser;
+
+  })();
 
   /*
-  Parse a RAML stream and produce parsing events.
+    validate controls whether the stream must be processed as a
   */
 
 
-  this.parse = function(stream, location) {
-    var loader, _results;
-    loader = new exports.loader.Loader(stream, location, false);
-    _results = [];
-    while (loader.check_event()) {
-      _results.push(loader.get_event());
-    }
-    return _results;
-  };
-
-  /*
-  Parse the first RAML document in a stream and produce the corresponding
-  representation tree.
-  */
-
-
-  this.compose = function(stream, validate, apply, join, location, parent) {
-    var loader;
-    if (validate == null) {
-      validate = true;
-    }
-    if (apply == null) {
-      apply = true;
-    }
-    if (join == null) {
-      join = true;
-    }
-    loader = new exports.loader.Loader(stream, location, validate, parent);
-    return loader.get_single_node(validate, apply, join);
+  defaultSettings = {
+    validate: true,
+    transform: true,
+    compose: true,
+    reader: new exports.FileReader(null)
   };
 
   /*
@@ -11658,52 +11855,13 @@ function decode(str) {
   */
 
 
-  this.load = function(stream, validate, location) {
-    var _this = this;
-    if (validate == null) {
-      validate = true;
+  this.loadFile = function(file, settings) {
+    var parser;
+    if (settings == null) {
+      settings = defaultSettings;
     }
-    return this.q.fcall(function() {
-      var loader;
-      loader = new exports.loader.Loader(stream, location, validate);
-      return loader.get_single_data();
-    });
-  };
-
-  /*
-  Parse the first RAML document in a stream and produce a list of
-  all the absolute URIs for all resources.
-  */
-
-
-  this.resources = function(stream, validate, location) {
-    var _this = this;
-    if (validate == null) {
-      validate = true;
-    }
-    return this.q.fcall(function() {
-      var loader;
-      loader = new exports.loader.Loader(stream, location, validate);
-      return loader.resources();
-    });
-  };
-
-  /*
-  Parse the first RAML document in a stream and produce the corresponding
-  Javascript object.
-  */
-
-
-  this.loadFile = function(file, validate) {
-    var _this = this;
-    if (validate == null) {
-      validate = true;
-    }
-    return this.q.fcall(function() {
-      var stream;
-      stream = _this.readFile(file);
-      return _this.load(stream, validate, file);
-    });
+    parser = new exports.RamlParser(settings);
+    return parser.loadFile(file, settings);
   };
 
   /*
@@ -11712,93 +11870,54 @@ function decode(str) {
   */
 
 
-  this.composeFile = function(file, validate, apply, join, parent) {
-    var stream;
-    if (validate == null) {
-      validate = true;
+  this.composeFile = function(file, settings, parent) {
+    var parser;
+    if (settings == null) {
+      settings = defaultSettings;
     }
-    if (apply == null) {
-      apply = true;
+    if (parent == null) {
+      parent = file;
     }
-    if (join == null) {
-      join = true;
-    }
-    stream = this.readFile(file);
-    return this.compose(stream, validate, apply, join, file, parent);
+    parser = new exports.RamlParser(settings);
+    return parser.composeFile(file, settings, parent);
   };
 
   /*
-  Parse the first RAML document in a file and produce a list of
-  all the absolute URIs for all resources.
+  Parse the first RAML document in a stream and produce the corresponding
+  representation tree.
   */
 
 
-  this.resourcesFile = function(file, validate) {
-    var stream;
-    if (validate == null) {
-      validate = true;
+  this.compose = function(stream, location, settings, parent) {
+    var parser;
+    if (settings == null) {
+      settings = defaultSettings;
     }
-    stream = this.readFile(file);
-    return this.resources(stream, validate, file);
+    if (parent == null) {
+      parent = location;
+    }
+    parser = new exports.RamlParser(settings);
+    return parser.compose(stream, location, settings, parent);
   };
 
   /*
-  Read file either locally or from the network.
+  Parse the first RAML document in a stream and produce the corresponding
+  Javascript object.
   */
 
 
-  this.readFile = function(file) {
-    var error, url;
-    url = require('url').parse(file);
-    if (url.protocol != null) {
-      if (!url.protocol.match(/^https?/i)) {
-        throw new exports.FileError("while reading " + file, null, "unknown protocol " + url.protocol, this.start_mark);
-      } else {
-        return this.fetchFile(file);
-      }
-    } else {
-      if (typeof window !== "undefined" && window !== null) {
-        return this.fetchFile(file);
-      } else {
-        try {
-          return require('fs').readFileSync(file).toString();
-        } catch (_error) {
-          error = _error;
-          throw new exports.FileError("while reading " + file, null, "cannot read " + file + " (" + error + ")", this.start_mark);
-        }
-      }
+  this.load = function(stream, location, settings) {
+    var parser;
+    if (settings == null) {
+      settings = defaultSettings;
     }
-  };
-
-  /*
-  Read file from the network.
-  */
-
-
-  this.fetchFile = function(file) {
-    var error, xhr;
-    if (typeof window !== "undefined" && window !== null) {
-      xhr = new XMLHttpRequest();
-    } else {
-      xhr = new (require('xmlhttprequest').XMLHttpRequest)();
-    }
-    try {
-      xhr.open('GET', file, false);
-      xhr.setRequestHeader('Accept', 'application/raml+yaml, */*');
-      xhr.send(null);
-      if ((typeof xhr.status === 'number' && xhr.status === 200) || (typeof xhr.status === 'string' && xhr.status.match(/^200/i))) {
-        return xhr.responseText;
-      }
-      throw new Error("HTTP " + xhr.status + " " + xhr.statusText);
-    } catch (_error) {
-      error = _error;
-      throw new exports.FileError("while fetching " + file, null, "cannot fetch " + file + " (" + error + ")", this.start_mark);
-    }
+    parser = new exports.RamlParser(settings);
+    return parser.load(stream, location, settings, null);
   };
 
 }).call(this);
 
-},{"./composer":10,"./construct":14,"./errors":1,"./events":2,"./loader":16,"./nodes":11,"./parser":19,"./reader":17,"./resolver":20,"./scanner":18,"./tokens":3,"fs":9,"q":6,"url":7,"xmlhttprequest":29}],27:[function(require,module,exports){
+},{"./errors":1,"./loader":16,"./nodes":11,"fs":7,"q":6,"url":8,"xmlhttprequest":29}],27:[function(require,module,exports){
 (function() {
   var nodes, uritemplate, url, util,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
@@ -11817,7 +11936,8 @@ function decode(str) {
 
 
   this.Transformations = (function() {
-    function Transformations() {
+    function Transformations(settings) {
+      this.settings = settings;
       this.isContentTypeString = __bind(this.isContentTypeString, this);
       this.add_key_value_to_node = __bind(this.add_key_value_to_node, this);
       this.apply_default_media_type_to_resource = __bind(this.apply_default_media_type_to_resource, this);
@@ -11830,13 +11950,17 @@ function decode(str) {
 
     Transformations.prototype.applyTransformations = function(rootObject) {
       var resources;
-      this.applyTransformationsToRoot(rootObject);
-      resources = rootObject.resources;
-      return this.applyTransformationsToResources(rootObject, resources);
+      if (this.settings.transform) {
+        this.applyTransformationsToRoot(rootObject);
+        resources = rootObject.resources;
+        return this.applyTransformationsToResources(rootObject, resources);
+      }
     };
 
     Transformations.prototype.applyAstTransformations = function(document) {
-      return this.transform_document(document);
+      if (this.settings.transform) {
+        return this.transform_document(document);
+      }
     };
 
     Transformations.prototype.load_default_media_type = function(node) {
@@ -12303,7 +12427,7 @@ function decode(str) {
 
 }).call(this);
 
-},{"./nodes":11,"./util":4,"uritemplate":30,"url":7}],21:[function(require,module,exports){
+},{"./nodes":11,"./util":4,"uritemplate":30,"url":8}],21:[function(require,module,exports){
 (function() {
   var MarkedYAMLError, nodes, traits, uritemplate, url, util, _ref,
     __hasProp = {}.hasOwnProperty,
@@ -12412,17 +12536,17 @@ function decode(str) {
       return _results;
     };
 
-    Validator.prototype.trackRepeatedProperties = function(properties, property, mark, section, errorMessage) {
+    Validator.prototype.trackRepeatedProperties = function(properties, key, property, section, errorMessage) {
       if (section == null) {
         section = "RAML";
       }
       if (errorMessage == null) {
         errorMessage = "a property with the same name already exists";
       }
-      if (property in properties) {
-        throw new exports.ValidationError("while validating " + section, null, errorMessage + (": '" + property + "'"), mark);
+      if (key in properties) {
+        throw new exports.ValidationError("while validating " + section, null, "" + errorMessage + ": '" + key + "'", property.start_mark);
       }
-      return properties[property] = true;
+      return properties[key] = property;
     };
 
     Validator.prototype.validate_security_scheme = function(scheme) {
@@ -12433,7 +12557,7 @@ function decode(str) {
       _ref1 = scheme.value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         property = _ref1[_i];
-        this.trackRepeatedProperties(schemeProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "property already used in security scheme");
+        this.trackRepeatedProperties(schemeProperties, property[0].value, property[0], 'while validating security scheme', "property already used in security scheme");
         switch (property[0].value) {
           case "description":
             if (!util.isScalar(property[1])) {
@@ -12480,7 +12604,7 @@ function decode(str) {
       _ref1 = settings[1].value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         property = _ref1[_i];
-        this.trackRepeatedProperties(settingProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "setting with the same name already exists");
+        this.trackRepeatedProperties(settingProperties, property[0].value, property[0], 'while validating security scheme', "setting with the same name already exists");
         switch (property[0].value) {
           case "authorizationUri":
             if (!util.isString(property[1])) {
@@ -12512,7 +12636,7 @@ function decode(str) {
       _ref1 = settings[1].value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         property = _ref1[_i];
-        this.trackRepeatedProperties(settingProperties, property[0].value, property[0].start_mark, 'while validating security scheme', "setting with the same name already exists");
+        this.trackRepeatedProperties(settingProperties, property[0].value, property[0], 'while validating security scheme', "setting with the same name already exists");
         switch (property[0].value) {
           case "requestTokenUri":
             if (!util.isString(property[1])) {
@@ -12606,7 +12730,7 @@ function decode(str) {
         for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
           uriParameter = _ref2[_i];
           parameterName = this.canonicalizePropertyName(uriParameter[0].value, allowParameterKeys);
-          this.trackRepeatedProperties(uriParameters, parameterName, uriProperty.start_mark, 'while validating URI parameters', "URI parameter with the same name already exists");
+          this.trackRepeatedProperties(uriParameters, parameterName, uriProperty, 'while validating URI parameters', "URI parameter with the same name already exists");
           if (__indexOf.call(reservedNames, parameterName) >= 0) {
             throw new exports.ValidationError('while validating baseUri', null, uriParameter[0].value + ' parameter not allowed here', uriParameter[0].start_mark);
           }
@@ -12749,7 +12873,7 @@ function decode(str) {
         childNode = _ref1[_i];
         propertyName = childNode[0].value;
         propertyValue = childNode[1].value;
-        this.trackRepeatedProperties(parameterProperties, this.canonicalizePropertyName(childNode[0].value, true), childNode[0].start_mark, 'while validating parameter properties', "parameter property already used");
+        this.trackRepeatedProperties(parameterProperties, this.canonicalizePropertyName(childNode[0].value, true), childNode[0], 'while validating parameter properties', "parameter property already used");
         booleanValues = ["true", "false"];
         if (allowParameterKeys && this.isParameterKey(childNode)) {
           continue;
@@ -12870,16 +12994,17 @@ function decode(str) {
     };
 
     Validator.prototype.validate_root_properties = function(node) {
-      var checkVersion, rootProperties,
-        _this = this;
+      var checkVersion, property, rootProperties, _i, _len, _ref1;
       checkVersion = false;
       rootProperties = {};
       if (node != null ? node.value : void 0) {
-        node.value.forEach(function(property) {
+        _ref1 = node.value;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          property = _ref1[_i];
           if (property[0].value.match(/^\//)) {
-            _this.trackRepeatedProperties(rootProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating root properties', "resource already declared");
+            this.trackRepeatedProperties(rootProperties, this.canonicalizePropertyName(property[0].value, true), property[0], 'while validating root properties', "resource already declared");
           } else {
-            _this.trackRepeatedProperties(rootProperties, property[0].value, property[0].start_mark, 'while validating root properties', 'root property already used');
+            this.trackRepeatedProperties(rootProperties, property[0].value, property[0], 'while validating root properties', 'root property already used');
           }
           switch (property[0].value) {
             case 'title':
@@ -12891,49 +13016,58 @@ function decode(str) {
               if (!util.isScalar(property[1])) {
                 throw new exports.ValidationError('while validating root properties', null, 'baseUri must be a string', property[0].start_mark);
               }
-              _this.baseUri = property[1].value;
-              return checkVersion = _this.validate_base_uri(property[1]);
+              this.baseUri = property[1].value;
+              checkVersion = this.validate_base_uri(property[1]);
+              break;
             case 'securitySchemes':
-              return _this.validate_security_schemes(property[1]);
+              this.validate_security_schemes(property[1]);
+              break;
             case 'schemas':
-              return _this.validate_root_schemas(property[1]);
+              this.validate_root_schemas(property[1]);
+              break;
             case 'version':
               if (!util.isScalar(property[1])) {
                 throw new exports.ValidationError('while validating root properties', null, 'version must be a string', property[0].start_mark);
               }
               if (!util.isNull(property[1])) {
-                return property[1].tag = 'tag:yaml.org,2002:str';
+                property[1].tag = 'tag:yaml.org,2002:str';
               }
               break;
             case 'traits':
-              return _this.validate_traits(property[1]);
+              this.validate_traits(property[1]);
+              break;
             case 'documentation':
               if (!util.isSequence(property[1])) {
                 throw new exports.ValidationError('while validating root properties', null, 'documentation must be an array', property[0].start_mark);
               }
-              return _this.validate_documentation(property[1]);
+              this.validate_documentation(property[1]);
+              break;
             case 'mediaType':
               if (!util.isString(property[1])) {
                 throw new exports.ValidationError('while validating root properties', null, 'mediaType must be a scalar', property[0].start_mark);
               }
               break;
             case 'baseUriParameters':
-              _this.baseUriParameters = property[1];
-              return util.isNoop(property[1]);
+              this.baseUriParameters = property[1];
+              util.isNoop(property[1]);
+              break;
             case 'resourceTypes':
-              return _this.validate_types(property[1]);
+              this.validate_types(property[1]);
+              break;
             case 'securedBy':
-              return _this.validate_secured_by(property);
+              this.validate_secured_by(property);
+              break;
             case 'protocols':
-              return _this.validate_protocols_property(property);
+              this.validate_protocols_property(property);
+              break;
             default:
               if (property[0].value.match(/^\//)) {
-                return _this.validate_resource(property);
+                this.validate_resource(property);
               } else {
                 throw new exports.ValidationError('while validating root properties', null, "unknown property " + property[0].value, property[0].start_mark);
               }
           }
-        });
+        }
       }
       if (!('title' in rootProperties)) {
         throw new exports.ValidationError('while validating root properties', null, 'missing title', node.start_mark);
@@ -12944,40 +13078,46 @@ function decode(str) {
     };
 
     Validator.prototype.validate_documentation = function(documentation_property) {
-      var _this = this;
+      var docSection, _i, _len, _ref1, _results;
       if (!documentation_property.value.length) {
         throw new exports.ValidationError('while validating documentation section', null, 'there must be at least one document in the documentation section', documentation_property.start_mark);
       }
-      return documentation_property.value.forEach(function(docSection) {
-        return _this.validate_doc_section(docSection);
-      });
+      _ref1 = documentation_property.value;
+      _results = [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        docSection = _ref1[_i];
+        _results.push(this.validate_doc_section(docSection));
+      }
+      return _results;
     };
 
     Validator.prototype.validate_doc_section = function(docSection) {
-      var docProperties,
-        _this = this;
+      var docProperties, hasContent, hasTitle, property, _i, _len, _ref1;
       if (!util.isMapping(docSection)) {
         throw new exports.ValidationError('while validating documentation section', null, 'each documentation section must be a map', docSection.start_mark);
       }
       docProperties = {};
-      docSection.value.forEach(function(property) {
-        var hasContent, hasTitle;
-        _this.trackRepeatedProperties(docProperties, property[0].value, property[0].start_mark, 'while validating documentation section', "property already used");
+      _ref1 = docSection.value;
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        property = _ref1[_i];
+        this.trackRepeatedProperties(docProperties, property[0].value, property[0], 'while validating documentation section', "property already used");
         switch (property[0].value) {
           case "title":
             if (!(util.isScalar(property[1]) && !util.isNull(property[1]))) {
               throw new exports.ValidationError('while validating documentation section', null, 'title must be a string', property[0].start_mark);
             }
-            return hasTitle = true;
+            hasTitle = true;
+            break;
           case "content":
             if (!(util.isScalar(property[1]) && !util.isNull(property[1]))) {
               throw new exports.ValidationError('while validating documentation section', null, 'content must be a string', property[0].start_mark);
             }
-            return hasContent = true;
+            hasContent = true;
+            break;
           default:
             throw new exports.ValidationError('while validating root properties', null, 'unknown property ' + property[0].value, property[0].start_mark);
         }
-      });
+      }
       if (!("content" in docProperties)) {
         throw new exports.ValidationError('while validating documentation section', null, 'a documentation entry must have content property', docSection.start_mark);
       }
@@ -12996,8 +13136,7 @@ function decode(str) {
     };
 
     Validator.prototype.validate_resource = function(resource, allowParameterKeys, context) {
-      var err, resourceProperties, template, _ref1,
-        _this = this;
+      var canonicalKey, err, key, property, resourceProperties, template, valid, _i, _len, _ref1, _ref2, _results;
       if (allowParameterKeys == null) {
         allowParameterKeys = false;
       }
@@ -13020,64 +13159,75 @@ function decode(str) {
       }
       if (resource[1].value) {
         resourceProperties = {};
-        return resource[1].value.forEach(function(property) {
-          var canonicalKey, key, valid;
+        _ref2 = resource[1].value;
+        _results = [];
+        for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+          property = _ref2[_i];
           if (property[0].value.match(/^\//)) {
-            _this.trackRepeatedProperties(resourceProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating resource', "resource already declared");
-          } else if (_this.isHttpMethod(property[0].value, allowParameterKeys)) {
-            _this.trackRepeatedProperties(resourceProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating resource', "method already declared");
+            this.trackRepeatedProperties(resourceProperties, this.canonicalizePropertyName(property[0].value, true), property[0], 'while validating resource', "resource already declared");
+          } else if (this.isHttpMethod(property[0].value, allowParameterKeys)) {
+            this.trackRepeatedProperties(resourceProperties, this.canonicalizePropertyName(property[0].value, true), property[0], 'while validating resource', "method already declared");
           } else {
-            _this.trackRepeatedProperties(resourceProperties, _this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating resource', "property already used");
+            this.trackRepeatedProperties(resourceProperties, this.canonicalizePropertyName(property[0].value, true), property[0], 'while validating resource', "property already used");
           }
-          if (!_this.validate_common_properties(property, allowParameterKeys)) {
+          if (!this.validate_common_properties(property, allowParameterKeys)) {
             if (property[0].value.match(/^\//)) {
               if (allowParameterKeys) {
                 throw new exports.ValidationError('while validating trait properties', null, 'resource type cannot define child resources', property[0].start_mark);
               }
-              return _this.validate_resource(property, allowParameterKeys);
-            } else if (_this.isHttpMethod(property[0].value, allowParameterKeys)) {
-              return _this.validate_method(property, allowParameterKeys, 'method');
+              _results.push(this.validate_resource(property, allowParameterKeys));
+            } else if (this.isHttpMethod(property[0].value, allowParameterKeys)) {
+              _results.push(this.validate_method(property, allowParameterKeys, 'method'));
             } else {
               key = property[0].value;
-              canonicalKey = _this.canonicalizePropertyName(key, allowParameterKeys);
+              canonicalKey = this.canonicalizePropertyName(key, allowParameterKeys);
               valid = true;
               switch (canonicalKey) {
                 case "uriParameters":
                   if (!util.isNullableMapping(property[1])) {
                     throw new exports.ValidationError('while validating uri parameters', null, 'uri parameters must be a map', property[0].start_mark);
                   }
-                  _this.validate_uri_parameters(resource[0].value, property[1], allowParameterKeys, allowParameterKeys);
+                  this.validate_uri_parameters(resource[0].value, property[1], allowParameterKeys, allowParameterKeys);
                   break;
                 case "baseUriParameters":
-                  if (!_this.baseUri) {
+                  if (!this.baseUri) {
                     throw new exports.ValidationError('while validating uri parameters', null, 'base uri parameters defined when there is no baseUri', property[0].start_mark);
                   }
                   if (!util.isNullableMapping(property[1])) {
                     throw new exports.ValidationError('while validating uri parameters', null, 'base uri parameters must be a map', property[0].start_mark);
                   }
-                  _this.validate_uri_parameters(_this.baseUri, property[1], allowParameterKeys);
+                  this.validate_uri_parameters(this.baseUri, property[1], allowParameterKeys);
                   break;
                 default:
                   valid = false;
               }
               switch (key) {
                 case "type":
-                  return _this.validate_type_property(property, allowParameterKeys);
+                  _results.push(this.validate_type_property(property, allowParameterKeys));
+                  break;
                 case "usage":
                   if (!allowParameterKeys) {
                     throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + "' is invalid in a resource", property[0].start_mark);
+                  } else {
+                    _results.push(void 0);
                   }
                   break;
                 case "securedBy":
-                  return _this.validate_secured_by(property);
+                  _results.push(this.validate_secured_by(property));
+                  break;
                 default:
                   if (!valid) {
                     throw new exports.ValidationError('while validating resources', null, "property: '" + property[0].value + ("' is invalid in a " + context), property[0].start_mark);
+                  } else {
+                    _results.push(void 0);
                   }
               }
             }
+          } else {
+            _results.push(void 0);
           }
-        });
+        }
+        return _results;
       }
     };
 
@@ -13133,8 +13283,7 @@ function decode(str) {
     };
 
     Validator.prototype.validate_type_property = function(property, allowParameterKeys) {
-      var typeName,
-        _this = this;
+      var parameter, typeName, _i, _len, _ref1, _results;
       if (!(util.isMapping(property[1]) || util.isString(property[1]))) {
         throw new exports.ValidationError('while validating resource types', null, "property 'type' must be a string or a map", property[0].start_mark);
       }
@@ -13151,11 +13300,17 @@ function decode(str) {
         throw new exports.ValidationError('while validating resource type consumption', null, "there is no resource type named " + typeName, property[1].start_mark);
       }
       if (util.isMapping(property[1])) {
-        return property[1].value.forEach(function(parameter) {
+        _ref1 = property[1].value;
+        _results = [];
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          parameter = _ref1[_i];
           if (!(util.isNull(parameter[1]) || util.isMapping(parameter[1]))) {
             throw new exports.ValidationError('while validating resource consumption', null, 'resource type parameters must be in a map', parameter[1].start_mark);
+          } else {
+            _results.push(void 0);
           }
-        });
+        }
+        return _results;
       }
     };
 
@@ -13175,7 +13330,7 @@ function decode(str) {
       _results = [];
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         property = _ref1[_i];
-        this.trackRepeatedProperties(methodProperties, this.canonicalizePropertyName(property[0].value, true), property[0].start_mark, 'while validating method', "property already used");
+        this.trackRepeatedProperties(methodProperties, this.canonicalizePropertyName(property[0].value, true), property[0], 'while validating method', "property already used");
         if (this.validate_common_properties(property, allowParameterKeys, context)) {
           continue;
         }
@@ -13248,7 +13403,7 @@ function decode(str) {
         if (!util.isNullableMapping(response[1])) {
           throw new exports.ValidationError('while validating responses', null, 'each response must be a map', response[1].start_mark);
         }
-        this.trackRepeatedProperties(responseValues, this.canonicalizePropertyName(response[0].value, true), response[0].start_mark, 'while validating responses', "response code already used");
+        this.trackRepeatedProperties(responseValues, this.canonicalizePropertyName(response[0].value, true), response[0], 'while validating responses', "response code already used");
         _results.push(this.validate_response(response, allowParameterKeys));
       }
       return _results;
@@ -13270,7 +13425,7 @@ function decode(str) {
         if (!(util.isNullableMapping(param[1]) || util.isNullableSequence(param[1]))) {
           throw new exports.ValidationError('while validating query parameters', null, "each query parameter must be a map", param[1].start_mark);
         }
-        this.trackRepeatedProperties(queryParameters, this.canonicalizePropertyName(param[0].value, true), param[0].start_mark, 'while validating query parameter', "parameter name already used");
+        this.trackRepeatedProperties(queryParameters, this.canonicalizePropertyName(param[0].value, true), param[0], 'while validating query parameter', "parameter name already used");
         _results.push(this.valid_common_parameter_properties(param[1], allowParameterKeys));
       }
       return _results;
@@ -13292,7 +13447,7 @@ function decode(str) {
         if (!(util.isNullableMapping(param[1]) || util.isNullableSequence(param[1]))) {
           throw new exports.ValidationError('while validating query parameters', null, 'each form parameter must be a map', param[1].start_mark);
         }
-        this.trackRepeatedProperties(formParameters, this.canonicalizePropertyName(param[0].value, true), param[0].start_mark, 'while validating form parameter', "parameter name already used");
+        this.trackRepeatedProperties(formParameters, this.canonicalizePropertyName(param[0].value, true), param[0], 'while validating form parameter', "parameter name already used");
         _results.push(this.valid_common_parameter_properties(param[1], allowParameterKeys));
       }
       return _results;
@@ -13314,24 +13469,25 @@ function decode(str) {
         if (!(util.isNullableMapping(param[1]) || util.isNullableSequence(param[1]))) {
           throw new exports.ValidationError('while validating query parameters', null, "each header must be a map", param[1].start_mark);
         }
-        this.trackRepeatedProperties(headerNames, this.canonicalizePropertyName(param[0].value, true), param[0].start_mark, 'while validating headers', "header name already used");
+        this.trackRepeatedProperties(headerNames, this.canonicalizePropertyName(param[0].value, true), param[0], 'while validating headers', "header name already used");
         _results.push(this.valid_common_parameter_properties(param[1], allowParameterKeys));
       }
       return _results;
     };
 
     Validator.prototype.validate_response = function(response, allowParameterKeys) {
-      var canonicalKey, property, responseProperties, _i, _len, _ref1, _results,
-        _this = this;
+      var canonicalKey, property, responseCode, responseProperties, _i, _j, _len, _len1, _ref1, _ref2, _results;
       if (util.isSequence(response[0])) {
         if (!response[0].value.length) {
           throw new exports.ValidationError('while validating responses', null, 'there must be at least one response code', response[0].start_mark);
         }
-        response[0].value.forEach(function(responseCode) {
-          if (!(_this.isParameterKey(responseCode) || util.isInteger(responseCode) || !isNaN(_this.canonicalizePropertyName(responseCode, allowParameterKeys)))) {
+        _ref1 = response[0].value;
+        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+          responseCode = _ref1[_i];
+          if (!(this.isParameterKey(responseCode) || util.isInteger(responseCode) || !isNaN(this.canonicalizePropertyName(responseCode, allowParameterKeys)))) {
             throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", responseCode.start_mark);
           }
-        });
+        }
       } else if (!(this.isParameterKey(response) || util.isInteger(response[0]) || !isNaN(this.canonicalizePropertyName(response[0].value, allowParameterKeys)))) {
         throw new exports.ValidationError('while validating responses', null, "each response key must be an integer", response[0].start_mark);
       }
@@ -13340,12 +13496,12 @@ function decode(str) {
       }
       if (util.isMapping(response[1])) {
         responseProperties = {};
-        _ref1 = response[1].value;
+        _ref2 = response[1].value;
         _results = [];
-        for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-          property = _ref1[_i];
+        for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+          property = _ref2[_j];
           canonicalKey = this.canonicalizePropertyName(property[0].value, allowParameterKeys);
-          this.trackRepeatedProperties(responseProperties, canonicalKey, property[0].start_mark, 'while validating responses', "property already used");
+          this.trackRepeatedProperties(responseProperties, canonicalKey, property[0], 'while validating responses', "property already used");
           if (!this.isParameterKey(property)) {
             switch (canonicalKey) {
               case "body":
@@ -13404,7 +13560,7 @@ function decode(str) {
     };
 
     Validator.prototype.validate_body = function(property, allowParameterKeys, bodyMode, isResponseBody) {
-      var bodyProperties, bodyProperty, canonicalProperty, implicitMode, key, _i, _len, _ref1;
+      var bodyProperties, bodyProperty, canonicalProperty, implicitMode, key, start_mark, _i, _len, _ref1;
       if (bodyMode == null) {
         bodyMode = null;
       }
@@ -13419,7 +13575,7 @@ function decode(str) {
       _ref1 = property[1].value;
       for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
         bodyProperty = _ref1[_i];
-        this.trackRepeatedProperties(bodyProperties, this.canonicalizePropertyName(bodyProperty[0].value, true), bodyProperty[0].start_mark, 'while validating body', "property already used");
+        this.trackRepeatedProperties(bodyProperties, this.canonicalizePropertyName(bodyProperty[0].value, true), bodyProperty[0], 'while validating body', "property already used");
         if (this.isParameterKey(bodyProperty)) {
           if (!allowParameterKeys) {
             throw new exports.ValidationError('while validating body', null, "property '" + bodyProperty[0].value + "' is invalid in a resource", bodyProperty[0].start_mark);
@@ -13471,11 +13627,12 @@ function decode(str) {
         }
       }
       if ("formParameters" in bodyProperties) {
+        start_mark = bodyProperties.formParameters.start_mark;
         if (isResponseBody) {
-          throw new exports.ValidationError('while validating body', null, "formParameters cannot be used to describe response bodies", property[0].start_mark);
+          throw new exports.ValidationError('while validating body', null, "formParameters cannot be used to describe response bodies", start_mark);
         }
         if ("schema" in bodyProperties || "example" in bodyProperties) {
-          throw new exports.ValidationError('while validating body', null, "formParameters cannot be used together with the example or schema properties", property[0].start_mark);
+          throw new exports.ValidationError('while validating body', null, "formParameters cannot be used together with the example or schema properties", start_mark);
         }
       }
       if (bodyMode === "implicit") {
@@ -13623,58 +13780,6 @@ function decode(str) {
       return properties;
     };
 
-    Validator.prototype.resources = function(node, parentPath) {
-      var child_resources, response,
-        _this = this;
-      if (node == null) {
-        node = this.get_single_node(true, true, false);
-      }
-      response = [];
-      child_resources = this.child_resources(node);
-      child_resources.forEach(function(childResource) {
-        var resourceResponse;
-        resourceResponse = {};
-        resourceResponse.methods = [];
-        if (parentPath != null) {
-          resourceResponse.uri = parentPath + childResource[0].value;
-        } else {
-          resourceResponse.uri = childResource[0].value;
-        }
-        if (_this.has_property(childResource[1], "displayName")) {
-          resourceResponse.displayName = _this.property_value(childResource[1], "displayName");
-        }
-        if (_this.has_property(childResource[1], "get")) {
-          resourceResponse.methods.push('get');
-        }
-        if (_this.has_property(childResource[1], "post")) {
-          resourceResponse.methods.push('post');
-        }
-        if (_this.has_property(childResource[1], "put")) {
-          resourceResponse.methods.push('put');
-        }
-        if (_this.has_property(childResource[1], "patch")) {
-          resourceResponse.methods.push('patch');
-        }
-        if (_this.has_property(childResource[1], "delete")) {
-          resourceResponse.methods.push('delete');
-        }
-        if (_this.has_property(childResource[1], "head")) {
-          resourceResponse.methods.push('head');
-        }
-        if (_this.has_property(childResource[1], "options")) {
-          resourceResponse.methods.push('options');
-        }
-        resourceResponse.line = childResource[0].start_mark.line + 1;
-        resourceResponse.column = childResource[0].start_mark.column + 1;
-        if (childResource[0].start_mark.name != null) {
-          resourceResponse.src = childResource[0].start_mark.name;
-        }
-        response.push(resourceResponse);
-        return response = response.concat(_this.resources(childResource[1], resourceResponse.uri));
-      });
-      return response;
-    };
-
     Validator.prototype.valid_absolute_uris = function(node) {
       var repeatedUri, uris;
       uris = this.get_absolute_uris(node);
@@ -13684,18 +13789,14 @@ function decode(str) {
     };
 
     Validator.prototype.get_absolute_uris = function(node, parentPath) {
-      var child_resources, response,
-        _this = this;
-      if (node == null) {
-        node = this.get_single_node(true, true, false);
-      }
+      var childResource, child_resources, response, uri, _i, _len;
       response = [];
       if (!util.isNullableMapping(node)) {
         throw new exports.ValidationError('while validating resources', null, 'resource is not a map', node.start_mark);
       }
       child_resources = this.child_resources(node);
-      child_resources.forEach(function(childResource) {
-        var uri;
+      for (_i = 0, _len = child_resources.length; _i < _len; _i++) {
+        childResource = child_resources[_i];
         if (parentPath != null) {
           uri = parentPath + childResource[0].value;
         } else {
@@ -13705,8 +13806,8 @@ function decode(str) {
           uri: uri,
           mark: childResource[0].start_mark
         });
-        return response = response.concat(_this.get_absolute_uris(childResource[1], uri));
-      });
+        response = response.concat(this.get_absolute_uris(childResource[1], uri));
+      }
       return response;
     };
 
@@ -13797,7 +13898,265 @@ function decode(str) {
 
 }).call(this);
 
-},{"./errors":1,"./nodes":11,"./traits":22,"./util":4,"uritemplate":30,"url":7}],29:[function(require,module,exports){
+},{"./errors":1,"./nodes":11,"./traits":22,"./util":4,"uritemplate":30,"url":8}],22:[function(require,module,exports){
+(function() {
+  var MarkedYAMLError, inflection, nodes, util, _ref, _ref1,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  MarkedYAMLError = require('./errors').MarkedYAMLError;
+
+  nodes = require('./nodes');
+
+  inflection = require('inflection');
+
+  util = require('./util');
+
+  /*
+  The Traits throws these.
+  */
+
+
+  this.TraitError = (function(_super) {
+    __extends(TraitError, _super);
+
+    function TraitError() {
+      _ref = TraitError.__super__.constructor.apply(this, arguments);
+      return _ref;
+    }
+
+    return TraitError;
+
+  })(MarkedYAMLError);
+
+  /*
+  */
+
+
+  this.ParameterError = (function(_super) {
+    __extends(ParameterError, _super);
+
+    function ParameterError() {
+      _ref1 = ParameterError.__super__.constructor.apply(this, arguments);
+      return _ref1;
+    }
+
+    return ParameterError;
+
+  })(MarkedYAMLError);
+
+  /*
+  The Traits class deals with applying traits to resources according to the spec
+  */
+
+
+  this.Traits = (function() {
+    function Traits() {
+      this.declaredTraits = {};
+    }
+
+    Traits.prototype.load_traits = function(node) {
+      var allTraits,
+        _this = this;
+      if (this.has_property(node, /^traits$/)) {
+        allTraits = this.property_value(node, /^traits$/);
+        if (allTraits && typeof allTraits === "object") {
+          return allTraits.forEach(function(trait_item) {
+            if (trait_item && typeof trait_item === "object" && typeof trait_item.value === "object") {
+              return trait_item.value.forEach(function(trait) {
+                return _this.declaredTraits[trait[0].value] = trait;
+              });
+            }
+          });
+        }
+      }
+    };
+
+    Traits.prototype.has_traits = function(node) {
+      if (this.declaredTraits.length === 0 && this.has_property(node, /^traits$/)) {
+        this.load_traits(node);
+      }
+      return Object.keys(this.declaredTraits).length > 0;
+    };
+
+    Traits.prototype.get_trait = function(traitName) {
+      if (traitName in this.declaredTraits) {
+        return this.declaredTraits[traitName][1];
+      }
+      return null;
+    };
+
+    Traits.prototype.apply_traits = function(node, resourceUri, removeQs) {
+      var resources,
+        _this = this;
+      if (resourceUri == null) {
+        resourceUri = "";
+      }
+      if (removeQs == null) {
+        removeQs = true;
+      }
+      if (!util.isMapping(node)) {
+        return;
+      }
+      if (this.has_traits(node)) {
+        resources = this.child_resources(node);
+        return resources.forEach(function(resource) {
+          return _this.apply_traits_to_resource(resourceUri + resource[0].value, resource[1], removeQs);
+        });
+      }
+    };
+
+    Traits.prototype.apply_traits_to_resource = function(resourceUri, resource, removeQs) {
+      var methods, uses,
+        _this = this;
+      if (!util.isMapping(resource)) {
+        return;
+      }
+      methods = this.child_methods(resource);
+      if (this.has_property(resource, /^is$/)) {
+        uses = this.property_value(resource, /^is$/);
+        uses.forEach(function(use) {
+          return methods.forEach(function(method) {
+            return _this.apply_trait(resourceUri, method, use);
+          });
+        });
+      }
+      methods.forEach(function(method) {
+        if (_this.has_property(method[1], /^is$/)) {
+          uses = _this.property_value(method[1], /^is$/);
+          return uses.forEach(function(use) {
+            return _this.apply_trait(resourceUri, method, use);
+          });
+        }
+      });
+      if (removeQs) {
+        resource.remove_question_mark_properties();
+      }
+      return this.apply_traits(resource, resourceUri, removeQs);
+    };
+
+    Traits.prototype.apply_trait = function(resourceUri, method, useKey) {
+      var plainParameters, temp, trait, traitName;
+      traitName = this.key_or_value(useKey);
+      if (!(traitName != null ? traitName.trim() : void 0)) {
+        throw new exports.TraitError('while applying trait', null, 'trait name must be provided', useKey.start_mark);
+      }
+      if (!(trait = this.get_trait(traitName))) {
+        throw new exports.TraitError('while applying trait', null, "there is no trait named " + traitName, useKey.start_mark);
+      }
+      plainParameters = this.get_parameters_from_is_key(resourceUri, method[0].value, useKey);
+      temp = trait.cloneForTrait();
+      this.apply_parameters(temp, plainParameters, useKey);
+      this.apply_default_media_type_to_method(temp);
+      temp.combine(method[1]);
+      return method[1] = temp;
+    };
+
+    Traits.prototype.apply_parameters = function(resource, parameters, useKey) {
+      var parameterName, usedParameters, _results;
+      this._apply_parameters(resource, parameters, useKey, usedParameters = {
+        resourcePath: true,
+        resourcePathName: true,
+        methodName: true
+      });
+      _results = [];
+      for (parameterName in parameters) {
+        if (!usedParameters[parameterName]) {
+          throw new exports.ParameterError('while applying parameters', null, "unused parameter: " + parameterName, useKey.start_mark);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Traits.prototype._apply_parameters = function(resource, parameters, useKey, usedParameters) {
+      var parameterUse,
+        _this = this;
+      if (!resource) {
+        return;
+      }
+      if (util.isString(resource)) {
+        if (parameterUse = resource.value.match(/<<\s*([^\|\s>]+)\s*(\|.*)?\s*>>/g)) {
+          parameterUse.forEach(function(parameter) {
+            var method, parameterName, value, _ref2, _ref3;
+            parameterName = parameter != null ? (_ref2 = parameter.trim()) != null ? _ref2.replace(/[<>]+/g, '').trim() : void 0 : void 0;
+            _ref3 = parameterName.split(/\s*\|\s*/), parameterName = _ref3[0], method = _ref3[1];
+            if (!(parameterName in parameters)) {
+              throw new exports.ParameterError('while applying parameters', null, "value was not provided for parameter: " + parameterName, useKey.start_mark);
+            }
+            value = parameters[parameterName];
+            usedParameters[parameterName] = true;
+            if (method) {
+              if (method.match(/!\s*singularize/)) {
+                value = inflection.singularize(value);
+              } else if (method.match(/!\s*pluralize/)) {
+                value = inflection.pluralize(value);
+              } else {
+                throw new exports.ParameterError('while validating parameter', null, 'unknown function applied to parameter', resource.start_mark);
+              }
+            }
+            return resource.value = resource.value.replace(parameter, value);
+          });
+        }
+        return;
+      }
+      if (util.isSequence(resource)) {
+        resource.value.forEach(function(node) {
+          return _this._apply_parameters(node, parameters, useKey, usedParameters);
+        });
+        return;
+      }
+      if (util.isMapping(resource)) {
+        resource.value.forEach(function(property) {
+          _this._apply_parameters(property[0], parameters, useKey, usedParameters);
+          return _this._apply_parameters(property[1], parameters, useKey, usedParameters);
+        });
+      }
+    };
+
+    Traits.prototype.get_parameters_from_is_key = function(resourceUri, methodName, typeKey) {
+      var parameter, parameters, reserved, result, _i, _len, _ref2;
+      result = {};
+      reserved = {
+        methodName: methodName,
+        resourcePath: resourceUri.replace(/\/\/*/g, '/'),
+        resourcePathName: this.extractResourcePathName(resourceUri)
+      };
+      if (util.isMapping(typeKey)) {
+        parameters = this.value_or_undefined(typeKey);
+        if (util.isMapping(parameters[0][1])) {
+          _ref2 = parameters[0][1].value;
+          for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+            parameter = _ref2[_i];
+            if (parameter[0].value in reserved) {
+              throw new exports.TraitError('while applying parameters', null, "invalid parameter name: " + parameter[0].value + " is reserved", parameter[0].start_mark);
+            }
+            result[parameter[0].value] = parameter[1].value;
+          }
+        }
+      }
+      return util.extend(result, reserved);
+    };
+
+    Traits.prototype.extractResourcePathName = function(resourceUri) {
+      var pathSegments, segment;
+      pathSegments = resourceUri.split(/\//);
+      while (segment = pathSegments.pop()) {
+        if (!(typeof segment !== "undefined" && segment !== null ? segment.match(/[{}]/) : void 0)) {
+          return segment;
+        }
+      }
+      return "";
+    };
+
+    return Traits;
+
+  })();
+
+}).call(this);
+
+},{"./errors":1,"./nodes":11,"./util":4,"inflection":31}],29:[function(require,module,exports){
 (function(process,Buffer){/**
  * Wrapper for built-in http.js to emulate the browser XMLHttpRequest object.
  *
@@ -14363,283 +14722,7 @@ exports.XMLHttpRequest = function() {
 };
 
 })(require("__browserify_process"),require("__browserify_buffer").Buffer)
-},{"__browserify_buffer":13,"__browserify_process":5,"child_process":31,"fs":9,"http":32,"https":33,"url":7}],22:[function(require,module,exports){
-(function() {
-  var MarkedYAMLError, inflection, nodes, util, _ref, _ref1,
-    __hasProp = {}.hasOwnProperty,
-    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
-
-  MarkedYAMLError = require('./errors').MarkedYAMLError;
-
-  nodes = require('./nodes');
-
-  inflection = require('inflection');
-
-  util = require('./util');
-
-  /*
-  The Traits throws these.
-  */
-
-
-  this.TraitError = (function(_super) {
-    __extends(TraitError, _super);
-
-    function TraitError() {
-      _ref = TraitError.__super__.constructor.apply(this, arguments);
-      return _ref;
-    }
-
-    return TraitError;
-
-  })(MarkedYAMLError);
-
-  /*
-  */
-
-
-  this.ParameterError = (function(_super) {
-    __extends(ParameterError, _super);
-
-    function ParameterError() {
-      _ref1 = ParameterError.__super__.constructor.apply(this, arguments);
-      return _ref1;
-    }
-
-    return ParameterError;
-
-  })(MarkedYAMLError);
-
-  /*
-  The Traits class deals with applying traits to resources according to the spec
-  */
-
-
-  this.Traits = (function() {
-    function Traits() {
-      this.declaredTraits = {};
-    }
-
-    Traits.prototype.load_traits = function(node) {
-      var allTraits,
-        _this = this;
-      if (this.has_property(node, /^traits$/)) {
-        allTraits = this.property_value(node, /^traits$/);
-        if (allTraits && typeof allTraits === "object") {
-          return allTraits.forEach(function(trait_item) {
-            if (trait_item && typeof trait_item === "object" && typeof trait_item.value === "object") {
-              return trait_item.value.forEach(function(trait) {
-                return _this.declaredTraits[trait[0].value] = trait;
-              });
-            }
-          });
-        }
-      }
-    };
-
-    Traits.prototype.has_traits = function(node) {
-      if (this.declaredTraits.length === 0 && this.has_property(node, /^traits$/)) {
-        this.load_traits(node);
-      }
-      return Object.keys(this.declaredTraits).length > 0;
-    };
-
-    Traits.prototype.get_trait = function(traitName) {
-      if (traitName in this.declaredTraits) {
-        return this.declaredTraits[traitName][1];
-      }
-      return null;
-    };
-
-    Traits.prototype.apply_traits = function(node, resourceUri, removeQs) {
-      var resources,
-        _this = this;
-      if (resourceUri == null) {
-        resourceUri = "";
-      }
-      if (removeQs == null) {
-        removeQs = true;
-      }
-      if (!util.isMapping(node)) {
-        return;
-      }
-      if (this.has_traits(node)) {
-        resources = this.child_resources(node);
-        return resources.forEach(function(resource) {
-          return _this.apply_traits_to_resource(resourceUri + resource[0].value, resource[1], removeQs);
-        });
-      }
-    };
-
-    Traits.prototype.apply_traits_to_resource = function(resourceUri, resource, removeQs) {
-      var methods, uses,
-        _this = this;
-      if (!util.isMapping(resource)) {
-        return;
-      }
-      methods = this.child_methods(resource);
-      if (this.has_property(resource, /^is$/)) {
-        uses = this.property_value(resource, /^is$/);
-        uses.forEach(function(use) {
-          return methods.forEach(function(method) {
-            return _this.apply_trait(resourceUri, method, use);
-          });
-        });
-      }
-      methods.forEach(function(method) {
-        if (_this.has_property(method[1], /^is$/)) {
-          uses = _this.property_value(method[1], /^is$/);
-          return uses.forEach(function(use) {
-            return _this.apply_trait(resourceUri, method, use);
-          });
-        }
-      });
-      if (removeQs) {
-        resource.remove_question_mark_properties();
-      }
-      return this.apply_traits(resource, resourceUri, removeQs);
-    };
-
-    Traits.prototype.apply_trait = function(resourceUri, method, useKey) {
-      var plainParameters, temp, trait, traitName;
-      traitName = this.key_or_value(useKey);
-      if (!(traitName != null ? traitName.trim() : void 0)) {
-        throw new exports.TraitError('while applying trait', null, 'trait name must be provided', useKey.start_mark);
-      }
-      if (!(trait = this.get_trait(traitName))) {
-        throw new exports.TraitError('while applying trait', null, "there is no trait named " + traitName, useKey.start_mark);
-      }
-      plainParameters = this.get_parameters_from_is_key(resourceUri, method[0].value, useKey);
-      temp = trait.cloneForTrait();
-      this.apply_parameters(temp, plainParameters, useKey);
-      this.apply_default_media_type_to_method(temp);
-      temp.combine(method[1]);
-      return method[1] = temp;
-    };
-
-    Traits.prototype.apply_parameters = function(resource, parameters, useKey) {
-      var parameterName, usedParameters, _results;
-      this._apply_parameters(resource, parameters, useKey, usedParameters = {
-        resourcePath: true,
-        resourcePathName: true,
-        methodName: true
-      });
-      _results = [];
-      for (parameterName in parameters) {
-        if (!usedParameters[parameterName]) {
-          throw new exports.ParameterError('while applying parameters', null, "unused parameter: " + parameterName, useKey.start_mark);
-        } else {
-          _results.push(void 0);
-        }
-      }
-      return _results;
-    };
-
-    Traits.prototype._apply_parameters = function(resource, parameters, useKey, usedParameters) {
-      var parameterUse,
-        _this = this;
-      if (!resource) {
-        return;
-      }
-      if (util.isString(resource)) {
-        if (parameterUse = resource.value.match(/<<\s*([^\|\s>]+)\s*(\|.*)?\s*>>/g)) {
-          parameterUse.forEach(function(parameter) {
-            var method, parameterName, value, _ref2, _ref3;
-            parameterName = parameter != null ? (_ref2 = parameter.trim()) != null ? _ref2.replace(/[<>]+/g, '').trim() : void 0 : void 0;
-            _ref3 = parameterName.split(/\s*\|\s*/), parameterName = _ref3[0], method = _ref3[1];
-            if (!(parameterName in parameters)) {
-              throw new exports.ParameterError('while applying parameters', null, "value was not provided for parameter: " + parameterName, useKey.start_mark);
-            }
-            value = parameters[parameterName];
-            usedParameters[parameterName] = true;
-            if (method) {
-              if (method.match(/!\s*singularize/)) {
-                value = inflection.singularize(value);
-              } else if (method.match(/!\s*pluralize/)) {
-                value = inflection.pluralize(value);
-              } else {
-                throw new exports.ParameterError('while validating parameter', null, 'unknown function applied to parameter', resource.start_mark);
-              }
-            }
-            return resource.value = resource.value.replace(parameter, value);
-          });
-        }
-        return;
-      }
-      if (util.isSequence(resource)) {
-        resource.value.forEach(function(node) {
-          return _this._apply_parameters(node, parameters, useKey, usedParameters);
-        });
-        return;
-      }
-      if (util.isMapping(resource)) {
-        resource.value.forEach(function(property) {
-          _this._apply_parameters(property[0], parameters, useKey, usedParameters);
-          return _this._apply_parameters(property[1], parameters, useKey, usedParameters);
-        });
-      }
-    };
-
-    Traits.prototype.get_parameters_from_is_key = function(resourceUri, methodName, typeKey) {
-      var parameter, parameters, reserved, result, _i, _len, _ref2;
-      result = {};
-      reserved = {
-        methodName: methodName,
-        resourcePath: resourceUri.replace(/\/\/*/g, '/'),
-        resourcePathName: this.extractResourcePathName(resourceUri)
-      };
-      if (util.isMapping(typeKey)) {
-        parameters = this.value_or_undefined(typeKey);
-        if (util.isMapping(parameters[0][1])) {
-          _ref2 = parameters[0][1].value;
-          for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-            parameter = _ref2[_i];
-            if (parameter[0].value in reserved) {
-              throw new exports.TraitError('while applying parameters', null, "invalid parameter name: " + parameter[0].value + " is reserved", parameter[0].start_mark);
-            }
-            result[parameter[0].value] = parameter[1].value;
-          }
-        }
-      }
-      return util.extend(result, reserved);
-    };
-
-    Traits.prototype.extractResourcePathName = function(resourceUri) {
-      var pathSegments, segment;
-      pathSegments = resourceUri.split(/\//);
-      while (segment = pathSegments.pop()) {
-        if (!(typeof segment !== "undefined" && segment !== null ? segment.match(/[{}]/) : void 0)) {
-          return segment;
-        }
-      }
-      return "";
-    };
-
-    return Traits;
-
-  })();
-
-}).call(this);
-
-},{"./errors":1,"./nodes":11,"./util":4,"inflection":34}],31:[function(require,module,exports){
-exports.spawn = function () {};
-exports.exec = function () {};
-
-},{}],33:[function(require,module,exports){
-var http = require('http');
-
-var https = module.exports;
-
-for (var key in http) {
-    if (http.hasOwnProperty(key)) https[key] = http[key];
-};
-
-https.request = function (params, cb) {
-    if (!params) params = {};
-    params.scheme = 'https';
-    return http.request.call(this, params, cb);
-}
-},{"http":32}],30:[function(require,module,exports){
+},{"__browserify_buffer":13,"__browserify_process":5,"child_process":32,"fs":7,"http":33,"https":34,"url":8}],30:[function(require,module,exports){
 (function(global){/*global unescape, module, define, window, global*/
 
 /*
@@ -15527,7 +15610,27 @@ var UriTemplate = (function () {
 ));
 
 })(window)
-},{}],35:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
+exports.spawn = function () {};
+exports.exec = function () {};
+
+},{}],34:[function(require,module,exports){
+var http = require('http');
+
+var https = module.exports;
+
+for (var key in http) {
+    if (http.hasOwnProperty(key)) https[key] = http[key];
+};
+
+https.request = function (params, cb) {
+    if (!params) params = {};
+    params.scheme = 'https';
+    return http.request.call(this, params, cb);
+}
+},{"http":33}],31:[function(require,module,exports){
+module.exports = require( './lib/inflection' );
+},{"./lib/inflection":35}],36:[function(require,module,exports){
 (function(process){if (!process.EventEmitter) process.EventEmitter = function () {};
 
 var EventEmitter = exports.EventEmitter = process.EventEmitter;
@@ -15724,71 +15827,7 @@ EventEmitter.listenerCount = function(emitter, type) {
 };
 
 })(require("__browserify_process"))
-},{"__browserify_process":5}],34:[function(require,module,exports){
-module.exports = require( './lib/inflection' );
-},{"./lib/inflection":36}],32:[function(require,module,exports){
-var http = module.exports;
-var EventEmitter = require('events').EventEmitter;
-var Request = require('./lib/request');
-
-http.request = function (params, cb) {
-    if (!params) params = {};
-    if (!params.host) params.host = window.location.host.split(':')[0];
-    if (!params.port) params.port = window.location.port;
-    if (!params.scheme) params.scheme = window.location.protocol.split(':')[0];
-    
-    var req = new Request(new xhrHttp, params);
-    if (cb) req.on('response', cb);
-    return req;
-};
-
-http.get = function (params, cb) {
-    params.method = 'GET';
-    var req = http.request(params, cb);
-    req.end();
-    return req;
-};
-
-http.Agent = function () {};
-http.Agent.defaultMaxSockets = 4;
-
-var xhrHttp = (function () {
-    if (typeof window === 'undefined') {
-        throw new Error('no window object present');
-    }
-    else if (window.XMLHttpRequest) {
-        return window.XMLHttpRequest;
-    }
-    else if (window.ActiveXObject) {
-        var axs = [
-            'Msxml2.XMLHTTP.6.0',
-            'Msxml2.XMLHTTP.3.0',
-            'Microsoft.XMLHTTP'
-        ];
-        for (var i = 0; i < axs.length; i++) {
-            try {
-                var ax = new(window.ActiveXObject)(axs[i]);
-                return function () {
-                    if (ax) {
-                        var ax_ = ax;
-                        ax = null;
-                        return ax_;
-                    }
-                    else {
-                        return new(window.ActiveXObject)(axs[i]);
-                    }
-                };
-            }
-            catch (e) {}
-        }
-        throw new Error('ajax not supported in this browser')
-    }
-    else {
-        throw new Error('ajax not supported in this browser');
-    }
-})();
-
-},{"./lib/request":37,"events":35}],36:[function(require,module,exports){
+},{"__browserify_process":5}],35:[function(require,module,exports){
 /*!
  * inflection
  * Copyright(c) 2011 Ben Lin <ben@dreamerslab.com>
@@ -16325,7 +16364,72 @@ module.exports = {
   }
 };
 
-},{}],38:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
+var http = module.exports;
+var EventEmitter = require('events').EventEmitter;
+var Request = require('./lib/request');
+
+http.request = function (params, cb) {
+    if (!params) params = {};
+    if (!params.host && !params.port) {
+        params.port = parseInt(window.location.port, 10);
+    }
+    if (!params.host) params.host = window.location.hostname;
+    if (!params.port) params.port = 80;
+    if (!params.scheme) params.scheme = window.location.protocol.split(':')[0];
+    
+    var req = new Request(new xhrHttp, params);
+    if (cb) req.on('response', cb);
+    return req;
+};
+
+http.get = function (params, cb) {
+    params.method = 'GET';
+    var req = http.request(params, cb);
+    req.end();
+    return req;
+};
+
+http.Agent = function () {};
+http.Agent.defaultMaxSockets = 4;
+
+var xhrHttp = (function () {
+    if (typeof window === 'undefined') {
+        throw new Error('no window object present');
+    }
+    else if (window.XMLHttpRequest) {
+        return window.XMLHttpRequest;
+    }
+    else if (window.ActiveXObject) {
+        var axs = [
+            'Msxml2.XMLHTTP.6.0',
+            'Msxml2.XMLHTTP.3.0',
+            'Microsoft.XMLHTTP'
+        ];
+        for (var i = 0; i < axs.length; i++) {
+            try {
+                var ax = new(window.ActiveXObject)(axs[i]);
+                return function () {
+                    if (ax) {
+                        var ax_ = ax;
+                        ax = null;
+                        return ax_;
+                    }
+                    else {
+                        return new(window.ActiveXObject)(axs[i]);
+                    }
+                };
+            }
+            catch (e) {}
+        }
+        throw new Error('ajax not supported in this browser')
+    }
+    else {
+        throw new Error('ajax not supported in this browser');
+    }
+})();
+
+},{"./lib/request":37,"events":36}],38:[function(require,module,exports){
 var events = require('events');
 var util = require('util');
 
@@ -16446,7 +16550,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":35,"util":39}],39:[function(require,module,exports){
+},{"events":36,"util":39}],39:[function(require,module,exports){
 var events = require('events');
 
 exports.isArray = isArray;
@@ -16793,15 +16897,16 @@ exports.format = function(f) {
   return str;
 };
 
-},{"events":35}],40:[function(require,module,exports){
+},{"events":36}],40:[function(require,module,exports){
 var Stream = require('stream');
+var util = require('util');
 
 var Response = module.exports = function (res) {
     this.offset = 0;
     this.readable = true;
 };
 
-Response.prototype = new Stream;
+util.inherits(Response, Stream);
 
 var capable = {
     streaming : true,
@@ -16914,11 +17019,12 @@ var isArray = Array.isArray || function (xs) {
     return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{"stream":38}],37:[function(require,module,exports){
+},{"stream":38,"util":39}],37:[function(require,module,exports){
 var Stream = require('stream');
 var Response = require('./response');
 var concatStream = require('concat-stream');
 var Base64 = require('Base64');
+var util = require('util');
 
 var Request = module.exports = function (xhr, params) {
     var self = this;
@@ -16971,7 +17077,7 @@ var Request = module.exports = function (xhr, params) {
     };
 };
 
-Request.prototype = new Stream;
+util.inherits(Request, Stream);
 
 Request.prototype.setHeader = function (key, value) {
     if (isArray(value)) {
@@ -17047,11 +17153,11 @@ var indexOf = function (xs, x) {
     return -1;
 };
 
-},{"./response":40,"Base64":42,"concat-stream":41,"stream":38}],42:[function(require,module,exports){
+},{"./response":40,"Base64":42,"concat-stream":41,"stream":38,"util":39}],42:[function(require,module,exports){
 ;(function () {
 
   var
-    object = typeof exports != 'undefined' ? exports : window,
+    object = typeof exports != 'undefined' ? exports : this, // #8: web workers
     chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=',
     INVALID_CHARACTER_ERR = (function () {
       // fabricate a suitable error object
@@ -17176,42 +17282,10 @@ function mix(from, into) {
   }
 }
 
-},{"./copy.js":49,"./create.js":50,"./from.js":44,"./is.js":46,"./join.js":48,"./read.js":51,"./subarray.js":47,"./to.js":45,"./write.js":52}],48:[function(require,module,exports){
-module.exports = join
+},{"./copy.js":49,"./create.js":50,"./from.js":44,"./is.js":46,"./join.js":48,"./read.js":51,"./subarray.js":47,"./to.js":45,"./write.js":52}],46:[function(require,module,exports){
 
-function join(targets, hint) {
-  if(!targets.length) {
-    return new Uint8Array(0)
-  }
-
-  var len = hint !== undefined ? hint : get_length(targets)
-    , out = new Uint8Array(len)
-    , cur = targets[0]
-    , curlen = cur.length
-    , curidx = 0
-    , curoff = 0
-    , i = 0
-
-  while(i < len) {
-    if(curoff === curlen) {
-      curoff = 0
-      ++curidx
-      cur = targets[curidx]
-      curlen = cur && cur.length
-      continue
-    }
-    out[i++] = cur[curoff++] 
-  }
-
-  return out
-}
-
-function get_length(targets) {
-  var size = 0
-  for(var i = 0, len = targets.length; i < len; ++i) {
-    size += targets[i].byteLength
-  }
-  return size
+module.exports = function(buffer) {
+  return buffer instanceof Uint8Array;
 }
 
 },{}],47:[function(require,module,exports){
@@ -17219,17 +17293,6 @@ module.exports = subarray
 
 function subarray(buf, from, to) {
   return buf.subarray(from || 0, to || buf.length)
-}
-
-},{}],46:[function(require,module,exports){
-
-module.exports = function(buffer) {
-  return buffer instanceof Uint8Array;
-}
-
-},{}],50:[function(require,module,exports){
-module.exports = function(size) {
-  return new Uint8Array(size)
 }
 
 },{}],49:[function(require,module,exports){
@@ -17284,6 +17347,49 @@ function slow_copy(from, to, j, i, jend) {
   for(; i < iend; ++i, ++x) {
     to[j++] = tmp[x]
   }
+}
+
+},{}],48:[function(require,module,exports){
+module.exports = join
+
+function join(targets, hint) {
+  if(!targets.length) {
+    return new Uint8Array(0)
+  }
+
+  var len = hint !== undefined ? hint : get_length(targets)
+    , out = new Uint8Array(len)
+    , cur = targets[0]
+    , curlen = cur.length
+    , curidx = 0
+    , curoff = 0
+    , i = 0
+
+  while(i < len) {
+    if(curoff === curlen) {
+      curoff = 0
+      ++curidx
+      cur = targets[curidx]
+      curlen = cur && cur.length
+      continue
+    }
+    out[i++] = cur[curoff++] 
+  }
+
+  return out
+}
+
+function get_length(targets) {
+  var size = 0
+  for(var i = 0, len = targets.length; i < len; ++i) {
+    size += targets[i].byteLength
+  }
+  return size
+}
+
+},{}],50:[function(require,module,exports){
+module.exports = function(size) {
+  return new Uint8Array(size)
 }
 
 },{}],51:[function(require,module,exports){
@@ -17545,7 +17651,45 @@ function from_base64(str) {
   return new Uint8Array(base64.toByteArray(str)) 
 }
 
-},{"base64-js":54}],54:[function(require,module,exports){
+},{"base64-js":54}],45:[function(require,module,exports){
+module.exports = to
+
+var base64 = require('base64-js')
+  , toutf8 = require('to-utf8')
+
+var encoders = {
+    hex: to_hex
+  , utf8: to_utf
+  , base64: to_base64
+}
+
+function to(buf, encoding) {
+  return encoders[encoding || 'utf8'](buf)
+}
+
+function to_hex(buf) {
+  var str = ''
+    , byt
+
+  for(var i = 0, len = buf.length; i < len; ++i) {
+    byt = buf[i]
+    str += ((byt & 0xF0) >>> 4).toString(16)
+    str += (byt & 0x0F).toString(16)
+  }
+
+  return str
+}
+
+function to_utf(buf) {
+  return toutf8(buf)
+}
+
+function to_base64(buf) {
+  return base64.fromByteArray(buf)
+}
+
+
+},{"base64-js":54,"to-utf8":55}],54:[function(require,module,exports){
 (function (exports) {
 	'use strict';
 
@@ -17631,45 +17775,7 @@ function from_base64(str) {
 	module.exports.fromByteArray = uint8ToBase64;
 }());
 
-},{}],45:[function(require,module,exports){
-module.exports = to
-
-var base64 = require('base64-js')
-  , toutf8 = require('to-utf8')
-
-var encoders = {
-    hex: to_hex
-  , utf8: to_utf
-  , base64: to_base64
-}
-
-function to(buf, encoding) {
-  return encoders[encoding || 'utf8'](buf)
-}
-
-function to_hex(buf) {
-  var str = ''
-    , byt
-
-  for(var i = 0, len = buf.length; i < len; ++i) {
-    byt = buf[i]
-    str += ((byt & 0xF0) >>> 4).toString(16)
-    str += (byt & 0x0F).toString(16)
-  }
-
-  return str
-}
-
-function to_utf(buf) {
-  return toutf8(buf)
-}
-
-function to_base64(buf) {
-  return base64.fromByteArray(buf)
-}
-
-
-},{"base64-js":54,"to-utf8":55}],55:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 module.exports = to_utf8
 
 var out = []

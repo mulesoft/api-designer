@@ -5,9 +5,54 @@ angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
   .constant('REFRESH_FILES_INTERVAL', 5000)
   .constant('DEFAULT_PATH', '/')
+  .service('ramlParserFileReader', function ($http, ramlParser, ramlRepository, safeApplyWrapper) {
+    function readLocFile(file) {
+      var split = file.split('/');
+      var name  = split.pop();
+      var path  = split.join('/') || '/';
+
+      return ramlRepository.loadFile({path: path, name: name}).then(function (file) {
+        return file.contents;
+      });
+    }
+
+    function readExtFile(file) {
+      return $http.get(file).then(
+        // success
+        function (response) {
+          return response.data;
+        },
+
+        // failure
+        function (response) {
+          var error = 'cannot fetch ' + file;
+          if (response.status) {
+            error += '(HTTP ' + response.status + ')';
+          }
+
+          throw error;
+        }
+      );
+    }
+
+    this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
+      var deferredSrc = /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
+      var deferredDst = new ramlParser.RamlParser({}).q.defer();
+
+      deferredSrc.then(
+        // success
+        deferredDst.resolve.bind(deferredDst),
+
+        // failure
+        deferredDst. reject.bind(deferredDst)
+      );
+
+      return deferredDst.promise;
+    });
+  })
   .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
-    ramlParser, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm) {
+    ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm) {
     var CodeMirror = codeMirror.CodeMirror, editor, saveTimer, currentUpdateTimer;
 
     $scope.setTheme = function (theme) {
@@ -49,11 +94,19 @@ angular.module('ramlEditorApp')
       }
     };
 
-    eventService.on('event:raml-source-updated', function (e, args) {
-      var definition = args;
-      $scope.errorMessage = '';
-      ramlParser.load(definition).then(function (result) {
-        codeMirrorErrors.clearAnnotations();
+    function loadRamlDefinition(definition) {
+      return ramlParser.load(definition, null, {
+        validate : true,
+        transform: true,
+        compose  : true,
+        reader   : ramlParserFileReader
+      });
+    }
+
+    eventService.on('event:raml-source-updated', function (e, definition) {
+      codeMirrorErrors.clearAnnotations();
+
+      loadRamlDefinition(definition).then(function (result) {
         eventService.broadcast('event:raml-parsed', result);
         $scope.$digest();
       }, function (error) {
@@ -229,7 +282,6 @@ angular.module('ramlEditorApp')
     $scope.init = function () {
       $scope.raml = {};
       $scope.definition = '';
-      $scope.errorMessage = '';
       $scope.resources = '';
       $scope.documentation = '';
       $scope.baseUri = '';
