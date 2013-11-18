@@ -173,8 +173,8 @@
     return elementsTraitsLevelBody;
   };
 //Resource Types - root
-  var elemResourceTypesLevel = ['description', 'displayName','get','post','put','delete','head','patch','options','trace', 'connect','uriParameters','baseUriParameters','securedBy','is','type']; // missing usage
-  var elemResourceTypesLevelDocs = ['description', 'displayName']; // missing usage
+  var elemResourceTypesLevel = ['description', 'displayName','get','post','put','delete','head','patch','options','trace', 'connect','uriParameters','baseUriParameters','securedBy','is','type', 'usage'];
+  var elemResourceTypesLevelDocs = ['description', 'displayName', 'usage'];
   var elemResourceTypesLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
   var elemResourceTypesLevelParameters = ['uriParameters','baseUriParameters'];
   var elemResourceTypesLevelSecurity = ['securedBy'];

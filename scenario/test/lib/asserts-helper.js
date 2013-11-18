@@ -194,7 +194,7 @@
   };
   global.shelfElemResourceTypesByGroupAssertion = function(){
     var byGroup = [shelfGetElemResourceTypesLevelDocs(),shelfGetElemResourceTypesLevelMethods(),shelfGetElemResourceTypesLevelParameters(),shelfGetElemResourceTypesLevelSecurity(),shelfGetElemResourceTypesLevelTraitsAndTypes()];
-    var groupInfo = ['DOCS (2)\ndescription\ndisplayName','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nbaseUriParameters\nuriParameters','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (2)\nis\ntype'];
+    var groupInfo = ['DOCS (3)\ndescription\ndisplayName\nusage','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nbaseUriParameters\nuriParameters','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (2)\nis\ntype'];
     shefGetElementsByGroupAssertion(groupInfo, byGroup);
   };
 
