@@ -11,9 +11,6 @@
 
   },
   "devDependencies": {
-    "angular-cookies": "PatternConsulting/bower-angular#1.1.5",
-    "angular-mocks": "PatternConsulting/bower-angular#1.1.5",
-    "angular-scenario": "PatternConsulting/bower-angular#1.1.5",
     "sinonjs": "~1.7.1"
   }
 }
