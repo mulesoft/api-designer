@@ -16,24 +16,24 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
+      'app/vendor/scripts/codemirror.js',
+      'app/vendor/scripts/foldcode.js',
+      'app/vendor/scripts/foldgutter.js',
+      'app/vendor/scripts/gfm.js',
+      'app/vendor/scripts/javascript.js',
+      'app/vendor/scripts/markdown.js',
+      'app/vendor/scripts/overlay.js',
+      'app/vendor/scripts/show-hint.js',
+      'app/vendor/scripts/xml.js',
+
       'bower_components/angular/angular.js',
       'bower_components/angular/angular-cookies.js',
       'bower_components/angular/angular-mocks.js',
       'bower_components/angular/angular-resource.js',
       'bower_components/angular/angular-sanitize.js',
       'bower_components/es5-shim/es5-shim.js',
+      'bower_components/showdown/src/showdown.js',
       'bower_components/sinonjs/sinon.js',
-
-      'app/vendor/scripts/codemirror.js',
-      'app/vendor/scripts/foldcode.js',
-      'app/vendor/scripts/foldgutter.js',
-      'app/vendor/scripts/javascript.js',
-      'app/vendor/scripts/xml.js',
-      'app/vendor/scripts/gfm.js',
-      'app/vendor/scripts/markdown.js',
-      'app/vendor/scripts/overlay.js',
-      'app/vendor/scripts/show-hint.js',
-      'app/vendor/scripts/showdown.min.js',
 
       'bower_components/raml-js-parser/dist/raml-parser.js',
       'bower_components/api-console/dist/app.js',
