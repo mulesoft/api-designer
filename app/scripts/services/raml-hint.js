@@ -189,53 +189,64 @@ angular.module('ramlEditorApp')
       return getScopes(arrayOfLines);
     };
 
-    hinter.selectiveCloneAlternatives = function (oldAlternatives, keysToErase) {
-      var newAlternatives = {}, newAlternativesSuggestions = {};
+    hinter.selectiveCloneAlternatives = function (alternatives, keysToErase) {
+      var newAlternatives = {};
+      var newSuggestions  = {};
 
-      Object.keys(oldAlternatives.suggestions || []).forEach(function (key) {
-        if (keysToErase.indexOf(key) === -1) {
-          newAlternativesSuggestions[key] = oldAlternatives.suggestions[key];
+      Object.keys(alternatives.suggestions || {}).forEach(function (key) {
+        var suggestion = alternatives.suggestions[key];
+        var optional   = !!(suggestion && suggestion.metadata && suggestion.metadata.canBeOptional);
+
+        if (keysToErase.indexOf(key) === -1 && (!optional || (optional && keysToErase.indexOf(key + '?') === -1))) {
+          newSuggestions[key] = alternatives.suggestions[key];
         }
       });
 
-      Object.keys(oldAlternatives).forEach(function(key) {
-        newAlternatives[key] = oldAlternatives[key];
+      Object.keys(alternatives).forEach(function(key) {
+        newAlternatives[key] = alternatives[key];
       });
 
-      newAlternatives.suggestions = newAlternativesSuggestions;
-
-      newAlternatives.isOpenSuggestion = oldAlternatives.constructor.name === 'OpenSuggestion';
+      newAlternatives.suggestions      = newSuggestions;
+      newAlternatives.isOpenSuggestion = alternatives.constructor.name === 'OpenSuggestion';
 
       return newAlternatives;
-
     };
 
     hinter.getAlternatives = function (editor) {
-      var val = hinter.computePath(editor), alternatives,
-        keysToErase, alternativeKeys = [];
+      var path = hinter.computePath(editor);
+      var alternatives;
+      var keysToErase;
+      var alternativeKeys = [];
 
       // Invalid tabulation detected :)
-      if ( val === undefined) {
-        return {values: {}, keys: [], path: []};
+      if (path === undefined) {
+        return {
+          path  : [],
+          keys  : [],
+          values: {}
+        };
       }
-      else if ( val !== null ) {
-        val.pop();
+      else if (path !== null) {
+        path.pop();
       }
 
-      alternatives = hinter.suggestRAML(val);
-
-      keysToErase = getKeysToErase(editor);
-
+      alternatives = hinter.suggestRAML(path);
+      keysToErase  = getKeysToErase(editor);
       alternatives = hinter.selectiveCloneAlternatives(alternatives, keysToErase);
 
       if (alternatives && alternatives.suggestions) {
         alternativeKeys = Object.keys(alternatives.suggestions);
       }
 
-      if (!val) {
-        val = [];
+      if (!path) {
+        path = [];
       }
-      return {values: alternatives, keys: alternativeKeys, path: val};
+
+      return {
+        path  : path,
+        keys  : alternativeKeys,
+        values: alternatives
+      };
     };
 
     hinter.getSuggestions = function (editor) {
