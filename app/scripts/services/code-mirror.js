@@ -15,7 +15,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
   .factory('codeMirror', function (
     ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
     getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
-    hasChildren, replaceSelection) {
+    hasChildren, replaceSelection, config) {
     var editor = null,
       service = {
         CodeMirror: CodeMirror
@@ -139,6 +139,8 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.initEditor = function () {
+      var shouldEnableFoldGutter = JSON.parse(config.get('folding', 'true')),
+          foldGutterConfig;
 
       CodeMirror.keyMap.tabSpace = {
         Tab: service.tabKey,
@@ -160,6 +162,16 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
 
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper('fold', 'indent', getFoldRange);
+      
+      if (!shouldEnableFoldGutter) {
+        foldGutterConfig = false;
+      } else {
+        foldGutterConfig = {
+          rangeFinder: CodeMirror.fold.indent,
+          foldOnChangeTimeSpan: 300,
+          updateViewportTimeSpan: 200
+        };
+      }
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         mode: 'raml',
@@ -176,9 +188,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
           'Ctrl-s': 'save'
         },
         keyMap: 'tabSpace',
-        foldGutter: {
-          rangeFinder: CodeMirror.fold.indent
-        },
+        foldGutter: foldGutterConfig,
         gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter']
       });
       editor.setSize(null, '100%');

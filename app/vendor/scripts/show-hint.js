@@ -222,12 +222,12 @@
     });
 
     CodeMirror.on(hints, "dblclick", function(e) {
-      var t = e.target || e.srcElement;
-      if (t.hintId != null) {widget.changeActive(t.hintId); widget.pick();}
+      var t = widget.getHintElement(hints, e.target || e.srcElement);
+      if (t && t.hintId != null) {widget.changeActive(t.hintId); widget.pick();}
     });
     CodeMirror.on(hints, "click", function(e) {
-      var t = e.target || e.srcElement;
-      if (t.hintId != null) widget.changeActive(t.hintId);
+      var t = widget.getHintElement(hints, e.target || e.srcElement);
+      if (t && t.hintId != null) widget.changeActive(t.hintId);
     });
     CodeMirror.on(hints, "mousedown", function() {
       setTimeout(function(){cm.focus();}, 20);
@@ -291,6 +291,24 @@
       if (!this.ghost) { return; }
       this.ghost.remove();
       return this;
+    },
+
+    getHintElement: function (parent, el) {
+      while (el && el !== parent && !this.isHintElement(el)) {
+        el = el.parentNode;
+      }
+
+      return el === parent
+        ? void(0)
+        : el
+      ;
+    },
+
+    isHintElement: function (el) {
+      return el.nodeName &&
+             el.nodeName.toUpperCase() === 'LI' &&
+             el.className.split(/\s/).indexOf('CodeMirror-hint') !== -1
+      ;
     }
   };
 

@@ -41,4 +41,25 @@ describe('Utils module', function () {
       generateTabs(3).should.be.equal('      ');
     });
   });
+
+  describe('safeApplyWrapper', function () {
+    var safeApplyWrapper;
+    beforeEach(inject(function ($injector) {
+      safeApplyWrapper = $injector.get('safeApplyWrapper');
+    }));
+
+    it('should call wrapped function', function () {
+      var wrapped = sinon.stub();
+      safeApplyWrapper(null, wrapped)();
+
+      wrapped.called.should.be.true;
+    });
+
+    it('should pass arguments to wrapped function', function () {
+      var wrapped = sinon.stub();
+      safeApplyWrapper(null, wrapped)(1, '2', true);
+
+      wrapped.calledWith(1, '2', true).should.be.true;
+    });
+  });
 });

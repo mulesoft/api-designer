@@ -2,10 +2,8 @@
 
 angular.module('fs')
   /* Request Builder */
-  .factory('host', function ($injector, config) {
-    var host = config.get('host', '');
-
-    return host;
+  .factory('host', function (config) {
+    return config.get('host', '');
   })
   .value('method', 'GET')
   .value('path', 'files')
@@ -100,7 +98,6 @@ angular.module('fs')
             $cookies[TOKEN_COOKIE_KEY] = data;
             token = data;
             config.set('token', token);
-            config.save();
           })
           .error(function () {
             throw 'Token could not be created';

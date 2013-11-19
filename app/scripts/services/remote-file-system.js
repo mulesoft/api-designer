@@ -69,6 +69,11 @@ angular.module('fs')
       var deferred = $q.defer();
       var fullPath = removeInitialSlash(path + name);
 
+      if (!fullPath) {
+        deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
+        return deferred.promise;
+      }
+
       requestTokenBuilder()
         .method('GET')
         .path('files', files[fullPath].id)
@@ -86,7 +91,7 @@ angular.module('fs')
       var fullPath = removeInitialSlash(path + name);
 
       if (!files[fullPath]) {
-        deferred.reject();
+        deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
         return deferred.promise;
       }
 

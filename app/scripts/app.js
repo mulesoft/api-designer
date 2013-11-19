@@ -7,7 +7,7 @@ angular.module('ramlEditorApp', ['ramlConsoleApp', 'helpers', 'raml', 'ngResourc
 
     // Warn before leaving the page
     $window.onbeforeunload = function () {
-      var message = 'Are you sure you want to leave API Designer?';
+      var message = 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
 
       return message;
     };

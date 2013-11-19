@@ -129,7 +129,6 @@ describe('Request Token Builder', function () {
 
       config.get = sinon.stub().returns(undefined);
       config.set = sinon.stub();
-      config.save = sinon.stub();
 
       requestTokenBuilder.init();
 
@@ -142,8 +141,6 @@ describe('Request Token Builder', function () {
 
       config.set.calledOnce.should.be.equal(true);
       config.set.calledWith('token', newToken).should.be.equal(true);
-
-      config.save.calledOnce.should.be.equal(true);
     });
 
     it('should execute error callback on error', function () {
@@ -151,7 +148,6 @@ describe('Request Token Builder', function () {
 
       config.get = sinon.stub().returns(undefined);
       config.set = sinon.stub();
-      config.save = sinon.stub();
 
       requestTokenBuilder.init();
 
@@ -169,7 +165,6 @@ describe('Request Token Builder', function () {
       should.not.exist($cookies[TOKEN_COOKIE_KEY]);
 
       config.set.callCount.should.be.equal(0);
-      config.save.callCount.should.be.equal(0);
     });
   });
 

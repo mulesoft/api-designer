@@ -1,14 +1,25 @@
 'use strict';
 
 angular.module('lightweightParse', ['utils'])
-  .value('getEditorTextAsArrayOfLines', function (editor) {
-    var textAsList = [], i;
+  .factory('getEditorTextAsArrayOfLines', function () {
+    var lastStringCache;
+    
+    return function (editor) {
+      var textAsList = [], i;
 
-    for (i = 0; i < editor.lineCount(); i++) {
-      textAsList.push(editor.getLine(i));
-    }
+      if ( lastStringCache && lastStringCache.key === editor.getValue() ) {
+        return lastStringCache.value;
+      }
 
-    return textAsList;
+      for (i = 0; i < editor.lineCount(); i++) {
+        textAsList.push(editor.getLine(i));
+      }
+
+      lastStringCache = {key: editor.getValue(), value: textAsList};
+
+      return textAsList;
+    };
+  
   })
   .value('extractKey', function (value) {
     value = value || '';
@@ -43,8 +54,34 @@ angular.module('lightweightParse', ['utils'])
     };
   })
   .factory('getScopes', function (getLineIndent) {
+    var lastArrayCache;
+
+    function areArraysEqual(a, b) {
+      if (a === undefined || b === undefined) {
+        return false;
+      }
+
+      if (a.length !== b.length) {
+        return false;
+      }
+
+      for (var i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+          return false;
+        }
+      }
+
+      return true;
+
+    }
+
+
     return function (arrayOfLines) {
       var zipValues = [], currentIndexes = {};
+
+      if (lastArrayCache && areArraysEqual(lastArrayCache.key, arrayOfLines)) {
+        return lastArrayCache.value;
+      }
 
       zipValues = arrayOfLines.map(function (line, index) {
         var lineIndentInfo = getLineIndent(line);
@@ -87,6 +124,11 @@ angular.module('lightweightParse', ['utils'])
         currentIndexes[y[0]].push(y[2]);
         return x;
       }, {});
+
+      lastArrayCache = {
+        result: {scopeLevels: currentIndexes, scopesByLine: levelTable},
+        lines: arrayOfLines
+      };
 
       return {scopeLevels: currentIndexes, scopesByLine: levelTable};
     };

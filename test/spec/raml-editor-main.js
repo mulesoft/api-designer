@@ -8,19 +8,17 @@ describe('RAML Editor Main Controller', function () {
 
   beforeEach(module('ramlEditorApp'));
 
-  beforeEach(
-    inject( function ($injector) {
-      $rootScope = $injector.get('$rootScope');
-      $controller = $injector.get('$controller');
-      $q = $injector.get('$q');
-      $timeout = $injector.get('$timeout');
-      $confirm = $injector.get('$confirm');
-      codeMirror = $injector.get('codeMirror');
-      eventService = $injector.get('eventService');
-      applySuggestion = $injector.get('applySuggestion');
-      ramlRepository = $injector.get('ramlRepository');
-    })
-  );
+  beforeEach(inject(function ($injector) {
+    $rootScope = $injector.get('$rootScope');
+    $controller = $injector.get('$controller');
+    $q = $injector.get('$q');
+    $timeout = $injector.get('$timeout');
+    $confirm = $injector.get('$confirm');
+    codeMirror = $injector.get('codeMirror');
+    eventService = $injector.get('eventService');
+    applySuggestion = $injector.get('applySuggestion');
+    ramlRepository = $injector.get('ramlRepository');
+  }));
 
   beforeEach(function () {
     scope = $rootScope.$new();
@@ -36,9 +34,14 @@ describe('RAML Editor Main Controller', function () {
       return editor;
     };
 
-    codeMirrorErrors = {};
-    codeMirrorErrors.displayAnnotations = function (annotations) {
-      annotationsToDisplay = annotations;
+    codeMirrorErrors = {
+      displayAnnotations: function displayAnnotations(annotations) {
+        annotationsToDisplay = annotations;
+      },
+
+      clearAnnotations: function clearAnnotations() {
+
+      }
     };
 
     params = {
@@ -502,4 +505,63 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
+  describe('parsing RAML definition', function () {
+    it('should use ramlParserFileReader to load included local files using ramlRepository', function (done) {
+      //
+      $controller('ramlMain', params);
+
+      // arrange
+      var loadFileDeferred = $q.defer();
+      var loadFileStub     = sinon.stub(ramlRepository, 'loadFile', function (file) {
+        // assert
+        file.path.should.be.equal('/');
+        file.name.should.be.equal('title.raml');
+
+        // restore
+        loadFileStub.restore();
+
+        // done
+        done();
+
+        // return something to manage unhandled exception
+        return loadFileDeferred.promise;
+      });
+
+      // act
+      eventService.broadcast('event:raml-source-updated', [
+        '#%RAML 0.8',
+        '---',
+        'title: !include title.raml'
+      ].join('\n'));
+    });
+
+    it('should use ramlParserFileReader to load included external files using $http service', function (done) {
+      inject(function ($http) {
+        //
+        $controller('ramlMain', params);
+
+        // arrange
+        var httpGetStub = sinon.stub($http, 'get', function (url) {
+          // assert
+          url.should.be.equal('http://api.com/title.raml');
+
+          // restore
+          httpGetStub.restore();
+
+          // done
+          done();
+
+          // return something to manage unhandled exception
+          return $q.defer().promise;
+        });
+
+        // act
+        eventService.broadcast('event:raml-source-updated', [
+          '#%RAML 0.8',
+          '---',
+          'title: !include http://api.com/title.raml'
+        ].join('\n'));
+      });
+    });
+  });
 });

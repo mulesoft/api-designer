@@ -24,7 +24,7 @@ describe('mockFileSystem', function () {
     describe('load', function () {
       it('should be rejected', function () {
         mockFileSystem.load('/', 'file').then(function () {}, function (error) {
-          error.should.be.equal('Error reading file');
+          error.should.be.equal('file with path="/" and name="file" does not exist');
         });
 
         $timeout.flush();
@@ -34,7 +34,7 @@ describe('mockFileSystem', function () {
     describe('remove', function () {
       it('should be rejected', function () {
         mockFileSystem.remove('/', 'file').then(function () {}, function (error) {
-          error.should.be.equal('Error reading file');
+          error.should.be.equal('file with path="/" and name="file" does not exist');
         });
 
         $timeout.flush();

@@ -7,14 +7,12 @@ angular.module('fs')
     if (!fsFactory) {
       fsFactory = 'mockFileSystem';
 
-      if ($window.location.origin === 'https://j0hn.mulesoft.org') {
-        fsFactory = 'remoteFileSystem';
-      }
+      // if ($window.location.hostname === 'j0hnqa.mulesoft.org') {
+      //   fsFactory = 'remoteFileSystem';
+      // }
 
       config.set('fsFactory', fsFactory);
     }
-
-    config.save();
 
     return $injector.get(fsFactory);
   })
