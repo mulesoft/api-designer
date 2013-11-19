@@ -7,12 +7,14 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
 
-    <!-- build:css({.tmp,app}) styles/main.css -->
+    <!-- build:css({.,.tmp,app}) styles/main.css -->
     <link rel="stylesheet" href="vendor/styles/font-awesome.css">
-    <link rel="stylesheet" href="bower_components/api-console/dist/styles/app.css">
     <link rel="stylesheet" href="vendor/styles/codemirror.css">
     <link rel="stylesheet" href="vendor/styles/solarized.css">
     <link rel="stylesheet" href="vendor/styles/show-hint.css">
+
+    <link rel="stylesheet" href="bower_components/api-console/dist/styles/app.css">
+
     <link rel="stylesheet" href="styles/css/main.css">
     <link rel="stylesheet" href="styles/css/shelf.css">
     <link rel="stylesheet" href="styles/css/errors.css">
@@ -25,13 +27,8 @@
   <body ng-app="ramlEditorApp" class="{{$root.theme}}">
     <div class="container" ng-include src="'views/raml-editor-main.tmpl.html'"></div>
 
-    <!-- build:js({.tmp,app}) scripts/vendor.js -->
-    <script src="vendor/scripts/es5-shim.js"></script>
+    <!-- build:js({.,.tmp,app}) scripts/vendor.js -->
     <script src="vendor/scripts/suggest.js"></script>
-    <script src="vendor/scripts/angular.js"></script>
-    <script src="vendor/scripts/angular-resource.js"></script>
-    <script src="vendor/scripts/angular-sanitize.js"></script>
-    <script src="vendor/scripts/angular-cookies.js"></script>
     <script src="vendor/scripts/codemirror.js"></script>
     <script src="vendor/scripts/foldcode.js"></script>
     <script src="vendor/scripts/foldgutter.js"></script>
@@ -42,11 +39,17 @@
     <script src="vendor/scripts/overlay.js"></script>
     <script src="vendor/scripts/show-hint.js"></script>
     <script src="vendor/scripts/showdown.min.js"></script>
+
+    <script src="bower_components/es5-shim/es5-shim.js"></script>
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/angular/angular-resource.js"></script>
+    <script src="bower_components/angular/angular-sanitize.js"></script>
+    <script src="bower_components/angular/angular-cookies.js"></script>
     <script src="bower_components/raml-js-parser/dist/raml-parser.js"></script>
     <script src="bower_components/api-console/dist/app.js"></script>
     <!-- endbuild -->
 
-    <!-- build:js({.tmp,app}) scripts/scripts.js -->
+    <!-- build:js({.,.tmp,app}) scripts/scripts.js -->
     <script src="scripts/services/utils.js"></script>
     <script src="scripts/directives/directives.js"></script>
     <script src="scripts/app.js"></script>

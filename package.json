@@ -44,7 +44,7 @@
     "test": "grunt --verbose"
   },
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/mulesoft/api-designer.git"
+    "type": "git",
+    "url": "https://github.com/mulesoft/api-designer.git"
   }
 }
