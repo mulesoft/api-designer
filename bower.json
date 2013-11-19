@@ -2,17 +2,15 @@
   "name": "editor",
   "version": "0.0.1",
   "dependencies": {
-    "CodeMirror": "git@github.com:marijnh/CodeMirror.git",
+    "CodeMirror": "marijnh/CodeMirror",
     "angular": "PatternConsulting/bower-angular#1.1.5",
-    "api-console": "git@github.com:mulesoft/api-console.git",
     "es5-shim": "~2.0.8",
     "json3": "~3.2.4",
-    "raml-js-parser": "git@github.com:raml-org/raml-js-parser.git"
+    "api-console": "mulesoft/api-console#27b0f77538d004ff5a032f93b4891e8f2a7a984e",
+    "raml-js-parser": "raml-org/raml-js-parser#8308aea2839a6683ee026228e7a2177fe834a6c0"
+
   },
   "devDependencies": {
-    "angular-cookies": "PatternConsulting/bower-angular#1.1.5",
-    "angular-mocks": "PatternConsulting/bower-angular#1.1.5",
-    "angular-scenario": "PatternConsulting/bower-angular#1.1.5",
     "sinonjs": "~1.7.1"
   }
 }
