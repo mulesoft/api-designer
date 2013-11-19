@@ -6,6 +6,7 @@
     "angular": "PatternConsulting/bower-angular#1.1.5",
     "es5-shim": "~2.0.8",
     "api-console": "mulesoft/api-console#27b0f77538d004ff5a032f93b4891e8f2a7a984e",
+    "raml-grammar": "mulesoft/raml-grammar#6081fc41c54a313f3bb48d3d27e2d7ac11519d0b",
     "raml-js-parser": "raml-org/raml-js-parser#8308aea2839a6683ee026228e7a2177fe834a6c0"
   },
   "devDependencies": {

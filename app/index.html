@@ -28,7 +28,6 @@
     <div class="container" ng-include src="'views/raml-editor-main.tmpl.html'"></div>
 
     <!-- build:js({.,.tmp,app}) scripts/vendor.js -->
-    <script src="vendor/scripts/suggest.js"></script>
     <script src="vendor/scripts/codemirror.js"></script>
     <script src="vendor/scripts/foldcode.js"></script>
     <script src="vendor/scripts/foldgutter.js"></script>
@@ -40,39 +39,41 @@
     <script src="vendor/scripts/show-hint.js"></script>
     <script src="vendor/scripts/showdown.min.js"></script>
 
-    <script src="bower_components/es5-shim/es5-shim.js"></script>
     <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/angular/angular-cookies.js"></script>
     <script src="bower_components/angular/angular-resource.js"></script>
     <script src="bower_components/angular/angular-sanitize.js"></script>
-    <script src="bower_components/angular/angular-cookies.js"></script>
+    <script src="bower_components/es5-shim/es5-shim.js"></script>
+
     <script src="bower_components/raml-js-parser/dist/raml-parser.js"></script>
     <script src="bower_components/api-console/dist/app.js"></script>
+    <script src="bower_components/raml-grammar/dist/suggest.js"></script>
     <!-- endbuild -->
 
     <!-- build:js({.,.tmp,app}) scripts/scripts.js -->
-    <script src="scripts/services/utils.js"></script>
-    <script src="scripts/directives/directives.js"></script>
     <script src="scripts/app.js"></script>
-    <script src="scripts/filters/string-filters.js"></script>
+    <script src="scripts/services/utils.js"></script>
     <script src="scripts/services/config.js"></script>
     <script src="scripts/services/lightweight-parse.js"></script>
     <script src="scripts/services/code-folding.js"></script>
     <script src="scripts/services/code-mirror.js"></script>
-    <script src="scripts/services/event.js"></script>
     <script src="scripts/services/code-mirror-errors.js"></script>
+    <script src="scripts/services/event.js"></script>
     <script src="scripts/services/raml-hint.js"></script>
     <script src="scripts/services/raml-snippets.js"></script>
-    <script src="scripts/services/raml-highlight-config.js"></script>
     <script src="scripts/services/raml-highlight.js"></script>
+    <script src="scripts/services/raml-highlight-config.js"></script>
     <script src="scripts/services/raml-repository.js"></script>
     <script src="scripts/services/request-executor.js"></script>
     <script src="scripts/services/request-builder.js"></script>
     <script src="scripts/services/file-system.js"></script>
     <script src="scripts/services/mock-file-system.js"></script>
     <script src="scripts/services/remote-file-system.js"></script>
-    <script src="scripts/controllers/notifications.js"></script>
+    <script src="scripts/directives/directives.js"></script>
+    <script src="scripts/filters/string-filters.js"></script>
     <script src="scripts/controllers/raml-editor-main.js"></script>
     <script src="scripts/controllers/raml-editor-shelf.js"></script>
+    <script src="scripts/controllers/notifications.js"></script>
     <!-- endbuild -->
   </body>
 </html>
