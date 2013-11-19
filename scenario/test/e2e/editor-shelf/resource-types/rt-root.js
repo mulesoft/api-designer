@@ -1,19 +1,18 @@
 'use strict';
-var ramlUrl = require('../../../config').url;
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
   var  shelfElements= new ShelfElements();
 //  beforeEach(function () {
-    browser.get(ramlUrl);
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-      window.onbeforeunload = null;
-    });
-    browser.wait(function(){
-      return editorGetLine(2).then(function(text) {
-        return text === 'title:';
-      });
-    });
+//    browser.get('');
+//    browser.executeScript(function () {
+//      localStorage['config.updateResponsivenessInterval'] = 1;
+//      window.onbeforeunload = null;
+//    });
+//    browser.wait(function(){
+//      return editorGetLine(2).then(function(text) {
+//        return text === 'title:';
+//      });
+//    });
 //  });
 
   var namedParameters = ['baseUriParameters', 'uriParameters'];
@@ -47,12 +46,9 @@ describe('shelf',function(){
             '          '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(6,7);
+          editorSetCursor(6,6);
           var list2 =[option];
-          var listPromise = shelfGetListOfElementsFromShelf();
-          listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfElements.getResourceTypeLevel(),list2);
-          });
+          noShelfElementsAssertion(list2, shelfElements.getResourceTypeLevel());
         });
       });
     }); // not displayed after being selected.
@@ -90,15 +86,13 @@ describe('shelf',function(){
                 '              '
               ].join('\\n');
               editorSetValue(definition);
-              editorSetCursor(8,13);
+              editorSetCursor(8,10);
               var list2 =[namedParamElem];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
-              });
+              noShelfElementsAssertion(list2, shelfElements.getNamedParametersLevel());
             });
           });
         });
+
       }); // Not displayed after being selected
     }); //NamedParameters
 

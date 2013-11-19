@@ -1,20 +1,19 @@
 'use strict';
-var ramlUrl = require('../../../config').url;
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
   var  shelfElements= new ShelfElements();
-//  beforeEach(function () {
-  browser.get(ramlUrl);
-  browser.executeScript(function () {
-    localStorage['config.updateResponsivenessInterval'] = 1;
-    window.onbeforeunload = null;
-  });
-  browser.wait(function(){
-    return editorGetLine(2).then(function(text) {
-      return text === 'title:';
-    });
-  });
+////  beforeEach(function () {
+//  browser.get('');
+//  browser.executeScript(function () {
+//    localStorage['config.updateResponsivenessInterval'] = 1;
+//    window.onbeforeunload = null;
 //  });
+//  browser.wait(function(){
+//    return editorGetLine(2).then(function(text) {
+//      return text === 'title:';
+//    });
+//  });
+////  });
 
   var options = shelfElements.getResourcelevelWithouNewResource();
   var namedParameters = [ 'baseUriParameters', 'uriParameters'];
@@ -29,7 +28,7 @@ describe('shelf',function(){
         '    '
       ].join('\\n');
       editorSetValue(definition);
-      editorSetCursor(4,3);
+      editorSetCursor(4,2);
       shelfElementsResourceByGroupAssertion(shelfElements);
 
     });
@@ -46,12 +45,9 @@ describe('shelf',function(){
             '    '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(5,3);
+          editorSetCursor(5,2);
           var list2 =[option];
-          var listPromise = shelfGetListOfElementsFromShelf();
-          listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfElements.getResourceLevel(),list2);
-          });
+          noShelfElementsAssertion(list2, shelfElements.getResourceLevel());
         });
       });
 
@@ -93,12 +89,9 @@ describe('shelf',function(){
                 '         '
               ].join('\\n');
               editorSetValue(definition);
-              editorSetCursor(7,7);
+              editorSetCursor(7,6);
               var list2 =[namedParamElem];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
-              });
+              noShelfElementsAssertion(list2, shelfElements.getNamedParametersLevel());
             });
           });
         });

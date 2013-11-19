@@ -1,10 +1,8 @@
 'use strict';
-//var webdriver = require('selenium-webdriver'),    protractor = require('protractor');
-
 function ShelfElements() {}
 
 ShelfElements.prototype = {};
-var ramlVersion = '#%RAML 0.8';
+var ramlVersion = ['#%RAML 0.8'];
 //Root Elements
 var elementsRootLevelRoot = ['title','version','schemas','baseUri','mediaType','protocols'];
 var elementsRootLevelDocs = ['documentation'];

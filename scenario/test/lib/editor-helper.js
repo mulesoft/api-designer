@@ -7,6 +7,8 @@
     browser.wait(function () {
         return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
     }).then(function () {
+
+
         browser.executeScript(function () {
           var querySelectorMarkerError = document.querySelector('.CodeMirror-lint-marker-error');
           return [
@@ -62,7 +64,7 @@
 
   global.editorSetCursor = function (line, char) {
     line --;
-    char --;
+//    char --;
     browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
 
   };

@@ -1,21 +1,18 @@
 'use strict';
-var ramlUrl = require('../../config').url;
 var ShelfElements = require ('../../lib/shelf-elements.js').ShelfElements;
-
 describe('shelf',function(){
   var  shelfElements= new ShelfElements();
 //  beforeEach(function () {
-    browser.get(ramlUrl);
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-      window.onbeforeunload = null;
-    });
-    browser.wait(function(){
-      return editorGetLine(2).then(function(text) {
-        return text === 'title:';
-      });
-    });
-
+//    browser.get('');
+//    browser.executeScript(function () {
+//      localStorage['config.updateResponsivenessInterval'] = 1;
+//      window.onbeforeunload = null;
+//    });
+//    browser.wait(function(){
+//      return editorGetLine(2).then(function(text) {
+//        return text === 'title:';
+//      });
+//    });
 //  });
 
   describe('root elements',function(){
@@ -27,7 +24,7 @@ describe('shelf',function(){
         editorSetValue(definition);
         shelfGetElementsFromShelf().then(function(list){
           expect(list.length).toEqual(1);
-          expect(list[0].getText()).toEqual(shelfElements.getRamlVersion());
+          expect(list[0].getText()).toEqual(shelfElements.getRamlVersion()[0]);
         });
       });
 
@@ -37,7 +34,6 @@ describe('shelf',function(){
         shelfGetElementsFromShelf().then(function(list){
           expect(list.length).toEqual(0);
         });
-
       });
 
     }); //RAML version
@@ -47,7 +43,7 @@ describe('shelf',function(){
       it('by group', function(){
         var definition = [
           '#%RAML 0.8',
-          '      '
+          ' '
         ].join('\\n');
         editorSetValue(definition);
         editorSetCursor(2,1);
@@ -70,7 +66,7 @@ describe('shelf',function(){
             '     '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(6,5);
+          editorSetCursor(6,4);
           shelfElemNamedParametersByGroupAssertion(shelfElements);
         });
 
@@ -88,12 +84,9 @@ describe('shelf',function(){
                 '      '
               ].join('\\n');
               editorSetValue(definition);
-              editorSetCursor(7,5);
+              editorSetCursor(7,4);
               var list2 =[option];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
-              });
+              noShelfElementsAssertion(list2, shelfElements.getNamedParametersLevel());
             });
           });
 
@@ -108,17 +101,15 @@ describe('shelf',function(){
             var definition = [
               '#%RAML 0.8',
               ''+option+': ',
-              '  '
+              ' '
             ].join('\\n');
             editorSetValue(definition);
             editorSetCursor(3,1);
             var list2 =[option];
-            var listPromise = shelfGetListOfElementsFromShelf();
-            listPromise.then(function (list) {
-              noShelfElementsAssertion(list, shelfElements.getRootLevel(),list2);
-            });
+            noShelfElementsAssertion(list2, shelfElements.getRootLevel());
           });
         });
+
       }); // Not displayed after select
     }); // root section
   }); // root elements

@@ -4,6 +4,7 @@
   var webdriver = require('selenium-webdriver');
 
 //Editor Starts
+
   global.editorParserErrorAssertions = function ( vLine, vMessage){
     var d = webdriver.promise.defer();
     editorGetErrorLineMessage().then(function (list) {
@@ -19,9 +20,7 @@
 
 //Console Starts
   global.consoleApiTitleAssertion = function(title){
-    browser.$('#raml-console-api-title').getText().then(function(text){
-     expect(text).toEqual(title);
-    });
+    expect(browser.$('#raml-console-api-title').getText()).toEqual(title);
   };
   global.resourcesNameAssertion = function(list, expList){
     var i=0;
@@ -43,64 +42,22 @@
 
 //Shelf starts
   global.shelfElementsAssertion = function (list, expList){
-    var i, dic = {}, counter = 0;
-    var d = webdriver.promise.defer();
     expect(list.length).toEqual(expList.length);
-    for (i = 0; i < expList.length; i++) {
-      dic[expList[i]] = false;
-    }
-    function afterAllThens() {
-      var key, value;
-      for (key in dic) {
-        value = dic[key];
-        if (!value){
-          console.log(JSON.stringify(dic));
-        }
-        expect(value).toEqual(true);
-      }
-      return d.fulfill();
-    }
-    list.forEach(function (element) {
+    list.forEach(function(element){
       element.getText().then(function(text){
-        dic[text] = true;
-        counter++;
-        if (counter === expList.length) {
-          afterAllThens();
-        }
+        expect(expList).toContain(text);
       });
     });
   };
 
-  global.noShelfElementsAssertion = function (list, expList, list2){
-    var i, dic = {}, counter = 0;
-    var d = webdriver.promise.defer();
-    var num = (expList.length - list2.length);
-    expect(list.length).toEqual(num);
-    for (i = 0; i < expList.length; i++) {
-      dic[expList[i]] = false;
-    }
-    function afterAllThens() {
-      var key, value, i;
-      for (i=0; i< list2.length; i++){
-        value = dic[list2[i]];
-        expect(value).toEqual(false);
-        dic[list2[i]]=true;
-      }
-      for (key in dic) {
-        value = dic[key];
-        expect(value).toEqual(true);
-      }
-      return d.fulfill();
-    }
-    list.forEach(function (element) {
-        dic[element] = true;
-        counter++;
-        if (counter === num) {
-          afterAllThens();
-        }
+  global.noShelfElementsAssertion = function (list2, expList){
+    list2.forEach(function(element){
+      expList.splice(expList.indexOf(element), 1);
+    });
+    shelfGetElementsFromShelf().then(function(list){
+      shelfElementsAssertion(list, expList);
     });
   };
-
 
   global.shefGetElementsByGroupAssertion = function(groupInfo, byGroup){
     var j, dic1 = {}, dic2 = {} ;

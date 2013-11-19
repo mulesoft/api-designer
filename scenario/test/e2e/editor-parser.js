@@ -1,10 +1,8 @@
 'use strict';
-var ramlUrl = require('../config').url;
-
 describe('editor-parser', function () {
 
 //  beforeEach(function () {
-  browser.get(ramlUrl);
+  browser.get('');
   browser.executeScript(function () {
     localStorage['config.updateResponsivenessInterval'] = 1;
     window.onbeforeunload = null;

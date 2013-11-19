@@ -1,21 +1,17 @@
 'use strict';
-var ramlUrl = require('../../config').url;
 var ShelfElements = require('../../lib/shelf-elements.js').ShelfElements;
 describe('shelf',function(){
-
   var  shelfElements = new ShelfElements();
-//  beforeEach(function () {
-    browser.get(ramlUrl);
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-      window.onbeforeunload = null;
-    });
-    browser.wait(function(){
-      return editorGetLine(2).then(function(text) {
-        return text === 'title:';
-      });
-    });
-//  });
+//    browser.get('');
+//    browser.executeScript(function () {
+//      localStorage['config.updateResponsivenessInterval'] = 1;
+//      window.onbeforeunload = null;
+//    });
+//    browser.wait(function(){
+//      return editorGetLine(2).then(function(text) {
+//        return text === 'title:';
+//      });
+//    });
 
   var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
   describe('traits elements',function(){
@@ -29,7 +25,7 @@ describe('shelf',function(){
         '         '
       ].join('\\n');
       editorSetValue(definition);
-      editorSetCursor(5,7);
+      editorSetCursor(5,6);
       shelfElemTraitsByGroupAssertion(shelfElements);
     });
 
@@ -69,14 +65,11 @@ describe('shelf',function(){
               ].join('\\n');
               editorSetValue(definition);
               editorSetCursor(8,10);
-              var list2 =[option];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
-              });
+              noShelfElementsAssertion([option], shelfElements.getNamedParametersLevel());
             });
           });
         });
+
       }); // Not displayed after being selected
     }); //NAmed Parameter
     
@@ -90,7 +83,7 @@ describe('shelf',function(){
           '  - trait1: ',
           '      responses: ',
           '        200: ',
-          '          '
+          '            '
         ].join('\\n');
         editorSetValue(definition);
         editorSetCursor(7,10);
@@ -113,10 +106,7 @@ describe('shelf',function(){
           editorSetValue(definition);
           editorSetCursor(8,10);
           var list2 =['description'];
-          var listPromise = shelfGetListOfElementsFromShelf();
-          listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfElements.getResponseLevel(),list2);
-          });
+          noShelfElementsAssertion(list2, shelfElements.getResponseLevel());
         });
 
         it('displayName is no longer displayed on the shelf', function(){
@@ -133,10 +123,7 @@ describe('shelf',function(){
           editorSetValue(definition);
           editorSetCursor(8,10);
           var list2 =['body'];
-          var listPromise = shelfGetListOfElementsFromShelf();
-          listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfElements.getResponseLevel(),list2);
-          });
+          noShelfElementsAssertion(list2, shelfElements.getResponseLevel());
         });
 
       }); // Not displayed after select
@@ -157,17 +144,15 @@ describe('shelf',function(){
             'traits: ',
             '  - trait1: ',
             '      '+option+': ',
-            '        '
+            '          '
           ].join('\\n');
           editorSetValue(definition);
-          editorSetCursor(6,7);
+          editorSetCursor(6,6);
           var list2 =[option];
-          var listPromise = shelfGetListOfElementsFromShelf();
-          listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfElements.getTraitsLevel(),list2);
-          });
+          noShelfElementsAssertion(list2, shelfElements.getTraitsLevel());
         });
       });
+
     });// Don't displayed after select
   });//traits elements
 }); // shelf
