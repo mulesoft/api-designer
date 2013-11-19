@@ -9,12 +9,18 @@ This is a standalone/embeddable editor for [RAML](http://raml.org) (Restful Api 
 Install global tools
 ```
 npm install -g grunt-cli
+npm install -g bower
 npm install -g karma # Optional for running the test suite
 ```
 
 Install node modules
 ```
-npm install .
+npm install
+```
+
+Install bower modules
+```
+bower install
 ```
 
 Run the application
@@ -56,47 +62,47 @@ The following example details how to embed the API Designer:
       angular.module('ramlEditorApp')
       .factory('MyFileSystem', function ($q, config, eventService) {
         var service = {};
-    
+
         service.directory = function (path) {
           var deferred = $q.defer();
-          
+        
           // Your magic goes here:
            // Do deferred.resolve(data); to fulfull the promise or
            // deferred.reject(error); to reject it.
-           
+        
            return deferred.promise;
         };
-    
+
         service.load = function (path, name) {
           var deferred = $q.defer();
-          
+        
           // Your magic goes here:
            // Do deferred.resolve(data); to fulfull the promise or
            // deferred.reject(error); to reject it.
-           
+        
            return deferred.promise;
         };
-    
+
         service.remove = function (path, name) {
           var deferred = $q.defer();
-          
+        
           // Your magic goes here:
            // Do deferred.resolve(data); to fulfull the promise or
            // deferred.reject(error); to reject it.
-           
+        
            return deferred.promise;
         };
-    
+
         service.save = function (path, name, contents) {
           var deferred = $q.defer();
-          
+        
           // Your magic goes here:
            // Do deferred.resolve(data); to fulfull the promise or
            // deferred.reject(error); to reject it.
-           
+        
            return deferred.promise;
         };
-    
+
         return service;
       })
       .run(function (MyFileSystem, config, eventService) {
@@ -104,7 +110,7 @@ The following example details how to embed the API Designer:
         config.set('fsFactory', 'MyFileSystem');
         
         // In case you want to send notifications to the user
-        // (for instance, that he must login to save). 
+        // (for instance, that he must login to save).
         // The expires flags means whether
         // it should be hidden after a period of time or the
         // user should dismiss it manually.
