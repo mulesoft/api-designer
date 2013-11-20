@@ -22,9 +22,31 @@ angular.module('lightweightParse', ['utils'])
   
   })
   .value('extractKey', function (value) {
-    value = value || '';
-    var match = /^(.+):( .*$|$)/.exec(value);
-    return match && match.length > 1 ? match[1] : '';
+    function endsWith(string, searchString) {
+      var position = string.length - searchString.length;
+      var lastIndex = string.lastIndexOf(searchString);
+      return lastIndex !== -1 && lastIndex === position;
+    }
+
+    var trimmedValue = value ? value.trim() : '', match, key;
+    if (!trimmedValue) {
+      return '';
+    }
+
+    // Keys are the first thing in the line, that is separated by a ": " (colon space)
+    match = trimmedValue.trim().split(/:\s+/, 2);
+    key = match && match.length > 1 ? match[0] : '';
+    if (key){
+      return key;
+    }
+
+    // There was no colon followed by a space, maybe it ends with a colon?
+    if (endsWith(trimmedValue, ':')) {
+      return trimmedValue.substr(0, trimmedValue.length - 1);
+    }
+
+    // No key found
+    return '';
   })
   .factory('isArrayStarter', function(getLineIndent) {
     return function(line) {
