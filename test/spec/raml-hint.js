@@ -625,8 +625,6 @@ describe('ramlEditorApp', function () {
         Object.keys(autocompleteSuggestionKeys).should.not.include.keys(['title', 'randomHint', 'version']);
       });
 
-
-
     });
   });
 
