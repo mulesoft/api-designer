@@ -162,7 +162,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
 
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper('fold', 'indent', getFoldRange);
-      
+
       if (!shouldEnableFoldGutter) {
         foldGutterConfig = false;
       } else {
@@ -185,7 +185,9 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
           'Cmd-s': 'save',
-          'Ctrl-s': 'save'
+          'Ctrl-s': 'save',
+          'Tab': 'indentMore',
+          'Shift-Tab': 'indentLess'
         },
         keyMap: 'tabSpace',
         foldGutter: foldGutterConfig,
