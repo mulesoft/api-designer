@@ -257,7 +257,7 @@ angular.module('ramlEditorApp')
 
     hinter.autocompleteHelper = function(editor) {
       var editorState = hinter.getEditorState(editor),
-          curWord = editorState.curWord,
+          curWord = editorState.curLine.trim(),
           start = editorState.start,
           end = editorState.end,
           alternatives = hinter.getAlternatives(editor),
