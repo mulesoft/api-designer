@@ -22,8 +22,11 @@
   "globals": {
     "angular": false,
     "describe": false,
+    "xdescribe": false,
     "should": false,
+    "expect": false,
     "it": false,
+    "xit": false,
     "after": false,
     "beforeEach": false,
     "afterEach": false,
@@ -31,6 +34,8 @@
     "mock": false,
     "sinon": false,
     "getEditor": false,
-    "prompt": false
+    "prompt": false,
+    "browser": false,
+    "by": false
   }
 }
