@@ -506,6 +506,125 @@ describe('ramlEditorApp', function () {
 
         Object.keys(autocompleteSuggestionKeys).should.not.include.keys('title');
       });
+
+      it('should use text in current line to get hints', function () {
+        var alternatives = {
+          suggestions: {
+            title: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            version: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            randomHint: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            }
+          },
+          metadata: {
+            category: 'snippets',
+            id: 'resource'
+          }
+        };
+
+        ramlHint.suggestRAML = function() {
+          return alternatives;
+        };
+
+        var editor = getEditor(
+          [
+            'title: hello',
+            'v'
+          ].join('\n'),
+          {line: 1, ch: 1});
+        var autocompleteSuggestions = ramlHint.autocompleteHelper(editor);
+
+        autocompleteSuggestions.should.be.ok;
+
+        var autocompleteSuggestionKeys = {};
+
+        autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
+          var cleanedUpText = autocompleteSuggestion.text.replace(/:(\w|\n|\s)*/g, '');
+          autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
+        });
+
+        alternatives.suggestions.should.include.keys(Object.keys(autocompleteSuggestionKeys));
+
+        Object.keys(autocompleteSuggestionKeys).should.not.include.keys(['title', 'randomHint']);
+      });
+
+      it('should use text in current line to get hints (fix for regression #61036226)', function () {
+        var alternatives = {
+          suggestions: {
+            title: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            version: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            randomHint: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            }
+          },
+          metadata: {
+            category: 'snippets',
+            id: 'resource'
+          }
+        };
+
+        ramlHint.suggestRAML = function() {
+          return alternatives;
+        };
+
+        var editor = getEditor(
+          [
+            'title: hello',
+            'some text v'
+          ].join('\n'),
+          {line: 1, ch: 11});
+        var autocompleteSuggestions = ramlHint.autocompleteHelper(editor);
+
+        autocompleteSuggestions.should.be.ok;
+
+        var autocompleteSuggestionKeys = {};
+
+        autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
+          var cleanedUpText = autocompleteSuggestion.text.replace(/:(\w|\n|\s)*/g, '');
+          autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
+        });
+
+        Object.keys(autocompleteSuggestionKeys).should.not.include.keys(['title', 'randomHint', 'version']);
+      });
+
     });
   });
 
