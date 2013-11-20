@@ -1,20 +1,9 @@
 'use strict';
-var expect = require('expect.js');
-var ramlUrl = require('../config').url;
-
+var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
+var ConsoleHelper = require ('../../../lib/console-helper.js').ConsoleHelper;
 describe('editor-console',function(){
-
-  beforeEach(function () {
-    browser.get(ramlUrl);
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-    });
-    browser.wait(function(){
-      return editorGetLine(2).then(function(text) {
-        return text === 'title:';
-      });
-    });
-  });
+  var editorHelper= new EditorHelper();
+  var consoleHelper= new ConsoleHelper();
 
   describe('console',function(){
 
@@ -31,14 +20,14 @@ describe('editor-console',function(){
         'title: mi api',
         '/res:'
       ].join('\\n');
-      editorSetValue(definition);
+      editorHelper.setValue(definition);
       browser.wait(function(){
-        return browser.$(consoleGetTitleElement()).getText().then(function(text){
+        return browser.$(consoleHelper.getTitleCss()).getText().then(function(text){
           return text === 'mi api';
         });
       }).then(function(){
-        browser.$(consoleGetTitleElement()).getText().then(function(text){
-          expect(text).to.eql('mi api');
+        browser.$(consoleHelper.getTitleCss()()).getText().then(function(text){
+          expect(text).toEqual('mi api');
         });
       });
     });
@@ -52,16 +41,16 @@ describe('editor-console',function(){
           'title: mi api',
           '/res:'
         ].join('\\n');
-        editorSetValue(definition);
+        editorHelper.setValue(definition);
         browser.wait(function(){
-          return browser.$(consoleGetTitleElement()).getText().then(function(text){
+          return browser.$(consoleHelper.getTitleCss()()).getText().then(function(text){
             return text === 'mi api';
           });
         }).then(function(){
-          browser.findElements(by.css(consoleGetListResourcesNameElement())).then(function(list){
-            expect(list.length).to.eql(1);
+          browser.findElements(by.css(consoleHelper.getListResourcesNameCss())).then(function(list){
+            expect(list.length).toEqual(1);
             list[0].getText().then(function(text){
-              expect(text).to.eql('/res');
+              expect(text).toEqual('/res');
             });
           });
         });
@@ -75,19 +64,19 @@ describe('editor-console',function(){
           '/res1:',
           '/res2:'
         ].join('\\n');
-        editorSetValue(definition);
+        editorHelper.setValue(definition);
         browser.wait(function(){
-          return browser.$(consoleGetTitleElement()).getText().then(function(text){
+          return browser.$(consoleHelper.getTitleCss()()).getText().then(function(text){
             return text === 'mi api';
           });
         }).then(function(){
-          browser.findElements(by.css(consoleGetListResourcesNameElement())).then(function(list){
-            expect(list.length).to.eql(2);
+          browser.findElements(by.css(consoleHelper.getListResourcesNameCss())).then(function(list){
+            expect(list.length).toEqual(2);
             list[0].getText().then(function(text){
-              expect(text).to.eql('/res1');
+              expect(text).toEqual('/res1');
             });
             list[1].getText().then(function(text){
-              expect(text).to.eql('/res2');
+              expect(text).toEqual('/res2');
             });
           });
         });
@@ -101,14 +90,14 @@ describe('editor-console',function(){
           '/res:',
           '  displayName: resour 1'
         ].join('\\n');
-        editorSetValue(definition);
+        editorHelper.setValue(definition);
         browser.wait(function(){
-          return browser.$(consoleGetTitleElement()).getText().then(function(text){
+          return browser.$(consoleHelper.getTitleCss()()).getText().then(function(text){
             return text === 'mi api';
           });
         }).then(function(){
           browser.$('[role=\'resourceSummary\'] li[ng-show=\'resource.name\']').getText().then(function(text){
-            expect(text).to.eql('"resour 1"');
+            expect(text).toEqual('"resour 1"');
           });
         });
       });
@@ -126,14 +115,14 @@ describe('editor-console',function(){
             '/res:',
             ' is: [secured]'
           ].join('\\n');
-          editorSetValue(definition);
+          editorHelper.setValue(definition);
           browser.wait(function(){
-            return browser.$(consoleGetTitleElement()).getText().then(function(text){
+            return browser.$(consoleHelper.getTitleCss()()).getText().then(function(text){
               return text === 'mi api';
             });
           }).then(function(){
             browser.$('[role=\'resourceSummary\'] [role=\'traits\'] li').getText().then(function(text){
-              expect(text).to.eql('secured');
+              expect(text).toEqual('secured');
             });
           });
         });
@@ -149,14 +138,14 @@ describe('editor-console',function(){
             '/res:',
             ' is: [secured]'
           ].join('\\n');
-          editorSetValue(definition);
+          editorHelper.setValue(definition);
           browser.wait(function(){
-            return browser.$(consoleGetTitleElement()).getText().then(function(text){
+            return browser.$(consoleHelper.getTitleCss()()).getText().then(function(text){
               return text === 'mi api';
             });
           }).then(function(){
             browser.$('[role=\'resourceSummary\'] [role=\'traits\'] li').getText().then(function(text){
-              expect(text).to.eql('secured');
+              expect(text).toEqual('secured');
             });
           });
         });
@@ -184,14 +173,14 @@ describe('editor-console',function(){
                 '/res:',
                 ' is: [secured]'
               ].join('\\n');
-              editorSetValue(definition);
+              editorHelper.setValue(definition);
               browser.wait(function(){
-                return browser.$(consoleGetTitleElement()).getText().then(function(text){
+                return browser.$(consoleHelper.getTitleCss()()).getText().then(function(text){
                   return text === 'mi api';
                 });
               }).then(function(){
                 browser.$('[role=\'resourceSummary\'] [role=\'traits\'] li').getText().then(function(text){
-                  expect(text).to.eql('secured');
+                  expect(text).toEqual('secured');
                 });
               });
             });
