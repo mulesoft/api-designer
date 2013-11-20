@@ -21,11 +21,6 @@ angular.module('lightweightParse', ['utils'])
     };
   
   })
-  .value('extractKey', function (value) {
-    value = value || '';
-    var match = /^(.+):( .*$|$)/.exec(value);
-    return match && match.length > 1 ? match[1] : '';
-  })
   .factory('isArrayStarter', function(getLineIndent) {
     return function(line) {
       if(!line) {
@@ -34,6 +29,42 @@ angular.module('lightweightParse', ['utils'])
 
       var lineWithoutIndentation = getLineIndent(line).content;
       return lineWithoutIndentation.indexOf('-') === 0 && lineWithoutIndentation.indexOf('---') < 0;
+    };
+  })
+  .factory('extractKey', function (isArrayStarter) {
+    return function(value) {
+      function endsWith(string, searchString) {
+        var position = string.length - searchString.length;
+        var lastIndex = string.lastIndexOf(searchString);
+        return lastIndex !== -1 && lastIndex === position;
+      }
+
+      function clearSlashes(key) {
+        if (isArrayStarter(key)) {
+          return key.replace(/^-\s*/, '');
+        }
+        return key;
+      }
+
+      var trimmedValue = value ? value.trim() : '', match, key;
+      if (!trimmedValue) {
+        return '';
+      }
+
+      // Keys are the first thing in the line, that is separated by a ": " (colon space)
+      match = trimmedValue.trim().split(/:\s+/, 2);
+      key = match && match.length > 1 ? match[0] : '';
+      if (key){
+        return clearSlashes(key);
+      }
+
+      // There was no colon followed by a space, maybe it ends with a colon?
+      if (endsWith(trimmedValue, ':')) {
+        return clearSlashes(trimmedValue.substr(0, trimmedValue.length - 1));
+      }
+
+      // No key found
+      return '';
     };
   })
   .factory('getLineIndent', function (indentUnit) {
