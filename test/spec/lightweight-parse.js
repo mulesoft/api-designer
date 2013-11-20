@@ -119,6 +119,16 @@ describe('Lightweight Parse Module', function () {
     it('should handle keys with : in their value', function () {
       extractKey('  title:longerKey: "Muse: Mule Sales Enablement API"').should.be.equal('title:longerKey');
       extractKey('  title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+    });
+
+    it('should handle keys which start in an array', function () {
+      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('  - title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('--- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('--- title');
     });
 
   });
