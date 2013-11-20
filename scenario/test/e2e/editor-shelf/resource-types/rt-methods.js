@@ -1,20 +1,11 @@
 'use strict';
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
+var AssertsHelper = require ('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
 describe('shelf',function(){
-  var  shelfElements= new ShelfElements();
-//  beforeEach(function () {
-//  browser.get('');
-//  browser.executeScript(function () {
-//    localStorage['config.updateResponsivenessInterval'] = 1;
-//    window.onbeforeunload = null;
-//  });
-//  browser.wait(function(){
-//    return editorGetLine(2).then(function(text) {
-//      return text === 'title:';
-//    });
-//  });
-//  });
-
+  var shelfElements= new ShelfElements();
+  var assertsHelper= new AssertsHelper();
+  var editorHelper= new EditorHelper();
   var methods = shelfElements.getResourceLevelMethods();
   var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
   var namedParamElems = shelfElements.getNamedParametersLevel();
@@ -34,9 +25,9 @@ describe('shelf',function(){
             '      '+method+':',
             '          '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(6,8);
-          shelfElementsRTMethodsByGroupAssertion(shelfElements);
+          editorHelper.setValue(definition);
+          editorHelper.setCursor(6,8);
+          assertsHelper.shelfElementsRTMethodsByGroup();
         });
       });
 
@@ -55,9 +46,9 @@ describe('shelf',function(){
                 '          hola:',
                 '             '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(8,12);
-              shelfElemNamedParametersByGroupAssertion(shelfElements);
+              editorHelper.setValue(definition);
+              editorHelper.setCursor(8,12);
+              assertsHelper.shelfElemNamedParametersByGroup();
             });
           });
         });
@@ -79,10 +70,10 @@ describe('shelf',function(){
                     '            '+namedParamElem+':',
                     '              '
                   ].join('\\n');
-                  editorSetValue(definition);
-                  editorSetCursor(9,12);
+                  editorHelper.setValue(definition);
+                  editorHelper.setCursor(9,12);
                   var list2 =[namedParamElem];
-                  noShelfElementsAssertion(list2, shelfElements.getNamedParametersLevel());
+                  assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getNamedParametersLevel());
                 });
               });
             });
@@ -114,10 +105,10 @@ describe('shelf',function(){
                 '        '+methodElem+': ',
                 '            '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(7,8);
+              editorHelper.setValue(definition);
+              editorHelper.setCursor(7,8);
               var list2 =[methodElem];
-              noShelfElementsAssertion(list2, shelfElements.getRTMethodsLevel());
+              assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getRTMethodsLevel());
             });
           });
         });

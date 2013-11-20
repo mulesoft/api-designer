@@ -1,20 +1,11 @@
 'use strict';
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
+var AssertsHelper = require ('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
 describe('shelf',function(){
-  var  shelfElements= new ShelfElements();
-////  beforeEach(function () {
-//  browser.get('');
-//  browser.executeScript(function () {
-//    localStorage['config.updateResponsivenessInterval'] = 1;
-//    window.onbeforeunload = null;
-//  });
-//  browser.wait(function(){
-//    return editorGetLine(2).then(function(text) {
-//      return text === 'title:';
-//    });
-//  });
-////  });
-
+  var shelfElements= new ShelfElements();
+  var assertsHelper= new AssertsHelper();
+  var editorHelper= new EditorHelper();
   var options = shelfElements.getResourcelevelWithouNewResource();
   var namedParameters = [ 'baseUriParameters', 'uriParameters'];
   var namedParamElems = shelfElements.getNamedParametersLevel();
@@ -27,10 +18,9 @@ describe('shelf',function(){
         '/res:',
         '    '
       ].join('\\n');
-      editorSetValue(definition);
-      editorSetCursor(4,2);
-      shelfElementsResourceByGroupAssertion(shelfElements);
-
+      editorHelper.setValue(definition);
+      editorHelper.setCursor(4,2);
+      assertsHelper.shelfElementsResourceByGroup();
     });
 
     describe('not displayed after being selected', function(){
@@ -44,10 +34,10 @@ describe('shelf',function(){
             '  '+option+': ',
             '    '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(5,2);
+          editorHelper.setValue(definition);
+          editorHelper.setCursor(5,2);
           var list2 =[option];
-          noShelfElementsAssertion(list2, shelfElements.getResourceLevel());
+          assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getResourceLevel());
         });
       });
 
@@ -67,9 +57,9 @@ describe('shelf',function(){
             '    hola: ',
             '        '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(7,6);
-          shelfElemNamedParametersByGroupAssertion(shelfElements);
+          editorHelper.setValue(definition);
+          editorHelper.setCursor(7,6);
+          assertsHelper.shelfElemNamedParametersByGroup();
         });
       });
 
@@ -88,10 +78,10 @@ describe('shelf',function(){
                 '      '+namedParamElem+':',
                 '         '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(7,6);
+              editorHelper.setValue(definition);
+              editorHelper.setCursor(7,6);
               var list2 =[namedParamElem];
-              noShelfElementsAssertion(list2, shelfElements.getNamedParametersLevel());
+              assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getNamedParametersLevel());
             });
           });
         });

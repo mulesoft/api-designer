@@ -1,19 +1,13 @@
 'use strict';
 var ShelfElements = require('../../lib/shelf-elements.js').ShelfElements;
+var AssertsHelper = require ('../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../lib/editor-helper.js').EditorHelper;
 describe('shelf',function(){
   var  shelfElements = new ShelfElements();
-//    browser.get('');
-//    browser.executeScript(function () {
-//      localStorage['config.updateResponsivenessInterval'] = 1;
-//      window.onbeforeunload = null;
-//    });
-//    browser.wait(function(){
-//      return editorGetLine(2).then(function(text) {
-//        return text === 'title:';
-//      });
-//    });
-
+  var assertsHelper= new AssertsHelper();
+  var editorHelper= new EditorHelper();
   var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
+  
   describe('traits elements',function(){
 
     it('check elements at trait level', function (){
@@ -24,9 +18,9 @@ describe('shelf',function(){
         '  - trait1: ',
         '         '
       ].join('\\n');
-      editorSetValue(definition);
-      editorSetCursor(5,6);
-      shelfElemTraitsByGroupAssertion(shelfElements);
+      editorHelper.setValue(definition);
+      editorHelper.setCursor(5,6);
+      assertsHelper.shelfElemTraitsByGroup();
     });
 
     describe('Named Parameters', function(){
@@ -42,9 +36,9 @@ describe('shelf',function(){
             '        hola: ',
             '              '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(7,10);
-          shelfElemNamedParametersByGroupAssertion(shelfElements);
+          editorHelper.setValue(definition);
+          editorHelper.setCursor(7,10);
+          assertsHelper.shelfElemNamedParametersByGroup();
         });
       });
 
@@ -63,9 +57,9 @@ describe('shelf',function(){
                 '          '+option+':',
                 '            '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(8,10);
-              noShelfElementsAssertion([option], shelfElements.getNamedParametersLevel());
+              editorHelper.setValue(definition);
+              editorHelper.setCursor(8,10);
+              assertsHelper.shelfElementsNotDisplayed([option], shelfElements.getNamedParametersLevel());
             });
           });
         });
@@ -85,9 +79,9 @@ describe('shelf',function(){
           '        200: ',
           '            '
         ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(7,10);
-        shelfElemResponsesByGroupAssertion(shelfElements);
+        editorHelper.setValue(definition);
+        editorHelper.setCursor(7,10);
+        assertsHelper.shelfElemResponsesByGroup();
       });
 
       describe('after being selected', function(){
@@ -103,10 +97,10 @@ describe('shelf',function(){
             '          description: ',
             '             '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(8,10);
+          editorHelper.setValue(definition);
+          editorHelper.setCursor(8,10);
           var list2 =['description'];
-          noShelfElementsAssertion(list2, shelfElements.getResponseLevel());
+          assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getResponseLevel());
         });
 
         it('displayName is no longer displayed on the shelf', function(){
@@ -120,10 +114,10 @@ describe('shelf',function(){
             '          body: ',
             '             '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(8,10);
+          editorHelper.setValue(definition);
+          editorHelper.setCursor(8,10);
           var list2 =['body'];
-          noShelfElementsAssertion(list2, shelfElements.getResponseLevel());
+          assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getResponseLevel());
         });
 
       }); // Not displayed after select
@@ -146,10 +140,10 @@ describe('shelf',function(){
             '      '+option+': ',
             '          '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(6,6);
+          editorHelper.setValue(definition);
+          editorHelper.setCursor(6,6);
           var list2 =[option];
-          noShelfElementsAssertion(list2, shelfElements.getTraitsLevel());
+          assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getTraitsLevel());
         });
       });
 

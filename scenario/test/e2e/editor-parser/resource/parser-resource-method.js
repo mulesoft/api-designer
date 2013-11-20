@@ -1,15 +1,10 @@
 'use strict';
+var AssertsHelper = require ('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
 describe('parser ',function(){
-//  browser.get('');
-//  browser.executeScript(function () {
-//    localStorage['config.updateResponsivenessInterval'] = 1;
-//    window.onbeforeunload = null;
-//  });
-//  browser.wait(function(){
-//    return editorGetLine(2).then(function(text) {
-//      return text === 'title:';
-//    });
-//  });
+  var assertsHelper= new AssertsHelper();
+  var editorHelper= new EditorHelper();
+
   describe('Methods', function () {
 
     describe('get', function () {
@@ -23,8 +18,8 @@ describe('parser ',function(){
           '  get:',
           '    displayName:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property: \'displayName\' is invalid in a method');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property: \'displayName\' is invalid in a method');
       });
 
       it('should fail: method already declared: get', function () {
@@ -36,8 +31,8 @@ describe('parser ',function(){
           '  get:',
           '  get:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','method already declared: \'get\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','method already declared: \'get\'');
       });
 
       describe('protocols', function () {
@@ -52,8 +47,8 @@ describe('parser ',function(){
             '    protocols: []',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','property already used: \'protocols\'');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','property already used: \'protocols\'');
         });
 
         it('should fail: Rget-protocol property must be an array', function () {
@@ -65,8 +60,8 @@ describe('parser ',function(){
             '  get:',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('6','property must be an array');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('6','property must be an array');
         });
 
         it('should fail: Rget-protocol value must be a string', function () {
@@ -79,8 +74,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - '
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','value must be a string');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','value must be a string');
         });
 
         it('should fail: Rget-protocols only HTTP and HTTPS values are allowed', function () {
@@ -93,8 +88,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - htt'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','only HTTP and HTTPS values are allowed');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
         });
 
       }); // protocols
@@ -113,8 +108,8 @@ describe('parser ',function(){
           '  put:',
           '    displayName:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property: \'displayName\' is invalid in a method');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property: \'displayName\' is invalid in a method');
       });
 
       it('should fail: method already declared: put', function () {
@@ -126,8 +121,8 @@ describe('parser ',function(){
           '  put:',
           '  put:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','method already declared: \'put\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','method already declared: \'put\'');
       });
 
       describe('protocols', function () {
@@ -142,8 +137,8 @@ describe('parser ',function(){
             '    protocols: []',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','property already used: \'protocols\'');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','property already used: \'protocols\'');
         });
 
         it('should fail: Rput-protocol property must be an array', function () {
@@ -155,8 +150,8 @@ describe('parser ',function(){
             '  put:',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('6','property must be an array');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('6','property must be an array');
         });
 
         it('should fail: Rput-protocol value must be a string', function () {
@@ -169,8 +164,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - '
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','value must be a string');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','value must be a string');
         });
 
         it('should fail: Rput-protocols only HTTP and HTTPS values are allowed', function () {
@@ -183,8 +178,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - htt'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','only HTTP and HTTPS values are allowed');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
         });
 
       }); // protocols
@@ -202,8 +197,8 @@ describe('parser ',function(){
           '  head:',
           '    displayName:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property: \'displayName\' is invalid in a method');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property: \'displayName\' is invalid in a method');
       });
 
       it('should fail: method already declared: head', function () {
@@ -215,8 +210,8 @@ describe('parser ',function(){
           '  head:',
           '  head:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','method already declared: \'head\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','method already declared: \'head\'');
       });
 
       describe('protocols', function () {
@@ -231,8 +226,8 @@ describe('parser ',function(){
             '    protocols: []',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','property already used: \'protocols\'');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','property already used: \'protocols\'');
         });
 
         it('should fail: Rhead-protocols property must be an array', function () {
@@ -244,8 +239,8 @@ describe('parser ',function(){
             '  head:',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('6','property must be an array');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('6','property must be an array');
         });
 
         it('should fail: Rhead-protocol value must be a string', function () {
@@ -258,8 +253,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - '
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','value must be a string');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','value must be a string');
         });
 
         it('should fail: Rhead-protocols only HTTP and HTTPS values are allowed', function () {
@@ -272,8 +267,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - htt'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','only HTTP and HTTPS values are allowed');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
         });
 
       }); // protocols
@@ -291,8 +286,8 @@ describe('parser ',function(){
           '  options:',
           '    displayName:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property: \'displayName\' is invalid in a method');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property: \'displayName\' is invalid in a method');
       });
 
       it('should fail: method already declared: options', function () {
@@ -304,8 +299,8 @@ describe('parser ',function(){
           '  options:',
           '  options:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','method already declared: \'options\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','method already declared: \'options\'');
       });
 
       describe('protocols', function () {
@@ -320,8 +315,8 @@ describe('parser ',function(){
             '    protocols: []',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','property already used: \'protocols\'');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','property already used: \'protocols\'');
         });
 
         it('should fail: Roptions-protocol property must be an array', function (){
@@ -333,8 +328,8 @@ describe('parser ',function(){
             '  options:',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('6','property must be an array');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('6','property must be an array');
         });
 
         it('should fail: Roptions-protocol value must be a string', function () {
@@ -347,8 +342,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - '
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','value must be a string');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','value must be a string');
         });
 
         it('should fail: Roptions-protocols only HTTP and HTTPS values are allowed', function () {
@@ -361,8 +356,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - htt'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','only HTTP and HTTPS values are allowed');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
         });
 
       }); // protocols
@@ -380,8 +375,8 @@ describe('parser ',function(){
           '  post:',
           '    displayName:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property: \'displayName\' is invalid in a method');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property: \'displayName\' is invalid in a method');
       });
 
       it('should fail: method already declared: post', function () {
@@ -393,8 +388,8 @@ describe('parser ',function(){
           '  post:',
           '  post:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','method already declared: \'post\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','method already declared: \'post\'');
       });
 
       describe('protocols', function () {
@@ -409,8 +404,8 @@ describe('parser ',function(){
             '    protocols: []',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','property already used: \'protocols\'');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','property already used: \'protocols\'');
         });
 
         it('should fail: Rpost-protocol property must be an array', function () {
@@ -422,8 +417,8 @@ describe('parser ',function(){
             '  post:',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('6','property must be an array');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('6','property must be an array');
         });
 
         it('should fail: Rpost-protocol value must be a string', function (){
@@ -436,8 +431,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - '
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','value must be a string');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','value must be a string');
         });
 
         it('should fail: Rpost-protocols only HTTP and HTTPS values are allowed', function () {
@@ -450,8 +445,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - htt'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','only HTTP and HTTPS values are allowed');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
         });
 
       }); // protocols
@@ -469,8 +464,8 @@ describe('parser ',function(){
           '  delete:',
           '    displayName:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property: \'displayName\' is invalid in a method');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property: \'displayName\' is invalid in a method');
       });
 
       it('should fail: method already declared: delete', function () {
@@ -482,8 +477,8 @@ describe('parser ',function(){
           '  delete:',
           '  delete:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','method already declared: \'delete\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','method already declared: \'delete\'');
       });
 
       describe('protocols', function () {
@@ -498,8 +493,8 @@ describe('parser ',function(){
             '    protocols: []',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','property already used: \'protocols\'');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','property already used: \'protocols\'');
         });
 
         it('should fail: Rdelete-protocol property must be an array', function () {
@@ -511,8 +506,8 @@ describe('parser ',function(){
             '  delete:',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('6','property must be an array');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('6','property must be an array');
         });
 
         it('should fail: Rdelete-protocol value must be a string', function () {
@@ -525,8 +520,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - '
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','value must be a string');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','value must be a string');
         });
 
         it('should fail: Rdelete-protocols only HTTP and HTTPS values are allowed', function () {
@@ -539,8 +534,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - htt'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','only HTTP and HTTPS values are allowed');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
         });
 
       }); // protocols
@@ -557,8 +552,8 @@ describe('parser ',function(){
           '  patch:',
           '    displayName:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property: \'displayName\' is invalid in a method');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property: \'displayName\' is invalid in a method');
       });
 
       it('should fail: method already declared: patch', function () {
@@ -570,8 +565,8 @@ describe('parser ',function(){
           '  patch:',
           '  patch:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','method already declared: \'patch\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','method already declared: \'patch\'');
       });
 
       describe('protocols', function () {
@@ -586,8 +581,8 @@ describe('parser ',function(){
             '    protocols: []',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','property already used: \'protocols\'');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','property already used: \'protocols\'');
         });
 
         it('should fail: Rpatch-protocol property must be an array', function () {
@@ -599,8 +594,8 @@ describe('parser ',function(){
             '  patch:',
             '    protocols:'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('6','property must be an array');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('6','property must be an array');
         });
 
         it('should fail: Rpatch-protocol value must be a string', function () {
@@ -613,8 +608,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - '
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','value must be a string');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','value must be a string');
         });
 
         it('should fail: Rpatch-protocols only HTTP and HTTPS values are allowed', function () {
@@ -627,8 +622,8 @@ describe('parser ',function(){
             '    protocols:',
             '      - htt'
           ].join('\\n');
-          editorSetValue(definition);
-          editorParserErrorAssertions('7','only HTTP and HTTPS values are allowed');
+          editorHelper.setValue(definition);
+          assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
         });
 
       }); // protocols

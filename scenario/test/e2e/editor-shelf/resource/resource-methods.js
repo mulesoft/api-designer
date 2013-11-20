@@ -1,26 +1,17 @@
 'use strict';
 var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
+var AssertsHelper = require ('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
 describe('shelf',function(){
-  var  shelfElements= new ShelfElements();
-//  beforeEach(function () {
-//  browser.get('');
-//  browser.executeScript(function () {
-//    localStorage['config.updateResponsivenessInterval'] = 1;
-//    window.onbeforeunload = null;
-//  });
-//  browser.wait(function(){
-//    return editorGetLine(2).then(function(text) {
-//      return text === 'title:';
-//    });
-//  });
-//  });
-
+  var shelfElements= new ShelfElements();
+  var assertsHelper= new AssertsHelper();
+  var editorHelper= new EditorHelper();
   var methods = shelfElements.getResourceLevelMethods();
   var options = ['baseUriParameters', 'headers', 'queryParameters'];
   var parameters = shelfElements.getNamedParametersLevel();
   var methodElems = shelfElements.getMethodsLevel();
-  describe('resource-Methods elements',function(){
 
+  describe('resource-Methods elements',function(){
     methods.forEach(function(method){
       it(method+'- check section', function(){
         var definition = [
@@ -30,9 +21,9 @@ describe('shelf',function(){
           '  '+method+':',
           '     '
         ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(5,4);
-        shelfElementsMethodsByGroupAssertion(shelfElements);
+        editorHelper.setValue(definition);
+        editorHelper.setCursor(5,4);
+        assertsHelper.shelfElementsMethodsByGroup();
       });
     });
 
@@ -51,9 +42,9 @@ describe('shelf',function(){
               '      hola:',
               '          '
             ].join('\\n');
-            editorSetValue(definition);
-            editorSetCursor(8,8);
-            shelfElemNamedParametersByGroupAssertion(shelfElements);
+            editorHelper.setValue(definition);
+            editorHelper.setCursor(8,8);
+            assertsHelper.shelfElemNamedParametersByGroup();
           });
         });
       });
@@ -75,10 +66,10 @@ describe('shelf',function(){
                   '        '+parameter+':',
                   '          '
                 ].join('\\n');
-                editorSetValue(definition);
-                editorSetCursor(9,8);
+                editorHelper.setValue(definition);
+                editorHelper.setCursor(9,8);
                 var list2 =[parameter];
-                noShelfElementsAssertion(list2, shelfElements.getNamedParametersLevel());
+                assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getNamedParametersLevel());
               });
             });
           });
@@ -108,10 +99,10 @@ describe('shelf',function(){
               '    '+methodElem+': ',
               '        '
             ].join('\\n');
-            editorSetValue(definition);
-            editorSetCursor(6,4);
+            editorHelper.setValue(definition);
+            editorHelper.setCursor(6,4);
             var list2 =[methodElem];
-            noShelfElementsAssertion(list2, shelfElements.getMethodsLevel());
+            assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getMethodsLevel());
           });
         });
       });

@@ -1,15 +1,9 @@
 'use strict';
+var AssertsHelper = require ('../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../lib/editor-helper.js').EditorHelper;
 describe('parser ',function(){
-//  browser.get('');
-//  browser.executeScript(function () {
-//    localStorage['config.updateResponsivenessInterval'] = 1;
-//    window.onbeforeunload = null;
-//  });
-//  browser.wait(function(){
-//    return editorGetLine(2).then(function(text) {
-//      return text === 'title:';
-//    });
-//  });
+  var assertsHelper= new AssertsHelper();
+  var editorHelper= new EditorHelper();
 
   describe('root', function(){
 
@@ -21,8 +15,8 @@ describe('parser ',function(){
           '---',
           'title: !include example.ramln'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('3', 'detected circular !include of example.raml');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('3', 'detected circular !include of example.raml');
       });
 
       it('should fail: test ', function () {
@@ -31,8 +25,8 @@ describe('parser ',function(){
           '---',
           'title: !include http://some.broken.link.com\\n'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('3','error: cannot fetch http://some.broken.link.com');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('3','error: cannot fetch http://some.broken.link.com');
       });
 
       it('should fail: file name/URL cannot be null', function () {
@@ -42,24 +36,24 @@ describe('parser ',function(){
           'title: Mi Api',
           'trait: !include'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('4', 'file name/URL cannot be null');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('4', 'file name/URL cannot be null');
       });
 
     }); //include
 
     it('should fail: The first line must be: #%RAML 0.8', function(){
       var definition = '';
-      editorSetValue(definition);
-      editorParserErrorAssertions('1','The first line must be: \'#%RAML 0.8\'');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('1','The first line must be: \'#%RAML 0.8\'');
     });
 
     it('should fail: unsupported raml version #%RAML 0.1', function () {
       var definition = [
         '#%RAML 0.1'
       ].join('\\n');
-      editorSetValue(definition);
-      editorParserErrorAssertions('1','Unsupported RAML version: \'#%RAML 0.1\'');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('1','Unsupported RAML version: \'#%RAML 0.1\'');
     });
 
     it('should fail: document must be a map---', function () {
@@ -67,8 +61,8 @@ describe('parser ',function(){
         '#%RAML 0.8',
         '---'
       ].join('\\n');
-      editorSetValue(definition);
-      editorParserErrorAssertions('2','document must be a map');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('2','document must be a map');
     });
 
     it('should fail: document must be a map(titl)', function () {
@@ -77,8 +71,8 @@ describe('parser ',function(){
         '---',
         'titl'
       ].join('\\n');
-      editorSetValue(definition);
-      editorParserErrorAssertions('3','document must be a map');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('3','document must be a map');
     });
 
     it('should fail: empty document (only comments)', function () {
@@ -86,8 +80,8 @@ describe('parser ',function(){
         '#%RAML 0.8',
         '#---'
       ].join('\\n');
-      editorSetValue(definition);
-      editorParserErrorAssertions('1','empty document');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('1','empty document');
     });
 
     it('should fail: block map end ...', function () {
@@ -98,8 +92,8 @@ describe('parser ',function(){
         '...',
         'version: 1.0'
       ].join('\\n');
-      editorSetValue(definition);
-      editorParserErrorAssertions('5','expected \'<document start>\', but found <block mapping end>');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('5','expected \'<document start>\', but found <block mapping end>');
     });
 
     it('should fail: missing title', function () {
@@ -108,8 +102,8 @@ describe('parser ',function(){
         '---',
         'version: v1'
       ].join('\\n');
-      editorSetValue(definition);
-      editorParserErrorAssertions('3','missing title');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('3','missing title');
     });
 
     it('should fail: missing version', function () {
@@ -119,8 +113,8 @@ describe('parser ',function(){
         'title: hola',
         'baseUri: http://server/api/{version}'
       ].join('\\n');
-      editorSetValue(definition);
-      editorParserErrorAssertions('3','missing version');
+      editorHelper.setValue(definition);
+      assertsHelper.editorParserError('3','missing version');
     });
 
     describe('baseUri', function () {
@@ -132,8 +126,8 @@ describe('parser ',function(){
           'title: My API',
           'baseUri:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('4','baseUri must have a value');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('4','baseUri must have a value');
       });
 
     }); //baseUri
@@ -151,8 +145,8 @@ describe('parser ',function(){
           '  uri1: ',
           '    require'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('7','URI parameter must be a map');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('7','URI parameter must be a map');
       });
 
       it('should fail: baseUriParameter - version parameter not allowed here', function () {
@@ -165,8 +159,8 @@ describe('parser ',function(){
           'baseUriParameters:',
           '  version:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('7','version parameter not allowed here');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('7','version parameter not allowed here');
       });
 
       it('should fail when no baseUri is defined', function () {
@@ -178,8 +172,8 @@ describe('parser ',function(){
           '  hols:',
           '    displayName: hola'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','uri parameters defined when there is no baseUri');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','uri parameters defined when there is no baseUri');
       });
 
       it('should fail: uri parameter unused', function () {
@@ -191,8 +185,8 @@ describe('parser ',function(){
           'baseUriParameters:',
           '  hola:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','hola uri parameter unused');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','hola uri parameter unused');
       });
 
     }); //baseUriParameters
@@ -206,8 +200,8 @@ describe('parser ',function(){
           'title: My API',
           'Documentation:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('4','unknown property Documentation');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('4','unknown property Documentation');
       });
 
       it('should fail: documentation must be an array', function () {
@@ -217,8 +211,8 @@ describe('parser ',function(){
           'title: My API',
           'documentation:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('4','documentation must be an array');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('4','documentation must be an array');
       });
 
       it('should fail: each documentation section must be a map', function () {
@@ -229,8 +223,8 @@ describe('parser ',function(){
           'documentation:',
           '  -'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','each documentation section must be a map');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','each documentation section must be a map');
       });
 
       it('should fail: title must be a string', function () {
@@ -241,8 +235,8 @@ describe('parser ',function(){
           'documentation:',
           '  - title:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','title must be a string');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','title must be a string');
       });
 
       it('should fail: content must be a string', function () {
@@ -253,8 +247,8 @@ describe('parser ',function(){
           'documentation:',
           '  - content:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','content must be a string');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','content must be a string');
       });
 
       it('should fail: a documentation entry must have a content property', function () {
@@ -265,8 +259,8 @@ describe('parser ',function(){
           'documentation:',
           '  - title: hola'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','a documentation entry must have content property');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','a documentation entry must have content property');
       });
 
       it('should fail: a documentation entry must have title property', function () {
@@ -277,8 +271,8 @@ describe('parser ',function(){
           'documentation:',
           '  - content: hola'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','a documentation entry must have title property');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','a documentation entry must have title property');
       });
 
       it('should fail: root property already used documentation', function () {
@@ -291,8 +285,8 @@ describe('parser ',function(){
           '    content: my content',
           'documentation:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('7','root property already used: \'documentation\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('7','root property already used: \'documentation\'');
       });
 
       it('should fail: property already used title', function () {
@@ -305,8 +299,8 @@ describe('parser ',function(){
           '    title:',
           '    content: my content'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('6','property already used: \'title\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('6','property already used: \'title\'');
       });
 
       it('should fail: property already used content', function (){
@@ -319,8 +313,8 @@ describe('parser ',function(){
           '    content: my content',
           '    content:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('7','property already used: \'content\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('7','property already used: \'content\'');
       });
 
     }); //Documentation
@@ -335,8 +329,8 @@ describe('parser ',function(){
           'protocols: []',
           'protocols:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'protocols\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'protocols\'');
       });
 
 
@@ -347,8 +341,8 @@ describe('parser ',function(){
           'title: My API',
           'protocols:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('4','property must be an array');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('4','property must be an array');
       });
 
 
@@ -360,8 +354,8 @@ describe('parser ',function(){
           'protocols:',
           '  - '
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','value must be a string');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','value must be a string');
       });
 
       it('should fail: only HTTP and HTTPS values are allowed', function () {
@@ -372,8 +366,8 @@ describe('parser ',function(){
           'protocols:',
           '  - htt'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','only HTTP and HTTPS values are allowed');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','only HTTP and HTTPS values are allowed');
       });
 
     }); //protocols
@@ -386,8 +380,8 @@ describe('parser ',function(){
           'title: Test',
           'schemas:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('4','schemas property must be an array');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('4','schemas property must be an array');
       });
 
 
@@ -403,8 +397,8 @@ describe('parser ',function(){
           'title: My API',
           'title:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('4','root property already used: \'title\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('4','root property already used: \'title\'');
       });
       it('should fail: root property already used version', function () {
         var definition = [
@@ -414,8 +408,8 @@ describe('parser ',function(){
           'version: v1',
           'version:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'version\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'version\'');
       });
       it('should fail: root property already used baseUri', function () {
         var definition = [
@@ -425,8 +419,8 @@ describe('parser ',function(){
           'baseUri: http://www.myapi.com',
           'baseUri:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'baseUri\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'baseUri\'');
       });
       it('should fail: root property already used baseUriParameters', function () {
         var definition = [
@@ -436,8 +430,8 @@ describe('parser ',function(){
           'baseUriParameters:',
           'baseUriParameters:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'baseUriParameters\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'baseUriParameters\'');
       });
       it('should fail: root property already used mediaType', function () {
         var definition = [
@@ -447,8 +441,8 @@ describe('parser ',function(){
           'mediaType: hola',
           'mediaType:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'mediaType\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'mediaType\'');
       });
       it('should fail: root property already used traits', function () {
         var definition = [
@@ -458,8 +452,8 @@ describe('parser ',function(){
           'traits: []',
           'traits:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'traits\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'traits\'');
       });
 
       it('should fail: root property already used resourceTypes', function () {
@@ -470,8 +464,8 @@ describe('parser ',function(){
           'resourceTypes: []',
           'resourceTypes:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'resourceTypes\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'resourceTypes\'');
       });
 
       it('should fail: root property already used schemas', function () {
@@ -482,8 +476,8 @@ describe('parser ',function(){
           'schemas: []',
           'schemas:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'schemas\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'schemas\'');
       });
 
       it('should fail: root property already used securitySchemes', function () {
@@ -494,8 +488,8 @@ describe('parser ',function(){
           'securitySchemes: []',
           'securitySchemes:'
         ].join('\\n');
-        editorSetValue(definition);
-        editorParserErrorAssertions('5','root property already used: \'securitySchemes\'');
+        editorHelper.setValue(definition);
+        assertsHelper.editorParserError('5','root property already used: \'securitySchemes\'');
       });
 
     }); // Keys Duplicated

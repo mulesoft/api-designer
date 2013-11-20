@@ -1,72 +1,73 @@
 'use strict';
-(function() {
-  global.editorGetErrorLineMessage = function () {
-    var webdriver = require('selenium-webdriver');
-    var d = webdriver.promise.defer();
+function EditorHelper() {}
 
-    browser.wait(function () {
-        return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
-    }).then(function () {
+EditorHelper.prototype = {};
 
-
-        browser.executeScript(function () {
-          var querySelectorMarkerError = document.querySelector('.CodeMirror-lint-marker-error');
-          return [
-            querySelectorMarkerError.getAttribute('data-marker-line'),
-            querySelectorMarkerError.getAttribute('data-marker-message')
-          ];
-        }).then(function (list) {
-            d.fulfill(list);
-          });
+EditorHelper.prototype.getErrorLineMessage = function(){
+//  global.editorGetErrorLineMessage = function () {
+  var webdriver = require('selenium-webdriver');
+  var d = webdriver.promise.defer();
+  browser.wait(function () {
+    return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
+  }).then(function () {
+    browser.executeScript(function () {
+      var querySelectorMarkerError = document.querySelector('.CodeMirror-lint-marker-error');
+      return [
+        querySelectorMarkerError.getAttribute('data-marker-line'),
+        querySelectorMarkerError.getAttribute('data-marker-message')
+      ];
+    }).then(function (list) {
+        d.fulfill(list);
       });
-    return d.promise;
-  };
+  });
+  return d.promise;
+};
 
-  global.editorGetErrorMessage = function () {
-    var webdriver = require('selenium-webdriver');
-    var d = webdriver.promise.defer();
+EditorHelper.prototype.getErrorMessage = function(){
+//  global.editorGetErrorMessage = function () {
+  var webdriver = require('selenium-webdriver');
+  var d = webdriver.promise.defer();
 
-    this.getErrorLineMessage().then(function (list) {
-      var message = list[1];
-      d.fulfill(message);
-    });
-    return d.promise;
-  };
+  this.getErrorLineMessage().then(function (list) {
+    var message = list[1];
+    d.fulfill(message);
+  });
+  return d.promise;
+};
+EditorHelper.prototype.getErrorLine= function(){
+//  global.editorgetErrorLine = function () {
+  var webdriver = require('selenium-webdriver');
+  var d = webdriver.promise.defer();
 
-  global.editorgetErrorLine = function () {
-    var webdriver = require('selenium-webdriver');
-    var d = webdriver.promise.defer();
+  this.getErrorLineMessage().then(function (list) {
+    var line = list[0];
+    d.fulfill(line);
+  });
+  return d.promise;
+};
+EditorHelper.prototype.setLine = function(line, text){
+//  global.editorSetLine = function (line, text) {
+  line --;
+  return browser.executeScript('window.editor.setLine(' + line + ',"' + text + '")');
+};
 
-    this.getErrorLineMessage().then(function (list) {
-      var line = list[0];
-      d.fulfill(line);
-    });
+EditorHelper.prototype.getLine = function(line){
+//  global.editorGetLine = function (line) {
+  line --;
+  return browser.executeScript('return window.editor.getLine(' + line + ')').then(function (text) {
+    return text;
+  });
+};
 
-    return d.promise;
+EditorHelper.prototype.setValue = function(text){
+//  global.editorSetValue = function (text) {
+  return browser.executeScript('window.editor.setValue(\'' + text + '\')');
+};
 
-  };
+EditorHelper.prototype.setCursor = function(line, char){
+//  global.editorSetCursor = function (line, char) {
+  line --;
+  browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
+};
 
-  global.editorSetLine = function (line, text) {
-    line --;
-    return browser.executeScript('window.editor.setLine(' + line + ',"' + text + '")');
-  };
-
-  global.editorGetLine = function (line) {
-    line --;
-    return browser.executeScript('return window.editor.getLine(' + line + ')').then(function (text) {
-      return text;
-    });
-  };
-
-  global.editorSetValue = function (text) {
-    return browser.executeScript('window.editor.setValue(\'' + text + '\')');
-  };
-
-  global.editorSetCursor = function (line, char) {
-    line --;
-//    char --;
-    browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
-
-  };
-
-})();
+exports.EditorHelper = EditorHelper;
