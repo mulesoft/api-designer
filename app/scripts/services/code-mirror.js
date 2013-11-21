@@ -34,6 +34,11 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       var cursor = cm.getCursor(), line = cm.getLine(cursor.line),
           indentUnit = cm.getOption('indentUnit'), spaces, result, unitsToIndent;
 
+      if (cm.somethingSelected()) {
+        cm.indentSelection('add');
+        return;
+      }
+
       result = service.removeTabs(line, indentUnit);
       result = result.length ? result : '';
 
@@ -186,7 +191,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
           'Ctrl-Space': 'autocomplete',
           'Cmd-s': 'save',
           'Ctrl-s': 'save',
-          'Tab': 'indentMore',
           'Shift-Tab': 'indentLess'
         },
         keyMap: 'tabSpace',
