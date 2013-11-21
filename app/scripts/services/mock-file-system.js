@@ -64,7 +64,7 @@ angular.module('fs')
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return f.path === path && f.name === name;
+          return (f.path === path && f.name === name) || ( '/' + f.name === path + '/' + name) || ( f.name === path + '/' + name);
         })
         .map(function (f) {
           return f.content;

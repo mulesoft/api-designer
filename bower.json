@@ -8,9 +8,12 @@
     "showdown": "~0.3.1",
     "api-console": "mulesoft/api-console#27b0f77538d004ff5a032f93b4891e8f2a7a984e",
     "raml-grammar": "mulesoft/raml-grammar#6081fc41c54a313f3bb48d3d27e2d7ac11519d0b",
-    "raml-js-parser": "raml-org/raml-js-parser#8308aea2839a6683ee026228e7a2177fe834a6c0"
+    "raml-js-parser": "raml-org/raml-js-parser#00b358b6de2cc38e75758dc84fbbea6385426537"
   },
   "devDependencies": {
     "sinonjs": "~1.7.1"
+  },
+  "resolutions": {
+    "raml-js-parser": "00b358b6de2cc38e75758dc84fbbea6385426537"
   }
 }
