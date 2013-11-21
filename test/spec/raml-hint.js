@@ -228,6 +228,14 @@ describe('ramlEditorApp', function () {
         alternatives.suggestions.x.should.not.equal(newAlternatives.suggestions.x);
         should.not.exist(newAlternatives.suggestions.x);
       });
+
+      it('should exclude optional keys', function () {
+        var suggestions     = {a: 1, b: {value:2, metadata:{canBeOptional:true}}, c: 3};
+        var alternatives    = {suggestions: suggestions};
+        var newAlternatives = ramlHint.selectiveCloneAlternatives(alternatives, ['b?']);
+
+        Object.keys(newAlternatives.suggestions).should.be.deep.equal(['a', 'c']);
+      });
     });
 
     describe('getAlternatives', function () {
