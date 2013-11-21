@@ -67,7 +67,7 @@ angular.module('codeFolding', ['raml', 'lightweightParse'])
       if(scopesByLine && scopesByLine.length >= 2) {
         var firstChild = scopes.scopesByLine[lineNumber][1];
         if(firstChild) {
-          return firstChild[0];
+          return firstChild.lineNumber;
         }
       }
     };
