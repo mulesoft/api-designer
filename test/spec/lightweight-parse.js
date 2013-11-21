@@ -115,6 +115,22 @@ describe('Lightweight Parse Module', function () {
       extractKey('a:b: c').should.be.equal('a:b');
       extractKey('a:b: c:d').should.be.equal('a:b');
     });
+
+    it('should handle keys with : in their value', function () {
+      extractKey('  title:longerKey: "Muse: Mule Sales Enablement API"').should.be.equal('title:longerKey');
+      extractKey('  title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+    });
+
+    it('should handle keys which start in an array', function () {
+      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('  - title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('--- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('--- title');
+    });
+
   });
 
   describe('getScopes', function () {

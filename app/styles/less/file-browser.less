@@ -1,3 +1,5 @@
+@import "utils.less";
+
 /* Browser */
 div[role=browser] {
   position: absolute;
@@ -40,7 +42,7 @@ div[role=browser] > ul[role=file-list] {
   border-radius: 0px 3px 3px 0px;
   min-width: 140px;
   background-color: white;
-  box-shadow: 2px 2px 7px -2px #333;
+  .box-shadow(2px 2px 7px -2px #333);
   color: #777;
   background-color: rgb(20,21,25);
   border: 1px solid rgb(48,83,110);
@@ -54,7 +56,7 @@ div[role=browser].expanded > ul[role=file-list] {
 
 div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
   background-color: white;
-  box-shadow: 2px 2px 7px -2px #999;
+  .box-shadow(2px 2px 7px -2px #999);
   color: #aaa;
   background-color: white;
   border: 1px solid rgb(131,148,150);
