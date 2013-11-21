@@ -125,7 +125,9 @@ module.exports = function (grunt) {
         'Gruntfile.js',
         '<%= yeoman.app %>/scripts/{,*/}*.js',
         'test/mocks/{,*/}*.js',
-        'test/spec/{,*/}*.js'
+        'test/spec/{,*/}*.js',
+        'scenario/test/e2e/{,*/}*.js',
+        'scenario/test/lib/{,*/}*.js'
       ]
     },
     rev: {

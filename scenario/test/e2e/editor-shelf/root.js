@@ -1,21 +1,11 @@
 'use strict';
-var expect = require('expect.js');
-var ramlUrl = require('../../config').url;
-
+var ShelfHelper = require ('../../lib/shelf-helper.js').ShelfHelper;
+var AssertsHelper = require ('../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../lib/editor-helper.js').EditorHelper;
 describe('shelf',function(){
-
-  beforeEach(function () {
-    browser.get(ramlUrl);
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-      window.onbeforeunload = null;
-    });
-    browser.wait(function(){
-      return editorGetLine(2).then(function(text) {
-        return text === 'title:';
-      });
-    });
-  });
+  var shelf = new ShelfHelper();
+  var designerAsserts = new AssertsHelper();
+  var editor = new EditorHelper();
 
   describe('root elements',function(){
 
@@ -23,20 +13,18 @@ describe('shelf',function(){
 
       it('should offer RAML version on line 1', function(){
         var definition = '';
-        editorSetValue(definition);
-        shelfGetElementsFromShelf().then(function(list){
-          expect(list.length).to.eql(1);
-          list[0].getText().then(function(text){
-          expect(text).to.eql('#%RAML 0.8');
-          });
+        editor.setValue(definition);
+        shelf.getElements().then(function(list){
+          expect(list.length).toEqual(1);
+          expect(list[0].getText()).toEqual(shelf.elemRamlVersion[0]);
         });
       });
 
       xit('should not be offer RAML version - line 1 - fail RT-363', function(){
         var definition = '#%RAML 0.8';
-        editorSetValue(definition);
-        shelfGetElementsFromShelf().then(function(list){
-          expect(list.length).to.eql(0);
+        editor.setValue(definition);
+        shelf.getElements().then(function(list){
+          expect(list.length).toEqual(0);
         });
       });
 
@@ -44,21 +32,21 @@ describe('shelf',function(){
 
     describe('root section', function(){
 
-      it('root section by group', function(){
+      it('by group', function(){
         var definition = [
           '#%RAML 0.8',
-          '      '
+          ' '
         ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(2,1);
-        shelfElementsRootByGroupAssertion();
+        editor.setValue(definition);
+        editor.setCursor(2,1);
+        designerAsserts.shelfElementsRootByGroup();
       });
 
       xdescribe('documentation', function(){
 
       }); //description
 
-      xdescribe('baseUriParameters - NamedParameter', function(){ // Failed due to https://www.pivotaltracker.com/story/show/60351064
+      describe('baseUriParameters - NamedParameter', function(){
 
         it('baseUriParameters - Named Parameters section by group', function(){
           var definition = [
@@ -69,16 +57,16 @@ describe('shelf',function(){
             '  hola:',
             '     '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(6,5);
-          shelfElemNamedParametersByGroupAssertion();
+          editor.setValue(definition);
+          editor.setCursor(6,4);
+          designerAsserts.shelfElemNamedParametersByGroup();
         });
 
-        describe('Not displayed after select', function(){
-
-          it('NamedParameter attribute is no longer displayed on the shelf', function(){
-            var options = shelfGetElemNamedParametersLevel();
-            options.forEach(function(option){
+        describe('after being selected', function(){
+          var options = shelf.elemNamedParametersLevel;
+          options.forEach(function(option){
+            it(option+': NamedParameter attribute is no longer displayed on the shelf', function(){
+              shelf = new ShelfHelper();
               var definition = [
                 '#%RAML 0.8',
                 'title: The API',
@@ -88,13 +76,10 @@ describe('shelf',function(){
                 '    '+option+':',
                 '      '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(7,5);
+              editor.setValue(definition);
+              editor.setCursor(7,4);
               var list2 =[option];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfGetElemNamedParametersLevel(),list2);
-              });
+              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
             });
           });
 
@@ -102,30 +87,24 @@ describe('shelf',function(){
 
       }); //baseUriParameters
 
-      describe('Not displayed after select', function(){
-
-        it('property is no longer displayed on the shelf', function(){
-          var options = shelfGetElementsRootLevelWithoutNewResource();
-          options.forEach(function(option){
+      describe('after being selected', function(){
+        var options = shelf.elemRootLevelWithoutNewResource;
+        options.forEach(function(option){
+          it(option+': property is no longer displayed on the shelf', function(){
+            shelf = new ShelfHelper();
             var definition = [
               '#%RAML 0.8',
               ''+option+': ',
-              '  '
+              ' '
             ].join('\\n');
-            editorSetValue(definition);
-            editorSetCursor(3,1);
+            editor.setValue(definition);
+            editor.setCursor(3,1);
             var list2 =[option];
-            var listPromise = shelfGetListOfElementsFromShelf();
-            listPromise.then(function (list) {
-              noShelfElementsAssertion(list, shelfGetElementsRootLevel(),list2);
-            });
+            designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
           });
         });
-        //no test is added for New Resource
-        // need to be automated added from the shelf and then verify the shelf status
 
       }); // Not displayed after select
-
     }); // root section
   }); // root elements
 

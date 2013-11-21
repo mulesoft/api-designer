@@ -1,260 +1,85 @@
 'use strict';
-(function() {
-
-  var webdriver = require('selenium-webdriver');
-//  var protractor = require('protractor');
-  var elementsVersion = ['#%RAML 0.8'];
-//  Root Level
-  var elementsRootLevel = ['title','version','schemas','baseUri','mediaType','protocols', 'documentation',
-  'baseUriParameters','securitySchemes','securedBy','New resource','traits','resourceTypes'];
-
-  var elementsRootLevelRoot = ['title','version','schemas','baseUri','mediaType','protocols'];
-  var elementsRootLevelDocs = ['documentation'];
-  var elementsRootLevelParameters = ['baseUriParameters'];
-  var elementsRootLevelSecurity = ['securitySchemes', 'securedBy'];
-  var elementsRootLevelResources = ['New resource'];
-  var elementsRootLevelTraitsAndTypes = [ 'traits', 'resourceTypes'];
-//  Resource level
-  var elementsResourceLevel = ['displayName','get','post','put','delete','head','patch','options','trace', 'connect','uriParameters','baseUriParameters','securedBy','New resource','is', 'type'];
-  var elementsResourceLevelDocs = ['displayName'];
-  var elementsResourceLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
-  var elementsResourceLevelParameters = ['uriParameters','baseUriParameters'];
-  var elementsResourceLevelSecurity = ['securedBy'];
-  var elementsResourceLevelResources = ['New resource'];
-  var elementsResourceLevelTraitsAndTypes = ['is', 'type'];
-// Method level
-  var groupsForMethods = 7;
-  var elemMethodLevel = ['protocols','description','baseUriParameters','headers','queryParameters','responses','securedBy','is','body'];
-  var elemMethodLevelRoot = ['protocols'];
-  var elemMethodLevelDocs = ['description']; // for resource Types need to be added usage option
-  var elemMethodLevelParameters = ['baseUriParameters','headers','queryParameters'];
-  var elemMethodLevelResponses = ['responses'];
-  var elemMethodLevelSecurity = ['securedBy'];
-  var elemMethodLevelTraitsAndTypes = ['is'];
-  var elemMethodLevelBody = ['body'];
-
+function ShelfHelper() {
+  this.elemRamlVersion = ['#%RAML 0.8'];
+//Root Elements
+  this.elemRootLevelRoot = ['title','version','schemas','baseUri','mediaType','protocols'];
+  this.elemRootLevelDocs = ['documentation'];
+  this.elemRootLevelParameters = ['baseUriParameters'];
+  this.elemRootLevelSecurity = ['securitySchemes', 'securedBy'];
+  this.elemRootLevelResources = ['New resource'];
+  this.elemRootLevelTraitsAndTypes = [ 'traits', 'resourceTypes'];
+  this.elemRootLevel = this.elemRootLevelRoot.concat(this.elemRootLevelDocs,this.elemRootLevelParameters,this.elemRootLevelSecurity,this.elemRootLevelResources,this.elemRootLevelTraitsAndTypes);
+  this.elemRootLevelWithoutNewResource = this.elemRootLevelRoot.concat(this.elemRootLevelDocs,this.elemRootLevelParameters,this.elemRootLevelSecurity,this.elemRootLevelTraitsAndTypes);
 //Named Parameter
-  var elemNamedParametersLevel = ['displayName', 'description', 'example', 'type','enum', 'pattern', 'minLength', 'maxLength', 'maximum','minimum','required','default'];
-  var elemNamedParametersLevelDocs = ['displayName', 'description', 'example'];
-  var elemNamedParametersLevelParameters = ['type','enum', 'pattern', 'minLength', 'maxLength', 'maximum','minimum','required','default'];
-
-//Root
-  global.shelfGetElementsRootLevel = function(){
-    return elementsRootLevel;
-  };
-
-  global.shelfGetElementsRootLevelWithoutNewResource = function(){
-    return  shelfGetElementsRootLevelRoot().concat(shelfGetElementsRootLevelDocs(), shelfGetElementsRootLevelParameters(),shelfGetElementsRootLevelSecurity(),shelfGetElementsRootLevelTraitsAndTypes());
-  };
-  global.shelfGetElementsRootLevelRoot = function(){
-    return elementsRootLevelRoot;
-  };
-  global.shelfGetElementsRootLevelDocs = function(){
-    return elementsRootLevelDocs;
-  };
-  global.shelfGetElementsRootLevelParameters = function(){
-    return elementsRootLevelParameters;
-  };
-  global.shelfGetElementsRootLevelSecurity = function(){
-    return elementsRootLevelSecurity;
-  };
-  global.shelfGetElementsRootLevelResources = function(){
-    return elementsRootLevelResources;
-  };
-  global.shelfGetElementsRootLevelTraitsAndTypes = function(){
-    return elementsRootLevelTraitsAndTypes;
-  };
-//  Resource
-  global.shelfGetElementsResourceLevel = function(){
-    return elementsResourceLevel;
-  };
-  global.shelfGetElementsResourceLevelWithoutNewResoource = function(){
-    return shelfGetElementsResourceLevelDocs().concat(shelfGetElementsResourceLevelMethods(),shelfGetElementsResourceLevelParameters(),shelfGetElementsResourceLevelSecurity(),shelfGetElementsResourceLevelTraitsAndTypes());
-  };
-  global.shelfGetElementsResourceLevelDocs = function(){
-    return elementsResourceLevelDocs;
-  };
-  global.shelfGetElementsResourceLevelMethods = function(){
-    return elementsResourceLevelMethods;
-  };
-  global.shelfGetElementsResourceLevelParameters = function(){
-    return elementsResourceLevelParameters;
-  };
-  global.shelfGetElementsResourceLevelSecurity = function(){
-    return elementsResourceLevelSecurity;
-  };
-  global.shelfGetElementsResourceLevelResources = function(){
-    return elementsResourceLevelResources;
-  };
-  global.shelfGetElementsResourceLevelTraitsAndTypes = function(){
-    return elementsResourceLevelTraitsAndTypes;
-  };
-//  Methods
-  global.shelfGetCantGroupsForMEthods = function(){
-    return groupsForMethods;
-  };
-  global.getelemForMethods = function(){
-    return elemForMethods;
-  };
-  global.shelfGetElemMethodLevel = function(){
-    return elemMethodLevel;
-  };
-//  global.shelfGetelemResourceTypeMethodLevel = function (){
-//    return shelfGetElemMethodLevel().concat(['usage']);
-//  };
-  global.shelfGetElemMethodLevelRoot = function(){
-    return elemMethodLevelRoot;
-  };
-  global.shelfGetElemMethodLevelDocs = function(){
-    return elemMethodLevelDocs;
-  };
-//  global.shelfGetElemResourceTypeMethodLevelDoc = function(){
-//    return shelfGetElemMethodLevelDocs().concat(['usage']);
-//  };
-  global.shelfGetElemMethodLevelParameters = function(){
-    return elemMethodLevelParameters;
-  };
-  global.shelfGetElemMethodLevelResponses = function(){
-    return elemMethodLevelResponses;
-  };
-  global.shelfGetElemMethodLevelSecurity = function(){
-    return elemMethodLevelSecurity;
-  };
-  global.shelfGetElemMethodLevelTraitsAndTypes = function(){
-    return elemMethodLevelTraitsAndTypes;
-  };
-  global.shelfGetElemMethodLevelBody = function(){
-    return elemMethodLevelBody;
-  };
-
-// Named Parameters
-  global.shelfGetElemNamedParametersLevel = function(){
-    return elemNamedParametersLevel;
-  };
-  global.shelfGetElemNamedParametersLevelDocs = function(){
-    return elemNamedParametersLevelDocs;
-  };
-  global.shelfGetElemNamedParametersLevelParameters = function(){
-    return elemNamedParametersLevelParameters;
-  };
-
-  global.shelfGetElementsVersion = function(){
-    return elementsVersion;
-  };
-
-  // traits
-  var elementsTraitsLevel = ['protocols','displayName', 'description','baseUriParameters', 'headers', 'queryParameters','responses', 'securedBy', 'body'];
-  var elementsTraitsLevelRoot =['protocols'];
-  var elementsTraitsLevelDocs = ['displayName', 'description']; //missing usage option
-  var elementsTraitsLevelParameters = ['baseUriParameters', 'headers', 'queryParameters'];
-  var elementsTraitsLevelResponses = ['responses'];
-  var elementsTraitsLevelSecurity = ['securedBy'];
-  var elementsTraitsLevelBody = ['body'];
-
-  global.shelfGetElementsTraitsLevel = function(){
-    return elementsTraitsLevel;
-  };
-  global.shelfGetElementsTraitsLevelRoot = function(){
-    return elementsTraitsLevelRoot;
-  };
-  global.shelfGetElementsTraitsLevelDocs = function(){
-    return elementsTraitsLevelDocs;
-  };
-  global.shelfGetElementsTraitsLevelParameters = function(){
-    return elementsTraitsLevelParameters;
-  };
-  global.shelfGetElementsTraitsLevelResponses = function(){
-    return elementsTraitsLevelResponses;
-  };
-  global.shelfGetElementsTraitsLevelSecurity = function(){
-    return elementsTraitsLevelSecurity;
-  };
-  global.shelfGetElementsTraitsLevelBody = function(){
-    return elementsTraitsLevelBody;
-  };
-//Resource Types - root
-  var elemResourceTypesLevel = ['description', 'displayName','get','post','put','delete','head','patch','options','trace', 'connect','uriParameters','baseUriParameters','securedBy','is','type', 'usage'];
-  var elemResourceTypesLevelDocs = ['description', 'displayName', 'usage'];
-  var elemResourceTypesLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
-  var elemResourceTypesLevelParameters = ['uriParameters','baseUriParameters'];
-  var elemResourceTypesLevelSecurity = ['securedBy'];
-  var elemResourceTypesLevelTraitsAndTypes = ['is', 'type'];
-
-  global.shelfGetElemResourceTypesLevel = function (){
-    return elemResourceTypesLevel;
-  };
-  global.shelfGetElemResourceTypesLevelDocs = function (){
-    return elemResourceTypesLevelDocs;
-  };
-  global.shelfGetElemResourceTypesLevelMethods = function (){
-    return elemResourceTypesLevelMethods;
-  };
-  global.shelfGetElemResourceTypesLevelParameters = function (){
-    return elemResourceTypesLevelParameters;
-  };
-  global.shelfGetElemResourceTypesLevelSecurity = function (){
-    return elemResourceTypesLevelSecurity;
-  };
-  global.shelfGetElemResourceTypesLevelTraitsAndTypes = function (){
-    return elemResourceTypesLevelTraitsAndTypes;
-  };
-
-// rtMethods
-
-
-
+  this.elemNamedParametersLevelDocs = ['displayName', 'description', 'example'];
+  this.elemNamedParametersLevelParameters = ['type','enum', 'pattern', 'minLength', 'maxLength', 'maximum','minimum','required','default'];
+  this.elemNamedParametersLevel = this.elemNamedParametersLevelDocs.concat(this.elemNamedParametersLevelParameters);
+//traits
+  this.elemTraitsLevelRoot =['protocols'];
+  this.elemTraitsLevelDocs = ['displayName', 'description','usage'];
+  this.elemTraitsLevelParameters = ['baseUriParameters', 'headers', 'queryParameters'];
+  this.elemTraitsLevelResponses = ['responses'];
+  this.elemTraitsLevelSecurity = ['securedBy'];
+  this.elemTraitsLevelBody = ['body'];
+  this.elemTraitsLevel = this.elemTraitsLevelRoot.concat(this.elemTraitsLevelDocs,this.elemTraitsLevelParameters, this.elemTraitsLevelResponses,this.elemTraitsLevelSecurity,this.elemTraitsLevelBody);
+//Methods
+  this.elemMethodLevelRoot = ['protocols'];
+  this.elemMethodLevelDocs = ['description'];
+  this.elemMethodLevelParameters = ['baseUriParameters','headers','queryParameters'];
+  this.elemMethodLevelResponses = ['responses'];
+  this.elemMethodLevelSecurity = ['securedBy'];
+  this.elemMethodLevelTraitsAndTypes = ['is'];
+  this.elemMethodLevelBody = ['body'];
+  this.elemMethodLevel = this.elemMethodLevelRoot.concat(this.elemMethodLevelDocs,this.elemMethodLevelParameters,this.elemMethodLevelResponses,this.elemMethodLevelSecurity,this.elemMethodLevelTraitsAndTypes,this.elemMethodLevelBody);
+//  RT Methods
+  this.elemRtMethodLevelRoot = this.elemMethodLevelRoot;
+  this.elemRtMethodLevelDocs = this.elemMethodLevelDocs.concat('usage');
+  this.elemRtMethodLevelParameters = this.elemMethodLevelParameters;
+  this.elemRtMethodLevelResponses = this.elemMethodLevelResponses;
+  this.elemRtMethodLevelSecurity = this.elemMethodLevelSecurity;
+  this.elemRtMethodLevelTraitsAndTypes = this.elemMethodLevelTraitsAndTypes;
+  this.elemRtMethodLevelBody = this.elemMethodLevelBody;
+  this.elemRtMethodLevel = this.elemRtMethodLevelRoot.concat(this.elemRtMethodLevelDocs,this.elemRtMethodLevelParameters,this.elemRtMethodLevelResponses,this.elemRtMethodLevelSecurity,this.elemRtMethodLevelTraitsAndTypes,this.elemRtMethodLevelBody);
+//  Resource Root
+  this.elemResourceLevelDocs = ['displayName','description'];
+  this.elemResourceLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
+  this.elemResourceLevelParameters = ['uriParameters','baseUriParameters'];
+  this.elemResourceLevelSecurity = ['securedBy'];
+  this.elemResourceLevelResources = ['New resource'];
+  this.elemResourceLevelTraitsAndTypes = ['is', 'type'];
+  this.elemResourceLevel = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelResources,this.elemResourceLevelTraitsAndTypes);
+  this.elemResourceLevelWithoutNewReosurce = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelTraitsAndTypes);
+//  RT root
+  this.elemResourceTypeLevelDocs = this.elemResourceLevelDocs.concat('usage');
+  this.elemResourceTypeLevelMethods = this.elemResourceLevelMethods;
+  this.elemResourceTypeLevelParameters = this.elemResourceLevelParameters;
+  this.elemResourceTypeLevelSecurity = this.elemResourceLevelSecurity;
+  this.elemResourceTypeLevelTraitsAndTypes = this.elemResourceLevelTraitsAndTypes;
+  this.elemResourceTypeLevel = this.elemResourceTypeLevelDocs.concat(this.elemResourceTypeLevelMethods,this.elemResourceTypeLevelParameters,this.elemResourceTypeLevelSecurity,this.elemResourceTypeLevelTraitsAndTypes);
 //Responses
-  var elementsResponsesLevel = ['description', 'body'];
-  var elementsResponsesLevelDocs = ['description'];
-  var elementsResponsesLevelBody = ['body'];
+  this.elemResponsesLevelDocs = ['description'];
+  this.elemResponsesLevelBody = ['body'];
+  this.elemResponsesLevel = this.elemResponsesLevelDocs.concat(this.elemResponsesLevelBody);
 
-  global.shelfGetElementsResponseLevel = function(){
-    return elementsResponsesLevel;
-  };
-  global.shelfGetElementsResponseLevelDocs = function(){
-    return elementsResponsesLevelDocs;
-  };
-  global.shelfGetElementsResponseLevelBody = function(){
-    return elementsResponsesLevelBody;
-  };
+}
 
-  global.shelfGetElementsFromShelf = function () {
-    return browser.findElements(by.css('[ng-repeat=\'item in section.items\'] span'));
-  };
+ShelfHelper.prototype = {};
 
-  global.shelfGetListOfElementsFromShelf = function (){
-    var d = webdriver.promise.defer();
+ShelfHelper.prototype.getElements = function(){
+  return browser.findElements(by.css('[ng-repeat=\'item in section.items\'] span'));
+};
 
-    function afterAllThens(items){
-      d.fulfill(items);
-    }
+ShelfHelper.prototype.getElementsByGroup = function(group){
+  return browser.findElements(by.css('.'+group+' ul li span'));
+};
 
-    shelfGetElementsFromShelf().then(function(list){
-      var items=[];
-      var i=0;
-      list.forEach(function (item) {
-        var t= i++;
-        item.getText().then(function(text){
-          items[t]=text;
-          if (t === list.length-1){
-            afterAllThens(items);
-          }
-        });
-      });
-    });
+ShelfHelper.prototype.getSections = function(){
+  return browser.findElements(by.css('[role=\'section\']'));
+};
 
-    return d;
-  };
+ShelfHelper.prototype.itemsInSection = function(){
+  return '[role=\'items\'] li span';
+};
 
-  global.shelfGetElementsFromShelfByGroup = function (group) {
-    return browser.findElements(by.css('.'+group+' ul li span'));
-  };
+exports.ShelfHelper = ShelfHelper;
 
-  global.shelfGetSectionsFromShelf = function(){
-    return browser.findElements(by.css('[role=\'section\']'));
-  };
-
-  global.itemsInSection = function(){
-    return '[role=\'items\'] li span';
-  };
-})();

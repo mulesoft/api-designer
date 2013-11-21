@@ -12,5 +12,8 @@
   },
   "devDependencies": {
     "sinonjs": "~1.7.1"
+  },
+  "resolutions": {
+    "raml-js-parser": "bbb0a9b383cb9a88b3f32c32eba81d9b1897bf1e"
   }
 }
