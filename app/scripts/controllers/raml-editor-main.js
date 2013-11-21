@@ -80,18 +80,64 @@ angular.module('ramlEditorApp')
     };
 
     $scope.triggerAutocomplete = function (cm) {
-      var editorState = ramlHint.getEditorState(cm) || {},
-          curLine = editorState.curLine || '',
-          trimmedCurLine = curLine.trim(),
-          end = editorState.end ? editorState.end.ch : 0,
-          lineNumber = editorState.start ? editorState.start.line : 0,
-          isKey = curLine.indexOf(':') > -1,
-          firstChar = trimmedCurLine[0],
-          currentPosIsLastChar = curLine.length === end;
+      var editorState = ramlHint.getEditorState(cm);
+      var curLine = editorState.curLine;
+      var curLineTrimmed = curLine.trim();
+      var offset = curLine.indexOf(curLineTrimmed);
+      var lineNumber = editorState.start ? editorState.start.line : 0;
 
-      if ((curLine && currentPosIsLastChar && !isKey && ['/', '#', '-'].indexOf(firstChar) === -1 ) || (curLine && currentPosIsLastChar && !isKey && lineNumber === 0 && ['#'].indexOf(firstChar) === 0 )){
-        CodeMirror.showHint(cm, CodeMirror.hint.javascript, { ghosting: true });
+      if (!curLineTrimmed) {
+        return;
       }
+
+      // nothing to autocomplete within comments
+      // -> "#..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('#');
+        return lineNumber > 0 &&
+               indexOf !== -1 &&
+               editorState.cur.ch > (indexOf + offset)
+        ;
+      })()) {
+        return;
+      }
+
+      // nothing to autocomplete within resources
+      // -> "/..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('/');
+        return indexOf === 0 &&
+               editorState.cur.ch >= (indexOf + offset)
+        ;
+      })()) {
+        return;
+      }
+
+      // nothing to autocomplete for key value
+      // -> "key: ..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf(': ');
+        return indexOf !== -1 &&
+               editorState.cur.ch >= (indexOf + offset + 2)
+        ;
+      })()) {
+        return;
+      }
+
+      // nothing to autocomplete prior array
+      // -> "...- "
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('- ');
+        return indexOf === 0 &&
+               editorState.cur.ch < (indexOf + offset)
+        ;
+      })()) {
+        return;
+      }
+
+      CodeMirror.showHint(cm, CodeMirror.hint.javascript, {
+        ghosting: true
+      });
     };
 
     function loadRamlDefinition(definition) {
