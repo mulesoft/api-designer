@@ -33,8 +33,10 @@
     "karma-spec-reporter": "0.0.5",
     "matchdep": "~0.1.2",
     "mocha": "~1.12.0",
-    "jasmine-node": "~1.9.0",
+    "jasmine-node": "~1.11.0",
     "protractor": "~0.12.0",
+    "minijasminenode": "~0.2.4",
+    "jasmine-reporters": "*",
     "selenium-webdriver": "*"
   },
   "engines": {
