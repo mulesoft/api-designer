@@ -1,9 +1,9 @@
 'use strict';
-var AssertsHelper = require ('../../../lib/asserts-helper.js').AssertsHelper;
-var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
+var AssertsHelper = require('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require('../../../lib/editor-helper.js').EditorHelper;
 describe('parser ',function(){
-  var assertsHelper= new AssertsHelper();
-  var editorHelper= new EditorHelper();
+  var designerAsserts= new AssertsHelper();
+  var editor= new EditorHelper();
 
   describe('Resource attributes', function () {
 
@@ -27,8 +27,8 @@ describe('parser ',function(){
           '    typedCollection:',
           '      param1:'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('14','unused parameter: param1');
+        editor.setValue(definition);
+        designerAsserts.parserError('14','unused parameter: param1');
       });
 
       xit('RT-327 -should fail: invalid type name send as parameter', function () {
@@ -56,8 +56,8 @@ describe('parser ',function(){
           '    type1:',
           '      typeName: type'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('22','there is no resource type named type');
+        editor.setValue(definition);
+        designerAsserts.parserError('22','there is no resource type named type');
       });
 
       xit('RT-327 -should fail: invalid type name send as parameter', function () {
@@ -89,8 +89,8 @@ describe('parser ',function(){
           '      typeName: type3',
           '      hol: y'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('21','there is no trait named yr');
+        editor.setValue(definition);
+        designerAsserts.parserError('21','there is no trait named yr');
       });
 
       xit('RT-327 -should fail: invalid type name send as parameter', function () {
@@ -117,8 +117,8 @@ describe('parser ',function(){
           '      typeName: type2',
           '      hol: '
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('21','??');
+        editor.setValue(definition);
+        designerAsserts.parserError('21','??');
       });
     }); //type
 
@@ -143,8 +143,8 @@ describe('parser ',function(){
           '        ',
           '  get:'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('13','value was not provided for parameter: param1');
+        editor.setValue(definition);
+        designerAsserts.parserError('13','value was not provided for parameter: param1');
       });
     });
 
@@ -156,8 +156,8 @@ describe('parser ',function(){
         '/rt1:',
         '  protocols:'
       ].join('\\n');
-      editorHelper.setValue(definition);
-      assertsHelper.editorParserError('5','property: \'protocols\' is invalid in a resource');
+      editor.setValue(definition);
+      designerAsserts.parserError('5','property: \'protocols\' is invalid in a resource');
     });
 
   }); // Resource -root

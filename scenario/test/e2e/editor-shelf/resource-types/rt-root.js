@@ -1,14 +1,15 @@
 'use strict';
-var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
-var AssertsHelper = require ('../../../lib/asserts-helper.js').AssertsHelper;
-var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
+var ShelfHelper = require('../../../lib/shelf-helper.js').ShelfHelper;
+var AssertsHelper = require('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require('../../../lib/editor-helper.js').EditorHelper;
+
 describe('shelf',function(){
-  var  shelfElements= new ShelfElements();
-  var assertsHelper= new AssertsHelper();
-  var editorHelper= new EditorHelper();
+  var  shelf= new ShelfHelper();
+  var designerAsserts= new AssertsHelper();
+  var editor= new EditorHelper();
   var namedParameters = ['baseUriParameters', 'uriParameters'];
-  var namedParamElems = shelfElements.getNamedParametersLevel();
-  var options = shelfElements.getResourceTypeLevel();
+  var namedParamElems = shelf.elemNamedParametersLevel;
+  var options = shelf.elemResourceTypeLevel;
 
   describe('resourceTypes elements',function(){
     it('resource shelf elements by group', function(){
@@ -19,15 +20,16 @@ describe('shelf',function(){
         '  - rt1: ',
         '        '
       ].join('\\n');
-      editorHelper.setValue(definition);
-      editorHelper.setCursor(5,6);
-      assertsHelper.shelfElemResourceTypesByGroup();
+      editor.setValue(definition);
+      editor.setCursor(5,6);
+      designerAsserts.shelfElemResourceTypesByGroup();
     });
 
     describe('after being selected', function(){
 
       options.forEach(function(option){
         it(option+' is no longer displayed on the shelf', function(){
+          shelf = new ShelfHelper();
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -36,10 +38,10 @@ describe('shelf',function(){
             '      '+option+':',
             '          '
           ].join('\\n');
-          editorHelper.setValue(definition);
-          editorHelper.setCursor(6,6);
+          editor.setValue(definition);
+          editor.setCursor(6,6);
           var list2 =[option];
-          assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getResourceTypeLevel());
+          designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
         });
       });
     }); // not displayed after being selected.
@@ -56,9 +58,9 @@ describe('shelf',function(){
             '        hola:',
             '            '
           ].join('\\n');
-          editorHelper.setValue(definition);
-          editorHelper.setCursor(7,10);
-          assertsHelper.shelfElemNamedParametersByGroup();
+          editor.setValue(definition);
+          editor.setCursor(7,10);
+          designerAsserts.shelfElemNamedParametersByGroup();
         });
       });
 
@@ -66,6 +68,7 @@ describe('shelf',function(){
         namedParameters.forEach(function(namedParameter){
           namedParamElems.forEach(function(namedParamElem){
             it(namedParameter+'-'+namedParamElem+' attribute is no longer displayed on the shelf', function(){
+              shelf = new ShelfHelper();
               var definition = [
                 '#%RAML 0.8',
                 'title: My api',
@@ -76,10 +79,10 @@ describe('shelf',function(){
                 '          '+namedParamElem+':',
                 '              '
               ].join('\\n');
-              editorHelper.setValue(definition);
-              editorHelper.setCursor(8,10);
+              editor.setValue(definition);
+              editor.setCursor(8,10);
               var list2 =[namedParamElem];
-              assertsHelper.shelfElementsNotDisplayed(list2, shelfElements.getNamedParametersLevel());
+              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
             });
           });
         });

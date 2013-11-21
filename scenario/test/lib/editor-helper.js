@@ -1,10 +1,9 @@
 'use strict';
-function EditorHelper() {}
+function EditorHelper(){}
 
 EditorHelper.prototype = {};
 
 EditorHelper.prototype.getErrorLineMessage = function(){
-//  global.editorGetErrorLineMessage = function () {
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
   browser.wait(function () {
@@ -24,35 +23,31 @@ EditorHelper.prototype.getErrorLineMessage = function(){
 };
 
 EditorHelper.prototype.getErrorMessage = function(){
-//  global.editorGetErrorMessage = function () {
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
-
   this.getErrorLineMessage().then(function (list) {
     var message = list[1];
     d.fulfill(message);
   });
   return d.promise;
 };
-EditorHelper.prototype.getErrorLine= function(){
-//  global.editorgetErrorLine = function () {
+
+EditorHelper.prototype.getErrorLine = function(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
-
   this.getErrorLineMessage().then(function (list) {
     var line = list[0];
     d.fulfill(line);
   });
   return d.promise;
 };
+
 EditorHelper.prototype.setLine = function(line, text){
-//  global.editorSetLine = function (line, text) {
   line --;
   return browser.executeScript('window.editor.setLine(' + line + ',"' + text + '")');
 };
 
 EditorHelper.prototype.getLine = function(line){
-//  global.editorGetLine = function (line) {
   line --;
   return browser.executeScript('return window.editor.getLine(' + line + ')').then(function (text) {
     return text;
@@ -60,12 +55,10 @@ EditorHelper.prototype.getLine = function(line){
 };
 
 EditorHelper.prototype.setValue = function(text){
-//  global.editorSetValue = function (text) {
   return browser.executeScript('window.editor.setValue(\'' + text + '\')');
 };
 
 EditorHelper.prototype.setCursor = function(line, char){
-//  global.editorSetCursor = function (line, char) {
   line --;
   browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
 };

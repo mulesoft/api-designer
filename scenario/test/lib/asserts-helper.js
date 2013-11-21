@@ -1,22 +1,18 @@
 'use strict';
 var EditorHelper = require ('./editor-helper.js').EditorHelper;
 var ShelfHelper = require ('./shelf-helper.js').ShelfHelper;
-var ShelfElements = require ('./shelf-elements.js').ShelfElements;
 var webdriver = require('selenium-webdriver');
 function AssertsHelper() {}
 
 AssertsHelper.prototype = {};
 
-var editorHelper = new EditorHelper();
-var shelfHelper = new ShelfHelper();
-var shelfElements = new ShelfElements();
-
+var editor = new EditorHelper();
+var shelf = new ShelfHelper();
 
 //Editor Starts
-AssertsHelper.prototype.editorParserError = function(vLine, vMessage){
-//  global.editorParserErrorAssertions = function ( vLine, vMessage){
+AssertsHelper.prototype.parserError = function(vLine, vMessage){
   var d = webdriver.promise.defer();
-  editorHelper.getErrorLineMessage().then(function (list) {
+  editor.getErrorLineMessage().then(function (list) {
     var line = list[0], message = list[1];
     expect(message).toEqual(vMessage);
     expect(line).toEqual(vLine);
@@ -28,12 +24,10 @@ AssertsHelper.prototype.editorParserError = function(vLine, vMessage){
 
 //Console Starts
 AssertsHelper.prototype.consoleApiTitle= function(title){
-//  global.consoleApiTitleAssertion = function(title){
   expect(browser.$('#raml-console-api-title').getText()).toEqual(title);
 };
 
 AssertsHelper.prototype.consoleResourcesName = function(list, expList){
-//  global.resourcesNameAssertion = function(list, expList){
   var i=0;
   var d = webdriver.promise.defer();
   expect(list.length).toEqual(expList.length);
@@ -53,7 +47,6 @@ AssertsHelper.prototype.consoleResourcesName = function(list, expList){
 
 //Shelf starts
 AssertsHelper.prototype.shelfElements = function(list, expList){
-//  global.shelfElementsAssertion = function (list, expList){
   expect(list.length).toEqual(expList.length);
   list.forEach(function(element){
     element.getText().then(function(text){
@@ -63,17 +56,15 @@ AssertsHelper.prototype.shelfElements = function(list, expList){
 };
 AssertsHelper.prototype.shelfElementsNotDisplayed = function(list2, expList){
   var that = this;
-//  global.noShelfElementsAssertion = function (list2, expList){
   list2.forEach(function(element){
     expList.splice(expList.indexOf(element), 1);
   });
-  shelfHelper.getElementsShelf().then(function(list){
+  shelf.getElements().then(function(list){
     that.shelfElements(list, expList);
   });
 };
 AssertsHelper.prototype.shelfElementsByGroup = function(groupInfo, byGroup){
   var that = this ;
-//  global.shefGetElementsByGroupAssertion = function(groupInfo, byGroup){
   var j, dic1 = {}, dic2 = {} ;
   var d = webdriver.promise.defer();
   var i = 0;
@@ -101,13 +92,13 @@ AssertsHelper.prototype.shelfElementsByGroup = function(groupInfo, byGroup){
     }
     return d.fulfill();
   }
-  shelfHelper.getSectionsShelf().then(function(sections){
+  shelf.getSections().then(function(sections){
     sections.forEach(function(section){
       var t = i++;
       section.getText().then(function(text){
         dic1[text] = true;
       }).then(function(){
-          section.findElements(by.css(shelfHelper.itemsInSection())).then(function(items){
+          section.findElements(by.css(shelf.itemsInSection())).then(function(items){
             dic2[byGroup[t]]=true;
             that.shelfElements(items, byGroup[t]);
             if (t === sections.length -1){
@@ -122,68 +113,59 @@ AssertsHelper.prototype.shelfElementsByGroup = function(groupInfo, byGroup){
 
 AssertsHelper.prototype.shelfElementsRootByGroup = function(){
   var that = this;
-//  global.shelfElementsRootByGroupAssertion = function(shelfElements){
-  var byGroup = [shelfElements.getRootLevelRoot(),shelfElements.getRootLevelDocs(),shelfElements.getRootLevelParameters(),shelfElements.getRootLevelSecurity(),shelfElements.getRootLevelResources(),shelfElements.getRootLevelTraitsAndTypes()];
+  var byGroup = [shelf.elemRootLevelRoot,shelf.elemRootLevelDocs,shelf.elemRootLevelParameters,shelf.elemRootLevelSecurity,shelf.elemRootLevelResources,shelf.elemRootLevelTraitsAndTypes];
   var groupInfo = ['ROOT (6)\ntitle\nversion\nschemas\nbaseUri\nmediaType\nprotocols','DOCS (1)\ndocumentation','PARAMETERS (1)\nbaseUriParameters','SECURITY (2)\nsecuritySchemes\nsecuredBy','RESOURCES (1)\nNew resource','TRAITS AND TYPES (2)\ntraits\nresourceTypes'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElementsResourceByGroup = function(){
   var that = this;
-//  global.shelfElementsResourceByGroupAssertion = function(shelfElements){
-  var byGroup =[shelfElements.getResourceLevelDocs(),shelfElements.getResourceLevelMethods(),shelfElements.getResourceLevelParameters(),shelfElements.getResourceLevelSecurity(), shelfElements.getResourceLevelResource(),shelfElements.getResourceLevelTraitsAndTypes()];
-  var groupInfo = ['DOCS (1)\ndisplayName','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nuriParameters\nbaseUriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\nNew resource','TRAITS AND TYPES (2)\nis\ntype'];
+  var byGroup = [shelf.elemResourceLevelDocs,shelf.elemResourceLevelMethods,shelf.elemResourceLevelParameters,shelf.elemResourceLevelSecurity, shelf.elemResourceLevelResources,shelf.elemResourceLevelTraitsAndTypes];
+  var groupInfo = ['DOCS (2)\ndisplayName\ndescription','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nuriParameters\nbaseUriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\nNew resource','TRAITS AND TYPES (2)\nis\ntype'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElementsMethodsByGroup = function(){
   var that = this;
-//  global.shelfElementsMethodsByGroupAssertion = function(shelfElements){
-  var byGroup = [shelfElements.getMethodsLevelRoot(),shelfElements.getMethodsLevelDocs(),shelfElements.getMethodsLevelParameters(), shelfElements.getMethodsLevelResponses(),shelfElements.getMethodsLevelSecurity(),shelfElements.getMethodsLevelTraitsAndTypes(), shelfElements.getMethodsLevelBody()];
+  var byGroup = [shelf.elemMethodLevelRoot,shelf.elemMethodLevelDocs,shelf.elemMethodLevelParameters, shelf.elemMethodLevelResponses,shelf.elemMethodLevelSecurity,shelf.elemMethodLevelTraitsAndTypes, shelf.elemMethodLevelBody];
   var groupInfo = ['ROOT (1)\nprotocols','DOCS (1)\ndescription','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (1)\nis','BODY (1)\nbody'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElemNamedParametersByGroup = function(){
   var that = this;
-//  global.shelfElemNamedParametersByGroupAssertion = function(shelfElements){
-  var byGroup = [shelfElements.getNamedParametersLevelDocs(),shelfElements.getNamedParametersLevelParameters()];
+  var byGroup = [shelf.elemNamedParametersLevelDocs,shelf.elemNamedParametersLevelParameters];
   var groupInfo = ['DOCS (3)\ndisplayName\ndescription\nexample','PARAMETERS (9)\ntype\nenum\npattern\nminLength\nmaxLength\nmaximum\nminimum\nrequired\ndefault'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElemTraitsByGroup = function(){
   var that = this;
-//  global.shelfElemTraitsByGroupAssertion = function(shelfElements){
-  var byGroup = [shelfElements.getTraitsLevelRoot(),shelfElements.getTraitsLevelDocs(),shelfElements.getTraitsLevelParameters(),shelfElements.getTraitsLevelResponses(),shelfElements.getTraitsLevelSecurity(),shelfElements.getTraitsLevelBody()];
+  var byGroup = [shelf.elemTraitsLevelRoot,shelf.elemTraitsLevelDocs,shelf.elemTraitsLevelParameters,shelf.elemTraitsLevelResponses,shelf.elemTraitsLevelSecurity,shelf.elemTraitsLevelBody];
   var groupInfo = ['ROOT (1)\nprotocols','DOCS (3)\ndisplayName\ndescription\nusage','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','BODY (1)\nbody'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElemResponsesByGroup = function(){
   var that = this;
-//  global.shelfElemResponsesByGroupAssertion = function(shelfElements){
-  var byGroup = [shelfElements.getResponseLevelDocs(),shelfElements.getResponseLevelBody()];
+  var byGroup = [shelf.elemResponsesLevelDocs,shelf.elemResponsesLevelBody];
   var groupInfo = ['DOCS (1)\ndescription','BODY (1)\nbody'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElemResourceTypesByGroup = function(){
   var that = this;
-//  global.shelfElemResourceTypesByGroupAssertion = function(shelfElements){
-  var byGroup = [shelfElements.getResourceTypeLevelDocs(),shelfElements.getResourceTypeLevelMethods(),shelfElements.getResourceTypeLevelParameters(),shelfElements.getResourceTypeLevelSecurity(),shelfElements.getResourceTypeLevelTraitsAndTypes()];
-  var groupInfo = ['DOCS (3)\ndescription\ndisplayName\nusage','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nbaseUriParameters\nuriParameters','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (2)\nis\ntype'];
+  var byGroup = [shelf.elemResourceTypeLevelDocs,shelf.elemResourceTypeLevelMethods,shelf.elemResourceTypeLevelParameters,shelf.elemResourceTypeLevelSecurity,shelf.elemResourceTypeLevelTraitsAndTypes];
+  var groupInfo = ['DOCS (3)\ndisplayName\ndescription\nusage','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nbaseUriParameters\nuriParameters','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (2)\nis\ntype'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElementsRTMethodsByGroup = function(){
   var that = this;
-//  global.shelfElementsRTMethodsByGroupAssertion = function(shelfElements){ //missing usage property
-  var byGroup = [shelfElements.getRTMethodsLevelRoot(),shelfElements.getRTMethodsLevelDocs(),shelfElements.getRTMethodsLevelParameters(), shelfElements.getRTMethodsLevelResponses(),shelfElements.getRTMethodsLevelSecurity(),shelfElements.getRTMethodsLevelTraitsAndTypes(), shelfElements.getRTMethodsLevelBody()];
+  var byGroup = [shelf.elemRtMethodLevelRoot,shelf.elemRtMethodLevelDocs,shelf.elemRtMethodLevelParameters, shelf.elemRtMethodLevelResponses,shelf.elemRtMethodLevelSecurity,shelf.elemRtMethodLevelTraitsAndTypes, shelf.elemRtMethodLevelBody];
   var groupInfo = ['ROOT (1)\nprotocols','DOCS (2)\ndescription\nusage','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (1)\nis','BODY (1)\nbody'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
-
 //Shelf ends
 
 exports.AssertsHelper = AssertsHelper;

@@ -2,8 +2,8 @@
 var AssertsHelper = require ('../../lib/asserts-helper.js').AssertsHelper;
 var EditorHelper = require ('../../lib/editor-helper.js').EditorHelper;
 describe('parser - traits',function(){
-  var assertsHelper= new AssertsHelper();
-  var editorHelper= new EditorHelper();
+  var designerAsserts= new AssertsHelper();
+  var editor= new EditorHelper();
 
   describe('traits', function () {
 
@@ -19,8 +19,8 @@ describe('parser - traits',function(){
         '            application/x-www-form-urlencoded: ',
         '              formParameters: '
       ].join('\\n');
-      editorHelper.setValue(definition);
-      assertsHelper.editorParserError('9','formParameters cannot be used to describe response bodies');
+      editor.setValue(definition);
+      designerAsserts.parserError('9','formParameters cannot be used to describe response bodies');
     });
 
     it('should fail: parameter key cannot be used as a trait name', function () {
@@ -31,8 +31,8 @@ describe('parser - traits',function(){
         'traits:',
         '  - <<name>>:'
       ].join('\\n');
-      editorHelper.setValue(definition);
-      assertsHelper.editorParserError('5','parameter key cannot be used as a trait name');
+      editor.setValue(definition);
+      designerAsserts.parserError('5','parameter key cannot be used as a trait name');
     });
 
     it('should fail: array as key - trait []', function () {
@@ -53,8 +53,8 @@ describe('parser - traits',function(){
         '/resourc:',
         '  type: member3'
       ].join('\\n');
-      editorHelper.setValue(definition);
-      assertsHelper.editorParserError('12','only scalar map keys are allowed in RAML');
+      editor.setValue(definition);
+      designerAsserts.parserError('12','only scalar map keys are allowed in RAML');
     });
 
     it('should fail: array as key - trait {}', function () {
@@ -75,8 +75,8 @@ describe('parser - traits',function(){
         '/resourc:',
         '  type: member3'
       ].join('\\n');
-      editorHelper.setValue(definition);
-      assertsHelper.editorParserError('12','only scalar map keys are allowed in RAML');
+      editor.setValue(definition);
+      designerAsserts.parserError('12','only scalar map keys are allowed in RAML');
     });
 
     describe('protocols', function () {
@@ -91,8 +91,8 @@ describe('parser - traits',function(){
           '      protocols: []',
           '      protocols:'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('7','property already used: \'protocols\'');
+        editor.setValue(definition);
+        designerAsserts.parserError('7','property already used: \'protocols\'');
       });
 
       it('should fail: protocol property must be an array', function () {
@@ -104,8 +104,8 @@ describe('parser - traits',function(){
           '  - hola:',
           '      protocols:'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('6','property must be an array');
+        editor.setValue(definition);
+        designerAsserts.parserError('6','property must be an array');
       });
 
       it('should fail: protocol value must be a string', function () {
@@ -118,8 +118,8 @@ describe('parser - traits',function(){
           '      protocols:',
           '        - '
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('7','value must be a string');
+        editor.setValue(definition);
+        designerAsserts.parserError('7','value must be a string');
       });
 
       it('should fail: only HTTP and HTTPS values are allowed', function () {
@@ -132,8 +132,8 @@ describe('parser - traits',function(){
           '      protocols:',
           '        - htt'
         ].join('\\n');
-        editorHelper.setValue(definition);
-        assertsHelper.editorParserError('7','only HTTP and HTTPS values are allowed');
+        editor.setValue(definition);
+        designerAsserts.parserError('7','only HTTP and HTTPS values are allowed');
       });
 
     }); // protocols
