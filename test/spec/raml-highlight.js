@@ -8,11 +8,9 @@ describe('RAML Syntax Highlight', function () {
       /* globals CodeMirror */
       var token;
 
-      /* jshint camelcase: false */
-      beforeEach(inject(function (_token_) {
-        token = _token_;
+      beforeEach(inject(function ($injector) {
+        token = $injector.get('token');
       }));
-      /* jshint camelcase: true */
 
       it('should mark string, almost identical to a RAML tag, as a comment (RT-346)', function () {
         var stream = new CodeMirror.StringStream('#%Raml 0.8');
@@ -28,6 +26,11 @@ describe('RAML Syntax Highlight', function () {
         ['options', 'get', 'head', 'post', 'put', 'delete', 'trace', 'connect', 'patch'].forEach(function (httpMethod) {
           token(new CodeMirror.StringStream(httpMethod + ':'), {}).should.be.equal('method-title');
         });
+      });
+
+      it('should mark RAML tag with whitespaces around', function () {
+        var stream = new CodeMirror.StringStream('#%RAML 0.8  ');
+        token(stream, {}).should.be.equal('raml-tag');
       });
     });
   });
