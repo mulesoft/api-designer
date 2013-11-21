@@ -8,7 +8,6 @@ exports.config = {
   },
 
   specs: [
-    '../test/lib/*.js',
     '../test/e2e/editor-shelf/resource/resource-methods.js',
     '../test/e2e/editor-shelf/resource/resource-root.js',
     '../test/e2e/editor-shelf/resource-types/rt-methods.js',
@@ -30,10 +29,6 @@ exports.config = {
     browser.wait(function(){
       return browser.executeScript('return (editor.getLine(1) === \'title:\');');
     });
-//    jasmine.getEnv().addReporter(
-      ////new jasmine.HtmlReporter());
-//      new jasmine.ConsoleReporter());
-//      new jasmine.JUnitXmlReporter('xmloutput', true, true));
   },
 
   baseUrl: 'http://localhost:9013/',
