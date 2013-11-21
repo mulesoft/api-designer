@@ -1,3 +1,5 @@
+@import "utils.less";
+
 /* The lint marker gutter */
 .CodeMirror-lint-markers {
   width: 16px;
@@ -73,7 +75,7 @@
 
 .cm-s-solarized .CodeMirror-gutters {
   padding: 0 5px 0 0;
-  box-shadow: none;
+  .box-shadow(none);
 }
 
 .cm-s-solarized .CodeMirror-linenumber {
