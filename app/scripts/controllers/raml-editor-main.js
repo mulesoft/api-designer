@@ -50,7 +50,7 @@ angular.module('ramlEditorApp')
       return deferredDst.promise;
     });
   })
-  .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
+  .controller('ramlEditorMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
     ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm) {
     var CodeMirror = codeMirror.CodeMirror, editor, saveTimer, currentUpdateTimer;

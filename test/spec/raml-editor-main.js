@@ -56,7 +56,7 @@ describe('RAML Editor Main Controller', function () {
   describe('on raml parser error', function () {
     it('should display errors on first line if no line specified', function () {
       // Arrange
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
       var error = {
         message: 'Error without line or column!'
       };
@@ -77,7 +77,7 @@ describe('RAML Editor Main Controller', function () {
   describe('controller actions', function (){
     it('should create a new RAML file if the current document is saved', function(){
       // arrange
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
 
       var file = {
         contents: 'NEW RAML FILE'
@@ -109,7 +109,7 @@ describe('RAML Editor Main Controller', function () {
     it('should create a new RAML file if the current document is not saved and the prompt is successful', function(){
       // arrange
       sinon.stub(params, '$confirm').returns(true);
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
 
       var file = {
         contents: 'NEW RAML FILE'
@@ -143,7 +143,7 @@ describe('RAML Editor Main Controller', function () {
     it('should not create a new RAML file if the current document is not saved and the prompt fails', function(){
       // arrange
       sinon.stub(params, '$confirm').returns(false);
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
 
       var file = {
         contents: 'NEW RAML FILE'
@@ -174,7 +174,7 @@ describe('RAML Editor Main Controller', function () {
   describe('saving files', function () {
     describe('save', function () {
       it('should be enabled only if file is dirty', function() {
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         scope.file = {
           dirty: true
@@ -187,7 +187,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('should abort if the file can\'t be saved', function(){
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         sinon.stub(scope, 'canSave').returns(false);
         sinon.stub(scope, 'saveFile');
@@ -202,7 +202,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('should abort if no file name is provided', function () {
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         scope.file = {
           dirty: true
@@ -221,7 +221,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('should ask for a file name if the file is new has never been saved', function () {
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         sinon.stub(scope, 'canSave').returns(true);
         sinon.stub(scope, '_promptForFileName').returns('api.raml');
@@ -243,7 +243,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('should not ask for a file name if the file comes from the persistence store', function () {
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         sinon.stub(scope, 'canSave').returns(true);
         sinon.stub(scope, '_promptForFileName');
@@ -268,7 +268,7 @@ describe('RAML Editor Main Controller', function () {
     describe('save as', function () {
       it('should be enabled only if the file has been saved or loaded from the persistence store', function (){
         // arrange
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         scope.file = {
           persisted: true
@@ -282,7 +282,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('should abort if the file is new', function() {
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         scope.file = {
           persisted: false
@@ -297,7 +297,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('should abort if no file name is provided', function () {
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         scope.file = {
           persisted: true
@@ -316,7 +316,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('save as should ask for a file name and call save file', function () {
-        ctrl = $controller('ramlMain', params);
+        ctrl = $controller('ramlEditorMain', params);
 
         scope.file = {
           persisted: true
@@ -344,7 +344,7 @@ describe('RAML Editor Main Controller', function () {
 
     it('should expand the file browser', function () {
       // arrange
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
 
       // act
       scope.toggleBrowser();
@@ -359,7 +359,7 @@ describe('RAML Editor Main Controller', function () {
       var getDirectoryDeferred = $q.defer();
       var getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory').returns(getDirectoryDeferred.promise);
 
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
 
       // act
       scope.toggleBrowser();
@@ -377,7 +377,7 @@ describe('RAML Editor Main Controller', function () {
     });
 
     it('collapseBrowser() should close the browser if it is open', function () {
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
 
       scope.browser.expanded.should.be.false;
 
@@ -394,7 +394,7 @@ describe('RAML Editor Main Controller', function () {
       var loadFileStub = sinon.stub(ramlRepository, 'loadFile').returns(loadFileDeferred.promise);
       var setValueSpy = sinon.spy(editor, 'setValue');
 
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
 
       // act
       scope.loadFile(file1);
@@ -415,7 +415,7 @@ describe('RAML Editor Main Controller', function () {
     it('switching a file from the browser should not open it in the code editor if the document is unsaved and confirmation fails', function () {
       // arrange
       sinon.stub(params, '$confirm').returns(false);
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
       sinon.stub(scope, 'canSave').returns(true);
       sinon.stub(ramlRepository, 'loadFile').returns(file1).yields(file1);
       sinon.spy(editor, 'setValue');
@@ -437,7 +437,7 @@ describe('RAML Editor Main Controller', function () {
     it('switching a file from the browser should open it in the code editor if the document is unsaved and confirmation confirms it', function () {
       // arrange
       sinon.stub(params, '$confirm').returns(true);
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
       sinon.stub(scope, 'canSave').returns(true);
       sinon.stub(ramlRepository, 'loadFile').returns(file1).yields(file1);
       sinon.spy(editor, 'setValue');
@@ -471,7 +471,7 @@ describe('RAML Editor Main Controller', function () {
       var removeFileDeferred = $q.defer();
       var removeFileStub = sinon.stub(ramlRepository, 'removeFile').returns(removeFileDeferred.promise);
 
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
       scope.file = file2;
 
       // act
@@ -489,7 +489,7 @@ describe('RAML Editor Main Controller', function () {
     it('should not delete the file if the user cancels', function () {
       // arrange
       sinon.stub(params, '$confirm').returns(false);
-      ctrl = $controller('ramlMain', params);
+      ctrl = $controller('ramlEditorMain', params);
       sinon.stub(ramlRepository, 'removeFile').yields();
       scope.file = file2;
 
@@ -508,7 +508,7 @@ describe('RAML Editor Main Controller', function () {
   describe('parsing RAML definition', function () {
     it('should use ramlParserFileReader to load included local files using ramlRepository', function (done) {
       //
-      $controller('ramlMain', params);
+      $controller('ramlEditorMain', params);
 
       // arrange
       var loadFileDeferred = $q.defer();
@@ -538,7 +538,7 @@ describe('RAML Editor Main Controller', function () {
     it('should use ramlParserFileReader to load included external files using $http service', function (done) {
       inject(function ($http) {
         //
-        $controller('ramlMain', params);
+        $controller('ramlEditorMain', params);
 
         // arrange
         var httpGetStub = sinon.stub($http, 'get', function (url) {
