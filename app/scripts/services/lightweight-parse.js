@@ -116,44 +116,44 @@ angular.module('lightweightParse', ['utils'])
 
       zipValues = arrayOfLines.map(function (line, index) {
         var lineIndentInfo = getLineIndent(line);
-        return [lineIndentInfo.tabCount, lineIndentInfo.content, index];
+        return {tabCount: lineIndentInfo.tabCount, content: lineIndentInfo.content, lineNumber: index};
       });
 
-      var levelTable = zipValues.reduce(function (x,y) {
-        var currentArray = currentIndexes[y[0] - 1],
+      var levelTable = zipValues.reduce(function (result, currentLine) {
+        var currentArray = currentIndexes[currentLine.tabCount - 1],
           lastArrayIndex, currentIndex;
 
         if (currentArray) {
           lastArrayIndex = currentArray.length - 1;
-          currentIndex = currentIndexes[y[0] - 1][lastArrayIndex];
-        } else if (y[0] > 1) {
+          currentIndex = currentIndexes[currentLine.tabCount - 1][lastArrayIndex];
+        } else if (currentLine.tabCount > 1) {
           // Case for lists, we fetch a level lower
-          currentArray = currentIndexes[y[0] - 2];
+          currentArray = currentIndexes[currentLine.tabCount - 2];
 
           // Ignore this line if the tab level is invalid
           if (currentArray) {
             lastArrayIndex = currentArray.length - 1;
-            currentIndex = currentIndexes[y[0] - 2][lastArrayIndex];
+            currentIndex = currentIndexes[currentLine.tabCount - 2][lastArrayIndex];
 
-            x[currentIndex] = x[currentIndex] || [];
-            x[currentIndex].push([y[2], y[1]]);
+            result[currentIndex] = result[currentIndex] || [];
+            result[currentIndex].push({lineNumber: currentLine.lineNumber, content: currentLine.content, tabCount: currentLine.tabCount});
 
-            currentIndexes[y[0] - 1] = currentIndexes[y[0] - 1] || [];
-            currentIndexes[y[0] - 1].push(y[2]);
+            currentIndexes[currentLine.tabCount - 1] = currentIndexes[currentLine.tabCount - 1] || [];
+            currentIndexes[currentLine.tabCount - 1].push(currentLine.lineNumber);
           }
 
-          return x;
+          return result;
         } else {
           // Case of the first element of the first level
           currentIndex = 0;
         }
 
-        x[currentIndex] = x[currentIndex] || [];
-        x[currentIndex].push([y[2], y[1]]);
+        result[currentIndex] = result[currentIndex] || [];
+        result[currentIndex].push({lineNumber: currentLine.lineNumber, content: currentLine.content, tabCount: currentLine.tabCount});
 
-        currentIndexes[y[0]] = currentIndexes[y[0]] || [];
-        currentIndexes[y[0]].push(y[2]);
-        return x;
+        currentIndexes[currentLine.tabCount] = currentIndexes[currentLine.tabCount] || [];
+        currentIndexes[currentLine.tabCount].push(currentLine.lineNumber);
+        return result;
       }, {});
 
       lastArrayCache = {
