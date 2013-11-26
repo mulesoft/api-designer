@@ -76,7 +76,7 @@ angular.module('ramlEditorApp')
     var hinter = {};
     var WORD = /[^\s]|[$]/;
     var RAML_VERSION = '#%RAML 0.8';
-    var RAML_VERSION_PATTERN = new RegExp('^' + RAML_VERSION + '\\s*$', 'i');
+    var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
     hinter.suggestRAML = suggestRAML;
 
