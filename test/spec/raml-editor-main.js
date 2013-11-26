@@ -55,7 +55,7 @@ describe('RAML Editor Main Controller', function () {
   });
 
   it('should ask user for confirmation if there are unsaved changes', function () {
-    ctrl = $controller('ramlMain', params);
+    ctrl = $controller('ramlEditorMain', params);
     var canSaveStub = sinon.stub(scope, 'canSave').returns(true);
 
     $window.onbeforeunload().should.be.equal('WARNING: You have unsaved changes. Those will be lost if you leave this page.');
@@ -64,7 +64,7 @@ describe('RAML Editor Main Controller', function () {
   });
 
   it('should not ask user for confirmation if there are no unsaved changes', function () {
-    ctrl = $controller('ramlMain', params);
+    ctrl = $controller('ramlEditorMain', params);
     var canSaveStub = sinon.stub(scope, 'canSave').returns(false);
 
     should.not.exist($window.onbeforeunload());
