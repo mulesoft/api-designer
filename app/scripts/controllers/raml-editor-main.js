@@ -316,6 +316,13 @@ angular.module('ramlEditorApp')
         eventService.broadcast('event:raml-editor-initialized', editor);
         $scope.bootstrap();
       });
+
+      // Warn before leaving the page
+      $window.onbeforeunload = function () {
+        if ($scope.canSave()) {
+          return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
+        }
+      };
     };
 
     $scope.init();

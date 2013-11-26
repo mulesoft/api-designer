@@ -4,7 +4,7 @@ var codeMirror, eventService, codeMirrorErrors,
   $rootScope, $controller, $q, applySuggestion;
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, ramlRepository;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository;
 
   beforeEach(module('ramlEditorApp'));
 
@@ -14,6 +14,7 @@ describe('RAML Editor Main Controller', function () {
     $q = $injector.get('$q');
     $timeout = $injector.get('$timeout');
     $confirm = $injector.get('$confirm');
+    $window = $injector.get('$window');
     codeMirror = $injector.get('codeMirror');
     eventService = $injector.get('eventService');
     applySuggestion = $injector.get('applySuggestion');
@@ -51,6 +52,24 @@ describe('RAML Editor Main Controller', function () {
       eventService: eventService,
       $confirm: $confirm
     };
+  });
+
+  it('should ask user for confirmation if there are unsaved changes', function () {
+    ctrl = $controller('ramlMain', params);
+    var canSaveStub = sinon.stub(scope, 'canSave').returns(true);
+
+    $window.onbeforeunload().should.be.equal('WARNING: You have unsaved changes. Those will be lost if you leave this page.');
+
+    canSaveStub.restore();
+  });
+
+  it('should not ask user for confirmation if there are no unsaved changes', function () {
+    ctrl = $controller('ramlMain', params);
+    var canSaveStub = sinon.stub(scope, 'canSave').returns(false);
+
+    should.not.exist($window.onbeforeunload());
+
+    canSaveStub.restore();
   });
 
   describe('on raml parser error', function () {
