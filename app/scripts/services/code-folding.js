@@ -79,19 +79,19 @@ angular.module('codeFolding', ['raml', 'lightweightParse'])
     };
   })
   .factory('getFoldRange', function (getParentLine, getParentLineNumber, getLineIndent) {
-    function _hasParent(pattern, cm, lineNumber) {
-      if(lineNumber === 0 || !lineNumber) {
-        return false;
-      }
-
-      var parentLineNumber = getParentLineNumber(cm, lineNumber);
-
-      if (pattern.test(cm.getLine(parentLineNumber))) {
-        return true;
-      } else {
-        return _hasParent (pattern, cm, parentLineNumber);
-      }
-    }
+//    function _hasParent(pattern, cm, lineNumber) {
+//      if(lineNumber === 0 || !lineNumber) {
+//        return false;
+//      }
+//
+//      var parentLineNumber = getParentLineNumber(cm, lineNumber);
+//
+//      if (pattern.test(cm.getLine(parentLineNumber))) {
+//        return true;
+//      } else {
+//        return _hasParent (pattern, cm, parentLineNumber);
+//      }
+//    }
 
     return function (cm, start) {
       var line = cm.getLine(start.line);
@@ -110,13 +110,13 @@ angular.module('codeFolding', ['raml', 'lightweightParse'])
       var indent = lineIndentInfo.tabCount;
       var nextLineIndent = getLineIndent(nextLine).tabCount;
 
-      if(/(content|schema|example):(\s?)\|/.test(getParentLine(cm, start.line))) {
-        return;
-      }
-
-      if(_hasParent(/(content|schema|example):(\s?)\|/, cm, start.line)){
-        return;
-      }
+//      if(/(content|schema|example):(\s?)\|/.test(getParentLine(cm, start.line))) {
+//        return;
+//      }
+//
+//      if(_hasParent(/(content|schema|example):(\s?)\|/, cm, start.line)){
+//        return;
+//      }
 
       if(nextLineIndent > indent) {
         for(var i = start.line + 2, end = cm.lineCount(); i < end; ++i) {
