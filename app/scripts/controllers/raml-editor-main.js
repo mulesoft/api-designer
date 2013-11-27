@@ -50,7 +50,7 @@ angular.module('ramlEditorApp')
       return deferredDst.promise;
     });
   })
-  .controller('ramlMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
+  .controller('ramlEditorMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
     ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm) {
     var CodeMirror = codeMirror.CodeMirror, editor, saveTimer, currentUpdateTimer;
@@ -362,6 +362,13 @@ angular.module('ramlEditorApp')
         eventService.broadcast('event:raml-editor-initialized', editor);
         $scope.bootstrap();
       });
+
+      // Warn before leaving the page
+      $window.onbeforeunload = function () {
+        if ($scope.canSave()) {
+          return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
+        }
+      };
     };
 
     $scope.init();

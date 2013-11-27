@@ -2,43 +2,48 @@
 
 angular.module('raml')
   .value('snippets', {
-    options: ['', 'options:\n', '  description: <<insert text or markdown here>>\n'],
-    head: ['', 'head:\n', '  description: <<insert text or markdown here>>\n'],
-    get: ['', 'get:\n', '  description: <<insert text or markdown here>>\n'],
-    post: ['', 'post:\n', '  description: <<insert text or markdown here>>\n'],
-    put: ['', 'put:\n', '  description: <<insert text or markdown here>>\n'],
-    delete: ['', 'delete:\n', '  description: <<insert text or markdown here>>\n'],
-    trace: ['', 'trace:\n', '  description: <<insert text or markdown here>>\n'],
-    connect: ['', 'connect:\n', '  description: <<insert text or markdown here>>\n'],
-    patch: ['', 'patch:\n', '  description: <<insert text or markdown here>>\n'],
-    'new resource': ['', '/newResource:\n', '  displayName: resourceName\n'],
-    title: ['', 'title: My API\n'],
-    version: ['', 'version: v0.1\n'],
-    baseuri: ['', 'baseUri: http://server/api/{version}\n']
+    options: ['options:', '  description: <<insert text or markdown here>>'],
+    head: ['head:', '  description: <<insert text or markdown here>>'],
+    get: ['get:', '  description: <<insert text or markdown here>>'],
+    post: ['post:', '  description: <<insert text or markdown here>>'],
+    put: ['put:', '  description: <<insert text or markdown here>>'],
+    delete: ['delete:', '  description: <<insert text or markdown here>>'],
+    trace: ['trace:', '  description: <<insert text or markdown here>>'],
+    connect: ['connect:', '  description: <<insert text or markdown here>>'],
+    patch: ['patch:', '  description: <<insert text or markdown here>>'],
+    'new resource': ['/newResource:', '  displayName: resourceName'],
+    title: ['title: My API'],
+    version: ['version: v0.1'],
+    baseuri: ['baseUri: http://server/api/{version}']
   })
   .factory('ramlSnippets', function (snippets) {
     var service = {};
 
     service.getEmptyRaml = function () {
-      return '#%RAML 0.8\n' +
-             'title:';
+      return [
+        '#%RAML 0.8',
+        'title:'
+      ].join('\n');
     };
 
     service.getSnippet = function (suggestion) {
       var snippetName = suggestion.name;
-      var ind = '{{padding}}';
+      var snippet     = snippets[snippetName.toLowerCase()];
 
-      var snippetToSuggest = snippets[snippetName.toLowerCase()];
-
-      if (snippetToSuggest) {
-        return snippetToSuggest.join(ind);
+      if (snippet) {
+        return snippet;
       }
 
       if (suggestion.isText) {
-        return ind + snippetName + '\n';
+        return [
+          snippetName,
+          ''
+        ];
       }
 
-      return ind + snippetName + ':';
+      return [
+        snippetName + ':'
+      ];
     };
 
     return service;
