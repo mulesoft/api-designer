@@ -74,7 +74,9 @@ angular.module('ramlEditorApp')
   .factory('ramlHint', function (getLineIndent, generateTabs, getKeysToErase,
     getScopes, getEditorTextAsArrayOfLines) {
     var hinter = {};
-    var WORD = /[^\s]+|[$]+/;
+    var WORD = /[^\s]|[$]/;
+    var RAML_VERSION = '#%RAML 0.8';
+    var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
     hinter.suggestRAML = suggestRAML;
 
@@ -165,6 +167,10 @@ angular.module('ramlEditorApp')
 
       currLineTabCount = getLineIndent(curLine).tabCount;
 
+      // Handle RAML version, it should look at the entire line
+      if (cur.line === 0) {
+        word = /^|[\s]|[$]/;
+      }
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
@@ -249,12 +255,25 @@ angular.module('ramlEditorApp')
       };
     };
 
+    hinter.shouldSuggestVersion = function(editor) {
+      var lineNumber = editor.getCursor().line,
+          line = editor.getLine(lineNumber);
+      var lineIsVersion = RAML_VERSION_PATTERN.test(line);
+
+      return (lineNumber === 0 && !lineIsVersion);
+    };
+
     hinter.getSuggestions = function (editor) {
       var alternatives = hinter.getAlternatives(editor);
 
       var list = alternatives.keys.map(function (e) {
         var suggestion = alternatives.values.suggestions[e];
         return { name: e, category: suggestion.metadata.category, isText: suggestion.metadata.isText  };
+      }).filter(function(e){
+        if (!hinter.shouldSuggestVersion(editor) && e.name === RAML_VERSION) {
+          return false;
+        }
+        return true;
       }) || [];
 
       if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
@@ -268,7 +287,7 @@ angular.module('ramlEditorApp')
 
     hinter.autocompleteHelper = function(editor) {
       var editorState = hinter.getEditorState(editor),
-          curWord = editorState.curLine.trim(),
+          curWord = editorState.curWord,
           start = editorState.start,
           end = editorState.end,
           alternatives = hinter.getAlternatives(editor),
