@@ -268,7 +268,7 @@ angular.module('ramlEditorApp')
           $scope.files = files;
           safeApply($scope);
         })
-        .always(function () {
+        .finally(function () {
           delete $scope.files.loading;
         })
       ;
