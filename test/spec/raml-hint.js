@@ -449,7 +449,70 @@ describe('ramlEditorApp', function () {
       });
     });
 
-    describe('autocompleteHelper', function () {
+    describe('autocompleteHelper 1', function () {
+      var getAlternativesStub;
+      beforeEach(function () {
+        getAlternativesStub = sinon.stub(ramlHint, 'getAlternatives').returns({keys: []});
+      });
+
+      afterEach(function () {
+        getAlternativesStub.restore();
+      });
+
+      function getWord(line, cursor) {
+        return ramlHint.autocompleteHelper(getEditor(line, cursor)).word;
+      }
+
+      it('should detect an empty word for an empty line', function () {
+        getWord('').should.be.empty;
+      });
+
+      it('should detect an empty word for a line with whitespaces only', function () {
+        getWord(' ').should.be.empty;
+      });
+
+      it('should detect a word that is RAML tag for a first line with comments', function () {
+        getWord(' #RAML ').should.be.equal('#RAML');
+      });
+
+      it('should detect a word for a simple line', function () {
+        getWord(' word ').should.be.equal('word');
+      });
+
+      it('should detect a word for a simple line with comments', function () {
+        getWord(' word # and').should.be.equal('word');
+      });
+
+      it('should detect a word for array element', function () {
+        getWord('- word').should.be.equal('word');
+      });
+
+      it('should detect a word for array element with whitespaces', function () {
+        getWord('  - word').should.be.equal('word');
+      });
+
+      it('should detect a word for array element with whitespaces and comments', function () {
+        getWord('  - word # and').should.be.equal('word');
+      });
+
+      it('should detect a word for map key', function () {
+        getWord('word: value').should.be.equal('word');
+      });
+
+      it('should detect a word for map key with whitespaces', function () {
+        getWord('  word: value').should.be.equal('word');
+      });
+
+      it('should detect a word for map key with whitespaces and comments', function () {
+        getWord('  word: value # and').should.be.equal('word');
+      });
+
+      it('should detect a word for map key being array element', function () {
+        getWord('- word: value').should.be.equal('word');
+      });
+    });
+
+    describe('autocompleteHelper 2', function () {
       it('should render the text correctly', function () {
         var alternatives = {
           suggestions: {

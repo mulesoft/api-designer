@@ -81,8 +81,7 @@ angular.module('ramlEditorApp')
     hinter.suggestRAML = suggestRAML;
 
     hinter.computePath = function (editor) {
-      var
-          editorState = hinter.getEditorState(editor),
+      var editorState = hinter.getEditorState(editor),
           line = editorState.cur.line, textAsList,
           ch = editorState.cur.ch,
           lines;
@@ -286,35 +285,78 @@ angular.module('ramlEditorApp')
     };
 
     hinter.autocompleteHelper = function(editor) {
-      var editorState = hinter.getEditorState(editor),
-          curWord = editorState.curWord,
-          start = editorState.start,
-          end = editorState.end,
-          alternatives = hinter.getAlternatives(editor),
-          list;
+      var editorState = hinter.getEditorState(editor);
+      var line = editorState.curLine;
+      var word = line.trim();
+      var wordIsKey;
+      var alternatives = hinter.getAlternatives(editor);
+      var list;
+      var render = function (element, self, data) {
+        element.innerHTML = [
+          '<div>',
+          data.displayText,
+          '</div>',
+          '<div class="category">',
+          data.category,
+          '</div>'
+        ].join('');
+      };
 
-      list = alternatives.keys.map(function (e) {
-          var suggestion = alternatives.values.suggestions[e],
-              text = suggestion.metadata.isText ? e : e + ':';
-
-          return {
-              text: text,
-              displayText: text,
-              category: suggestion.metadata.category,
-              render: function (element, self, data) {
-                element.innerHTML = '<div>' + data.displayText + '</div>' +
-                  '<div class="category">' + data.category + '</div>';
-              }
-            };
-        }).filter(function (e) {
-          if (curWord) {
-            return e && e.text.indexOf(curWord) === 0;
+      // handle comment (except RAML tag)
+      (function () {
+        var indexOf = word.indexOf('#');
+        if (indexOf !== -1) {
+          if (editorState.cur.line !== 0 || indexOf !== 0) {
+            word = word.slice(0, indexOf);
           }
+        }
+      })();
 
-          return true;
-        }) || [];
+      // handle array
+      if (word.indexOf('- ') === 0) {
+        word = word.slice(2);
+      }
 
-      return {list: list, from: start, to: end};
+      // handle map and extract key
+      (function () {
+        var match = word.match(/:(?:\s|$)/);
+        if (match) {
+          word      = word.slice(0, match.index);
+          wordIsKey = true;
+        }
+      })();
+
+      word = word.trim();
+      list = alternatives.keys.map(function (e) {
+        var suggestion = alternatives.values.suggestions[e];
+        var text       = e;
+
+        if (!suggestion.metadata.isText && !wordIsKey) {
+          text = text + ':';
+        }
+
+        return {
+          displayText: text,
+          text:        text,
+          category:    suggestion.metadata.category,
+          render:      render
+        };
+      });
+
+      if (word) {
+        list = list.filter(function (e) {
+          return e.text.indexOf(word) === 0 &&
+                 e.text.length !== word.length
+          ;
+        });
+      }
+
+      return {
+        word: word,
+        list: list,
+        from: CodeMirror.Pos(editorState.cur.line, line.indexOf(word)),
+        to:   CodeMirror.Pos(editorState.cur.line, line.indexOf(word) + word.length)
+      };
     };
 
     return hinter;
