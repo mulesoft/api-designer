@@ -15,7 +15,7 @@ angular.module('fs')
       }
     }
 
-    service.list = function (path) {
+    service.directory = function (path) {
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {

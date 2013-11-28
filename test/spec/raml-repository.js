@@ -23,7 +23,7 @@ describe('RAML Repository', function () {
     it('should reflect the contents of a directory on success', function () {
       // Arrange
       var directoryDeferred = $q.defer();
-      var directoryStub = sinon.stub(fileSystem, 'list').returns(directoryDeferred.promise);
+      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var success = sinon.stub();
       var files = ['myfile'];
 
@@ -44,7 +44,7 @@ describe('RAML Repository', function () {
     it('should handle errors', function () {
       // Arrange
       var directoryDeferred = $q.defer();
-      var directoryStub = sinon.stub(fileSystem, 'list').returns(directoryDeferred.promise);
+      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var error = sinon.stub();
       var errorData = {message: 'Error occurred'};
 

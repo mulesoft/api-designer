@@ -35,7 +35,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
 
     service.getDirectory = function (path) {
       path = path || defaultPath;
-      return fileSystem.list(path).then(function (entries) {
+      return fileSystem.directory(path).then(function (entries) {
         return entries.map(function (e) {
           return new RamlFile(e, path);
         });
