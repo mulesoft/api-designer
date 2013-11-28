@@ -1,6 +1,7 @@
 'use strict';
 var EditorHelper = require ('./editor-helper.js').EditorHelper;
 var ShelfHelper = require ('./shelf-helper.js').ShelfHelper;
+var ConsoleHelper = require ('./console-helper.js').ConsoleHelper;
 var webdriver = require('selenium-webdriver');
 function AssertsHelper() {}
 
@@ -43,10 +44,136 @@ AssertsHelper.prototype.consoleResourcesName = function(list, expList){
   });
   return d;
 };
+
+AssertsHelper.prototype.consoleMainResources = function(expList){
+  var consoleApi = new ConsoleHelper();
+  var i = 0;
+  consoleApi.getListMainResources().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResources = function(expList){
+  var consoleApi = new ConsoleHelper();
+  var i = 0;
+  consoleApi.getListResourcesName().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourceResourceType = function(expList){
+  var consoleApi = new ConsoleHelper();
+  var i=0;
+  consoleApi.getListResourceType().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourcesTraits = function(expList){
+  var consoleApi = new ConsoleHelper();
+  var i=0;
+  consoleApi.getListTrait().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourcesMethods = function(expList){
+  var consoleApi = new ConsoleHelper();
+  var i=0;
+  consoleApi.getListMethods().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourceName = function(expList){
+  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+    var i =0;
+    expect(resources.length).toEqual(expList.length);
+    resources.forEach(function(resource){
+      var t = i++;
+      resource.findElements(by.css('h3')).then(function(h3){
+        expect(h3.length).toEqual(1);
+        expect(h3[0].getText()).toEqual(expList[t]);
+      });
+    });
+  });
+};
+
+
+AssertsHelper.prototype.consoleResourceMethods = function(expList){
+  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+    var i =0;
+    resources.forEach(function(resource){
+      var t = i++;
+      resource.findElements(by.css('[role="methods"] li')).then(function(methods){
+        expect(methods.length).toEqual(expList['r'+t].length);
+        var j = 0;
+        methods.forEach(function(method){
+          expect(method.getText()).toEqual(expList['r'+t][j]);
+          j++;
+        });
+      });
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourceResourceType = function(expList){
+  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+    var i =0;
+    expect(resources.length).toEqual(expList.length);
+    resources.forEach(function(resource){
+      var t = i++;
+      resource.findElements(by.css('[role="resource-type"]')).then(function(h3){
+        expect(h3.length).toEqual(1);
+        expect(h3[0].getText()).toEqual(expList[t]);
+      });
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourceTraits = function(expList){
+  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+    var i =0;
+//    expect(resources.length).toEqual(expList.length);
+    resources.forEach(function(resource){
+      var t = i++;
+      resource.findElements(by.css('[role="trait"]')).then(function(traits){
+        expect(traits.length).toEqual(expList['r'+t].length);
+        var j = 0;
+        traits.forEach(function(trait){
+          expect(trait.getText()).toEqual(expList['r'+t][j]);
+          j++;
+        });
+      });
+    });
+  });
+};
+
+
 //Console Ends
 
 //Shelf starts
-AssertsHelper.prototype.shelfElements = function(list, expList){
+AssertsHelper.prototype.shelfElementsx = function(list, expList){
   expect(list.length).toEqual(expList.length);
   list.forEach(function(element){
     element.getText().then(function(text){
@@ -54,15 +181,27 @@ AssertsHelper.prototype.shelfElements = function(list, expList){
     });
   });
 };
+
+AssertsHelper.prototype.shelfElements = function(expList){
+  shelf = new ShelfHelper();
+  shelf.getElements().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(element){
+      element.getText().then(function(text){
+        expect(expList).toContain(text);
+      });
+    });
+  });
+};
+
 AssertsHelper.prototype.shelfElementsNotDisplayed = function(list2, expList){
   var that = this;
   list2.forEach(function(element){
     expList.splice(expList.indexOf(element), 1);
   });
-  shelf.getElements().then(function(list){
-    that.shelfElements(list, expList);
-  });
+  that.shelfElements(expList);
 };
+
 AssertsHelper.prototype.shelfElementsByGroup = function(groupInfo, byGroup){
   var that = this ;
   var j, dic1 = {}, dic2 = {} ;
@@ -98,14 +237,14 @@ AssertsHelper.prototype.shelfElementsByGroup = function(groupInfo, byGroup){
       section.getText().then(function(text){
         dic1[text] = true;
       }).then(function(){
-          section.findElements(by.css(shelf.itemsInSection())).then(function(items){
-            dic2[byGroup[t]]=true;
-            that.shelfElements(items, byGroup[t]);
-            if (t === sections.length -1){
-              afterAllThens();
-            }
-          });
+        section.findElements(by.css(shelf.itemsInSection())).then(function(items){
+          dic2[byGroup[t]]=true;
+          that.shelfElementsx(items, byGroup[t]);
+          if (t === sections.length -1){
+            afterAllThens();
+          }
         });
+      });
     });
     expect(sections.length).toEqual(byGroup.length);
   });
@@ -165,6 +304,12 @@ AssertsHelper.prototype.shelfElementsRTMethodsByGroup = function(){
   var byGroup = [shelf.elemRtMethodLevelRoot,shelf.elemRtMethodLevelDocs,shelf.elemRtMethodLevelParameters, shelf.elemRtMethodLevelResponses,shelf.elemRtMethodLevelSecurity,shelf.elemRtMethodLevelTraitsAndTypes, shelf.elemRtMethodLevelBody];
   var groupInfo = ['ROOT (1)\nprotocols','DOCS (2)\ndescription\nusage','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (1)\nis','BODY (1)\nbody'];
   that.shelfElementsByGroup(groupInfo, byGroup);
+};
+
+AssertsHelper.prototype.shelfWithNoElements = function(){
+  shelf.getElements().then(function(list){
+    expect(list.length).toEqual(0);
+  });
 };
 //Shelf ends
 

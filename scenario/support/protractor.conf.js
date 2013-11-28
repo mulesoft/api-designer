@@ -17,6 +17,7 @@ exports.config = {
     '../test/e2e/editor-parser/*.js',
     '../test/e2e/editor-parser/resource/*.js',
     '../test/e2e/editor-parser/resourceTypes/*.js',
+    '../test/e2e/raml-example/muse-e2e.js',
     '../test/lib/*.js'
   ],
   onPrepare: function() {
@@ -31,7 +32,7 @@ exports.config = {
     });
   },
 
-  baseUrl: 'http://localhost:9013/',
+  baseUrl: 'https://ramltooling:ram10ve@j0hnqa.mulesoft.org/',
 
   jasmineNodeOpts: {
     showColors: true,

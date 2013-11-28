@@ -20,7 +20,7 @@ describe('shelf',function(){
         });
       });
 
-      xit('should not be offer RAML version - line 1 - fail RT-363', function(){
+      it('should not be offer RAML version - line 1 - fail RT-363', function(){
         var definition = '#%RAML 0.8';
         editor.setValue(definition);
         shelf.getElements().then(function(list){
