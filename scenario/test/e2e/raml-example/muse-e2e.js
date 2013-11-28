@@ -839,7 +839,7 @@ describe('Muse: Mule Sales Enablement API', function () {
   }); // e2e validation
   describe('console validation - expanded', function(){
 
-    xdescribe('collapsed Console', function(){
+    describe('collapsed Console', function(){
 
       it('verify resources name', function(){
         var expList = ['/presentations','/presentations /{presentationId}','/products','/products /{productId}',
@@ -872,48 +872,5 @@ describe('Muse: Mule Sales Enablement API', function () {
       });
 
     }); // collapsed Console
-
-
-    xit('/presentation', function(){
-
-      browser.findElements(by.css('[role="resource"]')).then(function(resources){
-        expect(resources.length).toEqual(6);
-
-//      Expanded
-        resources[0].click();
-        resources[0].findElements(by.css('.accordion [role="method"]')).then(function(methods){
-          methods[0].click();
-          methods[0].findElements(by.css('[role="documentation"] .tabbable li a')).then(function(tab){
-            expect(tab[0].getText()).toEqual('Request');
-            expect(tab[1].getText()).toEqual('Responses');
-            expect(tab[2].getText()).toEqual('Try It');
-            tab[0].click().then(function(){
-//              resources[0].findElements(by.css('.tabbable .tab-content section[heading="Headers"]')).then(function(headers){
-              resources[0].findElements(by.css('.tabbable .tab-content [heading="Request"] section[heading="Headers"]')).then(function(headers){
-                console.log('headers length', headers.length);
-                headers[0].findElements(by.css('h2')).then(function(h2){
-                  expect(h2.length).toEqual(1);
-                  expect(h2[0].getText()).toEqual('Headers');
-                });
-                headers[1].findElements(by.css('h2')).then(function(h2){
-                  expect(h2.length).toEqual(1);
-                  expect(h2[0].getText()).toEqual('Headers');
-                });
-
-                headers[0].findElements(by.css('h4')).then(function(h4){
-                  h4.findElements(by.css('span[role="display-name"]')).then(function(displayName){
-                    expect(displayName.lenght).toEqual(1);
-                    expect(displayName.getText()).toEqual('Autorizationmm');
-                  });
-                });
-              });
-            });
-          });
-        });
-
-      });
-
-    });
-
   });// console validation - expanded
 }); // MAIN
