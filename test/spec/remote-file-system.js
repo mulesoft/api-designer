@@ -23,7 +23,7 @@ describe('remoteFileSystem', function () {
     });
   });
 
-  describe('directory', function () {
+  describe('list', function () {
     var files;
 
     beforeEach(inject(function ($injector) {
@@ -33,7 +33,7 @@ describe('remoteFileSystem', function () {
     }));
 
     it('should generate the right request', function () {
-      remoteFileSystem.directory('/');
+      remoteFileSystem.list('/');
 
       tokenBuilderMock.method.calledWith('GET').should.be.true;
       tokenBuilderMock.path.calledWith('files').should.be.true;
@@ -47,7 +47,7 @@ describe('remoteFileSystem', function () {
 
       Object.keys(files).length.should.be.equal(0);
 
-      remoteFileSystem.directory('/').then(function (data) {
+      remoteFileSystem.list('/').then(function (data) {
         Object.keys(files).length.should.be.equal(2);
         Object.keys(files).should.be.deep.equal(data);
 
@@ -59,7 +59,7 @@ describe('remoteFileSystem', function () {
     });
 
     it('should call the error function on error', function (done) {
-      remoteFileSystem.directory('/').then(
+      remoteFileSystem.list('/').then(
         // success
         function () {},
 

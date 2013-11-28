@@ -9,7 +9,10 @@ angular.module('fs')
       return s.indexOf('/') === 0 ? s.slice(1) : s;
     }
 
-    service.directory = function () {
+    /**
+     * List a directory content
+     */
+    service.list = function () {
       var deferred = $q.defer();
 
       requestTokenBuilder()
@@ -64,6 +67,8 @@ angular.module('fs')
 
       return deferred.promise;
     };
+
+
 
     service.load = function (path, name) {
       var deferred = $q.defer();
