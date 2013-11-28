@@ -81,10 +81,13 @@ angular.module('ramlEditorApp')
     hinter.suggestRAML = suggestRAML;
 
     hinter.computePath = function (editor) {
-      var editorState = hinter.getEditorState(editor),
-          line = editorState.cur.line, textAsList,
-          ch = editorState.cur.ch,
-          lines;
+      var editorState = hinter.getEditorState(editor);
+      var line = editorState.cur.line;
+      var ch = editorState.cur.ch;
+      var listsTraveled = 0;
+      var lastTraveledListSpaceCount;
+      var lines;
+      var textAsList;
 
       if (line === 0) {
         return null;
@@ -92,7 +95,7 @@ angular.module('ramlEditorApp')
 
       textAsList = getEditorTextAsArrayOfLines(editor).slice(0, line + 1).reverse();
       if (textAsList[0].trim() === '') {
-        textAsList[0] = textAsList[0].slice(0, ch + 1);
+        textAsList[0] = textAsList[0].slice(0, ch);
       }
 
       // It should have at least one element
@@ -100,28 +103,40 @@ angular.module('ramlEditorApp')
         return [];
       }
 
+      lastTraveledListSpaceCount = getLineIndent(textAsList[0]).spaceCount;
+      if ((lastTraveledListSpaceCount % editor.getOption('indentUnit')) !== 0) {
+        return;
+      }
+
       lines = textAsList
-      .map(function (lineContent) {
-        var result = {}, lineIndentInfo = getLineIndent(lineContent),
-          listMatcher;
+        .map(function (line, index) {
+          var result         = {};
+          var lineIndentInfo = getLineIndent(line);
+          var listMatcher;
 
-        result.tabCount = lineIndentInfo.tabCount;
-        lineContent = lineIndentInfo.content;
+          result.tabCount = lineIndentInfo.tabCount;
+          line = lineIndentInfo.content;
 
-        listMatcher = /^(- )(.*)$/.exec(lineContent) || {index: -1};
+          listMatcher = /^(- )(.*)$/.exec(line) || {index: -1};
 
-        // Case is a list
-        if (listMatcher.index === 0) {
-          result.isList = true;
-          lineContent = listMatcher[2];
-        }
+          // case is a list
+          if (listMatcher.index === 0) {
+            result.isList = true;
+            line = listMatcher[2];
 
-        lineContent = /^(.+)(: |:\s*$)/.exec(lineContent);
+            if (index === 0 || lineIndentInfo.spaceCount < lastTraveledListSpaceCount) {
+              listsTraveled++;
+              lastTraveledListSpaceCount = lineIndentInfo.spaceCount;
+            }
+          }
 
-        result.content = lineContent ? lineContent[1] : '';
+          line = /^(.+)(: |:\s*$)/.exec(line);
 
-        return result;
-      });
+          result.content = line ? line[1] : '';
+
+          return result;
+        })
+      ;
 
       var result = lines.slice(1).reduce(function (state, lineData) {
         var prev = state[state.length - 1];
@@ -151,11 +166,16 @@ angular.module('ramlEditorApp')
         return state;
       }, {invalid: false, path: [result[0]]});
 
-      var l = result.path.map(function (e) {
+      if (result.invalid) {
+        return;
+      }
+
+      var path = result.path.map(function (e) {
         return e.content;
       });
+      path.listsTraveled = listsTraveled;
 
-      return result.invalid ? undefined : l;
+      return path;
     };
 
     hinter.getEditorState = function(editor, options) {

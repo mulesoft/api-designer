@@ -10,16 +10,19 @@ describe('ramlEditorApp', function () {
     }));
 
     describe('computePath', function () {
+      it('should return NULL for the first line', function () {
+        var path = ramlHint.computePath(getEditor(''));
+        should.equal(path, null);
+      });
+
       it('should handle root level paths', function () {
         var editor = getEditor(
           'title: hello\n'+
           'version: v1.0\n' +
           'baseUri: http://example.com/api\n',
           {line: 1, ch: 4});
-        var res = ramlHint.computePath(editor);
-        res.should.be.ok;
-        res.length.should.be.equal(1);
-        res[0].should.be.equal('version');
+        var res = [].concat(ramlHint.computePath(editor));
+        res.should.be.deep.equal(['version']);
       });
 
       it('should handle second level paths', function () {
@@ -32,8 +35,7 @@ describe('ramlEditorApp', function () {
           '    get:\n',
           {line: 5, ch: 4});
 
-        var res = ramlHint.computePath(editor);
-        res.should.be.ok;
+        var res = [].concat(ramlHint.computePath(editor));
         res.should.be.deep.equal(['/hello', '/bye', 'get']);
       });
 
@@ -63,23 +65,7 @@ describe('ramlEditorApp', function () {
           '      displayName: hello2\n' +
           '  ',
           {line: 8, ch: 2});
-        var res = ramlHint.computePath(editor);
-        res.should.be.deep.equal(['traits', '']);
-      });
-
-      it('should offer computePath to lists at a more nested level', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          'traits:\n' +
-          '  - hello:\n' +
-          '      displayName: hello\n' +
-          '  - hello2:\n' +
-          '      displayName: hello2\n' +
-          '    ',
-          {line: 8, ch: 3});
-        var res = ramlHint.computePath(editor);
+        var res = [].concat(ramlHint.computePath(editor));
         res.should.be.deep.equal(['traits', '']);
       });
 
@@ -95,9 +81,8 @@ describe('ramlEditorApp', function () {
           '      displayName: hello\n' +
           '      ',
           {line: 8, ch: 6});
-        var res = ramlHint.computePath(editor);
+        var res = [].concat(ramlHint.computePath(editor));
         res.should.be.deep.equal(['traits', 'hello2', '']);
-        res.should.be.ok;
       });
 
       it('should offer options to valid elements inside dictionary lists', function () {
@@ -111,7 +96,7 @@ describe('ramlEditorApp', function () {
           '    hello:\n' +
           '      displayName: hello\n' +
           '      ',
-          {line: 8, ch: 5});
+          {line: 8, ch: 6});
         var res = ramlHint.computePath(editor);
         res.should.be.ok;
       });
@@ -134,6 +119,59 @@ describe('ramlEditorApp', function () {
         {line: 0, ch: 4});
         var res = ramlHint.computePath(editor);
         should.not.exist(res);
+      });
+
+      it('should detect valid number of traveled lists #1', function () {
+        ramlHint.computePath(getEditor([
+          'traits',
+          '  - trait1:',
+          '      displayName:' // <--
+        ].join('\n'),
+        {
+          line: 2,
+          ch:   6
+        }
+        )).listsTraveled.should.be.equal(1);
+      });
+
+      it('should detect valid number of traveled lists #2', function () {
+        ramlHint.computePath(getEditor([
+          'traits',
+          '  - trait1:',
+          '      displayName:',
+          '  - trait2:',
+          '      displayName:' // <--
+        ].join('\n'),
+        {
+          line: 4,
+          ch:   6
+        }
+        )).listsTraveled.should.be.equal(1);
+      });
+
+      it('should detect valid number of traveled lists #3', function () {
+        ramlHint.computePath(getEditor([
+          '- list1:',
+          '    - list2:',
+          '        key1:' // <--
+        ].join('\n'),
+        {
+          line: 2,
+          ch:   8
+        }
+        )).listsTraveled.should.be.equal(2);
+      });
+
+      it('should detect valid number of traveled lists #4', function () {
+        ramlHint.computePath(getEditor([
+          'documentation:',
+          '  - title:'
+        ].join('\n'),
+        {
+          line: 1,
+          ch:   4
+        }
+        )).listsTraveled.should.be.equal(1);
       });
     });
 
