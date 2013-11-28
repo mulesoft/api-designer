@@ -1,23 +1,15 @@
 'use strict';
-var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
+var ShelfHelper = require('../../../lib/shelf-helper.js').ShelfHelper;
+var AssertsHelper = require('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require('../../../lib/editor-helper.js').EditorHelper;
 describe('shelf',function(){
-  var  shelfElements= new ShelfElements();
-//  beforeEach(function () {
-  browser.get('/');
-  browser.executeScript(function () {
-    localStorage['config.updateResponsivenessInterval'] = 1;
-    window.onbeforeunload = null;
-  });
-  browser.wait(function(){
-    return editorGetLine(2).then(function(text) {
-      return text === 'title:';
-    });
-  });
-//  });
-
-  var options = shelfElements.getResourcelevelWithouNewResource();
+  var shelf = new ShelfHelper();
+  var designerAsserts= new AssertsHelper();
+  var editor= new EditorHelper();
+  var options = shelf.elemResourceLevelWithoutNewReosurce;
   var namedParameters = [ 'baseUriParameters', 'uriParameters'];
-  var namedParamElems = shelfElements.getNamedParametersLevel();
+  var namedParamElems = shelf.elemNamedParametersLevel;
+
   describe('resource-root elements',function(){
 
     it('resource shelf elements by group', function(){
@@ -27,16 +19,16 @@ describe('shelf',function(){
         '/res:',
         '    '
       ].join('\\n');
-      editorSetValue(definition);
-      editorSetCursor(4,3);
-      shelfElementsResourceByGroupAssertion(shelfElements);
-
+      editor.setValue(definition);
+      editor.setCursor(4,2);
+      designerAsserts.shelfElementsResourceByGroup();
     });
 
     describe('not displayed after being selected', function(){
 
       options.forEach(function(option){
         it(option+' is no longer displayed on the shelf', function(){
+          shelf = new ShelfHelper();
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -44,13 +36,10 @@ describe('shelf',function(){
             '  '+option+': ',
             '    '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(5,3);
+          editor.setValue(definition);
+          editor.setCursor(5,2);
           var list2 =[option];
-          var listPromise = shelfGetListOfElementsFromShelf();
-          listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfElements.getResourceLevel(),list2);
-          });
+          designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceLevel);
         });
       });
 
@@ -70,9 +59,9 @@ describe('shelf',function(){
             '    hola: ',
             '        '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(7,6);
-          shelfElemNamedParametersByGroupAssertion(shelfElements);
+          editor.setValue(definition);
+          editor.setCursor(7,6);
+          designerAsserts.shelfElemNamedParametersByGroup();
         });
       });
 
@@ -81,6 +70,7 @@ describe('shelf',function(){
         namedParameters.forEach(function(namedParameter){
           namedParamElems.forEach(function(namedParamElem){
             it(namedParameter+'-'+namedParamElem+' is no longer displayed on the shelf', function(){
+              shelf = new ShelfHelper();
               var definition = [
                 '#%RAML 0.8',
                 'title: My api',
@@ -91,13 +81,10 @@ describe('shelf',function(){
                 '      '+namedParamElem+':',
                 '         '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(7,7);
+              editor.setValue(definition);
+              editor.setCursor(7,6);
               var list2 =[namedParamElem];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
-              });
+              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
             });
           });
         });

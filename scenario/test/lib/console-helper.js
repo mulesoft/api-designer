@@ -1,32 +1,63 @@
 'use strict';
-(function() {
+function ConsoleHelper() {}
 
-  global.consoleGetTitleElement = function () {
-//	  return  '[role=\'resources\'] h2 span';
-    return '#raml-console-api-title';
-  };
+ConsoleHelper.prototype = {};
 
-  global.consoleGetListOfResources = function() {
-	  return 'div[role=\'resourceSummary\']';
-  };
+ConsoleHelper.prototype.getTitleCss = function(){
+  return '#raml-console-api-title';
+};
 
-  global.consoleGetListResourcesNameElement = function () {
-	  return 'div[role=\'resourceSummary\'] h3';
-  };
+ConsoleHelper.prototype.getListMainResources = function(){
+  return browser.findElements(by.css('#raml-console-api-reference h1'));
+};
 
-  global.consoleGetListResourcesName = function () {
-    return browser.findElements(by.css('div[role=\'resourceSummary\'] h2'));
-  };
+ConsoleHelper.prototype.getListOfResourcesCss = function(){
+  return 'div[role=\'resourceSummary\']';
+};
 
-  global.consoleGetListResourcesDisplayName = function(){
-    return browser.findElements(by.css('[ng-show=\'resource.name\']'));
-  };
+ConsoleHelper.prototype.getListResourcesNameCss = function(){
+  return 'div[role=\'resourceSummary\'] h3';
+};
+ConsoleHelper.prototype.getListResourcesName = function(){
+  return browser.findElements(by.css('[role=\'resource\'] h3.path'));
+};
+ConsoleHelper.prototype.getListResourceType = function(){
+  return  browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [role="resource-type"]'));
+};
 
-  global.consoleGetListOfMethodByResource = function(){
+ConsoleHelper.prototype.getListTrait = function(){
+  return  browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]'));
+};
+
+ConsoleHelper.prototype.getListMethods = function(){
+  return browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li'));
+};
+
+ConsoleHelper.prototype.getListResources = function(){
+//  return browser.findElements(by.css('[role=\'resource\'] h3.path'));
+  return browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"]'));
+};
+
+ConsoleHelper.prototype.getResourceTypeForAResource = function(t){
+//  var that = this;
+  var resource = this.getListResources();
+  console.log('resource t',resource[t]);
+  return resource[t].findElements(by.css('.modifiers [role=\'resource-type\']'));
+};
+
+ConsoleHelper.prototype.consoleExapndResourceArea = function(t){
+//  t is the possition of the resource in the list - starts with 0
+  browser.findElements(by.css('[role=\'resource\'] h3.path')[t].click());
+};
+
+ConsoleHelper.prototype.getListResourcesDisplayName = function(){
+  return browser.findElements(by.css('[ng-show=\'resource.name\']'));
+};
+
+ConsoleHelper.prototype.getListOfMethodByResourceCss = function(){
     //$('[role=\'resourceSummary\']').filter(function(){ return /^\s+\/classes\s*$/.test($(this).find("h2").text());})
-  };
+};
 
 
 
-
-})();
+exports.ConsoleHelper = ConsoleHelper;

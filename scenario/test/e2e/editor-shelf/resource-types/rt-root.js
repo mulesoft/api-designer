@@ -1,23 +1,15 @@
 'use strict';
-var ShelfElements = require ('../../../lib/shelf-elements.js').ShelfElements;
-describe('shelf',function(){
-  var  shelfElements= new ShelfElements();
-//  beforeEach(function () {
-    browser.get('/');
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-      window.onbeforeunload = null;
-    });
-    browser.wait(function(){
-      return editorGetLine(2).then(function(text) {
-        return text === 'title:';
-      });
-    });
-//  });
+var ShelfHelper = require('../../../lib/shelf-helper.js').ShelfHelper;
+var AssertsHelper = require('../../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require('../../../lib/editor-helper.js').EditorHelper;
 
+describe('shelf',function(){
+  var  shelf= new ShelfHelper();
+  var designerAsserts= new AssertsHelper();
+  var editor= new EditorHelper();
   var namedParameters = ['baseUriParameters', 'uriParameters'];
-  var namedParamElems = shelfElements.getNamedParametersLevel();
-  var options = shelfElements.getResourceTypeLevel();
+  var namedParamElems = shelf.elemNamedParametersLevel;
+  var options = shelf.elemResourceTypeLevel;
 
   describe('resourceTypes elements',function(){
     it('resource shelf elements by group', function(){
@@ -28,15 +20,16 @@ describe('shelf',function(){
         '  - rt1: ',
         '        '
       ].join('\\n');
-      editorSetValue(definition);
-      editorSetCursor(5,6);
-      shelfElemResourceTypesByGroupAssertion(shelfElements);
+      editor.setValue(definition);
+      editor.setCursor(5,6);
+      designerAsserts.shelfElemResourceTypesByGroup();
     });
 
     describe('after being selected', function(){
 
       options.forEach(function(option){
         it(option+' is no longer displayed on the shelf', function(){
+          shelf = new ShelfHelper();
           var definition = [
             '#%RAML 0.8',
             'title: My api',
@@ -45,13 +38,10 @@ describe('shelf',function(){
             '      '+option+':',
             '          '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(6,7);
+          editor.setValue(definition);
+          editor.setCursor(6,6);
           var list2 =[option];
-          var listPromise = shelfGetListOfElementsFromShelf();
-          listPromise.then(function (list) {
-            noShelfElementsAssertion(list, shelfElements.getResourceTypeLevel(),list2);
-          });
+          designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
         });
       });
     }); // not displayed after being selected.
@@ -68,9 +58,9 @@ describe('shelf',function(){
             '        hola:',
             '            '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(7,10);
-          shelfElemNamedParametersByGroupAssertion(shelfElements);
+          editor.setValue(definition);
+          editor.setCursor(7,10);
+          designerAsserts.shelfElemNamedParametersByGroup();
         });
       });
 
@@ -78,6 +68,7 @@ describe('shelf',function(){
         namedParameters.forEach(function(namedParameter){
           namedParamElems.forEach(function(namedParamElem){
             it(namedParameter+'-'+namedParamElem+' attribute is no longer displayed on the shelf', function(){
+              shelf = new ShelfHelper();
               var definition = [
                 '#%RAML 0.8',
                 'title: My api',
@@ -88,16 +79,14 @@ describe('shelf',function(){
                 '          '+namedParamElem+':',
                 '              '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(8,13);
+              editor.setValue(definition);
+              editor.setCursor(8,10);
               var list2 =[namedParamElem];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
-              });
+              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
             });
           });
         });
+
       }); // Not displayed after being selected
     }); //NamedParameters
 

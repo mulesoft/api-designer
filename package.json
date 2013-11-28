@@ -6,7 +6,6 @@
   "devDependencies": {
     "connect-livereload": "~0.2.0",
     "expect.js": "~0.2.0",
-    "grunt": "~0.4.1",
     "grunt-angular-templates": "~0.3.12",
     "grunt-connect-proxy": "~0.1.5",
     "grunt-contrib-clean": "~0.4.1",
@@ -25,6 +24,8 @@
     "grunt-open": "~0.2.0",
     "grunt-rev": "~0.1.0",
     "grunt-usemin": "~0.1.11",
+    "jasmine-node": "~1.11.0",
+    "jasmine-reporters": "*",
     "karma": "~0.10.0",
     "karma-chai": "0.0.1",
     "karma-coverage": "~0.1.0",
@@ -32,8 +33,8 @@
     "karma-mocha": "~0.1.0",
     "karma-spec-reporter": "0.0.5",
     "matchdep": "~0.1.2",
+    "minijasminenode": "~0.2.4",
     "mocha": "~1.12.0",
-    "jasmine-node": "~1.9.0",
     "protractor": "0.12.0",
     "selenium-webdriver": "*"
   },
@@ -44,7 +45,7 @@
     "test": "grunt --verbose && grunt localScenario"
   },
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/mulesoft/api-designer.git"
+    "type": "git",
+    "url": "https://github.com/mulesoft/api-designer.git"
   }
 }

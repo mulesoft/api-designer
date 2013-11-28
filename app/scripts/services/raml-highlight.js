@@ -33,7 +33,7 @@ angular.module('codeMirror')
       state.escaped = false;
 
       /* RAML tag */
-      if (ch === '#' && stream.string === '#%RAML 0.8') {
+      if (ch === '#' && stream.string.trim() === '#%RAML 0.8') {
         stream.skipToEnd();
         return 'raml-tag';
       }

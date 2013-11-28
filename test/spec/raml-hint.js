@@ -228,6 +228,14 @@ describe('ramlEditorApp', function () {
         alternatives.suggestions.x.should.not.equal(newAlternatives.suggestions.x);
         should.not.exist(newAlternatives.suggestions.x);
       });
+
+      it('should exclude optional keys', function () {
+        var suggestions     = {a: 1, b: {value:2, metadata:{canBeOptional:true}}, c: 3};
+        var alternatives    = {suggestions: suggestions};
+        var newAlternatives = ramlHint.selectiveCloneAlternatives(alternatives, ['b?']);
+
+        Object.keys(newAlternatives.suggestions).should.be.deep.equal(['a', 'c']);
+      });
     });
 
     describe('getAlternatives', function () {
@@ -441,7 +449,70 @@ describe('ramlEditorApp', function () {
       });
     });
 
-    describe('autocompleteHelper', function () {
+    describe('autocompleteHelper 1', function () {
+      var getAlternativesStub;
+      beforeEach(function () {
+        getAlternativesStub = sinon.stub(ramlHint, 'getAlternatives').returns({keys: []});
+      });
+
+      afterEach(function () {
+        getAlternativesStub.restore();
+      });
+
+      function getWord(line, cursor) {
+        return ramlHint.autocompleteHelper(getEditor(line, cursor)).word;
+      }
+
+      it('should detect an empty word for an empty line', function () {
+        getWord('').should.be.empty;
+      });
+
+      it('should detect an empty word for a line with whitespaces only', function () {
+        getWord(' ').should.be.empty;
+      });
+
+      it('should detect a word that is RAML tag for a first line with comments', function () {
+        getWord(' #RAML ').should.be.equal('#RAML');
+      });
+
+      it('should detect a word for a simple line', function () {
+        getWord(' word ').should.be.equal('word');
+      });
+
+      it('should detect a word for a simple line with comments', function () {
+        getWord(' word # and').should.be.equal('word');
+      });
+
+      it('should detect a word for array element', function () {
+        getWord('- word').should.be.equal('word');
+      });
+
+      it('should detect a word for array element with whitespaces', function () {
+        getWord('  - word').should.be.equal('word');
+      });
+
+      it('should detect a word for array element with whitespaces and comments', function () {
+        getWord('  - word # and').should.be.equal('word');
+      });
+
+      it('should detect a word for map key', function () {
+        getWord('word: value').should.be.equal('word');
+      });
+
+      it('should detect a word for map key with whitespaces', function () {
+        getWord('  word: value').should.be.equal('word');
+      });
+
+      it('should detect a word for map key with whitespaces and comments', function () {
+        getWord('  word: value # and').should.be.equal('word');
+      });
+
+      it('should detect a word for map key being array element', function () {
+        getWord('- word: value').should.be.equal('word');
+      });
+    });
+
+    describe('autocompleteHelper 2', function () {
       it('should render the text correctly', function () {
         var alternatives = {
           suggestions: {
@@ -506,6 +577,125 @@ describe('ramlEditorApp', function () {
 
         Object.keys(autocompleteSuggestionKeys).should.not.include.keys('title');
       });
+
+      it('should use text in current line to get hints', function () {
+        var alternatives = {
+          suggestions: {
+            title: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            version: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            randomHint: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            }
+          },
+          metadata: {
+            category: 'snippets',
+            id: 'resource'
+          }
+        };
+
+        ramlHint.suggestRAML = function() {
+          return alternatives;
+        };
+
+        var editor = getEditor(
+          [
+            'title: hello',
+            'v'
+          ].join('\n'),
+          {line: 1, ch: 1});
+        var autocompleteSuggestions = ramlHint.autocompleteHelper(editor);
+
+        autocompleteSuggestions.should.be.ok;
+
+        var autocompleteSuggestionKeys = {};
+
+        autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
+          var cleanedUpText = autocompleteSuggestion.text.replace(/:(\w|\n|\s)*/g, '');
+          autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
+        });
+
+        alternatives.suggestions.should.include.keys(Object.keys(autocompleteSuggestionKeys));
+
+        Object.keys(autocompleteSuggestionKeys).should.not.include.keys(['title', 'randomHint']);
+      });
+
+      it('should use text in current line to get hints (fix for regression #61036226)', function () {
+        var alternatives = {
+          suggestions: {
+            title: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            version: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            },
+            randomHint: {
+              metadata: {
+                category: 'simple'
+              },
+              open: function () {
+                return {constructor: {name: 'ConstantString'}};
+              }
+            }
+          },
+          metadata: {
+            category: 'snippets',
+            id: 'resource'
+          }
+        };
+
+        ramlHint.suggestRAML = function() {
+          return alternatives;
+        };
+
+        var editor = getEditor(
+          [
+            'title: hello',
+            'some text v'
+          ].join('\n'),
+          {line: 1, ch: 11});
+        var autocompleteSuggestions = ramlHint.autocompleteHelper(editor);
+
+        autocompleteSuggestions.should.be.ok;
+
+        var autocompleteSuggestionKeys = {};
+
+        autocompleteSuggestions.list.forEach(function (autocompleteSuggestion) {
+          var cleanedUpText = autocompleteSuggestion.text.replace(/:(\w|\n|\s)*/g, '');
+          autocompleteSuggestionKeys[cleanedUpText] = autocompleteSuggestion;
+        });
+
+        Object.keys(autocompleteSuggestionKeys).should.not.include.keys(['title', 'randomHint', 'version']);
+      });
+
     });
   });
 

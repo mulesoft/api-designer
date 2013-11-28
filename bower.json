@@ -2,17 +2,18 @@
   "name": "editor",
   "version": "0.0.1",
   "dependencies": {
+    "CodeMirror": "marijnh/CodeMirror",
     "angular": "PatternConsulting/bower-angular#1.1.5",
-    "json3": "~3.2.4",
     "es5-shim": "~2.0.8",
-    "raml-js-parser": "git@github.com:raml-org/raml-js-parser.git",
-    "api-console": "git@github.com:mulesoft/api-console.git",
-    "CodeMirror": "git@github.com:marijnh/CodeMirror.git"
+    "showdown": "~0.3.1",
+    "api-console": "mulesoft/api-console#24e11afce1142475662f998b2516231637f5758f",
+    "raml-grammar": "mulesoft/raml-grammar#185019f454d8f026b64a35c91a3db38c933ce59b",
+    "raml-js-parser": "raml-org/raml-js-parser#09300797e6bfe0769091fa8d272af7f0b0ca4563"
   },
   "devDependencies": {
-    "angular-mocks": "PatternConsulting/bower-angular#1.1.5",
-    "angular-scenario": "PatternConsulting/bower-angular#1.1.5",
-    "angular-cookies": "PatternConsulting/bower-angular#1.1.5",
     "sinonjs": "~1.7.1"
+  },
+  "resolutions": {
+    "raml-js-parser": "09300797e6bfe0769091fa8d272af7f0b0ca4563"
   }
 }

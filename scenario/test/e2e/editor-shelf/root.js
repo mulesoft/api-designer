@@ -1,21 +1,11 @@
 'use strict';
-var ShelfElements = require ('../../lib/shelf-elements.js').ShelfElements;
-
+var ShelfHelper = require ('../../lib/shelf-helper.js').ShelfHelper;
+var AssertsHelper = require ('../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../lib/editor-helper.js').EditorHelper;
 describe('shelf',function(){
-  var  shelfElements= new ShelfElements();
-//  beforeEach(function () {
-    browser.get('/');
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-      window.onbeforeunload = null;
-    });
-    browser.wait(function(){
-      return editorGetLine(2).then(function(text) {
-        return text === 'title:';
-      });
-    });
-
-//  });
+  var shelf = new ShelfHelper();
+  var designerAsserts = new AssertsHelper();
+  var editor = new EditorHelper();
 
   describe('root elements',function(){
 
@@ -23,20 +13,19 @@ describe('shelf',function(){
 
       it('should offer RAML version on line 1', function(){
         var definition = '';
-        editorSetValue(definition);
-        shelfGetElementsFromShelf().then(function(list){
+        editor.setValue(definition);
+        shelf.getElements().then(function(list){
           expect(list.length).toEqual(1);
-          expect(list[0].getText()).toEqual(shelfElements.getRamlVersion());
+          expect(list[0].getText()).toEqual(shelf.elemRamlVersion[0]);
         });
       });
 
-      xit('should not be offer RAML version - line 1 - fail RT-363', function(){
+      it('should not be offer RAML version - line 1 - fail RT-363', function(){
         var definition = '#%RAML 0.8';
-        editorSetValue(definition);
-        shelfGetElementsFromShelf().then(function(list){
+        editor.setValue(definition);
+        shelf.getElements().then(function(list){
           expect(list.length).toEqual(0);
         });
-
       });
 
     }); //RAML version
@@ -46,11 +35,11 @@ describe('shelf',function(){
       it('by group', function(){
         var definition = [
           '#%RAML 0.8',
-          '      '
+          ' '
         ].join('\\n');
-        editorSetValue(definition);
-        editorSetCursor(2,1);
-        shelfElementsRootByGroupAssertion(shelfElements);
+        editor.setValue(definition);
+        editor.setCursor(2,1);
+        designerAsserts.shelfElementsRootByGroup();
       });
 
       xdescribe('documentation', function(){
@@ -68,15 +57,16 @@ describe('shelf',function(){
             '  hola:',
             '     '
           ].join('\\n');
-          editorSetValue(definition);
-          editorSetCursor(6,5);
-          shelfElemNamedParametersByGroupAssertion(shelfElements);
+          editor.setValue(definition);
+          editor.setCursor(6,4);
+          designerAsserts.shelfElemNamedParametersByGroup();
         });
 
         describe('after being selected', function(){
-          var options = shelfElements.getNamedParametersLevel();
+          var options = shelf.elemNamedParametersLevel;
           options.forEach(function(option){
             it(option+': NamedParameter attribute is no longer displayed on the shelf', function(){
+              shelf = new ShelfHelper();
               var definition = [
                 '#%RAML 0.8',
                 'title: The API',
@@ -86,13 +76,10 @@ describe('shelf',function(){
                 '    '+option+':',
                 '      '
               ].join('\\n');
-              editorSetValue(definition);
-              editorSetCursor(7,5);
+              editor.setValue(definition);
+              editor.setCursor(7,4);
               var list2 =[option];
-              var listPromise = shelfGetListOfElementsFromShelf();
-              listPromise.then(function (list) {
-                noShelfElementsAssertion(list, shelfElements.getNamedParametersLevel(),list2);
-              });
+              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
             });
           });
 
@@ -101,23 +88,22 @@ describe('shelf',function(){
       }); //baseUriParameters
 
       describe('after being selected', function(){
-        var options = shelfElements.getRootLevelWithoutNewResource();
+        var options = shelf.elemRootLevelWithoutNewResource;
         options.forEach(function(option){
           it(option+': property is no longer displayed on the shelf', function(){
+            shelf = new ShelfHelper();
             var definition = [
               '#%RAML 0.8',
               ''+option+': ',
-              '  '
+              ' '
             ].join('\\n');
-            editorSetValue(definition);
-            editorSetCursor(3,1);
+            editor.setValue(definition);
+            editor.setCursor(3,1);
             var list2 =[option];
-            var listPromise = shelfGetListOfElementsFromShelf();
-            listPromise.then(function (list) {
-              noShelfElementsAssertion(list, shelfElements.getRootLevel(),list2);
-            });
+            designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
           });
         });
+
       }); // Not displayed after select
     }); // root section
   }); // root elements

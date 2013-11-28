@@ -42,6 +42,15 @@
     },
     focus: function () {
 
+    },
+    getValue: function () {
+      return this.text;
+    },
+    somethingSelected: function () {
+      return false;
+    },
+    indentSelection: function () {
+
     }
   };
 

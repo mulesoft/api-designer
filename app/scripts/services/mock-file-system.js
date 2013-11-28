@@ -64,7 +64,7 @@ angular.module('fs')
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return f.path === path && f.name === name;
+          return (f.path === path && f.name === name) || ( '/' + f.name === path + '/' + name) || ( f.name === path + '/' + name);
         })
         .map(function (f) {
           return f.content;
@@ -72,7 +72,11 @@ angular.module('fs')
       ;
 
       $timeout(function () {
-        deferred.resolve(entries[0] || '');
+        if (entries.length) {
+          deferred.resolve(entries[0] || '');
+        } else {
+          deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
+        }
       }, delay);
 
       return deferred.promise;
@@ -87,12 +91,12 @@ angular.module('fs')
       ;
 
       $timeout(function () {
-        var removed = entries[0];
-        if (removed) {
-          files.splice(files.indexOf(removed), 1);
+        if (entries.length) {
+          files.splice(files.indexOf(entries[0]), 1);
+          deferred.resolve();
+        } else {
+          deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
         }
-
-        deferred.resolve();
       }, delay);
 
       return deferred.promise;

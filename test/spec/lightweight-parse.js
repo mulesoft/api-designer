@@ -115,6 +115,22 @@ describe('Lightweight Parse Module', function () {
       extractKey('a:b: c').should.be.equal('a:b');
       extractKey('a:b: c:d').should.be.equal('a:b');
     });
+
+    it('should handle keys with : in their value', function () {
+      extractKey('  title:longerKey: "Muse: Mule Sales Enablement API"').should.be.equal('title:longerKey');
+      extractKey('  title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+    });
+
+    it('should handle keys which start in an array', function () {
+      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('  - title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+      extractKey('--- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('--- title');
+    });
+
   });
 
   describe('getScopes', function () {
@@ -137,27 +153,29 @@ describe('Lightweight Parse Module', function () {
       ];
 
       var scopesByLine = getScopes(text).scopesByLine;
-      scopesByLine.should.be.deep.equal({
+      var expected = {
         0: [
-          [0, 'title: hello'],
-          [1, 'version: v1.0'],
-          [2, 'baseUri: http://example.com/api'],
-          [3, '/hello:']
+          {lineNumber: 0, content: 'title: hello', tabCount: 0},
+          {lineNumber: 1, content: 'version: v1.0', tabCount: 0},
+          {lineNumber: 2, content: 'baseUri: http://example.com/api', tabCount: 0},
+          {lineNumber: 3, content: '/hello:', tabCount: 0}
         ],
 
         3: [
-          [4, '/bye:'],
-          [6, '/ciao:']
+          {lineNumber: 4, content: '/bye:', tabCount: 1},
+          {lineNumber: 6, content: '/ciao:', tabCount: 1}
         ],
 
         4: [
-          [5, 'get: {}']
+          {lineNumber: 5, content: 'get: {}', tabCount: 2}
         ],
 
         6: [
-          [7, 'get:']
+          {lineNumber: 7, content: 'get:', tabCount: 2}
         ]
-      });
+      };
+
+      scopesByLine.should.be.deep.equal(expected);
 
       var scopeLevels = getScopes(text).scopeLevels;
       (scopeLevels[0].length).should.be.equal(4);
@@ -186,41 +204,42 @@ describe('Lightweight Parse Module', function () {
 
       var scopesByLine = getScopes(text).scopesByLine;
       var scopeLevels = getScopes(text).scopeLevels;
-      scopesByLine.should.be.deep.equal({
+      var expected = {
         0: [
-          [0, 'title: hello'],
-          [1, 'version: v1.0'],
-          [2, 'baseUri: http://example.com/api'],
-          [3, 'traits:'],
-          [8, '/hello:']
+          {lineNumber: 0, content: 'title: hello', tabCount: 0},
+          {lineNumber: 1, content: 'version: v1.0', tabCount: 0},
+          {lineNumber: 2, content: 'baseUri: http://example.com/api', tabCount: 0},
+          {lineNumber: 3, content: 'traits:', tabCount: 0},
+          {lineNumber: 8, content: '/hello:', tabCount: 0}
         ],
 
         3: [
-          [4, '- my_trait:'],
-          [6, '- my_trait2:']
+          {lineNumber: 4, content: '- my_trait:', tabCount: 1},
+          {lineNumber: 6, content: '- my_trait2:', tabCount: 1}
         ],
 
         4: [
-          [5, 'displayName: My Trait']
+          {lineNumber: 5, content: 'displayName: My Trait', tabCount: 3}
         ],
 
         5: [
-          [7, 'displayName: My Trait 2']
+          {lineNumber: 7, content: 'displayName: My Trait 2', tabCount: 3}
         ],
 
         8: [
-          [9, '/bye:'],
-          [11, '/ciao:']
+          {lineNumber: 9, content: '/bye:', tabCount: 1},
+          {lineNumber: 11, content: '/ciao:', tabCount: 1}
         ],
 
         9: [
-          [10, 'get: {}']
+          {lineNumber: 10, content: 'get: {}', tabCount: 2}
         ],
 
         11: [
-          [12, 'get:']
+          {lineNumber: 12, content: 'get:', tabCount: 2}
         ]
-      });
+      };
+      scopesByLine.should.be.deep.equal(expected);
 
       scopeLevels.should.be.deep.equal({
         0: [0,1,2,3,8],
@@ -249,35 +268,36 @@ describe('Lightweight Parse Module', function () {
 
       var scopesByLine = getScopes(text).scopesByLine;
       var scopeLevels = getScopes(text).scopeLevels;
+
       scopesByLine.should.be.deep.equal({
         0: [
-          [0, 'title: hello'],
-          [1, 'version: v1.0'],
-          [2, 'baseUri: http://example.com/api'],
-          [3, 'traits:'],
-          [8, '/hello:']
+          {lineNumber: 0, tabCount: 0, content: 'title: hello'},
+          {lineNumber: 1, tabCount: 0, content: 'version: v1.0'},
+          {lineNumber: 2, tabCount: 0, content: 'baseUri: http://example.com/api'},
+          {lineNumber: 3, tabCount: 0, content: 'traits:'},
+          {lineNumber: 8, tabCount: 0, content: '/hello:'}
         ],
 
         3: [
-          [4, '- my_trait:'],
-          [6, '- my_trait2:']
+          {lineNumber: 4, tabCount: 1, content: '- my_trait:'},
+          {lineNumber: 6, tabCount: 1, content: '- my_trait2:'}
         ],
 
         4: [
-          [5, 'displayName: My Trait']
+          {lineNumber: 5, tabCount: 3, content: 'displayName: My Trait'}
         ],
 
         5: [
-          [7, 'displayName: My Trait 2']
+          {lineNumber: 7, tabCount: 3, content: 'displayName: My Trait 2'}
         ],
 
         8: [
-          [9, '/bye:'],
-          [11, '/ciao:']
+          {lineNumber: 9, tabCount: 1, content: '/bye:'},
+          {lineNumber: 11, tabCount: 1, content: '/ciao:'}
         ],
 
         9: [
-          [10, 'get: {}']
+          {lineNumber: 10, tabCount: 2, content: 'get: {}'}
         ]
       });
 
@@ -290,3 +310,4 @@ describe('Lightweight Parse Module', function () {
     });
   });
 });
+

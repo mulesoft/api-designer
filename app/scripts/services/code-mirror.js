@@ -34,6 +34,11 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       var cursor = cm.getCursor(), line = cm.getLine(cursor.line),
           indentUnit = cm.getOption('indentUnit'), spaces, result, unitsToIndent;
 
+      if (cm.somethingSelected()) {
+        cm.indentSelection('add');
+        return;
+      }
+
       result = service.removeTabs(line, indentUnit);
       result = result.length ? result : '';
 
@@ -162,15 +167,16 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
 
       CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper('fold', 'indent', getFoldRange);
-      
+
       if (!shouldEnableFoldGutter) {
         foldGutterConfig = false;
       } else {
-        foldGutterConfig = { rangeFinder: CodeMirror.fold.indent };
+        foldGutterConfig = {
+          rangeFinder: CodeMirror.fold.indent,
+          foldOnChangeTimeSpan: 300,
+          updateViewportTimeSpan: 200
+        };
       }
-
-
-      
 
       editor = CodeMirror.fromTextArea(document.getElementById('code'), {
         mode: 'raml',
@@ -184,7 +190,8 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
           'Cmd-s': 'save',
-          'Ctrl-s': 'save'
+          'Ctrl-s': 'save',
+          'Shift-Tab': 'indentLess'
         },
         keyMap: 'tabSpace',
         foldGutter: foldGutterConfig,

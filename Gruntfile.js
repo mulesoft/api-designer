@@ -3,8 +3,17 @@
 var LIVERELOAD_PORT = 35729;
 var proxySnippet = require('grunt-connect-proxy/lib/utils').proxyRequest;
 var lrSnippet = require('connect-livereload')({ port: LIVERELOAD_PORT });
-var mountFolder = function (connect, dir) {
-  return connect.static(require('path').resolve(dir));
+var mountFolder = function (connect, dir, route) {
+  var staticMiddleware = connect.static(require('path').resolve(dir));
+  return {
+    route : route,
+    handle: function (req, res, next) {
+      if (route) {
+        req.url = req.url.replace(route, '');
+      }
+      staticMiddleware(req, res, next);
+    }
+  };
 };
 
 // # Globbing
@@ -64,17 +73,8 @@ module.exports = function (grunt) {
               lrSnippet,
               mountFolder(connect, '.tmp'),
               mountFolder(connect, yeomanConfig.app),
+              mountFolder(connect, 'bower_components', '/bower_components'),
               proxySnippet
-            ];
-          }
-        }
-      },
-      test: {
-        options: {
-          middleware: function (connect) {
-            return [
-              mountFolder(connect, '.tmp'),
-              mountFolder(connect, 'test')
             ];
           }
         }
@@ -115,17 +115,7 @@ module.exports = function (grunt) {
           }
         ]
       },
-      server: '.tmp',
-      updatelibs: {
-        files: [
-          {
-            dot: true,
-            src: ['<%= yeoman.app %>/vendor/scripts/angular.js',
-              '<%= yeoman.app %>/vendor/scripts/raml-parser.js'
-            ]
-          }
-        ]
-      }
+      server: '.tmp'
     },
     jshint: {
       options: {
@@ -135,7 +125,9 @@ module.exports = function (grunt) {
         'Gruntfile.js',
         '<%= yeoman.app %>/scripts/{,*/}*.js',
         'test/mocks/{,*/}*.js',
-        'test/spec/{,*/}*.js'
+        'test/spec/{,*/}*.js',
+        'scenario/test/e2e/{,*/}*.js',
+        'scenario/test/lib/{,*/}*.js'
       ]
     },
     rev: {
@@ -197,23 +189,6 @@ module.exports = function (grunt) {
             src: ['*']
           }
         ]
-      },
-      updatelibs: {
-        files: [
-          {
-            expand: true,
-            dot: false,
-            cwd: '<%= yeoman.root %>',
-            dest: '<%= yeoman.app %>/vendor/scripts',
-            flatten: true,
-            src: [
-              'bower_components/angular/angular.js',
-              'bower_components/angular/angular-resource.js',
-              'bower_components/angular/angular-sanitize.js',
-              'bower_components/raml-js-parser/dist/raml-parser.js'
-            ]
-          }
-        ]
       }
     },
     karma: {
@@ -265,7 +240,7 @@ module.exports = function (grunt) {
     protractor: {
       local: {
         configFile: 'scenario/support/local.conf.js',
-        chromeDriver: false
+        chromeDriver: true
       },
       scenario: {
         configFile: 'scenario/support/protractor.conf.js',
@@ -300,15 +275,8 @@ module.exports = function (grunt) {
   });
 
   grunt.registerTask('test', [
-    'clean:server',
     'jshint',
-    'connect:test',
     'karma'
-  ]);
-
-  grunt.registerTask('updatelibs', [
-    'clean:updatelibs',
-    'copy:updatelibs'
   ]);
 
   grunt.registerTask('build', [
