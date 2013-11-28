@@ -60,7 +60,9 @@ function ShelfHelper() {
   this.elemResponsesLevelDocs = ['description'];
   this.elemResponsesLevelBody = ['body'];
   this.elemResponsesLevel = this.elemResponsesLevelDocs.concat(this.elemResponsesLevelBody);
-
+// body
+  this.elemBodyLevelDocs = ['application/x-www-form-urlencoded','multipart/form-data','application/json', 'application/xml' ];
+  this.elemBodyLevel = this.elemBodyLevelDocs;
 }
 
 ShelfHelper.prototype = {};
