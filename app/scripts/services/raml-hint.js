@@ -74,13 +74,14 @@ angular.module('ramlEditorApp')
   .factory('ramlHint', function (getLineIndent, generateTabs, getKeysToErase,
     getScopes, getEditorTextAsArrayOfLines) {
     var hinter = {};
-    var WORD = /[^\s]+|[$]+/;
+    var WORD = /[^\s]|[$]/;
+    var RAML_VERSION = '#%RAML 0.8';
+    var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
     hinter.suggestRAML = suggestRAML;
 
     hinter.computePath = function (editor) {
-      var
-          editorState = hinter.getEditorState(editor),
+      var editorState = hinter.getEditorState(editor),
           line = editorState.cur.line, textAsList,
           ch = editorState.cur.ch,
           lines;
@@ -165,6 +166,10 @@ angular.module('ramlEditorApp')
 
       currLineTabCount = getLineIndent(curLine).tabCount;
 
+      // Handle RAML version, it should look at the entire line
+      if (cur.line === 0) {
+        word = /^|[\s]|[$]/;
+      }
       while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
         ++endPos;
       }
@@ -249,12 +254,25 @@ angular.module('ramlEditorApp')
       };
     };
 
+    hinter.shouldSuggestVersion = function(editor) {
+      var lineNumber = editor.getCursor().line,
+          line = editor.getLine(lineNumber);
+      var lineIsVersion = RAML_VERSION_PATTERN.test(line);
+
+      return (lineNumber === 0 && !lineIsVersion);
+    };
+
     hinter.getSuggestions = function (editor) {
       var alternatives = hinter.getAlternatives(editor);
 
       var list = alternatives.keys.map(function (e) {
         var suggestion = alternatives.values.suggestions[e];
         return { name: e, category: suggestion.metadata.category, isText: suggestion.metadata.isText  };
+      }).filter(function(e){
+        if (!hinter.shouldSuggestVersion(editor) && e.name === RAML_VERSION) {
+          return false;
+        }
+        return true;
       }) || [];
 
       if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
@@ -267,35 +285,78 @@ angular.module('ramlEditorApp')
     };
 
     hinter.autocompleteHelper = function(editor) {
-      var editorState = hinter.getEditorState(editor),
-          curWord = editorState.curLine.trim(),
-          start = editorState.start,
-          end = editorState.end,
-          alternatives = hinter.getAlternatives(editor),
-          list;
+      var editorState = hinter.getEditorState(editor);
+      var line = editorState.curLine;
+      var word = line.trim();
+      var wordIsKey;
+      var alternatives = hinter.getAlternatives(editor);
+      var list;
+      var render = function (element, self, data) {
+        element.innerHTML = [
+          '<div>',
+          data.displayText,
+          '</div>',
+          '<div class="category">',
+          data.category,
+          '</div>'
+        ].join('');
+      };
 
-      list = alternatives.keys.map(function (e) {
-          var suggestion = alternatives.values.suggestions[e],
-              text = suggestion.metadata.isText ? e : e + ':';
-
-          return {
-              text: text,
-              displayText: text,
-              category: suggestion.metadata.category,
-              render: function (element, self, data) {
-                element.innerHTML = '<div>' + data.displayText + '</div>' +
-                  '<div class="category">' + data.category + '</div>';
-              }
-            };
-        }).filter(function (e) {
-          if (curWord) {
-            return e && e.text.indexOf(curWord) === 0;
+      // handle comment (except RAML tag)
+      (function () {
+        var indexOf = word.indexOf('#');
+        if (indexOf !== -1) {
+          if (editorState.cur.line !== 0 || indexOf !== 0) {
+            word = word.slice(0, indexOf);
           }
+        }
+      })();
 
-          return true;
-        }) || [];
+      // handle array
+      if (word.indexOf('- ') === 0) {
+        word = word.slice(2);
+      }
 
-      return {list: list, from: start, to: end};
+      // handle map and extract key
+      (function () {
+        var match = word.match(/:(?:\s|$)/);
+        if (match) {
+          word      = word.slice(0, match.index);
+          wordIsKey = true;
+        }
+      })();
+
+      word = word.trim();
+      list = alternatives.keys.map(function (e) {
+        var suggestion = alternatives.values.suggestions[e];
+        var text       = e;
+
+        if (!suggestion.metadata.isText && !wordIsKey) {
+          text = text + ':';
+        }
+
+        return {
+          displayText: text,
+          text:        text,
+          category:    suggestion.metadata.category,
+          render:      render
+        };
+      });
+
+      if (word) {
+        list = list.filter(function (e) {
+          return e.text.indexOf(word) === 0 &&
+                 e.text.length !== word.length
+          ;
+        });
+      }
+
+      return {
+        word: word,
+        list: list,
+        from: CodeMirror.Pos(editorState.cur.line, line.indexOf(word)),
+        to:   CodeMirror.Pos(editorState.cur.line, line.indexOf(word) + word.length)
+      };
     };
 
     return hinter;

@@ -3,37 +3,53 @@
 angular.module('ramlEditorApp')
   .factory('applySuggestion', function (ramlSnippets, getLineIndent, generateTabs) {
     return function (editor, suggestion) {
+      var snippet = ramlSnippets.getSnippet(suggestion);
+      var snippetLinesCount = snippet.length;
       var cursor = editor.getCursor();
-      var code = ramlSnippets.getSnippet(suggestion);
       var line = editor.getLine(cursor.line);
-      var ch = cursor.ch;
+      var lineIndent = getLineIndent(line);
+      var i = cursor.line + 1;
+      var nextLine = editor.getLine(i);
+      var nextLineIndent = nextLine && getLineIndent(nextLine);
+      var lineHasPadding = lineIndent.tabCount > 0;
+      var lineIsEmpty = line.trim() === '';
       var padding;
-      var rangeLine = cursor.line;
-      var rangeEndChar = 0;
 
-      if (line.trim() === '') {
-        padding = generateTabs(getLineIndent(line.slice(0, ch + 1)).tabCount);
+      if (lineIsEmpty) {
+        padding = generateTabs(lineIndent.tabCount);
       } else {
-        padding = generateTabs(getLineIndent(line).tabCount);
+        padding = generateTabs(getLineIndent(line.slice(0, cursor.ch + 1)).tabCount);
       }
 
-      if (code) {
-        code = code.replace(/\{\{padding\}\}/g, padding);
+      // add paddings to snippet lines
+      snippet = snippet.map(function (line, index) {
+        return (index === 0 && lineIsEmpty && lineHasPadding) ? line : (padding + line);
+      }).join('\n');
 
-        if (line.trim()) {
-          if (code.indexOf('\n') === -1) {
-            code = code + '\n';
-          }
-        } else {
-          rangeEndChar = line.length;
-          if (code.indexOf('\n') !== -1) {
-            code = code + padding;
-          }
-        }
-
-        editor.replaceRange(code, {line: rangeLine, ch: 0}, {line: rangeLine, ch: rangeEndChar});
-        editor.focus();
+      // insert into current cursor's position
+      // to re-use indentation as there is nothing else
+      if (!lineIsEmpty) {
+        snippet = '\n' + snippet;
       }
+
+      // search for a line that has the same indentation as
+      // current line or descending
+      while (nextLine && nextLineIndent.tabCount > lineIndent.tabCount) {
+        nextLine = editor.getLine(++i);
+        nextLineIndent = nextLine && getLineIndent(nextLine);
+      }
+
+      editor.replaceRange(snippet, {line: i - 1});
+      editor.focus();
+
+      // in case of inserting into current line we're
+      // moving cursor one line less further as we're
+      // re-using current line
+      if (lineIsEmpty) {
+        i = i - 1;
+      }
+
+      editor.setCursor({line: i + snippetLinesCount - 1});
     };
   })
   .controller('ramlEditorShelf', function ($scope, ramlHint,
