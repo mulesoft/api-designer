@@ -23,8 +23,8 @@ describe('mockFileSystem', function () {
 
     describe('load', function () {
       it('should be rejected', function () {
-        mockFileSystem.load('/', 'file').then(function () {}, function (error) {
-          error.should.be.equal('file with path="/" and name="file" does not exist');
+        mockFileSystem.load('/file').then(function () {}, function (error) {
+          error.should.be.equal('file with path="/file" does not exist');
         });
 
         $timeout.flush();
@@ -33,8 +33,8 @@ describe('mockFileSystem', function () {
 
     describe('remove', function () {
       it('should be rejected', function () {
-        mockFileSystem.remove('/', 'file').then(function () {}, function (error) {
-          error.should.be.equal('file with path="/" and name="file" does not exist');
+        mockFileSystem.remove('/file').then(function () {}, function (error) {
+          error.should.be.equal('file with path="/file" does not exist');
         });
 
         $timeout.flush();
@@ -43,13 +43,12 @@ describe('mockFileSystem', function () {
   });
 
   describe('when trying to save a file', function () {
-    var path = '/';
-    var name = 'created-at-' + Date.now();
+    var path = '/created-at-' + Date.now();
     var content = 'content';
 
     describe('save', function () {
       it('should store file successfully', function () {
-        mockFileSystem.save(path, name, content).then(function () {}, function (error) {
+        mockFileSystem.save(path, content).then(function () {}, function (error) {
           throw error;
         });
 
@@ -61,7 +60,7 @@ describe('mockFileSystem', function () {
       it('should list recently saved file among the entries', function () {
         mockFileSystem.directory(path).then(function (entries) {
           entries.should.have.length(1);
-          entries[0].should.be.equal(name);
+          entries[0].should.be.equal(path);
         });
 
         $timeout.flush();
@@ -70,7 +69,7 @@ describe('mockFileSystem', function () {
 
     describe('load', function () {
       it('should return recently saved file', function () {
-        mockFileSystem.load(path, name).then(function (loadedContent) {
+        mockFileSystem.load(path).then(function (loadedContent) {
           loadedContent.should.be.equal(content);
         });
 
@@ -80,13 +79,13 @@ describe('mockFileSystem', function () {
 
     describe('remove', function () {
       it('should remove recently saved file', function () {
-        mockFileSystem.remove(path, name).then(function () {
-          mockFileSystem.directory(path).then(function (entries) {
+        mockFileSystem.remove(path).then(function () {
+          mockFileSystem.list(path).then(function (entries) {
             entries.should.have.length(0);
           });
         });
 
-        mockFileSystem.remove(path, 'name');
+        mockFileSystem.remove(path);
 
         $timeout.flush();
       });

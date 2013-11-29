@@ -4,6 +4,13 @@ angular.module('fs')
   .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
   .factory('mockFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY) {
     var service = {};
+
+    /**
+     * File structure are objects that contain the following attributes:
+     * * path: The full path (including the filename).
+     * * content: The content of the file (only valid for files).
+     * * isFolder: A flag that indicates whether is a folder or file.
+     */
     var files   = [];
     var delay   = 500;
 
@@ -15,14 +22,17 @@ angular.module('fs')
       }
     }
 
-    service.directory = function (path) {
+    /**
+     * List a path content.
+     */
+    service.list = function (path) {
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return f.path === path;
+          return f.path.indexOf(path) === 0;
         })
         .map(function (f) {
-          return f.name;
+          return f.path;
         })
       ;
 
@@ -33,11 +43,14 @@ angular.module('fs')
       return deferred.promise;
     };
 
-    service.save = function (path, name, content) {
+    /**
+     * Persist a file to an existing folder.
+     */
+    service.save = function (path, content) {
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return f.path === path && f.name === name;
+          return f.path.indexOf(path) === 0;
         })
       ;
 
@@ -48,7 +61,6 @@ angular.module('fs')
         } else {
           files.push({
             path: path,
-            name: name,
             content: content
           });
         }
@@ -60,11 +72,14 @@ angular.module('fs')
       return deferred.promise;
     };
 
-    service.load = function (path, name) {
+    /**
+     * Loads the content of a file.
+     */
+    service.load = function (path) {
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return (f.path === path && f.name === name) || ( '/' + f.name === path + '/' + name) || ( f.name === path + '/' + name);
+          return f.path === path;;
         })
         .map(function (f) {
           return f.content;
@@ -75,18 +90,21 @@ angular.module('fs')
         if (entries.length) {
           deferred.resolve(entries[0] || '');
         } else {
-          deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
+          deferred.reject('file with path="' + path + '" does not exist');
         }
       }, delay);
 
       return deferred.promise;
     };
 
-    service.remove = function (path, name) {
+    /**
+     * Removes a file or directory.
+     */
+    service.remove = function (path) {
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return f.path === path && f.name === name;
+          return f.path === path;
         })
       ;
 
@@ -95,7 +113,7 @@ angular.module('fs')
           files.splice(files.indexOf(entries[0]), 1);
           deferred.resolve();
         } else {
-          deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
+          deferred.reject('file with path="' + path + '" does not exist');
         }
       }, delay);
 
