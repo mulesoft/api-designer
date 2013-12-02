@@ -449,6 +449,69 @@ describe('ramlEditorApp', function () {
       });
     });
 
+    describe('canAutocomplete', function () {
+      it('should allow autocomplete for the first line with comments (RAML tag)', function () {
+        ramlHint.canAutocomplete(getEditor([
+          '#RAML'
+        ].join('\n'))).should.be.true;
+      });
+
+      it('should not allow autocomplete for cursor after comment', function () {
+        ramlHint.canAutocomplete(getEditor([
+          'text',
+          'position1 # position2'
+        ].join('\n'), {line: 1, ch: 12})).should.be.false;
+      });
+
+      it('should allow autocomplete for cursor before comment', function () {
+        ramlHint.canAutocomplete(getEditor([
+          'text',
+          'position1 # position2'
+        ].join('\n'), {line: 1, ch: 0})).should.be.true;
+      });
+
+      it('should not allow autocomplete for cursor before array', function () {
+        ramlHint.canAutocomplete(getEditor([
+          'array:',
+          '  - element'
+        ].join('\n'), {line: 1, ch: 0})).should.be.false;
+      });
+
+      it('should allow autocomplete for cursor after array', function () {
+        ramlHint.canAutocomplete(getEditor([
+          'array:',
+          '  - element'
+        ].join('\n'), {line: 1, ch: 4})).should.be.true;
+      });
+
+      it('should not allow autocomplete for map value', function () {
+        ramlHint.canAutocomplete(getEditor([
+          'map:',
+          '  key: value'
+        ].join('\n'), {line: 1, ch: 7})).should.be.false;
+      });
+
+      it('should allow autocomplete for map key', function () {
+        ramlHint.canAutocomplete(getEditor([
+          'map:',
+          '  key: value'
+        ].join('\n'), {line: 1, ch: 2})).should.be.true;
+      });
+
+      it('should allow autocomplete for map key being part of array element', function () {
+        ramlHint.canAutocomplete(getEditor([
+          'map:',
+          '  - key: value'
+        ].join('\n'), {line: 1, ch: 4})).should.be.true;
+      });
+
+      it('should not allow autocomplete for resource', function () {
+        ramlHint.canAutocomplete(getEditor([
+          '/resource:',
+        ].join('\n'), {line: 0, ch: 0})).should.be.false;
+      });
+    });
+
     describe('autocompleteHelper 1', function () {
       var getAlternativesStub;
       beforeEach(function () {
@@ -483,16 +546,20 @@ describe('ramlEditorApp', function () {
         getWord(' word # and').should.be.equal('word');
       });
 
+      it('should detect an empty word for array element', function () {
+        getWord('- ').should.be.equal('');
+      });
+
       it('should detect a word for array element', function () {
         getWord('- word').should.be.equal('word');
       });
 
       it('should detect a word for array element with whitespaces', function () {
-        getWord('  - word').should.be.equal('word');
+        getWord('  - word', {line: 0, ch: 4}).should.be.equal('word');
       });
 
       it('should detect a word for array element with whitespaces and comments', function () {
-        getWord('  - word # and').should.be.equal('word');
+        getWord('  - word # and', {line: 0, ch: 4}).should.be.equal('word');
       });
 
       it('should detect a word for map key', function () {
@@ -509,6 +576,12 @@ describe('ramlEditorApp', function () {
 
       it('should detect a word for map key being array element', function () {
         getWord('- word: value').should.be.equal('word');
+      });
+
+      it('should start autocompletion at current cursor position if there is no word', function () {
+        var result = ramlHint.autocompleteHelper(getEditor('- ', {line: 0, ch: 2}));
+        result.from.should.be.deep.equal({line: 0, ch: 2});
+        result.to.should.be.deep.equal({line: 0, ch: 2});
       });
     });
 

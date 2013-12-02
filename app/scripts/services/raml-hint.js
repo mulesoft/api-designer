@@ -1,7 +1,5 @@
 'use strict';
 
-var CodeMirror = window.CodeMirror, suggestRAML = window.suggestRAML;
-
 angular.module('ramlEditorApp')
   /**
    * Returns array of lines (including specified)
@@ -78,7 +76,7 @@ angular.module('ramlEditorApp')
     var RAML_VERSION = '#%RAML 0.8';
     var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
-    hinter.suggestRAML = suggestRAML;
+    hinter.suggestRAML = window.suggestRAML;
 
     hinter.computePath = function (editor) {
       var editorState = hinter.getEditorState(editor),
@@ -284,14 +282,71 @@ angular.module('ramlEditorApp')
       return list;
     };
 
-    hinter.autocompleteHelper = function(editor) {
-      var editorState = hinter.getEditorState(editor);
-      var line = editorState.curLine;
-      var word = line.trim();
+    hinter.canAutocomplete = function (cm) {
+      var editorState    = hinter.getEditorState(cm);
+      var curLine        = editorState.curLine;
+      var curLineTrimmed = curLine.trim();
+      var offset         = curLine.indexOf(curLineTrimmed);
+      var lineNumber     = editorState.start ? editorState.start.line : 0;
+
+      // nothing to autocomplete within comments
+      // -> "#..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('#');
+        return lineNumber > 0 &&
+               indexOf !== -1 &&
+               editorState.cur.ch > (indexOf + offset)
+        ;
+      })()) {
+        return false;
+      }
+
+      // nothing to autocomplete within resources
+      // -> "/..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('/');
+        return indexOf === 0 &&
+               editorState.cur.ch >= (indexOf + offset)
+        ;
+      })()) {
+        return false;
+      }
+
+      // nothing to autocomplete for key value
+      // -> "key: ..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf(': ');
+        return indexOf !== -1 &&
+               editorState.cur.ch >= (indexOf + offset + 2)
+        ;
+      })()) {
+        return false;
+      }
+
+      // nothing to autocomplete prior array
+      // -> "...- "
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('- ');
+        return indexOf === 0 &&
+               editorState.cur.ch < (indexOf + offset)
+        ;
+      })()) {
+        return false;
+      }
+
+      return true;
+    };
+
+    hinter.autocompleteHelper = function(cm) {
+      var editorState  = hinter.getEditorState(cm);
+      var line         = editorState.curLine;
+      var word         = line.trimLeft();
       var wordIsKey;
-      var alternatives = hinter.getAlternatives(editor);
+      var alternatives;
       var list;
-      var render = function (element, self, data) {
+      var fromCh;
+      var toCh;
+      var render       = function (element, self, data) {
         element.innerHTML = [
           '<div>',
           data.displayText,
@@ -301,6 +356,12 @@ angular.module('ramlEditorApp')
           '</div>'
         ].join('');
       };
+
+      if (hinter.canAutocomplete(cm)) {
+        alternatives = hinter.getAlternatives(cm);
+      } else {
+        return;
+      }
 
       // handle comment (except RAML tag)
       (function () {
@@ -351,11 +412,19 @@ angular.module('ramlEditorApp')
         });
       }
 
+      if (word) {
+        fromCh = line.indexOf(word);
+        toCh   = fromCh + word.length;
+      } else {
+        fromCh = editorState.cur.ch;
+        toCh   = fromCh;
+      }
+
       return {
         word: word,
         list: list,
-        from: CodeMirror.Pos(editorState.cur.line, line.indexOf(word)),
-        to:   CodeMirror.Pos(editorState.cur.line, line.indexOf(word) + word.length)
+        from: CodeMirror.Pos(editorState.cur.line, fromCh),
+        to:   CodeMirror.Pos(editorState.cur.line, toCh)
       };
     };
 

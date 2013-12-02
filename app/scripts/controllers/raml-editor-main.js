@@ -53,7 +53,7 @@ angular.module('ramlEditorApp')
   .controller('ramlEditorMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
     ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm) {
-    var CodeMirror = codeMirror.CodeMirror, editor, saveTimer, currentUpdateTimer;
+    var editor, saveTimer, currentUpdateTimer;
 
     $scope.setTheme = function (theme) {
       config.set('theme', theme);
@@ -77,67 +77,6 @@ angular.module('ramlEditorApp')
       $scope.firstLoad = false;
       $scope.definition = source;
       eventService.broadcast('event:raml-source-updated', $scope.definition);
-    };
-
-    $scope.triggerAutocomplete = function (cm) {
-      var editorState = ramlHint.getEditorState(cm);
-      var curLine = editorState.curLine;
-      var curLineTrimmed = curLine.trim();
-      var offset = curLine.indexOf(curLineTrimmed);
-      var lineNumber = editorState.start ? editorState.start.line : 0;
-
-      if (!curLineTrimmed) {
-        return;
-      }
-
-      // nothing to autocomplete within comments
-      // -> "#..."
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf('#');
-        return lineNumber > 0 &&
-               indexOf !== -1 &&
-               editorState.cur.ch > (indexOf + offset)
-        ;
-      })()) {
-        return;
-      }
-
-      // nothing to autocomplete within resources
-      // -> "/..."
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf('/');
-        return indexOf === 0 &&
-               editorState.cur.ch >= (indexOf + offset)
-        ;
-      })()) {
-        return;
-      }
-
-      // nothing to autocomplete for key value
-      // -> "key: ..."
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf(': ');
-        return indexOf !== -1 &&
-               editorState.cur.ch >= (indexOf + offset + 2)
-        ;
-      })()) {
-        return;
-      }
-
-      // nothing to autocomplete prior array
-      // -> "...- "
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf('- ');
-        return indexOf === 0 &&
-               editorState.cur.ch < (indexOf + offset)
-        ;
-      })()) {
-        return;
-      }
-
-      CodeMirror.showHint(cm, CodeMirror.hint.javascript, {
-        ghosting: true
-      });
     };
 
     function loadRamlDefinition(definition) {
@@ -355,7 +294,9 @@ angular.module('ramlEditorApp')
       });
 
       editor.on('change', function (cm) {
-        $scope.triggerAutocomplete(cm);
+        if (cm.getLine(cm.getCursor().line).trim()) {
+          cm.execCommand('autocomplete');
+        }
       });
 
       $timeout(function () {
