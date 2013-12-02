@@ -55,7 +55,7 @@ module.exports = function(config) {
       'app/scripts/services/request-executor.js',
       'app/scripts/services/request-builder.js',
       'app/scripts/services/file-system.js',
-      'app/scripts/services/mock-file-system.js',
+      'app/scripts/services/local-storage-file-system.js',
       'app/scripts/services/remote-file-system.js',
       'app/scripts/directives/directives.js',
       'app/scripts/filters/string-filters.js',

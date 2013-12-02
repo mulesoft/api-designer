@@ -1,21 +1,21 @@
 'use strict';
 
-describe('mockFileSystem', function () {
+describe('Local Storage File System', function () {
   var $timeout;
-  var mockFileSystem;
+  var localStorageFileSystem;
 
   beforeEach(module('fs'));
   beforeEach(inject(function ($injector) {
     var LOCAL_PERSISTENCE_KEY = $injector.get('LOCAL_PERSISTENCE_KEY');
     delete localStorage[LOCAL_PERSISTENCE_KEY];
     $timeout = $injector.get('$timeout');
-    mockFileSystem = $injector.get('mockFileSystem');
+    localStorageFileSystem = $injector.get('localStorageFileSystem');
   }));
 
   describe('when empty', function () {
     describe('list', function () {
       it('should return no entries', function () {
-        mockFileSystem.list('/').then(function (entries) {
+        localStorageFileSystem.list('/').then(function (entries) {
           entries.should.have.length(0);
         });
 
@@ -25,7 +25,7 @@ describe('mockFileSystem', function () {
 
     describe('load', function () {
       it('should be rejected', function () {
-        mockFileSystem.load('/file').then(function () {}, function (error) {
+        localStorageFileSystem.load('/file').then(function () {}, function (error) {
           error.should.be.equal('file with path="/file" does not exist');
         });
 
@@ -35,7 +35,7 @@ describe('mockFileSystem', function () {
 
     describe('remove', function () {
       it('should be rejected', function () {
-        mockFileSystem.remove('/file').then(function () {}, function (error) {
+        localStorageFileSystem.remove('/file').then(function () {}, function (error) {
           error.should.be.equal('file with path="/file" does not exist');
         });
 
@@ -50,7 +50,7 @@ describe('mockFileSystem', function () {
 
     describe('save', function () {
       it('should store file successfully', function () {
-        mockFileSystem.save(path, content).then(function () {}, function (error) {
+        localStorageFileSystem.save(path, content).then(function () {}, function (error) {
           throw error;
         });
 
@@ -60,7 +60,7 @@ describe('mockFileSystem', function () {
 
     describe('list', function () {
       it('should list recently saved file among the entries', function () {
-        mockFileSystem.list(path).then(function (entries) {
+        localStorageFileSystem.list(path).then(function (entries) {
           entries.should.have.length(1);
           entries[0].should.be.equal(path);
         });
@@ -71,7 +71,7 @@ describe('mockFileSystem', function () {
 
     describe('load', function () {
       it('should return recently saved file', function () {
-        mockFileSystem.load(path).then(function (loadedContent) {
+        localStorageFileSystem.load(path).then(function (loadedContent) {
           loadedContent.should.be.equal(content);
         });
 
@@ -81,13 +81,13 @@ describe('mockFileSystem', function () {
 
     describe('remove', function () {
       it('should remove recently saved file', function () {
-        mockFileSystem.remove(path).then(function () {
-          mockFileSystem.list(path).then(function (entries) {
+        localStorageFileSystem.remove(path).then(function () {
+          localStorageFileSystem.list(path).then(function (entries) {
             entries.should.have.length(0);
           });
         });
 
-        mockFileSystem.remove(path);
+        localStorageFileSystem.remove(path);
 
         $timeout.flush();
       });
@@ -121,7 +121,7 @@ describe('mockFileSystem', function () {
 
     describe('list', function () {
       it('should not list folders if "includeFolders" parameter is not set', function () {
-        mockFileSystem.list('/').then(function (entries) {
+        localStorageFileSystem.list('/').then(function (entries) {
           entries.should.be.deep.equal(nonFolderFiles.map(function (file) {
             return file.path;
           }));
@@ -131,7 +131,7 @@ describe('mockFileSystem', function () {
       });
 
       it('should list folders if "includeFolders" is set', function () {
-        mockFileSystem.list('/', true).then(function (entries) {
+        localStorageFileSystem.list('/', true).then(function (entries) {
           entries.should.be.deep.equal(allFiles.map(function (file) {
             return file.path;
           }));

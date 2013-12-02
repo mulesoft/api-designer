@@ -5,7 +5,7 @@ angular.module('fs')
     var fsFactory = config.get('fsFactory');
 
     if (!fsFactory) {
-      fsFactory = 'mockFileSystem';
+      fsFactory = 'localStorageFileSystem';
 
       // if ($window.location.hostname === 'j0hnqa.mulesoft.org') {
       //   fsFactory = 'remoteFileSystem';

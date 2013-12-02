@@ -3,7 +3,7 @@
 angular.module('fs')
   .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
   .value('filesForMockFileSystem', [])
-  .factory('mockFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY, filesForMockFileSystem) {
+  .factory('localStorageFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY, filesForMockFileSystem) {
     var service = {};
 
     /**
