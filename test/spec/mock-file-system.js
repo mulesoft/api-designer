@@ -91,4 +91,73 @@ describe('mockFileSystem', function () {
       });
     });
   });
+
+  describe('when using folders', function () {
+    var filesForMockFileSystem;
+    beforeEach(inject(function ($injector) {
+      filesForMockFileSystem = [];
+      $injector.get('filesForMockFileSystem', filesForMockFileSystem);
+    }));
+
+    describe('list', function () {
+      it('should not list folders if "includeFolders" parameter is not set', function () {
+        var files = [
+          {path: '/folder/path2', name: 'myfile', content: 'some content'},
+          {path: '/', name: 'myfile2', content: 'some other content'}
+        ];
+
+        var folders = [
+          {path: '/folder', isFolder: true},
+          {path: '/folder/path', isFolder: true},
+          {path: '/folder/path2', isFolder: true}
+        ];
+
+        filesForMockFileSystem = files.concat(folders);
+
+        mockFileSystem.list('/').then(function (entries) {
+          entries.should.be.deep.equal(files.map(function (file) {
+            return file.path;
+          }));
+        });
+
+        $timeout.flush();
+      });
+
+      it('should list folders if "includeFolders" is set', function () {
+      });
+    });
+
+    describe('create folder', function () {
+      it('should create folders than can be later listed', function () {
+      });
+
+      it('should prevent users from creating folders that already exist', function () {
+      });
+
+      it('should prevent users from creating folders that are named as existing files', function () {
+      });
+    });
+
+    describe('save', function () {
+      it('should fail to save files with the same name as a folder', function () {
+      });
+      it('should work to save files inside a folder', function () {
+      });
+      it('should throw an error if folder is not created before', function () {
+      });
+    });
+
+    describe('load', function () {
+      it('should not allow to load a folder', function () {
+      });
+    });
+    describe('remove', function () {
+      it('should remove an empty folder successfully', function () {
+      });
+
+      it('should remove a folder and its content if provided the "recursive" flag', function () {
+
+      });
+    });
+  });
 });
