@@ -11,9 +11,9 @@ describe('mockFileSystem', function () {
   }));
 
   describe('when empty', function () {
-    describe('directory', function () {
+    describe('list', function () {
       it('should return no entries', function () {
-        mockFileSystem.directory('/').then(function (entries) {
+        mockFileSystem.list('/').then(function (entries) {
           entries.should.have.length(0);
         });
 
@@ -56,9 +56,9 @@ describe('mockFileSystem', function () {
       });
     });
 
-    describe('directory', function () {
+    describe('list', function () {
       it('should list recently saved file among the entries', function () {
-        mockFileSystem.directory(path).then(function (entries) {
+        mockFileSystem.list(path).then(function (entries) {
           entries.should.have.length(1);
           entries[0].should.be.equal(path);
         });
