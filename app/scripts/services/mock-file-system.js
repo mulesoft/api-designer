@@ -31,10 +31,10 @@ angular.module('fs')
           if (f.path.indexOf(path) !== 0) {
             return;
           }
-          if (includeFolders) {
-            return f.isFolder;
+          if (f.isFolder) {
+            return includeFolders;
           } else {
-            return !f.isFolder;
+            return true;
           }
         })
         .map(function (f) {

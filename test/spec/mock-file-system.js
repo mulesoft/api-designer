@@ -6,6 +6,8 @@ describe('mockFileSystem', function () {
 
   beforeEach(module('fs'));
   beforeEach(inject(function ($injector) {
+    var LOCAL_PERSISTENCE_KEY = $injector.get('LOCAL_PERSISTENCE_KEY');
+    delete localStorage[LOCAL_PERSISTENCE_KEY];
     $timeout = $injector.get('$timeout');
     mockFileSystem = $injector.get('mockFileSystem');
   }));
@@ -93,29 +95,34 @@ describe('mockFileSystem', function () {
   });
 
   describe('when using folders', function () {
-    var filesForMockFileSystem;
+    var filesForMockFileSystem, nonFolderFiles, folders, allFiles;
+
     beforeEach(inject(function ($injector) {
-      filesForMockFileSystem = [];
-      $injector.get('filesForMockFileSystem', filesForMockFileSystem);
+      filesForMockFileSystem = $injector.get('filesForMockFileSystem');
+      filesForMockFileSystem.splice(0, filesForMockFileSystem.length);
+
+      nonFolderFiles = [
+        {path: '/folder/path2/myfile', content: 'some content'},
+        {path: '/myfile2', content: 'some other content'}
+      ];
+
+      folders = [
+        {path: '/folder', isFolder: true},
+        {path: '/folder/path', isFolder: true},
+        {path: '/folder/path2', isFolder: true}
+      ];
+
+      allFiles = nonFolderFiles.concat(folders);
+
+      allFiles.forEach(function (file) {
+        filesForMockFileSystem.push(file);
+      });
     }));
 
     describe('list', function () {
       it('should not list folders if "includeFolders" parameter is not set', function () {
-        var files = [
-          {path: '/folder/path2', name: 'myfile', content: 'some content'},
-          {path: '/', name: 'myfile2', content: 'some other content'}
-        ];
-
-        var folders = [
-          {path: '/folder', isFolder: true},
-          {path: '/folder/path', isFolder: true},
-          {path: '/folder/path2', isFolder: true}
-        ];
-
-        filesForMockFileSystem = files.concat(folders);
-
         mockFileSystem.list('/').then(function (entries) {
-          entries.should.be.deep.equal(files.map(function (file) {
+          entries.should.be.deep.equal(nonFolderFiles.map(function (file) {
             return file.path;
           }));
         });
@@ -124,6 +131,13 @@ describe('mockFileSystem', function () {
       });
 
       it('should list folders if "includeFolders" is set', function () {
+        mockFileSystem.list('/', true).then(function (entries) {
+          entries.should.be.deep.equal(allFiles.map(function (file) {
+            return file.path;
+          }));
+        });
+
+        $timeout.flush();
       });
     });
 
