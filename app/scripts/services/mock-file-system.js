@@ -23,14 +23,19 @@ angular.module('fs')
       }
     }
 
-    /**
-     * List a path content.
-     */
-    service.list = function (path) {
+    service.list = function (path, includeFolders) {
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return f.path.indexOf(path) === 0;
+          /* f path should begin with path */
+          if (f.path.indexOf(path) !== 0) {
+            return;
+          }
+          if (includeFolders) {
+            return f.isFolder;
+          } else {
+            return !f.isFolder;
+          }
         })
         .map(function (f) {
           return f.path;
