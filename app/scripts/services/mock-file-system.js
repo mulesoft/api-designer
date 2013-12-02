@@ -2,7 +2,8 @@
 
 angular.module('fs')
   .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
-  .factory('mockFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY) {
+  .value('filesForMockFileSystem', [])
+  .factory('mockFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY, filesForMockFileSystem) {
     var service = {};
 
     /**
@@ -11,7 +12,7 @@ angular.module('fs')
      * * content: The content of the file (only valid for files).
      * * isFolder: A flag that indicates whether is a folder or file.
      */
-    var files   = [];
+    var files   = filesForMockFileSystem;
     var delay   = 500;
 
     if (localStorage[LOCAL_PERSISTENCE_KEY]) {
@@ -56,11 +57,17 @@ angular.module('fs')
 
       $timeout(function () {
         var entry = entries[0];
+
         if (entry) {
+          if (entry.isFolder) {
+            deferred.reject();
+            return;
+          }
           entry.content = content;
         } else {
           files.push({
             path: path,
+            name: path.slice(path.lastIndexOf('/')+1),
             content: content
           });
         }
@@ -73,13 +80,32 @@ angular.module('fs')
     };
 
     /**
+     * Create the folders contained in a path.
+     */
+    service.createFolder = function (path) {
+      var deferred = $q.defer();
+
+      $timeout(function () {
+        files.push({
+          path: path,
+          isFolder: true
+        });
+
+        localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
+        deferred.resolve();
+      }, delay);
+
+
+      return deferred.promise;
+    };
+    /**
      * Loads the content of a file.
      */
     service.load = function (path) {
       var deferred = $q.defer();
       var entries  = files
         .filter(function (f) {
-          return f.path === path;;
+          return f.path === path;
         })
         .map(function (f) {
           return f.content;
