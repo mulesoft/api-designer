@@ -35,7 +35,7 @@
     "matchdep": "~0.1.2",
     "minijasminenode": "~0.2.4",
     "mocha": "~1.12.0",
-    "protractor": "0.12.0",
+    "protractor": "https://github.com/vrtdev/protractor/archive/master.tar.gz",
     "selenium-webdriver": "*"
   },
   "engines": {
