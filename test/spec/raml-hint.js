@@ -1,154 +1,185 @@
 'use strict';
 
 describe('ramlEditorApp', function () {
+  var codeMirror;
+
   beforeEach(module('ramlEditorApp'));
+  beforeEach(inject(function ($injector) {
+    codeMirror = $injector.get('codeMirror');
+  }));
 
   describe('ramlHint', function () {
     var ramlHint;
+
     beforeEach(inject(function ($injector) {
       ramlHint = $injector.get('ramlHint');
     }));
 
     describe('computePath', function () {
       it('should handle root level paths', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n',
-          {line: 1, ch: 4});
-        var res = ramlHint.computePath(editor);
-        res.should.be.ok;
-        res.length.should.be.equal(1);
-        res[0].should.be.equal('version');
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api'
+          ],
+          {line: 1, ch: 4}
+        );
+
+        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['version']);
       });
 
       it('should handle second level paths', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          '/hello:\n' +
-          '  /bye:\n' +
-          '    get:\n',
-          {line: 5, ch: 4});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            '/hello:',
+            '  /bye:',
+            '    get:',
+          ],
+          {line: 5, ch: 4}
+        );
 
-        var res = ramlHint.computePath(editor);
-        res.should.be.ok;
-        res.should.be.deep.equal(['/hello', '/bye', 'get']);
+        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['/hello', '/bye', 'get']);
       });
 
       it('should inform when tab levels are invalid', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          '/hello:\n' +
-          '  /bye:\n' +
-          '    /foo:\n' +
-          '              ',
-          {line: 6, ch: 14});
-        var res = ramlHint.computePath(editor);
-        should.not.exist(res);
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            '/hello:',
+            '  /bye:',
+            '    /foo:',
+            '              '
+          ],
+          {line: 6, ch: 14}
+        );
+
+        should.not.exist(ramlHint.computePath(editor));
       });
 
       it('should offer computePath to lists at the same level', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          'traits:\n' +
-          '  - hello:\n' +
-          '      displayName: hello\n' +
-          '  - hello2:\n' +
-          '      displayName: hello2\n' +
-          '  ',
-          {line: 8, ch: 2});
-        var res = ramlHint.computePath(editor);
-        res.should.be.deep.equal(['traits', '']);
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            'traits:',
+            '  - hello:',
+            '      displayName: hello',
+            '  - hello2:',
+            '      displayName: hello2',
+            '  '
+          ],
+          {line: 8, ch: 2}
+        );
+
+        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
       });
 
       it('should offer computePath to lists at a more nested level', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          'traits:\n' +
-          '  - hello:\n' +
-          '      displayName: hello\n' +
-          '  - hello2:\n' +
-          '      displayName: hello2\n' +
-          '    ',
-          {line: 8, ch: 3});
-        var res = ramlHint.computePath(editor);
-        res.should.be.deep.equal(['traits', '']);
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            'traits:',
+            '  - hello:',
+            '      displayName: hello',
+            '  - hello2:',
+            '      displayName: hello2',
+            '    '
+          ],
+          {line: 8, ch: 3}
+        );
+
+        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
       });
 
       it('should offer options to valid elements inside lists', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          'traits:\n' +
-          '  - hello:\n' +
-          '      displayName: hello\n' +
-          '  - hello2:\n' +
-          '      displayName: hello\n' +
-          '      ',
-          {line: 8, ch: 6});
-        var res = ramlHint.computePath(editor);
-        res.should.be.deep.equal(['traits', 'hello2', '']);
-        res.should.be.ok;
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            'traits:',
+            '  - hello:',
+            '      displayName: hello',
+            '  - hello2:',
+            '      displayName: hello',
+            '      '
+          ],
+          {line: 8, ch: 6}
+        );
+
+        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', 'hello2', '']);
       });
 
       it('should offer options to valid elements inside dictionary lists', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          'traits:\n' +
-          '  - hello:\n' +
-          '      displayName: hello\n' +
-          '    hello:\n' +
-          '      displayName: hello\n' +
-          '      ',
-          {line: 8, ch: 5});
-        var res = ramlHint.computePath(editor);
-        res.should.be.ok;
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            'traits:',
+            '  - hello:',
+            '      displayName: hello',
+            '    hello:',
+            '      displayName: hello',
+            '      '
+          ],
+          {line: 8, ch: 5}
+        );
+
+        ramlHint.computePath(editor).should.be.ok;
       });
 
       it('should return null for first line first char', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n',
-          {line: 0, ch: 0});
-        var res = ramlHint.computePath(editor);
-        should.not.exist(res);
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api'
+          ],
+          {line: 0, ch: 0}
+        );
+
+        should.not.exist(ramlHint.computePath(editor));
       });
 
       it('should return null for first line non first char', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n',
-        {line: 0, ch: 4});
-        var res = ramlHint.computePath(editor);
-        should.not.exist(res);
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+          ],
+          {line: 0, ch: 4}
+        );
+
+        should.not.exist(ramlHint.computePath(editor));
       });
     });
 
     describe('getEditorState', function () {
       it('should be consistent with editor state', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          '/hello:\n' +
-          '  /bye:\n' +
-          '    get: {}\n' +
-          '  /ciao:\n' +
-          '    get:\n',
-          {line: 4, ch: 4});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            '/hello:',
+            '  /bye:',
+            '    get: {}',
+            '  /ciao:',
+            '    get:'
+          ],
+          {line: 4, ch: 4}
+        );
 
         var editorState = ramlHint.getEditorState(editor);
         (editorState).should.be.ok;
@@ -162,17 +193,20 @@ describe('ramlEditorApp', function () {
       });
 
       it('curr line tab count should count only the leading spaces', function () {
-        var editor = getEditor(
-          'title: hello\n'+
-          'version: v1.0\n' +
-          'baseUri: http://example.com/api\n' +
-          '/hello:\n' +
-          '  /bye:\n' +
-          '    get: {}\n' +
-          '      description: this is a text     with spaces\n' +
-          '  /ciao:\n' +
-          '    get:\n',
-          {line: 6, ch: 6});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            'version: v1.0',
+            'baseUri: http://example.com/api',
+            '/hello:',
+            '  /bye:',
+            '    get: {}',
+            '      description: this is a text     with spaces',
+            '  /ciao:',
+            '    get:',
+          ],
+          {line: 6, ch: 6}
+        );
 
         var editorState = ramlHint.getEditorState(editor);
         (editorState).should.be.ok;
@@ -244,11 +278,14 @@ describe('ramlEditorApp', function () {
         ramlHint.suggestRAML = function() {
           return alternatives;
         };
-        var editor = getEditor(
-          'title: hello\n',
-          {line: 1, ch: 0});
-        var newAlternatives = ramlHint.getAlternatives(editor);
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello'
+          ],
+          {line: 1, ch: 0}
+        );
 
+        var newAlternatives = ramlHint.getAlternatives(editor);
         alternatives.suggestions.should.be.deep.equal(newAlternatives.values.suggestions);
 
         newAlternatives.keys.length.should.be.equal(3);
@@ -259,9 +296,13 @@ describe('ramlEditorApp', function () {
         ramlHint.suggestRAML = function() {
           return alternatives;
         };
-        var editor = getEditor(
-          'title: hello\n',
-          {line: 1, ch: 0});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello'
+          ],
+          {line: 1, ch: 0}
+        );
+
         var newAlternatives = ramlHint.getAlternatives(editor);
 
         should.not.exist(newAlternatives.values.title);
@@ -274,11 +315,15 @@ describe('ramlEditorApp', function () {
         var suggestRAMLStub = sinon.stub(ramlHint, 'suggestRAML');
         suggestRAMLStub.withArgs([]).returns(alternatives);
         suggestRAMLStub.withArgs(['/hello']).returns({suggestions: {x: {}, y: {}, z:{}}, category: 'y'});
-        var editor = getEditor(
-          'title: hello\n' +
-          '/hello:\n' +
-          '         ',
-          {line: 2, ch: 0});
+
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            '/hello:',
+            '         '
+          ],
+          {line: 2, ch: 0}
+        );
 
         var newAlternatives = ramlHint.getAlternatives(editor);
 
@@ -309,10 +354,13 @@ describe('ramlEditorApp', function () {
         };
         sinon.stub(ramlHint, 'computePath').returns(undefined);
 
-        var editor = getEditor(
-          'title: hello\n' +
-          '      ',
-          {line: 1, ch: 6});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            '      ',
+          ],
+          {line: 1, ch: 6}
+        );
 
         var newAlternatives = ramlHint.getAlternatives(editor);
         newAlternatives.keys.should.be.deep.equal([]);
@@ -324,9 +372,12 @@ describe('ramlEditorApp', function () {
 
       it('should provide suggestRAML alternatives when path is null', function () {
         var alternatives = {suggestions: {'#%RAML 0.8': {a:1}}, category: 'x'};
-        var editor = getEditor(
-              'title: hello\n',
-              {line: 0, ch: 0});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello'
+          ],
+          {line: 0, ch: 0}
+        );
 
         ramlHint.suggestRAML = function() {
           return alternatives;
@@ -373,9 +424,13 @@ describe('ramlEditorApp', function () {
         ramlHint.suggestRAML = function() {
           return alternatives;
         };
-        var editor = getEditor(
-          'title: hello\n',
-          {line: 1, ch: 0});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            ''
+          ],
+          {line: 1, ch: 0}
+        );
         var shelfSuggestions = ramlHint.getSuggestions(editor);
 
         var titleFound = false;
@@ -403,11 +458,11 @@ describe('ramlEditorApp', function () {
       });
 
       it('should return suggestions for root level without title and version keys', function () {
-        var editor = getEditor(
+        var editor = getEditor(codeMirror,
           [
             'title: Title',
             'version: Version'
-          ].join('\n'),
+          ],
           {
             line: 0,
             ch: 0
@@ -425,13 +480,13 @@ describe('ramlEditorApp', function () {
       });
 
       it('should return suggestions for resource level without get and post keys', function () {
-        var editor = getEditor(
+        var editor = getEditor(codeMirror,
           [
             'title: Title',
             '/:',
             '  get:',
             '  post:'
-          ].join('\n'),
+          ],
           {
             line: 2,
             ch: 2
@@ -460,7 +515,7 @@ describe('ramlEditorApp', function () {
       });
 
       function getWord(line, cursor) {
-        return ramlHint.autocompleteHelper(getEditor(line, cursor)).word;
+        return ramlHint.autocompleteHelper(getEditor(codeMirror, line, cursor)).word;
       }
 
       it('should detect an empty word for an empty line', function () {
@@ -559,9 +614,13 @@ describe('ramlEditorApp', function () {
           return alternatives;
         };
 
-        var editor = getEditor(
-          'title: hello\n',
-          {line: 1, ch: 0});
+        var editor = getEditor(codeMirror,
+          [
+            'title: hello',
+            ''
+          ],
+          {line: 1, ch: 0}
+        );
         var autocompleteSuggestions = ramlHint.autocompleteHelper(editor);
 
         autocompleteSuggestions.should.be.ok;
@@ -616,11 +675,11 @@ describe('ramlEditorApp', function () {
           return alternatives;
         };
 
-        var editor = getEditor(
+        var editor = getEditor(codeMirror,
           [
             'title: hello',
             'v'
-          ].join('\n'),
+          ],
           {line: 1, ch: 1});
         var autocompleteSuggestions = ramlHint.autocompleteHelper(editor);
 
@@ -676,11 +735,11 @@ describe('ramlEditorApp', function () {
           return alternatives;
         };
 
-        var editor = getEditor(
+        var editor = getEditor(codeMirror,
           [
             'title: hello',
             'some text v'
-          ].join('\n'),
+          ],
           {line: 1, ch: 11});
         var autocompleteSuggestions = ramlHint.autocompleteHelper(editor);
 
@@ -706,15 +765,19 @@ describe('ramlEditorApp', function () {
     }));
 
     it('should list the keys at the same level with the same parent', function () {
-      var editor = getEditor(
-        'title: hello\n'+
-        'version: v1.0\n' +
-        'baseUri: http://example.com/api\n' +
-        '/hello:\n' +
-        '  /bye:\n' +
-        '    get: {}\n' +
-        '  /ciao:\n' +
-        '    get:', {line: 2, ch: 5});
+      var editor = getEditor(codeMirror,
+        [
+          'title: hello',
+          'version: v1.0',
+          'baseUri: http://example.com/api',
+          '/hello:',
+          '  /bye:',
+          '    get: {}',
+          '  /ciao:',
+          '    get:'
+        ],
+        {line: 2, ch: 5}
+      );
 
       var keysToErase = getKeysToErase(editor);
       (keysToErase.length).should.be.equal(4);
@@ -726,18 +789,22 @@ describe('ramlEditorApp', function () {
     });
 
     it('should list third level keys ok', function () {
-      var editor = getEditor(
-        'title: hello\n'+
-        'version: v1.0\n' +
-        'baseUri: http://example.com/api\n' +
-        '/hello:\n' +
-        '  /bye:\n' +
-        '    get: {}\n' +
-        '    post: {}\n' +
-        '    put: {}\n' +
-        '    delete: {}\n' +
-        '  /ciao:\n' +
-        '    get:', {line: 5, ch: 6});
+      var editor = getEditor(codeMirror,
+        [
+          'title: hello',
+          'version: v1.0',
+          'baseUri: http://example.com/api',
+          '/hello:',
+          '  /bye:',
+          '    get: {}',
+          '    post: {}',
+          '    put: {}',
+          '    delete: {}',
+          '  /ciao:',
+          '    get:'
+        ],
+        {line: 5, ch: 6}
+      );
 
       var keysToErase = getKeysToErase(editor);
       ['get', 'post', 'put', 'delete'].should.be.eql(keysToErase);
@@ -751,12 +818,12 @@ describe('ramlEditorApp', function () {
     }));
 
     it('should return expected neighbor lines #1', function () {
-      var editor = getEditor(
+      var editor = getEditor(codeMirror,
         [
           'line 1:', //
           'line 2:', // <---
           'line 3:'  //
-        ].join('\n'),
+        ],
         {
           line: 1,
           ch: 0
@@ -771,12 +838,12 @@ describe('ramlEditorApp', function () {
     });
 
     it('should return expected neighbor lines #2', function () {
-      var editor = getEditor(
+      var editor = getEditor(codeMirror,
         [
           'line 1:',  //
           'line 2:',  // <---
           '  line 3:' //
-        ].join('\n'),
+        ],
         {
           line: 1,
           ch: 0
@@ -790,12 +857,12 @@ describe('ramlEditorApp', function () {
     });
 
     it('should return expected neighbor lines #3', function () {
-      var editor = getEditor(
+      var editor = getEditor(codeMirror,
         [
           '  line 1:', //
           'line 2:',   // <---
           'line 3:'    //
-        ].join('\n'),
+        ],
         {
           line: 1,
           ch: 0
@@ -809,12 +876,12 @@ describe('ramlEditorApp', function () {
     });
 
     it('should return expected neighbor lines #4', function () {
-      var editor = getEditor(
+      var editor = getEditor(codeMirror,
         [
           'line 1:',   // <---
           '  line 2:', //
           'line 3:'    //
-        ].join('\n'),
+        ],
         {
           line: 0,
           ch: 0
@@ -828,12 +895,12 @@ describe('ramlEditorApp', function () {
     });
 
     it('should return expected neighbor lines #5', function () {
-      var editor = getEditor(
+      var editor = getEditor(codeMirror,
         [
           'line 1:',   //
           '  line 2:', // <---
           'line 3:'    //
-        ].join('\n'),
+        ],
         {
           line: 1,
           ch: 2
@@ -846,12 +913,12 @@ describe('ramlEditorApp', function () {
     });
 
     it('should return expected neighbor lines #6', function () {
-      var editor = getEditor(
+      var editor = getEditor(codeMirror,
         [
           'line 1:',   //
           '  line 2:', //
           'line 3:'    // <---
-        ].join('\n'),
+        ],
         {
           line: 2,
           ch: 0
@@ -865,7 +932,7 @@ describe('ramlEditorApp', function () {
     });
 
     it('should return expected neighbor lines #7', function () {
-      var editor = getEditor(
+      var editor = getEditor(codeMirror,
         [
           'line 1:',     //
           '  line 2:',   //
@@ -874,7 +941,7 @@ describe('ramlEditorApp', function () {
           '    line 5:', //
           '  line 6:',   //
           'line 7:'      //
-        ].join('\n'),
+        ],
         {
           line: 3,
           ch: 2
