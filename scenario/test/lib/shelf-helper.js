@@ -63,12 +63,26 @@ function ShelfHelper() {
 // body
   this.elemBodyLevelDocs = ['application/x-www-form-urlencoded','multipart/form-data','application/json', 'application/xml' ];
   this.elemBodyLevel = this.elemBodyLevelDocs;
+
+  this.elemlistCss = '[ng-repeat=\'item in section.items\'] span';
 }
 
 ShelfHelper.prototype = {};
 
 ShelfHelper.prototype.getElements = function(){
-  return browser.findElements(by.css('[ng-repeat=\'item in section.items\'] span'));
+  var that = this;
+  return browser.findElements(by.css(that.elemlistCss));
+};
+
+ShelfHelper.prototype.selectFirstElem = function(){
+  var that = this;
+  return browser.wait(function(){
+    return browser.isElementPresent(by.css(that.elemlistCss));
+  }).then(function () {
+    that.getElements().then(function(list){
+      list[0].click();
+    });
+  });
 };
 
 ShelfHelper.prototype.getElementsByGroup = function(group){

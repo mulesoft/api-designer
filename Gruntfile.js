@@ -250,6 +250,10 @@ module.exports = function (grunt) {
         configFile: 'scenario/support/protractor.conf.js',
         debug: true,
         chromeDriver: true
+      },
+      saucelabs: {
+        configFile: 'scenario/support/saucelabs.conf.js',
+        chromeDriver: true
       }
     }
   });
@@ -306,6 +310,11 @@ module.exports = function (grunt) {
     'protractor:scenario'
   ]);
 
+  grunt.registerTask('saucelabs', [
+    'clean:server',
+    'jshint',
+    'protractor:saucelabs'
+  ]);
   grunt.registerTask('default', [
     'test',
     'build'
