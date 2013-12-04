@@ -551,7 +551,7 @@ describe('Muse: Mule Sales Enablement API', function () {
             editor.setCursor(114,14);
             list2 =['application/json'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemBodyLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           114 : function(){
             expect(editor.getLine(t)).toEqual('                schema: <<schema>>');
@@ -564,7 +564,7 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
             editor.setCursor(116,8);
             designerAsserts.shelfElements(shelf.elemRtMethodLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           116 : function(){
             expect(editor.getLine(t)).toEqual('        body:');
@@ -573,31 +573,31 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
             editor.setCursor(117,10);
             designerAsserts.shelfElements(shelf.elemBodyLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           117 : function(){
             expect(editor.getLine(t)).toEqual('          application/json:');
             editor.setCursor(118,10);
             list2 =['application/json'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemBodyLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           118 : function(){
             expect(editor.getLine(t)).toEqual('            schema: <<schema>>');
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           119 : function(){
             expect(editor.getLine(t)).toEqual('        responses:');
             editor.setCursor(120,8);
             list2 =['body','responses'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           120 : function(){
             expect(editor.getLine(t)).toEqual('          200:');
             editor.setCursor(121,12);
             designerAsserts.shelfElements(shelf.elemResponsesLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           121 : function(){
             expect(editor.getLine(t)).toEqual('            body:');
@@ -606,18 +606,18 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResponsesLevel);
             editor.setCursor(122,14);
             designerAsserts.shelfElements(shelf.elemBodyLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           122 : function(){
             expect(editor.getLine(t)).toEqual('              application/json:');
             editor.setCursor(123,14);
             list2 =['application/json'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemBodyLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           123 : function(){
             expect(editor.getLine(t)).toEqual('                schema: <<schema>>');
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           124 : function(){
             expect(editor.getLine(t)).toEqual('      delete:');
@@ -626,14 +626,14 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
             editor.setCursor(125,8);
             designerAsserts.shelfElements(shelf.elemRtMethodLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           125 : function(){
             expect(editor.getLine(t)).toEqual('traits:');
             editor.setCursor(126,0);
             list2 =['title', 'baseUri','version', 'schemas','resourceTypes','traits'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           126 : function(){
             expect(editor.getLine(t)).toEqual('  - paged:');
