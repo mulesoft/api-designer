@@ -7,7 +7,7 @@ exports.config = {
   baseUrl: 'http://localhost:9013/',
   
   specs: [
-//    '../test/e2e/raml-example/muse-e2e.js',
+    '../test/e2e/raml-example/muse-e2e.js',
     '../test/lib/*.js'
   ],
 
