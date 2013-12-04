@@ -98,95 +98,95 @@ describe('RAML Editor Main Controller', function () {
     });
 
     it('should not trigger autocomplete for an empty line', function () {
-      triggerAutocomplete(getEditor([
-      ].join('\n')));
+      triggerAutocomplete(getEditor(codeMirror, [
+      ]));
 
       showHintStub.called.should.be.false;
     });
 
     it('should not trigger autocomplete for the line with whitespaces only', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         ' '
-      ].join('\n')));
+      ]));
 
       showHintStub.called.should.be.false;
     });
 
     it('should trigger autocomplete for the first line with comments (RAML tag)', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         '#RAML'
-      ].join('\n')));
+      ]));
 
       showHintStub.called.should.be.true;
     });
 
     it('should not trigger autocomplete for cursor after comment', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         'text',
         'position1 # position2'
-      ].join('\n'), {line: 1, ch: 12}));
+      ], {line: 1, ch: 12}));
 
       showHintStub.called.should.be.false;
     });
 
     it('should trigger autocomplete for cursor before comment', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         'text',
         'position1 # position2'
-      ].join('\n'), {line: 1, ch: 0}));
+      ], {line: 1, ch: 0}));
 
       showHintStub.called.should.be.true;
     });
 
     it('should not trigger autocomplete for cursor before array', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         'array:',
         '  - element'
-      ].join('\n'), {line: 1, ch: 0}));
+      ], {line: 1, ch: 0}));
 
       showHintStub.called.should.be.false;
     });
 
     it('should trigger autocomplete for cursor after array', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         'array:',
         '  - element'
-      ].join('\n'), {line: 1, ch: 4}));
+      ], {line: 1, ch: 4}));
 
       showHintStub.called.should.be.true;
     });
 
     it('should not trigger autocomplete for map value', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         'map:',
         '  key: value'
-      ].join('\n'), {line: 1, ch: 7}));
+      ], {line: 1, ch: 7}));
 
       showHintStub.called.should.be.false;
     });
 
     it('should trigger autocomplete for map key', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         'map:',
         '  key: value'
-      ].join('\n'), {line: 1, ch: 2}));
+      ], {line: 1, ch: 2}));
 
       showHintStub.called.should.be.true;
     });
 
     it('should trigger autocomplete for map key being part of array element', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         'map:',
         '  - key: value'
-      ].join('\n'), {line: 1, ch: 4}));
+      ], {line: 1, ch: 4}));
 
       showHintStub.called.should.be.true;
     });
 
     it('should not trigger autocomplete for resource', function () {
-      triggerAutocomplete(getEditor([
+      triggerAutocomplete(getEditor(codeMirror, [
         '/resource:',
-      ].join('\n'), {line: 0, ch: 0}));
+      ], {line: 0, ch: 0}));
 
       showHintStub.called.should.be.false;
     });

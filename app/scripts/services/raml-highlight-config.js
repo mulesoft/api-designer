@@ -1,7 +1,5 @@
 'use strict';
 
-var CodeMirror = window.CodeMirror;
-
 angular.module('codeMirror')
   .factory('codeMirrorHighLight', function () {
     var mode = {};
