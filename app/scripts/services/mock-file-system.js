@@ -93,6 +93,7 @@ angular.module('fs')
       $timeout(function () {
         if (entries.length) {
           files.splice(files.indexOf(entries[0]), 1);
+          localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
           deferred.resolve();
         } else {
           deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
