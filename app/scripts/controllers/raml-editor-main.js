@@ -323,8 +323,6 @@ angular.module('ramlEditorApp')
           $scope.switchFile(ramlRepository.createFile());
         }
       });
-
-      $scope.collapseBrowser();
     };
 
     eventService.on('event:save', function () {

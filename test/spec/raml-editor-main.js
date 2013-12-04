@@ -486,13 +486,13 @@ describe('RAML Editor Main Controller', function () {
       ctrl = $controller('ramlEditorMain', params);
 
       // act
-      scope.toggleBrowser();
+      scope.toggleSaveMenu();
 
       // assert
-      scope.browser.expanded.should.be.true;
+      scope.saveMenu.expanded.should.be.true;
     });
 
-    it('opening the file browser should trigger a file listing retrieval', function () {
+    it.skip('opening the file browser should trigger a file listing retrieval', function () {
       // arrange
       var fileList = [ file1, file2 ];
       var getDirectoryDeferred = $q.defer();
@@ -501,13 +501,13 @@ describe('RAML Editor Main Controller', function () {
       ctrl = $controller('ramlEditorMain', params);
 
       // act
-      scope.toggleBrowser();
+      scope.toggleSaveMenu();
 
       getDirectoryDeferred.resolve(fileList);
       $rootScope.$apply();
 
       // assert
-      scope.browser.expanded.should.be.true;
+      scope.saveMenu.expanded.should.be.true;
       getDirectoryStub.should.have.been.calledOnce;
       scope.files.should.deep.equal(fileList);
 
@@ -518,13 +518,13 @@ describe('RAML Editor Main Controller', function () {
     it('collapseBrowser() should close the browser if it is open', function () {
       ctrl = $controller('ramlEditorMain', params);
 
-      scope.browser.expanded.should.be.false;
+      scope.saveMenu.expanded.should.be.false;
 
-      scope.toggleBrowser();
-      scope.browser.expanded.should.be.true;
+      scope.toggleSaveMenu();
+      scope.saveMenu.expanded.should.be.true;
 
-      scope.collapseBrowser();
-      scope.browser.expanded.should.be.false;
+      scope.collapseSaveSubMenu();
+      scope.saveMenu.expanded.should.be.false;
     });
 
     it('selecting a file from the browser should open it in the code editor', function () {
@@ -618,7 +618,6 @@ describe('RAML Editor Main Controller', function () {
 
       // assert
       removeFileStub.calledWith(file1).should.be.true;
-      scope.browser.expanded.should.be.false;
 
       // restore
       removeFileStub.restore();
@@ -637,7 +636,6 @@ describe('RAML Editor Main Controller', function () {
 
       // assert
       ramlRepository.removeFile.called.should.not.be.true;
-      scope.browser.expanded.should.be.false;
 
       // restore
       ramlRepository.removeFile.restore();
