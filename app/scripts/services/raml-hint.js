@@ -86,6 +86,7 @@ angular.module('ramlEditorApp')
       var lastTraveledListSpaceCount;
       var lines;
       var textAsList;
+      var rootIsFound;
 
       if (line === 0) {
         return null;
@@ -107,6 +108,39 @@ angular.module('ramlEditorApp')
       }
 
       lines = textAsList
+        .filter(function (line, index) {
+          var spaceCount;
+
+          // current line is good
+          if (index === 0) {
+            return true;
+          }
+
+          // comments are good
+          if (line.trimLeft().indexOf('#') === 0) {
+            return true;
+          }
+
+          // lines with bigger indentation are not good
+          spaceCount = getLineIndent(line).spaceCount;
+          if (spaceCount > lastTraveledListSpaceCount) {
+            return false;
+          }
+
+          // lines after root are not good
+          if (rootIsFound) {
+            return false;
+          }
+
+          // lines with indentation are good until we find the root
+          if (spaceCount) {
+            return true;
+          }
+
+          rootIsFound = true;
+
+          return true;
+        })
         .map(function (line, index) {
           var result         = {};
           var lineIndentInfo = getLineIndent(line);
@@ -155,7 +189,7 @@ angular.module('ramlEditorApp')
       }, [lines[0]]);
 
       result = result.slice(1).reduce(function (state, lineData) {
-        if (state.path[0].tabCount > lineData.tabCount + 1 ) {
+        if (state.path[0].tabCount > lineData.tabCount + 1) {
           if (!state.path[0].isList && !lineData.isList) {
             state.invalid = true;
           }

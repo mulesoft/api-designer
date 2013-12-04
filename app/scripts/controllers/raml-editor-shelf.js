@@ -3,19 +3,19 @@
 angular.module('ramlEditorApp')
   .factory('applySuggestion', function (ramlHint, ramlSnippets, getLineIndent, generateTabs) {
     return function (editor, suggestion) {
-      var snippet = ramlSnippets.getSnippet(suggestion);
+      var snippet           = ramlSnippets.getSnippet(suggestion);
       var snippetLinesCount = snippet.length;
-      var cursor = editor.getCursor();
-      var line = editor.getLine(cursor.line);
-      var lineIndent = getLineIndent(line);
-      var i = cursor.line + 1;
-      var nextLine = editor.getLine(i);
-      var nextLineIndent = nextLine && getLineIndent(nextLine);
-      var lineHasPadding = lineIndent.tabCount > 0;
-      var lineIsEmpty = line.trim() === '';
-      var lineIsArray = line.trim() === '-';
-      var path = ramlHint.computePath(editor);
-      var padding = cursor.line === 0 ? '' : generateTabs(path.length - 1 + (path.length > 1 ? path.listsTraveled : 0));
+      var cursor            = editor.getCursor();
+      var line              = editor.getLine(cursor.line);
+      var lineIndent        = getLineIndent(line);
+      var lineHasPadding    = lineIndent.tabCount > 0;
+      var lineIsEmpty       = line.trim() === '';
+      var lineIsArray       = line.trim() === '-';
+      var i                 = cursor.line + 1;
+      var nextLine          = editor.getLine(i);
+      var nextLineIndent    = nextLine && getLineIndent(nextLine);
+      var path              = ramlHint.computePath(editor);
+      var padding           = cursor.line === 0 ? '' : generateTabs(path.length - 1 + (path.length > 1 ? path.listsTraveled : 0));
 
       // add paddings to snippet lines
       snippet = snippet.map(function (line, index) {
@@ -40,7 +40,7 @@ angular.module('ramlEditorApp')
 
       // search for a line that has the same indentation as
       // current line or descending
-      while (nextLine && nextLineIndent.tabCount > lineIndent.tabCount) {
+      while ((nextLine || '').trim() && nextLineIndent.tabCount > lineIndent.tabCount) {
         nextLine       = editor.getLine(++i);
         nextLineIndent = nextLine && getLineIndent(nextLine);
       }
@@ -80,21 +80,21 @@ angular.module('ramlEditorApp')
     });
 
     $scope.cursorMoved = function () {
-      var editor = codeMirror.getEditor();
+      var editor      = codeMirror.getEditor();
       var suggestions = ramlHint.getSuggestions(editor);
-      var sections = {};
-      var model = { sections: [] };
+      var sections    = {};
+      var model       = {sections: []};
 
       suggestions.forEach(function (item) {
-        sections[item.category] = sections[item.category] || { name: item.category, items: [] };
+        sections[item.category] = sections[item.category] || {name: item.category, items: []};
         sections[item.category].items.push(item);
       });
 
-      for (var prop in sections) {
-        model.sections.push(sections[prop]);
-      }
+      Object.keys(sections).forEach(function (key) {
+        model.sections.push(sections[key]);
+      });
 
-      model.path = suggestions.path;
+      model.path   = suggestions.path;
       $scope.model = model;
 
       safeApply($scope);
@@ -102,15 +102,15 @@ angular.module('ramlEditorApp')
 
     $scope.orderSections = function (section) {
       var index = [
-          'root',
-          'docs',
-          'methods',
-          'parameters',
-          'responses',
-          'security',
-          'resources',
-          'traits and types'
-        ].indexOf(section.name.toLowerCase());
+        'root',
+        'docs',
+        'methods',
+        'parameters',
+        'responses',
+        'security',
+        'resources',
+        'traits and types'
+      ].indexOf(section.name.toLowerCase());
 
       return (index === -1) ? index.length : index;
     };

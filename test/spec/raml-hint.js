@@ -16,6 +16,27 @@ describe('ramlEditorApp', function () {
     }));
 
     describe('computePath', function () {
+      it('should stop travelling when root level has been reached', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'traits:',
+            '  - trait:',
+            '      displayName: trait',
+            '/:',
+            '  options:',
+            '    description:'
+          ],
+          {
+            line: 5,
+            ch:   0
+          }
+        );
+
+        var path = ramlHint.computePath(editor);
+        [].concat(path).should.be.deep.equal(['/', 'options', 'description']);
+        path.listsTraveled.should.be.equal(0);
+      });
+
       it('should return NULL for the first line', function () {
         var path = ramlHint.computePath(getEditor(codeMirror, ''));
         should.equal(path, null);

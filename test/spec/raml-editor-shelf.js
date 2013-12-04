@@ -11,6 +11,24 @@ describe('Shelf controller', function () {
   }));
 
   describe('applySuggestion', function () {
+    it('should not skip current empty line with whitespace-only lines after', function () {
+      var editor = getEditor(codeMirror,
+        [
+          'title:',
+          '',
+          '  '
+        ],
+        {
+          line: 1,
+          ch:   0
+        }
+      );
+
+      applySuggestion(editor, {name: 'description'});
+      editor.getLine(1).should.be.equal('description:');
+      editor.getCursor().line.should.be.equal(1);
+    });
+
     it('should insert suggestion right after current property', function () {
       var editor = getEditor(codeMirror,
         [
