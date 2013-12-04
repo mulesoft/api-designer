@@ -9,15 +9,12 @@
     "angular-sanitize": "1.2.3",
     "es5-shim": "~2.0.8",
     "showdown": "~0.3.1",
-    "api-console": "mulesoft/api-console#fc1dbc1b87be03ed47986a96760f01325fbf63b8",
+    "api-console": "mulesoft/api-console#2b2fc11bc80e6894862c6d6727faa34966211051",
     "raml-grammar": "mulesoft/raml-grammar#185019f454d8f026b64a35c91a3db38c933ce59b",
     "raml-js-parser": "raml-org/raml-js-parser#09300797e6bfe0769091fa8d272af7f0b0ca4563"
   },
   "devDependencies": {
     "sinonjs": "~1.7.1",
     "angular-mocks": "1.2.3"
-  },
-  "resolutions": {
-    "raml-js-parser": "09300797e6bfe0769091fa8d272af7f0b0ca4563"
   }
 }
