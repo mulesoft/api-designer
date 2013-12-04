@@ -7,9 +7,24 @@
       {{message}}
     <div></div>
     <i class="icon-ok" ng-click="hideNotifications()"> </i></div>
-    <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
-    <div role="saveas-button" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()">Save As</div>
+    <a role="logo" target="_blank" href="http://mulesoft.com"></a>
   </header>
+  <div role="browser">
+    <div role="save-menu">
+        <span role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()" ng-click="save()">Save <span role="menu-separator">|</span> </span>
+        <i role="save-menu-rolldown-button" ng-class="saveMenu.expanded ? 'icon-caret-up' : 'icon-caret-down'" ng-click="toggleSaveMenu()"></i>
+    </div>
+    <ul role="save-submenu" ng-class="{expanded: saveMenu.expanded}">
+        <li role="save-option" ng-class="{disabled: !canSave()}" ng-click="save()"> Save </li>
+        <li role="saveas-option" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()"> Save As </li>
+    </ul>
+    <div role="new-button" ng-click="newFile()">New</div>
+    <ul role="file-list">
+      <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
+      <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
+      <li ng-repeat="fileEntry in files | orderBy:'name'" ng-click="loadFile(fileEntry)"><i class="icon-file"></i>{{fileEntry.name}}<i class="icon-trash" ng-click="deleteFile(fileEntry)" ng-prevent-default></i></li>
+    </ul>
+  </div>
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
     <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
       <div role="shelf-tab" ng-click="toggleShelf()">
@@ -17,31 +32,18 @@
       </div>
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
-    <div role="browser" ng-class="{expanded: browser.expanded}" ng-mouseleave="collapseBrowser()">
-      <div role="browser-toggle-button" ng-click="toggleBrowser()">
-        <i class="icon-folder-open"></i>
-        <i ng-class="browser.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i>
-      </div>
-      <ul role="file-list">
-        <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
-        <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
-        <li ng-repeat="fileEntry in files" ng-click="loadFile(fileEntry)"><i class="icon-file"></i>{{fileEntry.name}}<i class="icon-trash" ng-click="deleteFile(fileEntry)" ng-prevent-default></i></li>
-      </ul>
-    </div>
+
     <div role="tabs">
       <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
     </div>
-    <div role="actions">
-      <div role="new-button" ng-click="newFile()"><i class="icon-plus"></i></div>
-    </div>
+
     <div role="code" style="height:inherit"><textarea id="code" name="code" style="display: none;"></textarea></div>
   </div>
-  <div role="preview-wrapper">
-    <div role="preview" class="bootstrap">
-      <div role="console">
-        <raml-console></raml-console>
+    <div role="preview-wrapper">
+      <div role="preview" class="bootstrap">
+        <div role="console">
+          <raml-console></raml-console>
+        </div>
       </div>
-      <a role="logo" target="_blank" href="http://mulesoft.com"></a>
     </div>
-  </div>
 </div>

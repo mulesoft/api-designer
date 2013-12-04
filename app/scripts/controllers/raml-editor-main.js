@@ -182,10 +182,14 @@ angular.module('ramlEditorApp')
     });
 
     $scope.bootstrap = function () {
-      ramlRepository.bootstrap().then($scope.switchFile);
+      ramlRepository.bootstrap().then(function(filename) {
+        $scope.listFiles();
+        $scope.switchFile(filename);
+      });
     };
 
     $scope.switchFile = function (file) {
+      console.log(file);
       if (!$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
         $scope.file = file;
         $scope.firstLoad = true;
@@ -208,6 +212,8 @@ angular.module('ramlEditorApp')
         return;
       }
 
+      $scope.collapseSaveSubMenu();
+
       if (!$scope.file.persisted) {
         if (!$scope._promptForFileName()) {
           return;
@@ -218,6 +224,12 @@ angular.module('ramlEditorApp')
     };
 
     $scope.saveAs = function() {
+      if (!$scope.canSaveAs()) {
+        return;
+      }
+
+      $scope.collapseSaveSubMenu();
+
       if (!$scope.file.persisted) {
         return;
       }
@@ -245,20 +257,16 @@ angular.module('ramlEditorApp')
       config.set('shelf.collapsed', $scope.shelf.collapsed);
     };
 
-    $scope.collapseBrowser = function () {
-      var browser = $scope.browser;
-      if (browser.expanded) {
-        $scope.toggleBrowser();
+    $scope.collapseSaveSubMenu = function () {
+      var saveMenu = $scope.saveMenu;
+      if (saveMenu.expanded) {
+        $scope.toggleSaveMenu();
       }
     };
 
-    $scope.toggleBrowser = function () {
-      var browser = $scope.browser;
-      browser.expanded = !browser.expanded;
-
-      if (browser.expanded) {
-        $scope.listFiles();
-      }
+    $scope.toggleSaveMenu = function () {
+      var saveMenu = $scope.saveMenu;
+      saveMenu.expanded = !saveMenu.expanded;
     };
 
     $scope.listFiles = throttle(function () {
@@ -290,9 +298,6 @@ angular.module('ramlEditorApp')
     };
 
     $scope.loadFile = function (fileEntry) {
-      var browser = $scope.browser;
-      browser.expanded = false;
-
       ramlRepository.loadFile(fileEntry).then($scope.switchFile);
     };
 
@@ -336,8 +341,8 @@ angular.module('ramlEditorApp')
       $scope.shelf = {};
       $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', false));
       $scope.files = [];
-      $scope.browser = {};
-      $scope.browser.expanded = false;
+      $scope.saveMenu = {};
+      $scope.saveMenu.expanded = false;
 
       editor = codeMirror.initEditor();
 

@@ -2,56 +2,115 @@
 
 /* Browser */
 div[role=browser] {
-  position: absolute;
-  top: 9px;
-  left: 16px;
+  height: 100%;
+  max-width: @browserWidth;
+  float: left;
   overflow: show;
-  cursor: pointer;
+  overflow-x: show;
   color: grey;
-  padding-bottom: 10px;
-  padding-right: 30px;
+  padding-right: 3px;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   -khtml-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  z-index: 50;
 }
 
+/* Button menus*/
+
+div[role=raml-editor] > div[role=browser] > div[role$=menu],
+div[role=raml-editor] > div[role=browser] > div[role=new-button] {
+  top: 0;
+  right: 0;
+  margin: 10px 10px 10px 10px;
+  padding: 10px 13px;
+  background-color: rgb(87,152,202);
+  color: white;
+  border-radius: 2px;
+  font-size: 13px;
+  cursor: pointer;
+  float: left;
+}
+div[role=raml-editor] > div[role=browser] > div[role=new-button] {
+  margin: 10px 0px 10px 10px;
+  float: left;
+}
 div[role=raml-editor].light div[role=browser] {
   color: rgb(202,204,212);
 }
 
-div[role=browser]:hover > div[role=browser-toggle-button] > i {
-  color: #aaa;
-}
-
-div[role=raml-editor].light div[role=browser]:hover > div[role=browser-toggle-button] > i {
-  color: #eee;
-}
-
-div[role=browser] > ul[role=file-list] {
-  padding: 6px 0px;
+div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
+  padding: 6px 0px 6px 0px;
   margin: 0px;
+  min-width: 74px;
   position: absolute;
-  top: 24px;
-  left: -16px;
+  top: 106px;
+  left: 14px;
   list-style: none;
   font-size: 13px;
   border-radius: 0px 3px 3px 0px;
-  min-width: 140px;
   background-color: white;
   .box-shadow(2px 2px 7px -2px #333);
   color: #777;
   background-color: rgb(20,21,25);
   border: 1px solid rgb(48,83,110);
   display: none;
+  z-index: 80;
 }
 
-div[role=browser].expanded > ul[role=file-list] {
+div[role=browser] > ul[role=save-submenu] > li {
+  padding: 2px 6px 2px 6px;
+  cursor: pointer;
+  line-height: 18px;
+  white-space: nowrap;
+  border-bottom-width: 1px;
+}
+
+div[role=raml-editor] > div[role=browser] > ul[role=save-submenu].expanded {
   display: block;
-  transition: ease-in 0.1s;
+}
+
+/* Submenu Light theme*/
+div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] {
+  background-color: white;
+  .box-shadow(2px 2px 7px -2px #999);
+  color: #aaa;
+  background-color: white;
+  border: 1px solid rgb(131,148,150);
+  cursor: pointer;
+}
+
+div[role=browser] > ul[role=save-submenu] > li.disabled {
+  cursor: default;
+}
+
+div[role=browser] > ul[role=save-submenu] > li:not(.disabled):hover {
+  color: #ccc;
+  background-color: rgb(30,79,106);
+}
+
+div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] > li:not(.read-only):hover {
+  color: #eee;
+  background-color: rgb(47,124,166);
+}
+
+
+/* Files list*/
+div[role=browser] > ul[role=file-list] {
+  height: ~"calc(100% - 60px)";
+  float: none;
+  min-width: @browserWidth;
+  padding: 6px 0px 0px 0px;
+  margin: 0px;
+  overflow: auto;
+  list-style: none;
+  font-size: 13px;
+  border-radius: 0px 3px 3px 0px;
+  background-color: white;
+  .box-shadow(2px 2px 7px -2px #333);
+  color: #777;
+  background-color: rgb(20,21,25);
 }
 
 div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
@@ -63,10 +122,9 @@ div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
 }
 
 div[role=browser] > ul[role=file-list] > li {
-  padding: 2px 40px 2px 13px;
+  padding: 2px 2px 2px 13px;
   cursor: pointer;
   line-height: 18px;
-  position: relative;
   white-space: nowrap;
 }
 
@@ -89,7 +147,8 @@ div[role=browser] > ul[role=file-list] > li > i {
 }
 
 div[role=browser] > ul[role=file-list] > li > i.icon-trash {
-  position: absolute;
+//  position: absolute;
+  padding-left: 6px;
   right: 7px;
   top: 4px;
   font-size: 14px;
