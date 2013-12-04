@@ -239,21 +239,17 @@ module.exports = function (grunt) {
     },
     protractor: {
       local: {
-        configFile: 'scenario/support/local.conf.js',
-        chromeDriver: true
+        configFile: 'scenario/support/local.conf.js'
       },
       scenario: {
-        configFile: 'scenario/support/protractor.conf.js',
-        chromeDriver: true
+        configFile: 'scenario/support/protractor.conf.js'
       },
       debug: {
         configFile: 'scenario/support/protractor.conf.js',
-        debug: true,
-        chromeDriver: true
+        debug: true
       },
       saucelabs: {
-        configFile: 'scenario/support/saucelabs.conf.js',
-        chromeDriver: true
+        configFile: 'scenario/support/saucelabs.conf.js'
       }
     }
   });
