@@ -555,7 +555,7 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           114 : function(){
             expect(editor.getLine(t)).toEqual('                schema: <<schema>>');
-            designerAsserts.parserError('83', 'there is no trait named paged');
+//            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           115 : function(){
             expect(editor.getLine(t)).toEqual('      patch:');
