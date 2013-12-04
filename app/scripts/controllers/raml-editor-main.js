@@ -189,7 +189,6 @@ angular.module('ramlEditorApp')
     };
 
     $scope.switchFile = function (file) {
-      console.log(file);
       if (!$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
         $scope.file = file;
         $scope.firstLoad = true;
@@ -285,6 +284,7 @@ angular.module('ramlEditorApp')
     $scope.saveFile = function() {
       $scope.file.contents = editor.getValue();
       ramlRepository.saveFile($scope.file).then(function () {
+        $scope.listFiles();
         eventService.broadcast('event:notification',
           {message: 'File saved.', expires: true});
         safeApply($scope);
@@ -311,6 +311,7 @@ angular.module('ramlEditorApp')
 
       ramlRepository.removeFile(file).then(function () {
         $scope.files.splice(fileIndex, 1);
+        $scope.listFiles();
 
         if (currentFile.name !== file.name) {
           return;

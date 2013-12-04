@@ -23,7 +23,7 @@ div[role=raml-editor] > div[role=browser] > div[role$=menu],
 div[role=raml-editor] > div[role=browser] > div[role=new-button] {
   top: 0;
   right: 0;
-  margin: 10px 10px 10px 10px;
+  margin: 10px 0px 0px 2px;
   padding: 10px 13px;
   background-color: rgb(87,152,202);
   color: white;
@@ -32,16 +32,14 @@ div[role=raml-editor] > div[role=browser] > div[role=new-button] {
   cursor: pointer;
   float: left;
 }
+
 div[role=raml-editor] > div[role=browser] > div[role=new-button] {
   margin: 10px 0px 10px 10px;
   float: left;
 }
-div[role=raml-editor].light div[role=browser] {
-  color: rgb(202,204,212);
-}
 
 div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
-  padding: 6px 0px 6px 0px;
+  padding: 26px 0px 6px 0px;
   margin: 0px;
   min-width: 74px;
   position: absolute;
@@ -59,26 +57,16 @@ div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
   z-index: 80;
 }
 
+div[role=raml-editor] > div[role=browser] > ul[role=save-submenu].expanded {
+  display: block;
+}
+
 div[role=browser] > ul[role=save-submenu] > li {
   padding: 2px 6px 2px 6px;
   cursor: pointer;
   line-height: 18px;
   white-space: nowrap;
   border-bottom-width: 1px;
-}
-
-div[role=raml-editor] > div[role=browser] > ul[role=save-submenu].expanded {
-  display: block;
-}
-
-/* Submenu Light theme*/
-div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] {
-  background-color: white;
-  .box-shadow(2px 2px 7px -2px #999);
-  color: #aaa;
-  background-color: white;
-  border: 1px solid rgb(131,148,150);
-  cursor: pointer;
 }
 
 div[role=browser] > ul[role=save-submenu] > li.disabled {
@@ -90,11 +78,38 @@ div[role=browser] > ul[role=save-submenu] > li:not(.disabled):hover {
   background-color: rgb(30,79,106);
 }
 
+/* Browser Light theme*/
+div[role=raml-editor].light div[role=browser] {
+  color: rgb(202,204,212);
+}
+
+div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] {
+
+  background-color: white;
+  .box-shadow(2px 2px 7px -2px #999);
+  color: #aaa;
+  background-color: white;
+  border: 1px solid rgb(131,148,150);
+  cursor: pointer;
+}
+
 div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] > li:not(.read-only):hover {
   color: #eee;
   background-color: rgb(47,124,166);
 }
 
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
+  background-color: white;
+  .box-shadow(2px 2px 7px -2px #999);
+  color: #aaa;
+  background-color: white;
+  border: 1px solid rgb(131,148,150);
+}
+
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
+  color: #eee;
+  background-color: rgb(47,124,166);
+}
 
 /* Files list*/
 div[role=browser] > ul[role=file-list] {
@@ -113,14 +128,6 @@ div[role=browser] > ul[role=file-list] {
   background-color: rgb(20,21,25);
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
-  background-color: white;
-  .box-shadow(2px 2px 7px -2px #999);
-  color: #aaa;
-  background-color: white;
-  border: 1px solid rgb(131,148,150);
-}
-
 div[role=browser] > ul[role=file-list] > li {
   padding: 2px 2px 2px 13px;
   cursor: pointer;
@@ -135,11 +142,6 @@ div[role=browser] > ul[role=file-list] > li.read-only {
 div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
   color: #ccc;
   background-color: rgb(30,79,106);
-}
-
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
-  color: #eee;
-  background-color: rgb(47,124,166);
 }
 
 div[role=browser] > ul[role=file-list] > li > i {
