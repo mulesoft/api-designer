@@ -22,10 +22,16 @@
     <ul role="file-list">
       <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
       <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
-      <li ng-repeat="fileEntry in files | orderBy:'name'" ng-click="loadFile(fileEntry)">
+      <li role="file-name"
+          ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
+          ng-repeat="fileEntry in files | orderBy:'name'"
+          ng-click="loadFile(fileEntry)"
+          ng-mouseleave=""
+          ng-mouseenter="">
           <i class="icon-file"></i>
-          {{fileEntry.name}}
-          <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i></li>
+          <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
+          <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
+      </li>
     </ul>
   </div>
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
@@ -34,10 +40,6 @@
         <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
       </div>
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
-    </div>
-
-    <div role="tabs">
-      <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
     </div>
 
     <div role="code" style="height:inherit"><textarea id="code" name="code" style="display: none;"></textarea></div>

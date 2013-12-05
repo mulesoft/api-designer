@@ -2,7 +2,7 @@
 
 /* Browser */
 div[role=browser] {
-  height: 100%;
+  height: ~"calc(100% - 63px)";
   max-width: @browserWidth;
   float: left;
   overflow: show;
@@ -18,7 +18,6 @@ div[role=browser] {
 }
 
 /* Button menus*/
-
 div[role=raml-editor] > div[role=browser] > div[role$=menu],
 div[role=raml-editor] > div[role=browser] > div[role=new-button] {
   top: 0;
@@ -78,7 +77,69 @@ div[role=browser] > ul[role=save-submenu] > li:not(.disabled):hover {
   background-color: rgb(30,79,106);
 }
 
-/* Browser Light theme*/
+/* Files list*/
+div[role=browser] > ul[role=file-list] {
+  height: 100%;
+  float: none;
+  min-width: @browserWidth;
+  padding: 6px 0px 0px 0px;
+  margin: 0px;
+  overflow: auto;
+  list-style: none;
+  font-size: 13px;
+  border-radius: 0px 3px 3px 0px;
+  background-color: white;
+  .box-shadow(2px 2px 7px -2px #333);
+  color: #777;
+  background-color: rgb(20,21,25);
+}
+
+div[role=browser] > ul[role=file-list] > li {
+  padding: 2px 2px 2px 6px;
+  cursor: pointer;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+div[role=browser] > ul[role=file-list] > li.read-only {
+  cursor: default;
+}
+
+div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
+  color: #ccc;
+  background-color: rgb(30,79,106);
+
+  i.icon-trash {
+    display: inline;
+  }
+
+}
+
+div[role=browser] > ul[role=file-list] > li > i {
+  padding-right: 8px;
+}
+
+div[role=browser] > ul[role=file-list] > li.currentfile {
+  color: #ddd;
+  background-color: rgb(30,79,106);
+}
+
+div[role=browser] > ul[role=file-list] > li > i.icon-trash {
+  font-weight: bold;
+  position: absolute;
+  left: 170px;
+  padding-top: 1px;
+  font-size: 14px;
+  z-index: +10;
+  display: none;
+  color: #BF3626;
+}
+
+div[role=browser] > ul[role=file-list] > li > span.dirty {
+  color: #BF3626;
+}
+
+/* Light theme*/
 div[role=raml-editor].light div[role=browser] {
   color: rgb(202,204,212);
 }
@@ -109,48 +170,17 @@ div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
 div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
   color: #eee;
   background-color: rgb(47,124,166);
+
+  i.icon-trash {
+    display: inline;
+  }
 }
 
-/* Files list*/
-div[role=browser] > ul[role=file-list] {
-  height: ~"calc(100% - 60px)";
-  float: none;
-  min-width: @browserWidth;
-  padding: 6px 0px 0px 0px;
-  margin: 0px;
-  overflow: auto;
-  list-style: none;
-  font-size: 13px;
-  border-radius: 0px 3px 3px 0px;
-  background-color: white;
-  .box-shadow(2px 2px 7px -2px #333);
-  color: #777;
-  background-color: rgb(20,21,25);
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li.currentfile {
+  color: #ddd;
+  background-color: rgb(47,124,166);
 }
 
-div[role=browser] > ul[role=file-list] > li {
-  padding: 2px 2px 2px 13px;
-  cursor: pointer;
-  line-height: 18px;
-  white-space: nowrap;
-}
-
-div[role=browser] > ul[role=file-list] > li.read-only {
-  cursor: default;
-}
-
-div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
-  color: #ccc;
-  background-color: rgb(30,79,106);
-}
-
-div[role=browser] > ul[role=file-list] > li > i {
-  padding-right: 8px;
-}
-
-div[role=browser] > ul[role=file-list] > li > i.icon-trash {
-  padding-left: 6px;
-  right: 7px;
-  top: 4px;
-  font-size: 14px;
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li > span.dirty {
+  color: #7F2419;
 }
