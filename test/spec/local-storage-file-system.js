@@ -120,21 +120,23 @@ describe('Local Storage File System', function () {
     }));
 
     describe('list', function () {
-      it('should not list folders if "includeFolders" parameter is not set', function () {
+      it('should not list folders if "includeFolders" parameter is not set', function (done) {
         localStorageFileSystem.list('/').then(function (entries) {
           entries.should.be.deep.equal(nonFolderFiles.map(function (file) {
             return file.path;
           }));
+          done();
         });
 
         $timeout.flush();
       });
 
-      it('should list folders if "includeFolders" is set', function () {
+      it('should list folders if "includeFolders" is set', function (done) {
         localStorageFileSystem.list('/', true).then(function (entries) {
           entries.should.be.deep.equal(allFiles.map(function (file) {
             return file.path;
           }));
+          done();
         });
 
         $timeout.flush();
@@ -142,7 +144,28 @@ describe('Local Storage File System', function () {
     });
 
     describe('create folder', function () {
-      it('should create folders than can be later listed', function () {
+      it('should create folders than can be later listed', function (done) {
+        localStorageFileSystem.createFolder('/newfolder').then(function () {
+          localStorageFileSystem.list('/', true).then(function (entries) {
+            entries.indexOf('/newfolder').should.not.be.equal(-1);
+            done();
+          });
+        });
+
+        $timeout.flush();
+        $timeout.flush();
+      });
+
+      it('should support nested folders', function (done) {
+        localStorageFileSystem.createFolder('/newfolder/lala').then(function () {
+          localStorageFileSystem.list('/', true).then(function (entries) {
+            entries.indexOf('/newfolder/lala').should.not.be.equal(-1);
+            done();
+          });
+        });
+
+        $timeout.flush();
+        $timeout.flush();
       });
 
       it('should prevent users from creating folders that already exist', function () {
