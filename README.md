@@ -23,7 +23,7 @@ Install bower modules
 bower install
 ```
 
-Run the application
+Run the application locally
 ```
 grunt server
 ```

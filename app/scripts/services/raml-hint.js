@@ -1,7 +1,5 @@
 'use strict';
 
-var CodeMirror = window.CodeMirror, suggestRAML = window.suggestRAML;
-
 angular.module('ramlEditorApp')
   /**
    * Returns array of lines (including specified)
@@ -78,7 +76,7 @@ angular.module('ramlEditorApp')
     var RAML_VERSION = '#%RAML 0.8';
     var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
-    hinter.suggestRAML = suggestRAML;
+    hinter.suggestRAML = window.suggestRAML;
 
     hinter.computePath = function (editor) {
       var editorState = hinter.getEditorState(editor),
