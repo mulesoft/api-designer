@@ -19,8 +19,9 @@
         <li role="saveas-option" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()"> Save As </li>
     </ul>
     <div role="new-button" ng-click="newFile()">New</div>
+    <div role="title" class="read-only">Your files</div>
+    <div role="loading-indicator" ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</div>
     <ul role="file-list">
-      <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
       <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
       <li role="file-name"
           ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
