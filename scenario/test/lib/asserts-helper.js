@@ -25,7 +25,8 @@ AssertsHelper.prototype.parserError = function(vLine, vMessage){
 
 //Console Starts
 AssertsHelper.prototype.consoleApiTitle= function(title){
-  expect(browser.$('#raml-console-api-title').getText()).toEqual(title);
+  var consoleApi = new ConsoleHelper();
+  expect(browser.$(consoleApi.titleCss).getText()).toEqual(title);
 };
 
 AssertsHelper.prototype.consoleResourcesName = function(list, expList){
@@ -61,6 +62,18 @@ AssertsHelper.prototype.consoleResources = function(expList){
   var consoleApi = new ConsoleHelper();
   var i = 0;
   consoleApi.getListResourcesName().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourcesDescription = function(expList){
+  var consoleApi = new ConsoleHelper();
+  var i = 0;
+  consoleApi.getListResourcesDescription().then(function(list){
     expect(list.length).toEqual(expList.length);
     list.forEach(function(elem){
       var t = i++;

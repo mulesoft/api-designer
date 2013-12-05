@@ -1,6 +1,6 @@
 'use strict';
-var EditorHelper = require ('../../../lib/editor-helper.js').EditorHelper;
-var ConsoleHelper = require ('../../../lib/console-helper.js').ConsoleHelper;
+var EditorHelper = require ('../lib/editor-helper.js').EditorHelper;
+var ConsoleHelper = require ('../lib/console-helper.js').ConsoleHelper;
 describe('editor-console',function(){
   var editor= new EditorHelper();
   var consoleDesigner= new ConsoleHelper();
@@ -9,7 +9,7 @@ describe('editor-console',function(){
 
     it('should succeed: h1 should be APIdesigner', function(){
       browser.$('h1').getText().then(function(text){
-        expect(text).eql('API Designer');
+        expect(text).toEqual('API Designer');
       });
     });
 
@@ -22,11 +22,11 @@ describe('editor-console',function(){
       ].join('\\n');
       editor.setValue(definition);
       browser.wait(function(){
-        return browser.$(consoleDesigner.getTitleCss()).getText().then(function(text){
+        return browser.$(consoleDesigner.titleCss).getText().then(function(text){
           return text === 'mi api';
         });
       }).then(function(){
-        browser.$(consoleDesigner.getTitleCss()()).getText().then(function(text){
+        browser.$(consoleDesigner.titleCss).getText().then(function(text){
           expect(text).toEqual('mi api');
         });
       });
@@ -43,11 +43,11 @@ describe('editor-console',function(){
         ].join('\\n');
         editor.setValue(definition);
         browser.wait(function(){
-          return browser.$(consoleDesigner.getTitleCss()()).getText().then(function(text){
+          return browser.$(consoleDesigner.titleCss).getText().then(function(text){
             return text === 'mi api';
           });
         }).then(function(){
-          browser.findElements(by.css(consoleDesigner.getListResourcesNameCss())).then(function(list){
+          browser.findElements(by.css(consoleDesigner.listResourcesNameCss)).then(function(list){
             expect(list.length).toEqual(1);
             list[0].getText().then(function(text){
               expect(text).toEqual('/res');
@@ -66,11 +66,11 @@ describe('editor-console',function(){
         ].join('\\n');
         editor.setValue(definition);
         browser.wait(function(){
-          return browser.$(consoleDesigner.getTitleCss()()).getText().then(function(text){
+          return browser.$(consoleDesigner.titleCss).getText().then(function(text){
             return text === 'mi api';
           });
         }).then(function(){
-          browser.findElements(by.css(consoleDesigner.getListResourcesNameCss())).then(function(list){
+          browser.findElements(by.css(consoleDesigner.listResourcesNameCss)).then(function(list){
             expect(list.length).toEqual(2);
             list[0].getText().then(function(text){
               expect(text).toEqual('/res1');
@@ -82,7 +82,7 @@ describe('editor-console',function(){
         });
       });
 
-      it('should succeed: resource 1 - displayName', function(){
+      xit('should succeed: resource 1 - displayName', function(){
         var definition = [
           '#%RAML 0.8',
           '---',
@@ -92,7 +92,7 @@ describe('editor-console',function(){
         ].join('\\n');
         editor.setValue(definition);
         browser.wait(function(){
-          return browser.$(consoleDesigner.getTitleCss()()).getText().then(function(text){
+          return browser.$(consoleDesigner.titleCss).getText().then(function(text){
             return text === 'mi api';
           });
         }).then(function(){
@@ -117,7 +117,7 @@ describe('editor-console',function(){
           ].join('\\n');
           editor.setValue(definition);
           browser.wait(function(){
-            return browser.$(consoleDesigner.getTitleCss()()).getText().then(function(text){
+            return browser.$(consoleDesigner.titleCss).getText().then(function(text){
               return text === 'mi api';
             });
           }).then(function(){
@@ -140,7 +140,7 @@ describe('editor-console',function(){
           ].join('\\n');
           editor.setValue(definition);
           browser.wait(function(){
-            return browser.$(consoleDesigner.getTitleCss()()).getText().then(function(text){
+            return browser.$(consoleDesigner.titleCss).getText().then(function(text){
               return text === 'mi api';
             });
           }).then(function(){
@@ -175,7 +175,7 @@ describe('editor-console',function(){
               ].join('\\n');
               editor.setValue(definition);
               browser.wait(function(){
-                return browser.$(consoleDesigner.getTitleCss()()).getText().then(function(text){
+                return browser.$(consoleDesigner.titleCss).getText().then(function(text){
                   return text === 'mi api';
                 });
               }).then(function(){
@@ -193,6 +193,6 @@ describe('editor-console',function(){
     }); // resources
 
   }); //console
-  
-  
+
+
 });//RAMLeditor - Console verification
