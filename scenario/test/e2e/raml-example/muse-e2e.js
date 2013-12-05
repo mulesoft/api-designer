@@ -30,7 +30,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           1: function () {
             expect(editor.getLine(t)).toEqual('#%RAML 0.8');
             editor.setCursor(2,0);
-            // need to open a pivotal to track the error that in (2,1) options inside a methods are displayed
             designerAsserts.shelfElements(shelf.elemRootLevel);
           },
           2: function(){
@@ -755,7 +754,6 @@ describe('Muse: Mule Sales Enablement API', function () {
             editor.setCursor(146,2);
             list2 =['type','is'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceLevel);
-            designerAsserts.consoleResourcesTraits(['secured']);
           },
           146: function(){
             expect(editor.getLine(t)).toEqual('  get:');
@@ -784,7 +782,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           152: function(){
             expect(editor.getLine(t)).toEqual('    is: [ secured ]');
-            designerAsserts.consoleResourcesTraits(['secured','secured']);
           },
           153: function(){
             expect(editor.getLine(t)).toEqual('/products:');
@@ -798,7 +795,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           155: function(){
             expect(editor.getLine(t)).toEqual('  is: [ secured ]');
-            designerAsserts.consoleResourcesTraits(['secured','secured','secured']);
           },
           156: function(){
             expect(editor.getLine(t)).toEqual('  get:');
@@ -823,7 +819,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           162: function(){
             expect(editor.getLine(t)).toEqual('    is: [ secured ]');
-            designerAsserts.consoleResourcesTraits(['secured','secured','secured','secured']);
           },
           163: function(){
             expect(editor.getLine(t)).toEqual('    /presentations: *presentations');
@@ -838,7 +833,7 @@ describe('Muse: Mule Sales Enablement API', function () {
   }); // e2e validation
   describe('console validation - expanded', function(){
 
-    xdescribe('collapsed Console', function(){
+    describe('collapsed Console', function(){
 
       it('verify resources name', function(){
         var expList = ['/presentations','/presentations /{presentationId}','/products','/products /{productId}',
@@ -863,12 +858,6 @@ describe('Muse: Mule Sales Enablement API', function () {
         designerAsserts.consoleResourceResourceType(expList);
       });
 
-      it('verify resources Traits', function(){
-        var expList = {'r0':['secured'],'r1':['secured'],
-          'r2':['secured'],'r3':['secured'],'r4':['secured'],
-          'r5':['secured'] };
-        designerAsserts.consoleResourceTraits(expList);
-      });
     }); // collapsed Console
 
     xdescribe('expanded console', function(){
@@ -886,7 +875,6 @@ describe('Muse: Mule Sales Enablement API', function () {
               expect(tab[1].getText()).toEqual('Responses');
               expect(tab[2].getText()).toEqual('Try It');
               tab[0].click().then(function(){
-//              resources[0].findElements(by.css('.tabbable .tab-content section[heading="Headers"]')).then(function(headers){
                 resources[0].findElements(by.css('.tabbable .tab-content [heading="Request"] section[heading="Headers"]')).then(function(headers){
                   console.log('headers length', headers.length);
                   headers[0].findElements(by.css('h2')).then(function(h2){
