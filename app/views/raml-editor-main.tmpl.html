@@ -25,8 +25,7 @@
       <li role="file-name"
           ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
           ng-repeat="fileEntry in files | orderBy:'name'"
-          ng-click="loadFile(fileEntry)"
-          >
+          ng-click="loadFile(fileEntry)">
           <i class="icon-file"></i>
           <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
           <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
@@ -39,6 +38,9 @@
         <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
       </div>
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
+    </div>
+    <div role="tabs">
+      <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
     </div>
     <div id="code" role="code" style="height:inherit"></div>
   </div>

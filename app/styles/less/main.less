@@ -117,6 +117,7 @@ div[role=editor] {
   .box-sizing(border-box);
   position: relative;
   transition: padding-bottom .05s ease-in;
+  padding-top: 32px;
   background: rgb(11,11,13);
 }
 
@@ -128,6 +129,59 @@ div[role=editor].error {
   .box-shadow(0 0 5px 1px red);
   transition: all .5s ease-out;
   z-index: 65;
+}
+/* Tabs */
+
+div[role=tabs] {
+  padding: 0 0 0 0;
+  overflow:visible;
+  position: absolute;
+  top: 3px;
+  left: 53px;
+  .box-sizing(border-box);
+}
+
+div[role=tab] {
+  min-width:150px;
+  height:30px;
+  overflow:hidden;
+  float:left;
+  margin:0 -10px 0 0;
+  position: relative;
+  .box-sizing(border-box);
+  color: #839496;
+  .text-shadow(#002b36 0 1px);
+  font-size: 12px;
+  line-height: 32px;
+  padding-left: 21px;
+  border-bottom: 1px solid transparent;
+}
+
+div[role=tab-box] {
+  height:40px;
+  background: rgb(34,36,41);
+  border-radius: 4px;
+  border:1px solid rgb(42,44,51);
+  border-top-width: 2px;
+  margin:0 8px 0;
+  .transform(perspective(100px) rotateX(20deg));
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 140px;
+  .box-sizing(border-box);
+  z-index: -1;
+}
+
+div[role=tab].active {
+  position:relative;
+  padding-bottom:1px;
+  z-index: 2;
+  border-bottom: 1px;
+}
+
+div[role=tab].active div[role=tab-box]{
+  background-color: rgb(24,25,29);
 }
 
 div[role=code] {
