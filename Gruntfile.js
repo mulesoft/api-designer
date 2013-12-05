@@ -124,7 +124,7 @@ module.exports = function (grunt) {
       all: [
         'Gruntfile.js',
         '<%= yeoman.app %>/scripts/{,*/}*.js',
-        'test/mocks/{,*/}*.js',
+        'test/mock/{,*/}*.js',
         'test/spec/{,*/}*.js',
         'scenario/test/e2e/{,*/}*.js',
         'scenario/test/lib/{,*/}*.js'
@@ -238,12 +238,18 @@ module.exports = function (grunt) {
       }
     },
     protractor: {
+      local: {
+        configFile: 'scenario/support/local.conf.js'
+      },
       scenario: {
         configFile: 'scenario/support/protractor.conf.js'
       },
       debug: {
         configFile: 'scenario/support/protractor.conf.js',
         debug: true
+      },
+      saucelabs: {
+        configFile: 'scenario/support/saucelabs.conf.js'
       }
     }
   });
@@ -287,13 +293,24 @@ module.exports = function (grunt) {
     'usemin'
   ]);
 
-  grunt.registerTask('scenario', [
+  grunt.registerTask('localScenario', [
     'clean:server',
     'jshint',
     'connect:livereload',
-    'protractor'
+    'protractor:local'
   ]);
 
+  grunt.registerTask('scenario', [
+    'clean:server',
+    'jshint',
+    'protractor:scenario'
+  ]);
+
+  grunt.registerTask('saucelabs', [
+    'clean:server',
+    'jshint',
+    'protractor:saucelabs'
+  ]);
   grunt.registerTask('default', [
     'test',
     'build'

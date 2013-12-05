@@ -27,10 +27,10 @@ module.exports = function(config) {
       'app/vendor/scripts/xml.js',
 
       'bower_components/angular/angular.js',
-      'bower_components/angular/angular-cookies.js',
-      'bower_components/angular/angular-mocks.js',
-      'bower_components/angular/angular-resource.js',
-      'bower_components/angular/angular-sanitize.js',
+      'bower_components/angular-cookies/angular-cookies.js',
+      'bower_components/angular-mocks/angular-mocks.js',
+      'bower_components/angular-resource/angular-resource.js',
+      'bower_components/angular-sanitize/angular-sanitize.js',
       'bower_components/es5-shim/es5-shim.js',
       'bower_components/showdown/src/showdown.js',
       'bower_components/sinonjs/sinon.js',
@@ -63,7 +63,7 @@ module.exports = function(config) {
       'app/scripts/controllers/raml-editor-shelf.js',
       'app/scripts/controllers/notifications.js',
 
-      'test/mocks/**/*.js',
+      'test/mock/**/*.js',
       'test/spec/**/*.js'
     ],
 
