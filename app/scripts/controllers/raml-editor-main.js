@@ -331,7 +331,7 @@ angular.module('ramlEditorApp')
       }
 
       return source.path === target.path && source.name === target.name;
-    }
+    };
 
     eventService.on('event:save', function () {
       $scope.save();

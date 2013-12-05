@@ -26,8 +26,7 @@
           ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
           ng-repeat="fileEntry in files | orderBy:'name'"
           ng-click="loadFile(fileEntry)"
-          ng-mouseleave=""
-          ng-mouseenter="">
+          >
           <i class="icon-file"></i>
           <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
           <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
