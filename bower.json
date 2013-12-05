@@ -9,7 +9,7 @@
     "angular-sanitize": "1.2.2",
     "es5-shim": "~2.0.8",
     "showdown": "~0.3.1",
-    "api-console": "mulesoft/api-console#6d5331976cd23190f95bf0f96f0a115edf8de666",
+    "api-console": "mulesoft/api-console#172ef1b9e8ea671b31ed18765c9c01ab2120d3d2",
     "raml-grammar": "mulesoft/raml-grammar#185019f454d8f026b64a35c91a3db38c933ce59b",
     "raml-js-parser": "raml-org/raml-js-parser#a87b91310109c306af54a3239b34b47acdee2c03"
   },
