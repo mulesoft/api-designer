@@ -4,6 +4,7 @@ node_js:
 before_script:
   - npm install -g grunt-cli
   - npm install -g bower
+  - npm install -g phantomjs
   - bower update
 before_install:
   - "export DISPLAY=:99.0"
