@@ -82,15 +82,15 @@ div[role=raml-editor] > div[role=browser] > div[role=new-menu] > button {
 }
 
 div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
-  padding: 6px 0px;
+  padding: 0;
   margin: 0px;
   min-width: 74px;
   position: absolute;
-  top: 93px;
+  top: 89px;
   left: 6px;
   list-style: none;
   font-size: 13px;
-  border-radius: 0px 3px 3px 0px;
+  border-radius: 4px;
   .box-shadow(2px 2px 7px -2px #333);
   color: #777;
   background-color: rgb(20,21,25);
@@ -104,11 +104,15 @@ div[role=raml-editor] > div[role=browser] > ul[role=save-submenu].expanded {
 }
 
 div[role=browser] > ul[role=save-submenu] > li {
-  padding: 0px 6px 2px 6px;
+  padding: 4px 6px;
   cursor: pointer;
   line-height: 18px;
   white-space: nowrap;
-  border-bottom-width: 1px;
+  border-bottom: 1px solid #30536e;
+}
+
+div[role=browser] > ul[role=save-submenu] > li:last-child {
+  border-bottom: none;
 }
 
 div[role=browser] > ul[role=save-submenu] > li.disabled {
@@ -214,7 +218,11 @@ div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] {
   cursor: pointer;
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] > li:not(.read-only):hover {
+div[role=raml-editor].light [role=browser] > ul[role=save-submenu] > li {
+  border-color: #839496;
+}
+
+div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] >  li:not(.disabled):hover {
   color: #eee;
   background-color: rgb(47,124,166);
 }
