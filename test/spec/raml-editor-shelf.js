@@ -11,21 +11,41 @@ describe('Shelf controller', function () {
   }));
 
   describe('applySuggestion', function () {
+    it('should not skip current empty line with whitespace-only lines after', function () {
+      var editor = getEditor(codeMirror,
+        [
+          'title:',
+          '',
+          '  '
+        ],
+        {
+          line: 1,
+          ch:   0
+        }
+      );
+
+      applySuggestion(editor, {name: 'description'});
+      editor.getLine(1).should.be.equal('description:');
+      editor.getCursor().line.should.be.equal(1);
+    });
+
     it('should insert suggestion right after current property', function () {
       var editor = getEditor(codeMirror,
         [
           'traits:',
-          '  - hola:',
+          '  - trait1:',
+          '      displayName:',
+          '  - trait2:',
           '      displayName:' // <--
         ],
         {
-          line: 2,
+          line: 4,
           ch:   6
         }
       );
 
       applySuggestion(editor, {name: 'description'});
-      editor.getLine(3).should.be.equal('      description:');
+      editor.getLine(5).should.be.equal('      description:');
     });
 
     it('should insert suggestion right after current property following another', function () {
@@ -121,6 +141,56 @@ describe('Shelf controller', function () {
 
       applySuggestion(editor, {name: 'description'});
       editor.getLine(5).should.be.equal('      description:');
+    });
+
+    it('should insert suggestion into current cursor position with an array above it', function () {
+      var editor = getEditor(codeMirror,
+        [
+          'documentation:',
+          '  - title: title',
+          '    content: content',
+          ''                      // <--
+        ].join('\n'),
+        {
+          line: 3,
+          ch:   0
+        }
+      );
+
+      applySuggestion(editor, {name: 'schemas'});
+      editor.getLine(3).should.be.equal('schemas:');
+    });
+
+    it('should insert suggestion into current cursor position without padding and newline #1', function () {
+      var editor = getEditor(codeMirror,
+        [
+          'documentation:',
+          '  - '            // <--
+        ].join('\n'),
+        {
+          line: 1,
+          ch:   4
+        }
+      );
+
+      applySuggestion(editor, {name: 'title'});
+      editor.getLine(1).should.be.equal('  - title: My API');
+    });
+
+    it('should insert suggestion into current cursor position without padding and newline #2', function () {
+      var editor = getEditor(codeMirror,
+        [
+          'documentation:',
+          '  -'             // <--
+        ].join('\n'),
+        {
+          line: 1,
+          ch:   4
+        }
+      );
+
+      applySuggestion(editor, {name: 'title'});
+      editor.getLine(1).should.be.equal('  - title: My API');
     });
   });
 });

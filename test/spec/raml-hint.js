@@ -16,6 +16,32 @@ describe('ramlEditorApp', function () {
     }));
 
     describe('computePath', function () {
+      it('should stop travelling when root level has been reached', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'traits:',
+            '  - trait:',
+            '      displayName: trait',
+            '/:',
+            '  options:',
+            '    description:'
+          ],
+          {
+            line: 5,
+            ch:   0
+          }
+        );
+
+        var path = ramlHint.computePath(editor);
+        [].concat(path).should.be.deep.equal(['/', 'options', 'description']);
+        path.listsTraveled.should.be.equal(0);
+      });
+
+      it('should return NULL for the first line', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror, ''));
+        should.equal(path, null);
+      });
+
       it('should handle root level paths', function () {
         var editor = getEditor(codeMirror,
           [
@@ -81,25 +107,6 @@ describe('ramlEditorApp', function () {
         [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
       });
 
-      it('should offer computePath to lists at a more nested level', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '  - hello2:',
-            '      displayName: hello2',
-            '    '
-          ],
-          {line: 8, ch: 3}
-        );
-
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
-      });
-
       it('should offer options to valid elements inside lists', function () {
         var editor = getEditor(codeMirror,
           [
@@ -117,25 +124,6 @@ describe('ramlEditorApp', function () {
         );
 
         [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', 'hello2', '']);
-      });
-
-      it('should offer options to valid elements inside dictionary lists', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '    hello:',
-            '      displayName: hello',
-            '      '
-          ],
-          {line: 8, ch: 5}
-        );
-
-        ramlHint.computePath(editor).should.be.ok;
       });
 
       it('should return null for first line first char', function () {
@@ -162,6 +150,63 @@ describe('ramlEditorApp', function () {
         );
 
         should.not.exist(ramlHint.computePath(editor));
+      });
+
+      it('should detect valid number of traveled lists #1', function () {
+        ramlHint.computePath(getEditor(codeMirror,
+          [
+            'traits',
+            '  - trait1:',
+            '      displayName:' // <--
+          ].join('\n'),
+          {
+            line: 2,
+            ch:   6
+          }
+        )).listsTraveled.should.be.equal(1);
+      });
+
+      it('should detect valid number of traveled lists #2', function () {
+        ramlHint.computePath(getEditor(codeMirror,
+          [
+            'traits',
+            '  - trait1:',
+            '      displayName:',
+            '  - trait2:',
+            '      displayName:' // <--
+          ].join('\n'),
+          {
+            line: 4,
+            ch:   6
+          }
+        )).listsTraveled.should.be.equal(1);
+      });
+
+      it('should detect valid number of traveled lists #3', function () {
+        ramlHint.computePath(getEditor(codeMirror,
+          [
+            '- list1:',
+            '    - list2:',
+            '        key1:' // <--
+          ].join('\n'),
+          {
+            line: 2,
+            ch:   8
+          }
+        )).listsTraveled.should.be.equal(2);
+      });
+
+      it('should detect valid number of traveled lists #4', function () {
+        ramlHint.computePath(getEditor(codeMirror,
+          [
+            'documentation:',
+            '  - title:'
+          ].join('\n'),
+          {
+            line: 1,
+            ch:   4
+          }
+        )).listsTraveled.should.be.equal(1);
       });
     });
 
@@ -372,7 +417,7 @@ describe('ramlEditorApp', function () {
 
       it('should provide suggestRAML alternatives when path is null', function () {
         var alternatives = {suggestions: {'#%RAML 0.8': {a:1}}, category: 'x'};
-        var editor = getEditor(codeMirror,
+        var editor       = getEditor(codeMirror,
           [
             'title: hello'
           ],
@@ -421,9 +466,11 @@ describe('ramlEditorApp', function () {
             id: 'resource'
           }
         };
+
         ramlHint.suggestRAML = function() {
           return alternatives;
         };
+
         var editor = getEditor(codeMirror,
           [
             'title: hello',
@@ -431,10 +478,9 @@ describe('ramlEditorApp', function () {
           ],
           {line: 1, ch: 0}
         );
-        var shelfSuggestions = ramlHint.getSuggestions(editor);
 
-        var titleFound = false;
-
+        var shelfSuggestions    = ramlHint.getSuggestions(editor);
+        var titleFound          = false;
         var shelfSuggestionKeys = {};
 
         shelfSuggestions.forEach(function (shelfSuggestion) {
@@ -506,6 +552,7 @@ describe('ramlEditorApp', function () {
 
     describe('autocompleteHelper 1', function () {
       var getAlternativesStub;
+
       beforeEach(function () {
         getAlternativesStub = sinon.stub(ramlHint, 'getAlternatives').returns({keys: []});
       });
@@ -754,12 +801,12 @@ describe('ramlEditorApp', function () {
 
         Object.keys(autocompleteSuggestionKeys).should.not.include.keys(['title', 'randomHint', 'version']);
       });
-
     });
   });
 
   describe('getKeysToErase', function () {
     var getKeysToErase;
+
     beforeEach(inject(function ($injector) {
       getKeysToErase = $injector.get('getKeysToErase');
     }));
@@ -813,6 +860,7 @@ describe('ramlEditorApp', function () {
 
   describe('getNeighborLines', function () {
     var getNeighborLines;
+
     beforeEach(inject(function ($injector) {
       getNeighborLines = $injector.get('getNeighborLines');
     }));
