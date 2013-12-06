@@ -18,13 +18,8 @@ div[role=browser] {
 }
 
 /* Button menus*/
-div[role=raml-editor] > div[role=browser] > div[role$=menu],
-div[role=raml-editor] > div[role=browser] > div[role=new-button] {
-  top: 0;
-  right: 0;
+div[role=raml-editor] > div[role=browser] > div[role$=menu] {
   margin: 4px 0px 4px 2px;
-  padding: 7px 8px;
-  background-color: rgb(87,152,202);
   color: white;
   border-radius: 2px;
   font-size: 13px;
@@ -32,9 +27,58 @@ div[role=raml-editor] > div[role=browser] > div[role=new-button] {
   float: left;
 }
 
-div[role=raml-editor] > div[role=browser] > div[role=new-button] {
-  margin: 4px 50px 4px 10px;
-  float: left;
+div[role=raml-editor] > div[role=browser] > div[role$=menu] > button:hover {
+  background-color: rgb(45, 139, 202);
+}
+
+div[role=raml-editor] > div[role=browser] > div[role=save-menu] > button[role=save-button] {
+  border-right: 1px solid #777;
+  margin-right: 0;
+}
+
+div[role=raml-editor] > div[role=browser] > div[role=save-menu] > button[role=save-menu-rolldown-button] {
+  margin-left: -4px;
+  border-radius: 4px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+div[role=raml-editor] > div[role=browser] > div[role$=menu] > button {
+  padding: 5px 7px;
+  background-color: rgb(87,152,202);
+
+  /* Button reset styles*/
+  border: none;
+  font: inherit;
+  color: inherit;
+  margin: 0;
+  display: inline-block;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  background-image: none;
+  border-color: white;
+  text-decoration: none;
+  box-sizing: border-box;
+  outline: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+button.menu-left {
+  border-radius: 4px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+
+div[role=raml-editor] > div[role=browser] > div[role=new-menu] > button {
+  margin-left: 6px;
+  border-radius: 4px;
 }
 
 div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
@@ -47,7 +91,6 @@ div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
   list-style: none;
   font-size: 13px;
   border-radius: 0px 3px 3px 0px;
-//  background-color: white;
   .box-shadow(2px 2px 7px -2px #333);
   color: #777;
   background-color: rgb(20,21,25);
@@ -102,7 +145,7 @@ div[role=browser] > ul[role=file-list] > li {
 
 div[role=browser] > div[role=title] {
   float: left;
-  padding: 2px 2px 2px 6px;
+  padding: 2px 12px 2px 6px;
   line-height: 18px;
   font-size: 13px;
   color: #999;
@@ -142,11 +185,14 @@ div[role=browser] > ul[role=file-list] > li.currentfile {
 div[role=browser] > ul[role=file-list] > li > i.icon-trash {
   font-weight: bold;
   position: absolute;
-  left: 170px;
+  left: 165px;
+  padding-left: 6px;
+  padding-right: 1px;
   padding-top: 2px;
   font-size: 14px;
   display: none;
   color: #BF3626;
+  background-color: inherit;
 }
 
 div[role=browser] > ul[role=file-list] > li > span.dirty {
