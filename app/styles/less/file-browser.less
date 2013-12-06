@@ -167,9 +167,9 @@ div[role=browser] > ul[role=file-list] > li.read-only {
   cursor: default;
 }
 
-div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
+div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
   color: #ccc;
-  background-color: rgb(30,79,106);
+  background-color: #808395;
 
   i.icon-trash {
     display: inline;
@@ -235,9 +235,9 @@ div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
   border: 1px solid rgb(131,148,150);
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
+div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
   color: #eee;
-  background-color: rgb(47,124,166);
+  background-color: #caccd4;
 
   i.icon-trash {
     display: inline;
