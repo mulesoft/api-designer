@@ -3,18 +3,18 @@
   "version": "0.0.1",
   "dependencies": {
     "CodeMirror": "marijnh/CodeMirror",
-    "angular": "1.2.3",
-    "angular-cookies": "1.2.3",
-    "angular-resource": "1.2.3",
-    "angular-sanitize": "1.2.3",
+    "angular": "1.2.2",
+    "angular-cookies": "1.2.2",
+    "angular-resource": "1.2.2",
+    "angular-sanitize": "1.2.2",
     "es5-shim": "~2.0.8",
     "showdown": "~0.3.1",
-    "api-console": "mulesoft/api-console#2b2fc11bc80e6894862c6d6727faa34966211051",
+    "api-console": "mulesoft/api-console#172ef1b9e8ea671b31ed18765c9c01ab2120d3d2",
     "raml-grammar": "mulesoft/raml-grammar#185019f454d8f026b64a35c91a3db38c933ce59b",
-    "raml-js-parser": "raml-org/raml-js-parser#09300797e6bfe0769091fa8d272af7f0b0ca4563"
+    "raml-js-parser": "raml-org/raml-js-parser#a87b91310109c306af54a3239b34b47acdee2c03"
   },
   "devDependencies": {
     "sinonjs": "~1.7.1",
-    "angular-mocks": "1.2.3"
+    "angular-mocks": "1.2.2"
   }
 }

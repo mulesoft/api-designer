@@ -30,7 +30,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           1: function () {
             expect(editor.getLine(t)).toEqual('#%RAML 0.8');
             editor.setCursor(2,0);
-            // need to open a pivotal to track the error that in (2,1) options inside a methods are displayed
             designerAsserts.shelfElements(shelf.elemRootLevel);
           },
           2: function(){
@@ -858,7 +857,6 @@ describe('Muse: Mule Sales Enablement API', function () {
         var expList = ['collection','member','collection','member','collection','member'];
         designerAsserts.consoleResourceResourceType(expList);
       });
-
 
     }); // collapsed Console
 
