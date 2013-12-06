@@ -1,7 +1,8 @@
 exports.config = {
 
   capabilities: {
-    'browserName': 'phantomjs'
+//    'browserName': 'phantomjs'
+    'browserName': 'firefox'
   },
 
   baseUrl: 'http://localhost:9013/',
