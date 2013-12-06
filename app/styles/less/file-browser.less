@@ -167,14 +167,16 @@ div[role=browser] > ul[role=file-list] > li.read-only {
   cursor: default;
 }
 
-div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
-  color: #ccc;
-  background-color: #808395;
-
+div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
   i.icon-trash {
     display: inline;
   }
 
+}
+
+div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
+  color: #ccc;
+  background-color: #808395;
 }
 
 div[role=browser] > ul[role=file-list] > li > i {
