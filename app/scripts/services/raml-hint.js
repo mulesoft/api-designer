@@ -79,10 +79,14 @@ angular.module('ramlEditorApp')
     hinter.suggestRAML = window.suggestRAML;
 
     hinter.computePath = function (editor) {
-      var editorState = hinter.getEditorState(editor),
-          line = editorState.cur.line, textAsList,
-          ch = editorState.cur.ch,
-          lines;
+      var editorState = hinter.getEditorState(editor);
+      var line = editorState.cur.line;
+      var ch = editorState.cur.ch;
+      var listsTraveled = 0;
+      var lastTraveledListSpaceCount;
+      var lines;
+      var textAsList;
+      var rootIsFound;
 
       if (line === 0) {
         return null;
@@ -90,7 +94,7 @@ angular.module('ramlEditorApp')
 
       textAsList = getEditorTextAsArrayOfLines(editor).slice(0, line + 1).reverse();
       if (textAsList[0].trim() === '') {
-        textAsList[0] = textAsList[0].slice(0, ch + 1);
+        textAsList[0] = textAsList[0].slice(0, ch);
       }
 
       // It should have at least one element
@@ -98,28 +102,73 @@ angular.module('ramlEditorApp')
         return [];
       }
 
+      lastTraveledListSpaceCount = getLineIndent(textAsList[0]).spaceCount;
+      if ((lastTraveledListSpaceCount % editor.getOption('indentUnit')) !== 0) {
+        return;
+      }
+
       lines = textAsList
-      .map(function (lineContent) {
-        var result = {}, lineIndentInfo = getLineIndent(lineContent),
-          listMatcher;
+        .filter(function (line, index) {
+          var spaceCount;
 
-        result.tabCount = lineIndentInfo.tabCount;
-        lineContent = lineIndentInfo.content;
+          // current line is good
+          if (index === 0) {
+            return true;
+          }
 
-        listMatcher = /^(- )(.*)$/.exec(lineContent) || {index: -1};
+          // comments are good
+          if (line.trimLeft().indexOf('#') === 0) {
+            return true;
+          }
 
-        // Case is a list
-        if (listMatcher.index === 0) {
-          result.isList = true;
-          lineContent = listMatcher[2];
-        }
+          // lines with bigger indentation are not good
+          spaceCount = getLineIndent(line).spaceCount;
+          if (spaceCount > lastTraveledListSpaceCount) {
+            return false;
+          }
 
-        lineContent = /^(.+)(: |:\s*$)/.exec(lineContent);
+          // lines after root are not good
+          if (rootIsFound) {
+            return false;
+          }
 
-        result.content = lineContent ? lineContent[1] : '';
+          // lines with indentation are good until we find the root
+          if (spaceCount) {
+            return true;
+          }
 
-        return result;
-      });
+          rootIsFound = true;
+
+          return true;
+        })
+        .map(function (line, index) {
+          var result         = {};
+          var lineIndentInfo = getLineIndent(line);
+          var listMatcher;
+
+          result.tabCount = lineIndentInfo.tabCount;
+          line = lineIndentInfo.content;
+
+          listMatcher = /^(- )(.*)$/.exec(line) || {index: -1};
+
+          // case is a list
+          if (listMatcher.index === 0) {
+            result.isList = true;
+            line = listMatcher[2];
+
+            if (index === 0 || lineIndentInfo.spaceCount < lastTraveledListSpaceCount) {
+              listsTraveled++;
+              lastTraveledListSpaceCount = lineIndentInfo.spaceCount;
+            }
+          }
+
+          line = /^(.+)(: |:\s*$)/.exec(line);
+
+          result.content = line ? line[1] : '';
+
+          return result;
+        })
+      ;
 
       var result = lines.slice(1).reduce(function (state, lineData) {
         var prev = state[state.length - 1];
@@ -140,7 +189,7 @@ angular.module('ramlEditorApp')
       }, [lines[0]]);
 
       result = result.slice(1).reduce(function (state, lineData) {
-        if (state.path[0].tabCount > lineData.tabCount + 1 ) {
+        if (state.path[0].tabCount > lineData.tabCount + 1) {
           if (!state.path[0].isList && !lineData.isList) {
             state.invalid = true;
           }
@@ -149,11 +198,16 @@ angular.module('ramlEditorApp')
         return state;
       }, {invalid: false, path: [result[0]]});
 
-      var l = result.path.map(function (e) {
+      if (result.invalid) {
+        return;
+      }
+
+      var path = result.path.map(function (e) {
         return e.content;
       });
+      path.listsTraveled = listsTraveled;
 
-      return result.invalid ? undefined : l;
+      return path;
     };
 
     hinter.getEditorState = function(editor, options) {

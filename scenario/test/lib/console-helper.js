@@ -1,43 +1,45 @@
 'use strict';
-function ConsoleHelper() {}
+function ConsoleHelper() {
+  this.titleCss = '#raml-console-api-title';
+  this.listMainResourcesCss = '#raml-console-api-reference h1';
+  this.listResourceDescriptionCss = '[role=\'description\'] p';
+  this.listResourcesCss = '[role="resource"]';
+  this.listResourcesNameCss = '[role=\'resource\'] h3.path';
+  this.listResourceRTCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="resource-type"]';
+  this.listResourceTraitsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]';
+  this.listResourceMethodsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li';
+}
 
 ConsoleHelper.prototype = {};
 
-ConsoleHelper.prototype.getTitleCss = function(){
-  return '#raml-console-api-title';
-};
-
 ConsoleHelper.prototype.getListMainResources = function(){
-  return browser.findElements(by.css('#raml-console-api-reference h1'));
+  var that = this;
+  return browser.findElements(by.css(that.listMainResourcesCss));
 };
-
-ConsoleHelper.prototype.getListOfResourcesCss = function(){
-  return 'div[role=\'resourceSummary\']';
-};
-
-ConsoleHelper.prototype.getListResourcesNameCss = function(){
-  return 'div[role=\'resourceSummary\'] h3';
+ConsoleHelper.prototype.getListResourcesDescription = function(){
+  var that = this;
+  return browser.findElements(by.css(that.listResourceDescriptionCss));
 };
 ConsoleHelper.prototype.getListResourcesName = function(){
-  return browser.findElements(by.css('[role=\'resource\'] h3.path'));
+  var that = this;
+  return browser.findElements(by.css(that.listResourcesNameCss));
 };
 ConsoleHelper.prototype.getListResourceType = function(){
-  return  browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [role="resource-type"]'));
+  var that = this;
+  return  browser.findElements(by.css(that.listResourceRTCss));
 };
-
 ConsoleHelper.prototype.getListTrait = function(){
-  return  browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]'));
+  var that = this;
+  return  browser.findElements(by.css(that.listResourceTraitsCss));
 };
-
 ConsoleHelper.prototype.getListMethods = function(){
-  return browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li'));
+  var that = this ;
+  return browser.findElements(by.css(that.listResourceMethodsCss));
 };
-
 ConsoleHelper.prototype.getListResources = function(){
-//  return browser.findElements(by.css('[role=\'resource\'] h3.path'));
-  return browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"]'));
+  var that = this;
+  return browser.findElements(by.css(that.listResourcesCss));
 };
-
 ConsoleHelper.prototype.getResourceTypeForAResource = function(t){
 //  var that = this;
   var resource = this.getListResources();
@@ -58,6 +60,12 @@ ConsoleHelper.prototype.getListOfMethodByResourceCss = function(){
     //$('[role=\'resourceSummary\']').filter(function(){ return /^\s+\/classes\s*$/.test($(this).find("h2").text());})
 };
 
-
+ConsoleHelper.prototype.expandResourcebyPos = function(pos){
+  var that = this;
+  pos--;
+  browser.findElements(by.css(that.listResourcesCss)).then(function(resource){
+    resource[pos].click();
+  });
+};
 
 exports.ConsoleHelper = ConsoleHelper;

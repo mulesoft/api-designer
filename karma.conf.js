@@ -63,7 +63,7 @@ module.exports = function(config) {
       'app/scripts/controllers/raml-editor-shelf.js',
       'app/scripts/controllers/notifications.js',
 
-      'test/mocks/**/*.js',
+      'test/mock/**/*.js',
       'test/spec/**/*.js'
     ],
 
