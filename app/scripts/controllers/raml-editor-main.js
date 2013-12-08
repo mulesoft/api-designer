@@ -325,6 +325,10 @@ angular.module('ramlEditorApp')
       $scope.save();
     });
 
+    eventService.on('event:toggle-theme', function () {
+      $scope.setTheme(($scope.theme == 'dark') ? 'light' : 'dark');
+    });
+
     $scope.init = function () {
       $scope.raml = {};
       $scope.definition = '';
