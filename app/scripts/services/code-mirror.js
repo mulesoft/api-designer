@@ -172,9 +172,10 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         tabSize: 2,
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
-          'Cmd-s': 'save',
-          'Ctrl-s': 'save',
-          'Shift-Tab': 'indentLess'
+          'Cmd-S': 'save',
+          'Ctrl-S': 'save',
+          'Shift-Tab': 'indentLess',
+          'Shift-Ctrl-T': 'toggleTheme'
         },
         keyMap: 'tabSpace',
         foldGutter: foldGutterConfig,
@@ -236,6 +237,10 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         CodeMirror.showHint(cm, CodeMirror.hint.javascript, {
           ghosting: true
         });
+      };
+
+      CodeMirror.commands.toggleTheme = function (cm) {
+        eventService.broadcast('event:toggle-theme');
       };
 
       CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
