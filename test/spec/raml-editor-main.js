@@ -26,12 +26,7 @@ describe('RAML Editor Main Controller', function () {
   beforeEach(function () {
     scope = $rootScope.$new();
 
-    editor = {
-      on: function () {},
-      setValue: function() {},
-      setCursor: function() {},
-      focus: function() {}
-    };
+    editor = getEditor(codeMirror);
 
     codeMirror.initEditor = function (){
       return editor;
@@ -54,6 +49,68 @@ describe('RAML Editor Main Controller', function () {
       eventService: eventService,
       $confirm: $confirm
     };
+  });
+
+  it('should disable console when document is empty', function () {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue('');
+
+    scope.$apply();
+    $timeout.flush();
+    scope.$apply();
+
+    sourceUpdatedSpy.called.should.be.true;
+    scope.hasErrors.should.be.false;
+    scope.consoleEnabled.should.be.false;
+
+    sourceUpdatedSpy.restore();
+  });
+
+  it('should disable console when parser has errors', function (done) {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue('#%RAML 0.8');
+
+    scope.$apply();
+    $timeout.flush();
+
+    setTimeout(function () {
+      sourceUpdatedSpy.called.should.be.true;
+
+      scope.hasErrors.should.be.true;
+      scope.consoleEnabled.should.be.false;
+
+      sourceUpdatedSpy.restore();
+
+      done();
+    });
+  });
+
+  it('should enable console when everything is good', function (done) {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue([
+      '#%RAML 0.8',
+      'title: Title'
+    ].join('\n'));
+
+    scope.$apply();
+    $timeout.flush();
+
+    setTimeout(function () {
+      sourceUpdatedSpy.called.should.be.true;
+
+      scope.hasErrors.should.be.false;
+      scope.consoleEnabled.should.be.true;
+
+      sourceUpdatedSpy.restore();
+
+      done();
+    });
   });
 
   it('should ask user for confirmation if there are unsaved changes', function () {
@@ -189,27 +246,6 @@ describe('RAML Editor Main Controller', function () {
       ], {line: 0, ch: 0}));
 
       showHintStub.called.should.be.false;
-    });
-  });
-
-  describe('on raml parser error', function () {
-    it('should display errors on first line if no line specified', function () {
-      // Arrange
-      ctrl = $controller('ramlEditorMain', params);
-      var error = {
-        message: 'Error without line or column!'
-      };
-      scope.hasErrors.should.be.false;
-
-      // Act
-      eventService.broadcast('event:raml-parser-error', error);
-
-      // Assert
-      annotationsToDisplay.length.should.be.equal(1);
-      annotationsToDisplay[0].line.should.be.equal(1);
-      annotationsToDisplay[0].column.should.be.equal(1);
-      annotationsToDisplay[0].message.should.be.equal(error.message);
-      scope.hasErrors.should.be.true;
     });
   });
 
