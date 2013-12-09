@@ -127,14 +127,10 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       }
 
       var offset = 0;
-      if (curLineWithoutTabs.replace(' ', '').length > 0) {
+      if (editorState.cur.ch !== 0 && curLineWithoutTabs.replace(' ', '').length > 0) {
         if (hasChildren(cm)) {
           offset = 1;
         }
-      }
-
-      if (editorState.cur.ch < editorState.curLine.length) {
-        offset = /^\s*\w+:/.test(editorState.curLine) ? 1 : 0;
       }
 
       var extraWhitespace   = '';
