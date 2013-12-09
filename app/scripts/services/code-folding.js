@@ -17,18 +17,14 @@ angular.module('codeFolding', ['raml', 'lightweightParse'])
     };
   })
   .factory('hasChildren', function(ramlHint){
-    return function (cm){
+    return function (cm) {
       var editorState = ramlHint.getEditorState(cm);
 
-      var potentialChildren = ramlHint.getScopes(cm).scopeLevels[editorState.currLineTabCount > 0 ? editorState.currLineTabCount + 1 : 1], firstChild;
+      var potentialChildren = ramlHint.getScopes(cm).scopeLevels[editorState.currLineTabCount + 1];
 
-      if(potentialChildren) {
-        firstChild = potentialChildren.filter(function(line) {
-          return line === editorState.start.line + 1;
-        }).pop();
-      }
-
-      return !!firstChild;
+      return potentialChildren && potentialChildren.some(function(line) {
+        return line === editorState.start.line + 1;
+      });
     };
   })
   .factory('getParentLineNumber', function (getScopes, getEditorTextAsArrayOfLines, getLineIndent, isArrayStarter) {
