@@ -148,7 +148,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.createEditor = function (el, extraOptions) {
-      var shouldEnableFoldGutter = config.get('folding', true);
+      var shouldEnableFoldGutter = JSON.parse(config.get('folding', 'true'));
       var foldGutterConfig       = false;
       var cm;
       var options;
