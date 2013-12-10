@@ -11,7 +11,7 @@ angular.module('raml')
     trace: ['trace:', '  description: <<insert text or markdown here>>'],
     connect: ['connect:', '  description: <<insert text or markdown here>>'],
     patch: ['patch:', '  description: <<insert text or markdown here>>'],
-    'new resource': ['/newResource:', '  displayName: resourceName'],
+    '<resource>': ['/newResource:', '  displayName: resourceName'],
     title: ['title: My API'],
     version: ['version: v0.1'],
     baseuri: ['baseUri: http://server/api/{version}']
