@@ -283,6 +283,10 @@ angular.module('ramlEditorApp')
       $scope.save();
     });
 
+    eventService.on('event:toggle-theme', function () {
+      $window.setTheme(($scope.theme === 'dark') ? 'light' : 'dark');
+    });
+
     $scope._promptForFileName = function () {
       var fileName = $prompt('File Name?', $scope.file.name);
       $scope.file.name = fileName || $scope.file.name;
