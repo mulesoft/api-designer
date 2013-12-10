@@ -24,12 +24,7 @@ describe('RAML Editor Main Controller', function () {
   beforeEach(function () {
     scope = $rootScope.$new();
 
-    editor = {
-      on: function () {},
-      setValue: function() {},
-      setCursor: function() {},
-      focus: function() {}
-    };
+    editor = getEditor(codeMirror);
 
     codeMirror.initEditor = function (){
       return editor;
@@ -52,6 +47,68 @@ describe('RAML Editor Main Controller', function () {
       eventService: eventService,
       $confirm: $confirm
     };
+  });
+
+  it('should disable console when document is empty', function () {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue('');
+
+    scope.$apply();
+    $timeout.flush();
+    scope.$apply();
+
+    sourceUpdatedSpy.called.should.be.true;
+    scope.hasErrors.should.be.false;
+    scope.consoleEnabled.should.be.false;
+
+    sourceUpdatedSpy.restore();
+  });
+
+  it('should disable console when parser has errors', function (done) {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue('#%RAML 0.8');
+
+    scope.$apply();
+    $timeout.flush();
+
+    setTimeout(function () {
+      sourceUpdatedSpy.called.should.be.true;
+
+      scope.hasErrors.should.be.true;
+      scope.consoleEnabled.should.be.false;
+
+      sourceUpdatedSpy.restore();
+
+      done();
+    });
+  });
+
+  it('should enable console when everything is good', function (done) {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue([
+      '#%RAML 0.8',
+      'title: Title'
+    ].join('\n'));
+
+    scope.$apply();
+    $timeout.flush();
+
+    setTimeout(function () {
+      sourceUpdatedSpy.called.should.be.true;
+
+      scope.hasErrors.should.be.false;
+      scope.consoleEnabled.should.be.true;
+
+      sourceUpdatedSpy.restore();
+
+      done();
+    });
   });
 
   it('should ask user for confirmation if there are unsaved changes', function () {

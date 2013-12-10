@@ -52,19 +52,22 @@ angular.module('ramlEditorApp')
   })
   .controller('ramlEditorMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
-    ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm) {
-    var editor, saveTimer, currentUpdateTimer;
+    ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm,
+    safeApplyWrapper
+  ) {
+    var editor;
+    var saveTimer;
+    var currentUpdateTimer;
 
-    $scope.setTheme = function (theme) {
+    $window.setTheme = function (theme) {
       config.set('theme', theme);
       $scope.theme = $rootScope.theme = theme;
       safeApply($scope);
     };
-    $window.setTheme = $scope.setTheme;
 
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
-      var file = $scope.file;
+      var file   = $scope.file;
 
       if (source === $scope.definition) {
         return;
@@ -74,8 +77,9 @@ angular.module('ramlEditorApp')
         file.dirty = true;
       }
 
-      $scope.firstLoad = false;
+      $scope.firstLoad  = false;
       $scope.definition = source;
+
       eventService.broadcast('event:raml-source-updated', $scope.definition);
     };
 
@@ -91,34 +95,47 @@ angular.module('ramlEditorApp')
     eventService.on('event:raml-source-updated', function (e, definition) {
       codeMirrorErrors.clearAnnotations();
 
-      loadRamlDefinition(definition).then(function (result) {
-        eventService.broadcast('event:raml-parsed', result);
-        $scope.$digest();
-      }, function (error) {
-        eventService.broadcast('event:raml-parser-error', error);
-      });
+      if (definition.trim() === '') {
+        $scope.hasErrors      = false;
+        $scope.consoleEnabled = false;
+        return;
+      }
+
+      loadRamlDefinition(definition).then(
+        // success
+        safeApplyWrapper($scope, function (value) {
+          eventService.broadcast('event:raml-parsed', value);
+        }),
+
+        // failure
+        safeApplyWrapper($scope, function (error) {
+          eventService.broadcast('event:raml-parser-error', error);
+        })
+      );
     });
 
-    eventService.on('event:raml-parsed', function (e, args) {
-      var definition = args;
-      codeMirrorErrors.clearAnnotations();
-      $scope.title = definition.title;
-      $scope.version = definition.version;
-      eventService.broadcast('event:raml-operation-list-published', definition);
-      $scope.hasErrors = false;
-      safeApply($scope);
-    });
+    eventService.on('event:raml-parsed', safeApplyWrapper($scope, function (e, definition) {
+      $scope.title          = definition.title;
+      $scope.version        = definition.version;
+      $scope.hasErrors      = false;
+      $scope.consoleEnabled = true;
+    }));
 
-    eventService.on('event:raml-parser-error', function (e, args) {
-      var error = args, annotations = [], PROBLEM_MARK = 'problem_mark',
-        line = (error && error[PROBLEM_MARK] && error[PROBLEM_MARK].line) || 0,
-        column = (error && error[PROBLEM_MARK] && error[PROBLEM_MARK].column) || 0;
+    eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function (e, args) {
+      var error       = args;
+      var problemMark = 'problem_mark';
+      var line        = error[problemMark] ? error[problemMark].line   : 0;
+      var column      = error[problemMark] ? error[problemMark].column : 0;
 
-      annotations.push({ message: error.message, line: line + 1, column: column + 1});
-      codeMirrorErrors.displayAnnotations(annotations);
-      $scope.hasErrors = true;
-      safeApply($scope);
-    });
+      $scope.hasErrors      = true;
+      $scope.consoleEnabled = false;
+
+      codeMirrorErrors.displayAnnotations([{
+        line:    line + 1,
+        column:  column + 1,
+        message: error.message
+      }]);
+    }));
 
     $scope.bootstrap = function () {
       ramlRepository.bootstrap().then($scope.switchFile);
@@ -215,29 +232,31 @@ angular.module('ramlEditorApp')
 
     $scope.saveFile = function() {
       $scope.file.contents = editor.getValue();
+
       ramlRepository.saveFile($scope.file).then(function () {
-        eventService.broadcast('event:notification',
-          {message: 'File saved.', expires: true});
-        safeApply($scope);
+        eventService.broadcast('event:notification', {
+          message: 'File saved.',
+          expires: true
+        });
 
         if (saveTimer) {
           $timeout.cancel(saveTimer);
         }
 
         saveTimer = $timeout($scope.save, AUTOSAVE_INTERVAL);
+
+        safeApply($scope);
       });
     };
 
     $scope.loadFile = function (fileEntry) {
-      var browser = $scope.browser;
-      browser.expanded = false;
-
+      $scope.browser.expanded = false;
       ramlRepository.loadFile(fileEntry).then($scope.switchFile);
     };
 
     $scope.deleteFile = function (file) {
       var currentFile = $scope.file;
-      var fileIndex = $scope.files.indexOf(file);
+      var fileIndex   = $scope.files.indexOf(file);
 
       if (! $confirm('Are you sure you want to delete the file: "' + file.name + '" ?')) {
         return;
@@ -264,21 +283,26 @@ angular.module('ramlEditorApp')
       $scope.save();
     });
 
-    $scope.init = function () {
-      $scope.raml = {};
-      $scope.definition = '';
-      $scope.resources = '';
-      $scope.documentation = '';
-      $scope.baseUri = '';
-      $scope.hasErrors = false;
-      $scope.theme = $rootScope.theme = config.get('theme', 'dark');
-      $scope.shelf = {};
-      $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', false));
-      $scope.files = [];
-      $scope.browser = {};
-      $scope.browser.expanded = false;
+    $scope._promptForFileName = function () {
+      var fileName = $prompt('File Name?', $scope.file.name);
+      $scope.file.name = fileName || $scope.file.name;
+      return !!fileName;
+    };
 
-      editor = codeMirror.initEditor();
+    $scope._confirmLoseChanges = function () {
+      return $confirm('Are you sure you want to lose your unsaved changes?');
+    };
+
+    (function bootstrap() {
+      $scope.hasErrors        = false;
+      $scope.consoleEnabled   = false;
+      $scope.theme            = $rootScope.theme = config.get('theme', 'dark');
+      $scope.shelf            = {};
+      $scope.shelf.collapsed  = JSON.parse(config.get('shelf.collapsed', 'false'));
+      $scope.files            = [];
+      $scope.browser          = {};
+      $scope.browser.expanded = false;
+      $scope.editor           = editor = codeMirror.initEditor();
 
       editor.on('change', function () {
         var updateResponsivenessInterval = config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL);
@@ -310,17 +334,5 @@ angular.module('ramlEditorApp')
           return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
         }
       };
-    };
-
-    $scope.init();
-
-    $scope._promptForFileName = function () {
-      var fileName = $prompt('File Name?', $scope.file.name);
-      $scope.file.name = fileName || $scope.file.name;
-      return !!fileName;
-    };
-
-    $scope._confirmLoseChanges = function () {
-      return $confirm('Are you sure you want to lose your unsaved changes?');
-    };
+    })();
   });

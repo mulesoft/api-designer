@@ -119,7 +119,7 @@ describe('CodeMirror Service', function () {
     });
   });
 
-  describe('auto indentation', function () {
+  describe('enter key', function () {
     it('should keep the same indentation level by default', function () {
       var indentUnit = 2;
       var editor     = getEditor(codeMirror,
@@ -491,6 +491,40 @@ describe('CodeMirror Service', function () {
 
       editor.fakeKey('Enter');
       editor.getLine(5).substr(0, 3).should.be.equal(sp(3));
+    });
+
+    it('keeps indentation level after the enter key is pressed at the start of the line', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          '#%RAML 0.8',
+          'title: Test'
+        ],
+        {line: 1, ch: 0},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Enter');
+      editor.getLine(1).should.be.equal('');
+      editor.getLine(2).should.be.equal('title: Test');
+    });
+
+    it('keeps indentation level (with children) after the enter key is pressed at the start of the line', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          '#%RAML 0.8',
+          'title: Test',
+          '/resource:',
+          '  get:'
+        ],
+        {line: 2, ch: 0},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Enter');
+      editor.getLine(2).should.be.equal('');
+      editor.getLine(3).should.be.equal('/resource:');
     });
   });
 });
