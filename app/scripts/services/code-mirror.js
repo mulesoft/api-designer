@@ -229,7 +229,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       };
 
       CodeMirror.commands.autocomplete = function (cm) {
-        CodeMirror.showHint(cm, CodeMirror.hint.javascript, {
+        CodeMirror.showHint(cm, CodeMirror.hint.raml, {
           ghosting: true
         });
       };
@@ -237,7 +237,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
       CodeMirror.defineMIME('text/x-raml', 'raml');
 
-      CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
+      CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper('fold', 'indent', getFoldRange);
     })();
 

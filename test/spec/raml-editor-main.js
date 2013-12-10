@@ -1,5 +1,3 @@
-/* globals CodeMirror */
-
 'use strict';
 
 var codeMirror, eventService, codeMirrorErrors,
@@ -131,121 +129,24 @@ describe('RAML Editor Main Controller', function () {
     canSaveStub.restore();
   });
 
-  describe('triggerAutocomplete', function () {
-    var triggerAutocomplete;
-    var showHintStub;
+  describe('on raml parser error', function () {
+    it('should display errors on first line if no line specified', function () {
+      // Arrange
+      ctrl = $controller('ramlEditorMain', params);
+      var error = {
+        message: 'Error without line or column!'
+      };
+      scope.hasErrors.should.be.false;
 
-    beforeEach(function () {
-      $controller('ramlEditorMain', params);
+      // Act
+      eventService.broadcast('event:raml-parser-error', error);
 
-      triggerAutocomplete = scope.triggerAutocomplete;
-      showHintStub        = sinon.stub(CodeMirror, 'showHint');
-
-      if (!CodeMirror.hint) {
-        CodeMirror.hint = {};
-      }
-
-      if (!CodeMirror.hint.javascript) {
-        CodeMirror.hint.javascript = function () {};
-      }
-    });
-
-    afterEach(function () {
-      showHintStub.restore();
-    });
-
-    it('should not trigger autocomplete for an empty line', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-      ]));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should not trigger autocomplete for the line with whitespaces only', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        ' '
-      ]));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for the first line with comments (RAML tag)', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        '#RAML'
-      ]));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for cursor after comment', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'text',
-        'position1 # position2'
-      ], {line: 1, ch: 12}));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for cursor before comment', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'text',
-        'position1 # position2'
-      ], {line: 1, ch: 0}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for cursor before array', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'array:',
-        '  - element'
-      ], {line: 1, ch: 0}));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for cursor after array', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'array:',
-        '  - element'
-      ], {line: 1, ch: 4}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for map value', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'map:',
-        '  key: value'
-      ], {line: 1, ch: 7}));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for map key', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'map:',
-        '  key: value'
-      ], {line: 1, ch: 2}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should trigger autocomplete for map key being part of array element', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'map:',
-        '  - key: value'
-      ], {line: 1, ch: 4}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for resource', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        '/resource:',
-      ], {line: 0, ch: 0}));
-
-      showHintStub.called.should.be.false;
+      // Assert
+      annotationsToDisplay.length.should.be.equal(1);
+      annotationsToDisplay[0].line.should.be.equal(1);
+      annotationsToDisplay[0].column.should.be.equal(1);
+      annotationsToDisplay[0].message.should.be.equal(error.message);
+      scope.hasErrors.should.be.true;
     });
   });
 

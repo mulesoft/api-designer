@@ -83,67 +83,6 @@ angular.module('ramlEditorApp')
       eventService.broadcast('event:raml-source-updated', $scope.definition);
     };
 
-    $scope.triggerAutocomplete = function (cm) {
-      var editorState    = ramlHint.getEditorState(cm);
-      var curLine        = editorState.curLine;
-      var curLineTrimmed = curLine.trim();
-      var offset         = curLine.indexOf(curLineTrimmed);
-      var lineNumber     = editorState.start ? editorState.start.line : 0;
-
-      if (!curLineTrimmed) {
-        return;
-      }
-
-      // nothing to autocomplete within comments
-      // -> "#..."
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf('#');
-        return lineNumber > 0 &&
-               indexOf !== -1 &&
-               editorState.cur.ch > (indexOf + offset)
-        ;
-      })()) {
-        return;
-      }
-
-      // nothing to autocomplete within resources
-      // -> "/..."
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf('/');
-        return indexOf === 0 &&
-               editorState.cur.ch >= (indexOf + offset)
-        ;
-      })()) {
-        return;
-      }
-
-      // nothing to autocomplete for key value
-      // -> "key: ..."
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf(': ');
-        return indexOf !== -1 &&
-               editorState.cur.ch >= (indexOf + offset + 2)
-        ;
-      })()) {
-        return;
-      }
-
-      // nothing to autocomplete prior array
-      // -> "...- "
-      if ((function () {
-        var indexOf = curLineTrimmed.indexOf('- ');
-        return indexOf === 0 &&
-               editorState.cur.ch < (indexOf + offset)
-        ;
-      })()) {
-        return;
-      }
-
-      CodeMirror.showHint(cm, CodeMirror.hint.javascript, {
-        ghosting: true
-      });
-    };
-
     function loadRamlDefinition(definition) {
       return ramlParser.load(definition, null, {
         validate : true,
@@ -165,25 +104,21 @@ angular.module('ramlEditorApp')
       loadRamlDefinition(definition).then(
         // success
         safeApplyWrapper($scope, function (value) {
-          $scope.hasErrors      = false;
-          $scope.consoleEnabled = true;
-
           eventService.broadcast('event:raml-parsed', value);
         }),
 
         // failure
         safeApplyWrapper($scope, function (error) {
-          $scope.hasErrors      = true;
-          $scope.consoleEnabled = false;
-
           eventService.broadcast('event:raml-parser-error', error);
         })
       );
     });
 
     eventService.on('event:raml-parsed', safeApplyWrapper($scope, function (e, definition) {
-      $scope.title   = definition.title;
-      $scope.version = definition.version;
+      $scope.title          = definition.title;
+      $scope.version        = definition.version;
+      $scope.hasErrors      = false;
+      $scope.consoleEnabled = true;
     }));
 
     eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function (e, args) {
@@ -192,9 +127,12 @@ angular.module('ramlEditorApp')
       var line        = error[problemMark] ? error[problemMark].line   : 0;
       var column      = error[problemMark] ? error[problemMark].column : 0;
 
+      $scope.hasErrors      = true;
+      $scope.consoleEnabled = false;
+
       codeMirrorErrors.displayAnnotations([{
-        line   : line + 1,
-        column : column + 1,
+        line:    line + 1,
+        column:  column + 1,
         message: error.message
       }]);
     }));
@@ -380,7 +318,9 @@ angular.module('ramlEditorApp')
       });
 
       editor.on('change', function (cm) {
-        $scope.triggerAutocomplete(cm);
+        if (cm.getLine(cm.getCursor().line).trim()) {
+          cm.execCommand('autocomplete');
+        }
       });
 
       $timeout(function () {
