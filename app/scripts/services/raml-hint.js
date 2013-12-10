@@ -315,25 +315,25 @@ angular.module('ramlEditorApp')
     };
 
     hinter.getSuggestions = function (editor) {
-      var alternatives = hinter.getAlternatives(editor);
-
-      var list = alternatives.keys.map(function (e) {
-        var suggestion = alternatives.values.suggestions[e];
-        return { name: e, category: suggestion.metadata.category, isText: suggestion.metadata.isText  };
-      }).filter(function(e){
-        if (!hinter.shouldSuggestVersion(editor) && e.name === RAML_VERSION) {
-          return false;
-        }
-        return true;
-      }) || [];
-
-      if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
-        list.push({name: 'New resource', category: alternatives.values.metadata.category});
+      if (hinter.shouldSuggestVersion(editor)) {
+        return [{
+          name:     '#%RAML 0.8',
+          category: 'main',
+          isText:   true
+        }];
       }
 
-      list.path = alternatives.path;
+      var alternatives = hinter.getAlternatives(editor);
+      var suggestions  = alternatives.keys.map(function (e) {
+        return {
+          name:     e,
+          category: alternatives.values.suggestions[e].metadata.category
+        };
+      });
 
-      return list;
+      suggestions.path = alternatives.path;
+
+      return suggestions;
     };
 
     hinter.canAutocomplete = function (cm) {
@@ -396,7 +396,7 @@ angular.module('ramlEditorApp')
       var line         = editorState.curLine;
       var word         = line.trimLeft();
       var wordIsKey;
-      var alternatives;
+      var suggestions;
       var list;
       var fromCh;
       var toCh;
@@ -412,7 +412,7 @@ angular.module('ramlEditorApp')
       };
 
       if (hinter.canAutocomplete(cm)) {
-        alternatives = hinter.getAlternatives(cm);
+        suggestions = hinter.getSuggestions(cm);
       } else {
         return;
       }
@@ -442,18 +442,17 @@ angular.module('ramlEditorApp')
       })();
 
       word = word.trim();
-      list = alternatives.keys.map(function (e) {
-        var suggestion = alternatives.values.suggestions[e];
-        var text       = e;
+      list = suggestions.map(function (suggestion) {
+        var text = suggestion.name;
 
-        if (!suggestion.metadata.isText && !wordIsKey) {
+        if (!suggestion.isText && !wordIsKey) {
           text = text + ':';
         }
 
         return {
           displayText: text,
           text:        text,
-          category:    suggestion.metadata.category,
+          category:    suggestion.category,
           render:      render
         };
       });

@@ -10,7 +10,7 @@
     "es5-shim": "~2.0.8",
     "showdown": "~0.3.1",
     "api-console": "mulesoft/api-console#172ef1b9e8ea671b31ed18765c9c01ab2120d3d2",
-    "raml-grammar": "mulesoft/raml-grammar#185019f454d8f026b64a35c91a3db38c933ce59b",
+    "raml-grammar": "mulesoft/raml-grammar#54c160461b390df5d1054e6c380e590ea859fcb9",
     "raml-js-parser": "raml-org/raml-js-parser#a87b91310109c306af54a3239b34b47acdee2c03"
   },
   "devDependencies": {

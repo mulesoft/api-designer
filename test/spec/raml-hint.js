@@ -440,69 +440,6 @@ describe('ramlEditorApp', function () {
     });
 
     describe('getSuggestions', function () {
-      it('should render the text correctly', function () {
-        var alternatives = {
-          suggestions: {
-            title: {},
-            a: {
-              metadata: {
-                category: 'simple'
-              }
-            },
-            b: {
-              metadata: {
-                category: 'complex'
-              }
-            },
-            c: {
-              metadata: {
-                category: 'simple'
-              }
-            }
-          },
-          constructor: { name: 'OpenSuggestion' },
-          metadata: {
-            category: 'snippets',
-            id: 'resource'
-          }
-        };
-
-        ramlHint.suggestRAML = function() {
-          return alternatives;
-        };
-
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            ''
-          ],
-          {line: 1, ch: 0}
-        );
-
-        var shelfSuggestions    = ramlHint.getSuggestions(editor);
-        var titleFound          = false;
-        var shelfSuggestionKeys = {};
-
-        shelfSuggestions.forEach(function (shelfSuggestion) {
-          shelfSuggestionKeys[shelfSuggestion.name] = shelfSuggestion;
-        });
-
-        /* Check that all the alternatives are rendered correctly */
-        Object.keys(alternatives.suggestions).forEach(function (suggestion) {
-          /* Ignore if the key is title */
-          if (suggestion === 'title') {
-            titleFound = true;
-            return;
-          }
-
-          shelfSuggestionKeys[suggestion].should.be.ok;
-        });
-
-        shelfSuggestionKeys['New resource'].should.be.ok;
-
-        titleFound.should.be.equal(true);
-      });
-
       it('should return suggestions for root level without title and version keys', function () {
         var editor = getEditor(codeMirror,
           [

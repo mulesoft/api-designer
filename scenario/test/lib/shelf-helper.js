@@ -6,7 +6,7 @@ function ShelfHelper() {
   this.elemRootLevelDocs = ['documentation'];
   this.elemRootLevelParameters = ['baseUriParameters'];
   this.elemRootLevelSecurity = ['securitySchemes', 'securedBy'];
-  this.elemRootLevelResources = ['New resource'];
+  this.elemRootLevelResources = ['<resource>'];
   this.elemRootLevelTraitsAndTypes = [ 'traits', 'resourceTypes'];
   this.elemRootLevel = this.elemRootLevelRoot.concat(this.elemRootLevelDocs,this.elemRootLevelParameters,this.elemRootLevelSecurity,this.elemRootLevelResources,this.elemRootLevelTraitsAndTypes);
   this.elemRootLevelWithoutNewResource = this.elemRootLevelRoot.concat(this.elemRootLevelDocs,this.elemRootLevelParameters,this.elemRootLevelSecurity,this.elemRootLevelTraitsAndTypes);
@@ -33,7 +33,7 @@ function ShelfHelper() {
   this.elemMethodLevel = this.elemMethodLevelRoot.concat(this.elemMethodLevelDocs,this.elemMethodLevelParameters,this.elemMethodLevelResponses,this.elemMethodLevelSecurity,this.elemMethodLevelTraitsAndTypes,this.elemMethodLevelBody);
 //  RT Methods
   this.elemRtMethodLevelRoot = this.elemMethodLevelRoot;
-  this.elemRtMethodLevelDocs = this.elemMethodLevelDocs.concat('usage');
+  this.elemRtMethodLevelDocs = this.elemMethodLevelDocs.concat();
   this.elemRtMethodLevelParameters = this.elemMethodLevelParameters;
   this.elemRtMethodLevelResponses = this.elemMethodLevelResponses;
   this.elemRtMethodLevelSecurity = this.elemMethodLevelSecurity;
@@ -45,7 +45,7 @@ function ShelfHelper() {
   this.elemResourceLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
   this.elemResourceLevelParameters = ['uriParameters','baseUriParameters'];
   this.elemResourceLevelSecurity = ['securedBy'];
-  this.elemResourceLevelResources = ['New resource'];
+  this.elemResourceLevelResources = ['<resource>'];
   this.elemResourceLevelTraitsAndTypes = ['is', 'type'];
   this.elemResourceLevel = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelResources,this.elemResourceLevelTraitsAndTypes);
   this.elemResourceLevelWithoutNewReosurce = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelTraitsAndTypes);
