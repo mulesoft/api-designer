@@ -11,12 +11,12 @@ describe('shelf',function(){
     editor.setValue('');
     expect(editor.getLine(1)).toEqual('');
     designerAsserts.shelfElements(shelf.elemRamlVersion);
-    designerAsserts.parserError('1', 'The first line must be: \'#%RAML 0.8\'');
+    expect(editor.noErrorIsDisplayed()).toBe(false);
   });
 
-  describe('Adding elements from shelf',function(){
+  describe('elements',function(){
 
-    it('elements added ', function(){
+    it('added below on an array', function(){
       var definition = [
         '#%RAML 0.8',
         'title: hola',
@@ -32,7 +32,7 @@ describe('shelf',function(){
       expect(editor.getLine(6)).toEqual('version: v0.1');
     });
 
-    it('elements added like with blanks at the end', function(){
+    it('add in a line with blanks at the end', function(){
       var definition = [
         '#%RAML 0.8',
         'title: hola',
@@ -47,9 +47,13 @@ describe('shelf',function(){
       expect(editor.getLine(5)).toEqual('  displayName:');
     });
 
-    it('elements are added below', function(){
+    it('are added below', function(){
       editor.setCursor(1,0);
-      var lista = ['#%RAML 0.8','title: My API','version: v0.1','schemas:','baseUri: http://server/api/{version}','mediaType:','protocols:','documentation:','baseUriParameters:','securitySchemes:','securedBy:','/newResource:','  displayName: resourceName','  description:','  options:','    description: <<insert text or markdown here>>','    protocols:','    baseUriParameters:','    headers:','    queryParameters:','    responses:','    securedBy:','    is:','    body:'];
+      var lista = ['#%RAML 0.8','title: My API','version: v0.1','schemas:','baseUri: http://server/api/{version}',
+        'mediaType:','protocols:','documentation:','baseUriParameters:','securitySchemes:','securedBy:','/newResource:',
+        '  displayName: resourceName','  description:','  options:','    description: <<insert text or markdown here>>',
+        '    protocols:','    baseUriParameters:','    headers:','    queryParameters:','    responses:',
+        '    securedBy:','    is:','    body:'];
       var i=1;
       var promise;
       lista.forEach(function(elem){
@@ -64,6 +68,27 @@ describe('shelf',function(){
             t++;
           });
         }
+      });
+    });
+
+    it('root level - some lines with indent below', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: hola',
+        'resourceTypes:',
+        '  - hola: ',
+        '      options:',
+        '        description: <<insert text or markdown here>>',
+        ' ',
+        '  ',
+        '  ',
+        '  '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(7,0);
+      var promise = shelf.selectFirstElem();
+      promise.then(function(){
+        expect(editor.getLine(7)).toEqual('version: v0.1');
       });
     });
 

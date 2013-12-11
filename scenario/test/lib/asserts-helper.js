@@ -182,6 +182,22 @@ AssertsHelper.prototype.consoleResourceTraits = function(expList){
   });
 };
 
+AssertsHelper.prototype.consoleResourceDescription = function(descriptions){
+  var i =0;
+  var apiConsole = new ConsoleHelper();
+  browser.findElements(by.css(apiConsole.listResourcesCss)).then(function(resources){
+    expect(resources.length).toEqual(descriptions.length);
+    resources.forEach(function(resource){
+      var t = i++;
+      resource.findElements(by.css(apiConsole.listResourceDescriptionCss)).then(function(description){
+        expect(description.length).toEqual(1);
+        expect(description[0].getText()).toEqual(descriptions[t]);
+      });
+    });
+  });
+
+};
+
 
 //Console Ends
 

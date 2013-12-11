@@ -22,6 +22,10 @@ EditorHelper.prototype.getErrorLineMessage = function(){
   return d.promise;
 };
 
+EditorHelper.prototype.noErrorIsDisplayed = function(){
+  return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
+};
+
 EditorHelper.prototype.getErrorMessage = function(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();

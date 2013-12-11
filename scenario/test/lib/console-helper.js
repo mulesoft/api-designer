@@ -47,11 +47,6 @@ ConsoleHelper.prototype.getResourceTypeForAResource = function(t){
   return resource[t].findElements(by.css('.modifiers [role=\'resource-type\']'));
 };
 
-ConsoleHelper.prototype.consoleExapndResourceArea = function(t){
-//  t is the possition of the resource in the list - starts with 0
-  browser.findElements(by.css('[role=\'resource\'] h3.path')[t].click());
-};
-
 ConsoleHelper.prototype.getListResourcesDisplayName = function(){
   return browser.findElements(by.css('[ng-show=\'resource.name\']'));
 };
@@ -63,8 +58,19 @@ ConsoleHelper.prototype.getListOfMethodByResourceCss = function(){
 ConsoleHelper.prototype.expandResourcebyPos = function(pos){
   var that = this;
   pos--;
-  browser.findElements(by.css(that.listResourcesCss)).then(function(resource){
-    resource[pos].click();
+//send 0 to expand all.
+  browser.findElements(by.css(that.listResourcesNameCss)).then(function(resources){
+    console.log('resources to expand length',resources.length);
+
+    if(pos === -1){
+      console.log('menos 1');
+      resources.forEach(function(resource){
+        resource.click();
+      });
+    }else{
+      console.log('otros');
+      resources[pos].click();
+    }
   });
 };
 

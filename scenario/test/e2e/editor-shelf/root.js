@@ -11,7 +11,7 @@ describe('shelf',function(){
 
     describe('RAML version', function(){
 
-      it('should offer RAML version on line 1', function(){
+      it('offer RAML version on line 1', function(){
         var definition = '';
         editor.setValue(definition);
         shelf.getElements().then(function(list){
@@ -20,7 +20,7 @@ describe('shelf',function(){
         });
       });
 
-      it('should not be offer RAML version - line 1 - fail RT-363', function(){
+      it('not be offer RAML version - line 1 - fail RT-363', function(){
         var definition = '#%RAML 0.8';
         editor.setValue(definition);
         shelf.getElements().then(function(list){
@@ -38,7 +38,7 @@ describe('shelf',function(){
           ' '
         ].join('\\n');
         editor.setValue(definition);
-        editor.setCursor(2,1);
+        editor.setCursor(2,0);
         designerAsserts.shelfElementsRootByGroup();
       });
 
@@ -98,7 +98,7 @@ describe('shelf',function(){
               ' '
             ].join('\\n');
             editor.setValue(definition);
-            editor.setCursor(3,1);
+            editor.setCursor(3,0);
             var list2 =[option];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
           });

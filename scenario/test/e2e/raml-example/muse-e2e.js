@@ -16,7 +16,7 @@ describe('Muse: Mule Sales Enablement API', function () {
       editor.setValue('');
       expect(editor.getLine(1)).toEqual('');
       designerAsserts.shelfElements(shelf.elemRamlVersion);
-      designerAsserts.parserError('1', 'The first line must be: \'#%RAML 0.8\'');
+      expect(editor.noErrorIsDisplayed()).toBe(false);
     });
 
     var i = 1;
