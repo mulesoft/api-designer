@@ -14,26 +14,38 @@ angular.module('ramlEditorApp')
         lineNumber = editor.getCursor().line;
       }
 
+      function isArray(line) {
+        return line.trimLeft().indexOf('- ') === 0;
+      }
+
       var lineNumbers = [lineNumber];
-      var lineIndent = getLineIndent(editor.getLine(lineNumber).slice(0, editor.getCursor().ch + 1));
-      var linesCount = editor.lineCount();
+      var line        = editor.getLine(lineNumber).slice(0, editor.getCursor().ch + 1);
+      var lineIndent  = getLineIndent(line);
+      var lineIsArray = isArray(line);
+      var linesCount  = editor.lineCount();
       var i;
       var nextLine;
       var nextLineIndent;
 
       // lines above specified
       for (i = lineNumber - 1; i >= 0; i--) {
-        nextLine = editor.getLine(i);
+        nextLine       = editor.getLine(i);
         nextLineIndent = getLineIndent(nextLine);
 
         if (nextLineIndent.tabCount !== lineIndent.tabCount) {
           // level is decreasing, no way we can get back
           if (nextLineIndent.tabCount < lineIndent.tabCount) {
+            if (!lineIsArray && isArray(nextLine) && ((nextLineIndent.tabCount + 1) === lineIndent.tabCount)) {
+              lineNumbers.push(i);
+            }
+
             break;
           }
 
           // level is increasing, but we still can get back
           continue;
+        } else if (lineIsArray && isArray(nextLine)) {
+          break;
         }
 
         lineNumbers.push(i);
@@ -41,7 +53,7 @@ angular.module('ramlEditorApp')
 
       // lines below specified
       for (i = lineNumber + 1; i < linesCount; i++) {
-        nextLine = editor.getLine(i);
+        nextLine       = editor.getLine(i);
         nextLineIndent = getLineIndent(nextLine);
 
         if (nextLineIndent.tabCount !== lineIndent.tabCount) {
@@ -50,8 +62,10 @@ angular.module('ramlEditorApp')
             break;
           }
 
-          // level is increasing, but we still can get back
-          continue;
+          if (!lineIsArray || (nextLineIndent.tabCount !== (lineIndent.tabCount + 1))) {
+            // level is increasing, but we still can get back
+            continue;
+          }
         }
 
         lineNumbers.push(i);
@@ -270,6 +284,7 @@ angular.module('ramlEditorApp')
     };
 
     hinter.getAlternatives = function (editor) {
+
       var path = hinter.computePath(editor);
       var alternatives;
       var keysToErase;
