@@ -67,21 +67,47 @@ describe('CodeMirror Service', function () {
       editor.getLine(3).should.be.equal('lal');
     });
 
-    it('should delete tabs when line is tab only', function () {
+    it('should delete one space before cursor', function () {
       var indentUnit = 2;
       var editor     = getEditor(codeMirror,
         [
-          'title: hello',
-          'version: v1.0',
-          'baseUri: http://example.com/api',
-          '    '
+          'title: hello ',
         ],
-        {line: 3, ch: 3},
+        {line: 0, ch: 666},
         {indentUnit: indentUnit}
       );
 
       editor.fakeKey('Backspace');
-      editor.getLine(3).should.be.equal('  ');
+      editor.getLine(0).should.be.equal('title: hello');
+    });
+
+    it('should delete tab before cursor', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          'title: hello',
+          '    '
+        ],
+        {line: 1, ch: 3},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+      editor.getLine(1).should.be.equal('  ');
+    });
+
+    it('should delete tab before cursor with other characters before tab', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          'title: hello  '
+        ],
+        {line: 0, ch: 666},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+      editor.getLine(0).should.be.equal('title: hello');
     });
 
     it('should delete tabs with arbitrary tab size', function () {
@@ -116,6 +142,22 @@ describe('CodeMirror Service', function () {
 
       editor.fakeKey('Backspace');
       editor.getLine(2).should.be.equal('baseUri: http://example.com/api' + sp(indentUnit));
+    });
+
+    it('should delete one char with cursor at first character and tabs after', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          'title: hello',
+          '   '
+        ],
+        {line: 1, ch: 1},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+      editor.lineCount().should.be.equal(2);
+      editor.getLine(1).should.be.equal('  ');
     });
   });
 
