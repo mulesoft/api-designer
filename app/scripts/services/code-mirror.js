@@ -24,10 +24,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       return line.replace(tabRegExp, '');
     };
 
-    service.isLineOnlyTabs = function (line, indentUnit) {
-      return service.removeTabs(line, indentUnit).length === 0;
-    };
-
     service.tabKey = function (cm) {
       var cursor     = cm.getCursor();
       var line       = cm.getLine(cursor.line);
@@ -57,24 +53,15 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.backspaceKey = function (cm) {
-      var cursor     = cm.getCursor();
-      var line       = cm.getLine(cursor.line).substring(0, cursor.ch + 1);
-      var indentUnit = cm.getOption('indentUnit');
+      var cursor          = cm.getCursor();
+      var line            = cm.getLine(cursor.line).substring(0, cursor.ch);
+      var indentUnit      = cm.getOption('indentUnit');
+      var lineEndsWithTab = (line.length - line.trimRight().length) >= indentUnit;
       var i;
 
       /* Erase in tab chunks only if all things found in the current line are tabs */
-      if (line !== '' && service.isLineOnlyTabs(line, indentUnit)) {
+      if (line && lineEndsWithTab) {
         for (i = 0; i < indentUnit; i++) {
-          /*
-           * XXX deleteH should be used this way because if doing
-           *
-           *    cm.deleteH(-indentUnit,'char')
-           *
-           * it provokes some weird line deletion cases:
-           *
-           * On an empty line (but with tabs after the cursor) it completely erases the
-           * previous line.
-           */
           cm.deleteH(-1, 'char');
         }
         return;
