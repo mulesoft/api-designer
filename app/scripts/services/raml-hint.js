@@ -44,6 +44,8 @@ angular.module('ramlEditorApp')
 
           // level is increasing, but we still can get back
           continue;
+        } else if (lineIsArray && isArray(nextLine)) {
+          break;
         }
 
         lineNumbers.push(i);

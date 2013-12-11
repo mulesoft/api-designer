@@ -473,6 +473,29 @@ describe('ramlEditorApp', function () {
         });
       });
 
+      it('should not filter out used properties from previous arrays', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'documentation:',
+            '  - title: Title',
+            '    content: Content',
+            '  - '
+          ],
+          {
+            line: 3,
+            ch:   4
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.name] = true;
+        });
+
+        suggestions.should.include.key('title');
+        suggestions.should.include.key('content');
+      });
+
       it('should return suggestions for root level without title and version keys', function () {
         var editor = getEditor(codeMirror,
           [
