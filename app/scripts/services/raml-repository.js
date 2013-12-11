@@ -43,7 +43,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.saveFile = function (file) {
-      return fileSystem.save(file.path, file.name, file.contents).then(
+      return fileSystem.save(file.path, file.contents).then(
         // success
         function () {
           file.dirty = false;
@@ -62,7 +62,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.loadFile = function (file) {
-      return fileSystem.load(file.path, file.name).then(
+      return fileSystem.load(file.path).then(
         // success
         function (data) {
           file.dirty = false;
@@ -84,7 +84,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.removeFile = function (file) {
-      return fileSystem.remove(file.path, file.name).then(
+      return fileSystem.remove(file.path).then(
         // success
         function () {
           file.dirty = false;
