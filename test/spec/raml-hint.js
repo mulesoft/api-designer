@@ -440,6 +440,39 @@ describe('ramlEditorApp', function () {
     });
 
     describe('getSuggestions', function () {
+      it('should filter out used properties inside documentation', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'documentation:',
+            '  - title: Title',
+            '    content: Content'
+          ],
+          {
+            line: 1,
+            ch:   4
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.name] = true;
+        });
+
+        ['title', 'content'].forEach(function (key) {
+          suggestions.should.not.have.key(key);
+        });
+
+        editor.setCursor(2, 4);
+        suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.name] = true;
+        });
+
+        ['title', 'content'].forEach(function (key) {
+          suggestions.should.not.have.key(key);
+        });
+      });
+
       it('should return suggestions for root level without title and version keys', function () {
         var editor = getEditor(codeMirror,
           [
