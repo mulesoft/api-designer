@@ -2,45 +2,86 @@
 
 angular.module('fs')
   .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
-  .value('filesForMockFileSystem', [])
-  .factory('localStorageFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY, filesForMockFileSystem) {
+  .factory('localStorageFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY) {
     var service = {};
 
     /**
+     *
+     * Save in localStorage entries.
+     *
      * File structure are objects that contain the following attributes:
      * * path: The full path (including the filename).
      * * content: The content of the file (only valid for files).
      * * isFolder: A flag that indicates whether is a folder or file.
      */
-    var files   = filesForMockFileSystem;
     var delay   = 500;
 
-    if (localStorage[LOCAL_PERSISTENCE_KEY]) {
-      try {
-        files = JSON.parse(localStorage[LOCAL_PERSISTENCE_KEY]);
-      } catch (e) {
-        files = [];
+    function validatePath(path) {
+      if (path.indexOf('/') !== 0) {
+        return {valid: false, reason: 'Path should start with "/"'};
       }
+      return {valid: true};
     }
 
-    service.list = function (path, includeFolders) {
+    function extractNameFromPath(path) {
+      var pathInfo = validatePath(path);
+
+      if (!pathInfo.valid) {
+        throw 'Invalid Path!';
+      }
+
+      // When the path is ended in '/'
+      if (path.lastIndexOf('/') === path.length - 1) {
+        
+      }
+
+      path.slice(path.lastIndexOf('/')).
+    }
+
+    function LocalStorageHelper(localStorage) {
+      this.localStorage = localStorage;
+    }
+
+    LocalStorageHelper.prototype = {
+      forEach: function(fn) {
+        var i, key;
+
+        for (i = 0; i < localStorage.length; i++) {
+          key = this.localStorage.key(i);
+          // A key is a local storage file system entry if it starts with LOCAL_PERSISTENCE_KEY + '.'
+          if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
+            fn(key);
+          }
+        }
+      },
+      set: function(path, content) {
+        this.localStorage.setItem(LOCAL_PERSISTENCE_KEY + '.' + path, content);
+      },
+      get: function(path) {
+        return this.localStorage.getItem(LOCAL_PERSISTENCE_KEY + '.' + path);
+      }
+    };
+
+    var localStorageHelper = new LocalStorageHelper();
+
+    /**
+     * List files found in a given path.
+     */
+    service.list = function (path) {
       var deferred = $q.defer();
-      var entries  = files
-        .filter(function (f) {
-          /* f path should begin with path */
-          if (f.path.indexOf(path) !== 0) {
-            return;
-          }
-          if (f.isFolder) {
-            return includeFolders;
-          } else {
-            return true;
-          }
-        })
-        .map(function (f) {
-          return f.path;
-        })
-      ;
+      var isValidPath = validatePath(path);
+      var entries = [];
+
+      if (!isValidPath.valid) {
+        deferred.reject(isValidPath.reason);
+        return deferred.promise;
+      }
+
+      localStorageHelper.forEach(function (fileEntry) {
+        if (fileEntry.path.indexOf(path) === 0) {
+          entries.push(fileEntry);
+        }
+      });
 
       $timeout(function () {
         deferred.resolve(entries);
@@ -54,13 +95,9 @@ angular.module('fs')
      */
     service.save = function (path, content) {
       var deferred = $q.defer();
-      var entries  = files
-        .filter(function (f) {
-          return f.path.indexOf(path) === 0;
-        })
-      ;
 
       $timeout(function () {
+        localStorageHelper.set(path, content);
         var entry = entries[0];
 
         if (entry) {
@@ -89,6 +126,12 @@ angular.module('fs')
      */
     service.createFolder = function (path) {
       var deferred = $q.defer();
+      var isValidPath = validatePath(path);
+
+      if (!isValidPath.valid) {
+        deferred.reject(isValidPath.reason);
+        return deferred.promise;
+      }
 
       $timeout(function () {
         files.push({
