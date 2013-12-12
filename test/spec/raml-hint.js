@@ -541,25 +541,6 @@ describe('ramlEditorApp', function () {
           suggestions.should.not.have.key(key);
         });
       });
-
-      it('should return suggestions for trait in alphabetical order', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'traits:',
-            '  - trait:',
-            '    '
-          ],
-          {
-            line: 2,
-            ch:   4
-          }
-        );
-
-        var names       = ramlHint.getSuggestions(editor).map(function (suggestion) { return suggestion.name; });
-        var sortedNames = names.slice().sort();
-
-        names.should.be.deep.equal(sortedNames);
-      });
     });
 
     describe('canAutocomplete', function () {
