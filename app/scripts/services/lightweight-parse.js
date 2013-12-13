@@ -3,7 +3,7 @@
 angular.module('lightweightParse', ['utils'])
   .factory('getEditorTextAsArrayOfLines', function () {
     var lastStringCache;
-    
+
     return function (editor) {
       var textAsList = [], i;
 
@@ -19,16 +19,11 @@ angular.module('lightweightParse', ['utils'])
 
       return textAsList;
     };
-  
-  })
-  .factory('isArrayStarter', function(getLineIndent) {
-    return function(line) {
-      if(!line) {
-        return false;
-      }
 
-      var lineWithoutIndentation = getLineIndent(line).content;
-      return lineWithoutIndentation.indexOf('-') === 0 && lineWithoutIndentation.indexOf('---') < 0;
+  })
+  .factory('isArrayStarter', function() {
+    return function(line) {
+      return (line || '').trimLeft().indexOf('- ') === 0;
     };
   })
   .factory('extractKey', function (isArrayStarter) {
