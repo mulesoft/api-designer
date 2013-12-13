@@ -71,21 +71,18 @@ angular.module('ramlEditorApp')
       editor.focus();
     };
   })
-  .controller('ramlEditorShelf', function ($scope, ramlHint,
-    eventService, codeMirror, safeApply, applySuggestion) {
-
-    eventService.on('event:raml-editor-initialized', function () {
-      var editor = codeMirror.getEditor();
-      editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
-    });
-
-    $scope.cursorMoved = function () {
-      var editor      = codeMirror.getEditor();
+  .value('suggestionNameToTitleMapping', {
+    '<resource>': 'New Resource'
+  })
+  .factory('updateSuggestions', function(ramlHint, suggestionNameToTitleMapping) {
+    return function (editor) {
       var suggestions = ramlHint.getSuggestions(editor);
       var sections    = {};
       var model       = {sections: []};
 
       suggestions.forEach(function (item) {
+        item.title = suggestionNameToTitleMapping[item.name] || item.name;
+
         sections[item.category] = sections[item.category] || {name: item.category, items: []};
         sections[item.category].items.push(item);
       });
@@ -94,8 +91,18 @@ angular.module('ramlEditorApp')
         model.sections.push(sections[key]);
       });
 
-      model.path   = suggestions.path;
-      $scope.model = model;
+      model.path = suggestions.path;
+      return model;
+    };
+  })
+  .controller('ramlEditorShelf', function ($scope, eventService, codeMirror, safeApply, applySuggestion, updateSuggestions) {
+    eventService.on('event:raml-editor-initialized', function () {
+      var editor = codeMirror.getEditor();
+      editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
+    });
+
+    $scope.cursorMoved = function () {
+      $scope.model = updateSuggestions(codeMirror.getEditor());
 
       safeApply($scope);
     };

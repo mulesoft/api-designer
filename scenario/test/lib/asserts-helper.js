@@ -266,14 +266,14 @@ AssertsHelper.prototype.shelfElementsByGroup = function(groupInfo, byGroup){
 AssertsHelper.prototype.shelfElementsRootByGroup = function(){
   var that = this;
   var byGroup = [shelf.elemRootLevelRoot,shelf.elemRootLevelDocs,shelf.elemRootLevelParameters,shelf.elemRootLevelSecurity,shelf.elemRootLevelResources,shelf.elemRootLevelTraitsAndTypes];
-  var groupInfo = ['ROOT (6)\ntitle\nversion\nschemas\nbaseUri\nmediaType\nprotocols','DOCS (1)\ndocumentation','PARAMETERS (1)\nbaseUriParameters','SECURITY (2)\nsecuritySchemes\nsecuredBy','RESOURCES (1)\n<resource>','TRAITS AND TYPES (2)\ntraits\nresourceTypes'];
+  var groupInfo = ['ROOT (6)\ntitle\nversion\nschemas\nbaseUri\nmediaType\nprotocols','DOCS (1)\ndocumentation','PARAMETERS (1)\nbaseUriParameters','SECURITY (2)\nsecuritySchemes\nsecuredBy','RESOURCES (1)\nNew Resource','TRAITS AND TYPES (2)\ntraits\nresourceTypes'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
 AssertsHelper.prototype.shelfElementsResourceByGroup = function(){
   var that = this;
   var byGroup = [shelf.elemResourceLevelDocs,shelf.elemResourceLevelMethods,shelf.elemResourceLevelParameters,shelf.elemResourceLevelSecurity, shelf.elemResourceLevelResources,shelf.elemResourceLevelTraitsAndTypes];
-  var groupInfo = ['DOCS (2)\ndisplayName\ndescription','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nuriParameters\nbaseUriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\n<resource>','TRAITS AND TYPES (2)\nis\ntype'];
+  var groupInfo = ['DOCS (2)\ndisplayName\ndescription','METHODS (9)\noptions\nget\nhead\npost\nput\ndelete\ntrace\nconnect\npatch','PARAMETERS (2)\nuriParameters\nbaseUriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\nNew Resource','TRAITS AND TYPES (2)\nis\ntype'];
   that.shelfElementsByGroup(groupInfo, byGroup);
 };
 
