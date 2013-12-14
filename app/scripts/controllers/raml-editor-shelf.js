@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .factory('applySuggestion', function (ramlHint, ramlSnippets, getLineIndent, generateTabs) {
+  .factory('applySuggestion', function (ramlHint, ramlSnippets, getLineIndent, generateTabs, isArrayStarter) {
     return function (editor, suggestion) {
       var snippet           = ramlSnippets.getSnippet(suggestion);
       var snippetLinesCount = snippet.length;
@@ -11,17 +11,41 @@ angular.module('ramlEditorApp')
       var lineHasPadding    = lineIndent.tabCount > 0;
       var lineIsEmpty       = line.trim() === '';
       var lineIsArray       = line.trim() === '-';
+      var cursorIsAtNode    = !(lineIsEmpty || lineIsArray);
       var i                 = cursor.line + 1;
       var nextLine          = editor.getLine(i);
       var nextLineIndent    = nextLine && getLineIndent(nextLine);
       var path              = ramlHint.computePath(editor);
       var padding           = cursor.line === 0 ? '' : generateTabs(path.length - 1 + (path.length > 1 ? path.listsTraveled : 0));
 
+      //For list element suggestions, we need to know whether or not to add the '- ' list
+      //indicator: If a previous element at our tab depth already added the list indicator
+      //then we should not do so.
+      var isList = suggestion.isList;
+      if (isList) {
+        var prevLineIdx = cursor.line - (cursorIsAtNode ? 0 : 1);
+        if (prevLineIdx >= 0) {
+          var prevLine = editor.getLine(prevLineIdx);
+          var prevLineIndent = getLineIndent(prevLine);
+          var prevLineIsArray = isArrayStarter(prevLine);
+          //We apply the list '- ' indicator only if we are not already in an
+          //array. E.g. indent has changed or the previous line is not the
+          //first item in an array:
+          var indentChanged = lineIndent.tabCount !== prevLineIndent.tabCount;
+          isList = indentChanged !== prevLineIsArray;
+          if (isList && cursorIsAtNode) {
+            padding = generateTabs(prevLineIndent.tabCount - (prevLineIsArray ? 0 : 1));
+          }
+        }
+      }
+
       // add paddings to snippet lines
       snippet = snippet.map(function (line, index) {
         if (index === 0) {
           if (lineIsArray) {
             return ' ' + line;
+          } else if (isList) {
+            return '- ' + line;
           }
 
           if (lineIsEmpty && lineHasPadding) {
@@ -34,7 +58,10 @@ angular.module('ramlEditorApp')
 
       // insert into current cursor's position
       // to re-use indentation as there is nothing else
-      if (!(lineIsEmpty || lineIsArray)) {
+      if (cursorIsAtNode) {
+        if (isList) {
+          snippet = padding + snippet;
+        }
         snippet = '\n' + snippet;
       }
 
@@ -60,7 +87,7 @@ angular.module('ramlEditorApp')
       // in case of inserting into current line we're
       // moving cursor one line less further as we're
       // re-using current line
-      if (lineIsEmpty || lineIsArray) {
+      if (!cursorIsAtNode) {
         i = i - 1;
       }
 
@@ -87,6 +114,9 @@ angular.module('ramlEditorApp')
 
       suggestions.forEach(function (item) {
         sections[item.category] = sections[item.category] || {name: item.category, items: []};
+        //61553714: Because item is the model passed into the designer, we need to copy the
+        //isList property into it so that the designer can format things properly.
+        item.isList = suggestions.isList;
         sections[item.category].items.push(item);
       });
 

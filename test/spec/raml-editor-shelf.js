@@ -112,7 +112,7 @@ describe('Shelf controller', function () {
           '  - trait1:',
           '      displayName:', // <--
           '  - trait2:',
-          '      displayName:',
+          '      displayName:,
         ],
         {
           line: 2,
@@ -192,5 +192,103 @@ describe('Shelf controller', function () {
       applySuggestion(editor, {name: 'title'});
       editor.getLine(1).should.be.equal('  - title: My API');
     });
+
+    it ('should insert a documentation first child as a list item with a -', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  '
+        ]);
+
+      applySuggestion(editor, {name: 'title', isList: true });
+      editor.getLine(1).should.be.equal('  - title: My API');
+    });
+
+    it ('should insert a documentation second child as a peer when cursor is at end of node line', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello'
+        ]);
+
+      applySuggestion(editor, {name: 'content', isList: true });
+      editor.getLine(2).should.be.equal('  - content:');
+    });
+
+    it ('should insert a documentation child at 1 tab over as array root', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello',
+          '  '
+        ]);
+
+      applySuggestion(editor, {name: 'b', isList: true });
+      editor.getLine(2).should.be.equal('  - b:');
+    });
+
+    it ('should insert a documentation second child as a list item without a - when cursor is 2 tabs over', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - title: Hello',
+          '    '
+        ]);
+
+      applySuggestion(editor, {name: 'content', isList: true });
+      editor.getLine(2).should.be.equal('    content:');
+    });
+
+    it ('should insert a documentation third child as a list item with a -', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello',
+          '    b: World',
+          '  '
+        ]);
+
+      applySuggestion(editor, {name: 'c', isList: true });
+      editor.getLine(3).should.be.equal('  - c:');
+    });
+
+    it ('should insert a documentation third array child without a -', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello',
+          '    b: World',
+          '    '
+        ]);
+
+      applySuggestion(editor, {name: 'c', isList: true });
+      editor.getLine(3).should.be.equal('    c:');
+    });
+
+    it ('should insert an array root between two array elements when cursor is at end of line', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - title: Hello',
+          '  - title: World',
+          '  '
+        ], 1);
+
+      applySuggestion(editor, {name: 'content', isList: true });
+      editor.getLine(2).should.be.equal('  - content:');
+      editor.getLine(3).should.be.equal('  - title: World');
+    });
   });
+
+  //--------- Utility functions
+
+  //linesArray: Code to place in editor
+  //cursorLine: Line on which to place the cursor, last line if not specified
+  //cursorColumn: Column on which to place the cursor, last column if not specified.
+  function createEditor(linesArray, cursorLine, cursorColumn)
+  {
+    cursorLine = cursorLine || linesArray.length - 1;
+    cursorColumn = cursorColumn || linesArray[cursorLine].length;
+    return getEditor(codeMirror, linesArray.join('\n'), { line : cursorLine, ch: cursorColumn });
+  }
 });

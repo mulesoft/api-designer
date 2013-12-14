@@ -44,7 +44,10 @@ angular.module('ramlEditorApp')
 
           // level is increasing, but we still can get back
           continue;
-        } else if (lineIsArray && isArray(nextLine)) {
+        } else if (isArray(nextLine)) {
+          //We do not check if the current line is an array because it may not be marked
+          //as an array YET. However, if any element at the same tabbing level is an
+          //array element, then this one must be as well.
           break;
         }
 
@@ -92,9 +95,9 @@ angular.module('ramlEditorApp')
 
     hinter.suggestRAML = window.suggestRAML;
 
-    hinter.computePath = function (editor) {
+    hinter.computePath = function (editor, line) {
       var editorState = hinter.getEditorState(editor);
-      var line = editorState.cur.line;
+      line = line || editorState.cur.line;
       var ch = editorState.cur.ch;
       var listsTraveled = 0;
       var lastTraveledListSpaceCount;
@@ -107,6 +110,7 @@ angular.module('ramlEditorApp')
       }
 
       textAsList = getEditorTextAsArrayOfLines(editor).slice(0, line + 1).reverse();
+      //If the line is all whitespace, remove anything to the right of the cursor
       if (textAsList[0].trim() === '') {
         textAsList[0] = textAsList[0].slice(0, ch);
       }
@@ -117,6 +121,7 @@ angular.module('ramlEditorApp')
       }
 
       lastTraveledListSpaceCount = getLineIndent(textAsList[0]).spaceCount;
+      //Provide no suggestions if we are not at a tab boundary
       if ((lastTraveledListSpaceCount % editor.getOption('indentUnit')) !== 0) {
         return;
       }
@@ -303,6 +308,7 @@ angular.module('ramlEditorApp')
       }
 
       alternatives = hinter.suggestRAML(path);
+      var isList = alternatives && alternatives.metadata && alternatives.metadata.isList;
       keysToErase  = getKeysToErase(editor);
       alternatives = hinter.selectiveCloneAlternatives(alternatives, keysToErase);
 
@@ -317,7 +323,8 @@ angular.module('ramlEditorApp')
       return {
         path  : path,
         keys  : alternativeKeys,
-        values: alternatives
+        values: alternatives,
+        isList: isList
       };
     };
 
@@ -347,6 +354,7 @@ angular.module('ramlEditorApp')
       });
 
       suggestions.path = alternatives.path;
+      suggestions.isList = alternatives.isList;
 
       return suggestions;
     };
