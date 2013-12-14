@@ -346,7 +346,7 @@ angular.module('ramlEditorApp')
       }
 
       var alternatives = hinter.getAlternatives(editor);
-      var suggestions  = alternatives.keys.map(function (e) {
+      var suggestions  = alternatives.keys.sort().map(function (e) {
         return {
           name:     e,
           category: alternatives.values.suggestions[e].metadata.category
