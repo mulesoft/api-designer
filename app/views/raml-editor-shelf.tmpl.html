@@ -2,7 +2,7 @@
   <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">
     {{section.name}}&nbsp;({{section.items.length}})
     <ul role="items">
-      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="icon-reply"></i><span>{{item.name}}</span></li>
+      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="icon-reply"></i><span>{{item.title}}</span></li>
     </ul>
   </li>
 </ul>
