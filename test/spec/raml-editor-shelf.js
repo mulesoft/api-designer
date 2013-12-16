@@ -112,7 +112,7 @@ describe('Shelf controller', function () {
           '  - trait1:',
           '      displayName:', // <--
           '  - trait2:',
-          '      displayName:,
+          '      displayName:'
         ],
         {
           line: 2,
