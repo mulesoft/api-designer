@@ -64,7 +64,13 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
 
     service.enterKey = function (cm) {
       function getSpaceCount(line) {
-        return line.length - line.trimLeft().length;
+        for (var i = 0; i < line.length; i++) {
+          if (line[i] !== ' ') {
+            break;
+          }
+        }
+
+        return i;
       }
 
       function getParent(lineNumber, spaceCount) {
