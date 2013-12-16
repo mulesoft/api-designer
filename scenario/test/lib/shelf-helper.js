@@ -6,7 +6,7 @@ function ShelfHelper() {
   this.elemRootLevelDocs = ['documentation'];
   this.elemRootLevelParameters = ['baseUriParameters'];
   this.elemRootLevelSecurity = ['securedBy','securitySchemes'];
-  this.elemRootLevelResources = ['<resource>'];
+  this.elemRootLevelResources = ['New Resource'];
   this.elemRootLevelTraitsAndTypes = ['resourceTypes','traits'];
   this.elemRootLevelSchemas = ['schemas'];
   this.elemRootLevel = this.elemRootLevelRoot.concat(this.elemRootLevelDocs,this.elemRootLevelParameters,this.elemRootLevelSecurity,this.elemRootLevelResources,this.elemRootLevelTraitsAndTypes,this.elemRootLevelSchemas);
@@ -46,7 +46,7 @@ function ShelfHelper() {
   this.elemResourceLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
   this.elemResourceLevelParameters = ['uriParameters','baseUriParameters'];
   this.elemResourceLevelSecurity = ['securedBy'];
-  this.elemResourceLevelResources = ['<resource>'];
+  this.elemResourceLevelResources = ['New Resource'];
   this.elemResourceLevelTraitsAndTypes = ['is', 'type'];
   this.elemResourceLevel = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelResources,this.elemResourceLevelTraitsAndTypes);
   this.elemResourceLevelWithoutNewReosurce = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelTraitsAndTypes);
@@ -64,7 +64,6 @@ function ShelfHelper() {
 // body
   this.elemBodyLevelDocs = ['application/x-www-form-urlencoded','multipart/form-data','application/json', 'application/xml' ];
   this.elemBodyLevel = this.elemBodyLevelDocs;
-
   this.elemlistCss = '[ng-repeat=\'item in section.items\'] span';
 }
 
@@ -99,4 +98,3 @@ ShelfHelper.prototype.itemsInSection = function(){
 };
 
 exports.ShelfHelper = ShelfHelper;
-

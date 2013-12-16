@@ -1,5 +1,3 @@
-/* globals CodeMirror */
-
 'use strict';
 
 var codeMirror, eventService, codeMirrorErrors,
@@ -26,12 +24,7 @@ describe('RAML Editor Main Controller', function () {
   beforeEach(function () {
     scope = $rootScope.$new();
 
-    editor = {
-      on: function () {},
-      setValue: function() {},
-      setCursor: function() {},
-      focus: function() {}
-    };
+    editor = getEditor(codeMirror);
 
     codeMirror.initEditor = function (){
       return editor;
@@ -56,6 +49,68 @@ describe('RAML Editor Main Controller', function () {
     };
   });
 
+  it('should disable console when document is empty', function () {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue('');
+
+    scope.$apply();
+    $timeout.flush();
+    scope.$apply();
+
+    sourceUpdatedSpy.called.should.be.true;
+    scope.hasErrors.should.be.false;
+    scope.consoleEnabled.should.be.false;
+
+    sourceUpdatedSpy.restore();
+  });
+
+  it('should disable console when parser has errors', function (done) {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue('#%RAML 0.8');
+
+    scope.$apply();
+    $timeout.flush();
+
+    setTimeout(function () {
+      sourceUpdatedSpy.called.should.be.true;
+
+      scope.hasErrors.should.be.true;
+      scope.consoleEnabled.should.be.false;
+
+      sourceUpdatedSpy.restore();
+
+      done();
+    });
+  });
+
+  it('should enable console when everything is good', function (done) {
+    $controller('ramlEditorMain', params);
+
+    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
+    scope.editor.setValue([
+      '#%RAML 0.8',
+      'title: Title'
+    ].join('\n'));
+
+    scope.$apply();
+    $timeout.flush();
+
+    setTimeout(function () {
+      sourceUpdatedSpy.called.should.be.true;
+
+      scope.hasErrors.should.be.false;
+      scope.consoleEnabled.should.be.true;
+
+      sourceUpdatedSpy.restore();
+
+      done();
+    });
+  });
+
   it('should ask user for confirmation if there are unsaved changes', function () {
     ctrl = $controller('ramlEditorMain', params);
     var canSaveStub = sinon.stub(scope, 'canSave').returns(true);
@@ -72,124 +127,6 @@ describe('RAML Editor Main Controller', function () {
     should.not.exist($window.onbeforeunload());
 
     canSaveStub.restore();
-  });
-
-  describe('triggerAutocomplete', function () {
-    var triggerAutocomplete;
-    var showHintStub;
-
-    beforeEach(function () {
-      $controller('ramlEditorMain', params);
-
-      triggerAutocomplete = scope.triggerAutocomplete;
-      showHintStub        = sinon.stub(CodeMirror, 'showHint');
-
-      if (!CodeMirror.hint) {
-        CodeMirror.hint = {};
-      }
-
-      if (!CodeMirror.hint.javascript) {
-        CodeMirror.hint.javascript = function () {};
-      }
-    });
-
-    afterEach(function () {
-      showHintStub.restore();
-    });
-
-    it('should not trigger autocomplete for an empty line', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-      ]));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should not trigger autocomplete for the line with whitespaces only', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        ' '
-      ]));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for the first line with comments (RAML tag)', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        '#RAML'
-      ]));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for cursor after comment', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'text',
-        'position1 # position2'
-      ], {line: 1, ch: 12}));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for cursor before comment', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'text',
-        'position1 # position2'
-      ], {line: 1, ch: 0}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for cursor before array', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'array:',
-        '  - element'
-      ], {line: 1, ch: 0}));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for cursor after array', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'array:',
-        '  - element'
-      ], {line: 1, ch: 4}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for map value', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'map:',
-        '  key: value'
-      ], {line: 1, ch: 7}));
-
-      showHintStub.called.should.be.false;
-    });
-
-    it('should trigger autocomplete for map key', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'map:',
-        '  key: value'
-      ], {line: 1, ch: 2}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should trigger autocomplete for map key being part of array element', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        'map:',
-        '  - key: value'
-      ], {line: 1, ch: 4}));
-
-      showHintStub.called.should.be.true;
-    });
-
-    it('should not trigger autocomplete for resource', function () {
-      triggerAutocomplete(getEditor(codeMirror, [
-        '/resource:',
-      ], {line: 0, ch: 0}));
-
-      showHintStub.called.should.be.false;
-    });
   });
 
   describe('on raml parser error', function () {

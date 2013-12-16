@@ -11,7 +11,6 @@ describe('Muse: Mule Sales Enablement API', function () {
 //  var consoleApi = new ConsoleHelper();
 
   describe('e2e validation', function(){
-
     it('clear editor', function(){
       editor.setValue('');
       expect(editor.getLine(1)).toEqual('');

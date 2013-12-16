@@ -14,26 +14,38 @@ angular.module('ramlEditorApp')
         lineNumber = editor.getCursor().line;
       }
 
+      function isArray(line) {
+        return line.trimLeft().indexOf('- ') === 0;
+      }
+
       var lineNumbers = [lineNumber];
-      var lineIndent = getLineIndent(editor.getLine(lineNumber).slice(0, editor.getCursor().ch + 1));
-      var linesCount = editor.lineCount();
+      var line        = editor.getLine(lineNumber).slice(0, editor.getCursor().ch + 1);
+      var lineIndent  = getLineIndent(line);
+      var lineIsArray = isArray(line);
+      var linesCount  = editor.lineCount();
       var i;
       var nextLine;
       var nextLineIndent;
 
       // lines above specified
       for (i = lineNumber - 1; i >= 0; i--) {
-        nextLine = editor.getLine(i);
+        nextLine       = editor.getLine(i);
         nextLineIndent = getLineIndent(nextLine);
 
         if (nextLineIndent.tabCount !== lineIndent.tabCount) {
           // level is decreasing, no way we can get back
           if (nextLineIndent.tabCount < lineIndent.tabCount) {
+            if (!lineIsArray && isArray(nextLine) && ((nextLineIndent.tabCount + 1) === lineIndent.tabCount)) {
+              lineNumbers.push(i);
+            }
+
             break;
           }
 
           // level is increasing, but we still can get back
           continue;
+        } else if (lineIsArray && isArray(nextLine)) {
+          break;
         }
 
         lineNumbers.push(i);
@@ -41,7 +53,7 @@ angular.module('ramlEditorApp')
 
       // lines below specified
       for (i = lineNumber + 1; i < linesCount; i++) {
-        nextLine = editor.getLine(i);
+        nextLine       = editor.getLine(i);
         nextLineIndent = getLineIndent(nextLine);
 
         if (nextLineIndent.tabCount !== lineIndent.tabCount) {
@@ -50,8 +62,10 @@ angular.module('ramlEditorApp')
             break;
           }
 
-          // level is increasing, but we still can get back
-          continue;
+          if (!lineIsArray || (nextLineIndent.tabCount !== (lineIndent.tabCount + 1))) {
+            // level is increasing, but we still can get back
+            continue;
+          }
         }
 
         lineNumbers.push(i);
@@ -270,6 +284,7 @@ angular.module('ramlEditorApp')
     };
 
     hinter.getAlternatives = function (editor) {
+
       var path = hinter.computePath(editor);
       var alternatives;
       var keysToErase;
@@ -315,35 +330,93 @@ angular.module('ramlEditorApp')
     };
 
     hinter.getSuggestions = function (editor) {
-      var alternatives = hinter.getAlternatives(editor);
-
-      var list = alternatives.keys.map(function (e) {
-        var suggestion = alternatives.values.suggestions[e];
-        return { name: e, category: suggestion.metadata.category, isText: suggestion.metadata.isText  };
-      }).filter(function(e){
-        if (!hinter.shouldSuggestVersion(editor) && e.name === RAML_VERSION) {
-          return false;
-        }
-        return true;
-      }) || [];
-
-      if (alternatives.values.metadata && alternatives.values.metadata.id === 'resource') {
-        list.push({name: 'New resource', category: alternatives.values.metadata.category});
+      if (hinter.shouldSuggestVersion(editor)) {
+        return [{
+          name:     '#%RAML 0.8',
+          category: 'main',
+          isText:   true
+        }];
       }
 
-      list.path = alternatives.path;
+      var alternatives = hinter.getAlternatives(editor);
+      var suggestions  = alternatives.keys.sort().map(function (e) {
+        return {
+          name:     e,
+          category: alternatives.values.suggestions[e].metadata.category,
+          dynamic:  alternatives.values.suggestions[e].metadata.dynamic,
+        };
+      });
 
-      return list;
+      suggestions.path = alternatives.path;
+
+      return suggestions;
     };
 
-    hinter.autocompleteHelper = function(editor) {
-      var editorState = hinter.getEditorState(editor);
-      var line = editorState.curLine;
-      var word = line.trim();
+    hinter.canAutocomplete = function (cm) {
+      var editorState    = hinter.getEditorState(cm);
+      var curLine        = editorState.curLine;
+      var curLineTrimmed = curLine.trim();
+      var offset         = curLine.indexOf(curLineTrimmed);
+      var lineNumber     = editorState.start ? editorState.start.line : 0;
+
+      // nothing to autocomplete within comments
+      // -> "#..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('#');
+        return lineNumber > 0 &&
+               indexOf !== -1 &&
+               editorState.cur.ch > (indexOf + offset)
+        ;
+      })()) {
+        return false;
+      }
+
+      // nothing to autocomplete within resources
+      // -> "/..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('/');
+        return indexOf === 0 &&
+               editorState.cur.ch >= (indexOf + offset)
+        ;
+      })()) {
+        return false;
+      }
+
+      // nothing to autocomplete for key value
+      // -> "key: ..."
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf(': ');
+        return indexOf !== -1 &&
+               editorState.cur.ch >= (indexOf + offset + 2)
+        ;
+      })()) {
+        return false;
+      }
+
+      // nothing to autocomplete prior array
+      // -> "...- "
+      if ((function () {
+        var indexOf = curLineTrimmed.indexOf('- ');
+        return indexOf === 0 &&
+               editorState.cur.ch < (indexOf + offset)
+        ;
+      })()) {
+        return false;
+      }
+
+      return true;
+    };
+
+    hinter.autocompleteHelper = function(cm) {
+      var editorState  = hinter.getEditorState(cm);
+      var line         = editorState.curLine;
+      var word         = line.trimLeft();
       var wordIsKey;
-      var alternatives = hinter.getAlternatives(editor);
+      var suggestions;
       var list;
-      var render = function (element, self, data) {
+      var fromCh;
+      var toCh;
+      var render       = function (element, self, data) {
         element.innerHTML = [
           '<div>',
           data.displayText,
@@ -353,6 +426,12 @@ angular.module('ramlEditorApp')
           '</div>'
         ].join('');
       };
+
+      if (hinter.canAutocomplete(cm)) {
+        suggestions = hinter.getSuggestions(cm);
+      } else {
+        return;
+      }
 
       // handle comment (except RAML tag)
       (function () {
@@ -378,19 +457,22 @@ angular.module('ramlEditorApp')
         }
       })();
 
-      word = word.trim();
-      list = alternatives.keys.map(function (e) {
-        var suggestion = alternatives.values.suggestions[e];
-        var text       = e;
+      function notDynamic(suggestion) {
+        return !suggestion.dynamic;
+      }
 
-        if (!suggestion.metadata.isText && !wordIsKey) {
+      word = word.trim();
+      list = suggestions.filter(notDynamic).map(function (suggestion) {
+        var text = suggestion.name;
+
+        if (!suggestion.isText && !wordIsKey) {
           text = text + ':';
         }
 
         return {
           displayText: text,
           text:        text,
-          category:    suggestion.metadata.category,
+          category:    suggestion.category,
           render:      render
         };
       });
@@ -403,11 +485,19 @@ angular.module('ramlEditorApp')
         });
       }
 
+      if (word) {
+        fromCh = line.indexOf(word);
+        toCh   = fromCh + word.length;
+      } else {
+        fromCh = editorState.cur.ch;
+        toCh   = fromCh;
+      }
+
       return {
         word: word,
         list: list,
-        from: CodeMirror.Pos(editorState.cur.line, line.indexOf(word)),
-        to:   CodeMirror.Pos(editorState.cur.line, line.indexOf(word) + word.length)
+        from: CodeMirror.Pos(editorState.cur.line, fromCh),
+        to:   CodeMirror.Pos(editorState.cur.line, toCh)
       };
     };
 

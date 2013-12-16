@@ -24,10 +24,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       return line.replace(tabRegExp, '');
     };
 
-    service.isLineOnlyTabs = function (line, indentUnit) {
-      return service.removeTabs(line, indentUnit).length === 0;
-    };
-
     service.tabKey = function (cm) {
       var cursor     = cm.getCursor();
       var line       = cm.getLine(cursor.line);
@@ -57,24 +53,15 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.backspaceKey = function (cm) {
-      var cursor     = cm.getCursor();
-      var line       = cm.getLine(cursor.line).substring(0, cursor.ch + 1);
-      var indentUnit = cm.getOption('indentUnit');
+      var cursor          = cm.getCursor();
+      var line            = cm.getLine(cursor.line).substring(0, cursor.ch);
+      var indentUnit      = cm.getOption('indentUnit');
+      var lineEndsWithTab = (line.length - line.trimRight().length) >= indentUnit;
       var i;
 
       /* Erase in tab chunks only if all things found in the current line are tabs */
-      if (line !== '' && service.isLineOnlyTabs(line, indentUnit)) {
+      if (line && lineEndsWithTab) {
         for (i = 0; i < indentUnit; i++) {
-          /*
-           * XXX deleteH should be used this way because if doing
-           *
-           *    cm.deleteH(-indentUnit,'char')
-           *
-           * it provokes some weird line deletion cases:
-           *
-           * On an empty line (but with tabs after the cursor) it completely erases the
-           * previous line.
-           */
           cm.deleteH(-1, 'char');
         }
         return;
@@ -127,14 +114,10 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       }
 
       var offset = 0;
-      if (curLineWithoutTabs.replace(' ', '').length > 0) {
+      if (editorState.cur.ch !== 0 && curLineWithoutTabs.replace(' ', '').length > 0) {
         if (hasChildren(cm)) {
           offset = 1;
         }
-      }
-
-      if (editorState.cur.ch < editorState.curLine.length) {
-        offset = /^\s*\w+:/.test(editorState.curLine) ? 1 : 0;
       }
 
       var extraWhitespace   = '';
@@ -172,9 +155,10 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         tabSize: 2,
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
-          'Cmd-s': 'save',
-          'Ctrl-s': 'save',
-          'Shift-Tab': 'indentLess'
+          'Cmd-S': 'save',
+          'Ctrl-S': 'save',
+          'Shift-Tab': 'indentLess',
+          'Shift-Ctrl-T': 'toggleTheme'
         },
         keyMap: 'tabSpace',
         foldGutter: foldGutterConfig,
@@ -233,15 +217,19 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       };
 
       CodeMirror.commands.autocomplete = function (cm) {
-        CodeMirror.showHint(cm, CodeMirror.hint.javascript, {
+        CodeMirror.showHint(cm, CodeMirror.hint.raml, {
           ghosting: true
         });
+      };
+
+      CodeMirror.commands.toggleTheme = function () {
+        eventService.broadcast('event:toggle-theme');
       };
 
       CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
       CodeMirror.defineMIME('text/x-raml', 'raml');
 
-      CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
+      CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper('fold', 'indent', getFoldRange);
     })();
 

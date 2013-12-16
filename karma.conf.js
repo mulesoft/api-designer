@@ -57,7 +57,6 @@ module.exports = function(config) {
       'app/scripts/services/file-system.js',
       'app/scripts/services/mock-file-system.js',
       'app/scripts/services/remote-file-system.js',
-      'app/scripts/directives/directives.js',
       'app/scripts/filters/string-filters.js',
       'app/scripts/controllers/raml-editor-main.js',
       'app/scripts/controllers/raml-editor-shelf.js',

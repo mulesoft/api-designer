@@ -31,8 +31,8 @@ describe('RAML Snippets', function () {
     ]);
   });
 
-  it('should provide snippet for "new resource"', function () {
-    ramlSnippets.getSnippet({name: 'new resource'}).should.be.deep.equal([
+  it('should provide snippet for "<resource>"', function () {
+    ramlSnippets.getSnippet({name: '<resource>'}).should.be.deep.equal([
       '/newResource:',
       '  displayName: resourceName'
     ]);
