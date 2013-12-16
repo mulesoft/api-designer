@@ -193,6 +193,8 @@ describe('Shelf controller', function () {
       editor.getLine(1).should.be.equal('  - title: My API');
     });
 
+    //region Unit tests for isList metadata validation on list child items of documentation element
+
     it ('should insert a documentation first child as a list item with a -', function () {
       var editor = createEditor(
         [
@@ -202,6 +204,17 @@ describe('Shelf controller', function () {
 
       applySuggestion(editor, {name: 'title', isList: true });
       editor.getLine(1).should.be.equal('  - title: My API');
+    });
+
+    it ('should not insert a documentation first child as a list item with a - is isList is false', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  '
+        ]);
+
+      applySuggestion(editor, {name: 'title', isList: false });
+      editor.getLine(1).should.be.equal('  title: My API');
     });
 
     it ('should insert a documentation second child as a peer when cursor is at end of node line', function () {
@@ -278,13 +291,21 @@ describe('Shelf controller', function () {
       editor.getLine(2).should.be.equal('  - content:');
       editor.getLine(3).should.be.equal('  - title: World');
     });
+
+    //endregion
+
   });
 
   //--------- Utility functions
 
-  //linesArray: Code to place in editor
-  //cursorLine: Line on which to place the cursor, last line if not specified
-  //cursorColumn: Column on which to place the cursor, last column if not specified.
+  /**
+   *
+   * @param Code to place in editor
+   * @param Line on which to place the cursor, last line if not specified
+   * @param Column on which to place the cursor, last column if not specified.
+   * @returns {Object} CodeMirror Editor containing the given code with the
+   * cursor placed at cursorLine, cursorColumn
+   */
   function createEditor(linesArray, cursorLine, cursorColumn)
   {
     cursorLine = cursorLine || linesArray.length - 1;
