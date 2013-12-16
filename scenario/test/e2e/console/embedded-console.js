@@ -28,7 +28,6 @@ describe('Embedded-console',function(){
     editor.setValue(definition);
     var embeddedConsole = browser.findElement(by.css('[role="console"]'));
     expect(embeddedConsole.getAttribute('class')).toEqual('');
-    console.log('set line 5');
     editor.setLine(5,'  res2:');
     expect(embeddedConsole.getAttribute('class')).toEqual('ng-hide');
   });

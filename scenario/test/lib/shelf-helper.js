@@ -1,6 +1,7 @@
 'use strict';
 function ShelfHelper() {
   this.elemRamlVersion = ['#%RAML 0.8'];
+  this.elemRamlByGroup = '';
 //Root Elements
   this.elemRootLevelRoot = ['baseUri','mediaType','protocols','title','version'];
   this.elemRootLevelDocs = ['documentation'];
@@ -11,10 +12,12 @@ function ShelfHelper() {
   this.elemRootLevelSchemas = ['schemas'];
   this.elemRootLevel = this.elemRootLevelRoot.concat(this.elemRootLevelDocs,this.elemRootLevelParameters,this.elemRootLevelSecurity,this.elemRootLevelResources,this.elemRootLevelTraitsAndTypes,this.elemRootLevelSchemas);
   this.elemRootLevelWithoutNewResource = this.elemRootLevelRoot.concat(this.elemRootLevelDocs,this.elemRootLevelParameters,this.elemRootLevelSecurity,this.elemRootLevelTraitsAndTypes,this.elemRootLevelSchemas);
+  this.elemRootByGroup = ' root (5) baseUrimediaTypeprotocolstitleversion docs (1) documentation parameters (1) baseUriParameters security (2) securedBysecuritySchemes resources (1) New Resource traits and types (2) resourceTypestraits schemas (1) schemas ';
 //Named Parameter
   this.elemNamedParametersLevelDocs = ['description','displayName','example'];
-  this.elemNamedParametersLevelParameters = ['default','enum', 'maximum','maxLength','minimum','minLength','pattern','required','type'];
+  this.elemNamedParametersLevelParameters = ['default','enum','maxLength','maximum','minLength','minimum','pattern','required','type'];
   this.elemNamedParametersLevel = this.elemNamedParametersLevelDocs.concat(this.elemNamedParametersLevelParameters);
+  this.elemNamedParametersByGroups = ' docs (3) descriptiondisplayNameexample parameters (9) defaultenummaxLengthmaximumminLengthminimumpatternrequiredtype ';
 //traits
   this.elemTraitsLevelRoot =['protocols'];
   this.elemTraitsLevelDocs = ['description','displayName','usage'];
@@ -23,6 +26,7 @@ function ShelfHelper() {
   this.elemTraitsLevelSecurity = ['securedBy'];
   this.elemTraitsLevelBody = ['body'];
   this.elemTraitsLevel = this.elemTraitsLevelRoot.concat(this.elemTraitsLevelDocs,this.elemTraitsLevelParameters, this.elemTraitsLevelResponses,this.elemTraitsLevelSecurity,this.elemTraitsLevelBody);
+  this.elemTraitsByGroup = ' root (1) protocols docs (3) descriptiondisplayNameusage parameters (3) baseUriParametersheadersqueryParameters responses (1) responses security (1) securedBy body (1) body ';
 //Methods
   this.elemMethodLevelRoot = ['protocols'];
   this.elemMethodLevelDocs = ['description'];
@@ -32,6 +36,7 @@ function ShelfHelper() {
   this.elemMethodLevelTraitsAndTypes = ['is'];
   this.elemMethodLevelBody = ['body'];
   this.elemMethodLevel = this.elemMethodLevelRoot.concat(this.elemMethodLevelDocs,this.elemMethodLevelParameters,this.elemMethodLevelResponses,this.elemMethodLevelSecurity,this.elemMethodLevelTraitsAndTypes,this.elemMethodLevelBody);
+  this.elemMethodByGroup = ' root (1) protocols docs (1) description parameters (3) baseUriParametersheadersqueryParameters responses (1) responses security (1) securedBy traits and types (1) is body (1) body ';
 //  RT Methods
   this.elemRtMethodLevelRoot = this.elemMethodLevelRoot;
   this.elemRtMethodLevelDocs = this.elemMethodLevelDocs;
@@ -41,15 +46,17 @@ function ShelfHelper() {
   this.elemRtMethodLevelTraitsAndTypes = this.elemMethodLevelTraitsAndTypes;
   this.elemRtMethodLevelBody = this.elemMethodLevelBody;
   this.elemRtMethodLevel = this.elemRtMethodLevelRoot.concat(this.elemRtMethodLevelDocs,this.elemRtMethodLevelParameters,this.elemRtMethodLevelResponses,this.elemRtMethodLevelSecurity,this.elemRtMethodLevelTraitsAndTypes,this.elemRtMethodLevelBody);
+  this.elemRtMethodByGroup = ' root (1) protocols docs (1) description parameters (3) baseUriParametersheadersqueryParameters responses (1) responses security (1) securedBy traits and types (1) is body (1) body ';
 //  Resource Root
   this.elemResourceLevelDocs = ['description','displayName'];
-  this.elemResourceLevelMethods = ['get','post','put','delete','head','patch','options','trace', 'connect'];
-  this.elemResourceLevelParameters = ['uriParameters','baseUriParameters'];
+  this.elemResourceLevelMethods = ['connect','delete','get','head','options','patch','post','put','trace'];
+  this.elemResourceLevelParameters = ['baseUriParameters','uriParameters'];
   this.elemResourceLevelSecurity = ['securedBy'];
   this.elemResourceLevelResources = ['New Resource'];
   this.elemResourceLevelTraitsAndTypes = ['is', 'type'];
   this.elemResourceLevel = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelResources,this.elemResourceLevelTraitsAndTypes);
   this.elemResourceLevelWithoutNewReosurce = this.elemResourceLevelDocs.concat(this.elemResourceLevelMethods,this.elemResourceLevelParameters,this.elemResourceLevelSecurity,this.elemResourceLevelTraitsAndTypes);
+  this.elemResourceByGroup = ' docs (2) descriptiondisplayName methods (9) connectdeletegetheadoptionspatchpostputtrace parameters (2) baseUriParametersuriParameters security (1) securedBy resources (1) New Resource traits and types (2) istype ';
 //  RT root
   this.elemResourceTypeLevelDocs = this.elemResourceLevelDocs.concat('usage');
   this.elemResourceTypeLevelMethods = this.elemResourceLevelMethods;
@@ -57,21 +64,35 @@ function ShelfHelper() {
   this.elemResourceTypeLevelSecurity = this.elemResourceLevelSecurity;
   this.elemResourceTypeLevelTraitsAndTypes = this.elemResourceLevelTraitsAndTypes;
   this.elemResourceTypeLevel = this.elemResourceTypeLevelDocs.concat(this.elemResourceTypeLevelMethods,this.elemResourceTypeLevelParameters,this.elemResourceTypeLevelSecurity,this.elemResourceTypeLevelTraitsAndTypes);
+  this.elemResourceTypeTypeByGroup = ' docs (3) descriptiondisplayNameusage methods (9) connectdeletegetheadoptionspatchpostputtrace parameters (2) baseUriParametersuriParameters security (1) securedBy traits and types (2) istype ';
 //Responses
   this.elemResponsesLevelDocs = ['description'];
   this.elemResponsesLevelBody = ['body'];
   this.elemResponsesLevel = this.elemResponsesLevelDocs.concat(this.elemResponsesLevelBody);
+  this.elemResponsesByGroup = ' docs (1) description responses (1) body ';
 // body
-  this.elemBodyLevelDocs = ['application/x-www-form-urlencoded','multipart/form-data','application/json', 'application/xml' ];
+  this.elemBodyLevelDocs = ['application/json', 'application/x-www-form-urlencoded', 'application/xml', 'multipart/form-data' ];
   this.elemBodyLevel = this.elemBodyLevelDocs;
+  this.elemBodyByGroup = '';
+
   this.elemlistCss = '[ng-repeat=\'item in section.items\'] span';
 }
 
 ShelfHelper.prototype = {};
 
-ShelfHelper.prototype.getElements = function(){
+ShelfHelper.prototype.getElementsPromise = function(){
   var that = this;
   return browser.findElements(by.css(that.elemlistCss));
+};
+
+ShelfHelper.prototype.getElements = function(){
+  return browser.executeScript(function () {
+    var list = [];
+    $('[ng-repeat="item in section.items"] span').text(function( index,text ) {
+      list[index] =text;
+    });
+    return list;
+  });
 };
 
 ShelfHelper.prototype.selectFirstElem = function(){
@@ -79,7 +100,7 @@ ShelfHelper.prototype.selectFirstElem = function(){
   return browser.wait(function(){
     return browser.isElementPresent(by.css(that.elemlistCss));
   }).then(function () {
-    that.getElements().then(function(list){
+    that.getElementsPromise().then(function(list){
       list[0].click();
     });
   });
@@ -97,4 +118,10 @@ ShelfHelper.prototype.itemsInSection = function(){
   return '[role=\'items\'] li span';
 };
 
+
+ShelfHelper.prototype.getTextFromShelf = function(){
+  return browser.findElements(by.css('[role=\'shelf-container\']'));
+};
 exports.ShelfHelper = ShelfHelper;
+
+

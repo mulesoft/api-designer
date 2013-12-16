@@ -9,7 +9,8 @@ exports.config = {
   },
 
   specs: [
-    '../../test/e2e/raml-example/muse-e2e.js',
+    '../../test/e2e/editor-shelf/*.js',
+
     '../../test/lib/*.js'
   ],
 

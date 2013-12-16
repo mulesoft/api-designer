@@ -43,7 +43,6 @@ ConsoleHelper.prototype.getListResources = function(){
 ConsoleHelper.prototype.getResourceTypeForAResource = function(t){
 //  var that = this;
   var resource = this.getListResources();
-  console.log('resource t',resource[t]);
   return resource[t].findElements(by.css('.modifiers [role=\'resource-type\']'));
 };
 
@@ -60,15 +59,12 @@ ConsoleHelper.prototype.expandResourcebyPos = function(pos){
   pos--;
 //send 0 to expand all.
   browser.findElements(by.css(that.listResourcesNameCss)).then(function(resources){
-    console.log('resources to expand length',resources.length);
 
     if(pos === -1){
-      console.log('menos 1');
       resources.forEach(function(resource){
         resource.click();
       });
     }else{
-      console.log('otros');
       resources[pos].click();
     }
   });

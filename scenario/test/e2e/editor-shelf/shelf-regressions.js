@@ -14,6 +14,22 @@ describe('shelf',function(){
     expect(editor.noErrorIsDisplayed()).toBe(false);
   });
 
+  xit('groups',function(){
+    var definition = [
+      '#%RAML 0.8',
+      'title: The API',
+      'baseUri: http://www.theapi.com/{hola}',
+      'baseUriParameters:',
+      '  hola:',
+      '     '
+    ].join('\\n');
+    editor.setValue(definition);
+    editor.setCursor(6,4);
+    designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
+
+  });
+
+
   describe('elements',function(){
 
     it('added below on an array', function(){
@@ -26,7 +42,7 @@ describe('shelf',function(){
       ].join('\\n');
       editor.setValue(definition);
       editor.setCursor(6,0);
-      shelf.getElements().then(function(list){
+      shelf.getElementsPromise().then(function(list){
         list[0].click();
       });
       expect(editor.getLine(6)).toEqual('baseUri: http://server/api/{version}');
@@ -41,7 +57,7 @@ describe('shelf',function(){
       ].join('\\n');
       editor.setValue(definition);
       editor.setCursor(5,2);
-      shelf.getElements().then(function(list){
+      shelf.getElementsPromise().then(function(list){
         list[0].click();
       });
       expect(editor.getLine(5)).toEqual('  description:');
@@ -52,7 +68,7 @@ describe('shelf',function(){
       var lista = ['#%RAML 0.8', 'baseUri: http://server/api/{version}', 'mediaType:',
         'protocols:', 'title: My API', 'version: v0.1', 'documentation:', 'baseUriParameters:',
         'securedBy:', 'securitySchemes:', '/newResource:', '  displayName: resourceName',
-        '  description:', '  get:', '    description: <<insert text or markdown here>>',
+        '  description:', '  connect:', '    description: <<insert text or markdown here>>',
         '    protocols:', '    baseUriParameters:', '    headers:', '    queryParameters:',
         '    responses:', '    securedBy:', '    is:', '    body:'];
       var i=1;

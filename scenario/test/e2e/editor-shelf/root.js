@@ -16,7 +16,7 @@ describe('shelf',function(){
         editor.setValue(definition);
         shelf.getElements().then(function(list){
           expect(list.length).toEqual(1);
-          expect(list[0].getText()).toEqual(shelf.elemRamlVersion[0]);
+          expect(list[0]).toEqual(shelf.elemRamlVersion[0]);
         });
       });
 
@@ -37,7 +37,7 @@ describe('shelf',function(){
         ].join('\\n');
         editor.setValue(definition);
         editor.setCursor(2,0);
-        designerAsserts.shelfElementsRootByGroup();
+        designerAsserts.ShelfElementsByGroup(shelf.elemRootByGroup);
       });
 
       xdescribe('documentation', function(){
@@ -57,7 +57,7 @@ describe('shelf',function(){
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(6,4);
-          designerAsserts.shelfElemNamedParametersByGroup();
+          designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
         });
 
         describe('after being selected', function(){
