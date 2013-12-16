@@ -10,6 +10,32 @@ describe('Shelf controller', function () {
     applySuggestion = $injector.get('applySuggestion');
   }));
 
+  describe('updateSuggestions', function () {
+    var updateSuggestions;
+
+    beforeEach(inject(function ($injector) {
+      updateSuggestions = $injector.get('updateSuggestions');
+    }));
+
+    it('should use a friendly title for <resource>', function () {
+      var editor = getEditor(codeMirror,
+        [
+          '#%RAML 0.8',
+          '',
+        ],
+        {
+          line: 1,
+          ch:   0
+        }
+      );
+
+      var model = updateSuggestions(editor);
+
+      var resourceSection = model.sections.filter(function(section) { return section.name === 'resources'; })[0];
+      resourceSection.items.map(function (s) { return s.title; }).should.include('New Resource');
+    });
+  });
+
   describe('applySuggestion', function () {
     it('should not skip current empty line with whitespace-only lines after', function () {
       var editor = getEditor(codeMirror,

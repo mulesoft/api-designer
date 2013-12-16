@@ -349,7 +349,8 @@ angular.module('ramlEditorApp')
       var suggestions  = alternatives.keys.sort().map(function (e) {
         return {
           name:     e,
-          category: alternatives.values.suggestions[e].metadata.category
+          category: alternatives.values.suggestions[e].metadata.category,
+          dynamic:  alternatives.values.suggestions[e].metadata.dynamic,
         };
       });
 
@@ -464,8 +465,12 @@ angular.module('ramlEditorApp')
         }
       })();
 
+      function notDynamic(suggestion) {
+        return !suggestion.dynamic;
+      }
+
       word = word.trim();
-      list = suggestions.map(function (suggestion) {
+      list = suggestions.filter(notDynamic).map(function (suggestion) {
         var text = suggestion.name;
 
         if (!suggestion.isText && !wordIsKey) {

@@ -724,6 +724,18 @@ describe('ramlEditorApp', function () {
     });
 
     describe('autocompleteHelper 2', function () {
+      it('should not include <resource>', function () {
+        var result = ramlHint.autocompleteHelper(getEditor(codeMirror,
+          [
+            '#%RAML 0.8',
+            ''
+          ],
+          {line: 1, ch: 0}
+        ));
+
+        result.list.map(function (e) { return e.text; }).should.not.include('<resource>:');
+      });
+
       it('should render the text correctly', function () {
         var alternatives = {
           suggestions: {
