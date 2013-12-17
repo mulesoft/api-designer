@@ -23,7 +23,7 @@ describe('shelf',function(){
       it('not be offer RAML version - line 1', function(){
         var definition = '#%RAML 0.8';
         editor.setValue(definition);
-        designerAsserts.shelfElementsNotDisplayed(['#%RAML 0.8'], shelf.elemRootLevel);
+        designerAsserts.shelfElementsNotDisplayed(['#%RAML 0.8'], []);
       });
 
     }); //RAML version
