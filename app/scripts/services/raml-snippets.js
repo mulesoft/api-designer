@@ -27,22 +27,23 @@ angular.module('raml')
     };
 
     service.getSnippet = function (suggestion) {
-      var snippetName = suggestion.name;
-      var snippet     = snippets[snippetName.toLowerCase()];
+      var key      = suggestion.key;
+      var metadata = suggestion.metadata || {};
+      var snippet  = snippets[key.toLowerCase()];
 
       if (snippet) {
         return snippet;
       }
 
-      if (suggestion.isText) {
+      if (metadata.isText) {
         return [
-          snippetName,
+          key,
           ''
         ];
       }
 
       return [
-        snippetName + ':'
+        key + ':'
       ];
     };
 

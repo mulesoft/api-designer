@@ -8,20 +8,16 @@ angular.module('ramlEditorApp')
    * If <lineNumber> is not specified, current line
    * under cursor will be used.
    */
-  .factory('getNeighborLines', function (getLineIndent) {
+  .factory('getNeighborLines', function (getLineIndent, isArrayStarter) {
     return function (editor, lineNumber) {
       if (typeof lineNumber !== 'number') {
         lineNumber = editor.getCursor().line;
       }
 
-      function isArray(line) {
-        return line.trimLeft().indexOf('- ') === 0;
-      }
-
       var lineNumbers = [lineNumber];
       var line        = editor.getLine(lineNumber).slice(0, editor.getCursor().ch + 1);
       var lineIndent  = getLineIndent(line);
-      var lineIsArray = isArray(line);
+      var lineIsArray = isArrayStarter(line);
       var linesCount  = editor.lineCount();
       var i;
       var nextLine;
@@ -35,7 +31,7 @@ angular.module('ramlEditorApp')
         if (nextLineIndent.tabCount !== lineIndent.tabCount) {
           // level is decreasing, no way we can get back
           if (nextLineIndent.tabCount < lineIndent.tabCount) {
-            if (!lineIsArray && isArray(nextLine) && ((nextLineIndent.tabCount + 1) === lineIndent.tabCount)) {
+            if (!lineIsArray && isArrayStarter(nextLine) && ((nextLineIndent.tabCount + 1) === lineIndent.tabCount)) {
               lineNumbers.push(i);
             }
 
@@ -44,7 +40,7 @@ angular.module('ramlEditorApp')
 
           // level is increasing, but we still can get back
           continue;
-        } else if (lineIsArray && isArray(nextLine)) {
+        } else if (lineIsArray && isArrayStarter(nextLine)) {
           break;
         }
 
@@ -76,14 +72,12 @@ angular.module('ramlEditorApp')
       });
     };
   })
-  .factory('getKeysToErase', function (getNeighborLines, extractKey) {
+  .factory('getNeighborKeys', function (getNeighborLines, extractKey) {
     return function (editor) {
-      return getNeighborLines(editor).map(function (line) {
-        return extractKey(line.trim());
-      });
+      return getNeighborLines(editor).map(extractKey);
     };
   })
-  .factory('ramlHint', function (getLineIndent, generateTabs, getKeysToErase,
+  .factory('ramlHint', function (getLineIndent, generateTabs, getNeighborKeys,
     getScopes, getEditorTextAsArrayOfLines) {
     var hinter = {};
     var WORD = /[^\s]|[$]/;
@@ -256,100 +250,54 @@ angular.module('ramlEditorApp')
     };
 
     hinter.getScopes = function (editor) {
-      var arrayOfLines = getEditorTextAsArrayOfLines(editor);
-      return getScopes(arrayOfLines);
+      return getScopes(getEditorTextAsArrayOfLines(editor));
     };
 
-    hinter.selectiveCloneAlternatives = function (alternatives, keysToErase) {
-      var newAlternatives = {};
-      var newSuggestions  = {};
-
-      Object.keys(alternatives.suggestions || {}).forEach(function (key) {
-        var suggestion = alternatives.suggestions[key];
-        var optional   = !!(suggestion && suggestion.metadata && suggestion.metadata.canBeOptional);
-
-        if (keysToErase.indexOf(key) === -1 && (!optional || (optional && keysToErase.indexOf(key + '?') === -1))) {
-          newSuggestions[key] = alternatives.suggestions[key];
-        }
-      });
-
-      Object.keys(alternatives).forEach(function(key) {
-        newAlternatives[key] = alternatives[key];
-      });
-
-      newAlternatives.suggestions      = newSuggestions;
-      newAlternatives.isOpenSuggestion = alternatives.constructor.name === 'OpenSuggestion';
-
-      return newAlternatives;
-    };
-
-    hinter.getAlternatives = function (editor) {
-
-      var path = hinter.computePath(editor);
-      var alternatives;
-      var keysToErase;
-      var alternativeKeys = [];
-
-      // Invalid tabulation detected :)
-      if (path === undefined) {
-        return {
-          path  : [],
-          keys  : [],
-          values: {}
-        };
-      }
-      else if (path !== null) {
-        path.pop();
-      }
-
-      alternatives = hinter.suggestRAML(path);
-      keysToErase  = getKeysToErase(editor);
-      alternatives = hinter.selectiveCloneAlternatives(alternatives, keysToErase);
-
-      if (alternatives && alternatives.suggestions) {
-        alternativeKeys = Object.keys(alternatives.suggestions);
-      }
-
-      if (!path) {
-        path = [];
-      }
-
-      return {
-        path  : path,
-        keys  : alternativeKeys,
-        values: alternatives
-      };
-    };
-
-    hinter.shouldSuggestVersion = function(editor) {
-      var lineNumber = editor.getCursor().line,
-          line = editor.getLine(lineNumber);
+    hinter.shouldSuggestVersion = function (editor) {
+      var lineNumber    = editor.getCursor().line;
+      var line          = editor.getLine(lineNumber);
       var lineIsVersion = RAML_VERSION_PATTERN.test(line);
 
-      return (lineNumber === 0 && !lineIsVersion);
+      return lineNumber === 0 &&
+            !lineIsVersion
+      ;
+    };
+
+    hinter.isSuggestionInUse = function (suggestionKey, suggestion, neighborKeys) {
+      return neighborKeys.indexOf(suggestionKey) !== -1 ||
+             (suggestion.metadata.canBeOptional && neighborKeys.indexOf(suggestionKey + '?') !== -1)
+      ;
     };
 
     hinter.getSuggestions = function (editor) {
       if (hinter.shouldSuggestVersion(editor)) {
         return [{
-          name:     '#%RAML 0.8',
-          category: 'main',
-          isText:   true
+          key:     '#%RAML 0.8',
+          metadata: {
+            category: 'main',
+            isText:   true
+          }
         }];
       }
 
-      var alternatives = hinter.getAlternatives(editor);
-      var suggestions  = alternatives.keys.sort().map(function (e) {
-        return {
-          name:     e,
-          category: alternatives.values.suggestions[e].metadata.category,
-          dynamic:  alternatives.values.suggestions[e].metadata.dynamic,
-        };
-      });
+      var path         = hinter.computePath(editor);
+      var suggestions  = path ? hinter.suggestRAML(path.slice(0, -1)).suggestions : {};
+      var neighborKeys = getNeighborKeys(editor);
 
-      suggestions.path = alternatives.path;
+      return Object.keys(suggestions)
+        .filter(function (key) {
+          return !hinter.isSuggestionInUse(key, suggestions[key], neighborKeys);
+        })
 
-      return suggestions;
+        .sort()
+
+        .map(function (key) {
+          return {
+            key:      key,
+            metadata: suggestions[key].metadata
+          };
+        })
+      ;
     };
 
     hinter.canAutocomplete = function (cm) {
@@ -458,21 +406,21 @@ angular.module('ramlEditorApp')
       })();
 
       function notDynamic(suggestion) {
-        return !suggestion.dynamic;
+        return !suggestion.metadata.dynamic;
       }
 
       word = word.trim();
       list = suggestions.filter(notDynamic).map(function (suggestion) {
-        var text = suggestion.name;
+        var text = suggestion.key;
 
-        if (!suggestion.isText && !wordIsKey) {
+        if (!suggestion.metadata.isText && !wordIsKey) {
           text = text + ':';
         }
 
         return {
           displayText: text,
           text:        text,
-          category:    suggestion.category,
+          category:    suggestion.metadata.category,
           render:      render
         };
       });
@@ -502,4 +450,5 @@ angular.module('ramlEditorApp')
     };
 
     return hinter;
-  });
+  })
+;
