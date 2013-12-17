@@ -4,7 +4,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
   .factory('codeMirror', function (
     ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
     getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
-    hasChildren, config, extractKey
+    config, extractKey
   ) {
     var editor  = null;
     var service = {
