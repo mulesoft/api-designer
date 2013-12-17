@@ -80,16 +80,15 @@ angular.module('ramlEditorApp')
   .factory('ramlHint', function (getLineIndent, generateTabs, getNeighborKeys,
     getScopes, getEditorTextAsArrayOfLines) {
     var hinter = {};
-    var WORD = /[^\s]|[$]/;
     var RAML_VERSION = '#%RAML 0.8';
     var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
     hinter.suggestRAML = window.suggestRAML;
 
     hinter.computePath = function (editor) {
-      var editorState = hinter.getEditorState(editor);
-      var line = editorState.cur.line;
-      var ch = editorState.cur.ch;
+      var cursor = editor.getCursor();
+      var line = cursor.line;
+      var ch = cursor.ch;
       var listsTraveled = 0;
       var lastTraveledListSpaceCount;
       var lines;
@@ -218,37 +217,6 @@ angular.module('ramlEditorApp')
       return path;
     };
 
-    hinter.getEditorState = function(editor, options) {
-      var word = options && options.word || WORD;
-      var cur = editor.getCursor(), curLine = editor.getLine(cur.line);
-      var startPos = cur.ch, endPos = startPos;
-      var currLineTabCount;
-
-      currLineTabCount = getLineIndent(curLine).tabCount;
-
-      // Handle RAML version, it should look at the entire line
-      if (cur.line === 0) {
-        word = /^|[\s]|[$]/;
-      }
-      while (endPos < curLine.length && word.test(curLine.charAt(endPos))) {
-        ++endPos;
-      }
-      while (startPos && word.test(curLine.charAt(startPos - 1))) {
-        --startPos;
-      }
-
-      var start = CodeMirror.Pos(cur.line, startPos),
-      end = CodeMirror.Pos(cur.line, endPos);
-      return {
-        curWord: startPos !== endPos && curLine.slice(startPos, endPos),
-        start: start,
-        end: end,
-        cur: cur,
-        curLine: curLine,
-        currLineTabCount: currLineTabCount
-      };
-    };
-
     hinter.getScopes = function (editor) {
       return getScopes(getEditorTextAsArrayOfLines(editor));
     };
@@ -301,11 +269,11 @@ angular.module('ramlEditorApp')
     };
 
     hinter.canAutocomplete = function (cm) {
-      var editorState    = hinter.getEditorState(cm);
-      var curLine        = editorState.curLine;
+      var cursor         = cm.getCursor();
+      var curLine        = cm.getLine(cursor.line);
       var curLineTrimmed = curLine.trim();
       var offset         = curLine.indexOf(curLineTrimmed);
-      var lineNumber     = editorState.start ? editorState.start.line : 0;
+      var lineNumber     = cursor.line;
 
       // nothing to autocomplete within comments
       // -> "#..."
@@ -313,7 +281,7 @@ angular.module('ramlEditorApp')
         var indexOf = curLineTrimmed.indexOf('#');
         return lineNumber > 0 &&
                indexOf !== -1 &&
-               editorState.cur.ch > (indexOf + offset)
+               cursor.ch > (indexOf + offset)
         ;
       })()) {
         return false;
@@ -324,7 +292,7 @@ angular.module('ramlEditorApp')
       if ((function () {
         var indexOf = curLineTrimmed.indexOf('/');
         return indexOf === 0 &&
-               editorState.cur.ch >= (indexOf + offset)
+               cursor.ch >= (indexOf + offset)
         ;
       })()) {
         return false;
@@ -335,7 +303,7 @@ angular.module('ramlEditorApp')
       if ((function () {
         var indexOf = curLineTrimmed.indexOf(': ');
         return indexOf !== -1 &&
-               editorState.cur.ch >= (indexOf + offset + 2)
+               cursor.ch >= (indexOf + offset + 2)
         ;
       })()) {
         return false;
@@ -346,7 +314,7 @@ angular.module('ramlEditorApp')
       if ((function () {
         var indexOf = curLineTrimmed.indexOf('- ');
         return indexOf === 0 &&
-               editorState.cur.ch < (indexOf + offset)
+               cursor.ch < (indexOf + offset)
         ;
       })()) {
         return false;
@@ -356,8 +324,8 @@ angular.module('ramlEditorApp')
     };
 
     hinter.autocompleteHelper = function(cm) {
-      var editorState  = hinter.getEditorState(cm);
-      var line         = editorState.curLine;
+      var cursor       = cm.getCursor();
+      var line         = cm.getLine(cursor.line);
       var word         = line.trimLeft();
       var wordIsKey;
       var suggestions;
@@ -385,7 +353,7 @@ angular.module('ramlEditorApp')
       (function () {
         var indexOf = word.indexOf('#');
         if (indexOf !== -1) {
-          if (editorState.cur.line !== 0 || indexOf !== 0) {
+          if (cursor.line !== 0 || indexOf !== 0) {
             word = word.slice(0, indexOf);
           }
         }
@@ -437,15 +405,15 @@ angular.module('ramlEditorApp')
         fromCh = line.indexOf(word);
         toCh   = fromCh + word.length;
       } else {
-        fromCh = editorState.cur.ch;
+        fromCh = cursor.ch;
         toCh   = fromCh;
       }
 
       return {
         word: word,
         list: list,
-        from: CodeMirror.Pos(editorState.cur.line, fromCh),
-        to:   CodeMirror.Pos(editorState.cur.line, toCh)
+        from: CodeMirror.Pos(cursor.line, fromCh),
+        to:   CodeMirror.Pos(cursor.line, toCh)
       };
     };
 

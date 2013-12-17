@@ -210,61 +210,6 @@ describe('ramlEditorApp', function () {
       });
     });
 
-    describe('getEditorState', function () {
-      it('should be consistent with editor state', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    get: {}',
-            '  /ciao:',
-            '    get:'
-          ],
-          {line: 4, ch: 4}
-        );
-
-        var editorState = ramlHint.getEditorState(editor);
-        (editorState).should.be.ok;
-        (editorState.curWord).should.be.equal('/bye:');
-        (editorState.start.line).should.be.equal(4);
-        (editorState.start.ch).should.be.equal(2);
-        (editorState.end.line).should.be.equal(4);
-        (editorState.end.ch).should.be.equal(7);
-        (editorState.curLine).should.be.equal('  /bye:');
-        (editorState.currLineTabCount).should.be.equal(1);
-      });
-
-      it('curr line tab count should count only the leading spaces', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    get: {}',
-            '      description: this is a text     with spaces',
-            '  /ciao:',
-            '    get:',
-          ],
-          {line: 6, ch: 6}
-        );
-
-        var editorState = ramlHint.getEditorState(editor);
-        (editorState).should.be.ok;
-        (editorState.curWord).should.be.equal('description:');
-        (editorState.start.line).should.be.equal(6);
-        (editorState.start.ch).should.be.equal(6);
-        (editorState.end.line).should.be.equal(6);
-        (editorState.end.ch).should.be.equal(18);
-        (editorState.curLine).should.be.equal('      description: this is a text     with spaces');
-        (editorState.currLineTabCount).should.be.equal(3);
-      });
-    });
-
     describe('getSuggestions', function () {
       it('should exclude optional keys', function () {
         var suggestions = ramlHint.getSuggestions(getEditor(codeMirror,
