@@ -11,21 +11,19 @@ describe('shelf',function(){
 
     describe('RAML version', function(){
 
-      it('should offer RAML version on line 1', function(){
+      it('offer RAML version on line 1', function(){
         var definition = '';
         editor.setValue(definition);
         shelf.getElements().then(function(list){
           expect(list.length).toEqual(1);
-          expect(list[0].getText()).toEqual(shelf.elemRamlVersion[0]);
+          expect(list[0]).toEqual(shelf.elemRamlVersion[0]);
         });
       });
 
-      it('should not be offer RAML version - line 1 - fail RT-363', function(){
+      it('not be offer RAML version - line 1', function(){
         var definition = '#%RAML 0.8';
         editor.setValue(definition);
-        shelf.getElements().then(function(list){
-          expect(list.length).toEqual(0);
-        });
+        designerAsserts.shelfElementsNotDisplayed(['#%RAML 0.8'], []);
       });
 
     }); //RAML version
@@ -38,8 +36,8 @@ describe('shelf',function(){
           ' '
         ].join('\\n');
         editor.setValue(definition);
-        editor.setCursor(2,1);
-        designerAsserts.shelfElementsRootByGroup();
+        editor.setCursor(2,0);
+        designerAsserts.ShelfElementsByGroup(shelf.elemRootByGroup);
       });
 
       xdescribe('documentation', function(){
@@ -59,7 +57,7 @@ describe('shelf',function(){
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(6,4);
-          designerAsserts.shelfElemNamedParametersByGroup();
+          designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
         });
 
         describe('after being selected', function(){
@@ -98,7 +96,7 @@ describe('shelf',function(){
               ' '
             ].join('\\n');
             editor.setValue(definition);
-            editor.setCursor(3,1);
+            editor.setCursor(3,0);
             var list2 =[option];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
           });
