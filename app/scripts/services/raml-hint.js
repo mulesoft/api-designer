@@ -86,6 +86,36 @@ angular.module('ramlEditorApp')
     hinter.suggestRAML = window.suggestRAML;
 
     hinter.computePath = function computePath(editor) {
+      function isWhitespaceOnly(line, indent) {
+        return line.length === indent.spaceCount;
+      }
+
+      function isCommentStarter(line, indent) {
+        return line[indent.spaceCount] === '#';
+      }
+
+      function hasParentIsh(lineNumber, lineIndent) {
+        while ((lineNumber -= 1) >= 0) {
+          var parentLine       = editor.getLine(lineNumber);
+          var parentLineIndent = getLineIndent(parentLine);
+
+          if (
+            isWhitespaceOnly(parentLine, parentLineIndent) ||
+            isCommentStarter(parentLine, parentLineIndent)
+          ) {
+            continue;
+          }
+
+          // that's why we called "-ish" because
+          // we count on spaces, not tabs
+          if (parentLineIndent.spaceCount < lineIndent.spaceCount) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+
       function indentIsInvalid(indent) {
         return (indent.spaceCount % editor.getOption('indentUnit')) !== 0;
       }
@@ -100,7 +130,10 @@ angular.module('ramlEditorApp')
       var lastTabCount   = tabCount;
       var tabCountDiff;
 
-      if (line.length === lineIndent.spaceCount) {
+      if (
+        isWhitespaceOnly(line, lineIndent) ||
+        isCommentStarter(line, lineIndent) && (cursor.ch < line.indexOf('#'))
+      ) {
         // in case current line has only whitespaces we want to know
         // its indentation up to cursor position
         line         = line.slice(0, cursor.ch);
@@ -110,7 +143,10 @@ angular.module('ramlEditorApp')
         lastTabCount = tabCount;
       }
 
-      if (indentIsInvalid(lineIndent)) {
+      if (
+        (!isCommentStarter(line, lineIndent) || hasParentIsh(cursor.line, lineIndent)) &&
+        indentIsInvalid(lineIndent)
+      ) {
         return;
       }
 
@@ -120,7 +156,7 @@ angular.module('ramlEditorApp')
         tabCount     = lineIndent.tabCount;
         tabCountDiff = lastTabCount - tabCount;
 
-        if (line[lineIndent.spaceCount] === '#') {
+        if (isCommentStarter(line, lineIndent)) {
           continue;
         }
 

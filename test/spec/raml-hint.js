@@ -47,7 +47,7 @@ describe('ramlEditorApp', function () {
           }
         ));
 
-        [].concat(path).should.be.deep.equal([]);
+        [].concat(path).should.be.empty;
         path.arraysTraveled.should.be.equal(0);
       });
 
@@ -221,8 +221,8 @@ describe('ramlEditorApp', function () {
             '  # key 11',
             '      - key111:',
             '      # key111',
-            '          key111:',
-            '          '
+            '          key1111:',
+            '          # key1111'
           ],
           {
             line: 7,
@@ -321,6 +321,52 @@ describe('ramlEditorApp', function () {
         ));
 
         should.not.exist(path);
+      });
+
+      it('should return path for line without parent and odd whitespaces before a comment sign', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            ' #%RAML 0.8'
+          ],
+          {
+            line: 0,
+            ch:   0
+          }
+        ));
+
+        [].concat(path).should.be.empty;
+        path.arraysTraveled.should.be.equal(0);
+      });
+
+      it('should return falsy for line with parent and odd whitespaces before a comment sign', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            ' # key1'
+          ],
+          {
+            line: 1,
+            ch:   666
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return path for line with parent, odd whitespaces before a comment sign and cursor at non-odd position', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '   #'
+          ],
+          {
+            line: 1,
+            ch:   2
+          }
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1']);
+        path.arraysTraveled.should.be.equal(0);
       });
     });
 
