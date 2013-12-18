@@ -42,6 +42,7 @@ module.exports = function(config) {
       'app/scripts/app.js',
       'app/scripts/services/utils.js',
       'app/scripts/services/config.js',
+      'app/scripts/services/lightweight-dom.js',
       'app/scripts/services/lightweight-parse.js',
       'app/scripts/services/code-folding.js',
       'app/scripts/services/code-mirror.js',

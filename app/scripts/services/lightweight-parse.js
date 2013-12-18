@@ -26,6 +26,11 @@ angular.module('lightweightParse', ['utils'])
       return (line || '').trimLeft().indexOf('- ') === 0;
     };
   })
+  .factory('isCommentStarter', function() {
+    return function(line) {
+      return (line || '').trimLeft().indexOf('#') === 0;
+    };
+  })
   .factory('extractKey', function (isArrayStarter) {
     return function(value) {
       function endsWith(string, searchString) {
@@ -60,6 +65,35 @@ angular.module('lightweightParse', ['utils'])
 
       // No key found
       return '';
+    };
+  })
+  .factory('extractStringValue', function extractStringValueFactory() {
+    /**
+     * @return {string} the value of a node, or null if the
+     *                  node contains a complex value. The string will
+     *                  additionally be decorated with metadata:
+     *                  For alias values, e.g. Foo: &Bar, 'isAlias' will be set to true
+     *                  For reference values, e.g. Foo: *Bar, 'isReference' will be set to true
+     * @example for 'foo: bar' will return 'bar'
+     * @example for 'documentation:
+     *                - title: Hi' will return null
+     */
+    return function extractStringValue(line) {
+      if (!line) {
+        return null;
+      }
+      var matches = /:\s+(.+)/.exec(line);
+      if (matches && matches[1]) {
+        var value = matches[1].trim();
+        //Attach metadata to the string:
+        if (value[0] === '&') {
+          value.isAlias = true;
+        } else if (value[0] === '*') {
+          value.isReference = true;
+        }
+        return value;
+      }
+      return null;
     };
   })
   .factory('getLineIndent', function (indentUnit) {
@@ -100,7 +134,6 @@ angular.module('lightweightParse', ['utils'])
       return true;
 
     }
-
 
     return function (arrayOfLines) {
       var zipValues = [], currentIndexes = {};
