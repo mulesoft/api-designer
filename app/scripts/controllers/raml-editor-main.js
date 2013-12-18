@@ -53,7 +53,7 @@ angular.module('ramlEditorApp')
   .controller('ramlEditorMain', function (AUTOSAVE_INTERVAL, UPDATE_RESPONSIVENESS_INTERVAL,
     REFRESH_FILES_INTERVAL, DEFAULT_PATH, $scope, $rootScope, $timeout, $window, safeApply, throttle, ramlHint,
     ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm,
-    safeApplyWrapper
+    safeApplyWrapper, $modal
   ) {
     var editor;
     var saveTimer;
@@ -136,6 +136,12 @@ angular.module('ramlEditorApp')
         message: error.message
       }]);
     }));
+
+    $scope.openHelp = function openHelp() {
+      $modal.open({
+        templateUrl: 'views/help.html'
+      });
+    };
 
     $scope.bootstrap = function () {
       ramlRepository.bootstrap().then($scope.switchFile);
