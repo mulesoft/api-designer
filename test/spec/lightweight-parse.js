@@ -3,6 +3,38 @@
 describe('Lightweight Parse Module', function () {
   beforeEach(module('lightweightParse'));
 
+  describe('getSpaceCount', function () {
+    var getSpaceCount;
+
+    beforeEach(inject(function ($injector) {
+      getSpaceCount = $injector.get('getSpaceCount');
+    }));
+
+    it('should count spaces for empty string', function () {
+      getSpaceCount('').should.be.equal(0);
+    });
+
+    it('should count spaces for string made of whitespace characters only', function () {
+      getSpaceCount('  ').should.be.equal(2);
+    });
+
+    it('should count spaces for string without whitespace characters', function () {
+      getSpaceCount('abc').should.be.equal(0);
+    });
+
+    it('should count spaces for string with whitespaces at the beginning only', function () {
+      getSpaceCount('  abc').should.be.equal(2);
+    });
+
+    it('should count spaces for string with whitespaces at the beginning and the end', function () {
+      getSpaceCount('  abc  ').should.be.equal(2);
+    });
+
+    it('should count spaces for string with whitespaces everywhere', function () {
+      getSpaceCount('  a  b  c  ').should.be.equal(2);
+    });
+  });
+
   describe('getLineIndent', function () {
     var getLineIndent;
 
@@ -13,75 +45,59 @@ describe('Lightweight Parse Module', function () {
     it('should provide tabCount, spaceCount and content (the rest of the string)', function () {
       var indentInfo = getLineIndent('    foo:');
 
-      indentInfo.tabCount.should.be.equal(2);
       indentInfo.content.should.be.equal('foo:');
       indentInfo.spaceCount.should.be.equal(4);
+      indentInfo.tabCount.should.be.equal(2);
     });
 
     it('should work on root level', function () {
       var indentInfo = getLineIndent('foo:');
 
-      indentInfo.tabCount.should.be.equal(0);
       indentInfo.content.should.be.equal('foo:');
       indentInfo.spaceCount.should.be.equal(0);
-    });
-
-    it('should not fail on null', function () {
-      var indentInfo = getLineIndent(null);
-
       indentInfo.tabCount.should.be.equal(0);
-      indentInfo.content.should.be.equal('');
-      indentInfo.spaceCount.should.be.equal(0);
-    });
-
-    it('should not fail on undefined', function () {
-      var indentInfo = getLineIndent(undefined);
-
-      indentInfo.tabCount.should.be.equal(0);
-      indentInfo.content.should.be.equal('');
-      indentInfo.spaceCount.should.be.equal(0);
     });
 
     it('should with lines of only spaces', function () {
       var indentInfo = getLineIndent('      ');
 
-      indentInfo.tabCount.should.be.equal(3);
       indentInfo.content.should.be.equal('');
       indentInfo.spaceCount.should.be.equal(6);
+      indentInfo.tabCount.should.be.equal(3);
     });
 
     it('should work with odd number of spaces', function () {
       var indentInfo = getLineIndent('   hello:');
 
-      indentInfo.tabCount.should.be.equal(1);
       indentInfo.content.should.be.equal('hello:');
       indentInfo.spaceCount.should.be.equal(3);
+      indentInfo.tabCount.should.be.equal(1);
     });
 
     it('should support spaces/tabs after text and not count them as indent (RT-319)', function () {
       var indentInfo = getLineIndent('    hello:  ');
 
-      indentInfo.tabCount.should.be.equal(2);
       indentInfo.content.should.be.equal('hello:  ');
       indentInfo.spaceCount.should.be.equal(4);
+      indentInfo.tabCount.should.be.equal(2);
     });
 
     it('should work with dashes correctly', function() {
       var indentInfo = getLineIndent('  - hello:');
 
-      indentInfo.tabCount.should.be.equal(1);
       indentInfo.content.should.be.equal('- hello:');
       indentInfo.spaceCount.should.be.equal(2);
+      indentInfo.tabCount.should.be.equal(1);
 
       indentInfo = getLineIndent('   - hello:');
-      indentInfo.tabCount.should.be.equal(1);
       indentInfo.content.should.be.equal('- hello:');
       indentInfo.spaceCount.should.be.equal(3);
+      indentInfo.tabCount.should.be.equal(1);
 
       indentInfo = getLineIndent('-hello:');
-      indentInfo.tabCount.should.be.equal(0);
       indentInfo.content.should.be.equal('-hello:');
       indentInfo.spaceCount.should.be.equal(0);
+      indentInfo.tabCount.should.be.equal(0);
     });
   });
 
