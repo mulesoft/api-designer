@@ -42,20 +42,45 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * @throws If lineNum is out of range of the editor's contents
      */
     function LazyNode(editor, lineNum) {
+      this.lineNum = lineNum || editor.getCursor().line;
       this.editor = editor;
       this.line = editor.getLine(lineNum);
-      this.lineNum = lineNum;
       if (this.line === undefined) {
         throw 'line ' + lineNum + ' not found in the editor contents.';
       }
       this.isComment = isCommentStarter(this.line);
+      this.isEmpty = this.line.trim() === '';
+
+      this.tabCount = getTabCount(editor, lineNum, this.getIsStructural());
       if (!this.isComment) {
         this.key = extractKey(this.line);
         this.value = extractStringValue(this.line); //<- string + metadata: see extractStringValue jsDocs
-        this.tabCount = getLineIndent(this.line).tabCount;
         this.isArrayStarter = isArrayStarter(this.line);
-        this.isEmpty = this.line.trim() === '';
       }
+    }
+
+    /**
+     * Special case: If a node is non-structural, e.g. an empty line or a comment, then by
+     * contract with upper layers, we use the cursor position if it is at the line. This
+     * matches the behavior of the shelf and autocomplete features. It is, admittedly, a little
+     * bit obscure but based on all editor use cases we've looked at, it works.
+     *
+     * @param editor The CodeMirror raml editor containing the RAML document
+     * @param lineNum The line to read the node from. Current editor cursor line if not specified.
+     * @returns {Number} Number of tabs at line or at cursor
+     */
+    function getTabCount(editor, lineNum, nodeIsStructural) {
+      //Special case: If the current line is where the cursor is, AND
+      //the line is non-structural, then the tab count is based on the
+      //cursor position, not the contents of the line:
+      var line = editor.getLine(lineNum);
+      if (!nodeIsStructural) {
+        var cursor = editor.getCursor();
+        if (cursor.line === lineNum) {
+          line = ((new Array(cursor.ch + 1)).join(' ')); //<- Line containing spaces up to cursor
+        }
+      }
+      return getLineIndent(line).tabCount;
     }
 
     /**
@@ -72,7 +97,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
           return null;
         }
         //Skip empty elements and comments
-        if (nextNode.getIsNonStructural()) {
+        if (!nextNode.getIsStructural()) {
           continue;
         }
         //If the next node is at our tab level it is always a sibling
@@ -110,7 +135,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
           return null;
         }
         //Ignore comments and empty lines
-        if (prevNode.getIsNonStructural()) {
+        if (!prevNode.getIsStructural()) {
           continue;
         }
         //If the previous node is at our tab level it is always a sibling
@@ -151,7 +176,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
         }
         //look at any node at or beyond the tabCount since the document could be malformed,
         //but we still want to return children.
-        if (nextNode.tabCount >= nextNodeTabCount && !nextNode.getIsNonStructural()) {
+        if (nextNode.tabCount >= nextNodeTabCount && nextNode.getIsStructural()) {
           return nextNode;
         }
       }
@@ -175,7 +200,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
         }
         //look at any node at or beyond the tabCount since the document could be malformed,
         //but we still want to return a parent if we can find one.
-        if (prevNode.tabCount <= parentNodeTabCount && !prevNode.getIsNonStructural()) {
+        if (prevNode.tabCount <= parentNodeTabCount && prevNode.getIsStructural()) {
           return prevNode;
         }
       }
@@ -202,8 +227,8 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * @return {Boolean} Whether this node is a comment or consists of nothing
      * but whitespace
      */
-    LazyNode.prototype.getIsNonStructural = function getIsNonStructural() {
-      return this.isComment || this.isEmpty;
+    LazyNode.prototype.getIsStructural = function getIsStructural() {
+      return !this.isComment && !this.isEmpty;
     };
 
     //endregion

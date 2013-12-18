@@ -125,6 +125,33 @@ describe('Lightweight DOM Module', function () {
     });
   });
 
+  it('should report tabCount at cursor position for empty and comment lines', function() {
+    var editor = getEditor(codeMirror,[
+      'documentation:',
+      '    ',
+      '  #Hello  '
+    ]);
+    editor.setCursor({line: 1, ch: 2});
+    var node = getNode(editor);
+    //Sanity check:
+    node.lineNum.should.be.equal(1);
+    //The line tab count is 2, but the cursor position is 1 tab over:
+    node.tabCount.should.be.equal(1);
+
+    //Move cursor away from node
+    editor.setCursor({line: 0, ch: 0});
+    node = getNode(editor, 1);
+    node.tabCount.should.be.equal(2);
+
+    //Move cursor to comment line
+    editor.setCursor({line: 2, ch: 0});
+    node = getNode(editor);
+    node.tabCount.should.be.equal(0);
+    //Move cursor to beyond where the comment starts
+    editor.setCursor({line: 2, ch: 6});
+    node = getNode(editor);
+    node.tabCount.should.be.equal(3);
+  });
   //endregion
 
   //region Utility functions
@@ -141,14 +168,7 @@ describe('Lightweight DOM Module', function () {
   }
 
   /**
-   * @param cursorLine Line to place the cursor on, 0 if not specified
-   * @param cursorCol Column to place the cursor on, 0 if not specified
-   * @returns {Object} An editor containing a small, well-formed raml
-   * document, expanded from a sample in the RAML spec, describing a part
-   * of the Twilio API
-  function getWellFormedRAML(cursorLine, cursorCol) {
-    return getEditor(codeMirror,
-    [
+    Sample RAML:
       'title: Twilio API',
       '#Taken from the RAML spec',
       'version: 2010-04-01',
@@ -184,12 +204,6 @@ describe('Lightweight DOM Module', function () {
       '                  required: true',
       '                  pattern: (\\+1|1)?([2-9]\\d\\d[2-9]\\d{6}) # E.164 standard',
       '                  example: +14158675309'
-    ], {
-        line: cursorLine || 0,
-        ch: cursorCol || 0
-      }
-    );
-  }
    */
 
   //endregion
