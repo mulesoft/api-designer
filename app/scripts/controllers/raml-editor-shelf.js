@@ -71,20 +71,20 @@ angular.module('ramlEditorApp')
       editor.focus();
     };
   })
-  .value('suggestionNameToTitleMapping', {
+  .value('suggestionKeyToTitleMapping', {
     '<resource>': 'New Resource'
   })
-  .factory('updateSuggestions', function(ramlHint, suggestionNameToTitleMapping) {
+  .factory('updateSuggestions', function(ramlHint, suggestionKeyToTitleMapping) {
     return function (editor) {
       var suggestions = ramlHint.getSuggestions(editor);
       var sections    = {};
       var model       = {sections: []};
 
       suggestions.forEach(function (item) {
-        item.title = suggestionNameToTitleMapping[item.name] || item.name;
+        item.title = suggestionKeyToTitleMapping[item.key] || item.key;
 
-        sections[item.category] = sections[item.category] || {name: item.category, items: []};
-        sections[item.category].items.push(item);
+        sections[item.metadata.category] = sections[item.metadata.category] || {name: item.metadata.category, items: []};
+        sections[item.metadata.category].items.push(item);
       });
 
       Object.keys(sections).forEach(function (key) {
