@@ -9,9 +9,7 @@ before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
 after_success:
-  - echo $TRAVIS_PULL_REQUEST
-  - test $TRAVIS_PULL_REQUEST = false && echo 'this is NOT PR' || 'this is PR'
-  - exit 0
+  - test $TRAVIS_PULL_REQUEST != false && exit 0
   - echo -n $id_rsa_{00..30} >> ~/.ssh/id_rsa_base64
   - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
