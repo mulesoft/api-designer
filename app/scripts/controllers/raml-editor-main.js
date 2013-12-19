@@ -25,7 +25,7 @@ angular.module('ramlEditorApp')
 
         // failure
         function (response) {
-          var error = 'cannot fetch ' + file;
+          var error = 'cannot fetch ' + file + ', check that the server is up and that CORS is enabled';
           if (response.status) {
             error += '(HTTP ' + response.status + ')';
           }
