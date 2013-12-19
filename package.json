@@ -42,7 +42,7 @@
     "node": ">=0.8.0"
   },
   "scripts": {
-    "test": "grunt --verbose && grunt localScenario"
+    "test": "grunt test"
   },
   "repository": {
     "type": "git",
