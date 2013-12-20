@@ -33,12 +33,28 @@ angular.module('lightweightDOM', ['lightweightParse'])
    */
   return function getNode(editor, lineNum) {
 
+    /**
+     * @param editor The CodeMirror raml editor containing the RAML document
+     * @param lineNum The line to read the node from, or the current cursor
+     *                line if not specified.
+     * @returns {LazyNode} Instance of LazyNode at given line, or null if the
+     * line is not a number or out of editor bounds.
+     */
+    function createNode(editor, lineNum) {
+      //If the line number is a number but out of bounds then we return null.
+      //If the line number is not a number, we use the current editor line.
+      var codeLineNum = typeof lineNum === 'number' ? lineNum : editor.getCursor().line;
+      if (editor.getLine(codeLineNum) === undefined) {
+        return null;
+      }
+      return new LazyNode(editor, codeLineNum);
+    }
+
     //region LazyNode Class Definition
     /**
      * Builds a new lazy node from the given content.
      * @param editor The CodeMirror raml editor containing the RAML document
-     * @param lineNum The line to read the node from. Current editor cursor line if not specified.
-     *                (see factory code at bottom of file.)
+     * @param lineNum The line to read the node from.
      * @constructor
      * @throws If lineNum is out of range of the editor's contents
      */
@@ -46,9 +62,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       this.lineNum = lineNum;
       this.editor = editor;
       this.line = editor.getLine(lineNum);
-      if (this.line === undefined) {
-        throw 'line ' + lineNum + ' not found in the editor contents.';
-      }
+
       this.isComment = isCommentStarter(this.line);
       this.isEmpty = this.line.trim() === '';
 
@@ -252,12 +266,6 @@ angular.module('lightweightDOM', ['lightweightParse'])
 
     //endregion
 
-    //If the line number is a number but out of bounds then we return null.
-    //If the line number is not a number, we use the current editor line.
-    var codeLineNum = typeof lineNum === 'number' ? lineNum : editor.getCursor().line;
-    if (editor.getLine(codeLineNum) === undefined) {
-      return null;
-    }
-    return new LazyNode(editor, codeLineNum);
+    return createNode(editor, lineNum);
   };
 });
