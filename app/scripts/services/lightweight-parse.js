@@ -67,31 +67,32 @@ angular.module('lightweightParse', ['utils'])
       return '';
     };
   })
-  .factory('extractStringValue', function extractStringValueFactory() {
+  .factory('extractValue', function extractValueFactory() {
     /**
-     * @return {string} the value of a node, or null if the
-     *                  node contains a complex value. The string will
-     *                  additionally be decorated with metadata:
-     *                  For alias values, e.g. Foo: &Bar, 'isAlias' will be set to true
-     *                  For reference values, e.g. Foo: *Bar, 'isReference' will be set to true
-     * @example for 'foo: bar' will return 'bar'
-     * @example for 'documentation:
-     *                - title: Hi' will return null
+     * @return {{ raw, text, isAlias, isReference}} the value of a node, or null if the
+     *         node contains a complex value. The string will
+     *         additionally be decorated with metadata:
+     *         For alias values, e.g. Foo: &Bar, 'isAlias' will be set to true
+     *         For reference values, e.g. Foo: *Bar, 'isReference' will be set to true
+     * @example 'foo: bar' returns {text: "bar", isAlias: false, isReference: false}
+     * @example 'foo: *bar' returns {text: bar, isAlias: false, isReference: true}
+     * @example 'foo: &bar' returns {text: bar, isAlias: true, isReference: false}
      */
-    return function extractStringValue(line) {
+    return function extractValue(line) {
       if (!line) {
         return null;
       }
       var matches = /:\s+(.+)/.exec(line);
       if (matches && matches[1]) {
-        var value = matches[1].trim();
+        var raw = matches[1].trim();
         //Attach metadata to the string:
-        if (value[0] === '&') {
-          value.isAlias = true;
-        } else if (value[0] === '*') {
-          value.isReference = true;
-        }
-        return value;
+        var isAlias = raw[0] === '&';
+        var isReference = raw[0] === '*';
+        return {
+          text: raw,
+          isAlias: isAlias,
+          isReference: isReference
+        };
       }
       return null;
     };

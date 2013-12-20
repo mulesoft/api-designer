@@ -349,6 +349,26 @@ describe('ramlEditorApp', function () {
 
         names.should.be.deep.equal(sortedNames);
       });
+
+      it('should not show any suggestions for nodes whose value is a reference', function() {
+        var editor = getEditor(codeMirror,
+        [
+          '/res1: &res1',
+          '  description: this is res1 description',
+          '  displayName: resource 1',
+          '  get:',
+          '    description: get into resource 1',
+          '/res2: *res1',
+          '  illegalnode: nothing'
+        ],
+        {
+          line: 5,
+          ch: 12
+        });
+
+        //Cursor is to right of *res1, should get no suggestions
+        ramlHint.getSuggestions(editor).should.be.empty;
+      });
     });
 
     describe('canAutocomplete', function () {

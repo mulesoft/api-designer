@@ -25,7 +25,7 @@
 'use strict';
 
 angular.module('lightweightDOM', ['lightweightParse'])
-.factory('getNode', function getNodeFactory(getLineIndent, isArrayStarter, extractKey, extractStringValue, isCommentStarter) {
+.factory('getNode', function getNodeFactory(getLineIndent, isArrayStarter, extractKey, extractValue, isCommentStarter) {
   /**
    * Factory function that creates a lazydom instance from an editor code line
    * @param editor The codemirror editor containing the RAML document
@@ -38,11 +38,12 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * Builds a new lazy node from the given content.
      * @param editor The CodeMirror raml editor containing the RAML document
      * @param lineNum The line to read the node from. Current editor cursor line if not specified.
+     *                (see factory code at bottom of file.)
      * @constructor
      * @throws If lineNum is out of range of the editor's contents
      */
     function LazyNode(editor, lineNum) {
-      this.lineNum = lineNum || editor.getCursor().line;
+      this.lineNum = lineNum;
       this.editor = editor;
       this.line = editor.getLine(lineNum);
       if (this.line === undefined) {
@@ -54,7 +55,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       this.tabCount = getTabCount(editor, lineNum, this.getIsStructural());
       if (!this.isComment) {
         this.key = extractKey(this.line);
-        this.value = extractStringValue(this.line); //<- string + metadata: see extractStringValue jsDocs
+        this.value = extractValue(this.line);
         this.isArrayStarter = isArrayStarter(this.line);
       }
     }
@@ -84,7 +85,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
     }
 
     /**
-     * @returns {Object} The next structural sibling node, or null.
+     * @returns {LazyNode} The next structural sibling node, or null.
      */
     LazyNode.prototype.getNextSibling = function getNextSibling() {
       //Calculate the correct tab indent for the next sibling:
@@ -122,7 +123,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
     };
 
     /**
-     * @returns {Object} The previous structural sibling node, or null.
+     * @returns {LazyNode} The previous structural sibling node, or null.
      */
     LazyNode.prototype.getPreviousSibling = function getPreviousSibling() {
       //Calculate the correct tab indent for the previous sibling:
@@ -130,7 +131,8 @@ angular.module('lightweightDOM', ['lightweightParse'])
       //For array node, the indent is one less OR an element that is an array starter
       var prevLineNum = this.lineNum;
       while(true) {
-        var prevNode = getNode(editor, --prevLineNum);
+        prevLineNum -= 1;
+        var prevNode = getNode(editor, prevLineNum);
         if (prevNode === null) {
           return null;
         }
@@ -160,7 +162,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
     };
 
     /**
-     * @returns {Object} The first structural child node, or null.
+     * @returns {LazyNode} The first structural child node, or null.
      */
     LazyNode.prototype.getFirstChild = function getFirstChild() {
       var nextNodeTabCount = this.tabCount + (this.isArrayStarter ? 2 : 1);
@@ -183,7 +185,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
     };
 
     /**
-     * @returns {Object} The parent node, or null if this is a root node
+     * @returns {LazyNode} The parent node, or null if this is a root node
      */
     LazyNode.prototype.getParent = function getParent() {
       //For members of arrays that aren't the first array element, the parent is
@@ -191,7 +193,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       //documentation:
       //  - title: foo
       //    content: bar <- 2 tabs over from parent
-      var parentNodeTabCount = this.tabCount - (!this.isArrayStarter && this.getIsInArray() ? 2 : 1);
+      var parentNodeTabCount = this.tabCount - ((!this.isEmpty && !this.isArrayStarter && this.getIsInArray()) ? 2 : 1);
       var prevLineNum = this.lineNum;
       while(true) {
         var prevNode = getNode(editor, --prevLineNum);
@@ -207,7 +209,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
     };
 
     /**
-     * @returns {boolean} Whether or not the node is in an array
+     * @returns {Boolean} Whether or not the node is in an array
      */
     LazyNode.prototype.getIsInArray = function getIsInArray() {
       //Walk previous siblings until we find one that starts an array, or we run
@@ -231,10 +233,28 @@ angular.module('lightweightDOM', ['lightweightParse'])
       return !this.isComment && !this.isEmpty;
     };
 
+    /**
+     * Executes the testFunc against this node and its parents, moving up the
+     * tree until no more nodes are found.
+     * @param testFunc Function to execute against current node and parents
+     * @returns {LazyNode} The node where testFunc returned true, or null.
+     */
+    LazyNode.prototype.findUp = function findUp(testFunc, args) {
+      var node = this;
+      while(node) {
+        if (testFunc.apply(node, args)) {
+          return node;
+        }
+        node = node.getParent();
+      }
+      return null;
+    };
+
     //endregion
 
-    //If the line number is out of bounds then we return null
-    var codeLineNum = lineNum || editor.getCursor().line;
+    //If the line number is a number but out of bounds then we return null.
+    //If the line number is not a number, we use the current editor line.
+    var codeLineNum = typeof lineNum === 'number' ? lineNum : editor.getCursor().line;
     if (editor.getLine(codeLineNum) === undefined) {
       return null;
     }

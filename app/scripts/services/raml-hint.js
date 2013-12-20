@@ -77,8 +77,8 @@ angular.module('ramlEditorApp')
       return getNeighborLines(editor).map(extractKey);
     };
   })
-  .factory('ramlHint', function (getLineIndent, generateTabs, getNeighborKeys,
-    getScopes, getEditorTextAsArrayOfLines) {
+  .factory('ramlHint', function ramlHintFactory(getLineIndent, generateTabs, getNeighborKeys,
+                                                getScopes, getEditorTextAsArrayOfLines, getNode) {
     var hinter = {};
     var RAML_VERSION = '#%RAML 0.8';
     var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
@@ -237,7 +237,12 @@ angular.module('ramlEditorApp')
       ;
     };
 
-    hinter.getSuggestions = function (editor) {
+    /**
+     * @param editor The RAML editor
+     * @returns {{key, metadata {category, isText}}} Where keys are the RAML node names, and metadata
+     *          contains extra information about the node, such as its category
+     */
+    hinter.getSuggestions = function getSuggestions(editor) {
       if (hinter.shouldSuggestVersion(editor)) {
         return [{
           key:     '#%RAML 0.8',
@@ -248,6 +253,13 @@ angular.module('ramlEditorApp')
         }];
       }
 
+      //Pivotal 61664576: We use the DOM API to check to see if the current node or any
+      //of its parents contains a YAML reference. If it does, then we provide no suggestions.
+      var node = getNode(editor);
+      var refNode = node.findUp(function() { return this.value && this.value.isReference; });
+      if (refNode) {
+        return [];
+      }
       var path         = hinter.computePath(editor);
       var suggestions  = path ? hinter.suggestRAML(path.slice(0, -1)).suggestions : {};
       var neighborKeys = getNeighborKeys(editor);

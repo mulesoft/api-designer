@@ -60,24 +60,24 @@ describe('Lightweight DOM Module', function () {
       node.isArrayStarter.should.be.equal(true);
       node.getIsInArray().should.be.equal(true);
       node.key.should.be.equal('title');
-      node.value.should.be.equal('Hello');
+      node.value.text.should.be.equal('Hello');
       node = node.getNextSibling();
       node.isArrayStarter.should.be.equal(false);
       node.getIsInArray().should.be.equal(true);
       node.key.should.be.equal('content');
-      node.value.should.be.equal('World');
+      node.value.text.should.be.equal('World');
       //Iterator should skip to the next array:
       node = node.getNextSibling();
       node.isArrayStarter.should.be.equal(true);
       node.getIsInArray().should.be.equal(true);
       node.key.should.be.equal('title');
-      node.value.should.be.equal('Foo');
+      node.value.text.should.be.equal('Foo');
       //final node
       node = node.getNextSibling();
       node.isArrayStarter.should.be.equal(false);
       node.getIsInArray().should.be.equal(true);
       node.key.should.be.equal('content');
-      node.value.should.be.equal('Bar');
+      node.value.text.should.be.equal('Bar');
       node.getParent().key.should.be.equal('documentation');
       //final node
       should.not.exist(node.getNextSibling());
@@ -151,6 +151,17 @@ describe('Lightweight DOM Module', function () {
     editor.setCursor({line: 2, ch: 6});
     node = getNode(editor);
     node.tabCount.should.be.equal(3);
+  });
+
+  it('should be able to traverse to a parent on an empty line in an array using cursor position', function() {
+    var editor = getEditor(codeMirror, [
+      'documentation:',
+      '  - title:',
+      '  '
+    ]);
+    editor.setCursor({line:2, ch: 2});
+    var node = getNode(editor);
+    node.getParent().line.should.be.equal('documentation:');
   });
   //endregion
 
