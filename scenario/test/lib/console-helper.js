@@ -1,5 +1,6 @@
 'use strict';
 function ConsoleHelper() {
+  this.methodsList = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace', 'connect'];
   this.titleCss = '#raml-console-api-title';
   this.listMainResourcesCss = '#raml-console-api-reference h1';
   this.listResourceDescriptionCss = '[role=\'description\'] p';
@@ -8,6 +9,8 @@ function ConsoleHelper() {
   this.listResourceRTCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="resource-type"]';
   this.listResourceTraitsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]';
   this.listResourceMethodsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li';
+//  this.methodDocumentationArea = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation';
+  this.ListOftabs = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation div ul li a';
 }
 
 ConsoleHelper.prototype = {};
@@ -54,7 +57,38 @@ ConsoleHelper.prototype.getListOfMethodByResourceCss = function(){
     //$('[role=\'resourceSummary\']').filter(function(){ return /^\s+\/classes\s*$/.test($(this).find("h2").text());})
 };
 
-ConsoleHelper.prototype.expandResourcebyPos = function(pos){
+ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function(pos){
+//  resource needed to be expanded.
+  pos--;
+//send 0 to expand all.
+  if(pos ===-1){
+    browser.executeScript(function(){
+      $('#raml-console-api-reference h1').click();
+    });
+  }else{
+    browser.findElements(by.css('#raml-console-api-reference h1')).then(function(mainResources){
+      mainResources[pos].click();
+    });
+  }
+};
+
+ConsoleHelper.prototype.areResourceGroupsExpanded = function(){
+  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"]')).then(function(groups){
+    groups.forEach(function(group){
+      expect(group.getAttribute('class')).toMatch('expanded');
+    });
+  });
+};
+
+ConsoleHelper.prototype.areResourceGroupsCollapsed = function(){
+  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"]')).then(function(groups){
+    groups.forEach(function(group){
+      expect(group.getAttribute('class')).toMatch('collapsed');
+    });
+  });
+};
+
+ConsoleHelper.prototype.expandCollapseResourcebyPos = function(pos){
   var that = this;
   pos--;
 //send 0 to expand all.
@@ -70,4 +104,147 @@ ConsoleHelper.prototype.expandResourcebyPos = function(pos){
   });
 };
 
+ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function(pos){
+//  resource needed to be expanded.
+  pos--;
+//send 0 to expand all.
+  if(pos ===-1){
+    browser.executeScript(function(){
+      $('[role="api-console"] [role="resource"] [role="method"] [role="methodSummary"]').click();
+    });
+  }else{
+    browser.findElements(by.css('[role="api-console"] [role="resource"] [role="method"] [role="methodSummary"]')).then(function(methods){
+      methods[pos].click();
+    });
+  }
+};
+
+
+ConsoleHelper.prototype.selectTab = function(pos){
+  var that = this;
+  // 0 - request, 1- responses, 2 try it
+  browser.findElements(by.css(that.ListOftabs)).then(function(tab){
+    tab[pos].click();
+  });
+};
+
+ConsoleHelper.prototype.getListOfMethods = function(){
+  //works for collapsed and expanded console.
+  return browser.executeScript(function () {
+    var list = [];
+    $('[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li').text(function( index,text ) {
+      list[index] =text;
+    });
+    return list;
+  });
+};
+
+ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function(){
+  var webdriver = require('selenium-webdriver');
+  var d = webdriver.promise.defer();
+
+  browser.executeScript(function () {
+    var dic = {};
+    var keys = [];
+    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]').text(function( index,text ) {
+      dic[text]='';
+      keys[index]=text;
+    });
+
+    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="description"] p').text(function( index,text ) {
+      dic[keys[index]]=text;
+    });
+    return dic;
+  }).then(function(dic){
+      d.fulfill(dic);
+    });
+  return d.promise;
+
+};
+
+ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function(){
+  var webdriver = require('selenium-webdriver');
+  var d = webdriver.promise.defer();
+
+  browser.executeScript(function () {
+    var dic = {};
+    var keys = [];
+    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]').text(function( index,text ) {
+      dic[text]='';
+      keys[index]=text;
+    });
+    $('[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation [role="full-description"]').text(function( index,text ) {
+      dic[keys[index]]=text;
+    });
+    return dic;
+  }).then(function(dic){
+      d.fulfill(dic);
+    });
+  return d.promise;
+
+};
+
+ConsoleHelper.prototype.getResourcesResourceType = function(){
+  var webdriver = require('selenium-webdriver');
+  var d = webdriver.promise.defer();
+
+  browser.executeScript(function () {
+    var dic = {};
+    var keys = [];
+    $('[role=\'resource\'] h3.path').text(function( index,text ) {
+      var texto = text.replace(/\s+/g,'');
+      dic[texto]='';
+      keys[index]=texto;
+    });
+    $('[role="api-console"] [role="resource"] [role="resource-summary"] [role="resource-type"]').text(function( index,text ) {
+      dic[keys[index]]=text.replace(/\s+/g,'');
+    });
+    return dic;
+  }).then(function(dic){
+      d.fulfill(dic);
+    });
+  return d.promise;
+};
+
+//ConsoleHelper.prototype.getResourcesTraits = function(){
+//  var webdriver = require('selenium-webdriver');
+//  var d = webdriver.promise.defer();
+//
+//  browser.executeScript(function () {
+//    var dic = {};
+//    var keys = [];
+//    $('[role=\'resource\'] h3.path').text(function( index,text ) {
+//      var texto = text.replace(/\s+/g,'');
+//      dic[texto]='';
+//      keys[index]=texto;
+//    });
+//    $('[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]').text(function( index,text ) {
+//      dic[keys[index]]=text.replace(/\s+/g,'');
+//    });
+//    return dic;
+//  }).then(function(dic){
+//      d.fulfill(dic);
+//    });
+//  return d.promise;
+//};
+
+ConsoleHelper.prototype.getMethodsTraits = function(){
+  var webdriver = require('selenium-webdriver');
+  var d = webdriver.promise.defer();
+  browser.executeScript(function () {
+    var dic = {};
+    var keys = [];
+    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]').text(function( index,text ) {
+      dic[text]='';
+      keys[index]=text;
+    });
+    $('[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation [role="traits"]').text(function( index,text ) {
+      dic[keys[index]]=text.replace(/\s+/g,' ');
+    });
+    return dic;
+  }).then(function(dic){
+      d.fulfill(dic);
+    });
+  return d.promise;
+};
 exports.ConsoleHelper = ConsoleHelper;

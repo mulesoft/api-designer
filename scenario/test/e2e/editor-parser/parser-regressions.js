@@ -19,8 +19,20 @@ describe('parser ',function(){
       designerAsserts.parserError('5','found undefined alias res');
     });
 
-
-
+    xit('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
+      var definition = [
+        '#%RAML 0.8',
+        '---',
+        'title: GitHub API',
+        'version: v3',
+        'mediaType:  application/json',
+        '/res:',
+        '  get:',
+        '    responses: '
+      ].join('\\n');
+      editor.setValue(definition);
+      expect(editor.IsParserErrorDisplayed()).toBe(false);
+    });
 
   });//alias
 });// parser

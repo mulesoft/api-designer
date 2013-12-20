@@ -20,6 +20,7 @@ exports.config = {
     '../test/e2e/published-examples/examples-parser.js',
     '../test/e2e/editor-shelf/shelf-regressions.js',
     '../test/e2e/console/embedded-console.js',
+    '../test/e2e/console/console-defaultview.js',
     '../test/lib/*.js'
   ],
   baseUrl:  'https://ramltooling:ram10ve@j0hnqa.mulesoft.org',
