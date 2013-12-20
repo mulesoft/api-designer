@@ -359,7 +359,8 @@ describe('ramlEditorApp', function () {
           '  get:',
           '    description: get into resource 1',
           '/res2: *res1',
-          '  illegalnode: nothing'
+          '  illegalnode: nothing',
+          '  '
         ],
         {
           line: 5,
@@ -367,6 +368,14 @@ describe('ramlEditorApp', function () {
         });
 
         //Cursor is to right of *res1, should get no suggestions
+        ramlHint.getSuggestions(editor).should.be.empty;
+        editor.setCursor({line:6, ch:0});
+        ramlHint.getSuggestions(editor).should.be.empty;
+        editor.setCursor({line:6, ch:2});
+        ramlHint.getSuggestions(editor).should.be.empty;
+        editor.setCursor({line:7, ch:0});
+        ramlHint.getSuggestions(editor).should.not.be.empty;
+        editor.setCursor({line:7, ch:2});
         ramlHint.getSuggestions(editor).should.be.empty;
       });
     });
