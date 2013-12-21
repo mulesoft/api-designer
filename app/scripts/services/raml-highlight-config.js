@@ -5,10 +5,22 @@ angular.module('codeMirror')
     var mode = {};
 
     mode.highlight = function(config) {
-      mode.yaml = CodeMirror.getMode(config, 'yaml');
-      mode.xml = CodeMirror.getMode(config, 'xml');
-      mode.json = CodeMirror.getMode(config, { name: 'javascript', json: true });
-      mode.markdown = CodeMirror.getMode(config, 'gfm');
+      mode.indentationOverlay = {
+        token: function(stream, state) {
+          if (stream.match('  ') && (state.cutoff === undefined || stream.column() <= state.cutoff)) {
+            return 'indent indent-col-' + stream.column();
+          } else {
+            stream.skipToEnd();
+          }
+        },
+        startState: function() {
+          return {};
+        }
+      }
+      mode.yaml = CodeMirror.overlayMode(CodeMirror.getMode(config, 'yaml'), mode.indentationOverlay);
+      mode.xml = CodeMirror.overlayMode(CodeMirror.getMode(config, 'xml'), mode.indentationOverlay);
+      mode.json = CodeMirror.overlayMode(CodeMirror.getMode(config, { name: 'javascript', json: true }), mode.indentationOverlay);
+      mode.markdown = CodeMirror.overlayMode(CodeMirror.getMode(config, 'gfm'), mode.indentationOverlay);
 
       return {
         startState: function () {
@@ -95,6 +107,7 @@ angular.module('codeMirror')
         return mode._yaml(stream, state);
       }
 
+      state.localState.overlay.cutoff = state.localState.parentIndentation;
       return mode[modeName].token(stream, state.localState);
     };
 
