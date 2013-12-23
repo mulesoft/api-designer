@@ -14,7 +14,7 @@ describe('Embedded-console',function(){
     editor.setValue('');
     expect(editor.getLine(1)).toEqual('');
     designerAsserts.shelfElements(shelf.elemRamlVersion);
-    expect(editor.noErrorIsDisplayed()).toBe(false);
+    expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
 
   it('it is not displayed if are parser errors', function(){
@@ -44,7 +44,7 @@ describe('Embedded-console',function(){
       editor.setValue(definition);
       var expList = ['/res1','/res1 /res2'];
       designerAsserts.consoleResourceName(expList);
-      apiConsole.expandResourcebyPos(0);
+      apiConsole.expandCollapseResourcebyPos(0);
       var expDescriptions = ['this is res1 description','this is res1 description'];
       designerAsserts.consoleResourceDescription(expDescriptions);
     });

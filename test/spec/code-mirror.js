@@ -86,9 +86,9 @@ describe('CodeMirror Service', function () {
       var editor     = getEditor(codeMirror,
         [
           'title: hello',
-          '    '
+          sp(indentUnit * 2)
         ],
-        {line: 1, ch: 3},
+        {line: 1, ch: 666},
         {indentUnit: indentUnit}
       );
 
@@ -127,7 +127,7 @@ describe('CodeMirror Service', function () {
       editor.getLine(3).should.be.equal('');
     });
 
-    it('should delete one char if cursor is on first column (even with tabs after)', function () {
+    it('should delete one char if cursor at first column (even with tabs after)', function () {
       var indentUnit = 7;
       var editor     = getEditor(codeMirror,
         [
@@ -144,7 +144,7 @@ describe('CodeMirror Service', function () {
       editor.getLine(2).should.be.equal('baseUri: http://example.com/api' + sp(indentUnit));
     });
 
-    it('should delete one char with cursor at first character and tabs after', function () {
+    it('should delete one char with cursor at first column and tabs after', function () {
       var indentUnit = 2;
       var editor     = getEditor(codeMirror,
         [
@@ -159,8 +159,23 @@ describe('CodeMirror Service', function () {
       editor.lineCount().should.be.equal(2);
       editor.getLine(1).should.be.equal('  ');
     });
-  });
 
+    it('should delete one whitespace at cursor position when total number of whitespaces is not a multiple of indentUnit', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          '   '
+        ],
+        {line: 0, ch: 666},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+
+      editor.lineCount().should.be.equal(1);
+      editor.getLine(0).should.be.equal('  ');
+    });
+  });
 
   describe('enter key', function() {
     var editor;
