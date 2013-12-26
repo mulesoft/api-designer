@@ -15,7 +15,7 @@ angular.module('ramlEditorApp')
       var nextLine          = editor.getLine(i);
       var nextLineIndent    = nextLine && getLineIndent(nextLine);
       var path              = ramlHint.computePath(editor);
-      var padding           = cursor.line === 0 ? '' : generateTabs(path.length - 1 + (path.length > 1 ? path.listsTraveled : 0));
+      var padding           = generateTabs(path.length + path.arraysTraveled);
 
       // add paddings to snippet lines
       snippet = snippet.map(function (line, index) {

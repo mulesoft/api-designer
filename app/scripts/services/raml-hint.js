@@ -78,142 +78,134 @@ angular.module('ramlEditorApp')
     };
   })
   .factory('ramlHint', function (getLineIndent, generateTabs, getNeighborKeys,
-    getScopes, getEditorTextAsArrayOfLines) {
+    getScopes, getEditorTextAsArrayOfLines, isArrayStarter, extractKey) {
     var hinter = {};
     var RAML_VERSION = '#%RAML 0.8';
     var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
     hinter.suggestRAML = window.suggestRAML;
 
-    hinter.computePath = function (editor) {
-      var cursor = editor.getCursor();
-      var line = cursor.line;
-      var ch = cursor.ch;
-      var listsTraveled = 0;
-      var lastTraveledListSpaceCount;
-      var lines;
-      var textAsList;
-      var rootIsFound;
-
-      if (line === 0) {
-        return null;
+    hinter.computePath = function computePath(editor) {
+      function isWhitespaceOnly(line, indent) {
+        return line.length === indent.spaceCount;
       }
 
-      textAsList = getEditorTextAsArrayOfLines(editor).slice(0, line + 1).reverse();
-      if (textAsList[0].trim() === '') {
-        textAsList[0] = textAsList[0].slice(0, ch);
+      function isCommentStarter(line, indent) {
+        return line[indent.spaceCount] === '#';
       }
 
-      // It should have at least one element
-      if (!textAsList.length) {
-        return [];
-      }
+      function hasParentIsh(lineNumber, lineIndent) {
+        while ((lineNumber -= 1) >= 0) {
+          var parentLine       = editor.getLine(lineNumber);
+          var parentLineIndent = getLineIndent(parentLine);
 
-      lastTraveledListSpaceCount = getLineIndent(textAsList[0]).spaceCount;
-      if ((lastTraveledListSpaceCount % editor.getOption('indentUnit')) !== 0) {
-        return;
-      }
+          if (
+            isWhitespaceOnly(parentLine, parentLineIndent) ||
+            isCommentStarter(parentLine, parentLineIndent)
+          ) {
+            continue;
+          }
 
-      lines = textAsList
-        .filter(function (line, index) {
-          var spaceCount;
-
-          // current line is good
-          if (index === 0) {
+          // that's why we called "-ish" because
+          // we count on spaces, not tabs
+          if (parentLineIndent.spaceCount < lineIndent.spaceCount) {
             return true;
-          }
-
-          // comments are good
-          if (line.trimLeft().indexOf('#') === 0) {
-            return true;
-          }
-
-          // lines with bigger indentation are not good
-          spaceCount = getLineIndent(line).spaceCount;
-          if (spaceCount > lastTraveledListSpaceCount) {
-            return false;
-          }
-
-          // lines after root are not good
-          if (rootIsFound) {
-            return false;
-          }
-
-          // lines with indentation are good until we find the root
-          if (spaceCount) {
-            return true;
-          }
-
-          rootIsFound = true;
-
-          return true;
-        })
-        .map(function (line, index) {
-          var result         = {};
-          var lineIndentInfo = getLineIndent(line);
-          var listMatcher;
-
-          result.tabCount = lineIndentInfo.tabCount;
-          line = lineIndentInfo.content;
-
-          listMatcher = /^(- )(.*)$/.exec(line) || {index: -1};
-
-          // case is a list
-          if (listMatcher.index === 0) {
-            result.isList = true;
-            line = listMatcher[2];
-
-            if (index === 0 || lineIndentInfo.spaceCount < lastTraveledListSpaceCount) {
-              listsTraveled++;
-              lastTraveledListSpaceCount = lineIndentInfo.spaceCount;
-            }
-          }
-
-          line = /^(.+)(: |:\s*$)/.exec(line);
-
-          result.content = line ? line[1] : '';
-
-          return result;
-        })
-      ;
-
-      var result = lines.slice(1).reduce(function (state, lineData) {
-        var prev = state[state.length - 1];
-
-        // Ignore line if greater in tabs
-        if (lineData.tabCount >= prev.tabCount) {
-          return state;
-        } else if (lineData.tabCount === prev.tabCount - 1) {
-          if (lineData.isList) {
-            prev.isList = true;
-            return state;
           }
         }
 
-        state.push(lineData);
+        return false;
+      }
 
-        return state;
-      }, [lines[0]]);
+      function indentIsInvalid(indent) {
+        return (indent.spaceCount % editor.getOption('indentUnit')) !== 0;
+      }
 
-      result = result.slice(1).reduce(function (state, lineData) {
-        if (state.path[0].tabCount > lineData.tabCount + 1) {
-          if (!state.path[0].isList && !lineData.isList) {
-            state.invalid = true;
-          }
-        }
-        state.path.unshift(lineData);
-        return state;
-      }, {invalid: false, path: [result[0]]});
+      var path           = [];
+      var arraysTraveled = 0;
+      var cursor         = editor.getCursor();
+      var line           = editor.getLine(cursor.line);
+      var lineIndent     = getLineIndent(line);
+      var tabCount       = lineIndent.tabCount;
+      var lastLine       = line;
+      var lastTabCount   = tabCount;
+      var tabCountDiff;
 
-      if (result.invalid) {
+      if (
+        isWhitespaceOnly(line, lineIndent) ||
+        isCommentStarter(line, lineIndent) && (cursor.ch < line.indexOf('#'))
+      ) {
+        // in case current line has only whitespaces we want to know
+        // its indentation up to cursor position
+        line         = line.slice(0, cursor.ch);
+        lineIndent   = getLineIndent(line);
+        tabCount     = lineIndent.tabCount;
+        lastLine     = line;
+        lastTabCount = tabCount;
+      }
+
+      if (
+        (!isCommentStarter(line, lineIndent) || hasParentIsh(cursor.line, lineIndent)) &&
+        indentIsInvalid(lineIndent)
+      ) {
         return;
       }
 
-      var path = result.path.map(function (e) {
-        return e.content;
-      });
-      path.listsTraveled = listsTraveled;
+      for (var i = cursor.line - 1; i >= 0 && lastTabCount; i--) {
+        line         = editor.getLine(i);
+        lineIndent   = getLineIndent(line);
+        tabCount     = lineIndent.tabCount;
+        tabCountDiff = lastTabCount - tabCount;
 
+        if (isCommentStarter(line, lineIndent)) {
+          continue;
+        }
+
+        if (indentIsInvalid(lineIndent)) {
+          return;
+        }
+
+        if (tabCountDiff <= 0) {
+          // [line]     =   key1: value1
+          // [lastLine] = key2: value2
+          //
+          // OR
+          //
+          // [line]     = key1: value1
+          // [lastLine] = key2: value2
+          continue;
+        }
+
+        if (isArrayStarter(line)) {
+          if (tabCountDiff > 2) {
+            // [line]     = - key1: value1
+            // [lastLine] =       key2: value2
+            return;
+          }
+
+          arraysTraveled += 1;
+
+          if (tabCountDiff === 1 && !isArrayStarter(lastLine)) {
+            // [line]     = - key1: value1
+            // [lastLine] =   key2: value2
+            lastLine     = line;
+            lastTabCount = tabCount;
+            continue;
+          }
+        } else {
+          if (tabCountDiff > 1) {
+            // [line]     = key1: value1
+            // [lastLine] =     key2: value2
+            return;
+          }
+        }
+
+        path.unshift(extractKey(line));
+
+        lastLine     = line;
+        lastTabCount = tabCount;
+      }
+
+      path.arraysTraveled = arraysTraveled;
       return path;
     };
 
@@ -249,7 +241,7 @@ angular.module('ramlEditorApp')
       }
 
       var path         = hinter.computePath(editor);
-      var suggestions  = path ? hinter.suggestRAML(path.slice(0, -1)).suggestions : {};
+      var suggestions  = path ? hinter.suggestRAML(path).suggestions : {};
       var neighborKeys = getNeighborKeys(editor);
 
       return Object.keys(suggestions)

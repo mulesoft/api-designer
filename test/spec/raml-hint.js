@@ -17,196 +17,356 @@ describe('ramlEditorApp', function () {
 
     describe('computePath', function () {
       it('should stop travelling when root level has been reached', function () {
-        var editor = getEditor(codeMirror,
+        var path = ramlHint.computePath(getEditor(codeMirror,
           [
-            'traits:',
-            '  - trait:',
-            '      displayName: trait',
-            '/:',
-            '  options:',
-            '    description:'
+            'key1:',
+            '  - key11:',
+            '      key111:',
+            'key2:',
+            '  key21:',
+            '    key211:'
           ],
           {
             line: 5,
             ch:   0
           }
-        );
+        ));
 
-        var path = ramlHint.computePath(editor);
-        [].concat(path).should.be.deep.equal(['/', 'options', 'description']);
-        path.listsTraveled.should.be.equal(0);
-      });
-
-      it('should return NULL for the first line', function () {
-        var path = ramlHint.computePath(getEditor(codeMirror, ''));
-        should.equal(path, null);
+        [].concat(path).should.be.deep.equal(['key2', 'key21']);
+        path.arraysTraveled.should.be.equal(0);
       });
 
       it('should handle root level paths', function () {
-        var editor = getEditor(codeMirror,
+        var path = ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api'
+            ''
           ],
-          {line: 1, ch: 4}
-        );
+          {
+            line: 0,
+            ch:   0
+          }
+        ));
 
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['version']);
+        [].concat(path).should.be.empty;
+        path.arraysTraveled.should.be.equal(0);
       });
 
       it('should handle second level paths', function () {
-        var editor = getEditor(codeMirror,
+        var path = ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    get:',
+            'key1:',
+            '  key11:',
+            '    key111:'
           ],
-          {line: 5, ch: 4}
-        );
+          {
+            line: 2,
+            ch:   0
+          }
+        ));
 
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['/hello', '/bye', 'get']);
+        [].concat(path).should.be.deep.equal(['key1', 'key11']);
+        path.arraysTraveled.should.be.equal(0);
       });
 
-      it('should inform when tab levels are invalid', function () {
-        var editor = getEditor(codeMirror,
+      it('should handle and skip array at the same indentation level', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    /foo:',
-            '              '
-          ],
-          {line: 6, ch: 14}
-        );
-
-        should.not.exist(ramlHint.computePath(editor));
-      });
-
-      it('should offer computePath to lists at the same level', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '  - hello2:',
-            '      displayName: hello2',
+            'key1:',
+            '  - key11:',
+            '      key111:',
+            '  - key12:',
+            '      key121:',
             '  '
           ],
-          {line: 8, ch: 2}
-        );
+          {
+            line: 5,
+            ch:   666
+          }
+        ));
 
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
+        [].concat(path).should.be.deep.equal(['key1']);
+        path.arraysTraveled.should.be.equal(0);
       });
 
       it('should offer options to valid elements inside lists', function () {
-        var editor = getEditor(codeMirror,
+        var path = ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '  - hello2:',
-            '      displayName: hello',
+            'key1:',
+            '  - key11:',
+            '      key111:',
+            '  - key12:',
+            '      key121:',
             '      '
-          ],
-          {line: 8, ch: 6}
-        );
-
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', 'hello2', '']);
-      });
-
-      it('should return null for first line first char', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api'
-          ],
-          {line: 0, ch: 0}
-        );
-
-        should.not.exist(ramlHint.computePath(editor));
-      });
-
-      it('should return null for first line non first char', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-          ],
-          {line: 0, ch: 4}
-        );
-
-        should.not.exist(ramlHint.computePath(editor));
-      });
-
-      it('should detect valid number of traveled lists #1', function () {
-        ramlHint.computePath(getEditor(codeMirror,
-          [
-            'traits',
-            '  - trait1:',
-            '      displayName:' // <--
-          ],
-          {
-            line: 2,
-            ch:   6
-          }
-        )).listsTraveled.should.be.equal(1);
-      });
-
-      it('should detect valid number of traveled lists #2', function () {
-        ramlHint.computePath(getEditor(codeMirror,
-          [
-            'traits',
-            '  - trait1:',
-            '      displayName:',
-            '  - trait2:',
-            '      displayName:' // <--
           ],
           {
             line: 4,
-            ch:   6
+            ch:   666
           }
-        )).listsTraveled.should.be.equal(1);
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1', 'key12']);
+        path.arraysTraveled.should.be.equal(1);
       });
 
-      it('should detect valid number of traveled lists #3', function () {
-        ramlHint.computePath(getEditor(codeMirror,
+      it('should detect valid number of traveled arrays #1', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
           [
-            '- list1:',
-            '    - list2:',
-            '        key1:' // <--
+            'key1:',
+            '  - key11:',
+            '      key111:' // <--
           ],
           {
             line: 2,
-            ch:   8
+            ch:   666
           }
-        )).listsTraveled.should.be.equal(2);
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1', 'key11']);
+        path.arraysTraveled.should.be.equal(1);
       });
 
-      it('should detect valid number of traveled lists #4', function () {
-        ramlHint.computePath(getEditor(codeMirror,
+      it('should detect valid number of traveled arrays #2', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
           [
-            'documentation:',
-            '  - title:'
+            'key1:',
+            '  - key11:',
+            '      key111:',
+            '  - key12:',
+            '      key121:' // <--
+          ],
+          {
+            line: 4,
+            ch:   666
+          }
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1', 'key12']);
+        path.arraysTraveled.should.be.equal(1);
+      });
+
+      it('should detect valid number of traveled arrays #3', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            '- key1:',
+            '    - key11:',
+            '        key111:' // <--
+          ],
+          {
+            line: 2,
+            ch:   666
+          }
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1', 'key11']);
+        path.arraysTraveled.should.be.equal(2);
+      });
+
+      it('should detect valid number of traveled arrays #4', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '  - key11:'
           ],
           {
             line: 1,
-            ch:   4
+            ch:   666
           }
-        )).listsTraveled.should.be.equal(1);
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1']);
+        path.arraysTraveled.should.be.equal(0);
+      });
+
+      it('should detect valid number of traveled arrays #5', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            '- key1:',
+            '  key2:',
+            '    key21:'
+          ],
+          {
+            line: 2,
+            ch:   666
+          }
+        ));
+
+        [].concat(path).should.be.deep.equal(['key2']);
+        path.arraysTraveled.should.be.equal(1);
+      });
+
+      it('should detect valid number of traveled arrays #6', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '  - key11:',
+            '    key12:',
+            '      key121:'
+          ],
+          {
+            line: 3,
+            ch:   666
+          }
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1', 'key12']);
+        path.arraysTraveled.should.be.equal(1);
+      });
+
+      it('should return path that has comment lines along', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '# key 1',
+            '  - key11:',
+            '  # key 11',
+            '      - key111:',
+            '      # key111',
+            '          key1111:',
+            '          # key1111'
+          ],
+          {
+            line: 7,
+            ch:   666
+          }
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1', 'key11', 'key111']);
+        path.arraysTraveled.should.be.equal(2);
+      });
+
+      it('should return falsy for line with odd number of whitespaces', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            ' '
+          ],
+          {
+            line: 0,
+            ch:   666
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return falsy for line with odd number of whitespaces and parent', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '   key2:'
+          ],
+          {
+            line: 1,
+            ch:   666
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return falsy for line which parent has odd number of whitespaces', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            ' key1:',
+            '  key2:'
+          ],
+          {
+            line: 1,
+            ch:   666
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return falsy for line with too many whitespaces', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '    key2:'
+          ],
+          {
+            line: 1,
+            ch:   666
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return falsy for line with too many whitespaces that is part of an array', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            '- key1:',
+            '      key2:'
+          ],
+          {
+            line: 1,
+            ch:   666
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return falsy for line with cursor at position that sums to odd number of whitespaces', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '  '
+          ],
+          {
+            line: 1,
+            ch:   1
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return path for line without parent and odd whitespaces before a comment sign', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            ' #%RAML 0.8'
+          ],
+          {
+            line: 0,
+            ch:   0
+          }
+        ));
+
+        [].concat(path).should.be.empty;
+        path.arraysTraveled.should.be.equal(0);
+      });
+
+      it('should return falsy for line with parent and odd whitespaces before a comment sign', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            ' # key1'
+          ],
+          {
+            line: 1,
+            ch:   666
+          }
+        ));
+
+        should.not.exist(path);
+      });
+
+      it('should return path for line with parent, odd whitespaces before a comment sign and cursor at non-odd position', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror,
+          [
+            'key1:',
+            '   #'
+          ],
+          {
+            line: 1,
+            ch:   2
+          }
+        ));
+
+        [].concat(path).should.be.deep.equal(['key1']);
+        path.arraysTraveled.should.be.equal(0);
       });
     });
 

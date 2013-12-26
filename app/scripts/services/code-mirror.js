@@ -2,7 +2,7 @@
 
 angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
   .factory('codeMirror', function (
-    ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
+    ramlHint, codeMirrorHighLight, eventService, getSpaceCount, getLineIndent, generateSpaces, generateTabs,
     getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
     config, extractKey
   ) {
@@ -69,16 +69,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.enterKey = function (cm) {
-      function getSpaceCount(line) {
-        for (var i = 0; i < line.length; i++) {
-          if (line[i] !== ' ') {
-            break;
-          }
-        }
-
-        return i;
-      }
-
       function getParent(lineNumber, spaceCount) {
         for (var i = lineNumber - 1; i >= 0; i--) {
           if (getSpaceCount(cm.getLine(i)) < spaceCount) {

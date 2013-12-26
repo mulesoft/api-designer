@@ -62,20 +62,26 @@ angular.module('lightweightParse', ['utils'])
       return '';
     };
   })
-  .factory('getLineIndent', function (indentUnit) {
-    return function (string, indentSize) {
-      var result = /^(\s*)(.*)$/.exec(string);
-
-      if (!string) {
-        return {tabCount: 0, spaceCount: 0, content: ''};
+  .factory('getSpaceCount', function getSpaceCountFactory() {
+    return function getSpaceCount(string) {
+      for (var i = 0; i < string.length; i++) {
+        if (string[i] !== ' ') {
+          break;
+        }
       }
 
-      indentSize = indentSize || indentUnit;
+      return i;
+    };
+  })
+  .factory('getLineIndent', function getLineIndentFactory(getSpaceCount, indentUnit) {
+    return function getLineIndent(string, indentSize) {
+      var spaceCount = getSpaceCount(string);
+      var tabCount   = Math.floor(spaceCount / (indentSize || indentUnit));
 
       return {
-        tabCount: Math.floor((result[1] || '').length / indentSize),
-        content: result[2] || '',
-        spaceCount: (result[1] || '').length
+        content:    spaceCount ? string.slice(spaceCount) : string,
+        spaceCount: spaceCount,
+        tabCount:   tabCount
       };
     };
   })
@@ -100,7 +106,6 @@ angular.module('lightweightParse', ['utils'])
       return true;
 
     }
-
 
     return function (arrayOfLines) {
       var zipValues = [], currentIndexes = {};
