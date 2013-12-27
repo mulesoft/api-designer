@@ -15,7 +15,7 @@ npm install -g karma # Optional for running the test suite
 
 Install node modules
 ```
-npm install
+npm install 
 ```
 
 Install bower modules

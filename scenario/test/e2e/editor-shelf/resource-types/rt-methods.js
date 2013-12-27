@@ -25,11 +25,11 @@ describe('shelf',function(){
         ].join('\\n');
         editor.setValue(definition);
         editor.setCursor(6,8);
-        designerAsserts.shelfElementsRTMethodsByGroup();
+        designerAsserts.ShelfElementsByGroup(shelf.elemRtMethodByGroup);
       });
     });
 
-    describe('Named Parameters', function(){ // https://www.pivotaltracker.com/story/show/60351064
+    describe('Named Parameters', function(){
 
       methods.forEach(function(method){
         namedParameters.forEach(function(namedParameter){
@@ -46,7 +46,7 @@ describe('shelf',function(){
             ].join('\\n');
             editor.setValue(definition);
             editor.setCursor(8,12);
-            designerAsserts.shelfElemNamedParametersByGroup();
+            designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
           });
         });
       });

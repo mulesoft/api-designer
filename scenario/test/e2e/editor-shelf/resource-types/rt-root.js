@@ -22,7 +22,7 @@ describe('shelf',function(){
       ].join('\\n');
       editor.setValue(definition);
       editor.setCursor(5,6);
-      designerAsserts.shelfElemResourceTypesByGroup();
+      designerAsserts.ShelfElementsByGroup(shelf.elemResourceTypeTypeByGroup);
     });
 
     describe('after being selected', function(){
@@ -60,7 +60,7 @@ describe('shelf',function(){
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(7,10);
-          designerAsserts.shelfElemNamedParametersByGroup();
+          designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
         });
       });
 

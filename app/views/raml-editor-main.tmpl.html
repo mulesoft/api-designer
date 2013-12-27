@@ -1,7 +1,7 @@
 <div role="raml-editor" class="{{theme}}" ng-controller="ramlEditorMain">
   <header>
     <h1>
-      <strong>API</strong> Designer
+      <strong>API</strong> Designer <i class="help icon-question-sign" ng-click="openHelp()"></i>
     </h1>
     <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
       {{message}}

@@ -4,7 +4,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
   .factory('codeMirror', function (
     ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
     getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
-    hasChildren, config, extractKey
+    config, extractKey
   ) {
     var editor  = null;
     var service = {
@@ -46,14 +46,20 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
 
     service.backspaceKey = function (cm) {
       var cursor          = cm.getCursor();
-      var line            = cm.getLine(cursor.line).substring(0, cursor.ch);
+      var line            = cm.getLine(cursor.line).slice(0, cursor.ch);
       var indentUnit      = cm.getOption('indentUnit');
-      var lineEndsWithTab = (line.length - line.trimRight().length) >= indentUnit;
-      var i;
+      var spaceCount      = line.length - line.trimRight().length;
+      var lineEndsWithTab = spaceCount >= indentUnit;
 
-      /* Erase in tab chunks only if all things found in the current line are tabs */
-      if (line && lineEndsWithTab) {
-        for (i = 0; i < indentUnit; i++) {
+      // delete indentation if there is at least one right before
+      // the cursor and number of whitespaces is a multiple of indentUnit
+      //
+      // we do it for better user experience as if you had 3 whitespaces
+      // before cursor and pressed Backspace, you'd expect cursor to stop
+      // at second whitespace to continue typing RAML content, otherwise
+      // you'd end up at first whitespace and be forced to hit Spacebar
+      if (lineEndsWithTab && (spaceCount % indentUnit) === 0) {
+        for (var i = 0; i < indentUnit; i++) {
           cm.deleteH(-1, 'char');
         }
         return;

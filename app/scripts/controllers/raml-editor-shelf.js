@@ -1,8 +1,8 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .factory('applySuggestion', function (ramlHint, ramlSnippets, getLineIndent, generateTabs, isArrayStarter) {
-    return function (editor, suggestion) {
+  .factory('applySuggestion', function applySuggestionFactory(ramlHint, ramlSnippets, getLineIndent, generateTabs, isArrayStarter) {
+    return function applySuggestion(editor, suggestion) {
       var snippet           = ramlSnippets.getSnippet(suggestion);
       var snippetLinesCount = snippet.length;
       var cursor            = editor.getCursor();
@@ -98,23 +98,23 @@ angular.module('ramlEditorApp')
       editor.focus();
     };
   })
-  .value('suggestionNameToTitleMapping', {
+  .value('suggestionKeyToTitleMapping', {
     '<resource>': 'New Resource'
   })
-  .factory('updateSuggestions', function(ramlHint, suggestionNameToTitleMapping) {
+  .factory('updateSuggestions', function(ramlHint, suggestionKeyToTitleMapping) {
     return function (editor) {
       var suggestions = ramlHint.getSuggestions(editor);
       var sections    = {};
       var model       = {sections: []};
 
       suggestions.forEach(function (item) {
-        item.title = suggestionNameToTitleMapping[item.name] || item.name;
+        item.title = suggestionKeyToTitleMapping[item.key] || item.key;
 
-        sections[item.category] = sections[item.category] || {name: item.category, items: []};
+        sections[item.metadata.category] = sections[item.metadata.category] || {name: item.metadata.category, items: []};
+        sections[item.metadata.category].items.push(item);
         //61553714: Because item is the model passed into the designer, we need to copy the
         //isList property into it so that the designer can format things properly.
         item.isList = suggestions.isList;
-        sections[item.category].items.push(item);
       });
 
       Object.keys(sections).forEach(function (key) {

@@ -15,6 +15,7 @@ describe('Muse: Mule Sales Enablement API', function () {
       editor.setValue('');
       expect(editor.getLine(1)).toEqual('');
       designerAsserts.shelfElements(shelf.elemRamlVersion);
+      expect(editor.IsParserErrorDisplayed()).toBe(false);
     });
 
     var i = 1;

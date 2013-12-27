@@ -50,7 +50,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'description'});
+      applySuggestion(editor, {key: 'description'});
       editor.getLine(1).should.be.equal('description:');
       editor.getCursor().line.should.be.equal(1);
     });
@@ -70,7 +70,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'description'});
+      applySuggestion(editor, {key: 'description'});
       editor.getLine(5).should.be.equal('      description:');
     });
 
@@ -88,7 +88,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'description'});
+      applySuggestion(editor, {key: 'description'});
       editor.getLine(3).should.be.equal('      description:');
     });
 
@@ -106,7 +106,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'description'});
+      applySuggestion(editor, {key: 'description'});
       editor.getLine(3).should.be.equal('      description:');
       editor.getCursor().line.should.be.equal(3);
     });
@@ -126,7 +126,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'description'});
+      applySuggestion(editor, {key: 'description'});
       editor.getLine(3).should.be.equal('      description:');
       editor.getCursor().line.should.be.equal(3);
     });
@@ -146,7 +146,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'description'});
+      applySuggestion(editor, {key: 'description'});
       editor.getLine(3).should.be.equal('      description:');
     });
 
@@ -165,7 +165,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'description'});
+      applySuggestion(editor, {key: 'description'});
       editor.getLine(5).should.be.equal('      description:');
     });
 
@@ -183,7 +183,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'schemas'});
+      applySuggestion(editor, {key: 'schemas'});
       editor.getLine(3).should.be.equal('schemas:');
     });
 
@@ -199,7 +199,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'title'});
+      applySuggestion(editor, {key: 'title'});
       editor.getLine(1).should.be.equal('  - title: My API');
     });
 
@@ -215,7 +215,7 @@ describe('Shelf controller', function () {
         }
       );
 
-      applySuggestion(editor, {name: 'title'});
+      applySuggestion(editor, {key: 'title'});
       editor.getLine(1).should.be.equal('  - title: My API');
     });
 
@@ -228,7 +228,7 @@ describe('Shelf controller', function () {
           '  '
         ]);
 
-      applySuggestion(editor, {name: 'title', isList: true });
+      applySuggestion(editor, {key: 'title', isList: true });
       editor.getLine(1).should.be.equal('  - title: My API');
     });
 
@@ -239,7 +239,7 @@ describe('Shelf controller', function () {
           '  '
         ]);
 
-      applySuggestion(editor, {name: 'title', isList: false });
+      applySuggestion(editor, {key: 'title', isList: false });
       editor.getLine(1).should.be.equal('  title: My API');
     });
 
@@ -250,7 +250,7 @@ describe('Shelf controller', function () {
           '  - a: Hello'
         ]);
 
-      applySuggestion(editor, {name: 'content', isList: true });
+      applySuggestion(editor, {key: 'content', isList: true });
       editor.getLine(2).should.be.equal('  - content:');
     });
 
@@ -262,7 +262,7 @@ describe('Shelf controller', function () {
           '  '
         ]);
 
-      applySuggestion(editor, {name: 'b', isList: true });
+      applySuggestion(editor, {key: 'b', isList: true });
       editor.getLine(2).should.be.equal('  - b:');
     });
 
@@ -274,7 +274,7 @@ describe('Shelf controller', function () {
           '    '
         ]);
 
-      applySuggestion(editor, {name: 'content', isList: true });
+      applySuggestion(editor, {key: 'content', isList: true });
       editor.getLine(2).should.be.equal('    content:');
     });
 
@@ -287,7 +287,7 @@ describe('Shelf controller', function () {
           '  '
         ]);
 
-      applySuggestion(editor, {name: 'c', isList: true });
+      applySuggestion(editor, {key: 'c', isList: true });
       editor.getLine(3).should.be.equal('  - c:');
     });
 
@@ -300,7 +300,7 @@ describe('Shelf controller', function () {
           '    '
         ]);
 
-      applySuggestion(editor, {name: 'c', isList: true });
+      applySuggestion(editor, {key: 'c', isList: true });
       editor.getLine(3).should.be.equal('    c:');
     });
 
@@ -313,7 +313,7 @@ describe('Shelf controller', function () {
           '  '
         ], 1);
 
-      applySuggestion(editor, {name: 'content', isList: true });
+      applySuggestion(editor, {key: 'content', isList: true });
       editor.getLine(2).should.be.equal('  - content:');
       editor.getLine(3).should.be.equal('  - title: World');
     });
