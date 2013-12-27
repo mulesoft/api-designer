@@ -11,7 +11,7 @@ describe('shelf',function(){
     editor.setValue('');
     expect(editor.getLine(1)).toEqual('');
     designerAsserts.shelfElements(shelf.elemRamlVersion);
-    expect(editor.noErrorIsDisplayed()).toBe(false);
+    expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
 
   xit('groups',function(){

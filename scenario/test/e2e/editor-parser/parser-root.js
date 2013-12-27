@@ -26,7 +26,7 @@ describe('parser',function(){
           'title: !include http://some.broken.link.com\\n'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('3','error: cannot fetch http://some.broken.link.com');
+        designerAsserts.parserError('3','error: cannot fetch http://some.broken.link.com, check that the server is up and that CORS is enabled');
       });
 
       it('file name/URL cannot be null', function () {
@@ -45,7 +45,7 @@ describe('parser',function(){
     it('should fail: The first line must be: #%RAML 0.8', function(){
       var definition = '';
       editor.setValue(definition);
-      expect(editor.noErrorIsDisplayed()).toBe(false);
+      expect(editor.IsParserErrorDisplayed()).toBe(false);
     });
 
     it('should fail: unsupported raml version #%RAML 0.1', function () {

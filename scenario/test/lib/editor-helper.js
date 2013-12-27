@@ -22,7 +22,7 @@ EditorHelper.prototype.getErrorLineMessage = function(){
   return d.promise;
 };
 
-EditorHelper.prototype.noErrorIsDisplayed = function(){
+EditorHelper.prototype.IsParserErrorDisplayed = function(){
   return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
 };
 
