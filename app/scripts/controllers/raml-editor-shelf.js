@@ -28,7 +28,7 @@ angular.module('ramlEditorApp')
         var arrayStarterNode = node.selfOrPrevious(function(node) { return node.isArrayStarter; });
         //1. If we don't find and array starter node, we start a new array.
         //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
-        var startNewArray = !arrayStarterNode || (lineIndent.tabCount === arrayStarterNode.tabCount && line != arrayStarterNode.line);
+        var startNewArray = !arrayStarterNode || (lineIndent.tabCount === arrayStarterNode.tabCount && line !== arrayStarterNode.line);
       }
 
       // add padding to snippet lines
@@ -51,9 +51,6 @@ angular.module('ramlEditorApp')
       // insert into current cursor's position
       // to re-use indentation as there is nothing else
       if (cursorIsAtNode) {
-      //  if (isList) {
-      //    snippet = padding + snippet;
-      //  }
         snippet = '\n' + snippet;
       }
 
