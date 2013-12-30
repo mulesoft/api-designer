@@ -114,9 +114,9 @@ angular.module('lightweightParse', ['utils'])
   })
   .factory('getTabCount', function(indentUnit) {
     return function(numSpaces, indentSize) {
-      var indentSize = indentSize || indentUnit;
+      indentSize = indentSize || indentUnit;
       return Math.floor(numSpaces / indentSize);
-    }
+    };
   })
   .factory('getScopes', function (getLineIndent) {
     var lastArrayCache;

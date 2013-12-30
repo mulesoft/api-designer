@@ -267,8 +267,12 @@ angular.module('ramlEditorApp')
       var path         = hinter.computePath(editor);
       var raml         = path ? hinter.suggestRAML(path.slice(0, -1)) : null;
       var suggestions  = raml ? raml.suggestions : {};
-      var neighborKeys = getNeighborKeys(editor);
+      //Get all structural nodes' keys so we can filter them out
+      var neighborKeys = node.getSelfAndNeighbors()
+        .filter(function(node) { return node.getIsStructural() && node.key; })
+        .map(function (node) { return node.key; });
 
+      //Next, filter out the keys from the returned suggestions
       suggestions = Object.keys(suggestions)
         .filter(function (key) {
           return !hinter.isSuggestionInUse(key, suggestions[key], neighborKeys);
