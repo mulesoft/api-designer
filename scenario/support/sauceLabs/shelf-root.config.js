@@ -1,15 +1,20 @@
+'use strict';
 exports.config = {
 
+  sauceUser: process.env.SAUCE_USER,
+  sauceKey: process.env.SAUCE_KEY,
+
   capabilities: {
-    'browserName': 'firefox'
+    'browserName': 'chrome'
   },
 
-  baseUrl: 'http://localhost:9013/',
-  
   specs: [
-    '../test/e2e/raml-example/muse-e2e.js',
-    '../test/lib/*.js'
+    '../../test/e2e/editor-shelf/*.js',
+
+    '../../test/lib/*.js'
   ],
+
+  baseUrl:  'https://ramltooling:ram10ve@j0hnqa.mulesoft.org/',
 
   onPrepare: function() {
     browser.get('');
@@ -24,9 +29,10 @@ exports.config = {
   },
 
   jasmineNodeOpts: {
-    showColors: true,
-    defaultTimeoutInterval: 15000,
+    onComplete: null,
     isVerbose: false,
-    includeStackTrace: true
+    showColors: false,
+    includeStackTrace: false,
+    defaultTimeoutInterval: 80000
   }
 };

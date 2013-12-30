@@ -11,12 +11,11 @@ describe('Muse: Mule Sales Enablement API', function () {
 //  var consoleApi = new ConsoleHelper();
 
   describe('e2e validation', function(){
-
     it('clear editor', function(){
       editor.setValue('');
       expect(editor.getLine(1)).toEqual('');
       designerAsserts.shelfElements(shelf.elemRamlVersion);
-      designerAsserts.parserError('1', 'The first line must be: \'#%RAML 0.8\'');
+      expect(editor.IsParserErrorDisplayed()).toBe(false);
     });
 
     var i = 1;
@@ -30,7 +29,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           1: function () {
             expect(editor.getLine(t)).toEqual('#%RAML 0.8');
             editor.setCursor(2,0);
-            // need to open a pivotal to track the error that in (2,1) options inside a methods are displayed
             designerAsserts.shelfElements(shelf.elemRootLevel);
           },
           2: function(){
@@ -564,7 +562,7 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
             editor.setCursor(116,8);
             designerAsserts.shelfElements(shelf.elemRtMethodLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           116 : function(){
             expect(editor.getLine(t)).toEqual('        body:');
@@ -573,31 +571,31 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
             editor.setCursor(117,10);
             designerAsserts.shelfElements(shelf.elemBodyLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           117 : function(){
             expect(editor.getLine(t)).toEqual('          application/json:');
             editor.setCursor(118,10);
             list2 =['application/json'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemBodyLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           118 : function(){
             expect(editor.getLine(t)).toEqual('            schema: <<schema>>');
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           119 : function(){
             expect(editor.getLine(t)).toEqual('        responses:');
             editor.setCursor(120,8);
             list2 =['body','responses'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           120 : function(){
             expect(editor.getLine(t)).toEqual('          200:');
             editor.setCursor(121,12);
             designerAsserts.shelfElements(shelf.elemResponsesLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           121 : function(){
             expect(editor.getLine(t)).toEqual('            body:');
@@ -606,18 +604,18 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResponsesLevel);
             editor.setCursor(122,14);
             designerAsserts.shelfElements(shelf.elemBodyLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           122 : function(){
             expect(editor.getLine(t)).toEqual('              application/json:');
             editor.setCursor(123,14);
             list2 =['application/json'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemBodyLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           123 : function(){
             expect(editor.getLine(t)).toEqual('                schema: <<schema>>');
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           124 : function(){
             expect(editor.getLine(t)).toEqual('      delete:');
@@ -626,14 +624,14 @@ describe('Muse: Mule Sales Enablement API', function () {
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
             editor.setCursor(125,8);
             designerAsserts.shelfElements(shelf.elemRtMethodLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           125 : function(){
             expect(editor.getLine(t)).toEqual('traits:');
             editor.setCursor(126,0);
             list2 =['title', 'baseUri','version', 'schemas','resourceTypes','traits'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
-//            designerAsserts.parserError('83', 'there is no trait named paged');
+            designerAsserts.parserError('83', 'there is no trait named paged');
           },
           126 : function(){
             expect(editor.getLine(t)).toEqual('  - paged:');
@@ -755,7 +753,6 @@ describe('Muse: Mule Sales Enablement API', function () {
             editor.setCursor(146,2);
             list2 =['type','is'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceLevel);
-            designerAsserts.consoleResourcesTraits(['secured']);
           },
           146: function(){
             expect(editor.getLine(t)).toEqual('  get:');
@@ -784,7 +781,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           152: function(){
             expect(editor.getLine(t)).toEqual('    is: [ secured ]');
-            designerAsserts.consoleResourcesTraits(['secured','secured']);
           },
           153: function(){
             expect(editor.getLine(t)).toEqual('/products:');
@@ -798,7 +794,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           155: function(){
             expect(editor.getLine(t)).toEqual('  is: [ secured ]');
-            designerAsserts.consoleResourcesTraits(['secured','secured','secured']);
           },
           156: function(){
             expect(editor.getLine(t)).toEqual('  get:');
@@ -823,7 +818,6 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           162: function(){
             expect(editor.getLine(t)).toEqual('    is: [ secured ]');
-            designerAsserts.consoleResourcesTraits(['secured','secured','secured','secured']);
           },
           163: function(){
             expect(editor.getLine(t)).toEqual('    /presentations: *presentations');
@@ -838,7 +832,7 @@ describe('Muse: Mule Sales Enablement API', function () {
   }); // e2e validation
   describe('console validation - expanded', function(){
 
-    xdescribe('collapsed Console', function(){
+    describe('collapsed Console', function(){
 
       it('verify resources name', function(){
         var expList = ['/presentations','/presentations /{presentationId}','/products','/products /{productId}',
@@ -863,56 +857,7 @@ describe('Muse: Mule Sales Enablement API', function () {
         designerAsserts.consoleResourceResourceType(expList);
       });
 
-      it('verify resources Traits', function(){
-        var expList = {'r0':['secured'],'r1':['secured'],
-          'r2':['secured'],'r3':['secured'],'r4':['secured'],
-          'r5':['secured'] };
-        designerAsserts.consoleResourceTraits(expList);
-      });
     }); // collapsed Console
-
-    xdescribe('expanded console', function(){
-
-      it('/presentation', function(){
-        browser.findElements(by.css('[role="resource"]')).then(function(resources){
-          expect(resources.length).toEqual(6);
-
-//      Expanded
-          resources[0].click();
-          resources[0].findElements(by.css('.accordion [role="method"]')).then(function(methods){
-            methods[0].click();
-            methods[0].findElements(by.css('[role="documentation"] .tabbable li a')).then(function(tab){
-              expect(tab[0].getText()).toEqual('Request');
-              expect(tab[1].getText()).toEqual('Responses');
-              expect(tab[2].getText()).toEqual('Try It');
-              tab[0].click().then(function(){
-//              resources[0].findElements(by.css('.tabbable .tab-content section[heading="Headers"]')).then(function(headers){
-                resources[0].findElements(by.css('.tabbable .tab-content [heading="Request"] section[heading="Headers"]')).then(function(headers){
-                  console.log('headers length', headers.length);
-                  headers[0].findElements(by.css('h2')).then(function(h2){
-                    expect(h2.length).toEqual(1);
-                    expect(h2[0].getText()).toEqual('Headers');
-                  });
-                  headers[1].findElements(by.css('h2')).then(function(h2){
-                    expect(h2.length).toEqual(1);
-                    expect(h2[0].getText()).toEqual('Headers');
-                  });
-
-                  headers[0].findElements(by.css('h4')).then(function(h4){
-                    h4.findElements(by.css('span[role="display-name"]')).then(function(displayName){
-                      expect(displayName.length).toEqual(1);
-                      expect(displayName.getText()).toEqual('Autorizationmm');
-                    });
-                  });
-                });
-              });
-            });
-          });
-
-        });
-
-      });
-    });// expanded console
 
   });// console validation - expanded
 }); // MAIN

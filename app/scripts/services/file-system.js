@@ -119,7 +119,6 @@ angular.module('fs')
 
     if (!fsFactory) {
       fsFactory = 'localStorageFileSystem';
-
       config.set('fsFactory', fsFactory);
     }
 

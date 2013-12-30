@@ -328,7 +328,7 @@
     if (!text) { return this.remove(); }
 
     // At the moment, the ghost is going to assume the prefix text is accurate
-    var suffix = this.suffix = text.substr(this.data.to.ch - this.data.from.ch);
+    var suffix = this.suffix = text.substr(data.word.length);
 
     if (!suffix.length) { return this.remove(); }
 

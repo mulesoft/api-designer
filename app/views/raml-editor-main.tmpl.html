@@ -1,7 +1,7 @@
 <div role="raml-editor" class="{{theme}}" ng-controller="ramlEditorMain">
   <header>
     <h1>
-      <strong>API</strong> Designer
+      <strong>API</strong> Designer <i class="help icon-question-sign" ng-click="openHelp()"></i>
     </h1>
     <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
       {{message}}
@@ -38,7 +38,7 @@
   </div>
   <div role="preview-wrapper">
     <div role="preview" class="bootstrap">
-      <div role="console">
+      <div role="console" ng-show="consoleEnabled">
         <raml-console></raml-console>
       </div>
       <a role="logo" target="_blank" href="http://mulesoft.com"></a>

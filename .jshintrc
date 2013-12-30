@@ -25,6 +25,7 @@
     "angular": false,
     "beforeEach": false,
     "browser": false,
+    "$": false,
     "by": false,
     "CodeMirror": false,
     "describe": false,

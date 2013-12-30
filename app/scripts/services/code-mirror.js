@@ -1,18 +1,10 @@
 'use strict';
 
 angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
-  .factory('replaceSelection', function (ramlHint, generateTabs) {
-    return function(editor, offset, whitespace){
-      var editorState = ramlHint.getEditorState(editor);
-      var spaces      = '\n' + generateTabs(editorState.currLineTabCount + offset) + whitespace;
-
-      editor.replaceSelection(spaces, 'end', '+input');
-    };
-  })
   .factory('codeMirror', function (
     ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
     getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
-    hasChildren, replaceSelection, config
+    config, extractKey
   ) {
     var editor  = null;
     var service = {
@@ -22,10 +14,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     service.removeTabs = function (line, indentUnit) {
       var tabRegExp = new RegExp('( ){' + indentUnit + '}', 'g');
       return line.replace(tabRegExp, '');
-    };
-
-    service.isLineOnlyTabs = function (line, indentUnit) {
-      return service.removeTabs(line, indentUnit).length === 0;
     };
 
     service.tabKey = function (cm) {
@@ -57,24 +45,21 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.backspaceKey = function (cm) {
-      var cursor     = cm.getCursor();
-      var line       = cm.getLine(cursor.line).substring(0, cursor.ch + 1);
-      var indentUnit = cm.getOption('indentUnit');
-      var i;
+      var cursor          = cm.getCursor();
+      var line            = cm.getLine(cursor.line).slice(0, cursor.ch);
+      var indentUnit      = cm.getOption('indentUnit');
+      var spaceCount      = line.length - line.trimRight().length;
+      var lineEndsWithTab = spaceCount >= indentUnit;
 
-      /* Erase in tab chunks only if all things found in the current line are tabs */
-      if (line !== '' && service.isLineOnlyTabs(line, indentUnit)) {
-        for (i = 0; i < indentUnit; i++) {
-          /*
-           * XXX deleteH should be used this way because if doing
-           *
-           *    cm.deleteH(-indentUnit,'char')
-           *
-           * it provokes some weird line deletion cases:
-           *
-           * On an empty line (but with tabs after the cursor) it completely erases the
-           * previous line.
-           */
+      // delete indentation if there is at least one right before
+      // the cursor and number of whitespaces is a multiple of indentUnit
+      //
+      // we do it for better user experience as if you had 3 whitespaces
+      // before cursor and pressed Backspace, you'd expect cursor to stop
+      // at second whitespace to continue typing RAML content, otherwise
+      // you'd end up at first whitespace and be forced to hit Spacebar
+      if (lineEndsWithTab && (spaceCount % indentUnit) === 0) {
+        for (var i = 0; i < indentUnit; i++) {
           cm.deleteH(-1, 'char');
         }
         return;
@@ -84,67 +69,59 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.enterKey = function (cm) {
-      var editorState        = ramlHint.getEditorState(cm);
-      var indentUnit         = cm.getOption('indentUnit');
-      var curLineWithoutTabs = service.removeTabs(editorState.curLine, indentUnit);
-      var parentLine         = getParentLine(cm, editorState.start.line);
+      function getSpaceCount(line) {
+        for (var i = 0; i < line.length; i++) {
+          if (line[i] !== ' ') {
+            break;
+          }
+        }
 
-      // this overrides everything else, because the '|' explicitly declares the line as a scalar
-      // with a continuation on other lines. This applies to the current line or the parent of the current line
-      if (curLineWithoutTabs.indexOf('|') > curLineWithoutTabs.indexOf(':')) {
-        replaceSelection(cm, 1, '');
-        return;
+        return i;
       }
 
-      if (parentLine && parentLine.indexOf('|') > parentLine.indexOf(':')) {
-        replaceSelection(cm, 0, '');
-        return;
-      }
-
-      // if current line or parent line begins with: content, example or schema
-      // one indentation level should be added or the same level should be kept if
-      // the cursor is not on the first line
-      if (/^(content|example|schema):/.test(curLineWithoutTabs)) {
-        replaceSelection(cm, 1, '');
-        return;
-      }
-
-      if (/^(\s+)?(content|example|schema):/.test(parentLine)) {
-        replaceSelection(cm, 0, '');
-        return;
-      }
-
-      //if current line is inside a traits or resourceTypes array,
-      //some exception applies...
-      if (parentLine && /^(traits|resourceTypes):/.test(parentLine)) {
-        replaceSelection(cm, isArrayStarter(curLineWithoutTabs) ? 2 : 1, '');
-        return;
-      }
-
-      if (isArrayElement(cm, editorState.start.line)) {
-        replaceSelection(cm, isArrayStarter(curLineWithoutTabs) ? 1 : 0, '');
-        return;
-      }
-
-      var offset = 0;
-      if (curLineWithoutTabs.replace(' ', '').length > 0) {
-        if (hasChildren(cm)) {
-          offset = 1;
+      function getParent(lineNumber, spaceCount) {
+        for (var i = lineNumber - 1; i >= 0; i--) {
+          if (getSpaceCount(cm.getLine(i)) < spaceCount) {
+            return extractKey(cm.getLine(i));
+          }
         }
       }
 
-      if (editorState.cur.ch < editorState.curLine.length) {
-        offset = /^\s*\w+:/.test(editorState.curLine) ? 1 : 0;
+      var cursor          = cm.getCursor();
+      var endOfLine       = cursor.ch >= cm.getLine(cursor.line).length - 1;
+      var line            = cm.getLine(cursor.line).slice(0, cursor.ch);
+      var lineStartsArray = isArrayStarter(line);
+      var spaceCount      = getSpaceCount(line);
+      var spaces          = generateSpaces(spaceCount);
+      var parent          = getParent(cursor.line, spaceCount);
+      var traitOrType     = ['traits', 'resourceTypes'].indexOf(parent) !== -1;
+
+      if (endOfLine) {
+        (function () {
+          if (traitOrType) {
+            spaces += generateTabs(2);
+            return;
+          } else if (lineStartsArray) {
+            spaces += generateTabs(1);
+          }
+
+          if (line.trimRight().slice(-1) === '|') {
+            spaces += generateTabs(1);
+            return;
+          }
+
+          var nextLine = cm.getLine(cursor.line + 1);
+          if (nextLine && getSpaceCount(nextLine) > spaceCount) {
+            spaces += generateTabs(1);
+          }
+        })();
+      } else {
+        if (lineStartsArray) {
+          spaces += generateTabs(1);
+        }
       }
 
-      var extraWhitespace   = '';
-      var leadingWhitespace = curLineWithoutTabs.match(/^\s+/);
-
-      if (leadingWhitespace && leadingWhitespace[0] && !offset) {
-        extraWhitespace = leadingWhitespace[0];
-      }
-
-      replaceSelection (cm, offset, extraWhitespace);
+      cm.replaceSelection('\n' + spaces, 'end', '+input');
     };
 
     service.createEditor = function (el, extraOptions) {
@@ -172,9 +149,10 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         tabSize: 2,
         extraKeys: {
           'Ctrl-Space': 'autocomplete',
-          'Cmd-s': 'save',
-          'Ctrl-s': 'save',
-          'Shift-Tab': 'indentLess'
+          'Cmd-S': 'save',
+          'Ctrl-S': 'save',
+          'Shift-Tab': 'indentLess',
+          'Shift-Ctrl-T': 'toggleTheme'
         },
         keyMap: 'tabSpace',
         foldGutter: foldGutterConfig,
@@ -233,15 +211,19 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       };
 
       CodeMirror.commands.autocomplete = function (cm) {
-        CodeMirror.showHint(cm, CodeMirror.hint.javascript, {
+        CodeMirror.showHint(cm, CodeMirror.hint.raml, {
           ghosting: true
         });
+      };
+
+      CodeMirror.commands.toggleTheme = function () {
+        eventService.broadcast('event:toggle-theme');
       };
 
       CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
       CodeMirror.defineMIME('text/x-raml', 'raml');
 
-      CodeMirror.registerHelper('hint', 'yaml', ramlHint.autocompleteHelper);
+      CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
       CodeMirror.registerHelper('fold', 'indent', getFoldRange);
     })();
 

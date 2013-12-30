@@ -16,6 +16,32 @@ describe('ramlEditorApp', function () {
     }));
 
     describe('computePath', function () {
+      it('should stop travelling when root level has been reached', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'traits:',
+            '  - trait:',
+            '      displayName: trait',
+            '/:',
+            '  options:',
+            '    description:'
+          ],
+          {
+            line: 5,
+            ch:   0
+          }
+        );
+
+        var path = ramlHint.computePath(editor);
+        [].concat(path).should.be.deep.equal(['/', 'options', 'description']);
+        path.listsTraveled.should.be.equal(0);
+      });
+
+      it('should return NULL for the first line', function () {
+        var path = ramlHint.computePath(getEditor(codeMirror, ''));
+        should.equal(path, null);
+      });
+
       it('should handle root level paths', function () {
         var editor = getEditor(codeMirror,
           [
@@ -81,25 +107,6 @@ describe('ramlEditorApp', function () {
         [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
       });
 
-      it('should offer computePath to lists at a more nested level', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '  - hello2:',
-            '      displayName: hello2',
-            '    '
-          ],
-          {line: 8, ch: 3}
-        );
-
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
-      });
-
       it('should offer options to valid elements inside lists', function () {
         var editor = getEditor(codeMirror,
           [
@@ -117,25 +124,6 @@ describe('ramlEditorApp', function () {
         );
 
         [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', 'hello2', '']);
-      });
-
-      it('should offer options to valid elements inside dictionary lists', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '    hello:',
-            '      displayName: hello',
-            '      '
-          ],
-          {line: 8, ch: 5}
-        );
-
-        ramlHint.computePath(editor).should.be.ok;
       });
 
       it('should return null for first line first char', function () {
@@ -163,301 +151,141 @@ describe('ramlEditorApp', function () {
 
         should.not.exist(ramlHint.computePath(editor));
       });
-    });
 
-    describe('getEditorState', function () {
-      it('should be consistent with editor state', function () {
-        var editor = getEditor(codeMirror,
+      it('should detect valid number of traveled lists #1', function () {
+        ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    get: {}',
-            '  /ciao:',
-            '    get:'
+            'traits',
+            '  - trait1:',
+            '      displayName:' // <--
           ],
-          {line: 4, ch: 4}
-        );
-
-        var editorState = ramlHint.getEditorState(editor);
-        (editorState).should.be.ok;
-        (editorState.curWord).should.be.equal('/bye:');
-        (editorState.start.line).should.be.equal(4);
-        (editorState.start.ch).should.be.equal(2);
-        (editorState.end.line).should.be.equal(4);
-        (editorState.end.ch).should.be.equal(7);
-        (editorState.curLine).should.be.equal('  /bye:');
-        (editorState.currLineTabCount).should.be.equal(1);
-      });
-
-      it('curr line tab count should count only the leading spaces', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    get: {}',
-            '      description: this is a text     with spaces',
-            '  /ciao:',
-            '    get:',
-          ],
-          {line: 6, ch: 6}
-        );
-
-        var editorState = ramlHint.getEditorState(editor);
-        (editorState).should.be.ok;
-        (editorState.curWord).should.be.equal('description:');
-        (editorState.start.line).should.be.equal(6);
-        (editorState.start.ch).should.be.equal(6);
-        (editorState.end.line).should.be.equal(6);
-        (editorState.end.ch).should.be.equal(18);
-        (editorState.curLine).should.be.equal('      description: this is a text     with spaces');
-        (editorState.currLineTabCount).should.be.equal(3);
-      });
-    });
-
-    describe('selectiveCloneAlternatives', function () {
-      it('should clone all the keys in suggestions when keysToErase is empty', function () {
-        function MyCustomClass(obj) {
-          var that = this;
-          if (obj) {
-            Object.keys(obj).forEach(function (key) {
-              var value = obj[key];
-              that[key] = value;
-            });
+          {
+            line: 2,
+            ch:   6
           }
-        }
-
-        var suggestions = new MyCustomClass({x: 1, y: 2});
-        var alternatives = new MyCustomClass({a: 1, b: 2, c: 3, suggestions: suggestions});
-
-        var newAlternatives = ramlHint.selectiveCloneAlternatives(alternatives, []);
-
-        alternatives.should.not.equal(newAlternatives);
-        alternatives.suggestions.should.not.equal(newAlternatives.suggestions);
-
-        newAlternatives.should.contain.keys(Object.keys(alternatives));
-        newAlternatives.isOpenSuggestion.should.be.equal(alternatives.constructor.name === 'OpenSuggestion');
-
-        alternatives.suggestions.should.be.deep.equal(newAlternatives.suggestions);
+        )).listsTraveled.should.be.equal(1);
       });
 
-      it('should exclude the keys found in keysToErase', function () {
-        var suggestions = {x: 1, y: 2};
-        var alternatives = {a: 1, b: 2, c: 3, suggestions: suggestions};
-
-        var newAlternatives = ramlHint.selectiveCloneAlternatives(alternatives, ['x']);
-
-        alternatives.should.not.equal(newAlternatives);
-        alternatives.suggestions.should.not.equal(newAlternatives.suggestions);
-
-        newAlternatives.should.contain.keys(Object.keys(alternatives));
-        newAlternatives.isOpenSuggestion.should.be.equal(alternatives.constructor.name === 'OpenSuggestion');
-
-        newAlternatives.suggestions.y.should.be.equal(alternatives.suggestions.y);
-        alternatives.suggestions.x.should.not.equal(newAlternatives.suggestions.x);
-        should.not.exist(newAlternatives.suggestions.x);
-      });
-
-      it('should exclude optional keys', function () {
-        var suggestions     = {a: 1, b: {value:2, metadata:{canBeOptional:true}}, c: 3};
-        var alternatives    = {suggestions: suggestions};
-        var newAlternatives = ramlHint.selectiveCloneAlternatives(alternatives, ['b?']);
-
-        Object.keys(newAlternatives.suggestions).should.be.deep.equal(['a', 'c']);
-      });
-    });
-
-    describe('getAlternatives', function () {
-      it('should provide suggestRAML alternatives', function () {
-        var alternatives = {suggestions: {a: {}, b: {}, c: {}}, category: 'x'};
-        ramlHint.suggestRAML = function() {
-          return alternatives;
-        };
-        var editor = getEditor(codeMirror,
+      it('should detect valid number of traveled lists #2', function () {
+        ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello'
+            'traits',
+            '  - trait1:',
+            '      displayName:',
+            '  - trait2:',
+            '      displayName:' // <--
           ],
-          {line: 1, ch: 0}
-        );
-
-        var newAlternatives = ramlHint.getAlternatives(editor);
-        alternatives.suggestions.should.be.deep.equal(newAlternatives.values.suggestions);
-
-        newAlternatives.keys.length.should.be.equal(3);
+          {
+            line: 4,
+            ch:   6
+          }
+        )).listsTraveled.should.be.equal(1);
       });
 
-      it('should not provide existing keys', function () {
-        var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
-        ramlHint.suggestRAML = function() {
-          return alternatives;
-        };
-        var editor = getEditor(codeMirror,
+      it('should detect valid number of traveled lists #3', function () {
+        ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello'
+            '- list1:',
+            '    - list2:',
+            '        key1:' // <--
           ],
-          {line: 1, ch: 0}
-        );
-
-        var newAlternatives = ramlHint.getAlternatives(editor);
-
-        should.not.exist(newAlternatives.values.title);
-        newAlternatives.keys.should.not.include('title');
-        newAlternatives.keys.length.should.be.equal(3);
+          {
+            line: 2,
+            ch:   8
+          }
+        )).listsTraveled.should.be.equal(2);
       });
 
-      it('should provide options on spaces only line depending where the cursor is', function () {
-        var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
-        var suggestRAMLStub = sinon.stub(ramlHint, 'suggestRAML');
-        suggestRAMLStub.withArgs([]).returns(alternatives);
-        suggestRAMLStub.withArgs(['/hello']).returns({suggestions: {x: {}, y: {}, z:{}}, category: 'y'});
-
-        var editor = getEditor(codeMirror,
+      it('should detect valid number of traveled lists #4', function () {
+        ramlHint.computePath(getEditor(codeMirror,
           [
-            'title: hello',
-            '/hello:',
-            '         '
+            'documentation:',
+            '  - title:'
           ],
-          {line: 2, ch: 0}
-        );
-
-        var newAlternatives = ramlHint.getAlternatives(editor);
-
-        should.not.exist(newAlternatives.values.title);
-        newAlternatives.keys.should.be.deep.equal(['a', 'b', 'c']);
-
-        suggestRAMLStub.firstCall.calledWith([]).should.be.equal(true);
-
-        editor.setCursor(2, 2);
-
-        newAlternatives = ramlHint.getAlternatives(editor);
-        newAlternatives.keys.should.be.deep.equal(['x', 'y', 'z']);
-
-        suggestRAMLStub.secondCall.calledWith(['/hello']).should.be.equal(true);
-
-        editor.setCursor(2, 4);
-
-        newAlternatives = ramlHint.getAlternatives(editor);
-        newAlternatives.keys.should.be.deep.equal([]);
-
-        ramlHint.suggestRAML.restore();
-      });
-
-      it('should return empty list when using empty alternatives', function () {
-        var alternatives = {suggestions: {title: {}, a: {}, b: {}, c: {}}, category: 'x'};
-        ramlHint.suggestRAML = function() {
-          return alternatives;
-        };
-        sinon.stub(ramlHint, 'computePath').returns(undefined);
-
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            '      ',
-          ],
-          {line: 1, ch: 6}
-        );
-
-        var newAlternatives = ramlHint.getAlternatives(editor);
-        newAlternatives.keys.should.be.deep.equal([]);
-        newAlternatives.values.should.be.deep.equal({});
-        newAlternatives.path.should.be.deep.equal([]);
-
-        ramlHint.computePath.restore();
-      });
-
-      it('should provide suggestRAML alternatives when path is null', function () {
-        var alternatives = {suggestions: {'#%RAML 0.8': {a:1}}, category: 'x'};
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello'
-          ],
-          {line: 0, ch: 0}
-        );
-
-        ramlHint.suggestRAML = function() {
-          return alternatives;
-        };
-
-        ramlHint.computePath = function() {
-          return null;
-        };
-
-        var newAlternatives = ramlHint.getAlternatives(editor);
-        alternatives.suggestions.should.be.deep.equal(newAlternatives.values.suggestions);
-
-        newAlternatives.keys.length.should.be.equal(1);
+          {
+            line: 1,
+            ch:   4
+          }
+        )).listsTraveled.should.be.equal(1);
       });
     });
 
     describe('getSuggestions', function () {
-      it('should render the text correctly', function () {
-        var alternatives = {
-          suggestions: {
-            title: {},
-            a: {
-              metadata: {
-                category: 'simple'
-              }
-            },
-            b: {
-              metadata: {
-                category: 'complex'
-              }
-            },
-            c: {
-              metadata: {
-                category: 'simple'
-              }
-            }
-          },
-          constructor: { name: 'OpenSuggestion' },
-          metadata: {
-            category: 'snippets',
-            id: 'resource'
-          }
-        };
-        ramlHint.suggestRAML = function() {
-          return alternatives;
-        };
-        var editor = getEditor(codeMirror,
+      it('should exclude optional keys', function () {
+        var suggestions = ramlHint.getSuggestions(getEditor(codeMirror,
           [
-            'title: hello',
-            ''
+            'resourceTypes:',
+            '  - resourceType1:',
+            '      get?:'
           ],
-          {line: 1, ch: 0}
-        );
-        var shelfSuggestions = ramlHint.getSuggestions(editor);
-
-        var titleFound = false;
-
-        var shelfSuggestionKeys = {};
-
-        shelfSuggestions.forEach(function (shelfSuggestion) {
-          shelfSuggestionKeys[shelfSuggestion.name] = shelfSuggestion;
-        });
-
-        /* Check that all the alternatives are rendered correctly */
-        Object.keys(alternatives.suggestions).forEach(function (suggestion) {
-          /* Ignore if the key is title */
-          if (suggestion === 'title') {
-            titleFound = true;
-            return;
+          {
+            line: 2,
+            ch:   6
           }
+        ));
 
-          shelfSuggestionKeys[suggestion].should.be.ok;
-        });
-
-        shelfSuggestionKeys['New resource'].should.be.ok;
-
-        titleFound.should.be.equal(true);
+        suggestions
+          .map(function (s) { return s.key; })
+        .should.not.include('get');
       });
 
-      it('should return suggestions for root level without title and version keys', function () {
+      it('should exclude "title" and "content" keys at documentation level at different cursor positions', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'documentation:',
+            '  - title: Title',
+            '    content: Content'
+          ],
+          {
+            line: 1,
+            ch:   4
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.key] = true;
+        });
+
+        ['title', 'content'].forEach(function (key) {
+          suggestions.should.not.have.key(key);
+        });
+
+        editor.setCursor(2, 4);
+        suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.key] = true;
+        });
+
+        ['title', 'content'].forEach(function (key) {
+          suggestions.should.not.have.key(key);
+        });
+      });
+
+      it('should not exclude keys from another array', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'documentation:',
+            '  - title: Title',
+            '    content: Content',
+            '  - '
+          ],
+          {
+            line: 3,
+            ch:   4
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.key] = true;
+        });
+
+        suggestions.should.include.key('title');
+        suggestions.should.include.key('content');
+      });
+
+      it('should exclude "title" and "version" keys at root level', function () {
         var editor = getEditor(codeMirror,
           [
             'title: Title',
@@ -471,7 +299,7 @@ describe('ramlEditorApp', function () {
 
         var suggestions = {};
         ramlHint.getSuggestions(editor).map(function (suggestion) {
-          suggestions[suggestion.name] = true;
+          suggestions[suggestion.key] = true;
         });
 
         ['title', 'version'].forEach(function (key) {
@@ -479,7 +307,7 @@ describe('ramlEditorApp', function () {
         });
       });
 
-      it('should return suggestions for resource level without get and post keys', function () {
+      it('should exclude "get" and "post" keys at resource level', function () {
         var editor = getEditor(codeMirror,
           [
             'title: Title',
@@ -495,25 +323,122 @@ describe('ramlEditorApp', function () {
 
         var suggestions = {};
         ramlHint.getSuggestions(editor).map(function (suggestion) {
-          suggestions[suggestion.name] = true;
+          suggestions[suggestion.key] = true;
         });
 
         ['get', 'post'].forEach(function (key) {
           suggestions.should.not.have.key(key);
         });
       });
+
+      it('should return suggestions for trait in alphabetical order', function () {
+        var editor = getEditor(codeMirror,
+          [
+            'traits:',
+            '  - trait:',
+            '    '
+          ],
+          {
+            line: 2,
+            ch:   4
+          }
+        );
+
+        var names       = ramlHint.getSuggestions(editor).map(function (suggestion) { return suggestion.key; });
+        var sortedNames = names.slice().sort();
+
+        names.should.be.deep.equal(sortedNames);
+      });
+    });
+
+    describe('canAutocomplete', function () {
+      it('should allow autocomplete for the first line with comments (RAML tag)', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            '#RAML'
+          ]
+        )).should.be.true;
+      });
+
+      it('should not allow autocomplete for cursor after comment', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            'text',
+            'position1 # position2'
+          ],
+          {line: 1, ch: 12}
+        )).should.be.false;
+      });
+
+      it('should allow autocomplete for cursor before comment', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            'text',
+            'position1 # position2'
+          ],
+          {line: 1, ch: 0}
+        )).should.be.true;
+      });
+
+      it('should not allow autocomplete for cursor before array', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            'array:',
+            '  - element'
+          ],
+          {line: 1, ch: 0}
+        )).should.be.false;
+      });
+
+      it('should allow autocomplete for cursor after array', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            'array:',
+            '  - element'
+          ],
+          {line: 1, ch: 4}
+        )).should.be.true;
+      });
+
+      it('should not allow autocomplete for map value', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            'map:',
+            '  key: value'
+          ], {line: 1, ch: 7})).should.be.false;
+      });
+
+      it('should allow autocomplete for map key', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            'map:',
+            '  key: value'
+          ],
+          {line: 1, ch: 2}
+        )).should.be.true;
+      });
+
+      it('should allow autocomplete for map key being part of array element', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            'map:',
+            '  - key: value'
+          ],
+          {line: 1, ch: 4}
+        )).should.be.true;
+      });
+
+      it('should not allow autocomplete for resource', function () {
+        ramlHint.canAutocomplete(getEditor(codeMirror,
+          [
+            '/resource:',
+          ],
+          {line: 0, ch: 0}
+        )).should.be.false;
+      });
     });
 
     describe('autocompleteHelper 1', function () {
-      var getAlternativesStub;
-      beforeEach(function () {
-        getAlternativesStub = sinon.stub(ramlHint, 'getAlternatives').returns({keys: []});
-      });
-
-      afterEach(function () {
-        getAlternativesStub.restore();
-      });
-
       function getWord(line, cursor) {
         return ramlHint.autocompleteHelper(getEditor(codeMirror, line, cursor)).word;
       }
@@ -538,16 +463,20 @@ describe('ramlEditorApp', function () {
         getWord(' word # and').should.be.equal('word');
       });
 
+      it('should detect an empty word for array element', function () {
+        getWord('- ').should.be.equal('');
+      });
+
       it('should detect a word for array element', function () {
         getWord('- word').should.be.equal('word');
       });
 
       it('should detect a word for array element with whitespaces', function () {
-        getWord('  - word').should.be.equal('word');
+        getWord('  - word', {line: 0, ch: 4}).should.be.equal('word');
       });
 
       it('should detect a word for array element with whitespaces and comments', function () {
-        getWord('  - word # and').should.be.equal('word');
+        getWord('  - word # and', {line: 0, ch: 4}).should.be.equal('word');
       });
 
       it('should detect a word for map key', function () {
@@ -565,9 +494,27 @@ describe('ramlEditorApp', function () {
       it('should detect a word for map key being array element', function () {
         getWord('- word: value').should.be.equal('word');
       });
+
+      it('should start autocompletion at current cursor position if there is no word', function () {
+        var result = ramlHint.autocompleteHelper(getEditor(codeMirror, '- ', {line: 0, ch: 2}));
+        result.from.should.be.deep.equal({line: 0, ch: 2});
+        result.to.should.be.deep.equal({line: 0, ch: 2});
+      });
     });
 
     describe('autocompleteHelper 2', function () {
+      it('should not include <resource>', function () {
+        var result = ramlHint.autocompleteHelper(getEditor(codeMirror,
+          [
+            '#%RAML 0.8',
+            ''
+          ],
+          {line: 1, ch: 0}
+        ));
+
+        result.list.map(function (e) { return e.text; }).should.not.include('<resource>:');
+      });
+
       it('should render the text correctly', function () {
         var alternatives = {
           suggestions: {
@@ -754,14 +701,14 @@ describe('ramlEditorApp', function () {
 
         Object.keys(autocompleteSuggestionKeys).should.not.include.keys(['title', 'randomHint', 'version']);
       });
-
     });
   });
 
-  describe('getKeysToErase', function () {
-    var getKeysToErase;
+  describe('getNeighborKeys', function () {
+    var getNeighborKeys;
+
     beforeEach(inject(function ($injector) {
-      getKeysToErase = $injector.get('getKeysToErase');
+      getNeighborKeys = $injector.get('getNeighborKeys');
     }));
 
     it('should list the keys at the same level with the same parent', function () {
@@ -779,7 +726,7 @@ describe('ramlEditorApp', function () {
         {line: 2, ch: 5}
       );
 
-      var keysToErase = getKeysToErase(editor);
+      var keysToErase = getNeighborKeys(editor);
       (keysToErase.length).should.be.equal(4);
       var ed = ['title', 'version', 'baseUri', '/hello'];
       var i;
@@ -806,13 +753,14 @@ describe('ramlEditorApp', function () {
         {line: 5, ch: 6}
       );
 
-      var keysToErase = getKeysToErase(editor);
+      var keysToErase = getNeighborKeys(editor);
       ['get', 'post', 'put', 'delete'].should.be.eql(keysToErase);
     });
   });
 
   describe('getNeighborLines', function () {
     var getNeighborLines;
+
     beforeEach(inject(function ($injector) {
       getNeighborLines = $injector.get('getNeighborLines');
     }));

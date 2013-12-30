@@ -11,7 +11,7 @@ angular.module('raml')
     trace: ['trace:', '  description: <<insert text or markdown here>>'],
     connect: ['connect:', '  description: <<insert text or markdown here>>'],
     patch: ['patch:', '  description: <<insert text or markdown here>>'],
-    'new resource': ['/newResource:', '  displayName: resourceName'],
+    '<resource>': ['/newResource:', '  displayName: resourceName'],
     title: ['title: My API'],
     version: ['version: v0.1'],
     baseuri: ['baseUri: http://server/api/{version}']
@@ -27,22 +27,23 @@ angular.module('raml')
     };
 
     service.getSnippet = function (suggestion) {
-      var snippetName = suggestion.name;
-      var snippet     = snippets[snippetName.toLowerCase()];
+      var key      = suggestion.key;
+      var metadata = suggestion.metadata || {};
+      var snippet  = snippets[key.toLowerCase()];
 
       if (snippet) {
         return snippet;
       }
 
-      if (suggestion.isText) {
+      if (metadata.isText) {
         return [
-          snippetName,
+          key,
           ''
         ];
       }
 
       return [
-        snippetName + ':'
+        key + ':'
       ];
     };
 
