@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .factory('applySuggestion', function applySuggestionFactory(ramlHint, ramlSnippets, getLineIndent, generateTabs, isArrayStarter) {
+  .factory('applySuggestion', function applySuggestionFactory(ramlHint, ramlSnippets, getLineIndent, generateTabs, isArrayStarter, getNode) {
     return function applySuggestion(editor, suggestion) {
       var snippet           = ramlSnippets.getSnippet(suggestion);
       var snippetLinesCount = snippet.length;
@@ -11,40 +11,32 @@ angular.module('ramlEditorApp')
       var lineHasPadding    = lineIndent.tabCount > 0;
       var lineIsEmpty       = line.trim() === '';
       var lineIsArray       = line.trim() === '-';
-      var cursorIsAtNode    = !(lineIsEmpty || lineIsArray);
+      var cursorIsAtNode    = !lineIsEmpty && !lineIsArray;
       var i                 = cursor.line + 1;
       var nextLine          = editor.getLine(i);
       var nextLineIndent    = nextLine && getLineIndent(nextLine);
       var path              = ramlHint.computePath(editor);
       var padding           = cursor.line === 0 ? '' : generateTabs(path.length - 1 + (path.length > 1 ? path.listsTraveled : 0));
 
+      var node = getNode(editor);
+
       //For list element suggestions, we need to know whether or not to add the '- ' list
       //indicator: If a previous element at our tab depth already added the list indicator
       //then we should not do so.
       var isList = suggestion.isList;
       if (isList) {
-        var prevLineIdx = cursor.line - (cursorIsAtNode ? 0 : 1);
-        if (prevLineIdx >= 0) {
-          var prevLine = editor.getLine(prevLineIdx);
-          var prevLineIndent = getLineIndent(prevLine);
-          var prevLineIsArray = isArrayStarter(prevLine);
-          //We apply the list '- ' indicator only if we are not already in an
-          //array. E.g. indent has changed or the previous line is not the
-          //first item in an array:
-          var indentChanged = lineIndent.tabCount !== prevLineIndent.tabCount;
-          isList = indentChanged !== prevLineIsArray;
-          if (isList && cursorIsAtNode) {
-            padding = generateTabs(prevLineIndent.tabCount - (prevLineIsArray ? 0 : 1));
-          }
-        }
+        var arrayStarterNode = node.selfOrPrevious(function(node) { return node.isArrayStarter; });
+        //1. If we don't find and array starter node, we start a new array.
+        //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
+        var startNewArray = !arrayStarterNode || (lineIndent.tabCount === arrayStarterNode.tabCount && line != arrayStarterNode.line);
       }
 
-      // add paddings to snippet lines
+      // add padding to snippet lines
       snippet = snippet.map(function (line, index) {
         if (index === 0) {
           if (lineIsArray) {
             return ' ' + line;
-          } else if (isList) {
+          } else if (isList && startNewArray) {
             return '- ' + line;
           }
 
@@ -59,9 +51,9 @@ angular.module('ramlEditorApp')
       // insert into current cursor's position
       // to re-use indentation as there is nothing else
       if (cursorIsAtNode) {
-        if (isList) {
-          snippet = padding + snippet;
-        }
+      //  if (isList) {
+      //    snippet = padding + snippet;
+      //  }
         snippet = '\n' + snippet;
       }
 

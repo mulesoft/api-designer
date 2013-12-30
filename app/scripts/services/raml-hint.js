@@ -258,7 +258,7 @@ angular.module('ramlEditorApp')
       //Pivotal 61664576: We use the DOM API to check to see if the current node or any
       //of its parents contains a YAML reference. If it does, then we provide no suggestions.
       var node = getNode(editor);
-      var refNode = node.findUp(function() { return this.value && this.value.isReference; });
+      var refNode = node.selfOrUp(function(node) { return node.value && node.value.isReference; });
       if (refNode) {
         return [];
       }

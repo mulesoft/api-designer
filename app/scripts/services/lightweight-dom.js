@@ -240,8 +240,8 @@ angular.module('lightweightDOM', ['lightweightParse'])
     };
 
     /**
-     * @return {Boolean} Whether this node is a comment or consists of nothing
-     * but whitespace
+     * @return {Boolean} Whether this node is neither a comment nor consists of
+     * nothing but whitespace
      */
     LazyNode.prototype.getIsStructural = function getIsStructural() {
       return !this.isComment && !this.isEmpty;
@@ -253,13 +253,21 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * @param testFunc Function to execute against current node and parents
      * @returns {LazyNode} The node where testFunc returned true, or null.
      */
-    LazyNode.prototype.findUp = function findUp(testFunc, args) {
+    LazyNode.prototype.selfOrUp = function findSelfOrUp(testFunc, args) {
+      return this.find(this.getParent, testFunc, args);
+    };
+
+    LazyNode.prototype.selfOrPrevious = function findSelfOrPrevious(testFunc, args) {
+      return this.find(this.getPreviousSibling, testFunc, args);
+    };
+
+    LazyNode.prototype.find = function find(nextNodeFunc, testFunc, args) {
       var node = this;
       while(node) {
-        if (testFunc.apply(node, args)) {
+        if (testFunc(node, args)) {
           return node;
         }
-        node = node.getParent();
+        node = nextNodeFunc.apply(node);
       }
       return null;
     };
