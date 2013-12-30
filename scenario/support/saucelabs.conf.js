@@ -1,9 +1,8 @@
 'use strict';
 exports.config = {
-//  sauceUser: process.env.SAUCE_USER,
-  sauceUser: 'muleion',
-//  sauceKey: process.env.SAUCE_KEY,
-  sauceKey: '27696dec-0aa5-429c-ae5e-d9c11022fc5a',
+
+  sauceUser: process.env.SAUCE_USER,
+  sauceKey: process.env.SAUCE_KEY,
 
   capabilities: {
     'browserName': 'chrome'
@@ -27,7 +26,7 @@ exports.config = {
     '../test/lib/*.js'
   ],
 
-  baseUrl:  'https://ramltooling:ram10ve@j0hnqa.mulesoft.org/',
+  baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
     browser.get('');

@@ -10,11 +10,10 @@ exports.config = {
 
   specs: [
     '../../test/e2e/editor-shelf/*.js',
-
     '../../test/lib/*.js'
   ],
 
-  baseUrl:  'https://ramltooling:ram10ve@j0hnqa.mulesoft.org/',
+  baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
     browser.get('');

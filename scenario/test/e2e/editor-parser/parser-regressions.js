@@ -19,20 +19,34 @@ describe('parser ',function(){
       designerAsserts.parserError('5','found undefined alias res');
     });
 
-    xit('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
+    xit('expected alphabetic or numeric character but found ', function(){ //https://www.pivotaltracker.com/story/show/63038252
       var definition = [
-        '#%RAML 0.8',
-        '---',
-        'title: GitHub API',
-        'version: v3',
-        'mediaType:  application/json',
-        '/res:',
-        '  get:',
-        '    responses: '
+        '#%RAML 0.8 ',
+        'title: My api',
+        'version: v1',
+        '/res1: ',
+        '  description: this is res1 description',
+        '  displayName: resource 1     ',
+        '  get: &'
       ].join('\\n');
       editor.setValue(definition);
-      expect(editor.IsParserErrorDisplayed()).toBe(false);
+      designerAsserts.parserError('7','expected alphabetic or numeric character but found ');
     });
-
   });//alias
+
+  xit('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
+    var definition = [
+      '#%RAML 0.8',
+      '---',
+      'title: GitHub API',
+      'version: v3',
+      'mediaType:  application/json',
+      '/res:',
+      '  get:',
+      '    responses: '
+    ].join('\\n');
+    editor.setValue(definition);
+    expect(editor.IsParserErrorDisplayed()).toBe(false);
+  });
+
 });// parser
