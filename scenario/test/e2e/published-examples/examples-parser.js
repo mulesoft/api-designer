@@ -83,7 +83,7 @@ describe('parser ',function(){
         );
     });
 
-    it('bitly-api',function(){
+    xit('bitly-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
       editor.setLine(2,'!include http://www.apihub.com/bitly/api/bitly-api/bitly-api.raml');
