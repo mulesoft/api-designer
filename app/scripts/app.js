@@ -19,7 +19,8 @@ angular.module('ramlEditorApp',
     'helpers',
     'raml',
     'stringFilters',
-    'utils'
+    'utils',
+    'lightweightDOM'
   ]
 )
   .run(function ($window) {

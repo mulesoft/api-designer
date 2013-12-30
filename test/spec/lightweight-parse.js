@@ -105,7 +105,7 @@ describe('Lightweight Parse Module', function () {
       extractKey('').should.be.equal('');
     });
 
-    it('should handle falsy values (undefined, null(', function () {
+    it('should handle falsy values (undefined, null)', function () {
       extractKey(undefined).should.be.equal('');
       extractKey(null).should.be.equal('');
     });
@@ -131,6 +131,45 @@ describe('Lightweight Parse Module', function () {
       extractKey('--- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('--- title');
     });
 
+  });
+
+  describe('extractValue', function () {
+    var extractValue;
+
+    beforeEach(inject(function($injector) {
+      extractValue = $injector.get('extractValue');
+    }));
+
+    it('should extract a value correctly from a pair', function () {
+      extractValue('title: bye').text.should.be.equal('bye');
+    });
+
+    it('should return null if no pair', function () {
+      should.not.exist(extractValue('title:'));
+      should.not.exist(extractValue('title: '));
+    });
+
+    it('should handle the empty string and return null', function () {
+      should.not.exist(extractValue(''));
+    });
+
+    it('should handle falsy values (undefined, null)', function () {
+      should.not.exist(extractValue(undefined));
+      should.not.exist(extractValue(null));
+    });
+
+    it('should handle keys or values with : in their name', function () {
+      extractValue('a: b:c').text.should.be.equal('b:c');
+      extractValue('a:b: c').text.should.be.equal('c');
+      extractValue('a:b: c:d').text.should.be.equal('c:d');
+    });
+
+    it('should handle keys with : in their value', function () {
+      extractValue('  title:longerKey: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
+      extractValue('  title: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
+      extractValue('  - title: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
+      extractValue('- title: "Muse: --- Mule Sales Enablement API"').text.should.be.equal('"Muse: --- Mule Sales Enablement API"');
+    });
   });
 
   describe('getScopes', function () {
