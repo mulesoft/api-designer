@@ -1,7 +1,8 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .factory('applySuggestion', function applySuggestionFactory(ramlHint, ramlSnippets, getLineIndent, generateTabs, isArrayStarter, getNode) {
+  .factory('applySuggestion', function applySuggestionFactory(ramlHint, ramlSnippets, getLineIndent, generateTabs,
+                                                              isArrayStarter, getNode, getTabCount) {
     return function applySuggestion(editor, suggestion) {
       var snippet           = ramlSnippets.getSnippet(suggestion);
       var snippetLinesCount = snippet.length;
@@ -28,7 +29,8 @@ angular.module('ramlEditorApp')
         var arrayStarterNode = node.selfOrPrevious(function(node) { return node.isArrayStarter; });
         //1. If we don't find and array starter node, we start a new array.
         //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
-        var startNewArray = !arrayStarterNode || (lineIndent.tabCount === arrayStarterNode.tabCount && line !== arrayStarterNode.line);
+        var cursorTabs = getTabCount(cursor.ch);
+        var startNewArray = !arrayStarterNode || (cursorTabs === arrayStarterNode.tabCount && line !== arrayStarterNode.line);
       }
 
       // add padding to snippet lines

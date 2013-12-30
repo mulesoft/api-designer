@@ -97,7 +97,7 @@ angular.module('lightweightParse', ['utils'])
       return null;
     };
   })
-  .factory('getLineIndent', function (indentUnit) {
+  .factory('getLineIndent', function (getTabCount) {
     return function (string, indentSize) {
       var result = /^(\s*)(.*)$/.exec(string);
 
@@ -105,14 +105,18 @@ angular.module('lightweightParse', ['utils'])
         return {tabCount: 0, spaceCount: 0, content: ''};
       }
 
-      indentSize = indentSize || indentUnit;
-
       return {
-        tabCount: Math.floor((result[1] || '').length / indentSize),
+        tabCount: getTabCount((result[1] || '').length, indentSize),
         content: result[2] || '',
         spaceCount: (result[1] || '').length
       };
     };
+  })
+  .factory('getTabCount', function(indentUnit) {
+    return function(numSpaces, indentSize) {
+      var indentSize = indentSize || indentUnit;
+      return Math.floor(numSpaces / indentSize);
+    }
   })
   .factory('getScopes', function (getLineIndent) {
     var lastArrayCache;
