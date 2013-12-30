@@ -5,7 +5,8 @@ angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
   .constant('REFRESH_FILES_INTERVAL', 5000)
   .constant('DEFAULT_PATH', '/')
-  .service('ramlParserFileReader', function ($http, ramlParser, ramlRepository, safeApplyWrapper) {
+  .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
+    $http.defaults.transformResponse = null;
     function readLocFile(file) {
       var split = file.split('/');
       var name  = split.pop();
@@ -37,7 +38,7 @@ angular.module('ramlEditorApp')
 
     this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
       var deferredSrc = /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
-      var deferredDst = new ramlParser.RamlParser({}).q.defer();
+      var deferredDst = new $q.defer();
 
       deferredSrc.then(
         // success

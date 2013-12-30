@@ -1,0 +1,36 @@
+          {
+              "$schema": "http://json-schema.org/draft-04/schema",
+              "title": "Users",
+              "description": "A collection of users",
+              "type": "object",    
+              "properties": {
+                  "users": {
+                      "type": "array",
+                      "items": {
+                          "properties": {
+                              "id": {
+                                  "description": "The unique identifier for a user",
+                                  "type": "string"
+                              },
+                              "userName": {
+                                  "description": "The username of the user",
+                                  "type": "string"
+                              },
+                              "firstName": {
+                                  "description": "The first name of the user",
+                                  "type": "string"
+                              },
+                              "lastName": {
+                                  "description": "The last name of the user",
+                                  "type": "string"
+                              },
+                              "href": {
+                                  "description": "The URI to retrieve more information about the user",
+                                  "type": "string"
+                              }
+                          },
+                          "required": ["id", "href"]
+                      }
+                  }
+              }
+          } 
