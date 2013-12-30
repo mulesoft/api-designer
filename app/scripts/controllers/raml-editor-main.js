@@ -6,7 +6,6 @@ angular.module('ramlEditorApp')
   .constant('REFRESH_FILES_INTERVAL', 5000)
   .constant('DEFAULT_PATH', '/')
   .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
-    $http.defaults.transformResponse = null;
     function readLocFile(file) {
       var split = file.split('/');
       var name  = split.pop();
@@ -18,7 +17,7 @@ angular.module('ramlEditorApp')
     }
 
     function readExtFile(file) {
-      return $http.get(file).then(
+      return $http.get(file, { transformResponse: null }).then(
         // success
         function (response) {
           return response.data;
