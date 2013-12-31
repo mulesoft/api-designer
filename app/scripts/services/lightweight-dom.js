@@ -230,8 +230,9 @@ angular.module('lightweightDOM', ['lightweightParse'])
      */
     LazyNode.prototype.getSelfAndNeighbors = function getSelfAndNeighbors() {
       var nodes = [];
+      var inArray = this.getIsInArray();
       var node = this;
-      while (node) {
+      while (node && node.getIsInArray() === inArray) {
         nodes.push(node);
         if (node.isArrayStarter) {
           break;
@@ -239,7 +240,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
         node = node.getPreviousSibling();
       }
       node = this.getNextSibling();
-      while (node && !node.isArrayStarter) {
+      while (node && !node.isArrayStarter && node.getIsInArray() === inArray) {
         nodes.push(node);
         node = node.getNextSibling();
       }
@@ -253,14 +254,30 @@ angular.module('lightweightDOM', ['lightweightParse'])
       //Walk previous siblings until we find one that starts an array, or we run
       //out of siblings.
       //Note: We don't use recursion here since JS has a low recursion limit of 1000
-      var node = this;
-      while(node) {
-        if (node.isArrayStarter) {
-          return true;
-        }
+      if (this.isArrayStarter) {
+        return true;
+      }
+      //Move up until we find a node one tab count less: If it is
+      //an array starter, we are in an array
+      var node = this.getPreviousSibling();
+      while(node && node.tabCount >= this.tabCount) {
         node = node.getPreviousSibling();
       }
-      return false;
+      return node && node.isArrayStarter && (node.tabCount === this.tabCount - 1);
+    };
+
+    /**
+     * @returns {Array} Returns array of nodes from root down to the current
+     * node
+     */
+    LazyNode.prototype.getPath = function getPath() {
+      var path = [];
+      var node = this;
+      while(node) {
+        path.unshift(node);
+        node = node.getParent();
+      }
+      return path;
     };
 
     /**
@@ -276,10 +293,10 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * tree until no more nodes are found.  Will halt if the test function
      * returns true.
      * @param testFunc Function to execute against current node and parents
-     * @param args optional arguments to testFunc
+     * @param [args] optional arguments to testFunc
      * @returns {LazyNode} The first node where testFunc returns true, or null.
      */
-    LazyNode.prototype.selfOrUp = function findSelfOrUp(testFunc, args) {
+    LazyNode.prototype.selfOrParent = function selfOrParent(testFunc, args) {
       return this.first(this.getParent, testFunc, args);
     };
 
@@ -287,10 +304,10 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * Executes the testFunc against this node and its prior siblings. Will
      * halt if the test function returns true.
      * @param testFunc Function to execute against current node and parents
-     * @param args optional arguments to testFunc
+     * @param [args] optional arguments to testFunc
      * @returns {LazyNode} The first node where testFunc returns true, or null.
      */
-    LazyNode.prototype.selfOrPrevious = function findSelfOrPrevious(testFunc, args) {
+    LazyNode.prototype.selfOrPrevious = function selfOrPrevious(testFunc, args) {
       return this.first(this.getPreviousSibling, testFunc, args);
     };
 
@@ -300,7 +317,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * returns a truthy value.
      * @param nextNodeFunc Function that returns the next node to search.
      * @param testFunc Function that returns a node that matches a filter.
-     * @param args optional arguments to testFunc
+     * @param [args] optional arguments to testFunc
      * @returns {LazyNode} The first node where testFunc returns true, or null.
      */
     LazyNode.prototype.first = function first(nextNodeFunc, testFunc, args) {

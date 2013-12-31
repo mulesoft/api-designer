@@ -79,7 +79,7 @@ angular.module('ramlEditorApp')
       return getNeighborLines(editor).map(extractKey);
     };
   })
-  .factory('ramlHint', function ramlHintFactory(getLineIndent, generateTabs, getNeighborKeys,
+  .factory('ramlHint', function ramlHintFactory(getLineIndent, generateTabs, getNeighborKeys, getTabCount,
                                                 getScopes, getEditorTextAsArrayOfLines, getNode) {
     var hinter = {};
     var RAML_VERSION = '#%RAML 0.8';
@@ -260,26 +260,44 @@ angular.module('ramlEditorApp')
       //Pivotal 61664576: We use the DOM API to check to see if the current node or any
       //of its parents contains a YAML reference. If it does, then we provide no suggestions.
       var node = getNode(editor);
-      var refNode = node.selfOrUp(function(node) { return node.value && node.value.isReference; });
+      var refNode = node.selfOrParent(function(node) { return node.value && node.value.isReference; });
       if (refNode) {
         return [];
       }
-      var path         = hinter.computePath(editor);
-      var raml         = path ? hinter.suggestRAML(path.slice(0, -1)) : null;
-      var suggestions  = raml ? raml.suggestions : {};
-      //Get all structural nodes' keys so we can filter them out
-      var neighborKeys = node.getSelfAndNeighbors()
-        .filter(function(node) { return node.getIsStructural() && node.key; })
-        .map(function (node) { return node.key; });
+
+      var raml = null;
+      var suggestions = [];
+      var neighborKeys = [];
+
+      //Get the node at the cursor level. Note that if the node is at a smaller indent
+      //than the node, we use its indent instead. That way, if the cursor is at the end
+      //of the node, for example, we don't use too a high a tab.
+      var ch = editor.getCursor().ch;
+      var cursorTabCount = getTabCount(ch);
+      if (cursorTabCount <= node.tabCount) {
+        var atTabBoundary = ch % editor.getOption('indentUnit') === 0;
+        if (!atTabBoundary) {
+          return suggestions;
+        }
+      }
+
+      cursorTabCount = Math.min(cursorTabCount, node.tabCount);
+      node = node.selfOrParent(function(node) { return node.tabCount === cursorTabCount; });
+
+      if (node) {
+        var path = node.getPath().map(function(node) { return node.key; });
+        raml         = hinter.suggestRAML(path.slice(0, -1)); //<- Slice off the last element of the path
+        suggestions  = raml.suggestions;
+        //Get all structural nodes' keys so we can filter them out
+        neighborKeys = node.getSelfAndNeighbors()
+                      .filter(function(node) { return node.getIsStructural() && node.key; })
+                      .map(function (node) { return node.key; });
+      }
 
       //Next, filter out the keys from the returned suggestions
       suggestions = Object.keys(suggestions)
-        .filter(function (key) {
-          return !hinter.isSuggestionInUse(key, suggestions[key], neighborKeys);
-        })
-
+        .filter(function (key) { return !hinter.isSuggestionInUse(key, suggestions[key], neighborKeys); })
         .sort()
-
         .map(function (key) {
           return {
             key:      key,
