@@ -1,4 +1,7 @@
 'use strict';
+require('jasmine-reporters');
+jasmine.getEnv().addReporter(
+  new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
 exports.config = {
 
   sauceUser: process.env.SAUCE_USER,
