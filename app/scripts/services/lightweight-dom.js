@@ -66,7 +66,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       this.isComment = isCommentStarter(this.line);
       this.isEmpty = this.line.trim() === '';
 
-      this.tabCount = getTabCount(editor, lineNum, this.getIsStructural());
+      this.tabCount = getTabCount(editor, lineNum, this.isEmpty);
       if (!this.isComment) {
         this.key = extractKey(this.line);
         this.value = extractValue(this.line);
@@ -84,12 +84,11 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * @param lineNum The line to read the node from. Current editor cursor line if not specified.
      * @returns {Number} Number of tabs at line or at cursor
      */
-    function getTabCount(editor, lineNum, nodeIsStructural) {
+    function getTabCount(editor, lineNum, isEmpty) {
       //Special case: If the current line is where the cursor is, AND
-      //the line is non-structural, then the tab count is based on the
-      //cursor position, not the contents of the line:
+      //the line is empty:
       var line = editor.getLine(lineNum);
-      if (!nodeIsStructural) {
+      if (isEmpty) {
         var cursor = editor.getCursor();
         if (cursor.line === lineNum) {
           line = ((new Array(cursor.ch + 1)).join(' ')); //<- Line containing spaces up to cursor
@@ -207,7 +206,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       //documentation:
       //  - title: foo
       //    content: bar <- 2 tabs over from parent
-      var parentNodeTabCount = this.tabCount - ((!this.isEmpty && !this.isArrayStarter && this.getIsInArray()) ? 2 : 1);
+      var parentNodeTabCount = this.tabCount - ((!this.isArrayStarter && this.getIsInArray()) ? 2 : 1);
       var prevLineNum = this.lineNum;
       while(true) {
         var prevNode = getNode(editor, --prevLineNum);
@@ -267,12 +266,13 @@ angular.module('lightweightDOM', ['lightweightParse'])
     };
 
     /**
-     * @returns {Array} Returns array of nodes from root down to the current
-     * node
+     * @returns {Array} Returns array containing all parent nodes of
+     * this node, with the direct parent being the last element in the
+     * array.
      */
     LazyNode.prototype.getPath = function getPath() {
       var path = [];
-      var node = this;
+      var node = this.getParent();
       while(node) {
         path.unshift(node);
         node = node.getParent();

@@ -269,24 +269,26 @@ angular.module('ramlEditorApp')
       var suggestions = [];
       var neighborKeys = [];
 
-      //Get the node at the cursor level. Note that if the node is at a smaller indent
-      //than the node, we use its indent instead. That way, if the cursor is at the end
-      //of the node, for example, we don't use too a high a tab.
-      var ch = editor.getCursor().ch;
-      var cursorTabCount = getTabCount(ch);
-      if (cursorTabCount <= node.tabCount) {
-        var atTabBoundary = ch % editor.getOption('indentUnit') === 0;
-        if (!atTabBoundary) {
-          return suggestions;
+      //Designer policy: If the cursor is at an empty line, then we
+      //provide shelf contents based on the node only. If the cursor is
+      //on a non-structural line, such as an empty line, then we provide
+      //shelf contents based on the tab level of the node.
+      if (node.isEmpty) {
+        var ch = editor.getCursor().ch;
+        var cursorTabCount = getTabCount(ch);
+        if (cursorTabCount <= node.tabCount) {
+          var atTabBoundary = ch % editor.getOption('indentUnit') === 0;
+          if (!atTabBoundary) {
+            return suggestions;
+          }
         }
+        cursorTabCount = Math.min(cursorTabCount, node.tabCount);
+        node = node.selfOrParent(function(node) { return node.tabCount === cursorTabCount; });
       }
-
-      cursorTabCount = Math.min(cursorTabCount, node.tabCount);
-      node = node.selfOrParent(function(node) { return node.tabCount === cursorTabCount; });
 
       if (node) {
         var path = node.getPath().map(function(node) { return node.key; });
-        raml         = hinter.suggestRAML(path.slice(0, -1)); //<- Slice off the last element of the path
+        raml         = hinter.suggestRAML(path);
         suggestions  = raml.suggestions;
         //Get all structural nodes' keys so we can filter them out
         neighborKeys = node.getSelfAndNeighbors()
