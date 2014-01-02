@@ -1,4 +1,7 @@
 'use strict';
+require('jasmine-reporters');
+jasmine.getEnv().addReporter(
+  new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
 exports.config = {
 
   capabilities: {
@@ -14,6 +17,7 @@ exports.config = {
     '../test/e2e/editor-shelf/root.js',
     '../test/e2e/editor-shelf/traits.js',
     '../test/e2e/editor-shelf/shelf-regressions.js',
+//    '../test/e2e/RT-traits-optionals.js',
     '../test/e2e/editor-parser/*.js',
     '../test/e2e/editor-parser/resource/*.js',
     '../test/e2e/editor-parser/resourceTypes/*.js',
