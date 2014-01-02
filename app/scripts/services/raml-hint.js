@@ -293,7 +293,13 @@ angular.module('ramlEditorApp')
                       .filter(function(node) { return node.getIsStructural() && node.key; })
                       .map(function (node) { return node.key; });
       }
-
+/*
+      1. TOMORROW: WHY ARE WE GETTING 2 DOCUMENTATION NODES IN THE DOCS SECTION IN THE SHELF?
+      2. ADD MANY TESTS FOR ALL OF THE NEW NODE METHODS!
+      3. ADD TEST COVERAGE FOR SCENARIO #1!
+      4. UPDATE THE PIVOTAL BUG WITH A DESCRIPTION OF WHAT IS GOING ON HERE THAT I AM FIXING
+      5. INSPECT CODE - WHERE IS THE OLD COMPUTEPATH() API CALLED? CAN WE GET RID OF IT?
+*/
       //Next, filter out the keys from the returned suggestions
       suggestions = Object.keys(suggestions)
         .filter(function (key) { return !hinter.isSuggestionInUse(key, suggestions[key], neighborKeys); })
