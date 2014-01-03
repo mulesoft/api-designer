@@ -13,7 +13,7 @@ describe('Lightweight DOM Module', function () {
 
   //region Tests
 
-  describe('getNode', function () {
+  describe('LazyNode', function () {
 
     it('should be able to traverse all siblings at root level', function () {
       var node = createNode([
@@ -123,42 +123,159 @@ describe('Lightweight DOM Module', function () {
       node = node.getFirstChild();
       node.line.should.be.equal('        - content: Bar');
     });
+
+    it('should report tabCount at cursor position for empty node', function() {
+      var editor = getEditor(codeMirror,[
+        'documentation:',
+        '    ',
+        '  #Hello  '
+      ]);
+      editor.setCursor({line: 1, ch: 2});
+      var node = getNode(editor);
+      //Sanity check:
+      node.lineNum.should.be.equal(1);
+      //The line tab count is 2, but the cursor position is 1 tab over:
+      node.tabCount.should.be.equal(1);
+
+      //Move cursor away from node
+      editor.setCursor({line: 0, ch: 0});
+      node = getNode(editor, 1);
+      node.tabCount.should.be.equal(2);
+
+      //Move cursor to comment line
+      editor.setCursor({line: 2, ch: 0});
+      node = getNode(editor);
+      node.tabCount.should.be.equal(1);
+    });
   });
 
-  it('should report tabCount at cursor position for empty', function() {
-    var editor = getEditor(codeMirror,[
-      'documentation:',
-      '    ',
-      '  #Hello  '
-    ]);
-    editor.setCursor({line: 1, ch: 2});
-    var node = getNode(editor);
-    //Sanity check:
-    node.lineNum.should.be.equal(1);
-    //The line tab count is 2, but the cursor position is 1 tab over:
-    node.tabCount.should.be.equal(1);
+  describe('LazyNode.getParent', function () {
 
-    //Move cursor away from node
-    editor.setCursor({line: 0, ch: 0});
-    node = getNode(editor, 1);
-    node.tabCount.should.be.equal(2);
+    it('should be able to traverse to a parent on an empty line in an array using cursor position', function() {
+      var editor = getEditor(codeMirror, [
+        'documentation:',
+        '  - title:',
+        '    '
+      ]);
+      editor.setCursor({line:2, ch: 0});
+      var node = getNode(editor);
+      should.not.exist(node.getParent());
+      editor.setCursor({line:2, ch: 2});
+      node = getNode(editor);
+      node.getParent().line.should.be.equal('documentation:');
+      editor.setCursor({line:2, ch: 4});
+      node = getNode(editor);
+      node.getParent().line.should.be.equal('documentation:');
+    });
 
-    //Move cursor to comment line
-    editor.setCursor({line: 2, ch: 0});
-    node = getNode(editor);
-    node.tabCount.should.be.equal(1);
   });
 
-  it('should be able to traverse to a parent on an empty line in an array using cursor position', function() {
-    var editor = getEditor(codeMirror, [
-      'documentation:',
-      '  - title:',
-      '  '
-    ]);
-    editor.setCursor({line:2, ch: 2});
-    var node = getNode(editor);
-    node.getParent().line.should.be.equal('documentation:');
+  describe('LazyNode.getSelfAndNeighbors', function () {
+
+    it('should return all members of an array under a documentation node', function() {
+      var editor = getEditor(codeMirror, [
+        'documentation:',
+        '  - title: A',
+        '    content: B',
+        '  - content: C',
+        '    title: D',
+        '  - title: E',
+        '    '
+      ], 2);
+      //Start with the second node in the first array:
+      var node = getNode(editor);
+      node.value.text.should.be.equal('B');
+      var nodes = node.getSelfAndNeighbors();
+      nodes.length.should.be.equal(2);
+      nodes[0].value.text.should.be.equal('B');
+      nodes[1].value.text.should.be.equal('A');
+
+      //Now try the first node in the first array:
+      nodes = nodes[1].getSelfAndNeighbors();
+      nodes.length.should.be.equal(2);
+      nodes[0].value.text.should.be.equal('A');
+      nodes[1].value.text.should.be.equal('B');
+
+      //Try the same thing with the empty node in the last array:
+      editor.setCursor({ line: 6, ch: 4 });
+      nodes = getNode(editor).getSelfAndNeighbors();
+      nodes.length.should.be.equal(2);
+      nodes[0].isEmpty.should.be.equal(true);
+      nodes[1].value.text.should.be.equal('E');
+    });
   });
+
+  describe('LazyNode.getPath', function () {
+
+    it('should return all parents in a simple hierarchy in the right order', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+        '#Taken from the RAML spec',
+        'version: 2010-04-01',
+        'documentation:',
+        '  - title: Hello',
+        '  - content: World',
+        'baseUri: https://api.twilio.com/{version}',
+        '  /Accounts:',
+        '    /{AccountSid}:',
+        '      uriParameters:',
+        '        AccountSid:',
+        '          description: |',
+        '            An Account instance resource represents a single Twilio account.',
+        '          type: string'
+      ], 13);
+      //Start with the second node in the first array:
+      var path = getNode(editor).getPath();
+      path.length.should.equal(5);
+      path[0].key.should.be.equal('baseUri');
+      path[1].key.should.be.equal('/Accounts');
+      path[2].key.should.be.equal('/{AccountSid}');
+      path[3].key.should.be.equal('uriParameters');
+      path[4].key.should.be.equal('AccountSid');
+    });
+  });
+
+  describe('LazyNode.selfOrParent', function () {
+
+    it('should return self if matched', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+        '#Taken from the RAML spec',
+        'version: 2010-04-01'
+      ], 2);
+      var node = getNode(editor);
+      node = node.selfOrParent(function(node) { return node.value.text === '2010-04-01'; });
+      node.value.text.should.be.equal('2010-04-01');
+      node.key.should.be.equal('version');
+    });
+
+    it('should return parent if self does not match', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+        'baseUri: https://api.twilio.com/{version}',
+        '  /Accounts:',
+        '    /{AccountSid}:',
+        '      uriParameters:',
+        '        AccountSid:',
+        '          description: |',
+        '            An Account instance resource represents a single Twilio account.',
+        '          type: string'
+      ], 8);
+      var node = getNode(editor).selfOrParent(function(node) { return node.key === '/Accounts'; });
+      node.should.be.ok;
+    });
+
+    it('should return null if no match found', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+        'baseUri: https://api.twilio.com/{version}',
+        '  /Accounts:',
+      ], 2);
+      var node = getNode(editor).selfOrParent(function(node) { return node.key === 'xxx'; });
+      should.not.exist(node);
+    });
+  });
+
   //endregion
 
   //region Utility functions
