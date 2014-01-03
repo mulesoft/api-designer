@@ -15,12 +15,12 @@ angular.module('ramlEditorApp')
       //is simply the current node tabbing, or the cursor position if
       //there is no current node, which exactly what node.tabCount does:
       var prefix = lineIsArray ? ' ' : '';
-      var padding = generateTabs(tabCount);
+      var padding = lineIsArray ? '' : generateTabs(tabCount);
 
       //For list element suggestions, we need to know whether or not to add the '- ' list
       //indicator: If a previous element at our tab depth already added the list indicator
       //then we should not do so.
-      if (suggestion.isList) {
+      if (suggestion.isList && !lineIsArray) {
         var arrayStarterNode = node.selfOrPrevious(function(node) { return node.isArrayStarter; });
         //1. If we don't find and array starter node, we start a new array.
         //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
@@ -35,8 +35,7 @@ angular.module('ramlEditorApp')
        // Add prefix and padding to snippet lines:
       var codeToInsert = snippet.map(function (line, index) {
         return padding + (index === 0 ? prefix : '') + line;
-      })
-        .join('\n');
+      }).join('\n');
 
       //Peek ahead and search for a line that has the same indentation as current line
       var insertAtNode;
@@ -46,12 +45,9 @@ angular.module('ramlEditorApp')
       } while (node && !node.isEmpty && (node.tabCount > tabCount));
 
       //Calculate the place to insert the code:
-      var from = { line: insertAtNode.lineNum, ch: insertAtNode.line.length };
-      var to = { line: from.line, ch: 0 };
-      //Make sure to start at end of node content so we don't erase anything!
-      if (!insertAtNode.isEmpty) {
-        to.ch = from.ch;
-      }
+      //+ Make sure to start at end of node content so we don't erase anything!
+      var from = { line: insertAtNode.lineNum, ch: insertAtNode.line.trimRight().length };
+      var to = { line: from.line, ch: insertAtNode.line.length };
 
       // If cursor is on a non-empty/array starter line, add a newline:
       if (cursorIsAtNode) {

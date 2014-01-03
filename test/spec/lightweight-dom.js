@@ -125,7 +125,7 @@ describe('Lightweight DOM Module', function () {
     });
   });
 
-  it('should report tabCount at cursor position for empty and comment lines', function() {
+  it('should report tabCount at cursor position for empty', function() {
     var editor = getEditor(codeMirror,[
       'documentation:',
       '    ',
@@ -146,11 +146,7 @@ describe('Lightweight DOM Module', function () {
     //Move cursor to comment line
     editor.setCursor({line: 2, ch: 0});
     node = getNode(editor);
-    node.tabCount.should.be.equal(0);
-    //Move cursor to beyond where the comment starts
-    editor.setCursor({line: 2, ch: 6});
-    node = getNode(editor);
-    node.tabCount.should.be.equal(3);
+    node.tabCount.should.be.equal(1);
   });
 
   it('should be able to traverse to a parent on an empty line in an array using cursor position', function() {

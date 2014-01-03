@@ -243,7 +243,7 @@ describe('Shelf controller', function () {
       editor.getLine(1).should.be.equal('  title: My API');
     });
 
-    it ('should insert a documentation second child as a peer when cursor is at end of node line', function () {
+    it ('should insert a content node when cursor is at end of title array node', function () {
       var editor = createEditor(
         [
           'documentation:',
@@ -251,7 +251,7 @@ describe('Shelf controller', function () {
         ]);
 
       applySuggestion(editor, {key: 'content', isList: true });
-      editor.getLine(2).should.be.equal('  - content:');
+      editor.getLine(2).should.be.equal('    content:');
     });
 
     it ('should insert a documentation child at 1 tab over as array root', function () {
@@ -304,7 +304,7 @@ describe('Shelf controller', function () {
       editor.getLine(3).should.be.equal('    c:');
     });
 
-    it ('should insert an array root between two array elements when cursor is at end of line', function () {
+    it ('should insert a content element two array title starter elements when cursor is at end of line', function () {
       var editor = createEditor(
         [
           'documentation:',
@@ -314,7 +314,8 @@ describe('Shelf controller', function () {
         ], 1);
 
       applySuggestion(editor, {key: 'content', isList: true });
-      editor.getLine(2).should.be.equal('  - content:');
+      editor.getLine(1).should.be.equal('  - title: Hello');
+      editor.getLine(2).should.be.equal('    content:');
       editor.getLine(3).should.be.equal('  - title: World');
     });
 

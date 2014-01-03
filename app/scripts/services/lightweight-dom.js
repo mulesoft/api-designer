@@ -262,7 +262,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       while(node && node.tabCount >= this.tabCount) {
         node = node.getPreviousSibling();
       }
-      return node && node.isArrayStarter && (node.tabCount === this.tabCount - 1);
+      return !!(node && node.isArrayStarter && (node.tabCount === this.tabCount - 1));
     };
 
     /**
