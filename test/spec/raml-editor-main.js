@@ -150,7 +150,7 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('controller actions', function (){
+  describe('creating a new file', function (){
     it('should create a new RAML file if the current document is saved', function(){
       // arrange
       ctrl = $controller('ramlEditorMain', params);
@@ -159,10 +159,16 @@ describe('RAML Editor Main Controller', function () {
         contents: 'NEW RAML FILE'
       };
 
+      var existingFile = {
+        name: 'Untitled-1.raml',
+        contents: 'EXISTING RAML FILE'
+      };
+
       sinon.stub(scope, 'canSave').returns(false);
       sinon.stub(ramlRepository, 'createFile').returns(file);
       sinon.stub(editor, 'setValue');
       sinon.stub(editor, 'setCursor');
+      scope.files = [ existingFile ];
 
       // act
       scope.newFile();
@@ -170,6 +176,7 @@ describe('RAML Editor Main Controller', function () {
       // assert
       scope.canSave.calledOnce.should.be.true;
       ramlRepository.createFile.calledOnce.should.be.true;
+      ramlRepository.createFile.getCall(0).args[0].should.equal('Untitled-2.raml');
       editor.setValue.calledOnce.should.be.true;
       editor.setCursor.calledOnce.should.be.true;
 
