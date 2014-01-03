@@ -81,6 +81,10 @@ angular.module('codeMirror')
         state.pair = true;
         state.keyCol = stream.indentation();
 
+        if (stream.string.match(/^\s*\- /i)) {
+          state.keyCol = state.keyCol + 2;
+        }
+
         /* methods */
         if (level <= state.methodLevel || key.indexOf('/') === 0) {
           state.methodLevel = 0;
