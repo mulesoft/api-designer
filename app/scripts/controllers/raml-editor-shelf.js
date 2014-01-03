@@ -7,7 +7,6 @@ angular.module('ramlEditorApp')
       var snippet         = ramlSnippets.getSnippet(suggestion);
       var node            = getNode(editor);
       var lineIsArray     = node.line.trim() === '-';
-      var cursorIsAtNode  = !node.isEmpty && !lineIsArray;
       var tabCount        = node.tabCount;
 
       //Need to compute a prefix, such as '- ' or ' ' for the snippet
@@ -37,20 +36,26 @@ angular.module('ramlEditorApp')
         return padding + (index === 0 ? prefix : '') + line;
       }).join('\n');
 
-      //Peek ahead and search for a line that has the same indentation as current line
-      var insertAtNode;
-      do {
-        insertAtNode = node;
-        node = getNode(editor, node.lineNum + 1);
-      } while (node && !node.isEmpty && (node.tabCount > tabCount));
+      //Search for a line that is empty or has the same indentation as current line
+      while(true) {
+        if (node.isEmpty) {
+          break; //Empty node, place code there
+        }
+        var nextNode = getNode(editor, node.lineNum + 1);
+        if (!nextNode || nextNode.tabCount <= tabCount) {
+          break; //At end of raml, place node here
+        }
+        node = nextNode;
+      }
 
       //Calculate the place to insert the code:
       //+ Make sure to start at end of node content so we don't erase anything!
-      var from = { line: insertAtNode.lineNum, ch: insertAtNode.line.trimRight().length };
-      var to = { line: from.line, ch: insertAtNode.line.length };
+      var from = { line: node.lineNum, ch: node.line.trimRight().length };
+      var to = { line: from.line, ch: node.line.length };
+      var nodeHasContent = !node.isEmpty && !lineIsArray;
 
       // If cursor is on a non-empty/array starter line, add a newline:
-      if (cursorIsAtNode) {
+      if (nodeHasContent) {
         codeToInsert = '\n' + codeToInsert;
       }
 
@@ -60,7 +65,7 @@ angular.module('ramlEditorApp')
       // moving cursor one line less further as we're
       // re-using current line
       editor.setCursor({
-        line: from.line + snippet.length - (cursorIsAtNode ? 0 : 1)
+        line: from.line + snippet.length - (nodeHasContent ? 0 : 1)
       });
 
       editor.focus();
