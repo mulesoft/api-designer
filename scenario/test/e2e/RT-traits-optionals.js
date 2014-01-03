@@ -15,7 +15,7 @@ xdescribe('optionals Attributes',function(){
   });
 
 
-  describe('resourceTypes elements',function(){
+  xdescribe('resourceTypes elements',function(){
     var namedParameters = ['baseUriParameters', 'uriParameters'];
     var namedParamElems = shelf.elemNamedParametersLevel;
     var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
@@ -134,7 +134,7 @@ xdescribe('optionals Attributes',function(){
     }); // Not displayed after being selected
   });//resourceTypes elements
 
-  describe('resource-Types Methods', function(){
+  xdescribe('resource-Types Methods', function(){
 
     var methods = shelf.elemResourceTypeLevelMethods;
     var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
@@ -195,7 +195,7 @@ xdescribe('optionals Attributes',function(){
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(6,8);
-//          designerAsserts.shelfElementsNotDisplayed([], shelf.elemRtMethodLevel);  // add when the shelf is working for this properties
+          designerAsserts.shelfElementsNotDisplayed([], shelf.elemRtMethodLevel);  // add when the shelf is working for this properties
           editor.setLine(6,'        '+methodElem+'?: \\n                   ');
           if (notOptMethodElems.indexOf(methodElem) !== -1){
             if (methodElem === 'description' ){
@@ -285,6 +285,7 @@ xdescribe('optionals Attributes',function(){
                 if (namedParamElem===''){ // we are missing to add the parser validation to all the properties
                   designerAsserts.parserError('8','property: \''+namedParamElem+'?\' is invalid in a resource type');
                 }else{
+                  console.log('missing parser validation');
                   //https://www.pivotaltracker.com/story/show/61241162
                 }
               }else{
@@ -312,14 +313,20 @@ xdescribe('optionals Attributes',function(){
                 'title: My api',
                 'resourceTypes:',
                 '  - collection:',
-                '      '+method+':',
-                '        '+namedParameter+'?: ',
-                '          hola:',
-                '            '+namedParamElem+'?:',
+                '      '+method+'?:',
                 '                    '
+//                '        '+namedParameter+'?: ',
+//                '          hola:',
+//                '            '+namedParamElem+'?:',
+//                '                    '
               ].join('\\n');
               editor.setValue(definition);
-
+              editor.setCursor(5,8);
+              designerAsserts.shelfElementsNotDisplayed([], shelf.elemRtMethodLevel);
+              editor.setLine(5,'        '+namedParameter+'?: \\n          hola: \\n                ');
+              editor.setCursor(8,12);
+              designerAsserts.shelfElementsNotDisplayed([], shelf.elemNamedParametersLevel);
+              editor.setLine(8,'            '+namedParamElem+'?: \\n                        ');
               if (notOptNamedParam.indexOf(namedParamElem) !== -1){
                 if (namedParamElem===''){ // we are missing to add the parser validation to all the properties
                   designerAsserts.parserError('8','property: \''+namedParamElem+'?\' is invalid in a resource type');
@@ -344,43 +351,117 @@ xdescribe('optionals Attributes',function(){
 
     }); // namedParameters
 
-    it('under body? shelf options', function(){
-      var definition = [
-        ' #%RAML 0.8',
-        'title:',
-        'baseUri: http://server/api/{hol1}',
-        'resourceTypes:',
-        '  - hola:',
-        '      connect:',
-        '        body?:'
-      ].join('\\n');
-      editor.setValue(definition);
-      expect(true).toEqual(false);
+    methods.forEach(function(method){
+      it(method+' under body? shelf options', function(){
+        var definition = [
+          ' #%RAML 0.8',
+          'title:',
+          'baseUri: http://server/api/{hol1}',
+          'resourceTypes:',
+          '  - hola:',
+          '      '+method+':',
+          '        body?:'
+        ].join('\\n');
+        editor.setValue(definition);
+        expect(true).toEqual(false);
+      });
     });
 
-    it('under protocols? shelf options', function(){
-      var definition = [
-        ' #%RAML 0.8',
-        'title:',
-        'baseUri: http://server/api/{hol1}',
-        'resourceTypes:',
-        '  - hola:',
-        '      connect:',
-        '        protocols?:'
-      ].join('\\n');
-      editor.setValue(definition);
-      expect(true).toEqual(false);
+    methods.forEach(function(method){
+      it(method+' under protocols? shelf options', function(){
+        var definition = [
+          ' #%RAML 0.8',
+          'title:',
+          'baseUri: http://server/api/{hol1}',
+          'resourceTypes:',
+          '  - hola:',
+          '      '+method+':',
+          '        protocols?:'
+        ].join('\\n');
+        editor.setValue(definition);
+        expect(true).toEqual(false);
+      });
     });
 
+    methods.forEach(function(method){
+      it(method+' under description? shelf options', function(){
+        var definition = [
+          ' #%RAML 0.8',
+          'title:',
+          'baseUri: http://server/api/{hol1}',
+          'resourceTypes:',
+          '  - hola:',
+          '      '+method+':',
+          '        responses?:',
+          '          200:',
+          '              '
+        ].join('\\n');
+        editor.setValue(definition);
+        expect(true).toEqual(false);
+      });
+    });
 
 
   }); // resource-Types Methods
 
-  it('traits - methods', function(){
+  describe('traits', function(){
 
-  });
+    var options = shelf.elemTraitsLevel;
+    var notOptOptional = ['description','usage','displayName','is'];
+    options.forEach(function(option){
+      it(option+': property is no longer displayed on the shelf', function(){
+        shelf = new ShelfHelper();
+        var definition = [
+          '#%RAML 0.8',
+          'title: The API',
+          'traits: ',
+          '  - trait1: ',
+          '      '+option+'?: ',
+          '          '
+        ].join('\\n');
+        editor.setValue(definition);
+        if (notOptOptional.indexOf(option) !== -1){
+          if (option==='displayName' || option === 'description'){ // we are missing to add the parser validation to all the properties
+            console.log('missing parser validation '+option);
+            //https://www.pivotaltracker.com/story/show/61241162
+          }else{
+            designerAsserts.parserError('5','property: \''+option+'?\' is invalid in a resource type');
+          }
+        }else{
+          console.log('option', option);
+          editor.setCursor(6,6);
+          var list2 =[option];
+          designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemTraitsLevel);
+        }
 
-  it('traits - named parameters', function(){
+
+      });
+    });
+
+
+//
+//      var options = shelf.elemNamedParametersLevel;
+//      namedParameters.forEach(function(namedParameter){
+//        options.forEach(function(option){
+//          it(namedParameter+': '+option+' is no longer displayed on the shelf', function(){
+//            shelf = new ShelfHelper();
+//            var definition = [
+//              '#%RAML 0.8',
+//              'title: The API',
+//              'traits: ',
+//              '  - trait1: ',
+//              '      '+namedParameter+': ',
+//              '        hola:',
+//              '          '+option+':',
+//              '            '
+//            ].join('\\n');
+//            editor.setValue(definition);
+//            editor.setCursor(8,10);
+//            designerAsserts.shelfElementsNotDisplayed([option], shelf.elemNamedParametersLevel);
+//          });
+//        });
+//      });
+
 
   });
 
