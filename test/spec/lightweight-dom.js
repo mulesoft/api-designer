@@ -227,13 +227,17 @@ describe('Lightweight DOM Module', function () {
         '          type: string'
       ], 13);
       //Start with the second node in the first array:
+      var path = getNode(editor).getPath().map(function(node) { return node.key; });
+      path.should.be.deep.equal(['baseUri', '/Accounts', '/{AccountSid}', 'uriParameters', 'AccountSid']);
+    });
+
+    it('should return an empty array for root level nodes', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+      ]);
+      //Start with the second node in the first array:
       var path = getNode(editor).getPath();
-      path.length.should.equal(5);
-      path[0].key.should.be.equal('baseUri');
-      path[1].key.should.be.equal('/Accounts');
-      path[2].key.should.be.equal('/{AccountSid}');
-      path[3].key.should.be.equal('uriParameters');
-      path[4].key.should.be.equal('AccountSid');
+      path.length.should.be.equal(0);
     });
   });
 
