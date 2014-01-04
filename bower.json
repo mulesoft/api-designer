@@ -7,6 +7,7 @@
     "angular-cookies": "1.2.2",
     "angular-resource": "1.2.2",
     "angular-sanitize": "1.2.2",
+    "angular-ui-layout": "~0.0.0",
     "es5-shim": "~2.0.8",
     "showdown": "~0.3.1",
     "api-console": "mulesoft/api-console#172ef1b9e8ea671b31ed18765c9c01ab2120d3d2",
