@@ -78,6 +78,10 @@ angular.module('codeMirror')
       state.localState = mode[modeName].startState();
       state.localState.parentIndentation = stream.indentation();
 
+      if (stream.string.match(/^\s*\- /i)) {
+        state.localState.parentIndentation = state.localState.parentIndentation + 2;
+      }
+
       if(modeName === 'markdown') {
         state.localState.base.parentIndentation = state.localState.parentIndentation;
       }
