@@ -26,7 +26,7 @@ angular.module('raml')
       ].join('\n');
     };
 
-    service.getSnippet = function (suggestion) {
+    service.getSnippet = function getSnippet(suggestion) {
       var key      = suggestion.key;
       var metadata = suggestion.metadata || {};
       var snippet  = snippets[key.toLowerCase()];
