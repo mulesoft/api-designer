@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('codeMirror')
-  .factory('codeMirrorHighLight', function () {
+  .factory('codeMirrorHighLight', function (indentUnit) {
     var mode = {};
 
     mode.highlight = function(config) {
@@ -79,7 +79,7 @@ angular.module('codeMirror')
       state.localState.parentIndentation = stream.indentation();
 
       if (stream.string.match(/^\s*\- /i)) {
-        state.localState.parentIndentation = state.localState.parentIndentation + 2;
+        state.localState.parentIndentation += indentUnit;
       }
 
       if(modeName === 'markdown') {

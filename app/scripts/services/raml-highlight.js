@@ -26,7 +26,7 @@ angular.module('codeMirror')
     return new RegExp('\\b((' + booleanValues.join(')|(') + '))$', 'i');
   })
   .factory('token', function (keywordRegex, highlightRootElement,
-    getLineIndent) {
+    getLineIndent, indentUnit) {
     return function(stream, state) {
       var ch = stream.peek();
       var esc = state.escaped;
@@ -82,7 +82,7 @@ angular.module('codeMirror')
         state.keyCol = stream.indentation();
 
         if (stream.string.match(/^\s*\- /i)) {
-          state.keyCol = state.keyCol + 2;
+          state.keyCol += indentUnit;
         }
 
         /* methods */
