@@ -1,7 +1,7 @@
 'use strict';
 var AssertsHelper = require ('../../lib/asserts-helper.js').AssertsHelper;
 var EditorHelper = require ('../../lib/editor-helper.js').EditorHelper;
-describe('parser ',function(){
+describe('parser',function(){
   var designerAsserts= new AssertsHelper();
   var editor= new EditorHelper();
 
@@ -9,7 +9,7 @@ describe('parser ',function(){
 
     describe('include', function () {
 
-      xit('should fail: file circular reference', function () {
+      xit('file circular reference', function () {
         var definition = [
           '#%RAML 0.8',
           '---',
@@ -19,17 +19,17 @@ describe('parser ',function(){
         designerAsserts.parserError('3', 'detected circular !include of example.raml');
       });
 
-      it('should fail: test ', function () {
+      it('broken links', function () {
         var definition = [
           '#%RAML 0.8',
           '---',
           'title: !include http://some.broken.link.com\\n'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('3','error: cannot fetch http://some.broken.link.com');
+        designerAsserts.parserError('3','error: cannot fetch http://some.broken.link.com, check that the server is up and that CORS is enabled');
       });
 
-      it('should fail: file name/URL cannot be null', function () {
+      it('file name/URL cannot be null', function () {
         var definition = [
           '#%RAML 0.8',
           '---',
@@ -45,7 +45,7 @@ describe('parser ',function(){
     it('should fail: The first line must be: #%RAML 0.8', function(){
       var definition = '';
       editor.setValue(definition);
-      designerAsserts.parserError('1','The first line must be: \'#%RAML 0.8\'');
+      expect(editor.IsParserErrorDisplayed()).toBe(false);
     });
 
     it('should fail: unsupported raml version #%RAML 0.1', function () {

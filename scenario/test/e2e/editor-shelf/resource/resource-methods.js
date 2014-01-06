@@ -24,7 +24,7 @@ describe('shelf',function(){
         ].join('\\n');
         editor.setValue(definition);
         editor.setCursor(5,4);
-        designerAsserts.shelfElementsMethodsByGroup();
+        designerAsserts.ShelfElementsByGroup(shelf.elemMethodByGroup);
       });
     });
 
@@ -45,7 +45,7 @@ describe('shelf',function(){
             ].join('\\n');
             editor.setValue(definition);
             editor.setCursor(8,8);
-            designerAsserts.shelfElemNamedParametersByGroup();
+            designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
           });
         });
       });

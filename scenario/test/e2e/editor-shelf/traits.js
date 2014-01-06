@@ -20,7 +20,7 @@ describe('shelf',function(){
       ].join('\\n');
       editor.setValue(definition);
       editor.setCursor(5,6);
-      designerAsserts.shelfElemTraitsByGroup();
+      designerAsserts.ShelfElementsByGroup(shelf.elemTraitsByGroup);
     });
 
     describe('Named Parameters', function(){
@@ -38,7 +38,7 @@ describe('shelf',function(){
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(7,10);
-          designerAsserts.shelfElemNamedParametersByGroup();
+          designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
         });
       });
 
@@ -82,7 +82,8 @@ describe('shelf',function(){
         ].join('\\n');
         editor.setValue(definition);
         editor.setCursor(7,10);
-        designerAsserts.shelfElemResponsesByGroup();
+        designerAsserts.ShelfElementsByGroup(shelf.elemResponsesByGroup);
+
       });
 
       describe('after being selected', function(){

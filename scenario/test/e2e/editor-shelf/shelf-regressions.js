@@ -11,12 +11,29 @@ describe('shelf',function(){
     editor.setValue('');
     expect(editor.getLine(1)).toEqual('');
     designerAsserts.shelfElements(shelf.elemRamlVersion);
-    designerAsserts.parserError('1', 'The first line must be: \'#%RAML 0.8\'');
+    expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
 
-  describe('Adding elements from shelf',function(){
+  it('groups',function(){
+    var  shelf = new ShelfHelper();
+    var definition = [
+      '#%RAML 0.8',
+      'title: The API',
+      'baseUri: http://www.theapi.com/{hola}',
+      'baseUriParameters:',
+      '  hola:',
+      '     '
+    ].join('\\n');
+    editor.setValue(definition);
+    editor.setCursor(6,4);
+    designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
 
-    it('elements added ', function(){
+  });
+
+  describe('elements',function(){
+
+    it('added below on an array', function(){
+      var  shelf = new ShelfHelper();
       var definition = [
         '#%RAML 0.8',
         'title: hola',
@@ -26,13 +43,14 @@ describe('shelf',function(){
       ].join('\\n');
       editor.setValue(definition);
       editor.setCursor(6,0);
-      shelf.getElements().then(function(list){
+      shelf.getElementsPromise().then(function(list){
         list[0].click();
       });
-      expect(editor.getLine(6)).toEqual('version: v0.1');
+      expect(editor.getLine(6)).toEqual('baseUri: http://server/api/{version}');
     });
 
-    it('elements added like with blanks at the end', function(){
+    it('add in a line with blanks at the end', function(){
+      var  shelf = new ShelfHelper();
       var definition = [
         '#%RAML 0.8',
         'title: hola',
@@ -41,15 +59,21 @@ describe('shelf',function(){
       ].join('\\n');
       editor.setValue(definition);
       editor.setCursor(5,2);
-      shelf.getElements().then(function(list){
+      shelf.getElementsPromise().then(function(list){
         list[0].click();
       });
-      expect(editor.getLine(5)).toEqual('  displayName:');
+      expect(editor.getLine(5)).toEqual('  description:');
     });
 
-    it('elements are added below', function(){
+    it('are added below', function(){
+      var  shelf = new ShelfHelper();
       editor.setCursor(1,0);
-      var lista = ['#%RAML 0.8','title: My API','version: v0.1','schemas:','baseUri: http://server/api/{version}','mediaType:','protocols:','documentation:','baseUriParameters:','securitySchemes:','securedBy:','/newResource:','  displayName: resourceName','  description:','  options:','    description: <<insert text or markdown here>>','    protocols:','    baseUriParameters:','    headers:','    queryParameters:','    responses:','    securedBy:','    is:','    body:'];
+      var lista = ['#%RAML 0.8', 'baseUri: http://server/api/{version}', 'mediaType:',
+        'protocols:', 'title: My API', 'version: v0.1', 'documentation:', 'baseUriParameters:',
+        'securedBy:', 'securitySchemes:', '/newResource:', '  displayName: resourceName',
+        '  description:', '  connect:', '    description: <<insert text or markdown here>>',
+        '    protocols:', '    baseUriParameters:', '    headers:', '    queryParameters:',
+        '    responses:', '    securedBy:', '    is:', '    body:'];
       var i=1;
       var promise;
       lista.forEach(function(elem){
@@ -67,7 +91,124 @@ describe('shelf',function(){
       });
     });
 
+    it('root level - some lines with indent below', function(){
+      var  shelf = new ShelfHelper();
+      var definition = [
+        '#%RAML 0.8',
+        'title: hola',
+        'resourceTypes:',
+        '  - hola: ',
+        '      options:',
+        '        description: <<insert text or markdown here>>',
+        ' ',
+        '  ',
+        '  ',
+        '  '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(7,0);
+      var promise = shelf.selectFirstElem();
+      promise.then(function(){
+        expect(editor.getLine(7)).toEqual('baseUri: http://server/api/{version}');
+      });
+    });
+
   });// adding elements from shelf
+
+  describe('using alias & *', function(){
+
+    it('in a resource', function(){
+      var  shelf = new ShelfHelper();
+      var definition = [
+        '#%RAML 0.8 ',
+        'title: My api',
+        'version: v1',
+        '/res1: &res1',
+        '  description: this is res1 description',
+        '  displayName: resource 1',
+        '  get:',
+        '    description: get into resource 1',
+        '/res2: *res1',
+        '                '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(10,0);
+      var list2 = ['title', 'version'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
+      editor.setCursor(10, 2);
+      designerAsserts.shelfWithNoElements();
+    });
+
+    it('in a method', function(){
+      var  shelf = new ShelfHelper();
+      var definition = [
+        '#%RAML 0.8 ',
+        'title: My api',
+        'version: v1',
+        '/res1: ',
+        '  description: this is res1 description',
+        '  displayName: resource 1     ',
+        '  get: &metho1',
+        '    description: this is method description',
+        '    body:',
+        '      application/json:',
+        '    responses:',
+        '      200:',
+        '        description: 200 ok',
+        '        body: ',
+        '          application/json:     ',
+        '/res3: ',
+        '  get: *metho1',
+        '            '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(18,0);
+      var list2 = ['title', 'version'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
+      var list22 = ['get'];
+      editor.setCursor(18, 2);
+      designerAsserts.shelfElementsNotDisplayed(list22, shelf.elemResourceLevel);
+      editor.setCursor(18, 4);
+      designerAsserts.shelfWithNoElements();
+    });
+
+    it('in a Named Parameter', function(){
+      var  shelf = new ShelfHelper();
+      var definition = [
+        '#%RAML 0.8 ',
+        'title: My api',
+        'version: v1',
+        '/res1: ',
+        '  description: this is res1 description',
+        '  displayName: resource 1     ',
+        '  get: ',
+        '    description: this is method description',
+        '    headers: &head1',
+        '      head1:',
+        '        displayName: head1 DN',
+        '        description: head1 description',
+        '        type: integer',
+        '  ',
+        '/res3: ',
+        '  post:',
+        '    headers: *head1',
+        '            '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(18,0);
+      var list2 = ['title', 'version'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
+      editor.setCursor(18, 2);
+      list2 = ['post'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceLevel);
+      editor.setCursor(18, 4);
+      list2 = ['headers'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemMethodLevel);
+      editor.setCursor(18, 6);
+      designerAsserts.shelfWithNoElements();
+    });
+
+  }); // using alias & *
 
 }); // Shelf
 

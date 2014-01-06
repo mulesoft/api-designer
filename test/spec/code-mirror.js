@@ -67,21 +67,47 @@ describe('CodeMirror Service', function () {
       editor.getLine(3).should.be.equal('lal');
     });
 
-    it('should delete tabs when line is tab only', function () {
+    it('should delete one space before cursor', function () {
       var indentUnit = 2;
       var editor     = getEditor(codeMirror,
         [
-          'title: hello',
-          'version: v1.0',
-          'baseUri: http://example.com/api',
-          '    '
+          'title: hello ',
         ],
-        {line: 3, ch: 3},
+        {line: 0, ch: 666},
         {indentUnit: indentUnit}
       );
 
       editor.fakeKey('Backspace');
-      editor.getLine(3).should.be.equal('  ');
+      editor.getLine(0).should.be.equal('title: hello');
+    });
+
+    it('should delete tab before cursor', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          'title: hello',
+          sp(indentUnit * 2)
+        ],
+        {line: 1, ch: 666},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+      editor.getLine(1).should.be.equal('  ');
+    });
+
+    it('should delete tab before cursor with other characters before tab', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          'title: hello  '
+        ],
+        {line: 0, ch: 666},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+      editor.getLine(0).should.be.equal('title: hello');
     });
 
     it('should delete tabs with arbitrary tab size', function () {
@@ -101,7 +127,7 @@ describe('CodeMirror Service', function () {
       editor.getLine(3).should.be.equal('');
     });
 
-    it('should delete one char if cursor is on first column (even with tabs after)', function () {
+    it('should delete one char if cursor at first column (even with tabs after)', function () {
       var indentUnit = 7;
       var editor     = getEditor(codeMirror,
         [
@@ -117,380 +143,233 @@ describe('CodeMirror Service', function () {
       editor.fakeKey('Backspace');
       editor.getLine(2).should.be.equal('baseUri: http://example.com/api' + sp(indentUnit));
     });
+
+    it('should delete one char with cursor at first column and tabs after', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          'title: hello',
+          '   '
+        ],
+        {line: 1, ch: 1},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+      editor.lineCount().should.be.equal(2);
+      editor.getLine(1).should.be.equal('  ');
+    });
+
+    it('should delete one whitespace at cursor position when total number of whitespaces is not a multiple of indentUnit', function () {
+      var indentUnit = 2;
+      var editor     = getEditor(codeMirror,
+        [
+          '   '
+        ],
+        {line: 0, ch: 666},
+        {indentUnit: indentUnit}
+      );
+
+      editor.fakeKey('Backspace');
+
+      editor.lineCount().should.be.equal(1);
+      editor.getLine(0).should.be.equal('  ');
+    });
   });
 
-  describe('auto indentation', function () {
-    it('should keep the same indentation level by default', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: hello',
-          'version: v1.0',
-          'baseUri: http://example.com/api',
-          '/tags:',
-          '  displayName: Tags'
-        ],
-        { line: 4, ch: 19},
-        { indentUnit: indentUnit }
-      );
+  describe('enter key', function() {
+    var editor;
 
-      editor.fakeKey('Enter');
-      editor.getLine(5).should.be.equal(sp(indentUnit));
+    describe('in a line with no indentation or children', function() {
+      beforeEach(function() {
+        editor     = getEditor(codeMirror, ['version: v1.0']);
+      });
+
+      it('keeps indentation level when enter is pressed at the beginning of a line', function () {
+        editor.setCursor(0, 0);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('');
+        editor.getLine(1).should.be.equal('version: v1.0');
+      });
+
+      it('keeps indentation level when enter is pressed in the middle of a line', function () {
+        editor.setCursor(0, 3);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('ver');
+        editor.getLine(1).should.be.equal('sion: v1.0');
+      });
+
+      it('keeps indentation level when enter is pressed in the end of a line', function () {
+        editor.setCursor(0, 666);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('version: v1.0');
+        editor.getLine(1).should.be.equal('');
+      });
     });
 
-    it('should keep the same indentation level for elements without children', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: hello',
-          'version: v1.0',
-          'baseUri: http://example.com/api',
-          '/tags:'
-        ],
-        { line: 3, ch: 6 },
-        { indentUnit: indentUnit }
-      );
+    describe('in an indented line with no children', function() {
+      beforeEach(function() {
+        editor     = getEditor(codeMirror, ['  displayName: Tags']);
+      });
 
-      editor.fakeKey('Enter');
-      editor.getLine(4).should.be.equal('');
+      it('keeps indentation level when enter is pressed at the beginning of a line', function () {
+        editor.setCursor(0, 0);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('');
+        editor.getLine(1).should.be.equal('  displayName: Tags');
+      });
+
+      it('keeps indentation level when enter is pressed in the middle of a line', function () {
+        editor.setCursor(0, 2);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('  ');
+        editor.getLine(1).should.be.equal('  displayName: Tags');
+      });
+
+      it('keeps indentation level when enter is pressed in the end of a line', function () {
+        editor.setCursor(0, 666);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('  displayName: Tags');
+        editor.getLine(1).should.be.equal('  ');
+      });
     });
 
-    it('should add one indentation level if the current line has children', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  name: Tags',
-          '  description: This is a description of tags',
-          '  get:', // <--
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags',
-        ],
-        { line: 6, ch: 666 },
-        { indentUnit: indentUnit }
-      );
+    describe('in a line with children', function() {
+      beforeEach(function() {
+        editor     = getEditor(codeMirror, ['/tags:', '  displayName: Tags']);
+      });
 
-      editor.fakeKey('Enter');
-      editor.getLine(7).should.be.equal(sp(indentUnit * 2));
+      it('keeps indentation level when enter is pressed at the beginning of a line', function () {
+        editor.setCursor(0, 0);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('');
+        editor.getLine(1).should.be.equal('/tags:');
+      });
+
+      it('keeps indentation level when enter is pressed in the middle of a line', function () {
+        editor.setCursor(0, 2);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('/t');
+        editor.getLine(1).should.be.equal('ags:');
+      });
+
+      it('indents a new child when enter is pressed at the end of the line', function () {
+        editor.setCursor(0, 666);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('/tags:');
+        editor.getLine(1).should.be.equal('  ');
+      });
     });
 
-    it('should add another indentation if the current line has a continuation character ("|") and has one indent', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  ',
-          '  name: Tags',
-          '  description: |', // <--
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags',
-        ],
-        { line: 6, ch: 666 },
-        { indentUnit: indentUnit }
-      );
+    describe('in a line that ends with the pipe character', function() {
+      beforeEach(function() {
+        editor     = getEditor(codeMirror, ['schema: |']);
+      });
 
-      editor.fakeKey('Enter');
-      editor.getLine(7).should.be.equal(sp(indentUnit * 2));
+      it('keeps indentation level when enter is pressed at the beginning of a line', function () {
+        editor.setCursor(0, 0);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('');
+        editor.getLine(1).should.be.equal('schema: |');
+      });
+
+      it('keeps indentation level when enter is pressed in the middle of a line', function () {
+        editor.setCursor(0, 2);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('sc');
+        editor.getLine(1).should.be.equal('hema: |');
+      });
+
+      it('indents a new child when enter is pressed at the end of the line', function () {
+        editor.setCursor(0, 666);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('schema: |');
+        editor.getLine(1).should.be.equal('  ');
+      });
     });
 
-    it('should preserve the whitespace if the current line has a parent with continuation character ("|") and one indent', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  name: Tags',
-          '  description: |',
-          '    Here be dragons', // <--
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags',
-        ],
-        { line: 6, ch: 666 },
-        { indentUnit: indentUnit }
-      );
+    describe('in a line with a dictionary value', function() {
+      beforeEach(function() {
+        editor    = getEditor(codeMirror, ['description: a long description']);
+      });
 
-      editor.fakeKey('Enter');
-      editor.getLine(7).should.be.equal(sp(indentUnit * 2));
+      it('keeps indentation level when enter is pressed at the beginning of a line', function () {
+        editor.setCursor(0, 0);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('');
+        editor.getLine(1).should.be.equal('description: a long description');
+      });
+
+      it('keeps indentation level when enter is inside the key', function () {
+        editor.setCursor(0, 10);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('descriptio');
+        editor.getLine(1).should.be.equal('n: a long description');
+      });
+
+      // new feature suggestion
+      xit('indents when enter is pressed inside the value', function() {
+        editor.setCursor(0, 12);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('description:');
+        editor.getLine(1).should.be.equal('   a long description');
+      });
     });
 
-    it('should add another indentation if the current line has a continuation character ("|") and has two indents', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  ',
-          '  name: Tags',
-          '  description: This is the description of the tag',
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: |', // <--
-        ],
-        { line: 9, ch: 666 },
-        { indentUnit: indentUnit }
-      );
+    ['traits', 'resourceTypes'].forEach(function(key) {
+      describe('immediately inside of a ' + key + ' array', function() {
+        beforeEach(function() {
+          editor    = getEditor(codeMirror, [key + ':', '  - myThing:']);
+        });
 
-      editor.fakeKey('Enter');
-      editor.getLine(10).should.be.equal(sp(indentUnit * 3));
+        it('keeps indentation level when enter is pressed at the beginning of a line', function () {
+          editor.setCursor(1, 0);
+          editor.fakeKey('Enter');
+          editor.getLine(1).should.be.equal('');
+          editor.getLine(2).should.be.equal('  - myThing:');
+        });
+
+        it('adds one indentation level when enter in the middle of the line', function () {
+          editor.setCursor(1, 6);
+          editor.fakeKey('Enter');
+          editor.getLine(1).should.be.equal('  - my');
+          editor.getLine(2).should.be.equal('    Thing:');
+        });
+
+        it('indents twice at the end of the line', function() {
+          editor.setCursor(1, 666);
+          editor.fakeKey('Enter');
+          editor.getLine(1).should.be.equal('  - myThing:');
+          editor.getLine(2).should.be.equal('      ');
+        });
+      });
     });
 
-    it('should keep the same indentation level if the current line is all tabs', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  ',
-          '  name: Tags',
-          '  description: This is a description of tags',
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags',
-        ],
-        { line: 4, ch: 2 },
-        { indentUnit: indentUnit }
-      );
+    describe('within an array not inside resourceTypes or traits', function() {
+      beforeEach(function() {
+        editor    = getEditor(codeMirror, ['- myKey:']);
+      });
 
-      editor.fakeKey('Enter');
-      editor.getLine(5).should.be.equal(sp(indentUnit));
-    });
+      it('keeps indentation level when enter is pressed at the beginning of a line', function () {
+        editor.setCursor(0, 0);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('');
+        editor.getLine(1).should.be.equal('- myKey:');
+      });
 
-    it('should keep the same indentation level if the current line is all tabs, preserving any extra whitespace', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '   ', // <--
-          '  name: Tags',
-          '  description: This is a description of tags',
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags'
-        ],
-        { line: 4, ch: 2 },
-        { indentUnit: indentUnit }
-      );
+      it('keeps indentation level when enter in the middle of the line', function () {
+        editor.setCursor(0, 4);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('- my');
+        editor.getLine(1).should.be.equal('  Key:');
+      });
 
-      editor.fakeKey('Enter');
-      editor.getLine(5).should.be.equal(sp(4));
-    });
-
-    it('should add one indentation level if the cursor is in the middle of a sentence', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  name: Tags',
-          '  description: This is a description of tags      with spaces in it', // <--
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags',
-        ],
-        { line: 5, ch: 46 },
-        { indentUnit: indentUnit }
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(6).substr(0, indentUnit * 2).should.be.equal(sp(indentUnit * 2));
-    });
-
-    it('should keep the same indentation level if the cursor is in the middle of a sentence and not on the first line', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  name: Tags',
-          '  description: This is a description of tags with spaces in it',
-          '    but no in the first        line', // <--
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags',
-        ],
-        { line: 6, ch: 22 },
-        { indentUnit: indentUnit }
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(7).substr(0, indentUnit * 2).should.be.equal(sp(indentUnit * 2));
-    });
-
-    it('should keep the same indentation level if the cursor is at the beginning of a sentence', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '  name: Tags',
-          '  description: This is a description of tags with spaces in it',
-          '    but no in the first        line', // <--
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags'
-        ],
-        { line: 6, ch: 22 },
-        { indentUnit: indentUnit }
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(7).substr(0, indentUnit * 2).should.be.equal(sp(indentUnit * 2));
-    });
-
-    it('should detect traits and add an extra indentation level', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          'traits:',
-          '  - trait-one:',
-          '  - trait-two:',
-          '    trait-three:'
-        ],
-        { line: 4, ch: 666 },
-        { indentUnit: indentUnit }
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(5).should.be.equal(sp(indentUnit * 3));
-
-      editor.setCursor(5, 666);
-      editor.fakeKey('Enter');
-      editor.getLine(6).should.be.equal(sp(indentUnit * 3));
-
-      editor.setCursor(6, 666);
-      editor.fakeKey('Enter');
-      editor.getLine(7).should.be.equal(sp(indentUnit * 3));
-    });
-
-    it('should detect resource types and add an extra indentation level', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          'resourceTypes:',
-          '  - base:',
-          '  - collection:',
-          '    member:'
-        ],
-        { line: 4, ch: 666 },
-        { indentUnit: indentUnit }
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(5).should.be.equal(sp(indentUnit * 3));
-    });
-
-    it('should detect arrays and add an extra indentation level', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          'documentation:',
-          '  - title:'
-        ],
-        { line: 4, ch: 666 },
-        { indentUnit: indentUnit }
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(5).should.be.equal(sp(indentUnit * 2));
-    });
-
-    it('should keep the same indentation level for sequence of entries with a little help', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'key1:',
-          '  - value1:',
-          '  - value2:',
-          '    value3:'
-        ],
-        {
-          line: 2,
-          ch:   null
-        },
-        {
-          indentUnit: indentUnit
-        }
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(3).should.be.equal(sp(indentUnit * 2));
-
-      editor.setCursor(2, 666);
-      editor.fakeKey('Enter');
-      editor.getLine(3).should.be.equal(sp(indentUnit * 2));
-
-      editor.setCursor(3, 666);
-      editor.fakeKey('Enter');
-      editor.getLine(3).should.be.equal(sp(indentUnit * 2));
-    });
-
-    it('should keep the same indentation level for document start marker (RT-156)', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          '---'
-        ],
-        {line: 0, ch: 3},
-        {indentUnit: indentUnit}
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(1).should.be.equal('');
-    });
-
-    it('should keep the same indentation level and any extra whitespace for lines that are "rubbish"', function () {
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: Test',
-          'baseUri: http://www.api.com/{version}/{company}',
-          'version: v1.1',
-          '/tags:',
-          '   this is rubbish',
-          '  name: Tags',
-          '  description: This is a description of tags',
-          '  get:',
-          '    summary: Get a list of recently tagged media',
-          '    description: This is a description of getting tags'
-        ],
-        {line: 4, ch: 2},
-        {indentUnit: indentUnit}
-      );
-
-      editor.fakeKey('Enter');
-      editor.getLine(5).substr(0, 3).should.be.equal(sp(3));
+      it('indents once at the end of the line', function() {
+        editor.setCursor(0, 666);
+        editor.fakeKey('Enter');
+        editor.getLine(0).should.be.equal('- myKey:');
+        editor.getLine(1).should.be.equal('  ');
+      });
     });
   });
 });

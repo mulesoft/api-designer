@@ -16,21 +16,6 @@ angular.module('codeFolding', ['raml', 'lightweightParse'])
       return isArrayStarter(firstChild);
     };
   })
-  .factory('hasChildren', function(ramlHint){
-    return function (cm){
-      var editorState = ramlHint.getEditorState(cm);
-
-      var potentialChildren = ramlHint.getScopes(cm).scopeLevels[editorState.currLineTabCount > 0 ? editorState.currLineTabCount + 1 : 1], firstChild;
-
-      if(potentialChildren) {
-        firstChild = potentialChildren.filter(function(line) {
-          return line === editorState.start.line + 1;
-        }).pop();
-      }
-
-      return !!firstChild;
-    };
-  })
   .factory('getParentLineNumber', function (getScopes, getEditorTextAsArrayOfLines, getLineIndent, isArrayStarter) {
     var getParentLineNumber = function (cm, lineNumber) {
       var tabCount = getLineIndent(cm.getLine(lineNumber)).tabCount;

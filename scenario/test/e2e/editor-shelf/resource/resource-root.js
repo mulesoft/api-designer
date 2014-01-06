@@ -21,7 +21,7 @@ describe('shelf',function(){
       ].join('\\n');
       editor.setValue(definition);
       editor.setCursor(4,2);
-      designerAsserts.shelfElementsResourceByGroup();
+      designerAsserts.ShelfElementsByGroup(shelf.elemResourceByGroup);
     });
 
     describe('not displayed after being selected', function(){
@@ -61,7 +61,7 @@ describe('shelf',function(){
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(7,6);
-          designerAsserts.shelfElemNamedParametersByGroup();
+          designerAsserts.ShelfElementsByGroup(shelf.elemNamedParametersByGroups);
         });
       });
 
