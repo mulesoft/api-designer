@@ -23,7 +23,7 @@ describe('shelf',function(){
       it('not be offer RAML version - line 1', function(){
         var definition = '#%RAML 0.8';
         editor.setValue(definition);
-        designerAsserts.shelfElementsNotDisplayed(['#%RAML 0.8'], []);
+        designerAsserts.shelfElementsNotDisplayed(['#%RAML 0.8'], shelf.elemRootLevel);
       });
 
     }); //RAML version
@@ -40,8 +40,80 @@ describe('shelf',function(){
         designerAsserts.ShelfElementsByGroup(shelf.elemRootByGroup);
       });
 
-      xdescribe('documentation', function(){
+      describe('documentation', function(){
+        it('documentation - basic node - adding title from  shelf', function(){
 
+          var definition = [
+            '#%RAML 0.8',
+            'title: The API',
+            '       \\n      \\n      \\n      \\n      \\n     \\n'
+          ].join('\\n');
+          editor.setValue(definition);
+          editor.setCursor(3,0);
+          shelf.selectShelfElemByPos(4);
+          expect(editor.getLine(3)).toEqual('documentation:');
+          editor.setCursor(4,2);
+          shelf.selectShelfElemByPos(1);
+          expect(editor.getLine(4)).toEqual('  - title: My API');
+          shelf = new ShelfHelper();
+          editor.setCursor(5,4);
+          designerAsserts.shelfElementsNotDisplayed(['title'], shelf.elemDocumentationLevel);
+          editor.setCursor(5,4);
+          shelf.selectShelfElemByPos(0);
+          expect(editor.getLine(5)).toEqual('    content:');
+          shelf = new ShelfHelper();
+          editor.setCursor(6,4);
+          designerAsserts.shelfElementsNotDisplayed(['title','content'], shelf.elemDocumentationLevel);
+          shelf = new ShelfHelper();
+          editor.setCursor(6,2);
+          designerAsserts.shelfElements(shelf.elemDocumentationLevel);
+          shelf.selectShelfElemByPos(0);
+          expect(editor.getLine(6)).toEqual('  - content:');
+          shelf = new ShelfHelper();
+          editor.setCursor(7,4);
+          designerAsserts.shelfElementsNotDisplayed(['content'], shelf.elemDocumentationLevel);
+          shelf = new ShelfHelper();
+          editor.setCursor(7,2);
+          designerAsserts.shelfElements(shelf.elemDocumentationLevel);
+          editor.setCursor(7,4);
+          shelf.selectShelfElemByPos(0);
+          expect(editor.getLine(7)).toEqual('    title: My API');
+          shelf = new ShelfHelper();
+          editor.setCursor(8,4);
+          designerAsserts.shelfElementsNotDisplayed(['title','content'], shelf.elemDocumentationLevel);
+          shelf = new ShelfHelper();
+          editor.setCursor(8,2);
+          designerAsserts.shelfElements(shelf.elemDocumentationLevel);
+        });
+
+
+        it('documentation - basic node - adding multiples nodes  from  shelf as list', function(){
+          var definition = [
+            '#%RAML 0.8',
+            'title: The API',
+            '     \\n    \\n    \\n    \\n    \\n   \\n'
+          ].join('\\n');
+          editor.setValue(definition);
+          editor.setCursor(3,0);
+          shelf.selectShelfElemByPos(4);
+          expect(editor.getLine(3)).toEqual('documentation:');
+          editor.setCursor(4,2);
+          shelf.selectShelfElemByPos(1);
+          expect(editor.getLine(4)).toEqual('  - title: My API');
+          editor.setCursor(5,4);
+          shelf = new ShelfHelper();
+          designerAsserts.shelfElementsNotDisplayed(['title'], shelf.elemDocumentationLevel);
+          shelf = new ShelfHelper();
+          editor.setCursor(5,2);
+          designerAsserts.shelfElements(shelf.elemDocumentationLevel);
+          shelf.selectShelfElemByPos(0);
+          expect(editor.getLine(5)).toEqual('  - content:');
+          editor.setCursor(6,4);
+          shelf = new ShelfHelper();
+          designerAsserts.shelfElementsNotDisplayed(['content'], shelf.elemDocumentationLevel);
+        });
+
+//        shelf
       }); //description
 
       describe('baseUriParameters - NamedParameter', function(){
