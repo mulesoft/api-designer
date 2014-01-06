@@ -13,6 +13,7 @@ describe('Lightweight DOM Module', function () {
 
   //region Tests
 
+  //Combined scenario tests:
   describe('LazyNode', function () {
 
     it('should be able to traverse all siblings at root level', function () {
@@ -149,6 +150,7 @@ describe('Lightweight DOM Module', function () {
     });
   });
 
+  //Specific method tests:
   describe('LazyNode.getParent', function () {
 
     it('should be able to traverse to a parent on an empty line in an array using cursor position', function() {
@@ -225,13 +227,17 @@ describe('Lightweight DOM Module', function () {
         '          type: string'
       ], 13);
       //Start with the second node in the first array:
+      var path = getNode(editor).getPath().map(function(node) { return node.key; });
+      path.should.be.deep.equal(['baseUri', '/Accounts', '/{AccountSid}', 'uriParameters', 'AccountSid']);
+    });
+
+    it('should return an empty array for root level nodes', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+      ]);
+      //Start with the second node in the first array:
       var path = getNode(editor).getPath();
-      path.length.should.equal(5);
-      path[0].key.should.be.equal('baseUri');
-      path[1].key.should.be.equal('/Accounts');
-      path[2].key.should.be.equal('/{AccountSid}');
-      path[3].key.should.be.equal('uriParameters');
-      path[4].key.should.be.equal('AccountSid');
+      path.length.should.be.equal(0);
     });
   });
 
@@ -272,6 +278,47 @@ describe('Lightweight DOM Module', function () {
         '  /Accounts:',
       ], 2);
       var node = getNode(editor).selfOrParent(function(node) { return node.key === 'xxx'; });
+      should.not.exist(node);
+    });
+  });
+
+  describe('LazyNode.selfOrPrevious', function () {
+
+    it('should return self when matched', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+        '#Taken from the RAML spec',
+        'version: 2010-04-01'
+      ], 2);
+      var node = getNode(editor);
+      node = node.selfOrPrevious(function(node) { return node.value.text === '2010-04-01'; });
+      node.value.text.should.be.equal('2010-04-01');
+      node.key.should.be.equal('version');
+    });
+
+    it('should return a previous sibling when matched', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+        'documentation:',
+        '  - title: Hello',
+        '    content: world',
+        '    Tricky: Hello'
+      ], 3);
+      var node = getNode(editor);
+      node = node.selfOrPrevious(function(node) { return node.value.text === 'Hello'; });
+      node.value.text.should.be.equal('Hello');
+      node.key.should.be.equal('title');
+    });
+
+    it('should return null when no matches are found', function() {
+      var editor = getEditor(codeMirror, [
+        'title: Twilio API',
+        'documentation:',
+        '  - title: Hello',
+        '    content: world',
+      ], 3);
+      var node = getNode(editor);
+      node = node.selfOrPrevious(function(node) { return node.value.text === 'Foo'; });
       should.not.exist(node);
     });
   });

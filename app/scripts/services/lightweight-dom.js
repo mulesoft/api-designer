@@ -293,22 +293,20 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * tree until no more nodes are found.  Will halt if the test function
      * returns true.
      * @param testFunc Function to execute against current node and parents
-     * @param [args] optional arguments to testFunc
      * @returns {LazyNode} The first node where testFunc returns true, or null.
      */
-    LazyNode.prototype.selfOrParent = function selfOrParent(testFunc, args) {
-      return this.first(this.getParent, testFunc, args);
+    LazyNode.prototype.selfOrParent = function selfOrParent(testFunc) {
+      return this.first(this.getParent, testFunc);
     };
 
     /**
      * Executes the testFunc against this node and its prior siblings. Will
      * halt if the test function returns true.
      * @param testFunc Function to execute against current node and parents
-     * @param [args] optional arguments to testFunc
      * @returns {LazyNode} The first node where testFunc returns true, or null.
      */
-    LazyNode.prototype.selfOrPrevious = function selfOrPrevious(testFunc, args) {
-      return this.first(this.getPreviousSibling, testFunc, args);
+    LazyNode.prototype.selfOrPrevious = function selfOrPrevious(testFunc) {
+      return this.first(this.getPreviousSibling, testFunc);
     };
 
     /**
@@ -317,13 +315,12 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * returns a truthy value.
      * @param nextNodeFunc Function that returns the next node to search.
      * @param testFunc Function that returns a node that matches a filter.
-     * @param [args] optional arguments to testFunc
      * @returns {LazyNode} The first node where testFunc returns true, or null.
      */
-    LazyNode.prototype.first = function first(nextNodeFunc, testFunc, args) {
+    LazyNode.prototype.first = function first(nextNodeFunc, testFunc) {
       var node = this;
       while(node) {
-        if (testFunc(node, args)) {
+        if (testFunc(node)) {
           return node;
         }
         node = nextNodeFunc.apply(node);
