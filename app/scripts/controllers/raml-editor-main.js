@@ -59,6 +59,21 @@ angular.module('ramlEditorApp')
     var saveTimer;
     var currentUpdateTimer;
 
+    var FILE_NAME_MATCHER = /Untitled-(\d+)?/;
+    function generateFilename(files) {
+      var newFileNumber = 1;
+
+      files.forEach(function(file) {
+        var match = FILE_NAME_MATCHER.exec(file.name);
+        var fileNumber = match && parseInt(match[1], 10);
+        if (fileNumber && newFileNumber <= fileNumber) {
+          newFileNumber = fileNumber + 1;
+        }
+      });
+
+      return 'Untitled-' + newFileNumber + '.raml';
+    }
+
     $window.setTheme = function (theme) {
       config.set('theme', theme);
       $scope.theme = $rootScope.theme = theme;
@@ -205,7 +220,7 @@ angular.module('ramlEditorApp')
 
     $scope.newFile = function () {
       if (!$scope.canSave() || ($scope.canSave() && $scope._confirmLoseChanges())) {
-        $scope.file = ramlRepository.createFile();
+        $scope.file = ramlRepository.createFile(generateFilename($scope.files));
         editor.setValue($scope.file.contents);
         editor.setCursor({line: 1, ch: 0});
 
