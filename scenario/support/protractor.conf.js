@@ -21,6 +21,7 @@ exports.config = {
     '../test/e2e/published-examples/examples-parser.js',
     '../test/e2e/console/embedded-console.js',
     '../test/e2e/console/console-defaultview.js',
+    '../test/e2e/RT-traits-optionals.js',
     '../test/lib/*.js'
   ],
 

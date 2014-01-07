@@ -6,6 +6,8 @@ describe('optionals Attributes',function(){
   var  shelf = new ShelfHelper();
   var designerAsserts = new AssertsHelper();
   var editor = new EditorHelper();
+  var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
+  var namedParamElems = shelf.elemNamedParametersLevel;
 
   beforeEach(function(){
     editor.setValue('');
@@ -17,8 +19,6 @@ describe('optionals Attributes',function(){
 
   describe('resourceTypes elements',function(){
     var namedParameters = ['baseUriParameters', 'uriParameters'];
-    var namedParamElems = shelf.elemNamedParametersLevel;
-    var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
     var options = shelf.elemResourceTypeLevel;
     var notOptOptionals = ['description','displayName', 'usage', 'securedBy', 'is', 'type']; //cannot be scalars
 
@@ -42,8 +42,7 @@ describe('optionals Attributes',function(){
             designerAsserts.shelfElements(shelf.elemResourceTypeLevel);
           }else{
             editor.setCursor(6,6);
-            var list2 =[option];
-            designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
+            designerAsserts.shelfElementsNotDisplayed([option], shelf.elemResourceTypeLevel);
           }
         });
       });
@@ -73,12 +72,11 @@ describe('optionals Attributes',function(){
               designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
             }else{
               if(namedParamElem === 'enum'){
-                console.log('enum is not removed from the shelf - #63154018');
+//                console.log('enum is not removed from the shelf - #63154018');
 //                  https://www.pivotaltracker.com/story/show/63154018
               }else{
                 editor.setCursor(9,10);
-                var list2 =[namedParamElem];
-                designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
               }
             }
           });
@@ -98,8 +96,6 @@ describe('optionals Attributes',function(){
               '      '+namedParameter+'?: ',
               '        hola:',
               '                    '
-//              '          '+namedParamElem+'?:',
-//              '              '
             ].join('\\n');
             editor.setValue(definition);
             editor.setCursor(8,10);
@@ -111,12 +107,11 @@ describe('optionals Attributes',function(){
               designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
             }else{
               if(namedParamElem === 'enum'){
-                console.log('enum is not removed from the shelf - #63154018');
+//                console.log('enum is not removed from the shelf - #63154018');
 //                  https://www.pivotaltracker.com/story/show/63154018
               }else{
                 editor.setCursor(9,10);
-                var list2 =[namedParamElem];
-                designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
               }
             }
           });
@@ -130,8 +125,6 @@ describe('optionals Attributes',function(){
 
     var methods = shelf.elemResourceTypeLevelMethods;
     var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
-    var namedParamElems = shelf.elemNamedParametersLevel;
-    var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
     var methodElems = shelf.elemRtMethodLevel;
     var notOptMethodElems = [ 'description', 'securedBy', 'is'];
 
@@ -157,11 +150,10 @@ describe('optionals Attributes',function(){
             if (methodElem === 'protocols'||methodElem === 'baseUriParameters'||
               methodElem === 'headers' || methodElem === 'queryParameters' ||
               methodElem === 'responses' ||  methodElem === 'body'){
-              console.log(methodElem+' is not removed from the shelf #63154018');
+//              console.log(methodElem+' is not removed from the shelf #63154018');
             }else{
               editor.setCursor(7,8);
-              var list2 =[methodElem];
-              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
+              designerAsserts.shelfElementsNotDisplayed([methodElem], shelf.elemRtMethodLevel);
             }
           }
         });
@@ -179,8 +171,6 @@ describe('optionals Attributes',function(){
             '  - collection:',
             '      '+method+'?:',
             '                    '
-//            '        '+methodElem+'?: ',
-//            '            '
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(6,8);
@@ -194,11 +184,10 @@ describe('optionals Attributes',function(){
             if (methodElem === 'protocols'||methodElem === 'baseUriParameters'||
               methodElem === 'headers' || methodElem === 'queryParameters' ||
               methodElem === 'responses' ||  methodElem === 'body'){
-              console.log(methodElem+' is not removed from the shelf #63154018');
+//              console.log(methodElem+' is not removed from the shelf #63154018');
             }else{
               editor.setCursor(7,8);
-              var list2 =[methodElem];
-              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
+              designerAsserts.shelfElementsNotDisplayed([methodElem], shelf.elemRtMethodLevel);
             }
           }
         });
@@ -233,12 +222,11 @@ describe('optionals Attributes',function(){
                   //https://www.pivotaltracker.com/story/show/61241162
               }else{
                 if(namedParamElem === 'enum'){
-                  console.log('enum is not removed from the shelf');
+//                  console.log('enum is not removed from the shelf');
 //                  https://www.pivotaltracker.com/story/show/63154018
                 }else{
                   editor.setCursor(10,12);
-                  var list2 =[namedParamElem];
-                  designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                  designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
                 }
               }
             });
@@ -273,12 +261,11 @@ describe('optionals Attributes',function(){
                 designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
               }else{
                 if(namedParamElem === 'enum'){
-                  console.log('enum is not removed from the shelf');
+//                  console.log('enum is not removed from the shelf');
 //                  https://www.pivotaltracker.com/story/show/63154018
                 }else{
                   editor.setCursor(10,12);
-                  var list2 =[namedParamElem];
-                  designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                  designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
                 }
               }
             });
@@ -300,10 +287,6 @@ describe('optionals Attributes',function(){
                 '  - collection:',
                 '      '+method+'?:',
                 '                    '
-//                '        '+namedParameter+'?: ',
-//                '          hola:',
-//                '            '+namedParamElem+'?:',
-//                '                    '
               ].join('\\n');
               editor.setValue(definition);
               editor.setCursor(7,8);
@@ -318,13 +301,11 @@ describe('optionals Attributes',function(){
                 designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
               }else{
                 if(namedParamElem === 'enum'){
-                  console.log('enum is not removed from the shelf');
+//                  console.log('enum is not removed from the shelf');
 //                  https://www.pivotaltracker.com/story/show/63154018
                 }else{
                   editor.setCursor(10,12);
-                  var list2 =[namedParamElem];
-                  console.log('');
-                  designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                  designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
                 }
               }
             });
@@ -390,10 +371,10 @@ describe('optionals Attributes',function(){
 
   }); // resource-Types Methods
 
-  xdescribe('traits', function(){
+  describe('traits', function(){
 
     var options = shelf.elemTraitsLevel;
-    var notOptOptional = ['description','usage','displayName','is'];
+    var notOptOptional = ['description','usage','displayName','is', 'securedBy'];
     options.forEach(function(option){
       it(option+': property is no longer displayed on the shelf', function(){
         shelf = new ShelfHelper();
@@ -407,47 +388,97 @@ describe('optionals Attributes',function(){
         ].join('\\n');
         editor.setValue(definition);
         if (notOptOptional.indexOf(option) !== -1){
-          if (option==='displayName' || option === 'description'){ // we are missing to add the parser validation to all the properties
-            console.log('missing parser validation '+option);
-            //https://www.pivotaltracker.com/story/show/61241162
-          }else{
-            designerAsserts.parserError('5','property: \''+option+'?\' is invalid in a resource type');
-          }
+          designerAsserts.parserError('5','property: \''+option+'?\' is invalid in a trait');
+//          uncomment when 63154018 is fixed
+//          editor.setCursor(6,8);
+//          designerAsserts.shelfElementsNotDisplayed(option, shelf.elemTraitsLevel);
         }else{
-          console.log('option', option);
-          editor.setCursor(6,6);
-          var list2 =[option];
-          designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemTraitsLevel);
+          if (option ==='baseUriParameters'|| option ==='headers' || option === 'queryParameters' ||
+            option === 'responses' || option === 'body' || option ==='protocols'){
+//            console.log(option+' is not removed from the shelf #63154018');
+          }else{
+//            console.log('option',option);
+            editor.setCursor(6,6);
+            designerAsserts.shelfElementsNotDisplayed([option], shelf.elemTraitsLevel);
+          }
         }
-
-
       });
     });
 
+    describe('Named Parameters', function(){
+      var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
 
-//
-//      var options = shelf.elemNamedParametersLevel;
-//      namedParameters.forEach(function(namedParameter){
-//        options.forEach(function(option){
-//          it(namedParameter+': '+option+' is no longer displayed on the shelf', function(){
-//            shelf = new ShelfHelper();
-//            var definition = [
-//              '#%RAML 0.8',
-//              'title: The API',
-//              'traits: ',
-//              '  - trait1: ',
-//              '      '+namedParameter+': ',
-//              '        hola:',
-//              '          '+option+':',
-//              '            '
-//            ].join('\\n');
-//            editor.setValue(definition);
-//            editor.setCursor(8,10);
-//            designerAsserts.shelfElementsNotDisplayed([option], shelf.elemNamedParametersLevel);
-//          });
-//        });
-//      });
+      namedParameters.forEach(function(namedParameter){
+        namedParamElems.forEach(function(namedParamElem){
+          it(namedParameter+': '+namedParamElem+'? is no longer displayed on the shelf', function(){
+            shelf = new ShelfHelper();
+            var definition = [
+              '#%RAML 0.8',
+              'title: The API',
+              'baseUri: http://server/api/{hola}',
+              'traits: ',
+              '  - trait1: ',
+              '      '+namedParameter+': ',
+              '        hola:',
+              '          '+namedParamElem+'?:',
+              '            '
+            ].join('\\n');
+            editor.setValue(definition);
+            if (notOptNamedParam.indexOf(namedParamElem) !== -1){
+              designerAsserts.parserError('8','unknown property '+namedParamElem+'?');
+//              uncomment when 63154018 is fixed
+//              editor.setCursor(7,12);
+//              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
+            }else{
+              if(namedParamElem === 'enum'){
+//                console.log('enum is not removed from the shelf #63154018');
+//                  https://www.pivotaltracker.com/story/show/63154018
+              }else{
+                editor.setCursor(9,10);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
+              }
+            }
+          });
+        });
+      });
 
+
+      namedParameters.forEach(function(namedParameter){
+        namedParamElems.forEach(function(namedParamElem){
+          it(namedParameter+'?: '+namedParamElem+'? is no longer displayed on the shelf', function(){
+            shelf = new ShelfHelper();
+            var definition = [
+              '#%RAML 0.8',
+              'title: The API',
+              'baseUri: http://server/api/{hola}',
+              'traits: ',
+              '  - trait1: ',
+              '      '+namedParameter+'?: ',
+              '        hola:',
+              '          '+namedParamElem+'?:',
+              '            '
+            ].join('\\n');
+            editor.setValue(definition);
+            if (notOptNamedParam.indexOf(namedParamElem) !== -1){
+              designerAsserts.parserError('8','unknown property '+namedParamElem+'?');
+//              uncomment when 63154018 is fixed
+//              editor.setCursor(7,12);
+//              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
+            }else{
+              if(namedParamElem === 'enum'){
+//                console.log('enum is not removed from the shelf #63154018');
+//                  https://www.pivotaltracker.com/story/show/63154018
+              }else{
+                editor.setCursor(9,10);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
+              }
+            }
+          });
+        });
+      });
+
+
+    }); // Named Parameters
 
   });
 
