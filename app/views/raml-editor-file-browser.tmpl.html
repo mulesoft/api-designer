@@ -1,0 +1,50 @@
+<div role="browser">
+  <div role="new-menu">
+    <button role="new-button" ng-click="fileBrowser.newFile()">New</button>
+  </div>
+
+  <ul role="file-list">
+    <li role="file-name"
+        ng-repeat="file in fileBrowser.files">
+      {{file.name}}
+    </li>
+  </ul>
+
+</div>
+
+
+
+
+
+
+<!--
+<div role="browser">
+  <div role="save-menu">
+    <button class="menu-left" role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()" ng-click="save()">Save</button>
+    <button role="save-menu-rolldown-button" ng-click="toggleSaveMenu()"><i ng-class="saveMenu.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i></button>
+  </div>
+  <ul role="save-submenu" ng-class="{expanded: saveMenu.expanded}">
+    <li role="save-option" ng-class="{disabled: !canSave()}" ng-click="save()"> Save </li>
+    <li role="saveas-option" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()"> Save As </li>
+  </ul>
+
+  <div role="new-menu">
+    <button role="new-button" ng-click="newFile()">New</button>
+  </div>
+
+  <div role="title" class="read-only">Your files</div>
+  <div role="loading-indicator" ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</div>
+
+  <ul role="file-list">
+    <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
+    <li role="file-name"
+        ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
+        ng-repeat="fileEntry in files | orderBy:'name'"
+        ng-click="loadFile(fileEntry)">
+      <i class="icon-file"></i>
+      <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
+      <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
+    </li>
+  </ul>
+</div>
+-->
