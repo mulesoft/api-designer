@@ -10,5 +10,11 @@ angular.module('testFs', [])
       return $q.when(this.files);
     };
 
+    service.loadFile = function (file) {
+      file.contents = file.name + ' content';
+
+      return $q.when(file);
+    };
+
     return service;
   });

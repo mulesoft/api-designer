@@ -23,6 +23,16 @@
       }
     };
 
+    controller.prototype.selectFile = function(file) {
+      this.selectedFile = file;
+
+      if (!angular.isString(file.contents)) {
+        var self = this;
+        ramlRepository.loadFile(file).then(function(file) {
+          self.selectedFile = file;
+        });
+      }
+    };
 
     return {
       restrict: 'E',

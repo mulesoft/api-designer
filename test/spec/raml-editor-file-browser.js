@@ -13,6 +13,10 @@ describe('ramlEditorFileBrowser', function() {
     };
   }
 
+  function compileFileBrowser() {
+    el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+  }
+
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
@@ -28,7 +32,7 @@ describe('ramlEditorFileBrowser', function() {
 
   it('displays the file list', function() {
     ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
-    el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+    compileFileBrowser();
 
     scope.fileBrowser.files.length.should.equal(2);
     scope.fileBrowser.files[0].name.should.equal('file1');
@@ -47,7 +51,7 @@ describe('ramlEditorFileBrowser', function() {
     });
 
     it('prompts user for filename', function() {
-      el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+      compileFileBrowser();
       clickNewFileButton();
       promptSpy.should.have.been.calledWith('Name your file:');
     });
@@ -58,7 +62,7 @@ describe('ramlEditorFileBrowser', function() {
       });
 
       it('adds the file to the list', function() {
-        el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+        compileFileBrowser();
         clickNewFileButton();
         scope.fileBrowser.files.length.should.equal(3);
       });
@@ -70,7 +74,7 @@ describe('ramlEditorFileBrowser', function() {
       });
 
       it('does not add a file', function() {
-        el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+        compileFileBrowser();
         clickNewFileButton();
         scope.fileBrowser.files.length.should.equal(2);
       });
@@ -78,13 +82,13 @@ describe('ramlEditorFileBrowser', function() {
 
     describe('suggested filename', function() {
       it('defaults to Untitled-1.raml first', function() {
-        el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+        compileFileBrowser();
         clickNewFileButton();
         promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-1.raml');
       });
 
       it('does not increment the filename if you cancel', function() {
-        el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+        compileFileBrowser();
         promptSpy.returns(null);
         clickNewFileButton();
         clickNewFileButton();
@@ -92,7 +96,7 @@ describe('ramlEditorFileBrowser', function() {
       });
 
       it('defaults to Untitled-2.raml second', function() {
-        el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+        compileFileBrowser();
         promptSpy.returns('Untitled-1.raml');
         clickNewFileButton();
         clickNewFileButton();
@@ -105,10 +109,58 @@ describe('ramlEditorFileBrowser', function() {
         });
 
         it('it defaults to Untitled-7.raml', function() {
-          el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+          compileFileBrowser();
           clickNewFileButton();
           promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-7.raml');
         });
+      });
+    });
+  });
+
+  describe('clicking a file', function() {
+    var fileToClick;
+
+    beforeEach(function() {
+      ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
+      compileFileBrowser();
+      fileToClick = el[0].querySelectorAll('[role="file-name"]')[1];
+
+      sandbox.spy(ramlRepository, 'loadFile');
+    });
+
+    describe('by default', function() {
+      beforeEach(function() {
+        angular.element(fileToClick).triggerHandler('click');
+      });
+
+      it('updates selectedFile to the file clicked', function() {
+        scope.fileBrowser.selectedFile.name.should.equal('file2');
+      });
+
+      it('adds the "currentfile" class to the file clicked', function() {
+        fileToClick.classList.contains('currentfile').should.be.true;
+      });
+
+      it('removes the "currentfile" class from all other files', function() {
+        el[0].querySelectorAll('.currentfile').length.should.equal(1);
+      });
+    });
+
+    describe('when the file is not loaded', function() {
+      it('loads the file content', function() {
+        angular.element(fileToClick).triggerHandler('click');
+        ramlRepository.loadFile.should.have.been.called;
+      });
+    });
+
+    describe('when the file is loaded', function() {
+      beforeEach(function() {
+        ramlRepository.files[1].contents = 'raml';
+        angular.element(fileToClick).triggerHandler('click');
+      });
+
+      it('does not load the file content', function() {
+        ramlRepository.loadFile.should.not.have.been.called;
       });
     });
   });
