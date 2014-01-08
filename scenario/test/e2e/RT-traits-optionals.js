@@ -2,10 +2,12 @@
 var ShelfHelper = require('../lib/shelf-helper.js').ShelfHelper;
 var AssertsHelper = require ('../lib/asserts-helper.js').AssertsHelper;
 var EditorHelper = require ('../lib/editor-helper.js').EditorHelper;
-xdescribe('optionals Attributes',function(){
+describe('optionals Attributes',function(){
   var  shelf = new ShelfHelper();
   var designerAsserts = new AssertsHelper();
   var editor = new EditorHelper();
+  var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
+  var namedParamElems = shelf.elemNamedParametersLevel;
 
   beforeEach(function(){
     editor.setValue('');
@@ -15,10 +17,8 @@ xdescribe('optionals Attributes',function(){
   });
 
 
-  xdescribe('resourceTypes elements',function(){
+  describe('resourceTypes elements',function(){
     var namedParameters = ['baseUriParameters', 'uriParameters'];
-    var namedParamElems = shelf.elemNamedParametersLevel;
-    var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
     var options = shelf.elemResourceTypeLevel;
     var notOptOptionals = ['description','displayName', 'usage', 'securedBy', 'is', 'type']; //cannot be scalars
 
@@ -37,15 +37,12 @@ xdescribe('optionals Attributes',function(){
           ].join('\\n');
           editor.setValue(definition);
           if (notOptOptionals.indexOf(option) !== -1){
-            if (option=== 'description' || option === 'displayName'){
-              //https://www.pivotaltracker.com/story/show/61241162
-            }else{
-              designerAsserts.parserError('5','property: \''+option+'?\' is invalid in a resource type');
-            }
+            designerAsserts.parserError('5','property: \''+option+'?\' is invalid in a resource type');
+            editor.setCursor(6,6);
+            designerAsserts.shelfElements(shelf.elemResourceTypeLevel);
           }else{
             editor.setCursor(6,6);
-            var list2 =[option];
-            designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceTypeLevel);
+            designerAsserts.shelfElementsNotDisplayed([option], shelf.elemResourceTypeLevel);
           }
         });
       });
@@ -54,7 +51,7 @@ xdescribe('optionals Attributes',function(){
     describe('named parameter - after being selected', function(){
       namedParameters.forEach(function(namedParameter){
         namedParamElems.forEach(function(namedParamElem){
-          it(namedParameter+'-'+namedParamElem+'? attribute is no longer displayed on the shelf', function(){
+          it(namedParameter+'-'+namedParamElem+'? property is no longer displayed on the shelf', function(){
             shelf = new ShelfHelper();
             var definition = [
               '#%RAML 0.8',
@@ -70,20 +67,16 @@ xdescribe('optionals Attributes',function(){
             editor.setValue(definition);
 
             if (notOptNamedParam.indexOf(namedParamElem) !== -1){
-              if (namedParamElem===''){ // we are missing to add the parser validation to all the properties
-                designerAsserts.parserError('8','property: \''+namedParamElem+'?\' is invalid in a resource type');
-              }else{
-                console.log('missing parser validation for '+namedParamElem);
-                //https://www.pivotaltracker.com/story/show/61241162
-              }
+              designerAsserts.parserError('8','unknown property '+namedParamElem+'?');
+              editor.setCursor(9,10);
+              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
             }else{
               if(namedParamElem === 'enum'){
-                console.log('enum is not removed from the shelf');
+//                console.log('enum is not removed from the shelf - #63154018');
 //                  https://www.pivotaltracker.com/story/show/63154018
               }else{
                 editor.setCursor(9,10);
-                var list2 =[namedParamElem];
-                designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
               }
             }
           });
@@ -92,7 +85,7 @@ xdescribe('optionals Attributes',function(){
 
       namedParameters.forEach(function(namedParameter){
         namedParamElems.forEach(function(namedParamElem){
-          it(namedParameter+'?-'+namedParamElem+'? attribute is no longer displayed on the shelf', function(){
+          it(namedParameter+'?-'+namedParamElem+'? property is no longer displayed on the shelf', function(){
             shelf = new ShelfHelper();
             var definition = [
               '#%RAML 0.8',
@@ -103,28 +96,22 @@ xdescribe('optionals Attributes',function(){
               '      '+namedParameter+'?: ',
               '        hola:',
               '                    '
-//              '          '+namedParamElem+'?:',
-//              '              '
             ].join('\\n');
             editor.setValue(definition);
             editor.setCursor(8,10);
-            designerAsserts.shelfElementsNotDisplayed([], shelf.elemNamedParametersLevel);
+            designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
             editor.setLine(8,'          '+namedParamElem+'?:\\n              ');
             if (notOptNamedParam.indexOf(namedParamElem) !== -1){
-              if (namedParamElem===''){ // we are missing to add the parser validation to all the properties
-                designerAsserts.parserError('8','property: \''+namedParamElem+'?\' is invalid in a resource type');
-              }else{
-                console.log('missing parser validation for '+namedParamElem);
-                //https://www.pivotaltracker.com/story/show/61241162
-              }
+              designerAsserts.parserError('8','unknown property '+namedParamElem+'?');
+              editor.setCursor(9,10);
+              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
             }else{
               if(namedParamElem === 'enum'){
-                console.log('enum is not removed from the shelf');
+//                console.log('enum is not removed from the shelf - #63154018');
 //                  https://www.pivotaltracker.com/story/show/63154018
               }else{
                 editor.setCursor(9,10);
-                var list2 =[namedParamElem];
-                designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
               }
             }
           });
@@ -134,12 +121,10 @@ xdescribe('optionals Attributes',function(){
     }); // Not displayed after being selected
   });//resourceTypes elements
 
-  xdescribe('resource-Types Methods', function(){
+  describe('resource-Types Methods', function(){
 
     var methods = shelf.elemResourceTypeLevelMethods;
     var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
-    var namedParamElems = shelf.elemNamedParametersLevel;
-    var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
     var methodElems = shelf.elemRtMethodLevel;
     var notOptMethodElems = [ 'description', 'securedBy', 'is'];
 
@@ -158,21 +143,17 @@ xdescribe('optionals Attributes',function(){
           ].join('\\n');
           editor.setValue(definition);
           if (notOptMethodElems.indexOf(methodElem) !== -1){
-            if (methodElem=== 'description' ){
-              console.log('missing parser validation for methodElem');
-              //https://www.pivotaltracker.com/story/show/61241162
-            }else{
-              designerAsserts.parserError('6','property: \''+methodElem+'?\' is invalid in a method');
-            }
+            designerAsserts.parserError('6','property: \''+methodElem+'?\' is invalid in a method');
+            editor.setCursor(7,8);
+            designerAsserts.shelfElements(shelf.elemRtMethodLevel);
           }else{
             if (methodElem === 'protocols'||methodElem === 'baseUriParameters'||
               methodElem === 'headers' || methodElem === 'queryParameters' ||
               methodElem === 'responses' ||  methodElem === 'body'){
-              console.log('shelf is not working properly for this optional property',methodElem);
+//              console.log(methodElem+' is not removed from the shelf #63154018');
             }else{
               editor.setCursor(7,8);
-              var list2 =[methodElem];
-              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
+              designerAsserts.shelfElementsNotDisplayed([methodElem], shelf.elemRtMethodLevel);
             }
           }
         });
@@ -190,29 +171,23 @@ xdescribe('optionals Attributes',function(){
             '  - collection:',
             '      '+method+'?:',
             '                    '
-//            '        '+methodElem+'?: ',
-//            '            '
           ].join('\\n');
           editor.setValue(definition);
           editor.setCursor(6,8);
-          designerAsserts.shelfElementsNotDisplayed([], shelf.elemRtMethodLevel);  // add when the shelf is working for this properties
+          designerAsserts.shelfElements(shelf.elemRtMethodLevel);  // add when the shelf is working for this properties
           editor.setLine(6,'        '+methodElem+'?: \\n                   ');
           if (notOptMethodElems.indexOf(methodElem) !== -1){
-            if (methodElem === 'description' ){
-              console.log('missing parser validation '+methodElem);
-              //https://www.pivotaltracker.com/story/show/61241162
-            }else{
-              designerAsserts.parserError('6','property: \''+methodElem+'?\' is invalid in a method');
-            }
+            designerAsserts.parserError('6','property: \''+methodElem+'?\' is invalid in a method');
+            editor.setCursor(7,8);
+            designerAsserts.shelfElements(shelf.elemRtMethodLevel);
           }else{
             if (methodElem === 'protocols'||methodElem === 'baseUriParameters'||
               methodElem === 'headers' || methodElem === 'queryParameters' ||
               methodElem === 'responses' ||  methodElem === 'body'){
-              console.log('shelf is not working properly for this optional property '+methodElem);
+//              console.log(methodElem+' is not removed from the shelf #63154018');
             }else{
               editor.setCursor(7,8);
-              var list2 =[methodElem];
-              designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRtMethodLevel);
+              designerAsserts.shelfElementsNotDisplayed([methodElem], shelf.elemRtMethodLevel);
             }
           }
         });
@@ -229,6 +204,7 @@ xdescribe('optionals Attributes',function(){
               var definition = [
                 '#%RAML 0.8',
                 'title: My api',
+                'baseUri: http://server/api/{hola}',
                 'resourceTypes:',
                 '  - collection:',
                 '      '+method+':',
@@ -240,19 +216,17 @@ xdescribe('optionals Attributes',function(){
               editor.setValue(definition);
 
               if (notOptNamedParam.indexOf(namedParamElem) !== -1){
-                if (namedParamElem===''){ // we are missing to add the parser validation to all the properties
-                  designerAsserts.parserError('8','property: \''+namedParamElem+'?\' is invalid in a resource type');
-                }else{
-                  //https://www.pivotaltracker.com/story/show/61241162
-                }
+                designerAsserts.parserError('9','unknown property '+namedParamElem+'?');
+                editor.setCursor(10,12);
+                designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
+                //https://www.pivotaltracker.com/story/show/61241162
               }else{
                 if(namedParamElem === 'enum'){
-                  console.log('enum is not removed from the shelf');
+//                  console.log('enum is not removed from the shelf');
 //                  https://www.pivotaltracker.com/story/show/63154018
                 }else{
-                  editor.setCursor(9,12);
-                  var list2 =[namedParamElem];
-                  designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                  editor.setCursor(10,12);
+                  designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
                 }
               }
             });
@@ -263,39 +237,35 @@ xdescribe('optionals Attributes',function(){
       methods.forEach(function(method){
         namedParameters.forEach(function(namedParameter){
           namedParamElems.forEach(function(namedParamElem){
-            it(method+'-'+namedParameter+'?-'+namedParamElem+'? attribute is no longer displayed on the shelf', function(){
+//            63154018 - properties  are not being offered if namedParameter is optional
+            xit(method+'-'+namedParameter+'?-'+namedParamElem+'? attribute is no longer displayed on the shelf', function(){
               shelf = new ShelfHelper();
               var definition = [
                 '#%RAML 0.8',
                 'title: My api',
+                'baseUri: http://server/api/{hola}',
                 'resourceTypes:',
                 '  - collection:',
                 '      '+method+':',
                 '        '+namedParameter+'?: ',
                 '          hola:',
                 '               '
-//                '            '+namedParamElem+'?:',
-//                '              '
               ].join('\\n');
               editor.setValue(definition);
-              editor.setCursor(8,12);
-              designerAsserts.shelfElementsNotDisplayed([], shelf.elemNamedParametersLevel);
-              editor.setLine(8,'            '+namedParamElem+'?:\\n                ');
+              editor.setCursor(9,12);
+              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
+              editor.setLine(9,'            '+namedParamElem+'?:\\n                ');
               if (notOptNamedParam.indexOf(namedParamElem) !== -1){
-                if (namedParamElem===''){ // we are missing to add the parser validation to all the properties
-                  designerAsserts.parserError('8','property: \''+namedParamElem+'?\' is invalid in a resource type');
-                }else{
-                  console.log('missing parser validation');
-                  //https://www.pivotaltracker.com/story/show/61241162
-                }
+                designerAsserts.parserError('9','unknown property '+namedParamElem+'?');
+                editor.setCursor(10,12);
+                designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
               }else{
                 if(namedParamElem === 'enum'){
-                  console.log('enum is not removed from the shelf');
+//                  console.log('enum is not removed from the shelf');
 //                  https://www.pivotaltracker.com/story/show/63154018
                 }else{
-                  editor.setCursor(9,12);
-                  var list2 =[namedParamElem];
-                  designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                  editor.setCursor(10,12);
+                  designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
                 }
               }
             });
@@ -306,42 +276,36 @@ xdescribe('optionals Attributes',function(){
       methods.forEach(function(method){
         namedParameters.forEach(function(namedParameter){
           namedParamElems.forEach(function(namedParamElem){
-            it(method+'?-'+namedParameter+'?-'+namedParamElem+'? attribute is no longer displayed on the shelf', function(){
+//            63154018 - properties  are not being offered if namedParameter is optional
+            xit(method+'?-'+namedParameter+'?-'+namedParamElem+'? attribute is no longer displayed on the shelf', function(){
               shelf = new ShelfHelper();
               var definition = [
                 '#%RAML 0.8',
                 'title: My api',
+                'baseUri: http://server/api/{hola}',
                 'resourceTypes:',
                 '  - collection:',
                 '      '+method+'?:',
                 '                    '
-//                '        '+namedParameter+'?: ',
-//                '          hola:',
-//                '            '+namedParamElem+'?:',
-//                '                    '
               ].join('\\n');
               editor.setValue(definition);
-              editor.setCursor(5,8);
-              designerAsserts.shelfElementsNotDisplayed([], shelf.elemRtMethodLevel);
-              editor.setLine(5,'        '+namedParameter+'?: \\n          hola: \\n                ');
-              editor.setCursor(8,12);
-              designerAsserts.shelfElementsNotDisplayed([], shelf.elemNamedParametersLevel);
-              editor.setLine(8,'            '+namedParamElem+'?: \\n                        ');
+              editor.setCursor(7,8);
+              designerAsserts.shelfElements(shelf.elemRtMethodLevel);
+              editor.setLine(7,'        '+namedParameter+'?: \\n          hola: \\n                ');
+              editor.setCursor(9,12);
+              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
+              editor.setLine(9,'            '+namedParamElem+'?: \\n                        ');
               if (notOptNamedParam.indexOf(namedParamElem) !== -1){
-                if (namedParamElem===''){ // we are missing to add the parser validation to all the properties
-                  designerAsserts.parserError('8','property: \''+namedParamElem+'?\' is invalid in a resource type');
-                }else{
-                  //https://www.pivotaltracker.com/story/show/61241162
-                }
+                designerAsserts.parserError('9','unknown property '+namedParamElem+'?');
+                editor.setCursor(10,12);
+                designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
               }else{
                 if(namedParamElem === 'enum'){
-                  console.log('enum is not removed from the shelf');
+//                  console.log('enum is not removed from the shelf');
 //                  https://www.pivotaltracker.com/story/show/63154018
                 }else{
-                  editor.setCursor(9,12);
-                  var list2 =[namedParamElem];
-                  console.log('');
-                  designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemNamedParametersLevel);
+                  editor.setCursor(10,12);
+                  designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
                 }
               }
             });
@@ -352,7 +316,8 @@ xdescribe('optionals Attributes',function(){
     }); // namedParameters
 
     methods.forEach(function(method){
-      it(method+' under body? shelf options', function(){
+      xit(method+' under body? shelf options', function(){
+//    bug in the spec - not properly defined
         var definition = [
           ' #%RAML 0.8',
           'title:',
@@ -368,7 +333,8 @@ xdescribe('optionals Attributes',function(){
     });
 
     methods.forEach(function(method){
-      it(method+' under protocols? shelf options', function(){
+      xit(method+' under protocols? shelf options', function(){
+//        shelf is not working properly - not options is offer under protocols? 63154018
         var definition = [
           ' #%RAML 0.8',
           'title:',
@@ -384,7 +350,8 @@ xdescribe('optionals Attributes',function(){
     });
 
     methods.forEach(function(method){
-      it(method+' under description? shelf options', function(){
+      xit(method+' under description? shelf options', function(){
+//         shelf is not working properly - not options is offer under responses? 63154018
         var definition = [
           ' #%RAML 0.8',
           'title:',
@@ -407,7 +374,7 @@ xdescribe('optionals Attributes',function(){
   describe('traits', function(){
 
     var options = shelf.elemTraitsLevel;
-    var notOptOptional = ['description','usage','displayName','is'];
+    var notOptOptional = ['description','usage','displayName','is', 'securedBy'];
     options.forEach(function(option){
       it(option+': property is no longer displayed on the shelf', function(){
         shelf = new ShelfHelper();
@@ -421,51 +388,98 @@ xdescribe('optionals Attributes',function(){
         ].join('\\n');
         editor.setValue(definition);
         if (notOptOptional.indexOf(option) !== -1){
-          if (option==='displayName' || option === 'description'){ // we are missing to add the parser validation to all the properties
-            console.log('missing parser validation '+option);
-            //https://www.pivotaltracker.com/story/show/61241162
-          }else{
-            designerAsserts.parserError('5','property: \''+option+'?\' is invalid in a resource type');
-          }
+          designerAsserts.parserError('5','property: \''+option+'?\' is invalid in a trait');
+//          uncomment when 63154018 is fixed
+//          editor.setCursor(6,8);
+//          designerAsserts.shelfElementsNotDisplayed(option, shelf.elemTraitsLevel);
         }else{
-          console.log('option', option);
-          editor.setCursor(6,6);
-          var list2 =[option];
-          designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemTraitsLevel);
+          if (option ==='baseUriParameters'|| option ==='headers' || option === 'queryParameters' ||
+            option === 'responses' || option === 'body' || option ==='protocols'){
+//            console.log(option+' is not removed from the shelf #63154018');
+          }else{
+//            console.log('option',option);
+            editor.setCursor(6,6);
+            designerAsserts.shelfElementsNotDisplayed([option], shelf.elemTraitsLevel);
+          }
         }
-
-
       });
     });
 
+    describe('Named Parameters', function(){
+      var namedParameters = ['baseUriParameters', 'headers', 'queryParameters'];
 
-//
-//      var options = shelf.elemNamedParametersLevel;
-//      namedParameters.forEach(function(namedParameter){
-//        options.forEach(function(option){
-//          it(namedParameter+': '+option+' is no longer displayed on the shelf', function(){
-//            shelf = new ShelfHelper();
-//            var definition = [
-//              '#%RAML 0.8',
-//              'title: The API',
-//              'traits: ',
-//              '  - trait1: ',
-//              '      '+namedParameter+': ',
-//              '        hola:',
-//              '          '+option+':',
-//              '            '
-//            ].join('\\n');
-//            editor.setValue(definition);
-//            editor.setCursor(8,10);
-//            designerAsserts.shelfElementsNotDisplayed([option], shelf.elemNamedParametersLevel);
-//          });
-//        });
-//      });
+      namedParameters.forEach(function(namedParameter){
+        namedParamElems.forEach(function(namedParamElem){
+          it(namedParameter+': '+namedParamElem+'? is no longer displayed on the shelf', function(){
+            shelf = new ShelfHelper();
+            var definition = [
+              '#%RAML 0.8',
+              'title: The API',
+              'baseUri: http://server/api/{hola}',
+              'traits: ',
+              '  - trait1: ',
+              '      '+namedParameter+': ',
+              '        hola:',
+              '          '+namedParamElem+'?:',
+              '            '
+            ].join('\\n');
+            editor.setValue(definition);
+            if (notOptNamedParam.indexOf(namedParamElem) !== -1){
+              designerAsserts.parserError('8','unknown property '+namedParamElem+'?');
+//              uncomment when 63154018 is fixed
+//              editor.setCursor(7,12);
+//              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
+            }else{
+              if(namedParamElem === 'enum'){
+//                console.log('enum is not removed from the shelf #63154018');
+//                  https://www.pivotaltracker.com/story/show/63154018
+              }else{
+                editor.setCursor(9,10);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
+              }
+            }
+          });
+        });
+      });
 
+
+      namedParameters.forEach(function(namedParameter){
+        namedParamElems.forEach(function(namedParamElem){
+          it(namedParameter+'?: '+namedParamElem+'? is no longer displayed on the shelf', function(){
+            shelf = new ShelfHelper();
+            var definition = [
+              '#%RAML 0.8',
+              'title: The API',
+              'baseUri: http://server/api/{hola}',
+              'traits: ',
+              '  - trait1: ',
+              '      '+namedParameter+'?: ',
+              '        hola:',
+              '          '+namedParamElem+'?:',
+              '            '
+            ].join('\\n');
+            editor.setValue(definition);
+            if (notOptNamedParam.indexOf(namedParamElem) !== -1){
+              designerAsserts.parserError('8','unknown property '+namedParamElem+'?');
+//              uncomment when 63154018 is fixed
+//              editor.setCursor(7,12);
+//              designerAsserts.shelfElements(shelf.elemNamedParametersLevel);
+            }else{
+              if(namedParamElem === 'enum'){
+//                console.log('enum is not removed from the shelf #63154018');
+//                  https://www.pivotaltracker.com/story/show/63154018
+              }else{
+                editor.setCursor(9,10);
+                designerAsserts.shelfElementsNotDisplayed([namedParamElem], shelf.elemNamedParametersLevel);
+              }
+            }
+          });
+        });
+      });
+
+
+    }); // Named Parameters
 
   });
 
 }); //optional attributes
-
-
-
