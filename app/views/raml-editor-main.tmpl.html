@@ -5,22 +5,22 @@
     </h1>
     <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
       {{message}}
-    <div></div>
-    <i class="icon-ok" ng-click="hideNotifications()"> </i></div>
+      <div></div>
+      <i class="icon-ok" ng-click="hideNotifications()"> </i></div>
     <a role="logo" target="_blank" href="http://mulesoft.com"></a>
   </header>
   <div role="browser">
     <div role="save-menu">
-        <button class="menu-left" role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()" ng-click="save()">Save</button>
-        <button role="save-menu-rolldown-button" ng-click="toggleSaveMenu()"><i ng-class="saveMenu.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i></button>
+      <button class="menu-left" role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()" ng-click="save()">Save</button>
+      <button role="save-menu-rolldown-button" ng-click="toggleSaveMenu()"><i ng-class="saveMenu.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i></button>
     </div>
     <ul role="save-submenu" ng-class="{expanded: saveMenu.expanded}">
-        <li role="save-option" ng-class="{disabled: !canSave()}" ng-click="save()"> Save </li>
-        <li role="saveas-option" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()"> Save As </li>
+      <li role="save-option" ng-class="{disabled: !canSave()}" ng-click="save()"> Save </li>
+      <li role="saveas-option" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()"> Save As </li>
     </ul>
 
     <div role="new-menu">
-        <button role="new-button" ng-click="newFile()">New</button>
+      <button role="new-button" ng-click="newFile()">New</button>
     </div>
 
     <div role="title" class="read-only">Your files</div>
@@ -32,9 +32,9 @@
           ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
           ng-repeat="fileEntry in files | orderBy:'name'"
           ng-click="loadFile(fileEntry)">
-          <i class="icon-file"></i>
-          <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
-          <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
+        <i class="icon-file"></i>
+        <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
+        <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
       </li>
     </ul>
   </div>
@@ -50,11 +50,11 @@
     </div>
     <div id="code" role="code" style="height:inherit"></div>
   </div>
-    <div role="preview-wrapper">
-      <div role="preview" class="bootstrap">
-        <div role="console">
-          <raml-console></raml-console>
-        </div>
+  <div role="preview-wrapper" style="width:calc(50% - 186px)">
+    <div role="preview" class="bootstrap">
+      <div role="console">
+        <raml-console></raml-console>
       </div>
     </div>
+  </div>
 </div>

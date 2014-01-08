@@ -1,0 +1,31 @@
+@splitter-border-size: 5px;
+@splitter-color: #EFEFEF;
+
+div .noselect{
+  -webkit-user-select: none;
+  -moz-user-select: -moz-none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+[ng-splitter]{
+  box-shadow: (@splitter-color - #333333) 0px 0px 2px 1px inset;
+}
+
+[ng-splitter=vertical]{
+  position:relative;
+  float:left;
+  width: @splitter-border-size;
+  height: 100%;
+  background: @splitter-color;
+  cursor: col-resize;
+  z-index: 9999;
+}
+
+[ng-splitter=horizontal]{
+  width: auto;
+  height: @splitter-border-size;
+  background: @splitter-color;
+  cursor: row-resize;
+  z-index: 9999;
+}

@@ -10,7 +10,6 @@ div[role=shelf] {
   bottom: 0;
   border-top: 1px solid rgb(48,83,110);
   .box-sizing(border-box);
-  padding: 0 20px;
   font-size: 15px;
   transition: height .1s ease-in;
   z-index: 5;
@@ -25,6 +24,7 @@ div[role=shelf].expanded {
 div[role=shelf] div[role=shelf-container] {
   overflow: auto;
   height: 100%;
+  padding: 0 20px;
 }
 
 div[role=shelf] > div[role=shelf-tab] {
