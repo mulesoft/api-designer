@@ -189,6 +189,23 @@ describe('ramlEditorFileBrowser', function() {
     });
   });
 
+  describe('saving a file', function() {
+    beforeEach(function() {
+      ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
+      compileFileBrowser();
+      var fileToSave = el[0].querySelectorAll('[role="file-name"]')[1];
+      angular.element(fileToSave).triggerHandler('click');
+    });
+
+    it('calls saveFile passing the selected file', function() {
+      var saveSpy = sandbox.spy(ramlRepository, 'saveFile');
+
+      el[0].querySelector('[role="save-button"]').click();
+
+      saveSpy.should.have.been.calledWith(ramlRepository.files[1]);
+    });
+  });
+
   describe('file list', function() {
     it('displays', function() {
       ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];

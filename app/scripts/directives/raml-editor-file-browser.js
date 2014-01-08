@@ -49,6 +49,10 @@
           });
         });
       };
+
+      this.saveFile = function(file) {
+        ramlRepository.saveFile(file);
+      };
     };
 
     return {

@@ -3,6 +3,10 @@
     <button role="new-button" ng-click="fileBrowser.newFile()">New</button>
   </div>
 
+  <div role="save-menu">
+    <button role="save-button" ng-click="fileBrowser.saveFile(fileBrowser.selectedFile)">Save</button>
+  </div>
+
   <ul role="file-list">
     <li role="file-name"
         ng-repeat="file in fileBrowser.files | orderBy:'name'"

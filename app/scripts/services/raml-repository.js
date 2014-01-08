@@ -11,7 +11,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       this.name = name || defaultName;
       this.contents = typeof contents === 'string' ? contents : null;
 
-      this.dirty = !name;
+      this.dirty = false;
       this.persisted = false;
     }
 
@@ -102,7 +102,9 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.createFile = function (name) {
-      return new RamlFile(name, defaultPath, ramlSnippets.getEmptyRaml());
+      var file = new RamlFile(name, defaultPath, ramlSnippets.getEmptyRaml());
+      file.dirty = true;
+      return file;
     };
 
     service.bootstrap = function () {

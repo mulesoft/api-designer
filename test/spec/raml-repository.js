@@ -36,6 +36,7 @@ describe('RAML Repository', function () {
       // Assert
       success.firstCall.args[0][0].path.should.be.equal('/');
       success.firstCall.args[0][0].name.should.be.equal(files[0]);
+      success.firstCall.args[0][0].dirty.should.be.false;
 
       // Restore
       directoryStub.restore();
@@ -221,6 +222,7 @@ describe('RAML Repository', function () {
       file.path.should.be.equal('/');
       file.name.should.be.equal('untitled.raml');
       file.contents.should.be.equal(snippet);
+      file.dirty.should.be.true;
 
       // Restore
       getEmptyRamlStub.restore();
@@ -230,6 +232,7 @@ describe('RAML Repository', function () {
       var file = ramlRepository.createFile('myfile.raml');
 
       file.name.should.be.equal('myfile.raml');
+      file.dirty.should.be.true;
     });
   });
 
