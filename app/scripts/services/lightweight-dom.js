@@ -66,7 +66,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       this.isComment = isCommentStarter(this.line);
       this.isEmpty = this.line.trim() === '';
 
-      this.tabCount = getTabCount(editor, lineNum, this.getIsStructural());
+      this.tabCount = getTabCount(editor, lineNum, this.isEmpty);
       if (!this.isComment) {
         this.key = extractKey(this.line);
         this.value = extractValue(this.line);
@@ -84,12 +84,11 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * @param lineNum The line to read the node from. Current editor cursor line if not specified.
      * @returns {Number} Number of tabs at line or at cursor
      */
-    function getTabCount(editor, lineNum, nodeIsStructural) {
+    function getTabCount(editor, lineNum, isEmpty) {
       //Special case: If the current line is where the cursor is, AND
-      //the line is non-structural, then the tab count is based on the
-      //cursor position, not the contents of the line:
+      //the line is empty:
       var line = editor.getLine(lineNum);
-      if (!nodeIsStructural) {
+      if (isEmpty) {
         var cursor = editor.getCursor();
         if (cursor.line === lineNum) {
           line = ((new Array(cursor.ch + 1)).join(' ')); //<- Line containing spaces up to cursor
@@ -158,7 +157,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
         if (prevNode.tabCount === this.tabCount) {
           return prevNode;
         }
-        //Array case:
+        //Array cases:
         //Previous element is non-starter in previous array:
         if (this.isArrayStarter && !prevNode.isArrayStarter && prevNode.tabCount === this.tabCount + 1) {
           return prevNode;
@@ -207,7 +206,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       //documentation:
       //  - title: foo
       //    content: bar <- 2 tabs over from parent
-      var parentNodeTabCount = this.tabCount - ((!this.isEmpty && !this.isArrayStarter && this.getIsInArray()) ? 2 : 1);
+      var parentNodeTabCount = this.tabCount - ((!this.isArrayStarter && this.getIsInArray()) ? 2 : 1);
       var prevLineNum = this.lineNum;
       while(true) {
         var prevNode = getNode(editor, --prevLineNum);
@@ -223,25 +222,67 @@ angular.module('lightweightDOM', ['lightweightParse'])
     };
 
     /**
+     * @returns {[LazyNode]} The current node plus any nodes at the same tab
+     * level with the same parent. For arrays, returns all members of the
+     * node's array. Array consists first of current node, then previous neighbors
+     * then next neighbors.
+     */
+    LazyNode.prototype.getSelfAndNeighbors = function getSelfAndNeighbors() {
+      var nodes = [];
+      var inArray = this.getIsInArray();
+      var node = this;
+      while (node && node.getIsInArray() === inArray) {
+        nodes.push(node);
+        if (node.isArrayStarter) {
+          break;
+        }
+        node = node.getPreviousSibling();
+      }
+      node = this.getNextSibling();
+      while (node && !node.isArrayStarter && node.getIsInArray() === inArray) {
+        nodes.push(node);
+        node = node.getNextSibling();
+      }
+      return nodes;
+    };
+
+    /**
      * @returns {Boolean} Whether or not the node is in an array
      */
     LazyNode.prototype.getIsInArray = function getIsInArray() {
       //Walk previous siblings until we find one that starts an array, or we run
       //out of siblings.
       //Note: We don't use recursion here since JS has a low recursion limit of 1000
-      var node = this;
-      while(node) {
-        if (node.isArrayStarter) {
-          return true;
-        }
+      if (this.isArrayStarter) {
+        return true;
+      }
+      //Move up until we find a node one tab count less: If it is
+      //an array starter, we are in an array
+      var node = this.getPreviousSibling();
+      while(node && node.tabCount >= this.tabCount) {
         node = node.getPreviousSibling();
       }
-      return false;
+      return !!(node && node.isArrayStarter && (node.tabCount === this.tabCount - 1));
     };
 
     /**
-     * @return {Boolean} Whether this node is a comment or consists of nothing
-     * but whitespace
+     * @returns {Array} Returns array containing all parent nodes of
+     * this node, with the direct parent being the last element in the
+     * array.
+     */
+    LazyNode.prototype.getPath = function getPath() {
+      var path = [];
+      var node = this.getParent();
+      while(node) {
+        path.unshift(node);
+        node = node.getParent();
+      }
+      return path;
+    };
+
+    /**
+     * @return {Boolean} Whether this node is neither a comment nor consists of
+     * nothing but whitespace
      */
     LazyNode.prototype.getIsStructural = function getIsStructural() {
       return !this.isComment && !this.isEmpty;
@@ -249,17 +290,40 @@ angular.module('lightweightDOM', ['lightweightParse'])
 
     /**
      * Executes the testFunc against this node and its parents, moving up the
-     * tree until no more nodes are found.
+     * tree until no more nodes are found.  Will halt if the test function
+     * returns true.
      * @param testFunc Function to execute against current node and parents
-     * @returns {LazyNode} The node where testFunc returned true, or null.
+     * @returns {LazyNode} The first node where testFunc returns true, or null.
      */
-    LazyNode.prototype.findUp = function findUp(testFunc, args) {
+    LazyNode.prototype.selfOrParent = function selfOrParent(testFunc) {
+      return this.first(this.getParent, testFunc);
+    };
+
+    /**
+     * Executes the testFunc against this node and its prior siblings. Will
+     * halt if the test function returns true.
+     * @param testFunc Function to execute against current node and parents
+     * @returns {LazyNode} The first node where testFunc returns true, or null.
+     */
+    LazyNode.prototype.selfOrPrevious = function selfOrPrevious(testFunc) {
+      return this.first(this.getPreviousSibling, testFunc);
+    };
+
+    /**
+     * Executes the test function against all nodes, including the current one,
+     * returned by nextNodeFunc. Halts when no more nodes are found or testFunc
+     * returns a truthy value.
+     * @param nextNodeFunc Function that returns the next node to search.
+     * @param testFunc Function that returns a node that matches a filter.
+     * @returns {LazyNode} The first node where testFunc returns true, or null.
+     */
+    LazyNode.prototype.first = function first(nextNodeFunc, testFunc) {
       var node = this;
       while(node) {
-        if (testFunc.apply(node, args)) {
+        if (testFunc(node)) {
           return node;
         }
-        node = node.getParent();
+        node = nextNodeFunc.apply(node);
       }
       return null;
     };

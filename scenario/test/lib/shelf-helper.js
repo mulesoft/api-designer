@@ -1,4 +1,5 @@
 'use strict';
+//var webdriver = require('selenium-webdriver');
 function ShelfHelper() {
   this.elemRamlVersion = ['#%RAML 0.8'];
   this.elemRamlByGroup = '';
@@ -75,6 +76,9 @@ function ShelfHelper() {
   this.elemBodyLevel = this.elemBodyLevelDocs;
   this.elemBodyByGroup = '';
 
+// Documentation
+  this.elemDocumentationLevelDocs = ['content','title'];
+  this.elemDocumentationLevel = this.elemDocumentationLevelDocs;
   this.elemlistCss = '[ng-repeat=\'item in section.items\'] span';
 }
 
@@ -104,6 +108,18 @@ ShelfHelper.prototype.selectFirstElem = function(){
       list[0].click();
     });
   });
+};
+
+ShelfHelper.prototype.selectShelfElemByPos = function(pos){
+  var that = this;
+  return browser.wait(function(){
+    return browser.isElementPresent(by.css(that.elemlistCss));
+  }).then(function () {
+    that.getElementsPromise().then(function(list){
+      list[pos].click();
+    });
+  });
+
 };
 
 ShelfHelper.prototype.getElementsByGroup = function(group){
