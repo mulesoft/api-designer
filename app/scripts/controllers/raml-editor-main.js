@@ -67,7 +67,9 @@ angular.module('ramlEditorApp')
         return;
       }
 
-      $scope.file.contents = source;
+      if ($scope.file) {
+        $scope.file.contents = source;
+      }
       $scope.definition = source;
 
       eventService.broadcast('event:raml-source-updated', $scope.definition);

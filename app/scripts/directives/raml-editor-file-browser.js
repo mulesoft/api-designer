@@ -7,6 +7,15 @@
 
       ramlRepository.getDirectory().then(function(files) {
         $scope.fileBrowser.files = files;
+        $scope.fileBrowser.files.sort(function(file1, file2) {
+          return file1.name.localeCompare(file2.name);
+        });
+
+        if (files.length > 0) {
+          $scope.fileBrowser.selectFile($scope.fileBrowser.files[0]);
+        } else {
+          $scope.fileBrowser.newFile();
+        }
       });
 
       this.newFile = function() {

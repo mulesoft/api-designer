@@ -34,16 +34,22 @@ describe('ramlEditorFileBrowser', function() {
     sandbox.restore();
   });
 
-  it('displays the file list', function() {
-    ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
-    compileFileBrowser();
+  describe('when initialized', function() {
+    it('selects the first file', function() {
+      ramlRepository.files = [createMockFile('lastFile'), createMockFile('firstFile')];
+      compileFileBrowser();
+      scope.fileBrowser.selectedFile.name.should.equal('firstFile');
+    });
 
-    scope.fileBrowser.files.length.should.equal(2);
-    scope.fileBrowser.files[0].name.should.equal('file1');
-    scope.fileBrowser.files[1].name.should.equal('file2');
-
-    el.text().should.contain('file1');
-    el.text().should.contain('file2');
+    describe('when there are no files', function() {
+      it('prompts you to name a new file', function() {
+        var promptSpy;
+        promptSpy = sandbox.stub(window, 'prompt');
+        ramlRepository.files = [];
+        compileFileBrowser();
+        promptSpy.should.have.been.called;
+      });
+    });
   });
 
   describe('creating a new file', function() {
@@ -184,6 +190,18 @@ describe('ramlEditorFileBrowser', function() {
   });
 
   describe('file list', function() {
+    it('displays', function() {
+      ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
+      compileFileBrowser();
+
+      scope.fileBrowser.files.length.should.equal(2);
+      scope.fileBrowser.files[0].name.should.equal('file1');
+      scope.fileBrowser.files[1].name.should.equal('file2');
+
+      el.text().should.contain('file1');
+      el.text().should.contain('file2');
+    });
+
     describe('sorting', function() {
       beforeEach(function() {
         ramlRepository.files = [
