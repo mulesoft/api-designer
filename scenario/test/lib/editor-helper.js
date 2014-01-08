@@ -1,5 +1,12 @@
 'use strict';
-function EditorHelper(){}
+function EditorHelper(){
+  this.editorLinesListCssWithCol =  '.CodeMirror-code div[style="position: relative;"]';
+  this.editorLinesListCss =  '.CodeMirror-code div[style="position: relative;"] pre';
+//  Syntax highlight
+  this.keySHighlight = 'cm-key';
+  this.traitTitleSHighlight= 'cm-trait-title';
+  this.ramlTagSHighlight = 'cm-raml-tag';
+}
 
 EditorHelper.prototype = {};
 
