@@ -218,6 +218,22 @@ describe('ramlEditorFileBrowser', function() {
         file.classList.contains('dirty').should.be.false;
       });
 
+      it('marks the selected file dirty when its contents change', function() {
+        var file = createMockFile('clean');
+        ramlRepository.files = [file];
+        compileFileBrowser();
+
+        scope.fileBrowser.selectFile(file);
+        scope.$digest();
+
+        file.dirty.should.be.false;
+
+        file.contents = 'dirty content';
+        scope.$digest();
+
+        file.dirty.should.be.true;
+      });
+
     });
   });
 });

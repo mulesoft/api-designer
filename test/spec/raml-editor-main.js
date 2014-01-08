@@ -111,7 +111,7 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  it('should ask user for confirmation if there are unsaved changes', function () {
+  xit('should ask user for confirmation if there are unsaved changes', function () {
     ctrl = $controller('ramlEditorMain', params);
     var canSaveStub = sinon.stub(scope, 'canSave').returns(true);
 
@@ -120,7 +120,7 @@ describe('RAML Editor Main Controller', function () {
     canSaveStub.restore();
   });
 
-  it('should not ask user for confirmation if there are no unsaved changes', function () {
+  xit('should not ask user for confirmation if there are no unsaved changes', function () {
     ctrl = $controller('ramlEditorMain', params);
     var canSaveStub = sinon.stub(scope, 'canSave').returns(false);
 
@@ -150,7 +150,7 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('controller actions', function (){
+  xdescribe('controller actions', function (){
     it('should create a new RAML file if the current document is saved', function(){
       // arrange
       ctrl = $controller('ramlEditorMain', params);
@@ -247,7 +247,7 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('saving files', function () {
+  xdescribe('saving files', function () {
     describe('save', function () {
       it('should be enabled only if file is dirty', function() {
         ctrl = $controller('ramlEditorMain', params);
@@ -341,7 +341,7 @@ describe('RAML Editor Main Controller', function () {
       });
     });
 
-    describe('save as', function () {
+    xdescribe('save as', function () {
       it('should be enabled only if the file has been saved or loaded from the persistence store', function (){
         // arrange
         ctrl = $controller('ramlEditorMain', params);
@@ -414,7 +414,7 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('file browser actions', function () {
+  xdescribe('file browser actions', function () {
     var file1 = { name: 'api.raml', path: '/', contents: 'file1' };
     var file2 = { name: 'traits.raml', path: '/', contents: 'file2' };
 
@@ -537,7 +537,7 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('deleteFile()', function () {
+  xdescribe('deleteFile()', function () {
     var file1 = { name: 'api.raml',    path: '/', contents: 'file1' };
     var file2 = { name: 'traits.raml', path: '/', contents: 'file2' };
 
