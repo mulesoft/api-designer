@@ -5,9 +5,9 @@
 
   <ul role="file-list">
     <li role="file-name"
-        ng-repeat="file in fileBrowser.files"
+        ng-repeat="file in fileBrowser.files | orderBy:'name'"
         ng-click="fileBrowser.selectFile(file)"
-        ng-class="{currentfile: fileBrowser.selectedFile === file}">
+        ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty}">
       {{file.name}}
     </li>
   </ul>

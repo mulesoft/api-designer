@@ -19,7 +19,8 @@
       var filename = $window.prompt('Name your file:', suggestedFileName);
 
       if (filename) {
-        this.files.push({ name: filename });
+        var file = this.selectedFile = ramlRepository.createFile(filename);
+        this.files.push(file);
       }
     };
 

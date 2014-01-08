@@ -16,5 +16,11 @@ angular.module('testFs', [])
       return $q.when(file);
     };
 
+    service.createFile = function (name) {
+      return {
+        name: name
+      };
+    };
+
     return service;
   });

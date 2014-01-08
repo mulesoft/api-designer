@@ -225,6 +225,12 @@ describe('RAML Repository', function () {
       // Restore
       getEmptyRamlStub.restore();
     }));
+
+    it('names the file according to the argument given', function() {
+      var file = ramlRepository.createFile('myfile.raml');
+
+      file.name.should.be.equal('myfile.raml');
+    });
   });
 
   describe('bootstrap', function () {

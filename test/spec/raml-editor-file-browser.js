@@ -7,9 +7,12 @@ describe('ramlEditorFileBrowser', function() {
     el[0].querySelector('[role="new-button"]').click();
   }
 
-  function createMockFile(name) {
+  function createMockFile(name, options) {
+    options = options || {};
+
     return {
-      name: name
+      name: name,
+      dirty: !!options.dirty
     };
   }
 
@@ -27,6 +30,7 @@ describe('ramlEditorFileBrowser', function() {
   }));
 
   afterEach(function() {
+    el = scope = ramlRepository = undefined;
     sandbox.restore();
   });
 
@@ -61,10 +65,24 @@ describe('ramlEditorFileBrowser', function() {
         promptSpy.returns('MyFile.raml');
       });
 
+      it('creates the file using ramlRepository', function() {
+        var createSpy = sandbox.spy(ramlRepository, 'createFile');
+        compileFileBrowser();
+        clickNewFileButton();
+
+        createSpy.should.have.been.calledWith('MyFile.raml');
+      });
+
       it('adds the file to the list', function() {
         compileFileBrowser();
         clickNewFileButton();
         scope.fileBrowser.files.length.should.equal(3);
+      });
+
+      it('selects the file', function() {
+        compileFileBrowser();
+        clickNewFileButton();
+        scope.fileBrowser.selectedFile.name.should.equal('MyFile.raml');
       });
     });
 
@@ -162,6 +180,44 @@ describe('ramlEditorFileBrowser', function() {
       it('does not load the file content', function() {
         ramlRepository.loadFile.should.not.have.been.called;
       });
+    });
+  });
+
+  describe('file list', function() {
+    describe('sorting', function() {
+      beforeEach(function() {
+        ramlRepository.files = [
+          createMockFile('xFile'),
+          createMockFile('yFile'),
+          createMockFile('aFile'),
+          createMockFile('bFile'),
+          createMockFile('zFile')
+        ];
+        compileFileBrowser();
+      });
+
+      it('lists alphabetically', function() {
+        var match = el.text().match(/(\wFile)/mg);
+        match.should.deep.equal(['aFile', 'bFile', 'xFile', 'yFile', 'zFile']);
+      });
+    });
+
+    describe('dirty tracking', function() {
+      it('indicates unsaved files', function() {
+        ramlRepository.files = [ createMockFile('dirty', { dirty : true }) ];
+        compileFileBrowser();
+        var file = el[0].querySelector('[role="file-name"]');
+        file.classList.contains('dirty').should.be.true;
+      });
+
+      it('indicates saved files', function() {
+        ramlRepository.files = [ createMockFile('saved') ];
+        compileFileBrowser();
+        var file = el[0].querySelector('[role="file-name"]');
+
+        file.classList.contains('dirty').should.be.false;
+      });
+
     });
   });
 });
