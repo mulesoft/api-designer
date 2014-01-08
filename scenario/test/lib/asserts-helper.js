@@ -25,14 +25,11 @@ AssertsHelper.prototype.parserError = function(vLine, vMessage){
 
 AssertsHelper.prototype.checkSyntaxHignlight = function(line,pos,text){
   //Line is editor line, pos , text is the highlight class
-  console.log('line', line);
   line--;
-
-  browser.findElements(by.css(editor.editorLinesListCss)).then(function(list){
-    list[line].findElements(by.css('span')).then(function(lintext){
-      expect(lintext[pos].getAttribute('class')).toEqual(text);
-    });
+  editor.getSHighlightClass(line,pos).then(function(classe){
+    expect(classe).toEqual(text);
   });
+
 };
 //Editor Ends
 

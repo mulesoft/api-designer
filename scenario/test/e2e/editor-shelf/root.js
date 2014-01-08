@@ -30,7 +30,7 @@ describe('shelf',function(){
 
     describe('root section', function(){
 
-      xit('by group', function(){
+      it('by group', function(){
         var definition = [
           '#%RAML 0.8',
           ' '
@@ -42,15 +42,14 @@ describe('shelf',function(){
 
       describe('documentation', function(){
         it('documentation - basic node - adding title from  shelf', function(){
-
           var definition = [
             '#%RAML 0.8',
             'title: The API',
             '       \\n      \\n      \\n      \\n      \\n     \\n'
           ].join('\\n');
+          editor.setValue(definition);
           designerAsserts.checkSyntaxHignlight(1, 0, editor.ramlTagSHighlight);
           designerAsserts.checkSyntaxHignlight(2, 0, editor.keySHighlight);
-          editor.setValue(definition);
           editor.setCursor(3,0);
           shelf.selectShelfElemByPos(4);
           expect(editor.getLine(3)).toEqual('documentation:');
@@ -93,7 +92,6 @@ describe('shelf',function(){
           designerAsserts.shelfElements(shelf.elemDocumentationLevel);
         });
 
-
         it('documentation - basic node - adding multiples nodes  from  shelf as list', function(){
           var definition = [
             '#%RAML 0.8',
@@ -135,7 +133,7 @@ describe('shelf',function(){
           designerAsserts.checkSyntaxHignlight(2,0,editor.keySHighlight);
           designerAsserts.checkSyntaxHignlight(3,0,editor.keySHighlight);
           designerAsserts.checkSyntaxHignlight(4,1,editor.keySHighlight);
-//          designerAsserts.checkSyntaxHignlight(5,1,editor.keySHighlight);
+          designerAsserts.checkSyntaxHignlight(5,1,'');
           designerAsserts.checkSyntaxHignlight(7,0,editor.keySHighlight);
 
 
