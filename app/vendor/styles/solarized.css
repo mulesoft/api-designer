@@ -111,13 +111,6 @@ http://ethanschoonover.com/solarized/img/solarized-palette.png
   color: #586e75;
 }
 
-.cm-s-solarized .cm-indent:before {
-  content: " ";
-  position: absolute;
-  height: 100%;
-  border-right: 1px solid rgba(255,255,255,0.15);
-}
-
 .cm-s-solarized.cm-s-dark .CodeMirror-focused .CodeMirror-selected {
   background: #386774;
   color: inherit;
