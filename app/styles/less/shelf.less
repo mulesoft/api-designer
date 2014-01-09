@@ -2,19 +2,21 @@
 
 /* Shelf */
 div[role=shelf] {
-  position: absolute;
   background: rgb(26,32,43);
   color: gray;
-  left: 0;
-  right: 0;
-  bottom: 0;
   border-top: 1px solid rgb(48,83,110);
   .box-sizing(border-box);
   font-size: 15px;
   transition: height .1s ease-in;
   z-index: 5;
-  
+
+  -webkit-flex: 0 0 0px;
+  flex: 0 0 0px;
+  -webkit-order: 3;
+  order: 3;
+
   .disable-selection;
+  position: relative;
 }
 
 div[role=shelf].expanded {

@@ -2,9 +2,6 @@
 
 /* Browser */
 div[role=browser] {
-  height: ~"calc(100% - 45px)";
-  max-width: @browserWidth;
-  float: left;
   overflow: show;
   overflow-x: show;
   color: grey;
@@ -15,10 +12,36 @@ div[role=browser] {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  -webkit-flex: 0 0 140px;
+  flex: 0 0 140px;
+  -webkit-order: 1;
+  order: 1;
+
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: column;
+  flex-flow: column;
+}
+
+div[role=browser] div[role=browserHeader] {
+  -webkit-flex: 0 0 60px;
+  flex: 0 0 60px;
+  -webkit-order: 1;
+  order: 1;
+}
+
+div[role=browser] div[role=browserMain] {
+  border-radius: 0px 3px 0px 0px;
+  background-color: rgb(20,21,25);
+
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  -webkit-order: 2;
+  order: 2;
 }
 
 /* Button menus*/
-div[role=raml-editor] > div[role=browser] > div[role$=menu] {
+div[role=raml-editor] div[role=browser] div[role$=menu] {
   margin: 4px 0px 4px 2px;
   color: white;
   border-radius: 2px;
@@ -27,23 +50,23 @@ div[role=raml-editor] > div[role=browser] > div[role$=menu] {
   float: left;
 }
 
-div[role=raml-editor] > div[role=browser] > div[role$=menu] > button:hover {
+div[role=raml-editor] div[role=browser] div[role$=menu] > button:hover {
   background-color: rgb(45, 139, 202);
 }
 
-div[role=raml-editor] > div[role=browser] > div[role=save-menu] > button[role=save-button] {
+div[role=raml-editor] div[role=browser] div[role=save-menu] > button[role=save-button] {
   border-right: 1px solid #777;
   margin-right: 0;
 }
 
-div[role=raml-editor] > div[role=browser] > div[role=save-menu] > button[role=save-menu-rolldown-button] {
+div[role=raml-editor] div[role=browser] div[role=save-menu] > button[role=save-menu-rolldown-button] {
   margin-left: -4px;
   border-radius: 4px;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
 
-div[role=raml-editor] > div[role=browser] > div[role$=menu] > button {
+div[role=raml-editor] div[role=browser] div[role$=menu] > button {
   padding: 5px 7px;
   background-color: rgb(87,152,202);
 
@@ -76,12 +99,12 @@ button.menu-left {
 }
 
 
-div[role=raml-editor] > div[role=browser] > div[role=new-menu] > button {
+div[role=raml-editor] div[role=browser] div[role=new-menu] > button {
   margin-left: 6px;
   border-radius: 4px;
 }
 
-div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
+div[role=raml-editor] div[role=browser] ul[role=save-submenu] {
   padding: 0;
   margin: 0px;
   min-width: 74px;
@@ -99,11 +122,11 @@ div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
   z-index: 80;
 }
 
-div[role=raml-editor] > div[role=browser] > ul[role=save-submenu].expanded {
+div[role=raml-editor] div[role=browser] ul[role=save-submenu].expanded {
   display: block;
 }
 
-div[role=browser] > ul[role=save-submenu] > li {
+div[role=browser] ul[role=save-submenu] > li {
   padding: 4px 6px;
   cursor: pointer;
   line-height: 18px;
@@ -111,43 +134,40 @@ div[role=browser] > ul[role=save-submenu] > li {
   border-bottom: 1px solid #30536e;
 }
 
-div[role=browser] > ul[role=save-submenu] > li:last-child {
+div[role=browser] ul[role=save-submenu] > li:last-child {
   border-bottom: none;
 }
 
-div[role=browser] > ul[role=save-submenu] > li.disabled {
+div[role=browser] ul[role=save-submenu] > li.disabled {
   cursor: default;
 }
 
-div[role=browser] > ul[role=save-submenu] > li:not(.disabled):hover {
+div[role=browser] ul[role=save-submenu] > li:not(.disabled):hover {
   color: #ccc;
   background-color: rgb(30,79,106);
 }
 
 /* Files list*/
-div[role=browser] > ul[role=file-list] {
+div[role=browser] ul[role=file-list] {
   height: 100%;
-  float: none;
-  min-width: @browserWidth;
+  width: 100%;
   padding: 6px 0px 0px 0px;
   margin: 0px;
   overflow: auto;
   list-style: none;
   font-size: 13px;
-  border-radius: 0px 3px 3px 0px;
-  background-color: rgb(20,21,25);
   .box-shadow(2px 2px 7px -2px #333);
   color: #777;
 }
 
-div[role=browser] > ul[role=file-list] > li {
+div[role=browser] ul[role=file-list] > li {
   padding: 2px 2px 2px 6px;
   cursor: pointer;
   line-height: 18px;
   white-space: nowrap;
 }
 
-div[role=browser] > div[role=title] {
+div[role=browser] div[role=title] {
   float: left;
   padding: 2px 12px 2px 6px;
   line-height: 18px;
@@ -155,7 +175,7 @@ div[role=browser] > div[role=title] {
   color: #999;
 }
 
-div[role=browser] > div[role=loading-indicator] {
+div[role=browser] div[role=loading-indicator] {
   float: left;
   padding: 2px 2px 2px 10px;
   line-height: 18px;
@@ -163,31 +183,31 @@ div[role=browser] > div[role=loading-indicator] {
   color: white;
 }
 
-div[role=browser] > ul[role=file-list] > li.read-only {
+div[role=browser] ul[role=file-list] > li.read-only {
   cursor: default;
 }
 
-div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
+div[role=browser] ul[role=file-list] > li:not(.read-only):hover {
   i.icon-trash {
     display: inline;
   }
 }
 
-div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
+div[role=browser] ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
   color: #ccc;
   background-color: #808395;
 }
 
-div[role=browser] > ul[role=file-list] > li > i {
+div[role=browser] ul[role=file-list] > li > i {
   padding-right: 8px;
 }
 
-div[role=browser] > ul[role=file-list] > li.currentfile {
+div[role=browser] ul[role=file-list] > li.currentfile {
   color: #ddd;
   background-color: rgb(30,79,106);
 }
 
-div[role=browser] > ul[role=file-list] > li > i.icon-trash {
+div[role=browser] ul[role=file-list] > li > i.icon-trash {
   font-weight: bold;
   position: absolute;
   left: 165px;
@@ -200,7 +220,7 @@ div[role=browser] > ul[role=file-list] > li > i.icon-trash {
   background-color: inherit;
 }
 
-div[role=browser] > ul[role=file-list] > li > span.dirty {
+div[role=browser] ul[role=file-list] > li > span.dirty {
   color: #BF3626;
 }
 
@@ -209,7 +229,7 @@ div[role=raml-editor].light div[role=browser] {
   color: rgb(202,204,212);
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] {
+div[role=raml-editor].light div[role=browser] ul[role=save-submenu] {
 
   background-color: white;
   .box-shadow(2px 2px 7px -2px #999);
@@ -223,12 +243,12 @@ div[role=raml-editor].light [role=browser] > ul[role=save-submenu] > li {
   border-color: #839496;
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] >  li:not(.disabled):hover {
+div[role=raml-editor].light div[role=browser] ul[role=save-submenu] >  li:not(.disabled):hover {
   color: #eee;
   background-color: rgb(47,124,166);
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
+div[role=raml-editor].light div[role=browser] ul[role=file-list] {
   background-color: white;
   .box-shadow(2px 2px 7px -2px #999);
   color: #aaa;
@@ -236,7 +256,7 @@ div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
   border: 1px solid rgb(131,148,150);
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
+div[role=raml-editor].light div[role=browser] ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
   color: #eee;
   background-color: #caccd4;
 
@@ -245,15 +265,15 @@ div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.rea
   }
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li.currentfile {
+div[role=raml-editor].light div[role=browser] ul[role=file-list] > li.currentfile {
   color: #ddd;
   background-color: rgb(47,124,166);
 }
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li > span.dirty {
+div[role=raml-editor].light div[role=browser] ul[role=file-list] > li > span.dirty {
   color: #7F2419;
 }
 
-div[role=raml-editor].light div[role=browser] > div[role=title] {
+div[role=raml-editor].light div[role=browser] div[role=title] {
   color: white;
 }

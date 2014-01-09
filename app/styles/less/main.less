@@ -25,7 +25,6 @@ div[role=raml-editor] {
   width: 100%;
   height: 100%;
   padding-top: 60px;
-  padding-left: 4px;
   .box-sizing(border-box);
   position: relative;
   background: rgb(52,52,54);
@@ -36,13 +35,11 @@ div[role=raml-editor] > header {
   position: absolute;
   top: 0;
   left: 0;
-  margin-left: 4px;
   padding-top: 12px;
   padding-left: 18px;
   right: 0;
   background: rgb(87,88,90);
   height: 60px;
-  border-radius: 5px 0 0 0;
 }
 
 div[role=raml-editor] > header > div[role=notifications] {
@@ -76,7 +73,6 @@ div[role=raml-editor] > header > div[role=notifications] {
     }
   }
 
-
   &.hidden {
     opacity: 0;
     top: -26px;
@@ -109,16 +105,31 @@ div[role=raml-editor] > header > a[role=logo] {
   background-image: @lightLogo;
 }
 
-div[role=editor] {
-  width: @editorWidth;
+/* BEGIN HORIZONTAL COMPONENT COLUMNS */
+
+div[role=flexColumns] {
   height: 100%;
-  float: left;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: row nowrap;
+  flex-flow: row nowrap;
+}
+
+div[role=editor] {
   padding: 0;
   .box-sizing(border-box);
-  position: relative;
   transition: padding-bottom .05s ease-in;
-  padding-top: 32px;
   background: rgb(11,11,13);
+
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-flow: column;
+  flex-flow: column;
+
+  -webkit-flex: 1 6 60%;
+  flex: 1 6 60%;
+  -webkit-order: 2;
+  order: 2;
 }
 
 div[role=editor].collapsed {
@@ -135,10 +146,14 @@ div[role=editor].error {
 div[role=tabs] {
   padding: 0 0 0 0;
   overflow:visible;
-  position: absolute;
   top: 3px;
   left: 0px;
   .box-sizing(border-box);
+
+  -webkit-flex: 0 0 30px;
+  flex: 0 0 30px;
+  -webkit-order: 1;
+  order: 1;
 }
 
 div[role=tab] {
@@ -186,21 +201,29 @@ div[role=tab].active div[role=tab-box]{
 
 div[role=code] {
   padding: 0;
+  overflow: auto;
+
+  -webkit-flex: 1 1 auto;
+  flex: 1 1 auto;
+  -webkit-order: 2;
+  order: 2;
 }
 
 /* Preview - Console */
 
 div[role=preview-wrapper] {
-  position: absolute;
   right: 0px;
   width: @consoleWidth;
   min-width: 140px;
-  height: ~"calc(100% - 60px)";
-  float: right;
   .box-sizing(border-box);
   background: rgb(230,231,235);
   padding: 20px 20px 10px 20px;
   z-index: 6;
+
+  -webkit-flex: 1 6 20%;
+  flex: 1 6 20%;
+  -webkit-order: 3;
+  order: 3;
 }
 
 div[role=preview] {
