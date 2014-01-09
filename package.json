@@ -37,7 +37,10 @@
     "mocha": "~1.12.0",
     "protractor": "0.14.0",
     "selenium-webdriver": "*",
-    "karma-sinon-chai": "~0.1.4"
+    "sinon-chai": "~2.4.0",
+    "chai": "~1.8.1",
+    "sinon": "~1.7.3",
+    "karma-chai-sinon": "~0.1.0"
   },
   "engines": {
     "node": ">=0.8.0"
