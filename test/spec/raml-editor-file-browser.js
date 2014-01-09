@@ -30,6 +30,7 @@ describe('ramlEditorFileBrowser', function() {
   }));
 
   afterEach(function() {
+    scope.$destroy();
     el = scope = ramlRepository = undefined;
     sandbox.restore();
   });
@@ -190,18 +191,33 @@ describe('ramlEditorFileBrowser', function() {
   });
 
   describe('saving a file', function() {
+    var saveSpy;
+
     beforeEach(function() {
       ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
       compileFileBrowser();
       var fileToSave = el[0].querySelectorAll('[role="file-name"]')[1];
       angular.element(fileToSave).triggerHandler('click');
+      saveSpy = sandbox.spy(ramlRepository, 'saveFile');
     });
 
     it('calls saveFile passing the selected file', function() {
-      var saveSpy = sandbox.spy(ramlRepository, 'saveFile');
 
       el[0].querySelector('[role="save-button"]').click();
 
+      saveSpy.should.have.been.calledWith(ramlRepository.files[1]);
+    });
+
+    it('saves when meta-s is pressed', function() {
+      var event = document.createEvent('Events');
+
+      event.initEvent('keydown', true, true);
+
+      event.keyCode = 83;
+      event.which = 83;
+      event.metaKey = true;
+
+      document.dispatchEvent(event);
       saveSpy.should.have.been.calledWith(ramlRepository.files[1]);
     });
   });

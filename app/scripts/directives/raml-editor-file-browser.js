@@ -53,6 +53,21 @@
       this.saveFile = function(file) {
         ramlRepository.saveFile(file);
       };
+
+      var saveListener = function(e) {
+        if (e.which === 83 && e.metaKey) {
+          e.preventDefault();
+          $scope.$apply(function() {
+            $scope.fileBrowser.saveFile($scope.fileBrowser.selectedFile);
+          });
+        }
+      };
+
+      $window.addEventListener('keydown', saveListener);
+
+      $scope.$on('$destroy', function() {
+        $window.removeEventListener('keydown', saveListener);
+      });
     };
 
     return {
