@@ -61,7 +61,6 @@ describe('RAML Editor Main Controller', function () {
 
     sourceUpdatedSpy.called.should.be.true;
     scope.hasErrors.should.be.false;
-    scope.consoleEnabled.should.be.false;
 
     sourceUpdatedSpy.restore();
   });
@@ -79,7 +78,6 @@ describe('RAML Editor Main Controller', function () {
       sourceUpdatedSpy.called.should.be.true;
 
       scope.hasErrors.should.be.true;
-      scope.consoleEnabled.should.be.false;
 
       sourceUpdatedSpy.restore();
 
@@ -103,7 +101,6 @@ describe('RAML Editor Main Controller', function () {
       sourceUpdatedSpy.called.should.be.true;
 
       scope.hasErrors.should.be.false;
-      scope.consoleEnabled.should.be.true;
 
       sourceUpdatedSpy.restore();
 
