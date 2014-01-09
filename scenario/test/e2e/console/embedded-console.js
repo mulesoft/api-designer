@@ -29,7 +29,7 @@ describe('Embedded-console',function(){
     var embeddedConsole = browser.findElement(by.css('[role="console"]'));
     expect(embeddedConsole.getAttribute('class')).toEqual('');
     editor.setLine(5,'  res2:');
-    expect(embeddedConsole.getAttribute('class')).toEqual('ng-hide');
+    expect(embeddedConsole.getAttribute('class')).not.toContain('ng-hide');
   });
 
   describe('verify parser response on the console', function(){
