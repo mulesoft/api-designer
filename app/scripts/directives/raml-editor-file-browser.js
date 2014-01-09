@@ -22,7 +22,7 @@
         var currentMax = Math.max.apply(undefined, this.files.map(function(file) {
           var match = file.name.match(/Untitled-(\d+)\.raml/);
           return match ? match[1] : 0;
-        }));
+        }).concat(0));
 
         var suggestedFileName = 'Untitled-' + (currentMax + 1) + '.raml';
         var filename = $window.prompt('Name your file:', suggestedFileName);

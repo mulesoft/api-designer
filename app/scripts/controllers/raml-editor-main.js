@@ -60,6 +60,12 @@ angular.module('ramlEditorApp')
       safeApply($scope);
     };
 
+    $scope.$watch('fileBrowser.selectedFile.contents', function(contents) {
+      if (contents) {
+        editor.setValue(contents);
+      }
+    });
+
     $scope.sourceUpdated = function () {
       var source = editor.getValue();
 
@@ -67,8 +73,8 @@ angular.module('ramlEditorApp')
         return;
       }
 
-      if ($scope.file) {
-        $scope.file.contents = source;
+      if ($scope.fileBrowser && $scope.fileBrowser.selectedFile) {
+        $scope.fileBrowser.selectedFile.contents = source;
       }
       $scope.definition = source;
 
@@ -134,13 +140,6 @@ angular.module('ramlEditorApp')
         templateUrl: 'views/help.html'
       });
     };
-
-    $scope.$watch('fileBrowser.selectedFile', function(file) {
-      $scope.file = file;
-      if (file && file.contents) {
-        editor.setValue(file.contents);
-      }
-    });
 
     $scope.toggleShelf = function () {
       $scope.shelf.collapsed = !$scope.shelf.collapsed;

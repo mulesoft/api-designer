@@ -49,7 +49,7 @@ describe('ramlEditorFileBrowser', function() {
         promptSpy = sandbox.stub(window, 'prompt');
         ramlRepository.files = [];
         compileFileBrowser();
-        promptSpy.should.have.been.called;
+        promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-1.raml');
       });
     });
   });

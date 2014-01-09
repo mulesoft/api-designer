@@ -18,7 +18,7 @@
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
     <div role="tabs">
-      <div role="tab" class="active"><span ng-show="file.dirty">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
+      <div role="tab" class="active"><span ng-show="fileBrowser.selectedFile.dirty">*&nbsp;</span>{{fileBrowser.selectedFile.name}}<div role="tab-box"></div></div>
     </div>
     <div id="code" role="code" style="height:inherit"></div>
   </div>
