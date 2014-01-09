@@ -43,7 +43,7 @@
         </ul>
       </div>
     </div>
-    <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
+    <div role="editor" ng-class="{error: hasErrors}">
       <div role="tabs">
         <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
       </div>
@@ -56,7 +56,7 @@
       </div>
     </div>
     <!--    <div ng-splitter="vertical"></div> -->
-    <div role="preview-wrapper" style="width:calc(50% - 186px); float:left">
+    <div role="preview-wrapper">
       <div role="preview" class="bootstrap">
         <div role="console">
           <raml-console></raml-console>

@@ -8,19 +8,13 @@ div[role=shelf] {
   .box-sizing(border-box);
   font-size: 15px;
   transition: height .1s ease-in;
-  z-index: 5;
-
-  -webkit-flex: 0 0 0px;
   flex: 0 0 0px;
-  -webkit-order: 3;
-  order: 3;
-
   .disable-selection;
   position: relative;
 }
 
 div[role=shelf].expanded {
-  height: 160px;
+  flex: 0 0 160px;
 }
 
 div[role=shelf] div[role=shelf-container] {

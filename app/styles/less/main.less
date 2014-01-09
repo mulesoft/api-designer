@@ -121,15 +121,10 @@ div[role=editor] {
   transition: padding-bottom .05s ease-in;
   background: rgb(11,11,13);
 
-  display: -webkit-flex;
   display: flex;
-  -webkit-flex-flow: column;
-  flex-flow: column;
+  flex-direction: column;
 
-  -webkit-flex: 1 6 60%;
   flex: 1 6 60%;
-  -webkit-order: 2;
-  order: 2;
 }
 
 div[role=editor].collapsed {
@@ -150,10 +145,7 @@ div[role=tabs] {
   left: 0px;
   .box-sizing(border-box);
 
-  -webkit-flex: 0 0 30px;
   flex: 0 0 30px;
-  -webkit-order: 1;
-  order: 1;
 }
 
 div[role=tab] {
@@ -203,27 +195,16 @@ div[role=code] {
   padding: 0;
   overflow: auto;
 
-  -webkit-flex: 1 1 auto;
   flex: 1 1 auto;
-  -webkit-order: 2;
-  order: 2;
 }
 
 /* Preview - Console */
 
 div[role=preview-wrapper] {
-  right: 0px;
-  width: @consoleWidth;
-  min-width: 140px;
   .box-sizing(border-box);
   background: rgb(230,231,235);
   padding: 20px 20px 10px 20px;
-  z-index: 6;
-
-  -webkit-flex: 1 6 20%;
-  flex: 1 6 20%;
-  -webkit-order: 3;
-  order: 3;
+  flex: 0 0 250px;
 }
 
 div[role=preview] {

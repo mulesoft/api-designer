@@ -12,32 +12,19 @@ div[role=browser] {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+
   -webkit-flex: 0 0 140px;
   flex: 0 0 140px;
-  -webkit-order: 1;
-  order: 1;
 
-  display: -webkit-flex;
   display: flex;
-  -webkit-flex-flow: column;
-  flex-flow: column;
-}
-
-div[role=browser] div[role=browserHeader] {
-  -webkit-flex: 0 0 60px;
-  flex: 0 0 60px;
-  -webkit-order: 1;
-  order: 1;
+  flex-direction: column;
 }
 
 div[role=browser] div[role=browserMain] {
   border-radius: 0px 3px 0px 0px;
   background-color: rgb(20,21,25);
 
-  -webkit-flex: 1 1 auto;
   flex: 1 1 auto;
-  -webkit-order: 2;
-  order: 2;
 }
 
 /* Button menus*/
@@ -97,7 +84,6 @@ button.menu-left {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
-
 
 div[role=raml-editor] div[role=browser] div[role=new-menu] > button {
   margin-left: 6px;
