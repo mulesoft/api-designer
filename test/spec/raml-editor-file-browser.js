@@ -12,7 +12,8 @@ describe('ramlEditorFileBrowser', function() {
 
     return {
       name: name,
-      dirty: !!options.dirty
+      dirty: !!options.dirty,
+      contents: options.contents
     };
   }
 
@@ -91,6 +92,29 @@ describe('ramlEditorFileBrowser', function() {
         clickNewFileButton();
         scope.fileBrowser.selectedFile.name.should.equal('MyFile.raml');
       });
+
+      describe('when the name is already taken (case-insensitive)', function() {
+        var alertSpy;
+
+        beforeEach(function() {
+          alertSpy = sandbox.stub(window, 'alert');
+          ramlRepository.files.push(createMockFile('MYFILE.raml', { contents: 'my content' }));
+          compileFileBrowser();
+          clickNewFileButton();
+        });
+
+        it('alerts the user', function() {
+          alertSpy.should.have.been.calledWith('That filename is already taken.');
+        });
+
+        it('does not create a new file', function() {
+          scope.fileBrowser.files.length.should.equal(3);
+        });
+
+        it('leaves the existing file unchanged', function() {
+          scope.fileBrowser.files[0].contents.should.equal('my content'); // should be [2], but https://github.com/ariya/phantomjs/issues/11063
+        });
+      });
     });
 
     describe('upon cancellation', function() {
@@ -124,6 +148,7 @@ describe('ramlEditorFileBrowser', function() {
         compileFileBrowser();
         promptSpy.returns('Untitled-1.raml');
         clickNewFileButton();
+        promptSpy.returns('the-name-i-actually-give-the-second-file.raml');
         clickNewFileButton();
         promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-2.raml');
       });

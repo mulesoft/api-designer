@@ -28,8 +28,15 @@
         var filename = $window.prompt('Name your file:', suggestedFileName);
 
         if (filename) {
-          var file = this.selectedFile = ramlRepository.createFile(filename);
-          this.files.push(file);
+          var filenameAlreadyTaken = $scope.fileBrowser.files.some(function(file) {
+            return file.name.toLowerCase() === filename.toLowerCase();
+          });
+          if (filenameAlreadyTaken) {
+            $window.alert('That filename is already taken.');
+          } else {
+            var file = this.selectedFile = ramlRepository.createFile(filename);
+            this.files.push(file);
+          }
         }
       };
 
