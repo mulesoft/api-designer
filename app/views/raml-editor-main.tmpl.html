@@ -3,44 +3,55 @@
     <h1>
       <strong>API</strong> Designer <i class="help icon-question-sign" ng-click="openHelp()"></i>
     </h1>
+
     <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
       {{message}}
-    <div></div>
-    <i class="icon-ok" ng-click="hideNotifications()"> </i></div>
+      <i class="icon-ok" ng-click="hideNotifications()"></i>
+    </div>
+
     <div role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()">Save</div>
     <div role="saveas-button" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()">Save As</div>
   </header>
+
   <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
     <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
       <div role="shelf-tab" ng-click="toggleShelf()">
         <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
       </div>
+
       <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
     </div>
+
     <div role="browser" ng-class="{expanded: browser.expanded}" ng-mouseleave="collapseBrowser()">
       <div role="browser-toggle-button" ng-click="toggleBrowser()">
         <i class="icon-folder-open"></i>
         <i ng-class="browser.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i>
       </div>
+
       <ul role="file-list">
         <li ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</li>
         <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
         <li ng-repeat="fileEntry in files" ng-click="loadFile(fileEntry)"><i class="icon-file"></i>{{fileEntry.name}}<i class="icon-trash" ng-click="deleteFile(fileEntry)" ng-prevent-default></i></li>
       </ul>
     </div>
+
     <div role="tabs">
       <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
     </div>
+
     <div role="actions">
       <div role="new-button" ng-click="newFile()"><i class="icon-plus"></i></div>
     </div>
+
     <div id="code" role="code" style="height:inherit"></div>
   </div>
+
   <div role="preview-wrapper">
-    <div role="preview" class="bootstrap">
-      <div role="console" ng-show="consoleEnabled">
+    <div role="preview">
+      <div role="console">
         <raml-console></raml-console>
       </div>
+
       <a role="logo" target="_blank" href="http://mulesoft.com"></a>
     </div>
   </div>
