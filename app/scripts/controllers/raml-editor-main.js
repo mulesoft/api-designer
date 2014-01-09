@@ -184,7 +184,10 @@ angular.module('ramlEditorApp')
 
       // Warn before leaving the page
       $window.onbeforeunload = function () {
-        if ($scope.canSave()) {
+        var anyUnsavedChanges = $scope.fileBrowser.files.some(function(file) {
+          return file.dirty;
+        });
+        if (anyUnsavedChanges) {
           return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
         }
       };

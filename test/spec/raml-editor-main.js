@@ -111,22 +111,32 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  xit('should ask user for confirmation if there are unsaved changes', function () {
-    ctrl = $controller('ramlEditorMain', params);
-    var canSaveStub = sinon.stub(scope, 'canSave').returns(true);
+  describe('leaving the page', function() {
+    it('should ask user for confirmation if there are unsaved changes', function () {
+      scope.fileBrowser = {
+        files: [
+          { dirty: false },
+          { dirty: true },
+          { dirty: false }
+        ]
+      };
+      ctrl = $controller('ramlEditorMain', params);
 
-    $window.onbeforeunload().should.be.equal('WARNING: You have unsaved changes. Those will be lost if you leave this page.');
+      $window.onbeforeunload().should.equal('WARNING: You have unsaved changes. Those will be lost if you leave this page.');
+    });
 
-    canSaveStub.restore();
-  });
+    it('should not ask user for confirmation if there are no unsaved changes', function () {
+      scope.fileBrowser = {
+        files: [
+          { dirty: false },
+          { dirty: false },
+          { dirty: false }
+        ]
+      };
+      ctrl = $controller('ramlEditorMain', params);
 
-  xit('should not ask user for confirmation if there are no unsaved changes', function () {
-    ctrl = $controller('ramlEditorMain', params);
-    var canSaveStub = sinon.stub(scope, 'canSave').returns(false);
-
-    should.not.exist($window.onbeforeunload());
-
-    canSaveStub.restore();
+      should.not.exist($window.onbeforeunload());
+    });
   });
 
   describe('on raml parser error', function () {
