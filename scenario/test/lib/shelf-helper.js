@@ -1,5 +1,5 @@
 'use strict';
-//var webdriver = require('selenium-webdriver');
+var webdriver = require('selenium-webdriver');
 function ShelfHelper() {
   this.elemRamlVersion = ['#%RAML 0.8'];
   this.elemRamlByGroup = '';
@@ -110,16 +110,24 @@ ShelfHelper.prototype.selectFirstElem = function(){
   });
 };
 
-ShelfHelper.prototype.selectShelfElemByPos = function(pos){
+ShelfHelper.prototype.clickShelfElemByPos = function(pos){
   var that = this;
-  return browser.wait(function(){
+  var d = webdriver.promise.defer();
+  browser.wait(function(){
     return browser.isElementPresent(by.css(that.elemlistCss));
   }).then(function () {
     that.getElementsPromise().then(function(list){
       list[pos].click();
+      d.fulfill('done');
     });
   });
+  return d.promise;
+};
 
+ShelfHelper.prototype.selectShelfElemByPos = function(pos){
+  this.clickShelfElemByPos(pos).then(function(text){
+    expect(text).toEqual('done');
+  });
 };
 
 ShelfHelper.prototype.getElementsByGroup = function(group){
