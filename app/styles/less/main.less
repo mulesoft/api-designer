@@ -194,7 +194,7 @@ div[role=tab].active div[role=tab-box]{
 div[role=code] {
   padding: 0;
   overflow: auto;
-
+  position: relative;
   flex: 1 1 auto;
 }
 
@@ -203,11 +203,12 @@ div[role=code] {
 div[role=preview-wrapper] {
   .box-sizing(border-box);
   background: rgb(230,231,235);
-  padding: 20px 20px 10px 20px;
   flex: 0 0 250px;
+  z-index: 70;
 }
 
 div[role=preview] {
+  padding: 20px 20px 10px 20px;
   height: 100%;
   position: relative;
 }

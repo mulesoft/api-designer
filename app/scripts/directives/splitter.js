@@ -1,11 +1,15 @@
 'use strict';
 
 /**
- * Calculating splitter
+ * Flex layout splitter
  */
-angular.module('splitter', []).directive('ngSplitter', ['$window',
-  function($window) {
+angular.module('splitter', []).directive('ngSplitter', [
+  function() {
 
+    /**
+     * @param element
+     * @returns {Object} The element that is in the DOM before the passed-in element
+     */
     function getPrevious(element) {
       element[0].getPreviousMarker = true;
       var siblings = Array.prototype.slice.call(element.parent().children(), 0);
@@ -25,76 +29,48 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
     }
 
     /**
-     *
-     * @param element Element to resize
+     * @param splitter Splitter that was moved
      * @param sizeAttr 'width' or 'height'
      * @param delta Pixels to resize by
-     * @returns {boolean} Whether the resize succeeded
      */
-    function resize(element, sizeAttr, delta) {
+    function resizeNextBy(splitter, sizeAttr, delta) {
+      var next = splitter.next();
+      var prev = getPrevious(splitter);
       //Get the original offsetWidth or offsetHeight:
-      var offsetSizeProperty = 'offset' + sizeAttr[0].toUpperCase() + sizeAttr.slice(1);
-      var originalOffsetSize = element[0][offsetSizeProperty];
-
-      //Get the original width/height css property value
-      var originalValue = element.css(sizeAttr);
-      //Do we have a calc expression?
-      var matches = /^calc\(\d+%\s*(\+|-)\s*(\d*)px\s*\)/.exec(originalValue); //E.g. "calc(20% + 55px), we want the "55"
-      if (matches) {
-        var offset = parseInt(matches[1] + matches[2], 10);
-        offset += delta;
-        offset = offset < 0 ? '- ' + (-offset) : '+ ' + offset;
-        var newValue = originalValue.replace(/(\+|-)\s*(\d*)px/, offset + 'px');
-        element.css(sizeAttr, newValue);
-        //There are several failure cases:
-        // 1. The element could have been collapse down to a width of 0
-        // 2. The element could have a min-width or height
-        var failed = element[0][offsetSizeProperty] !== originalOffsetSize + delta;
-        if (failed) {
-          //roll back:
-          element.css(sizeAttr, originalValue);
-          return false;
-        }
+      var prevElementOffsetSize = getOffsetSize(prev, sizeAttr);
+      if (prevElementOffsetSize + delta > getOffsetSize(splitter, sizeAttr) * 2) {
+        var originalOffsetSize = getOffsetSize(next, sizeAttr);
+        next.css('flex', '0 0 ' + (originalOffsetSize - delta) + 'px');
       }
-      return true;
     }
 
     /**
-     * Resizes previousElement by delta and next element by -delta. If either
-     * resize fails, will roll back the resize on both.
-     *
-     * @param previousElement Element before the splitter
-     * @param nextElement Element after the splitter
+     * @param element Element to resize
      * @param sizeAttr 'width' or 'height'
-     * @param delta Pixels to resize the elements by
+     * @param delta Pixels to size the element to
      */
-    function symmetricResize(previousElement, nextElement, sizeAttr, delta, ignoreFail)
-    {
-      var success = resize(previousElement, sizeAttr, delta);
-      if (success || ignoreFail) {
-        success = resize(nextElement, sizeAttr, -delta);
-        if (!success && !ignoreFail) {
-          //Roll back the first scale if the second failed:
-          resize(previousElement, sizeAttr, -delta);
-        }
-      }
+    //function resizeFlexTo(element, size) {
+      //Get the original offsetWidth or offsetHeight:
+    //  element.css('flex', '0 0 ' + size + 'px');
+    //}
+
+    /**
+     * @param element Element whose offset size we want
+     * @param sizeAttr 'width' or 'height'
+     * @returns {Number} offset size
+     */
+    function getOffsetSize(element, sizeAttr) {
+      var offsetSizeProperty = 'offset' + sizeAttr[0].toUpperCase() + sizeAttr.slice(1);
+      return element[0][offsetSizeProperty];
     }
 
-    function getDistanceToNext(element) {
-      var elementLeft = element[0].offsetLeft;
-      var nextLeft = element.next()[0].offsetLeft;
-      return elementLeft - nextLeft;
-    }
+//    function saveSize(element, sizeAttr) {
+      //var size = getOffsetSize(element, sizeAttr);
+  //  }
 
-/*
-    TOMORROW:
-      1. FIX THE PROBLEM WHERE the splitter overlaps the console
-      2. Use cookie to make splitter position persistent and reset after page is pageLoaded
-      3. Splitter should only active with left mouse button, not right
-      4. Splitter 2x click should revert the splitter to its last position, like git checkout -
-      5. Reenable the styles that prevent text from getting selected. (the "active" stuff in splitter.less)
-      6. Need a nicer/more distinctive splitter background color.
-*/
+//    function loadSize(element) {
+//    }
+
     return {
       restrict: 'A',
       /**
@@ -106,22 +82,30 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
         if (attrs.fixed === 'fixed') {
           return;
         }
+        //Create 'static' members
         var isActive  = false;
         var vertical  = attrs.ngSplitter === 'vertical';
         var sizeAttr  = vertical ? 'width' : 'height';
         var mousePos  = vertical ? 'clientX' : 'clientY';
-        var originalDelta = getDistanceToNext(splitter);
         var lastPos;
         var container = splitter.parent();
+
+        //If a size was saved, restore it:
+        //var originalSize = loadSize(splitter.next());
+        //if (originalSize) {
+        //  resizeFlexTo(splitter.next(), originalSize);
+        //}
+
+        //Configure UI events
         splitter.on('mousedown', function() {
+          //Only respond to left mouse button:
           isActive = true;
           container.addClass('noselect');
         }).parent().on('mousemove', function(evt) {
             if (isActive) {
-              var previousElement = getPrevious(splitter);
               var delta = evt[mousePos] - lastPos;
-              //Scale the two elements:
-              symmetricResize(previousElement, splitter.next(), sizeAttr, delta, false);
+              //Scale the elements:
+              resizeNextBy(splitter, sizeAttr, delta);
               lastPos = evt[mousePos];
             }
           }).on('mousedown', function(evt) {
@@ -129,18 +113,9 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
           }).on('mouseup', function() {
             isActive = false;
             container.removeClass('noselect');
+            //saveSize(splitter.next(), sizeAttr);
           });
-
-        //If the window is resized, we need to ensure that the splitter remains
-        //in the correct location. We do this very carefully by comparing where
-        //the splitter should be wrt to its next sibling and where it now is:
-        angular.element($window).on('resize', function() {
-          var delta = getDistanceToNext(splitter);
-          if (delta !== originalDelta) {
-            symmetricResize(getPrevious(splitter), splitter.next(), sizeAttr, originalDelta - delta, true);
-          }
-        });
       }
     };
-  }]
-);
+  }
+]);
