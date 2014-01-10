@@ -21,6 +21,16 @@ AssertsHelper.prototype.parserError = function(vLine, vMessage){
   });
   return d.promise;
 };
+
+
+AssertsHelper.prototype.checkSyntaxHignlight = function(line,pos,text){
+  //Line is editor line, pos , text is the highlight class
+  line--;
+  editor.getSHighlightClass(line,pos).then(function(classe){
+    expect(classe).toEqual(text);
+  });
+
+};
 //Editor Ends
 
 //Console Starts
