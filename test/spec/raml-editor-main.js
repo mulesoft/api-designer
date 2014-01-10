@@ -160,14 +160,14 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
-  describe('on changes to fileBrowser.selectedFile', function () {
+  describe('on event:raml-editor-file-selected', function () {
     it('loads the new file in the editor', function () {
       scope.fileBrowser = {};
       ctrl = $controller('ramlEditorMain', params);
 
       editor.getValue().should.equal('');
 
-      scope.fileBrowser.selectedFile = { name: 'api.raml', path: '/', contents: 'file1' };
+      scope.$emit('event:raml-editor-file-selected', { name: 'api.raml', path: '/', contents: 'file1' });
       scope.$digest();
 
       editor.getValue().should.equal('file1');

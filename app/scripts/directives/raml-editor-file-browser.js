@@ -3,6 +3,7 @@
 
   angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function(ramlRepository, $window, $q) {
     var controller = function($scope) {
+      var unwatchSelectedFile = angular.noop;
       $scope.fileBrowser = this;
 
       ramlRepository.getDirectory().then(function(files) {
@@ -34,13 +35,13 @@
           if (filenameAlreadyTaken) {
             $window.alert('That filename is already taken.');
           } else {
-            var file = this.selectedFile = ramlRepository.createFile(filename);
+            var file = ramlRepository.createFile(filename);
             this.files.push(file);
+            $scope.fileBrowser.selectFile(file);
           }
         }
       };
 
-      var unwatchSelectedFile = angular.noop;
       this.selectFile = function(file) {
         unwatchSelectedFile();
 
@@ -49,6 +50,7 @@
 
         afterLoading.then(function(file) {
           $scope.fileBrowser.selectedFile = file;
+          $scope.$emit('event:raml-editor-file-selected', file);
           unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function(newContents, oldContents) {
             if (newContents !== oldContents) {
               file.dirty = true;

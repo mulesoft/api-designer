@@ -13,6 +13,7 @@ exports.config = {
 
   onPrepare: function() {
     browser.get('');
+    browser.driver.switchTo().alert().accept();
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
       window.onbeforeunload = null;

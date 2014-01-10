@@ -60,9 +60,9 @@ angular.module('ramlEditorApp')
       safeApply($scope);
     };
 
-    $scope.$watch('fileBrowser.selectedFile.contents', function(contents) {
-      if (contents) {
-        editor.setValue(contents);
+    $scope.$on('event:raml-editor-file-selected', function(event, file) {
+      if (file.contents) {
+        editor.setValue(file.contents);
       }
     });
 
