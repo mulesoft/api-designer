@@ -3,7 +3,7 @@
 angular.module('lightweightParse', ['utils'])
   .factory('getEditorTextAsArrayOfLines', function () {
     var lastStringCache;
-    
+
     return function (editor) {
       var textAsList = [], i;
 
@@ -19,16 +19,16 @@ angular.module('lightweightParse', ['utils'])
 
       return textAsList;
     };
-  
-  })
-  .factory('isArrayStarter', function(getLineIndent) {
-    return function(line) {
-      if(!line) {
-        return false;
-      }
 
-      var lineWithoutIndentation = getLineIndent(line).content;
-      return lineWithoutIndentation.indexOf('-') === 0 && lineWithoutIndentation.indexOf('---') < 0;
+  })
+  .factory('isArrayStarter', function() {
+    return function(line) {
+      return (line || '').trimLeft().indexOf('- ') === 0;
+    };
+  })
+  .factory('isCommentStarter', function() {
+    return function(line) {
+      return (line || '').trimLeft().indexOf('#') === 0;
     };
   })
   .factory('extractKey', function (isArrayStarter) {
@@ -65,6 +65,36 @@ angular.module('lightweightParse', ['utils'])
 
       // No key found
       return '';
+    };
+  })
+  .factory('extractValue', function extractValueFactory() {
+    /**
+     * @return {{ raw, text, isAlias, isReference}} the value of a node, or null if the
+     *         node contains a complex value. The string will
+     *         additionally be decorated with metadata:
+     *         For alias values, e.g. Foo: &Bar, 'isAlias' will be set to true
+     *         For reference values, e.g. Foo: *Bar, 'isReference' will be set to true
+     * @example 'foo: bar' returns {text: "bar", isAlias: false, isReference: false}
+     * @example 'foo: *bar' returns {text: bar, isAlias: false, isReference: true}
+     * @example 'foo: &bar' returns {text: bar, isAlias: true, isReference: false}
+     */
+    return function extractValue(line) {
+      if (!line) {
+        return null;
+      }
+      var matches = /:\s+(.+)/.exec(line);
+      if (matches && matches[1]) {
+        var raw = matches[1].trim();
+        //Attach metadata to the string:
+        var isAlias = raw[0] === '&';
+        var isReference = raw[0] === '*';
+        return {
+          text: raw,
+          isAlias: isAlias,
+          isReference: isReference
+        };
+      }
+      return null;
     };
   })
   .factory('getLineIndent', function (indentUnit) {
@@ -105,7 +135,6 @@ angular.module('lightweightParse', ['utils'])
       return true;
 
     }
-
 
     return function (arrayOfLines) {
       var zipValues = [], currentIndexes = {};

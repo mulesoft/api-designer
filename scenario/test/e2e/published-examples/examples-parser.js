@@ -13,7 +13,7 @@ describe('parser ',function(){
     editor.setValue('');
     expect(editor.getLine(1)).toEqual('');
     designerAsserts.shelfElements(shelf.elemRamlVersion);
-    designerAsserts.parserError('1', 'The first line must be: \'#%RAML 0.8\'');
+    expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
 
   describe('api hub', function(){
@@ -83,7 +83,7 @@ describe('parser ',function(){
         );
     });
 
-    it('bitly-api',function(){
+    xit('bitly-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
       editor.setLine(2,'!include http://www.apihub.com/bitly/api/bitly-api/bitly-api.raml');

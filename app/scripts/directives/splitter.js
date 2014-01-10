@@ -35,13 +35,26 @@ angular.module('splitter', []).directive('ngSplitter', [
      */
     function resizeNextBy(splitter, sizeAttr, delta) {
       var next = splitter.next();
-      var prev = getPrevious(splitter);
-      //Get the original offsetWidth or offsetHeight:
-      var prevElementOffsetSize = getOffsetSize(prev, sizeAttr);
-      if (prevElementOffsetSize + delta > getOffsetSize(splitter, sizeAttr) * 2) {
+      if (canResizeNextBy(splitter, sizeAttr, delta)) {
         var originalOffsetSize = getOffsetSize(next, sizeAttr);
         next.css('flex', '0 0 ' + (originalOffsetSize - delta) + 'px');
       }
+    }
+
+    /**
+     * @param splitter Splitter that was moved
+     * @param sizeAttr 'width' or 'height'
+     * @param delta Pixels we intend to resize the next element by
+     * @returns {boolean} That the splitter's previous element would
+     * remain larger than 2 x splitter width/height, which is its
+     * minimum size
+     */
+    function canResizeNextBy(splitter, sizeAttr, delta) {
+      var prev = getPrevious(splitter);
+      //Get the original offsetWidth or offsetHeight:
+      var prevElementOffsetSize = getOffsetSize(prev, sizeAttr);
+      //Policy: Previous element cannot shrink to less than 2 x splitter width/height
+      return prevElementOffsetSize + delta > getOffsetSize(splitter, sizeAttr) * 2;
     }
 
     /**
@@ -88,7 +101,7 @@ angular.module('splitter', []).directive('ngSplitter', [
         var sizeAttr  = vertical ? 'width' : 'height';
         var mousePos  = vertical ? 'clientX' : 'clientY';
         var lastPos;
-        var container = splitter.parent();
+        var naturalSize; //<- used when window is resized to scale the 'next' element
 
         //If a size was saved, restore it:
         //var originalSize = loadSize(splitter.next());
@@ -100,7 +113,7 @@ angular.module('splitter', []).directive('ngSplitter', [
         splitter.on('mousedown', function() {
           //Only respond to left mouse button:
           isActive = true;
-          container.addClass('noselect');
+          splitter.parent().addClass('noselect');
         }).parent().on('mousemove', function(evt) {
             if (isActive) {
               var delta = evt[mousePos] - lastPos;
@@ -112,9 +125,11 @@ angular.module('splitter', []).directive('ngSplitter', [
             lastPos = evt[mousePos];
           }).on('mouseup', function() {
             isActive = false;
-            container.removeClass('noselect');
+            splitter.parent().removeClass('noselect');
             //saveSize(splitter.next(), sizeAttr);
           });
+
+        //Window resizing is treated like a splitter move
       }
     };
   }
