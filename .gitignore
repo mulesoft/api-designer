@@ -15,3 +15,4 @@ test-results.xml
 keyfile
 app/styles/css
 scenario/Sauce-Connect-latest
+test/spec/support/templates.js

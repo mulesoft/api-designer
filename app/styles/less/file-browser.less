@@ -1,259 +1,83 @@
 @import "utils.less";
+@import "mixins.less";
 
-/* Browser */
-div[role=browser] {
+[role=browser] {
   height: ~"calc(100% - 45px)";
   max-width: @browserWidth;
   float: left;
-  overflow: show;
-  overflow-x: show;
   color: grey;
   padding-right: 3px;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
+  .disable-selection;
 
-/* Button menus*/
-div[role=raml-editor] > div[role=browser] > div[role$=menu] {
-  margin: 4px 0px 4px 2px;
-  color: white;
-  border-radius: 2px;
-  font-size: 13px;
-  cursor: pointer;
-  float: left;
-}
+  button {
+    .button;
+    float: left;
+    margin: 4px 4px 4px 0;
+  }
 
-div[role=raml-editor] > div[role=browser] > div[role$=menu] > button:hover {
-  background-color: rgb(45, 139, 202);
-}
+  ul[role=file-list] {
+    height: 100%;
+    min-width: @browserWidth;
+    padding: 6px 0px 0px 0px;
+    margin: 0px;
+    overflow: auto;
+    list-style: none;
+    font-size: 13px;
+    border-radius: 0px 3px 3px 0px;
+    background-color: rgb(20,21,25);
+    .box-shadow(2px 2px 7px -2px #333);
+    color: #777;
 
-div[role=raml-editor] > div[role=browser] > div[role=save-menu] > button[role=save-button] {
-  border-right: 1px solid #777;
-  margin-right: 0;
-}
-
-div[role=raml-editor] > div[role=browser] > div[role=save-menu] > button[role=save-menu-rolldown-button] {
-  margin-left: -4px;
-  border-radius: 4px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-div[role=raml-editor] > div[role=browser] > div[role$=menu] > button {
-  padding: 5px 7px;
-  background-color: rgb(87,152,202);
-
-  /* Button reset styles*/
-  border: none;
-  font: inherit;
-  color: inherit;
-  margin: 0;
-  display: inline-block;
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: middle;
-  cursor: pointer;
-  background-image: none;
-  border-color: white;
-  text-decoration: none;
-  box-sizing: border-box;
-  outline: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  -o-user-select: none;
-  user-select: none;
-}
-
-button.menu-left {
-  border-radius: 4px;
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
+    li {
+      padding: 2px 2px 2px 6px;
+      cursor: pointer;
+      line-height: 18px;
+      white-space: nowrap;
 
 
-div[role=raml-editor] > div[role=browser] > div[role=new-menu] > button {
-  margin-left: 6px;
-  border-radius: 4px;
-}
+      &:not(.currentfile):hover {
+        color: #ccc;
+        background-color: #808395;
+      }
 
-div[role=raml-editor] > div[role=browser] > ul[role=save-submenu] {
-  padding: 0;
-  margin: 0px;
-  min-width: 74px;
-  position: absolute;
-  top: 89px;
-  left: 6px;
-  list-style: none;
-  font-size: 13px;
-  border-radius: 4px;
-  .box-shadow(2px 2px 7px -2px #333);
-  color: #777;
-  background-color: rgb(20,21,25);
-  border: 1px solid rgb(48,83,110);
-  display: none;
-  z-index: 80;
-}
+      &.currentfile {
+        color: #ddd;
+        background-color: rgb(30,79,106);
+      }
 
-div[role=raml-editor] > div[role=browser] > ul[role=save-submenu].expanded {
-  display: block;
-}
+      &::before {
+        content: "* ";
+        visibility: hidden;
+      }
 
-div[role=browser] > ul[role=save-submenu] > li {
-  padding: 4px 6px;
-  cursor: pointer;
-  line-height: 18px;
-  white-space: nowrap;
-  border-bottom: 1px solid #30536e;
-}
-
-div[role=browser] > ul[role=save-submenu] > li:last-child {
-  border-bottom: none;
-}
-
-div[role=browser] > ul[role=save-submenu] > li.disabled {
-  cursor: default;
-}
-
-div[role=browser] > ul[role=save-submenu] > li:not(.disabled):hover {
-  color: #ccc;
-  background-color: rgb(30,79,106);
-}
-
-/* Files list*/
-div[role=browser] > ul[role=file-list] {
-  height: 100%;
-  float: none;
-  min-width: @browserWidth;
-  padding: 6px 0px 0px 0px;
-  margin: 0px;
-  overflow: auto;
-  list-style: none;
-  font-size: 13px;
-  border-radius: 0px 3px 3px 0px;
-  background-color: rgb(20,21,25);
-  .box-shadow(2px 2px 7px -2px #333);
-  color: #777;
-}
-
-div[role=browser] > ul[role=file-list] > li {
-  padding: 2px 2px 2px 6px;
-  cursor: pointer;
-  line-height: 18px;
-  white-space: nowrap;
-}
-
-div[role=browser] > div[role=title] {
-  float: left;
-  padding: 2px 12px 2px 6px;
-  line-height: 18px;
-  font-size: 13px;
-  color: #999;
-}
-
-div[role=browser] > div[role=loading-indicator] {
-  float: left;
-  padding: 2px 2px 2px 10px;
-  line-height: 18px;
-  font-size: 13px;
-  color: white;
-}
-
-div[role=browser] > ul[role=file-list] > li.read-only {
-  cursor: default;
-}
-
-div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
-  i.icon-trash {
-    display: inline;
+      &.dirty::before {
+        visibility: visible;
+      }
+    }
   }
 }
 
-div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
-  color: #ccc;
-  background-color: #808395;
-}
-
-div[role=browser] > ul[role=file-list] > li > i {
-  padding-right: 8px;
-}
-
-div[role=browser] > ul[role=file-list] > li.currentfile {
-  color: #ddd;
-  background-color: rgb(30,79,106);
-}
-
-div[role=browser] > ul[role=file-list] > li > i.icon-trash {
-  font-weight: bold;
-  position: absolute;
-  left: 165px;
-  padding-left: 6px;
-  padding-right: 1px;
-  padding-top: 2px;
-  font-size: 14px;
-  display: none;
-  color: #BF3626;
-  background-color: inherit;
-}
-
-div[role=browser] > ul[role=file-list] > li > span.dirty {
-  color: #BF3626;
-}
-
-/* Light theme*/
-div[role=raml-editor].light div[role=browser] {
+/* Light theme */
+div[role=raml-editor].light [role=browser] {
   color: rgb(202,204,212);
-}
 
-div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] {
+  ul[role=file-list] {
+    background-color: white;
+    .box-shadow(2px 2px 7px -2px #999);
+    color: #aaa;
+    background-color: white;
+    border: 1px solid rgb(131,148,150);
 
-  background-color: white;
-  .box-shadow(2px 2px 7px -2px #999);
-  color: #aaa;
-  background-color: white;
-  border: 1px solid rgb(131,148,150);
-  cursor: pointer;
-}
+    li {
+      &:not(.currentfile):hover {
+        color: #eee;
+        background-color: #caccd4;
+      }
 
-div[role=raml-editor].light [role=browser] > ul[role=save-submenu] > li {
-  border-color: #839496;
-}
-
-div[role=raml-editor].light div[role=browser] > ul[role=save-submenu] >  li:not(.disabled):hover {
-  color: #eee;
-  background-color: rgb(47,124,166);
-}
-
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
-  background-color: white;
-  .box-shadow(2px 2px 7px -2px #999);
-  color: #aaa;
-  background-color: white;
-  border: 1px solid rgb(131,148,150);
-}
-
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):not(.currentfile):hover {
-  color: #eee;
-  background-color: #caccd4;
-
-  i.icon-trash {
-    display: inline;
+      &.currentfile {
+        color: #ddd;
+        background-color: rgb(47,124,166);
+      }
+    }
   }
-}
-
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li.currentfile {
-  color: #ddd;
-  background-color: rgb(47,124,166);
-}
-
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li > span.dirty {
-  color: #7F2419;
-}
-
-div[role=raml-editor].light div[role=browser] > div[role=title] {
-  color: white;
 }
