@@ -48,6 +48,8 @@ module.exports = function(config) {
       'app/scripts/services/code-mirror.js',
       'app/scripts/services/code-mirror-errors.js',
       'app/scripts/services/event.js',
+      'app/scripts/services/raml-editor-file-list.js',
+      'app/scripts/services/raml-editor-new-file-prompt.js',
       'app/scripts/services/raml-hint.js',
       'app/scripts/services/raml-snippets.js',
       'app/scripts/services/raml-highlight.js',
@@ -63,6 +65,7 @@ module.exports = function(config) {
       'app/scripts/controllers/raml-editor-shelf.js',
       'app/scripts/controllers/notifications.js',
       'app/scripts/directives/raml-editor-file-browser.js',
+      'app/scripts/directives/raml-editor-new-file-button.js',
 
       'test/mock/**/*.js',
       'test/spec/**/*.js'

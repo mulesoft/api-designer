@@ -1,10 +1,9 @@
 <div role="browser">
-  <button role="new-button" ng-click="fileBrowser.newFile()">New</button>
   <button role="save-button" ng-click="fileBrowser.saveFile(fileBrowser.selectedFile)">Save</button>
 
   <ul role="file-list">
     <li role="file-name"
-        ng-repeat="file in fileBrowser.files | orderBy:'name'"
+        ng-repeat="file in homeDirectory.files | orderBy:'name'"
         ng-click="fileBrowser.selectFile(file)"
         ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty}">
       {{file.name}}

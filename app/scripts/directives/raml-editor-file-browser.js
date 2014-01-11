@@ -1,46 +1,23 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function(ramlRepository, $window, $q) {
+  angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function($rootScope, $q, $window, ramlEditorNewFilePrompt, fileList, ramlRepository) {
     var controller = function($scope) {
       var unwatchSelectedFile = angular.noop;
       $scope.fileBrowser = this;
+      $scope.homeDirectory = fileList;
 
-      ramlRepository.getDirectory().then(function(files) {
-        $scope.fileBrowser.files = files;
-        $scope.fileBrowser.files.sort(function(file1, file2) {
-          return file1.name.localeCompare(file2.name);
-        });
-
-        if (files.length > 0) {
-          $scope.fileBrowser.selectFile($scope.fileBrowser.files[0]);
+      ramlRepository.getDirectory().then(function() {
+        if (fileList.files.length > 0) {
+          $scope.fileBrowser.selectFile(fileList.files[0]);
         } else {
-          $scope.fileBrowser.newFile();
+          ramlEditorNewFilePrompt.open();
         }
       });
 
-      this.newFile = function() {
-        var currentMax = Math.max.apply(undefined, this.files.map(function(file) {
-          var match = file.name.match(/Untitled-(\d+)\.raml/);
-          return match ? match[1] : 0;
-        }).concat(0));
-
-        var suggestedFileName = 'Untitled-' + (currentMax + 1) + '.raml';
-        var filename = $window.prompt('Name your file:', suggestedFileName);
-
-        if (filename) {
-          var filenameAlreadyTaken = $scope.fileBrowser.files.some(function(file) {
-            return file.name.toLowerCase() === filename.toLowerCase();
-          });
-          if (filenameAlreadyTaken) {
-            $window.alert('That filename is already taken.');
-          } else {
-            var file = ramlRepository.createFile(filename);
-            this.files.push(file);
-            $scope.fileBrowser.selectFile(file);
-          }
-        }
-      };
+      $scope.$on('event:raml-editor-new-file', function(event, file) {
+        $scope.fileBrowser.selectFile(file);
+      });
 
       this.selectFile = function(file) {
         unwatchSelectedFile();
