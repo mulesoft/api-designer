@@ -3,8 +3,8 @@
 /**
  * Flex layout splitter
  */
-angular.module('splitter', []).directive('ngSplitter', ['$window',
-  function($window) {
+angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
+  function($window, config) {
     /**
      * @param element
      * @returns {Object} The element that is in the DOM before the passed-in element
@@ -43,16 +43,6 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
     /**
      * @param splitter Splitter that was moved
      * @param sizeAttr 'width' or 'height'
-     * @param delta Pixels to resize by
-     */
-    function resizeNextTo(splitter, size) {
-      var next = splitter.next();
-      next.css('flex', '0 0 ' + size + 'px');
-    }
-
-    /**
-     * @param splitter Splitter that was moved
-     * @param sizeAttr 'width' or 'height'
      * @param delta Pixels we intend to resize the next element by
      * @returns {boolean} That the splitter's previous element would
      * remain larger than 2 x splitter width/height, which is its
@@ -63,18 +53,18 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
       //Get the original offsetWidth or offsetHeight:
       var prevElementOffsetSize = getOffsetSize(prev, sizeAttr);
       //Policy: Previous element cannot shrink to less than 2 x splitter width/height
-      return prevElementOffsetSize - delta > getOffsetSize(splitter, sizeAttr) * 2;
+      return prevElementOffsetSize - delta >= getOffsetSize(splitter, sizeAttr) * 2;
     }
 
     /**
-     * @param element Element to resize
+     * @param splitter Splitter that was moved
      * @param sizeAttr 'width' or 'height'
-     * @param delta Pixels to size the element to
+     * @param delta Pixels to resize by
      */
-    //function resizeFlexTo(element, size) {
-      //Get the original offsetWidth or offsetHeight:
-    //  element.css('flex', '0 0 ' + size + 'px');
-    //}
+    function resizeNextTo(splitter, size) {
+      var next = splitter.next();
+      next.css('flex', '0 0 ' + size + 'px');
+    }
 
     /**
      * @param element Element whose offset size we want
@@ -86,12 +76,42 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
       return element[0][offsetSizeProperty];
     }
 
-//    function saveSize(element, sizeAttr) {
-      //var size = getOffsetSize(element, sizeAttr);
-  //  }
+    /**
+     * Saves the splitter size
+     * @param size The size to save, in pixels
+     */
+    function saveSize(size) {
+      config.set('splitterSize', size);
+    }
 
-//    function loadSize(element) {
-//    }
+    /**
+     * Loads the splitter size and applies it to the next element after
+     * the splitter
+     * @param splitter The splitter element
+     */
+    function loadSize(splitter, sizeAttr) {
+      var size = config.get('splitterSize');
+      if (size) {
+        resizeNextTo(splitter, size);
+      }
+      handleWindowResize(splitter, sizeAttr, size);
+    }
+
+    function handleWindowResize(splitter, sizeAttr, preferredSize) {
+      var prevElementOffsetSize = getOffsetSize(getPrevious(splitter), sizeAttr);
+      //Window shrinks: Ensure that the previous element does not disappear by
+      //shrinking the element after the splitter:
+      var minSize = Math.max(getOffsetSize(splitter, sizeAttr) * 2, 8);
+      while(prevElementOffsetSize < minSize) {
+        resizeNextBy(splitter, sizeAttr, -(minSize - prevElementOffsetSize));
+        prevElementOffsetSize = getOffsetSize(getPrevious(splitter), sizeAttr);
+      }
+
+      //Grow the splitter if it is smaller than its preferred size
+      if (preferredSize && (getOffsetSize(splitter.next(), sizeAttr) < preferredSize)) {
+        resizeNextBy(splitter, sizeAttr, prevElementOffsetSize - minSize);
+      }
+    }
 
     return {
       restrict: 'A',
@@ -111,14 +131,10 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
         var mousePos  = vertical ? 'clientX' : 'clientY';
         var lastPos;
         //Used when window is resized to scale the 'next' element
-        var splitterSize = getOffsetSize(splitter, sizeAttr);
         var preferredSize = getOffsetSize(splitter.next(), sizeAttr);
 
         //If a size was saved, restore it:
-        //var originalSize = loadSize(splitter.next());
-        //if (originalSize) {
-        //  resizeFlexTo(splitter.next(), originalSize);
-        //}
+        loadSize(splitter, sizeAttr);
 
         //Configure UI events
         splitter.on('mousedown', function() {
@@ -137,27 +153,14 @@ angular.module('splitter', []).directive('ngSplitter', ['$window',
           }).on('mouseup', function() {
             if (isActive) {
               preferredSize = getOffsetSize(splitter.next(), sizeAttr);
+              saveSize(preferredSize);
             }
             isActive = false;
             splitter.parent().removeClass('noselect');
-            //saveSize(splitter.next(), sizeAttr);
           });
 
         //Window resizing is treated a bit like a splitter move:
-        angular.element($window).on('resize', function() {
-          var prevElementOffsetSize = getOffsetSize(getPrevious(splitter), sizeAttr);
-          //Window shrinks: Ensure that the previous element does not disappear by
-          //shrinking the element after the splitter:
-          var minSize = splitterSize * 2;
-          if (prevElementOffsetSize < minSize) {
-            resizeNextBy(splitter, sizeAttr, -(minSize - prevElementOffsetSize));
-          } else {
-            //Grow the splitter if it is smaller than its preferred size
-            if (getOffsetSize(splitter.next(), sizeAttr) < preferredSize) {
-              resizeNextBy(splitter, sizeAttr, prevElementOffsetSize - minSize);
-            }
-          }
-        });
+        angular.element($window).on('resize', function() { handleWindowResize(splitter, sizeAttr, preferredSize); });
       }
     };
   }
