@@ -48,6 +48,8 @@ describe('shelf',function(){
             '       \\n      \\n      \\n      \\n      \\n     \\n'
           ].join('\\n');
           editor.setValue(definition);
+          expect(editor.getLine(1)).toEqual('#%RAML 0.8');
+          expect(editor.getLine(2)).toEqual('title: The API');
           designerAsserts.checkSyntaxHignlight(1, 0, editor.ramlTagSHighlight);
           designerAsserts.checkSyntaxHignlight(2, 0, editor.keySHighlight);
           editor.setCursor(3,0);

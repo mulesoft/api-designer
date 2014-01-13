@@ -9,7 +9,7 @@ AssertsHelper.prototype = {};
 
 var editor = new EditorHelper();
 var shelf = new ShelfHelper();
-
+var apiConsole = new ConsoleHelper();
 //Editor Starts
 AssertsHelper.prototype.parserError = function(vLine, vMessage){
   var d = webdriver.promise.defer();
@@ -208,6 +208,15 @@ AssertsHelper.prototype.consoleResourceDescription = function(descriptions){
 
 };
 
+AssertsHelper.prototype.consoleMethodDescriptionCollapsed = function(methods, desc){
+  apiConsole.getListOfMethodsDescriptionCollapsed().then(function(dic){
+    var i = 0;
+    methods.forEach(function(method){
+      expect(dic[method]).toEqual(desc[i]);
+      i++;
+    });
+  });
+};
 
 //Console Ends
 
