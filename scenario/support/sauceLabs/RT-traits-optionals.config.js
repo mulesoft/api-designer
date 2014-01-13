@@ -9,7 +9,7 @@ exports.config = {
   },
 
   specs: [
-    '../test/e2e/RT-traits-optionals.js',
+    '../../test/e2e/RT-traits-optionals.js',
     '../../test/lib/*.js'
   ],
 
