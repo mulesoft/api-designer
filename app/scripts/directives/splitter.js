@@ -3,9 +3,8 @@
 /**
  * Flex layout splitter
  */
-angular.module('splitter', []).directive('ngSplitter', [
-  function() {
-
+angular.module('splitter', []).directive('ngSplitter', ['$window',
+  function($window) {
     /**
      * @param element
      * @returns {Object} The element that is in the DOM before the passed-in element
@@ -37,8 +36,18 @@ angular.module('splitter', []).directive('ngSplitter', [
       var next = splitter.next();
       if (canResizeNextBy(splitter, sizeAttr, delta)) {
         var originalOffsetSize = getOffsetSize(next, sizeAttr);
-        next.css('flex', '0 0 ' + (originalOffsetSize - delta) + 'px');
+        next.css('flex', '0 0 ' + (originalOffsetSize + delta) + 'px');
       }
+    }
+
+    /**
+     * @param splitter Splitter that was moved
+     * @param sizeAttr 'width' or 'height'
+     * @param delta Pixels to resize by
+     */
+    function resizeNextTo(splitter, size) {
+      var next = splitter.next();
+      next.css('flex', '0 0 ' + size + 'px');
     }
 
     /**
@@ -54,7 +63,7 @@ angular.module('splitter', []).directive('ngSplitter', [
       //Get the original offsetWidth or offsetHeight:
       var prevElementOffsetSize = getOffsetSize(prev, sizeAttr);
       //Policy: Previous element cannot shrink to less than 2 x splitter width/height
-      return prevElementOffsetSize + delta > getOffsetSize(splitter, sizeAttr) * 2;
+      return prevElementOffsetSize - delta > getOffsetSize(splitter, sizeAttr) * 2;
     }
 
     /**
@@ -101,7 +110,9 @@ angular.module('splitter', []).directive('ngSplitter', [
         var sizeAttr  = vertical ? 'width' : 'height';
         var mousePos  = vertical ? 'clientX' : 'clientY';
         var lastPos;
-        var naturalSize; //<- used when window is resized to scale the 'next' element
+        //Used when window is resized to scale the 'next' element
+        var splitterSize = getOffsetSize(splitter, sizeAttr);
+        var preferredSize = getOffsetSize(splitter.next(), sizeAttr);
 
         //If a size was saved, restore it:
         //var originalSize = loadSize(splitter.next());
@@ -118,18 +129,35 @@ angular.module('splitter', []).directive('ngSplitter', [
             if (isActive) {
               var delta = evt[mousePos] - lastPos;
               //Scale the elements:
-              resizeNextBy(splitter, sizeAttr, delta);
+              resizeNextBy(splitter, sizeAttr, -delta);
               lastPos = evt[mousePos];
             }
           }).on('mousedown', function(evt) {
             lastPos = evt[mousePos];
           }).on('mouseup', function() {
+            if (isActive) {
+              preferredSize = getOffsetSize(splitter.next(), sizeAttr);
+            }
             isActive = false;
             splitter.parent().removeClass('noselect');
             //saveSize(splitter.next(), sizeAttr);
           });
 
-        //Window resizing is treated like a splitter move
+        //Window resizing is treated a bit like a splitter move:
+        angular.element($window).on('resize', function() {
+          var prevElementOffsetSize = getOffsetSize(getPrevious(splitter), sizeAttr);
+          //Window shrinks: Ensure that the previous element does not disappear by
+          //shrinking the element after the splitter:
+          var minSize = splitterSize * 2;
+          if (prevElementOffsetSize < minSize) {
+            resizeNextBy(splitter, sizeAttr, -(minSize - prevElementOffsetSize));
+          } else {
+            //Grow the splitter if it is smaller than its preferred size
+            if (getOffsetSize(splitter.next(), sizeAttr) < preferredSize) {
+              resizeNextBy(splitter, sizeAttr, prevElementOffsetSize - minSize);
+            }
+          }
+        });
       }
     };
   }
