@@ -2,9 +2,8 @@
 
 angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
   .factory('codeMirror', function (
-    ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
-    getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
-    config, extractKey
+    ramlHint, codeMirrorHighLight, eventService, generateSpaces, generateTabs,
+    getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue
   ) {
     var editor  = null;
     var service = {
@@ -12,8 +11,8 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.removeTabs = function (line, indentUnit) {
-      var tabRegExp = new RegExp('( ){' + indentUnit + '}', 'g');
-      return line.replace(tabRegExp, '');
+      var spaceCount = getTabCount(getSpaceCount(line), indentUnit) * indentUnit;
+      return spaceCount ? line.slice(spaceCount) : line;
     };
 
     service.tabKey = function (cm) {
@@ -69,20 +68,10 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.enterKey = function (cm) {
-      function getSpaceCount(line) {
-        for (var i = 0; i < line.length; i++) {
-          if (line[i] !== ' ') {
-            break;
-          }
-        }
-
-        return i;
-      }
-
       function getParent(lineNumber, spaceCount) {
         for (var i = lineNumber - 1; i >= 0; i--) {
           if (getSpaceCount(cm.getLine(i)) < spaceCount) {
-            return extractKey(cm.getLine(i));
+            return extractKeyValue(cm.getLine(i)).key;
           }
         }
       }

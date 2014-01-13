@@ -21,10 +21,10 @@ angular.module('codeMirror')
         },
         copyState: function(state) {
           var local;
-          if (state.localState){
+          if (state.localState) {
             local = CodeMirror.copyState(state.localMode, state.localState);
 
-            if(!local.parentIndentation) {
+            if (!local.parentIndentation) {
               local.parentIndentation = state.localState.parentIndentation;
             }
           }
@@ -49,15 +49,15 @@ angular.module('codeMirror')
     };
 
     mode._yaml = function(stream, state) {
-      if(/(content|description):(\s?)\|/.test(stream.string)) {
+      if (/(content|description):(\s?)\|/.test(stream.string)) {
         mode._setMode('markdown', stream, state);
       }
 
-      if(/application\/json:/.test(stream.string)) {
+      if (/application\/json:/.test(stream.string)) {
         mode._setMode('json', stream, state);
       }
 
-      if(/text\/xml:/.test(stream.string)) {
+      if (/text\/xml:/.test(stream.string)) {
         mode._setMode('xml', stream, state);
       }
 
@@ -78,12 +78,12 @@ angular.module('codeMirror')
       state.localState = mode[modeName].startState();
       state.localState.parentIndentation = stream.indentation();
 
-      if(modeName === 'markdown') {
+      if (modeName === 'markdown') {
         state.localState.base.parentIndentation = state.localState.parentIndentation;
       }
     };
     mode._applyMode = function (modeName, stream, state) {
-      if(stream.string.trim().length > 0 &&
+      if (stream.string.trim().length > 0 &&
          stream.indentation() <= state.localState.parentIndentation) {
 
         state.token = mode._yaml;
@@ -91,7 +91,7 @@ angular.module('codeMirror')
         return mode._yaml(stream, state);
       }
 
-      if(/(schema|example):(\s?)\|/.test(stream.string)) {
+      if (/(schema|example):(\s?)\|/.test(stream.string)) {
         return mode._yaml(stream, state);
       }
 

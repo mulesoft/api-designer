@@ -57,7 +57,7 @@ angular.module('codeMirror')
         state.pairStart = false;
 
         /* document start */
-        if(stream.match(/---/)) {
+        if (stream.match(/---/)) {
           return 'def';
         }
 
