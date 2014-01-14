@@ -201,10 +201,12 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
         var preferredSize = loadSize(splitter, sizeAttr, !collapsed);
 
         //Configure UI events
-        splitter.on('mousedown', function() {
+        splitter.on('mousedown', function(evt) {
           //Only respond to left mouse button:
-          isActive = true;
-          splitter.parent().addClass('noselect');
+          if (evt.button === 0) {
+            isActive = true;
+            splitter.parent().addClass('noselect');
+          }
         }).parent().on('mousemove', function(evt) {
             if (isActive) {
               var delta = evt[mousePos] - lastPos;
