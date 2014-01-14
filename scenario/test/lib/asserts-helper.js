@@ -9,6 +9,7 @@ AssertsHelper.prototype = {};
 
 var editor = new EditorHelper();
 var shelf = new ShelfHelper();
+var apiConsole = new ConsoleHelper();
 
 //Editor Starts
 AssertsHelper.prototype.parserError = function(vLine, vMessage){
@@ -206,6 +207,24 @@ AssertsHelper.prototype.consoleResourceDescription = function(descriptions){
     });
   });
 
+};
+
+
+AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function(expTitle, expContent){
+  apiConsole.getDocumentationSections().then(function(sections){
+    expect(sections.length).toEqual(expTitle.length);
+    var i = 0;
+    sections.forEach(function(section){
+      var p = i++;
+      section.findElement(by.css('h2')).then(function(title){
+        expect(title.getText()).toEqual(expTitle[p]);
+        title.click();
+      });
+      section.findElement(by.css('p')).then(function(content){
+        expect(content.getText()).toEqual(expContent[p]);
+      });
+    });
+  });
 };
 
 
