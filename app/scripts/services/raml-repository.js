@@ -36,14 +36,14 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     service.getDirectory = function (path) {
       path = path || defaultPath;
       return fileSystem.list(path).then(function (entries) {
-        return entries.map(function (e) {
-          return new RamlFile(e, path);
+        return entries.map(function (entry) {
+          return new RamlFile(entry.name, entry.path, entry.content);
         });
       });
     };
 
     service.saveFile = function (file) {
-      return fileSystem.save(file.path, file.contents).then(
+      return fileSystem.save(file).then(
         // success
         function () {
           file.dirty = false;

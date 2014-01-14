@@ -25,7 +25,11 @@ describe('RAML Repository', function () {
       var directoryDeferred = $q.defer();
       var directoryStub = sinon.stub(fileSystem, 'list').returns(directoryDeferred.promise);
       var success = sinon.stub();
-      var files = ['myfile'];
+      var files = [{
+        path: '/',
+        name: 'example.raml',
+        content: ''
+      }];
 
       // Act
       ramlRepository.getDirectory('/').then(success);
@@ -35,7 +39,7 @@ describe('RAML Repository', function () {
 
       // Assert
       success.firstCall.args[0][0].path.should.be.equal('/');
-      success.firstCall.args[0][0].name.should.be.equal(files[0]);
+      success.firstCall.args[0][0].name.should.be.equal(files[0].name);
 
       // Restore
       directoryStub.restore();

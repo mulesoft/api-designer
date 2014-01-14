@@ -1,10 +1,9 @@
 'use strict';
 
 angular.module('fs')
-  .constant('LOCAL_PERSISTENCE_KEY','mockFilePersistence')
-  .factory('localStorageFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY) {
-    var service = {};
-
+  .constant('LOCAL_PERSISTENCE_KEY','localStorageFilePersistence')
+  .constant('FOLDER', 'folder')
+  .factory('localStorageFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY, FOLDER) {
     /**
      *
      * Save in localStorage entries.
@@ -14,13 +13,34 @@ angular.module('fs')
      * * content: The content of the file (only valid for files).
      * * isFolder: A flag that indicates whether is a folder or file.
      */
+    var service = {};
     var delay   = 500;
+    var entries = [];
 
     function validatePath(path) {
       if (path.indexOf('/') !== 0) {
         return {valid: false, reason: 'Path should start with "/"'};
       }
       return {valid: true};
+    }
+
+    function isValidParent(path) {
+      var parent = path.slice(0, path.lastIndexOf('/'));
+      if(!localStorageHelper.has(parent)) {
+        return false;
+      }
+      return true;
+    }
+
+    function hasChildrens(path) {
+      var has = false;
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() !== path.toLowerCase() &&
+            entry.path.indexOf(path) === 0) {
+          has = true;
+        }
+      });
+      return has;
     }
 
     function extractNameFromPath(path) {
@@ -32,10 +52,10 @@ angular.module('fs')
 
       // When the path is ended in '/'
       if (path.lastIndexOf('/') === path.length - 1) {
-        
+        path = path.slice(0, path.length - 1);
       }
 
-      path.slice(path.lastIndexOf('/')).
+      return path.slice(path.lastIndexOf('/') + 1);
     }
 
     function LocalStorageHelper(localStorage) {
@@ -48,21 +68,38 @@ angular.module('fs')
 
         for (i = 0; i < localStorage.length; i++) {
           key = this.localStorage.key(i);
-          // A key is a local storage file system entry if it starts with LOCAL_PERSISTENCE_KEY + '.'
+          // A key is a local storage file system entry if it starts 
+          //with LOCAL_PERSISTENCE_KEY + '.'
           if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
-            fn(key);
+            fn(JSON.parse(this.localStorage.getItem(key)));
           }
         }
       },
+      has: function(path) {
+        var has = false;
+        path = path || '/';
+        this.forEach(function(entry) {
+          if(entry.path.toLowerCase() === path.toLowerCase()){
+            has = true;
+          }
+        });
+        return has;
+      },
       set: function(path, content) {
-        this.localStorage.setItem(LOCAL_PERSISTENCE_KEY + '.' + path, content);
+        this.localStorage.setItem(
+          LOCAL_PERSISTENCE_KEY + '.' + path,
+          JSON.stringify(content)
+        );
       },
       get: function(path) {
-        return this.localStorage.getItem(LOCAL_PERSISTENCE_KEY + '.' + path);
+        return JSON.parse(this.localStorage.getItem(LOCAL_PERSISTENCE_KEY + '.' + path));
+      },
+      remove: function(path) {
+        this.localStorage.removeItem(LOCAL_PERSISTENCE_KEY + '.' + path);
       }
     };
 
-    var localStorageHelper = new LocalStorageHelper();
+    var localStorageHelper = new LocalStorageHelper(localStorage);
 
     /**
      * List files found in a given path.
@@ -70,16 +107,21 @@ angular.module('fs')
     service.list = function (path) {
       var deferred = $q.defer();
       var isValidPath = validatePath(path);
-      var entries = [];
 
       if (!isValidPath.valid) {
         deferred.reject(isValidPath.reason);
         return deferred.promise;
       }
 
-      localStorageHelper.forEach(function (fileEntry) {
-        if (fileEntry.path.indexOf(path) === 0) {
-          entries.push(fileEntry);
+      if(path.lastIndexOf('/') !== path.length - 1) {
+        path += '/';
+      }
+
+      entries = [];
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() !== path.toLowerCase() &&
+            entry.path.indexOf(path + entry.name) === 0) {
+          entries.push(entry);
         }
       });
 
@@ -88,34 +130,43 @@ angular.module('fs')
       }, delay);
 
       return deferred.promise;
+
     };
 
     /**
      * Persist a file to an existing folder.
      */
-    service.save = function (path, content) {
+    service.save = function (file) {
       var deferred = $q.defer();
 
       $timeout(function () {
-        localStorageHelper.set(path, content);
-        var entry = entries[0];
+        var path = file.path + file.name;
+        var entry = localStorageHelper.get(file.path);
 
-        if (entry) {
-          if (entry.isFolder) {
-            deferred.reject();
-            return;
-          }
-          entry.content = content;
-        } else {
-          files.push({
-            path: path,
-            name: path.slice(path.lastIndexOf('/')+1),
-            content: content
-          });
+        if(!isValidParent(file.path)){
+          deferred.reject('Parent folder does not exists');
+          return deferred.promise;
         }
 
-        localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
+        if (entry) {
+          if (entry.type === 'folder') {
+            deferred.reject('file has the same name as a folder');
+            return deferred.promise;
+          }
+          entry.content = file.content;
+          file = entry;
+        } else {
+          file = {
+            path: path,
+            name: file.name,
+            content: file.contents,
+            type: 'file'
+          };
+        }
+
+        localStorageHelper.set(path, file);
         deferred.resolve();
+
       }, delay);
 
       return deferred.promise;
@@ -133,39 +184,47 @@ angular.module('fs')
         return deferred.promise;
       }
 
-      $timeout(function () {
-        files.push({
-          path: path,
-          isFolder: true
-        });
+      if(localStorageHelper.has(path)) {
+        deferred.reject('Folder already exists');
+        return deferred.promise;
+      }
 
-        localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
+      var parent = path.slice(0, path.lastIndexOf('/'));
+      if(!localStorageHelper.has(parent)) {
+        deferred.reject('Parent folder does not exists');
+        return deferred.promise;
+      }
+
+      $timeout(function () {
+
+        localStorageHelper.set(path, {
+            path: path,
+            name: extractNameFromPath(path),
+            type: 'folder'
+          });
+
         deferred.resolve();
       }, delay);
 
 
       return deferred.promise;
     };
+
     /**
      * Loads the content of a file.
      */
     service.load = function (path) {
       var deferred = $q.defer();
-      var entries  = files
-        .filter(function (f) {
-          return f.path === path;
-        })
-        .map(function (f) {
-          return f.content;
-        })
-      ;
 
       $timeout(function () {
-        if (entries.length) {
-          deferred.resolve(entries[0] || '');
+
+        var entry = localStorageHelper.get(path);
+        if(entry && entry.type === 'file') {
+          deferred.resolve(localStorageHelper.get(path).content);
         } else {
           deferred.reject('file with path="' + path + '" does not exist');
         }
+
       }, delay);
 
       return deferred.promise;
@@ -176,19 +235,19 @@ angular.module('fs')
      */
     service.remove = function (path) {
       var deferred = $q.defer();
-      var entries  = files
-        .filter(function (f) {
-          return f.path === path;
-        })
-      ;
 
       $timeout(function () {
-        if (entries.length) {
-          files.splice(files.indexOf(entries[0]), 1);
-          deferred.resolve();
-        } else {
-          deferred.reject('file with path="' + path + '" does not exist');
+        var entry = localStorageHelper.get(path);
+
+        if(entry &&
+           entry.type === FOLDER &&
+           hasChildrens(path)) {
+          deferred.reject('folder not empty');
+          return deferred.promise;
         }
+
+        localStorageHelper.remove(path);
+        deferred.resolve();
       }, delay);
 
       return deferred.promise;

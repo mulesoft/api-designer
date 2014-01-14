@@ -8,18 +8,24 @@ FileSystem.prototype = {
    * Path
    * ----
    *
-   * A path is an string that represents a location in a File System. A path is composed of path parts:
-   *  * A Path Part is expressed by the following regular expression: [A-Za-z\-\._0-9]+.
-   *  * Path Parts are case sensitive: 'hello' and 'Hello' are different Path parts.
+   * A path is an string that represents a location in a File System. 
+   * A path is composed of path parts:
+   *  * A Path Part is expressed by the following regular expression: 
+   *  [A-Za-z\-\._0-9]+.
+   *  * Path Parts are case sensitive: 'hello' and 'Hello' are different 
+   *  Path parts.
    *
    * A valid path is:
-   *  * The root path '/' that represents the topmost of the hierachy.
-   *  * A path that is derived from the root path and appending Path Parts separated by '/'. Each of the Path Parts that
-   *    are added are known as children of the previous path. The previous path is called parent path.
+   *  * The root path '/' that represents the topmost of the hierarchy.
+   *  * A path that is derived from the root path and appending Path Parts 
+   *  separated by '/'. Each of the Path Parts that are added are known as 
+   *  children of the previous path. The previous path is called parent path.
    *
    *
-   * If a given nested path exists, after substracting the last part is should be a valid path too. That means that all
-   * the ancestors of a given path exists. For instance, if we have path /a/b/c/d then, /a/b/c, /a/b/, /a/ and / must exist.
+   * If a given nested path exists, after subtracting the last part is should 
+   * be a valid path too. That means that all the ancestors of a given path 
+   * exists. For instance, if we have path /a/b/c/d then, /a/b/c, /a/b/, /a/ 
+   * and / must exist.
    * If a path does not have a trailing '/', a '/' is prepended to it.
    *
    * Entry
@@ -27,11 +33,17 @@ FileSystem.prototype = {
    *
    * An Entry is a data structure with the following keys:
    *
+   *  id: identifier provided by the underlying system to uniquely identify a
+   *    file or folder. It does not change when a file or folder is moved or
+   *    renamed.
    *  name: An string containing the last path part of the full path.
    *  fullpath: The path of the entry that represents it unequivocally.
-   *  type: Flag that can be set to 'file' or 'folder' that represents what kind of entry is.
+   *  type: Flag that can be set to 'file' or 'folder' that represents what 
+   *    kind of entry is.
    *  children: If the type of the entry is 'folder' it may contain the children attribute. This attribute is an array of
    *    Entries that represents the content of that folder.
+   *  meta: a key/value repository for contextual information about the file.
+   *    standard fields include created, accessed and modified dates.
    *
    *  Examples:
    *
