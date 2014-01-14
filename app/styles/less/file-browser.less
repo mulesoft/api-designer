@@ -14,8 +14,8 @@ div[role=browser] {
   user-select: none;
   z-index: 200;
 
-  -webkit-flex: 0 0 140px;
-  flex: 0 0 140px;
+  -webkit-flex: 0 0 184px;
+  flex: 0 0 184px;
 
   display: flex;
   flex-direction: column;
@@ -26,6 +26,9 @@ div[role=browser] div[role=browserMain] {
   background-color: rgb(20,21,25);
 
   flex: 1 1 auto;
+
+  display: flex;
+  flex-direction: row;
 }
 
 /* Button menus*/
@@ -136,8 +139,6 @@ div[role=browser] ul[role=save-submenu] > li:not(.disabled):hover {
 
 /* Files list*/
 div[role=browser] ul[role=file-list] {
-  height: 100%;
-  width: 100%;
   padding: 6px 0px 0px 0px;
   margin: 0px;
   overflow: auto;
@@ -145,6 +146,9 @@ div[role=browser] ul[role=file-list] {
   font-size: 13px;
   .box-shadow(2px 2px 7px -2px #333);
   color: #777;
+
+  -webkit-flex: 0 0 100%;
+  flex: 0 0 100%;
 }
 
 div[role=browser] ul[role=file-list] > li {
