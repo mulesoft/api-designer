@@ -72,14 +72,6 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
     }
 
     /**
-     * @param splitter The splitter that owns the chevron
-     * @returns {boolean} Whether the chevron is visible
-     */
-    function getChevronIsExpander(splitter) {
-      return splitter.children().hasClass('icon-chevron-sign-left');
-    }
-
-    /**
      * Scales the splitter to the requested size, clipping the size based on
      * our constraints and toggling the resize chevron if the size of the
      * next element goes to the minimum value.
@@ -215,17 +207,10 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
           splitter.parent().addClass('noselect');
         }).parent().on('mousemove', function(evt) {
             if (isActive) {
-              var chevronWasExpander = getChevronIsExpander(splitter);
               var delta = evt[mousePos] - lastPos;
               //Scale the elements:
               resizeNextBy(splitter, sizeAttr, -delta);
               lastPos = evt[mousePos];
-
-              //If the chevron was not shown and now is visible
-              //then we deactivate the drag
-              if (getChevronIsExpander(splitter) && !chevronWasExpander) {
-                isActive = false;
-              }
             }
           }).on('mousedown', function(evt) {
             lastPos = evt[mousePos];
