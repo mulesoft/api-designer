@@ -27,6 +27,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
       } finally {
         delete element.getPreviousMarker;
       }
+      return null;
     }
 
     /**
@@ -38,7 +39,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
       var next = splitter.next();
       if (canResizeNextBy(splitter, sizeAttr, delta)) {
         var targetSize = getOffsetSize(next, sizeAttr) + delta;
-        resizeNextTo(splitter, targetSize, sizeAttr);
+        resizeNextTo(splitter, targetSize);
       }
     }
 
@@ -61,7 +62,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
     /**
      * Toggles the chevron display
      * @param splitter The splitter that owns the chevron
-     * @param Collapsed False means expand chevron shown, true
+     * @param collapsed False means expand chevron shown, true
      * means collapse chevron is shown
      */
     function setChevronState(splitter, collapsed) {
@@ -128,15 +129,18 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
      * @returns {Number} The splitter size
      */
     function loadSize(splitter, sizeAttr, applySize) {
-      var size = config.get('splitterSize_' + splitter.attr('id'));
-      if (size && applySize) {
-        resizeNextTo(splitter, size, sizeAttr);
+      //If no size was saved, use the current size;
+      var size = config.get('splitterSize_' + splitter.attr('id'))
+                  || saveSize(splitter, sizeAttr);
+      if (applySize) {
+        resizeNextTo(splitter, size);
         //In case window is too small for requested splitter size, we resize
         //the splitter:
         ensureSplitterFitsInWindow(splitter, sizeAttr, size);
       }
       return size;
     }
+
     /**
      * Saves whether the splitter is collapsed
      * @param splitter The splitter element. Should have a unique id.
@@ -191,21 +195,18 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
        * @param attrs Normalized attribute names/values for the element
        */
       link: function(scope, splitter, attrs) {
-        if (attrs.fixed === 'fixed') {
-          return;
-        }
-        //Create 'static' members
         var isActive  = false;
         var vertical  = attrs.ngSplitter === 'vertical';
         var sizeAttr  = vertical ? 'width' : 'height';
         var mousePos  = vertical ? 'clientX' : 'clientY';
         var lastPos;
-        //If the splitter was collapsed, collapse it:
+        //Check the saved splitter state and collapse or resize it
         var collapsed = loadIsCollapsed(splitter);
         if (collapsed) {
           resizeNextTo(splitter, collapsedSize);
         }
-        //If a size was saved, restore it:
+        //Load the last non-collapsed size the splitter had, and
+        //if the splitter is not collapsed, apply it.
         var preferredSize = loadSize(splitter, sizeAttr, !collapsed);
 
         //Configure UI events
