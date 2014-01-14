@@ -130,8 +130,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
      */
     function loadSize(splitter, sizeAttr, applySize) {
       //If no size was saved, use the current size;
-      var size = config.get('splitterSize_' + splitter.attr('id'))
-                  || saveSize(splitter, sizeAttr);
+      var size = config.get('splitterSize_' + splitter.attr('id')) || saveSize(splitter, sizeAttr);
       if (applySize) {
         resizeNextTo(splitter, size);
         //In case window is too small for requested splitter size, we resize
