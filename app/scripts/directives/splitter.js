@@ -7,6 +7,25 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
   function($window, config) {
     var collapsedSize = 20;
 
+    // Extend angular jqlite with .prev as an opposite to .next
+    if (!angular.element.prototype.prev) {
+      /**
+       * Get the immediately preceding sibling of each element in the set of matched elements.
+       */
+      angular.element.prototype.prev = function prev() {
+        var value;
+
+        if (this.length) {
+          value = this[0].previousSibling;
+          while (value != null && value.nodeType !== 1) {
+            value = value.previousSibling;
+          }
+        }
+
+        return angular.isDefined(value) ? angular.element(value) : this;
+      };
+    }
+
     /**
      * Scales the splitter to the requested size, clipping the size based on
      * our constraints and toggling the resize chevron if the size of the
@@ -35,10 +54,21 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
      * @param delta Pixels to resize by
      */
     function resizeNextBy(splitter, sizeAttr, delta) {
-      var next = splitter.next();
-      var size = getOffsetSize(next, sizeAttr) + delta;
+      var prev     = splitter.prev();
+      var prevSize = getOffsetSize(prev, sizeAttr);
+      var next     = splitter.next();
+      var nextSize = getOffsetSize(next, sizeAttr);
 
-      resizeNextTo(splitter, size);
+      // Force delta to be as small as possible to make
+      // sure next container doesn't over grow if there is
+      // no space before it
+      if ((prevSize + (-delta)) < 0) {
+        delta = prevSize;
+      }
+
+      if (delta) {
+        resizeNextTo(splitter, nextSize + delta);
+      }
     }
 
     /**
