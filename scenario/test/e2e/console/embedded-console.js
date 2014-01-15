@@ -29,7 +29,7 @@ describe('Embedded-console',function(){
     var embeddedConsole = browser.findElement(by.css('[role="console"]'));
     expect(embeddedConsole.getAttribute('class')).toEqual('');
     editor.setLine(5,'  res2:');
-    expect(embeddedConsole.getAttribute('class')).toEqual('ng-hide');
+    expect(embeddedConsole.getAttribute('class')).not.toContain('ng-hide');
   });
 
   describe('verify parser response on the console', function(){
@@ -49,5 +49,68 @@ describe('Embedded-console',function(){
       designerAsserts.consoleResourceDescription(expDescriptions);
     });
   }); // verify parser response on the console
+
+
+  describe('documentation section', function(){
+
+    it('toggle between views (documentation and api reference', function(){
+//      this test verify that by default the documentation section is hidden
+      var definition = [
+        '#%RAML 0.8',
+        'title: My api',
+        'documentation:',
+        '  - title: My docs1',
+        '    content: | ',
+        '      content of my doc1',
+        '/presentation: ',
+        '  description: presentation resource description'
+      ].join('\\n');
+      editor.setValue(definition);
+      apiConsole.toggleDocumentationApiReference('documentation');
+      apiConsole.getListMainResources().then(function(list){
+        expect(list.length).toEqual(0);
+      });
+      apiConsole.toggleDocumentationApiReference('api');
+      apiConsole.getListMainResources().then(function(list){
+        expect(list.length).toEqual(1);
+      });
+    });
+
+    it('check documentation view', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: My api',
+        'documentation:',
+        '  - title: My docs1',
+        '    content: | ',
+        '      content of my doc1',
+        '  - title: My docs2',
+        '    content: content of my doc2',
+        '/presentation: ',
+        '  description: presentation resource description'
+      ].join('\\n');
+      editor.setValue(definition);
+      var expTitle = ['My docs1', 'My docs2'];
+      var expContent = ['content of my doc1','content of my doc2' ];
+      apiConsole.toggleDocumentationApiReference('documentation');
+      apiConsole.getListMainResources().then(function(list){
+        expect(list.length).toEqual(0);
+      });
+      designerAsserts.consoleValidateDocumentationSectionPlainText(expTitle, expContent);
+    });
+
+    xdescribe('Markdown', function(){
+
+      it('validate titles',function(){
+
+      });
+
+      it('validate lists', function(){
+
+      });
+
+
+    });//Markdown
+  });//documentation section
 
 });// Embedded-console

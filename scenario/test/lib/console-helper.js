@@ -11,9 +11,32 @@ function ConsoleHelper() {
   this.listResourceMethodsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li';
 //  this.methodDocumentationArea = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation';
   this.ListOftabs = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation div ul li a';
+  this.documentationSectionlistCss = '[role="api-console"] div [role="root-documentation"] section';
 }
 
 ConsoleHelper.prototype = {};
+
+ConsoleHelper.prototype.toggleDocumentationApiReference = function(view){
+  var button = browser.findElement(by.css('[role="api-console"] nav a'));
+  if (view === 'api'){
+//    console.log('to select api view');
+    expect(button.getAttribute('ng-click')).toEqual('ramlConsole.gotoView("apiReference")');
+    button.click();
+  }else {
+    if (view ==='documentation'){
+//      console.log('to select documentation view');
+      expect(button.getAttribute('ng-click')).toEqual('ramlConsole.gotoView("rootDocumentation")');
+      button.click();
+    }
+  }
+
+};
+
+ConsoleHelper.prototype.getDocumentationSections = function(){
+  return browser.findElements(by.css(this.documentationSectionlistCss));
+};
+
+
 
 ConsoleHelper.prototype.getListMainResources = function(){
   var that = this;

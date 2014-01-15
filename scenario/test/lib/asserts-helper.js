@@ -9,6 +9,7 @@ AssertsHelper.prototype = {};
 
 var editor = new EditorHelper();
 var shelf = new ShelfHelper();
+var apiConsole = new ConsoleHelper();
 
 //Editor Starts
 AssertsHelper.prototype.parserError = function(vLine, vMessage){
@@ -20,6 +21,16 @@ AssertsHelper.prototype.parserError = function(vLine, vMessage){
     d.fulfill();
   });
   return d.promise;
+};
+
+
+AssertsHelper.prototype.checkSyntaxHignlight = function(line,pos,text){
+  //Line is editor line, pos , text is the highlight class
+  line--;
+  editor.getSHighlightClass(line,pos).then(function(classe){
+    expect(classe).toEqual(text);
+  });
+
 };
 //Editor Ends
 
@@ -196,6 +207,24 @@ AssertsHelper.prototype.consoleResourceDescription = function(descriptions){
     });
   });
 
+};
+
+
+AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function(expTitle, expContent){
+  apiConsole.getDocumentationSections().then(function(sections){
+    expect(sections.length).toEqual(expTitle.length);
+    var i = 0;
+    sections.forEach(function(section){
+      var p = i++;
+      section.findElement(by.css('h2')).then(function(title){
+        expect(title.getText()).toEqual(expTitle[p]);
+        title.click();
+      });
+      section.findElement(by.css('p')).then(function(content){
+        expect(content.getText()).toEqual(expContent[p]);
+      });
+    });
+  });
 };
 
 

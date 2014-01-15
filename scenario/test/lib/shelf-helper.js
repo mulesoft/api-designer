@@ -1,4 +1,5 @@
 'use strict';
+var webdriver = require('selenium-webdriver');
 function ShelfHelper() {
   this.elemRamlVersion = ['#%RAML 0.8'];
   this.elemRamlByGroup = '';
@@ -75,6 +76,9 @@ function ShelfHelper() {
   this.elemBodyLevel = this.elemBodyLevelDocs;
   this.elemBodyByGroup = '';
 
+// Documentation
+  this.elemDocumentationLevelDocs = ['content','title'];
+  this.elemDocumentationLevel = this.elemDocumentationLevelDocs;
   this.elemlistCss = '[ng-repeat=\'item in section.items\'] span';
 }
 
@@ -103,6 +107,26 @@ ShelfHelper.prototype.selectFirstElem = function(){
     that.getElementsPromise().then(function(list){
       list[0].click();
     });
+  });
+};
+
+ShelfHelper.prototype.clickShelfElemByPos = function(pos){
+  var that = this;
+  var d = webdriver.promise.defer();
+  browser.wait(function(){
+    return browser.isElementPresent(by.css(that.elemlistCss));
+  }).then(function () {
+    that.getElementsPromise().then(function(list){
+      list[pos].click();
+      d.fulfill('done');
+    });
+  });
+  return d.promise;
+};
+
+ShelfHelper.prototype.selectShelfElemByPos = function(pos){
+  this.clickShelfElemByPos(pos).then(function(text){
+    expect(text).toEqual('done');
   });
 };
 

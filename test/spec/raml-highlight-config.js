@@ -284,6 +284,13 @@ describe('RAML Highlight Config', function () {
     state.token.should.equal(codeMirrorHighLight._markdown);
   });
 
+  it('calculates the correct indentation when entering markdown mode (taking array starter into account)', function() {
+    var state = mode.startState();
+    var stream = new CodeMirror.StringStream('  - content: |');
+    state.token(stream, state).should.be.equal('meta');
+    state.localState.parentIndentation.should.be.equal(4);
+  });
+
   describe('indentation', function() {
     it('marks beginning indentation', function() {
       var state = mode.startState();
@@ -344,5 +351,4 @@ describe('RAML Highlight Config', function () {
       // since they're nested within the markdown
       should.not.exist(mode.token(stream, state));
     });
-  });
 });
