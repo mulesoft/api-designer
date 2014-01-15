@@ -11,7 +11,7 @@ module.exports = function(config) {
     // frameworks to use
     frameworks: [
       'mocha',
-      'chai'
+      'chai-sinon'
     ],
 
     // list of files / patterns to load in the browser
@@ -34,7 +34,6 @@ module.exports = function(config) {
       'bower_components/angular-bootstrap/ui-bootstrap-tpls.js',
       'bower_components/es5-shim/es5-shim.js',
       'bower_components/showdown/src/showdown.js',
-      'bower_components/sinonjs/sinon.js',
 
       'bower_components/raml-js-parser/dist/raml-parser.js',
       'bower_components/api-console/dist/scripts/app.js',
@@ -49,6 +48,8 @@ module.exports = function(config) {
       'app/scripts/services/code-mirror.js',
       'app/scripts/services/code-mirror-errors.js',
       'app/scripts/services/event.js',
+      'app/scripts/services/raml-editor-file-list.js',
+      'app/scripts/services/raml-editor-new-file-prompt.js',
       'app/scripts/services/raml-hint.js',
       'app/scripts/services/raml-snippets.js',
       'app/scripts/services/raml-highlight.js',
@@ -64,6 +65,9 @@ module.exports = function(config) {
       'app/scripts/controllers/raml-editor-main.js',
       'app/scripts/controllers/raml-editor-shelf.js',
       'app/scripts/controllers/notifications.js',
+      'app/scripts/directives/raml-editor-file-browser.js',
+      'app/scripts/directives/raml-editor-new-file-button.js',
+      'app/scripts/directives/raml-editor-context-menu.js',
 
       'test/mock/**/*.js',
       'test/spec/**/*.js'

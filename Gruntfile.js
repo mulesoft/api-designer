@@ -119,7 +119,10 @@ module.exports = function (grunt) {
     },
     jshint: {
       options: {
-        jshintrc: '.jshintrc'
+        jshintrc: '.jshintrc',
+        ignores: [
+          'test/spec/support/templates.js'
+        ]
       },
       all: [
         'Gruntfile.js',
@@ -219,13 +222,21 @@ module.exports = function (grunt) {
       }
     },
     ngtemplates: {
-      ramlConsoleApp: {
+      ramlEditorApp: {
         options: {
           base: 'app',
           concat: 'dist/scripts/scripts.js'
         },
         src: 'app/views/**/*.html',
         dest: 'dist/templates.js'
+      },
+      test: {
+        options: {
+          base: 'app',
+          module: 'ramlEditorApp'
+        },
+        src: 'app/views/**/*.html',
+        dest: 'test/spec/support/templates.js'
       }
     },
     less: {
@@ -276,6 +287,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'jshint',
+    'ngtemplates:test',
     'karma'
   ]);
 
@@ -284,7 +296,7 @@ module.exports = function (grunt) {
     'jshint',
     'less',
     'useminPrepare',
-    'ngtemplates',
+    'ngtemplates:ramlEditorApp',
     'concat',
     'htmlmin',
     'copy:dist',

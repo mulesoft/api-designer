@@ -123,6 +123,7 @@ div[role=editor] {
   transition: padding-bottom .05s ease-in;
   background: rgb(11,11,13);
 
+  position: relative;
   display: flex;
   flex-direction: column;
 
@@ -189,6 +190,22 @@ div[role=code] {
   overflow: auto;
   position: relative;
   flex: 1;
+}
+
+raml-editor-new-file-button {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+
+  i {
+    cursor: pointer;
+    font-size: 20px;
+    color: gray;
+
+    &:hover {
+      color: white;
+    }
+  }
 }
 
 /* Preview - Console */
