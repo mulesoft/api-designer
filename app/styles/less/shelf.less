@@ -2,29 +2,25 @@
 
 /* Shelf */
 div[role=shelf] {
-  position: absolute;
   background: rgb(26,32,43);
   color: gray;
-  left: 0;
-  right: 0;
-  bottom: 0;
   border-top: 1px solid rgb(48,83,110);
   .box-sizing(border-box);
-  padding: 0 20px;
   font-size: 15px;
   transition: height .1s ease-in;
-  z-index: 5;
-  
+  flex: 0 0 0px;
   .disable-selection;
+  position: relative;
 }
 
 div[role=shelf].expanded {
-  height: 160px;
+  flex: 0 0 160px;
 }
 
 div[role=shelf] div[role=shelf-container] {
   overflow: auto;
   height: 100%;
+  padding: 0 20px;
 }
 
 div[role=shelf] > div[role=shelf-tab] {
@@ -39,6 +35,7 @@ div[role=shelf] > div[role=shelf-tab] {
   border-top: 1px solid rgb(48,83,110);
   border-left: 1px solid rgb(48,83,110);
   border-radius: 2px 0 0 0;
+  white-space: nowrap;
   cursor: pointer;
 }
 

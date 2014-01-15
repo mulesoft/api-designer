@@ -25,7 +25,6 @@ div[role=raml-editor] {
   width: 100%;
   height: 100%;
   padding-top: 60px;
-  padding-left: 4px;
   .box-sizing(border-box);
   position: relative;
   background: rgb(52,52,54);
@@ -36,13 +35,11 @@ div[role=raml-editor] > header {
   position: absolute;
   top: 0;
   left: 0;
-  margin-left: 4px;
   padding-top: 12px;
   padding-left: 18px;
   right: 0;
   background: rgb(87,88,90);
   height: 60px;
-  border-radius: 5px 0 0 0;
 }
 
 div[role=raml-editor] > header > div[role=notifications] {
@@ -75,7 +72,6 @@ div[role=raml-editor] > header > div[role=notifications] {
       color: white;
     }
   }
-
 
   &.hidden {
     opacity: 0;
@@ -113,36 +109,37 @@ div[role=raml-editor] > header > a[role=logo] {
   background-image: @lightLogo;
 }
 
-div[role=editor] {
-  width: @editorWidth;
+/* BEGIN HORIZONTAL COMPONENT COLUMNS */
+
+div[role=flexColumns] {
   height: 100%;
-  float: left;
-  padding: 0;
-  .box-sizing(border-box);
-  position: relative;
-  transition: padding-bottom .05s ease-in;
-  padding-top: 32px;
-  background: rgb(11,11,13);
+  display: flex;
+  flex-direction: row;
 }
 
-div[role=editor].collapsed {
-  padding-bottom: 161px;
+div[role=editor] {
+  .box-sizing(border-box);
+
+  transition: padding-bottom .05s ease-in;
+  background: rgb(11,11,13);
+
+  display: flex;
+  flex-direction: column;
+
+  flex: 1;
 }
 
 div[role=editor].error {
   .box-shadow(0 0 5px 1px red);
   transition: all .5s ease-out;
-  z-index: 65;
+  z-index: 1001;
 }
+
 /* Tabs */
 
 div[role=tabs] {
-  padding: 0 0 0 0;
-  overflow:visible;
-  position: absolute;
-  top: 3px;
-  left: 0px;
   .box-sizing(border-box);
+  overflow: hidden;
 }
 
 div[role=tab] {
@@ -189,25 +186,23 @@ div[role=tab].active div[role=tab-box]{
 }
 
 div[role=code] {
-  padding: 0;
+  overflow: auto;
+  position: relative;
+  flex: 1;
 }
 
 /* Preview - Console */
 
 div[role=preview-wrapper] {
-  position: absolute;
-  right: 0px;
-  width: @consoleWidth;
-  min-width: 140px;
-  height: ~"calc(100% - 60px)";
-  float: right;
   .box-sizing(border-box);
+  overflow: auto;
   background: rgb(230,231,235);
-  padding: 20px 20px 10px 20px;
-  z-index: 6;
+  flex: 0 0 250px;
+  z-index: 70;
 }
 
 div[role=preview] {
+  padding: 20px 20px 10px 20px;
   height: 100%;
   position: relative;
 }

@@ -6,64 +6,69 @@
 
     <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
       {{message}}
-      <i class="icon-ok" ng-click="hideNotifications()"> </i>
+      <i class="icon-ok" ng-click="hideNotifications()"></i>
     </div>
 
     <a role="logo" target="_blank" href="http://mulesoft.com"></a>
   </header>
 
-  <div role="browser">
-    <div role="save-menu">
-        <button class="menu-left" role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()" ng-click="save()">Save</button>
-        <button role="save-menu-rolldown-button" ng-click="toggleSaveMenu()"><i ng-class="saveMenu.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i></button>
-    </div>
+  <div role="flexColumns">
+    <div role="browser">
+      <div role="browserHeader" class="clearfix">
+        <div role="save-menu" class="browserHeaderItem">
+          <button class="menu-left" role="save-button" ng-class="{disabled: !canSave()}" ng-click="save()" ng-click="save()">Save</button><button role="save-menu-rolldown-button" ng-click="toggleSaveMenu()"><i ng-class="saveMenu.expanded ? 'icon-caret-up' : 'icon-caret-down'"></i></button>
+        </div>
 
-    <ul role="save-submenu" ng-class="{expanded: saveMenu.expanded}">
-        <li role="save-option" ng-class="{disabled: !canSave()}" ng-click="save()"> Save </li>
-        <li role="saveas-option" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()"> Save As </li>
-    </ul>
+        <ul role="save-submenu" ng-class="{expanded: saveMenu.expanded}">
+          <li role="save-option" ng-class="{disabled: !canSave()}" ng-click="save()"> Save </li>
+          <li role="saveas-option" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()"> Save As </li>
+        </ul>
 
-    <div role="new-menu">
-        <button role="new-button" ng-click="newFile()">New</button>
-    </div>
-
-    <div role="title" class="read-only">Your files</div>
-    <div role="loading-indicator" ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>loading...</div>
-
-    <ul role="file-list">
-      <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
-
-      <li role="file-name"
-          ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
-          ng-repeat="fileEntry in files | orderBy:'name'"
-          ng-click="loadFile(fileEntry)">
-          <i class="icon-file"></i>
-          <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
-          <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
-      </li>
-    </ul>
-  </div>
-
-  <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
-    <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
-      <div role="shelf-tab" ng-click="toggleShelf()">
-        <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
+        <div role="new-menu" class="browserHeaderItem">
+          <button role="new-button" ng-click="newFile()">New</button>
+        </div>
       </div>
 
-      <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
+      <div role="browserMain">
+        <div role="loading-indicator" ng-show="files.loading" class="read-only"><i class="icon-refresh"></i>&nbsp;loading...</div>
+
+        <ul role="file-list">
+          <li ng-show="!files.loading && !files.length" class="read-only" ng-click="toggleBrowser()"><i class="icon-exclamation-sign"></i>No files found</li>
+          <li role="file-name"
+              ng-class="{currentfile: compareFiles(fileEntry, file), dirty: canSave() && compareFiles(fileEntry, file)}"
+              ng-repeat="fileEntry in files | orderBy:'name'"
+              ng-click="loadFile(fileEntry)">
+            <i class="icon-file"></i>
+            <span ng-class="{dirty: canSave() && compareFiles(fileEntry, file)}">{{fileEntry.name}}</span>
+            <i class="icon-trash" ng-click="deleteFile(fileEntry)"></i>
+          </li>
+        </ul>
+      </div>
     </div>
 
-    <div role="tabs">
-      <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
+    <div role="editor" ng-class="{error: hasErrors}">
+      <div role="tabs">
+        <div role="tab" class="active"><span ng-show="canSave()">*&nbsp;</span>{{file.name}}<div role="tab-box"></div></div>
+      </div>
+
+      <div id="code" role="code"></div>
+
+      <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
+        <div role="shelf-tab" ng-click="toggleShelf()">
+          <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
+        </div>
+
+        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
+      </div>
     </div>
 
-    <div id="code" role="code" style="height:inherit"></div>
-  </div>
+    <div ng-splitter="vertical"><i id="consoleSplitter" class="icon-chevron-sign-right"></i></div>
 
-  <div role="preview-wrapper">
-    <div role="preview">
-      <div role="console">
-        <raml-console></raml-console>
+    <div role="preview-wrapper">
+      <div role="preview" class="bootstrap">
+        <div role="console">
+          <raml-console></raml-console>
+        </div>
       </div>
     </div>
   </div>

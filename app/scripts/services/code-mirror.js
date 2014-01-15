@@ -166,7 +166,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       }
 
       cm = new CodeMirror(el, options);
-      cm.setSize(null, '100%');
+      cm.setSize('100%', '100%');
       cm.foldCode(0, {
         rangeFinder: CodeMirror.fold.indent
       });
