@@ -3,7 +3,7 @@
 
   angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function($rootScope, $q, $window, ramlEditorNewFilePrompt, fileList, ramlRepository) {
     var controller = function($scope) {
-      var unwatchSelectedFile = angular.noop;
+      var unwatchSelectedFile = angular.noop, contextMenu;
       $scope.fileBrowser = this;
       $scope.homeDirectory = fileList;
 
@@ -38,6 +38,18 @@
 
       this.saveFile = function(file) {
         ramlRepository.saveFile(file);
+      };
+
+      $scope.registerContextMenu = function(cm) {
+        contextMenu = cm;
+      };
+
+      this.showContextMenu = function(event, file) {
+        contextMenu.open(event, file);
+      };
+
+      this.contextMenuOpenedFor = function(file) {
+        return contextMenu.file === file;
       };
 
       var saveListener = function(e) {

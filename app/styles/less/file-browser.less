@@ -1,3 +1,4 @@
+@import "colors.less";
 @import "utils.less";
 @import "mixins.less";
 
@@ -8,11 +9,43 @@
   color: grey;
   padding-right: 3px;
   .disable-selection;
+  position: relative;
 
   button {
     .button;
     float: left;
     margin: 4px 4px 4px 0;
+  }
+
+  [role="context-menu"] {
+    position: absolute;
+    z-index: 5;
+    list-style: none;
+    margin: 0;
+    border: 1px solid #AAA;
+    background-color: #EEE;
+    color: #666;
+
+    padding: 3px 0;
+    min-width: 145px;
+    font-size: 13px;
+    line-height: 18px;
+    border-radius: 2px;
+    box-shadow: 3px 3px 10px 0 rgba(0,0,0,0.25);
+    opacity: 0.95;
+
+    li {
+      padding: 2px 5px;
+
+      &:hover {
+        background: @cello_blue;
+        color: #DDD;
+      }
+    }
+  }
+
+  [role="context-menu-item"] {
+    cursor: pointer;
   }
 
   ul[role=file-list] {
@@ -42,7 +75,7 @@
 
       &.currentfile {
         color: #ddd;
-        background-color: rgb(30,79,106);
+        background-color: @cello_blue;
       }
 
       &::before {
@@ -52,6 +85,18 @@
 
       &.dirty::before {
         visibility: visible;
+      }
+
+      .icon {
+        display: none;
+        float: right;
+        font-size: 15px;
+        line-height: 18px;
+        margin-right: 5px;
+      }
+
+      &.geared .icon, &:hover .icon {
+        display: block;
       }
     }
   }

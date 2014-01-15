@@ -15,6 +15,7 @@ describe('ramlEditorFileBrowser', function() {
 
   function compileFileBrowser() {
     el = compileTemplate('<raml-editor-file-browser></raml-editor-file-browser>', scope);
+    document.body.appendChild(el[0]);
   }
 
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
@@ -98,6 +99,38 @@ describe('ramlEditorFileBrowser', function() {
     });
   });
 
+  describe('opening the context menu', function() {
+    var iconToClick;
+
+    beforeEach(function() {
+      ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
+      compileFileBrowser();
+      iconToClick = el[0].querySelectorAll('[role="file-name"] i')[1];
+
+      sandbox.spy(ramlRepository, 'loadFile');
+    });
+
+    describe('by default', function() {
+      beforeEach(function() {
+        scope.fileBrowser.selectedFile.name.should.equal('file1');
+        iconToClick.dispatchEvent(events.click());
+      });
+
+      it('does not update the selectedFile', function() {
+        scope.fileBrowser.selectedFile.name.should.equal('file1');
+      });
+
+      it('adds the "geared" class to the file clicked', function() {
+        iconToClick.parentElement.classList.contains('geared').should.be.true;
+      });
+
+      it('opens the context menu', function() {
+        var rect = el[0].querySelector('[role="context-menu"]').getBoundingClientRect();
+        rect.height.should.be.greaterThan(0);
+      });
+    });
+  });
+
   describe('when a new file is created', function() {
     beforeEach(inject(function($rootScope) {
       compileFileBrowser();
@@ -121,22 +154,8 @@ describe('ramlEditorFileBrowser', function() {
       saveSpy = sandbox.spy(ramlRepository, 'saveFile');
     });
 
-    it('calls saveFile passing the selected file', function() {
-
-      el[0].querySelector('[role="save-button"]').click();
-
-      saveSpy.should.have.been.calledWith(ramlRepository.files[1]);
-    });
-
     it('saves when meta-s is pressed', function() {
-      var event = document.createEvent('Events');
-
-      event.initEvent('keydown', true, true);
-
-      event.keyCode = 83;
-      event.which = 83;
-      event.metaKey = true;
-
+      var event = events.keydown(83, true);
       document.dispatchEvent(event);
       saveSpy.should.have.been.calledWith(ramlRepository.files[1]);
     });
