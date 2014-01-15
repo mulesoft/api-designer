@@ -49,7 +49,7 @@ angular.module('ramlEditorApp')
   })
   .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
     safeApply, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
-    codeMirrorErrors, config, $prompt, $confirm, safeApplyWrapper, $modal
+    codeMirrorErrors, config, $prompt, $confirm, safeApplyWrapper, $modal, fileList
   ) {
     var editor;
     var currentUpdateTimer;
@@ -178,7 +178,7 @@ angular.module('ramlEditorApp')
 
       // Warn before leaving the page
       $window.onbeforeunload = function () {
-        var anyUnsavedChanges = $scope.fileBrowser.files.some(function(file) {
+        var anyUnsavedChanges = fileList.files.some(function(file) {
           return file.dirty;
         });
         if (anyUnsavedChanges) {

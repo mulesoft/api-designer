@@ -4,7 +4,7 @@ var codeMirror, eventService, codeMirrorErrors,
   $rootScope, $controller, $q, applySuggestion;
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepositoryx;
 
   beforeEach(module('ramlEditorApp'));
 
@@ -45,7 +45,8 @@ describe('RAML Editor Main Controller', function () {
       codeMirror: codeMirror,
       codeMirrorErrors: codeMirrorErrors,
       eventService: eventService,
-      $confirm: $confirm
+      $confirm: $confirm,
+      fileList: {}
     };
   });
 
@@ -110,7 +111,7 @@ describe('RAML Editor Main Controller', function () {
 
   describe('leaving the page', function() {
     it('should ask user for confirmation if there are unsaved changes', function () {
-      scope.fileBrowser = {
+      params.fileList = {
         files: [
           { dirty: false },
           { dirty: true },
@@ -123,7 +124,7 @@ describe('RAML Editor Main Controller', function () {
     });
 
     it('should not ask user for confirmation if there are no unsaved changes', function () {
-      scope.fileBrowser = {
+      params.fileList = {
         files: [
           { dirty: false },
           { dirty: false },
