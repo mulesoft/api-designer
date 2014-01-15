@@ -84,8 +84,11 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
       //Clip the size to a minimum of minSize pixels wide/high
       size = Math.max(size, collapsedSize);
       //Show/hide the chevron:
-      setChevronState(splitter, size === collapsedSize);
+      var collapsed = size === collapsedSize;
+      setChevronState(splitter, collapsed);
       next.css('flex', '0 0 ' + size + 'px');
+      //Hide the scrollbar on collapse
+      next.css('overflow', collapsed ? 'hidden' : 'auto');
     }
 
     /**
