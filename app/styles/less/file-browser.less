@@ -2,8 +2,7 @@
 
 /* Browser */
 div[role=browser] {
-  overflow: show;
-  overflow-x: show;
+  font-size: 12px;
   color: grey;
   padding-right: 3px;
   -webkit-touch-callout: none;
@@ -14,33 +13,38 @@ div[role=browser] {
   user-select: none;
   z-index: 200;
 
-  -webkit-flex: 0 0 184px;
-  flex: 0 0 184px;
+  flex: 0 0 200px;
 
   display: flex;
   flex-direction: column;
 }
 
 div[role=browser] div[role=browserHeader] {
-  flex: 0 0 54px;
+  padding: 5px 10px;
+}
+
+div[role=browser] .browserHeaderItem {
+  margin-left: 10px;
+}
+
+div[role=browser] .browserHeaderItem:first-child {
+  margin-left: 0;
 }
 
 div[role=browser] div[role=browserMain] {
+  display: flex;
+  flex-direction: column;
+
   border-radius: 0px 3px 0px 0px;
   background-color: rgb(20,21,25);
 
-  flex: 1 1 auto;
-
-  display: flex;
-  flex-direction: row;
+  flex: 1;
 }
 
 /* Button menus*/
 div[role=raml-editor] div[role=browser] div[role$=menu] {
-  margin: 4px 0px 4px 2px;
   color: white;
-  border-radius: 2px;
-  font-size: 13px;
+  border-radius: 4px;
   cursor: pointer;
   float: left;
 }
@@ -51,14 +55,10 @@ div[role=raml-editor] div[role=browser] div[role$=menu] > button:hover {
 
 div[role=raml-editor] div[role=browser] div[role=save-menu] > button[role=save-button] {
   border-right: 1px solid #777;
-  margin-right: 0;
 }
 
 div[role=raml-editor] div[role=browser] div[role=save-menu] > button[role=save-menu-rolldown-button] {
-  margin-left: -4px;
-  border-radius: 4px;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  border-radius: 0 4px 4px 0;
 }
 
 div[role=raml-editor] div[role=browser] div[role$=menu] > button {
@@ -88,13 +88,12 @@ div[role=raml-editor] div[role=browser] div[role$=menu] > button {
 }
 
 button.menu-left {
-  border-radius: 4px;
+  border-radius: 4px 0 0 4px;
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 
 div[role=raml-editor] div[role=browser] div[role=new-menu] > button {
-  margin-left: 6px;
   border-radius: 4px;
 }
 
@@ -143,16 +142,14 @@ div[role=browser] ul[role=save-submenu] > li:not(.disabled):hover {
 
 /* Files list*/
 div[role=browser] ul[role=file-list] {
-  padding: 6px 0px 0px 0px;
-  margin: 0px;
+  margin: 0;
+  padding: 0;
   overflow: auto;
   list-style: none;
-  font-size: 13px;
   .box-shadow(2px 2px 7px -2px #333);
   color: #777;
 
-  -webkit-flex: 0 0 100%;
-  flex: 0 0 100%;
+  flex: 1;
 }
 
 div[role=browser] ul[role=file-list] > li {
@@ -171,12 +168,9 @@ div[role=browser] div[role=title] {
 }
 
 div[role=browser] div[role=loading-indicator] {
-  float: left;
-  padding: 2px 2px 2px 10px;
-  line-height: 18px;
-  font-size: 13px;
+  padding: 5px 10px;
   color: white;
-  flex: 0 0 100%;
+  text-align: center;
 }
 
 div[role=browser] ul[role=file-list] > li.read-only {

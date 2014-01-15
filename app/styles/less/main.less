@@ -113,43 +113,33 @@ div[role=raml-editor] > header > a[role=logo] {
 
 div[role=flexColumns] {
   height: 100%;
-  display: -webkit-flex;
   display: flex;
-  -webkit-flex-flow: row nowrap;
-  flex-flow: row nowrap;
+  flex-direction: row;
 }
 
 div[role=editor] {
-  padding: 0;
   .box-sizing(border-box);
+
   transition: padding-bottom .05s ease-in;
   background: rgb(11,11,13);
 
   display: flex;
   flex-direction: column;
 
-  flex: 1 6 60%;
-}
-
-div[role=editor].collapsed {
-  padding-bottom: 161px;
+  flex: 1;
 }
 
 div[role=editor].error {
   .box-shadow(0 0 5px 1px red);
   transition: all .5s ease-out;
-  z-index: 65;
+  z-index: 1001;
 }
+
 /* Tabs */
 
 div[role=tabs] {
-  padding: 0 0 0 0;
-  overflow:hidden;
-  top: 3px;
-  left: 0px;
   .box-sizing(border-box);
-
-  flex: 0 0 30px;
+  overflow: hidden;
 }
 
 div[role=tab] {
@@ -196,10 +186,9 @@ div[role=tab].active div[role=tab-box]{
 }
 
 div[role=code] {
-  padding: 0;
   overflow: auto;
   position: relative;
-  flex: 1 1 auto;
+  flex: 1;
 }
 
 /* Preview - Console */
