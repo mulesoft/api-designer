@@ -296,6 +296,17 @@ describe('RAML Highlight Config', function () {
       stream.pos.should.equal(4);
     });
 
+    it('marks beginning partial indentation (1 trailing space)', function() {
+      var state = mode.startState();
+      var stream = new CodeMirror.StringStream('   description: text');
+      mode.token(stream, state).should.equal('indent indent-col-0');
+      stream.pos.should.equal(2);
+
+      stream.start = stream.pos;
+      mode.token(stream, state).should.equal('indent-incomplete');
+      stream.pos.should.equal(3);
+    });
+
     it('does not mark indentation after non-whitespace', function() {
       var state = mode.startState();
       var stream = new CodeMirror.StringStream('description: text    ');

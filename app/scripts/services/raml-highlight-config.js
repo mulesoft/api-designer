@@ -7,11 +7,14 @@ angular.module('codeMirror')
     mode.highlight = function(config) {
       mode.indentationOverlay = {
         token: function(stream, state) {
-          if (stream.match('  ') && (state.cutoff === undefined || stream.column() <= state.cutoff)) {
-            return 'indent indent-col-' + stream.column();
-          } else {
-            stream.skipToEnd();
+          if (state.cutoff === undefined || stream.column() <= state.cutoff) {
+            if (stream.match('  ')) {
+              return 'indent indent-col-' + stream.column();
+            } else if (stream.match(' ')) {
+              return 'indent-incomplete';
+            }
           }
+          stream.skipToEnd();
         },
         startState: function() {
           return {};
