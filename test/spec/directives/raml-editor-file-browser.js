@@ -8,6 +8,7 @@ describe('ramlEditorFileBrowser', function() {
 
     return {
       name: name,
+      path: '/' + name,
       dirty: !!options.dirty,
       contents: options.contents
     };
@@ -27,18 +28,36 @@ describe('ramlEditorFileBrowser', function() {
     ramlRepository = $injector.get('ramlRepository');
   }));
 
-  afterEach(function() {
+  afterEach(inject(function(config) {
     scope.$destroy();
     el = scope = ramlRepository = undefined;
     sandbox.restore();
-  });
+    config.clear();
+  }));
 
   describe('when initialized', function() {
-    it('selects the first file', function() {
-      ramlRepository.files = [createMockFile('lastFile'), createMockFile('firstFile')];
-      compileFileBrowser();
-      scope.fileBrowser.selectedFile.name.should.equal('firstFile');
+    describe('by default', function() {
+      it('selects the first file', function() {
+        ramlRepository.files = [createMockFile('lastFile'), createMockFile('firstFile')];
+        compileFileBrowser();
+        scope.fileBrowser.selectedFile.name.should.equal('firstFile');
+      });
     });
+
+    describe('with a previous file selected', function() {
+      beforeEach(inject(function(config) {
+        ramlRepository.files = [createMockFile('lastFile'), createMockFile('firstFile')];
+        var fileToOpen = ramlRepository.files[0];
+
+        config.set('currentFile', JSON.stringify({ name: fileToOpen.name, path: fileToOpen.path }));
+        compileFileBrowser();
+      }));
+
+      it('selects the previously selected file', function() {
+        scope.fileBrowser.selectedFile.name.should.equal('lastFile');
+      });
+    });
+
 
     describe('when there are no files', function() {
       it('prompts you to name a new file', function() {
@@ -70,6 +89,11 @@ describe('ramlEditorFileBrowser', function() {
       it('updates selectedFile to the file clicked', function() {
         scope.fileBrowser.selectedFile.name.should.equal('file2');
       });
+
+      it('updates the currentFile stored in config', inject(function(config) {
+        JSON.parse(config.get('currentFile')).name.should.equal('file2');
+        JSON.parse(config.get('currentFile')).path.should.equal('/file2');
+      }));
 
       it('adds the "currentfile" class to the file clicked', function() {
         fileToClick.classList.contains('currentfile').should.be.true;
