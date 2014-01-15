@@ -1,4 +1,4 @@
-@splitter-border-size: 5px;
+@splitter-size: 5px;
 @splitter-color: #EFEFEF;
 
 div .noselect {
@@ -11,14 +11,11 @@ div .noselect {
 [ng-splitter] {
   box-shadow: (@splitter-color - #333333) 0px 0px 2px 1px inset;
   z-index: 1000;
+  background: @splitter-color;
+  cursor: col-resize;
+  flex: 0;
 
-  .icon-chevron-sign-left {
-    position: relative;
-    left: 8px;
-    cursor: pointer;
-  }
-
-  .icon-chevron-sign-right {
+  & > i {
     position: relative;
     left: 8px;
     cursor: pointer;
@@ -26,17 +23,10 @@ div .noselect {
 }
 
 [ng-splitter=vertical] {
-  position: relative;
-  display: inline-block;
-  width: @splitter-border-size;
-  height: 100%;
-  background: @splitter-color;
-  cursor: col-resize;
+  min-width: @splitter-size;
+  flex: 0;
 }
 
 [ng-splitter=horizontal] {
-  width: auto;
-  height: @splitter-border-size;
-  background: @splitter-color;
-  cursor: row-resize;
+  min-height: @splitter-size;
 }
