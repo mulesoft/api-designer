@@ -168,7 +168,11 @@ describe('RAML Repository', function () {
       var saveDeferred = $q.defer();
       var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var success = sinon.stub();
-      var fileMock = {dirty: true};
+      var fileMock = {
+        path: '/',
+        name: 'example.raml',
+        dirty: true
+      };
       var file;
 
       // Act
@@ -192,7 +196,11 @@ describe('RAML Repository', function () {
       var saveDeferred = $q.defer();
       var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var error = sinon.stub();
-      var fileMock = {dirty: true};
+      var fileMock = {
+        path: '/',
+        name: 'example.raml',
+        dirty: true
+      };
       var errorData = {message: 'This is the error description'};
 
       // Act

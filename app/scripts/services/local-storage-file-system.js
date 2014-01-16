@@ -26,7 +26,7 @@ angular.module('fs')
 
     function isValidParent(path) {
       var parent = path.slice(0, path.lastIndexOf('/'));
-      if(!localStorageHelper.has(parent)) {
+      if(!localStorageHelper.has(parent) && parent !== '') {
         return false;
       }
       return true;
@@ -263,6 +263,9 @@ angular.module('fs')
       return deferred.promise;
     };
 
+    /**
+     * Ranames a file or directory
+     */
     service.rename = function (source, destination) {
       var deferred = $q.defer();
 

@@ -40,8 +40,6 @@ FileSystem.prototype = {
    *  fullpath: The path of the entry that represents it unequivocally.
    *  type: Flag that can be set to 'file' or 'folder' that represents what 
    *    kind of entry is.
-   *  children: If the type of the entry is 'folder' it may contain the children attribute. This attribute is an array of
-   *    Entries that represents the content of that folder.
    *  meta: a key/value repository for contextual information about the file.
    *    standard fields include created, accessed and modified dates.
    *
