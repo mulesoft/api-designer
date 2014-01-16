@@ -17,7 +17,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
 
         if (this.length) {
           value = this[0].previousSibling;
-          while (value != null && value.nodeType !== 1) {
+          while (value !== null && value.nodeType !== 1) {
             value = value.previousSibling;
           }
         }
