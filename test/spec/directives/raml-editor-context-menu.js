@@ -8,7 +8,14 @@ describe('ramlEditorContextMenu', function() {
     document.body.appendChild(el[0]);
   }
 
-  beforeEach(module('ramlEditorApp'));
+  function contextMenuItemNamed(name) {
+    return Array.prototype.slice.call(el.children().children()).filter(function(child) {
+      return angular.element(child).text() === name;
+    })[0];
+  }
+
+  angular.module('contextMenuTest', ['ramlEditorApp', 'testFs']);
+  beforeEach(module('contextMenuTest'));
 
   beforeEach(inject(function($rootScope) {
     sandbox = sinon.sandbox.create();
@@ -39,21 +46,33 @@ describe('ramlEditorContextMenu', function() {
       scope.$digest();
     });
 
-    describe('saving', function() {
-      var saveFileStub;
+    describe('saving a file', function() {
+      var saveFileSpy;
 
       beforeEach(inject(function(ramlRepository) {
-        saveFileStub = sinon.stub(ramlRepository, 'saveFile');
-
-        var saveItem = Array.prototype.slice.call(el.children().children()).filter(function(child) {
-          return angular.element(child).text() === 'Save';
-        })[0];
+        saveFileSpy = sinon.spy(ramlRepository, 'saveFile');
+        var saveItem = contextMenuItemNamed('Save');
 
         saveItem.dispatchEvent(events.click());
       }));
 
       it('delegates to the ramlRepository', function() {
-        saveFileStub.should.have.been.calledWith(file);
+        saveFileSpy.should.have.been.calledWith(file);
+      });
+    });
+
+    describe('removing a file', function() {
+      var openStub;
+
+      beforeEach(inject(function(ramlEditorRemoveFilePrompt) {
+        openStub = sinon.stub(ramlEditorRemoveFilePrompt, 'open');
+        var removeItem = contextMenuItemNamed('Delete');
+
+        removeItem.dispatchEvent(events.click());
+      }));
+
+      it('delegates to the ramlRepository', function() {
+        openStub.should.have.been.calledWith(file);
       });
     });
 

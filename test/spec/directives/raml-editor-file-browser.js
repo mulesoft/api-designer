@@ -19,6 +19,20 @@ describe('ramlEditorFileBrowser', function() {
     document.body.appendChild(el[0]);
   }
 
+  function verifyNewFilePrompt(newFilePromptStub, done) {
+    function verify() {
+      try {
+        newFilePromptStub.should.have.been.called;
+        done();
+      } catch(e) {
+        setTimeout(verify, 10);
+      }
+    }
+
+    setTimeout(verify, 10);
+  }
+
+
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
@@ -60,12 +74,15 @@ describe('ramlEditorFileBrowser', function() {
 
 
     describe('when there are no files', function() {
-      it('prompts you to name a new file', function() {
-        var promptSpy;
-        promptSpy = sandbox.stub(window, 'prompt');
-        ramlRepository.files = [];
+      var openStub;
+
+      beforeEach(inject(function(ramlEditorNewFilePrompt) {
+        openStub = sinon.stub(ramlEditorNewFilePrompt, 'open');
+      }));
+
+      it('prompts you to name a new file', function(done) {
         compileFileBrowser();
-        promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-1.raml');
+        verifyNewFilePrompt(openStub, done);
       });
     });
   });
@@ -158,12 +175,48 @@ describe('ramlEditorFileBrowser', function() {
   describe('when a new file is created', function() {
     beforeEach(inject(function($rootScope) {
       compileFileBrowser();
-      $rootScope.$broadcast('event:raml-editor-new-file', createMockFile('filenameOfTheNewFile'));
+      $rootScope.$broadcast('event:raml-editor-file-created', createMockFile('filenameOfTheNewFile'));
       scope.$digest();
     }));
 
     it('selects the file', function() {
       scope.fileBrowser.selectedFile.name.should.equal('filenameOfTheNewFile');
+    });
+  });
+
+  describe('removing a file', function() {
+    beforeEach(inject(function(fileList) {
+      fileList.files.push(createMockFile('some.raml'));
+      compileFileBrowser();
+    }));
+
+    describe('when it is the last file', function() {
+      var openStub;
+
+      beforeEach(inject(function($rootScope, fileList, ramlEditorNewFilePrompt) {
+        var removed = fileList.files.pop();
+        openStub = sinon.stub(ramlEditorNewFilePrompt, 'open');
+
+        $rootScope.$broadcast('event:raml-editor-file-removed', removed);
+        scope.$digest();
+      }));
+
+      it('prompts the user to create a new file', function(done) {
+        verifyNewFilePrompt(openStub, done);
+      });
+    });
+
+    describe('when it is the selected file', function() {
+      beforeEach(inject(function($rootScope) {
+        var removed = scope.fileBrowser.selectedFile = createMockFile('old.raml');
+
+        $rootScope.$broadcast('event:raml-editor-file-removed', removed);
+        scope.$digest();
+      }));
+
+      it('selects the first file from the fileList', function() {
+        scope.fileBrowser.selectedFile.name.should.equal('some.raml');
+      });
     });
   });
 

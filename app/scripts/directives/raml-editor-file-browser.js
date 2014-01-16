@@ -8,6 +8,14 @@
       $scope.homeDirectory = fileList;
 
       ramlRepository.getDirectory().then(function() {
+        $scope.$watch('homeDirectory.files', function(files) {
+          if (files.length === 0) {
+            setTimeout(function() {
+              ramlEditorNewFilePrompt.open();
+            }, 0);
+          }
+        }, true);
+
         if (fileList.files.length > 0) {
           var lastFile = JSON.parse(config.get('currentFile', '{}'));
 
@@ -18,13 +26,17 @@
           fileToOpen = fileToOpen || fileList.files[0];
 
           $scope.fileBrowser.selectFile(fileToOpen);
-        } else {
-          ramlEditorNewFilePrompt.open();
         }
       });
 
-      $scope.$on('event:raml-editor-new-file', function(event, file) {
+      $scope.$on('event:raml-editor-file-created', function(event, file) {
         $scope.fileBrowser.selectFile(file);
+      });
+
+      $scope.$on('event:raml-editor-file-removed', function(event, file) {
+        if (file === $scope.fileBrowser.selectedFile && fileList.files.length > 0) {
+          $scope.fileBrowser.selectFile(fileList.files[0]);
+        }
       });
 
       this.selectFile = function(file) {

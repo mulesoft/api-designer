@@ -26,5 +26,14 @@ angular.module('testFs', [])
       };
     };
 
+    service.removeFile = function (file) {
+      var index = this.files.indexOf(file);
+      if (index !== -1) {
+        this.files.splice(index, 1);
+      }
+
+      return $q.when(file);
+    };
+
     return service;
   });
