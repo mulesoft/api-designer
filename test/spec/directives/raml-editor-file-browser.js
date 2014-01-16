@@ -76,7 +76,7 @@ describe('ramlEditorFileBrowser', function() {
     beforeEach(function() {
       ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
       compileFileBrowser();
-      fileToClick = el[0].querySelectorAll('[role="file-name"]')[1];
+      fileToClick = el[0].querySelectorAll('.file-item')[1];
 
       sandbox.spy(ramlRepository, 'loadFile');
     });
@@ -129,7 +129,7 @@ describe('ramlEditorFileBrowser', function() {
     beforeEach(function() {
       ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
       compileFileBrowser();
-      iconToClick = el[0].querySelectorAll('[role="file-name"] i')[1];
+      iconToClick = el[0].querySelectorAll('.file-item .icon')[1];
 
       sandbox.spy(ramlRepository, 'loadFile');
     });
@@ -173,7 +173,7 @@ describe('ramlEditorFileBrowser', function() {
     beforeEach(function() {
       ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
       compileFileBrowser();
-      var fileToSave = el[0].querySelectorAll('[role="file-name"]')[1];
+      var fileToSave = el[0].querySelectorAll('.file-item')[1];
       angular.element(fileToSave).triggerHandler('click');
       saveSpy = sandbox.spy(ramlRepository, 'saveFile');
     });
@@ -220,14 +220,14 @@ describe('ramlEditorFileBrowser', function() {
       it('indicates unsaved files', function() {
         ramlRepository.files = [ createMockFile('dirty', { dirty : true }) ];
         compileFileBrowser();
-        var file = el[0].querySelector('[role="file-name"]');
+        var file = el[0].querySelector('.file-item');
         file.classList.contains('dirty').should.be.true;
       });
 
       it('indicates saved files', function() {
         ramlRepository.files = [ createMockFile('saved') ];
         compileFileBrowser();
-        var file = el[0].querySelector('[role="file-name"]');
+        var file = el[0].querySelector('.file-item');
 
         file.classList.contains('dirty').should.be.false;
       });

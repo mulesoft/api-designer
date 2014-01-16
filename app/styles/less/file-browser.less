@@ -52,9 +52,9 @@
     cursor: pointer;
   }
 
-  ul[role=file-list] {
-    padding: 6px 0 0 0;
+  .file-list {
     margin: 0;
+    padding: 0;
     overflow: auto;
     list-style: none;
 
@@ -64,12 +64,13 @@
 
     flex: 1;
 
-    li {
-      padding: 2px 2px 2px 6px;
+    .file-item {
+      padding: 5px 10px;
       cursor: pointer;
-      line-height: 18px;
       white-space: nowrap;
 
+      display: flex;
+      align-items: center;
 
       &:not(.currentfile):hover {
         color: #ccc;
@@ -81,25 +82,23 @@
         background-color: @cello_blue;
       }
 
-      &::before {
-        content: "* ";
-        visibility: hidden;
-      }
-
-      &.dirty::before {
-        visibility: visible;
+      .file-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .icon {
         display: none;
-        float: right;
-        font-size: 15px;
-        line-height: 18px;
-        margin-right: 5px;
+        padding-left: 10px;
       }
 
       &.geared .icon, &:hover .icon {
         display: block;
+      }
+
+      &.dirty .file-name:before {
+        content: '* ';
       }
     }
   }
