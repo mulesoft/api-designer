@@ -15,7 +15,7 @@
         }
       });
 
-      $scope.$on('event:raml-editor-new-file', function(event, file) {
+      $scope.$on('event:raml-editor-file-created', function(event, file) {
         $scope.fileBrowser.selectFile(file);
       });
 

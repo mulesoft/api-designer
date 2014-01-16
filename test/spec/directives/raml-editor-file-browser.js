@@ -134,7 +134,7 @@ describe('ramlEditorFileBrowser', function() {
   describe('when a new file is created', function() {
     beforeEach(inject(function($rootScope) {
       compileFileBrowser();
-      $rootScope.$broadcast('event:raml-editor-new-file', createMockFile('filenameOfTheNewFile'));
+      $rootScope.$broadcast('event:raml-editor-file-created', createMockFile('filenameOfTheNewFile'));
       scope.$digest();
     }));
 

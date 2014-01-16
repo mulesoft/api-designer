@@ -20,7 +20,7 @@
       newFile: function(filename) {
         var file = ramlRepository.createFile(filename);
         this.files.push(file);
-        $rootScope.$broadcast('event:raml-editor-new-file', file);
+        $rootScope.$broadcast('event:raml-editor-file-created', file);
 
         return file;
       }

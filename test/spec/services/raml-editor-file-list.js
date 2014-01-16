@@ -34,7 +34,7 @@ describe('FileList', function () {
     });
 
     it('emits an event indicating that a file has been added', function() {
-      broadcastSpy.should.have.been.calledWith('event:raml-editor-new-file', sinon.match({ name: 'shiny.raml' }));
+      broadcastSpy.should.have.been.calledWith('event:raml-editor-file-created', sinon.match({ name: 'shiny.raml' }));
     });
   });
 });
