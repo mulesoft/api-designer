@@ -106,26 +106,28 @@ angular.module('fs')
      */
     service.list = function (path) {
       var deferred = $q.defer();
-      var isValidPath = validatePath(path);
 
-      if (!isValidPath.valid) {
-        deferred.reject(isValidPath.reason);
-        return deferred.promise;
-      }
-
-      if(path.lastIndexOf('/') !== path.length - 1) {
-        path += '/';
-      }
-
-      entries = [];
-      localStorageHelper.forEach(function (entry) {
-        if (entry.path.toLowerCase() !== path.toLowerCase() &&
-            entry.path.indexOf(path + entry.name) === 0) {
-          entries.push(entry);
-        }
-      });
 
       $timeout(function () {
+        var isValidPath = validatePath(path);
+
+        if (!isValidPath.valid) {
+          deferred.reject(isValidPath.reason);
+          return deferred.promise;
+        }
+
+        if(path.lastIndexOf('/') !== path.length - 1) {
+          path += '/';
+        }
+
+        entries = [];
+        localStorageHelper.forEach(function (entry) {
+          if (entry.path.toLowerCase() !== path.toLowerCase() &&
+              entry.path.indexOf(path + entry.name) === 0) {
+            entries.push(entry);
+          }
+        });
+
         deferred.resolve(entries);
       }, delay);
 
@@ -136,31 +138,36 @@ angular.module('fs')
     /**
      * Persist a file to an existing folder.
      */
-    service.save = function (file) {
+    service.save = function (path, content) {
       var deferred = $q.defer();
 
       $timeout(function () {
-        var path = file.path + file.name;
-        var entry = localStorageHelper.get(file.path);
+        var name = extractNameFromPath(path);
+        var entry = localStorageHelper.get(path);
 
-        if(!isValidParent(file.path)){
+        if(!isValidParent(path)){
           deferred.reject('Parent folder does not exists');
           return deferred.promise;
         }
 
+        var file = {};
         if (entry) {
-          if (entry.type === 'folder') {
+          if (entry.type === FOLDER) {
             deferred.reject('file has the same name as a folder');
             return deferred.promise;
           }
-          entry.content = file.content;
+          entry.content = content;
+          entry.meta.lastUpdated = Math.round(new Date().getTime()/1000.0);
           file = entry;
         } else {
           file = {
             path: path,
-            name: file.name,
-            content: file.contents,
-            type: 'file'
+            name: name,
+            content: content,
+            type: 'file',
+            meta: {
+              'created': Math.round(new Date().getTime()/1000.0)
+            }
           };
         }
 
@@ -247,6 +254,59 @@ angular.module('fs')
         }
 
         localStorageHelper.remove(path);
+        deferred.resolve();
+      }, delay);
+
+      return deferred.promise;
+    };
+
+    service.rename = function (source, destination) {
+      var deferred = $q.defer();
+
+      $timeout(function(){
+        var sourceEntry = localStorageHelper.get(source);
+
+        if(!sourceEntry) {
+          deferred.reject('Source file or folder does not exists.');
+          return deferred.promise;
+        }
+
+        var destinationEntry = localStorageHelper.get(destination);
+        if(destinationEntry) {
+          deferred.reject('File or folder already exists.');
+          return deferred.promise;
+        }
+
+        if(!isValidParent(destination)) {
+          deferred.reject('Destination folder does not exist.');
+          return deferred.promise;
+        }
+
+        sourceEntry.path = destination;
+        sourceEntry.name = extractNameFromPath(destination);
+
+        localStorageHelper.remove(destination);
+        localStorageHelper.remove(source);
+        localStorageHelper.set(destination, sourceEntry);
+
+        if(sourceEntry.type === FOLDER) {
+          // if(!isValidPath(destination)) {
+          //   deferred.reject('Destination is not a valid folder');
+          //   return deferred.promise;
+          // }
+          //move all child items
+          localStorageHelper.forEach(function (entry) {
+            if (entry.path.toLowerCase() !== source.toLowerCase() &&
+                entry.path.indexOf(source) === 0) {
+              
+              var newPath = destination + entry.path.substring(source.length);
+              localStorageHelper.remove(entry.path);
+              entry.path = newPath;
+              localStorageHelper.set(newPath, entry);
+            }
+          });
+        }
+
         deferred.resolve();
       }, delay);
 

@@ -15,14 +15,14 @@ describe('Local Storage File System', function () {
     localStorage.clear();
 
     localStorage.setItem(LOCAL_PERSISTENCE_KEY + './', '{ "path": "/", "name": "", "type": "folder" }');
+    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './example.raml', '{ "path": "/example.raml", "name": "example.raml", "type": "file" }');
+    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './emptyFolder', '{ "path": "/emptyFolder", "name": "emptyFolder", "type": "folder" }');
     localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder', '{ "path": "/folder", "name": "folder", "type": "folder" }');
+    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/example.raml', '{ "path": "/folder/example.raml", "name": "example.raml", "type": "file"}');
     localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/subFolderA', '{ "path": "/folder/subFolderA", "name": "subFolderA", "type": "folder" }');
+    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/subFolderA/example.raml', '{ "path": "/folder/subFolderA/example.raml", "name": "example.raml", "type": "file"}');
     localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/subFolderB', '{ "path": "/folder/subFolderB", "name": "subFolderB", "type": "folder" }');
 
-    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './example.raml', '{ "path": "/example.raml", "name": "example.raml", "type": "file" }');
-    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/example.raml', '{ "path": "/folder/example.raml", "name": "example.raml", "type": "file"}');
-
-    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './emptyFolder', '{ "path": "/emptyFolder", "name": "emptyFolder", "type": "folder" }');
   });
 
   describe('when empty', function () {
@@ -70,11 +70,9 @@ describe('Local Storage File System', function () {
 
     describe('save', function () {
       it('should store file successfully', function () {
-        localStorageFileSystem.save({
-          path: path,
-          name: name,
-          content: content
-        }).then(function () {}, function (error) {
+        localStorageFileSystem.save(path, content).then(
+          function () {},
+          function (error) {
             throw error;
           });//success,error
 
@@ -84,18 +82,16 @@ describe('Local Storage File System', function () {
 
     describe('list', function () {
       it('should list recently saved file among the entries', function () {
-        localStorageFileSystem.save({
-          path: path,
-          name: name,
-          content: content
-        }).then(function () {
-          localStorageFileSystem.list(folder).then(function (entries) {
-            entries.should.have.length(4);
-            //entries[0].path.should.be.equal(path + name);
-          });
-        }, function (error) {
+        localStorageFileSystem.save(path, content).then(
+          function () {
+            localStorageFileSystem.list(folder).then(function (entries) {
+              entries.should.have.length(4);
+              hasPath(path).should.be.ok;
+            });
+          },
+          function (error) {
             throw error;
-          });//success,error
+          });
 
         $timeout.flush();
         $timeout.flush();
@@ -115,13 +111,33 @@ describe('Local Storage File System', function () {
     describe('remove', function () {
       it('should remove recently saved file', function () {
         localStorageFileSystem.remove(path).then(function () {
-          localStorageFileSystem.list(path).then(function (entries) {
-            entries.should.have.length(0);
+          localStorageFileSystem.list(folder).then(function (entries) {
+            entries.should.have.length(3);
+            hasPath(entries, path).should.not.be.ok;
           });
         });
 
-        localStorageFileSystem.remove(path);
+        $timeout.flush();
+        $timeout.flush();
+      });
+    });
 
+    describe('rename', function (){
+      it('should allow renaming of recently saved files', function (){
+        var destination = folder + 'renamed-at-' + Date.now();
+
+        localStorageFileSystem.save(path, content).then(function () {
+          localStorageFileSystem.rename(path, destination).then(function(){
+            localStorageFileSystem.list(folder).then(function(entries){
+              entries.should.have.length(4);
+              hasPath(entries, destination).should.be.ok;
+              hasPath(entries, path).should.not.be.ok;
+            });
+          });
+        });
+
+        $timeout.flush();
+        $timeout.flush();
         $timeout.flush();
       });
     });
@@ -172,7 +188,7 @@ describe('Local Storage File System', function () {
         localStorageFileSystem.createFolder('/newFolder').then(function () {
           localStorageFileSystem.list('/').then(function (entries) {
             entries.should.have.length(4);
-            //entries.path.indexOf('/newfolder').should.not.be.equal(-1);
+            hasPath('/newFolder').should.be.ok;
             done();
           });
         });
@@ -195,7 +211,7 @@ describe('Local Storage File System', function () {
         localStorageFileSystem.createFolder('/folder/newSubFolder').then(function () {
           localStorageFileSystem.list('/folder', true).then(function (entries) {
             entries.length.should.equal(4);
-            //entries.indexOf('/newfolder/lala').should.not.be.equal(-1);
+            hasPath('/folder/newSubFolder').should.be.ok;
             done();
           });
         });
@@ -219,11 +235,7 @@ describe('Local Storage File System', function () {
       it('should fail to save files with the same name as a folder', function () {
         //Arrange
         var error = sinon.stub();
-        localStorageFileSystem.save({
-          path: '/',
-          name: 'folder',
-          content: ''
-        }).then(function () {}, error);
+        localStorageFileSystem.save('/folder', '').then(function () {}, error);
         //Act
         $timeout.flush();
         //Assert
@@ -231,15 +243,11 @@ describe('Local Storage File System', function () {
       });
 
       it('should work to save files inside a folder', function () {
-        localStorageFileSystem.save({
-          path: '/folder/exampleA.raml',
-          name: 'exampleA.raml',
-          content: ''
-        }).then(
+        localStorageFileSystem.save('/folder/exampleA.raml', '').then(
           function () {},
           function (error) {
             throw error;
-          });//success,error
+          });
 
         $timeout.flush();
       });
@@ -247,11 +255,8 @@ describe('Local Storage File System', function () {
       it('should throw an error if folder is not created before saving file', function () {
         //Arrange
         var error = sinon.stub();
-        localStorageFileSystem.save({
-          path: '/randomFolder/exampleA.raml',
-          name: 'exampleA.raml',
-          content: ''
-        }).then(function () {}, error);
+        localStorageFileSystem.save('/randomFolder/exampleA.raml', '').then(
+          function () {}, error);
         //Act
         $timeout.flush();
         //Assert
@@ -286,5 +291,108 @@ describe('Local Storage File System', function () {
         $timeout.flush();
       });
     });
+
+    // var error;
+    // beforeEach(function(){
+    //   error = sinon.spy();
+    // });
+    // afterEach(function(){
+    //   error.called.should.not.be.ok;
+    // });
+    describe('rename', function () {
+
+      it('should move a file to a different folder', function(){
+        var error = sinon.spy();
+
+        localStorageFileSystem.rename('/example.raml', '/emptyFolder/example.raml').then(function(){
+          localStorageFileSystem.list('/').then(function(entries){
+            entries.should.have.length(2);
+            hasPath('/example.raml').should.be.ok;
+
+            localStorageFileSystem.list('/emptyFolder').then(function(entries){
+              entries.should.have.length(1);
+              hasPath('/emptyFolder/example.raml').should.be.ok;
+            }, error);
+          }, error);
+        }, error);
+
+        $timeout.flush();
+        $timeout.flush();
+        $timeout.flush();
+
+        error.called.should.not.be.ok;
+      });
+
+      it('should move a complete folder tree', function(){
+        var error = sinon.spy();
+
+        localStorageFileSystem.rename('/folder', '/renamedFolder').then(function(){
+          localStorageFileSystem.list('/folder').then(function(entries){
+            entries.should.have.length(0);
+
+            localStorageFileSystem.list('/renamedFolder').then(function(entries){
+              entries.should.have.length(3);
+
+              localStorageFileSystem.list('/renamedFolder/subFolderA').then(function(entries){
+                entries.should.have.length(1);
+              }, error);
+            },error);
+          }, error);
+        }, error);
+
+        $timeout.flush();
+        $timeout.flush();
+        $timeout.flush();
+        $timeout.flush();
+
+        error.called.should.not.be.ok;
+      });
+
+      it('should not rename a file when there is a folder with the same name', function(){
+        var error = sinon.spy();
+
+        localStorageFileSystem.rename('/example.raml', '/folder').then(function(){}, error);
+
+        $timeout.flush();
+        error.called.should.be.ok;
+      });
+
+      it('should not rename a folder when there is a file with the same name', function(){
+        var error = sinon.spy();
+
+        localStorageFileSystem.rename('/folder', '/example.raml').then(function(){}, error);
+
+        $timeout.flush();
+        error.called.should.be.ok;
+      });
+
+      it('should not move files into unexisting paths', function(){
+        var error = sinon.spy();
+
+        localStorageFileSystem.rename('/example.raml', '/somethingRandom/example.raml').then(function(){}, error);
+
+        $timeout.flush();
+        error.called.should.be.ok;
+      });
+
+      it('should not move folders into unexisting paths', function(){
+        var error = sinon.spy();
+
+        localStorageFileSystem.rename('/folder', '/somethingRandom/folder').then(function(){}, error);
+
+        $timeout.flush();
+        error.called.should.be.ok;
+      });
+    });
   });
+
+  function hasPath(entries, path) {
+    for(var i = 0; i < entries.length; i++) {
+      if(entries[i].path === path) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 });
