@@ -295,7 +295,10 @@ angular.module('ramlEditorApp')
 
     $scope._promptForFileName = function () {
       var fileName = $prompt('File Name?', $scope.file.name);
+      var path = $scope.file.path.slice(0, $scope.file.path.lastIndexOf($scope.file.name));
+
       $scope.file.name = fileName || $scope.file.name;
+      $scope.file.path = path || '/' + $scope.file.name;
       return !!fileName;
     };
 

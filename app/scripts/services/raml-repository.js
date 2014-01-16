@@ -43,9 +43,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.saveFile = function (file) {
-      var path = file.path;
-      path += path.lastIndexOf('/') !== path.length - 1 ? '/' + file.name : file.name;
-      return fileSystem.save(path, file.contents).then(
+      return fileSystem.save(file.path, file.contents).then(
         // success
         function () {
           file.dirty = false;
