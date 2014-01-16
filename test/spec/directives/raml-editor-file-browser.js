@@ -76,8 +76,8 @@ describe('ramlEditorFileBrowser', function() {
     describe('when there are no files', function() {
       var openStub;
 
-      beforeEach(inject(function(ramlEditorNewFilePrompt) {
-        openStub = sinon.stub(ramlEditorNewFilePrompt, 'open');
+      beforeEach(inject(function(ramlEditorFilenamePrompt) {
+        openStub = sinon.stub(ramlEditorFilenamePrompt, 'open');
       }));
 
       it('prompts you to name a new file', function(done) {
@@ -193,9 +193,9 @@ describe('ramlEditorFileBrowser', function() {
     describe('when it is the last file', function() {
       var openStub;
 
-      beforeEach(inject(function($rootScope, fileList, ramlEditorNewFilePrompt) {
+      beforeEach(inject(function($rootScope, fileList, ramlEditorFilenamePrompt) {
         var removed = fileList.files.pop();
-        openStub = sinon.stub(ramlEditorNewFilePrompt, 'open');
+        openStub = sinon.stub(ramlEditorFilenamePrompt, 'open');
 
         $rootScope.$broadcast('event:raml-editor-file-removed', removed);
         scope.$digest();

@@ -78,6 +78,29 @@ describe('mockFileSystem', function () {
       });
     });
 
+    var newPath = '/myFolder';
+    var newName = 'updated-at-' + Date.now();
+
+    describe('move', function () {
+      it('should move the file successfully', function() {
+        mockFileSystem.move(path, name, newPath, newName).then(function () {}, function (error) {
+          throw error;
+        });
+        $timeout.flush();
+
+        mockFileSystem.directory(path).then(function (entries) {
+          entries.length.should.equal(0);
+        });
+        $timeout.flush();
+
+        mockFileSystem.directory(newPath).then(function (entries) {
+          entries.should.have.length(1);
+          entries[0].should.be.equal(newName);
+        });
+        $timeout.flush();
+      });
+    });
+
     describe('remove', function () {
       it('should remove recently saved file', function () {
         mockFileSystem.remove(path, name).then(function () {

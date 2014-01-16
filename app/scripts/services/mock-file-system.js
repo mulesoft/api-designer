@@ -15,6 +15,21 @@ angular.module('fs')
       }
     }
 
+    function findFile(path, name) {
+      var matchingFiles = files.filter(function (f) {
+        return f.path === path && f.name === name;
+      });
+      return matchingFiles.length > 0 ? matchingFiles[0] : null;
+    }
+
+    function fileNotFoundMessage(path,name) {
+      return 'file with path="' + path + '" and name="' + name + '" does not exist';
+    }
+
+    function persist() {
+      localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
+    }
+
     service.directory = function (path) {
       var deferred = $q.defer();
       var entries  = files
@@ -35,14 +50,9 @@ angular.module('fs')
 
     service.save = function (path, name, content) {
       var deferred = $q.defer();
-      var entries  = files
-        .filter(function (f) {
-          return f.path === path && f.name === name;
-        })
-      ;
+      var entry = findFile(path, name);
 
       $timeout(function () {
-        var entry = entries[0];
         if (entry) {
           entry.content = content;
         } else {
@@ -53,8 +63,26 @@ angular.module('fs')
           });
         }
 
-        localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
+        persist();
         deferred.resolve();
+      }, delay);
+
+      return deferred.promise;
+    };
+
+    service.move = function(currentPath, currentName, newPath, newName) {
+      var deferred = $q.defer();
+
+      var entry = findFile(currentPath, currentName);
+      $timeout(function() {
+        if (entry) {
+          entry.path = newPath;
+          entry.name = newName;
+          persist();
+          deferred.resolve(entry);
+        } else {
+          deferred.reject(fileNotFoundMessage(currentPath, currentName));
+        }
       }, delay);
 
       return deferred.promise;
@@ -75,7 +103,7 @@ angular.module('fs')
         if (entries.length) {
           deferred.resolve(entries[0] || '');
         } else {
-          deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
+          deferred.reject(fileNotFoundMessage(path, name));
         }
       }, delay);
 
@@ -84,19 +112,15 @@ angular.module('fs')
 
     service.remove = function (path, name) {
       var deferred = $q.defer();
-      var entries  = files
-        .filter(function (f) {
-          return f.path === path && f.name === name;
-        })
-      ;
+      var entry = findFile(path, name);
 
       $timeout(function () {
-        if (entries.length) {
-          files.splice(files.indexOf(entries[0]), 1);
-          localStorage[LOCAL_PERSISTENCE_KEY] = JSON.stringify(files);
+        if (entry) {
+          files.splice(files.indexOf(entry), 1);
+          persist();
           deferred.resolve();
         } else {
-          deferred.reject('file with path="' + path + '" and name="' + name + '" does not exist');
+          deferred.reject(fileNotFoundMessage(path, name));
         }
       }, delay);
 

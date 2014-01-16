@@ -2,7 +2,7 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlEditorRemoveFilePrompt) {
+  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorFilenamePrompt) {
     function Actions(file) {
       return [
         {
@@ -11,11 +11,18 @@
             fileList.saveFile(file);
           }
         },
-
         {
           label: 'Delete',
           execute: function() {
             ramlEditorRemoveFilePrompt.open(file);
+          }
+        },
+        {
+          label: 'Rename',
+          execute: function() {
+            ramlEditorFilenamePrompt.open(file.name).then(function(filename) {
+              ramlRepository.moveFile(file, filename);
+            });
           }
         }
       ];

@@ -1,10 +1,7 @@
 'use strict';
 
 describe('RAML Repository', function () {
-  var $rootScope;
-  var $q;
-  var ramlRepository;
-  var fileSystem;
+  var $rootScope, $q, ramlRepository, fileSystem, sandbox;
 
   beforeEach(module('fs'));
   beforeEach(function () {
@@ -12,11 +9,13 @@ describe('RAML Repository', function () {
       $exceptionHandlerProvider.mode('log');
     });
   });
+
   beforeEach(inject(function ($injector) {
     $rootScope = $injector.get('$rootScope');
     $q = $injector.get('$q');
     ramlRepository = $injector.get('ramlRepository');
     fileSystem = $injector.get('fileSystem');
+    sandbox = sinon.sandbox.create();
   }));
 
   describe('getDirectory', function () {
@@ -205,6 +204,99 @@ describe('RAML Repository', function () {
 
       // Restore
       saveStub.restore();
+    });
+  });
+
+  describe('moveFile', function () {
+    var file, fileSystemMock, moveFile;
+
+    beforeEach(function() {
+      file = { name: 'currentName', path: 'currentPath' };
+      fileSystemMock = sandbox.stub(fileSystem, 'move');
+    });
+
+    describe('without a path argument', function() {
+      beforeEach(function() {
+        moveFile = function() {
+          ramlRepository.moveFile(file, 'newName');
+        };
+      });
+
+      it('delegates to the fileSystem, providing the file\'s current path', function() {
+        fileSystemMock.returns(promise.stub());
+        moveFile();
+
+        fileSystemMock.should.have.been.calledWith('currentPath', 'currentName', 'currentPath', 'newName');
+      });
+
+      describe('upon fileSystem success', function() {
+        beforeEach(function() {
+          fileSystemMock.returns(promise.resolved({ name: 'newName', path: 'currentPath' }));
+        });
+
+        it('updates the name', function() {
+          moveFile();
+
+          file.name.should.equal('newName');
+        });
+      });
+
+      describe('upon fileSystem failure', function() {
+        beforeEach(function() {
+          fileSystemMock.returns(promise.rejected('errorMessage'));
+        });
+
+        it('assigns the error message on the file', function() {
+          try {
+            moveFile();
+          } catch (e) {}
+
+          file.error.should.equal('errorMessage');
+        });
+      });
+    });
+
+    describe('with a path argument', function() {
+      beforeEach(function() {
+        moveFile = function() {
+          ramlRepository.moveFile(file, 'newName', 'newPath');
+        };
+      });
+
+      it('delegates to the fileSystem', function() {
+        fileSystemMock.returns(promise.stub());
+        moveFile();
+
+        fileSystemMock.should.have.been.calledWith('currentPath', 'currentName', 'newPath', 'newName');
+      });
+
+      describe('upon fileSystem success', function() {
+        beforeEach(function() {
+          fileSystemMock.returns(promise.resolved({ name: 'currentName', path: 'newPath' }));
+        });
+
+        it('updates the path', function() {
+          moveFile();
+
+          file.path.should.equal('newPath');
+        });
+      });
+
+    });
+
+    describe('without a name argument', function() {
+      beforeEach(function() {
+        moveFile = function() {
+          ramlRepository.moveFile(file, undefined, 'newPath');
+        };
+      });
+
+      it('delegates to the fileSystem, providing the file\'s current name', function() {
+        fileSystemMock.returns(promise.stub());
+        moveFile();
+
+        fileSystemMock.should.have.been.calledWith('currentPath', 'currentName', 'newPath', 'currentName');
+      });
     });
   });
 
