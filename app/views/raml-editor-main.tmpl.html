@@ -24,7 +24,7 @@
 
       <div id="code" role="code"></div>
 
-      <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
+      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
         <div role="shelf-tab" ng-click="toggleShelf()">
           <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
         </div>
@@ -33,10 +33,10 @@
       </div>
     </div>
 
-    <div ng-splitter="vertical"><i id="consoleSplitter" class="icon-chevron-sign-right"></i></div>
+    <div ng-show="getIsConsoleVisible()" ng-splitter="vertical"><i id="consoleSplitter" class="icon-chevron-sign-right"></i></div>
 
-    <div role="preview-wrapper">
-      <div role="preview" class="bootstrap">
+    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">
+      <div role="preview">
         <div role="console">
           <raml-console></raml-console>
         </div>
