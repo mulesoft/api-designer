@@ -18,8 +18,11 @@ div[role=shelf].expanded {
 }
 
 div[role=shelf] div[role=shelf-container] {
-  overflow: auto;
+  box-sizing: border-box;
+  position: absolute;
+  width: 100%;
   height: 100%;
+  overflow: auto;
   padding: 0 20px;
 }
 
@@ -47,16 +50,9 @@ div[role=shelf] > div[role=shelf-tab] > i + i {
   padding-left: 6px;
 }
 
-div[role=shelf] ul {
-  padding: 0;
-  margin: 0;
-  padding-left: 15px;
-}
-
 div[role=shelf] ul[role=sections] {
-  margin-left: 0;
-  padding-left: 0;
-  padding-bottom: 0;
+  margin: 0;
+  padding: 0;
 }
 
 div[role=shelf] ul[role=sections] > li[role=section] {

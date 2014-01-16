@@ -1,7 +1,7 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function($rootScope, $q, $window, ramlEditorNewFilePrompt, fileList, ramlRepository, config) {
+  angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function($rootScope, $q, $window, ramlEditorNewFilePrompt, fileList, ramlRepository, config, eventService) {
     var controller = function($scope) {
       var unwatchSelectedFile = angular.noop, contextMenu;
       $scope.fileBrowser = this;
@@ -59,7 +59,12 @@
       };
 
       this.saveFile = function(file) {
-        ramlRepository.saveFile(file);
+        ramlRepository.saveFile(file).then(function success() {
+          eventService.broadcast('event:notification', {
+            message: 'File saved.',
+            expires: true
+          });
+        });
       };
 
       $scope.registerContextMenu = function(cm) {

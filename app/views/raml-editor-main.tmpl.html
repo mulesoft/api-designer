@@ -1,13 +1,13 @@
 <div role="raml-editor" class="{{theme}}" ng-controller="ramlEditorMain">
+  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
+    {{message}}
+    <i class="icon-ok" ng-click="hideNotifications()"></i>
+  </div>
+
   <header>
     <h1>
       <strong>API</strong> Designer <i class="help icon-question-sign" ng-click="openHelp()"></i>
     </h1>
-
-    <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
-      {{message}}
-      <i class="icon-ok" ng-click="hideNotifications()"></i>
-    </div>
 
     <a role="logo" target="_blank" href="http://mulesoft.com"></a>
   </header>
