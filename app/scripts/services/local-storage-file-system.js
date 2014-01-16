@@ -207,7 +207,10 @@ angular.module('fs')
         localStorageHelper.set(path, {
             path: path,
             name: extractNameFromPath(path),
-            type: 'folder'
+            type: 'folder',
+            meta: {
+              'created': Math.round(new Date().getTime()/1000.0)
+            }
           });
 
         deferred.resolve();
