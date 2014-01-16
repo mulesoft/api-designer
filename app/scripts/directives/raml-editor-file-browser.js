@@ -10,7 +10,9 @@
       ramlRepository.getDirectory().then(function() {
         $scope.$watch('homeDirectory.files', function(files) {
           if (files.length === 0) {
-            ramlEditorNewFilePrompt.open();
+            setTimeout(function() {
+              ramlEditorNewFilePrompt.open();
+            }, 0);
           }
         }, true);
 
