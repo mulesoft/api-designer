@@ -23,6 +23,27 @@
         $rootScope.$broadcast('event:raml-editor-file-created', file);
 
         return file;
+      },
+
+      saveFile: function(file) {
+        ramlRepository.saveFile(file);
+      },
+
+      removeFile: function(file) {
+        function groomFileList() {
+          $rootScope.$broadcast('event:raml-editor-file-removed', file);
+
+          var index = files.indexOf(file);
+          if (index !== -1) {
+            files.splice(index, 1);
+          }
+        }
+
+        if (file.persisted) {
+          ramlRepository.removeFile(file).then(groomFileList);
+        } else {
+          groomFileList();
+        }
       }
     };
   }

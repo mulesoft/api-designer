@@ -8,15 +8,25 @@
       $scope.homeDirectory = fileList;
 
       ramlRepository.getDirectory().then(function() {
+        $scope.$watch('homeDirectory.files', function(files) {
+          if (files.length === 0) {
+            ramlEditorNewFilePrompt.open();
+          }
+        }, true);
+
         if (fileList.files.length > 0) {
           $scope.fileBrowser.selectFile(fileList.files[0]);
-        } else {
-          ramlEditorNewFilePrompt.open();
         }
       });
 
       $scope.$on('event:raml-editor-file-created', function(event, file) {
         $scope.fileBrowser.selectFile(file);
+      });
+
+      $scope.$on('event:raml-editor-file-removed', function(event, file) {
+        if (file === $scope.fileBrowser.selectedFile && fileList.files.length > 0) {
+          $scope.fileBrowser.selectFile(fileList.files[0]);
+        }
       });
 
       this.selectFile = function(file) {

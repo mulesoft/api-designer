@@ -2,11 +2,23 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, ramlRepository) {
+  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlEditorRemoveFilePrompt) {
     function Actions(file) {
-      return [{ label: 'Save', execute: function() {
-        ramlRepository.saveFile(file);
-      }}];
+      return [
+        {
+          label: 'Save',
+          execute: function() {
+            fileList.saveFile(file);
+          }
+        },
+
+        {
+          label: 'Delete',
+          execute: function() {
+            ramlEditorRemoveFilePrompt.open(file);
+          }
+        }
+      ];
     }
 
     return {

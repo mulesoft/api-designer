@@ -143,6 +143,42 @@ describe('ramlEditorFileBrowser', function() {
     });
   });
 
+  describe('removing a file', function() {
+    beforeEach(inject(function(fileList) {
+      fileList.files.push(createMockFile('some.raml'));
+      compileFileBrowser();
+    }));
+
+    describe('when it is the last file', function() {
+      var openStub;
+
+      beforeEach(inject(function($rootScope, fileList, ramlEditorNewFilePrompt) {
+        var removed = fileList.files.pop();
+        openStub = sinon.stub(ramlEditorNewFilePrompt, 'open');
+
+        $rootScope.$broadcast('event:raml-editor-file-removed', removed);
+        scope.$digest();
+      }));
+
+      it('prompts the user to create a new file', function() {
+        openStub.should.have.been.called;
+      });
+    });
+
+    describe('when it is the selected file', function() {
+      beforeEach(inject(function($rootScope) {
+        var removed = scope.fileBrowser.selectedFile = createMockFile('old.raml');
+
+        $rootScope.$broadcast('event:raml-editor-file-removed', removed);
+        scope.$digest();
+      }));
+
+      it('selects the first file from the fileList', function() {
+        scope.fileBrowser.selectedFile.name.should.equal('some.raml');
+      });
+    });
+  });
+
   describe('saving a file', function() {
     var saveSpy;
 
