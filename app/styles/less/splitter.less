@@ -10,7 +10,6 @@ div .noselect {
 
 [ng-splitter] {
   box-shadow: (@splitter-color - #333333) 0px 0px 2px 1px inset;
-  z-index: 1000;
   background: @splitter-color;
   cursor: col-resize;
   flex: 0;
@@ -19,12 +18,12 @@ div .noselect {
     position: relative;
     left: 8px;
     cursor: pointer;
+    z-index: 1000;
   }
 }
 
 [ng-splitter=vertical] {
   min-width: @splitter-size;
-  flex: 0;
 }
 
 [ng-splitter=horizontal] {
