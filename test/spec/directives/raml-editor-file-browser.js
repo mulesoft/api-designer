@@ -18,6 +18,20 @@ describe('ramlEditorFileBrowser', function() {
     document.body.appendChild(el[0]);
   }
 
+  function verifyNewFilePrompt(newFilePromptStub, done) {
+    function verify() {
+      try {
+        newFilePromptStub.should.have.been.called;
+        done();
+      } catch(e) {
+        setTimeout(verify, 10);
+      }
+    }
+
+    setTimeout(verify, 10);
+  }
+
+
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
@@ -41,12 +55,15 @@ describe('ramlEditorFileBrowser', function() {
     });
 
     describe('when there are no files', function() {
-      it('prompts you to name a new file', function() {
-        var promptSpy;
-        promptSpy = sandbox.stub(window, 'prompt');
-        ramlRepository.files = [];
+      var openStub;
+
+      beforeEach(inject(function(ramlEditorNewFilePrompt) {
+        openStub = sinon.stub(ramlEditorNewFilePrompt, 'open');
+      }));
+
+      it('prompts you to name a new file', function(done) {
         compileFileBrowser();
-        promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-1.raml');
+        verifyNewFilePrompt(openStub, done);
       });
     });
   });
@@ -160,8 +177,8 @@ describe('ramlEditorFileBrowser', function() {
         scope.$digest();
       }));
 
-      it('prompts the user to create a new file', function() {
-        openStub.should.have.been.called;
+      it('prompts the user to create a new file', function(done) {
+        verifyNewFilePrompt(openStub, done);
       });
     });
 

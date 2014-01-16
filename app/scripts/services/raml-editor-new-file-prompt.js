@@ -14,7 +14,12 @@
     return {
       open: function() {
         var suggestedFileName = generateFileName(fileList.files);
-        var filename = $window.prompt('Name your file:', suggestedFileName);
+        var message = 'Name your file:';
+        if (fileList.files.length === 0) {
+          message = 'The file browser is empty. Create a new file:';
+        }
+
+        var filename = $window.prompt(message, suggestedFileName);
 
         if (filename) {
           var filenameAlreadyTaken = fileList.files.some(function(file) {
