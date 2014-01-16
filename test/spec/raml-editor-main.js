@@ -4,7 +4,7 @@ var codeMirror, eventService, codeMirrorErrors,
   $rootScope, $controller, $q, applySuggestion;
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepositoryx;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository;
 
   beforeEach(module('ramlEditorApp'));
 
