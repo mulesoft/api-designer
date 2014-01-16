@@ -122,7 +122,7 @@ FileSystem.prototype = {
    */
   remove: function (fullpath) {
     throw 'Not implemented: FileSystem remove invoked with [fullpath=' + fullpath + ']';
-  }
+  },
 
   /**
    * Renames a file or folder. If the destination is a different folder
@@ -130,9 +130,9 @@ FileSystem.prototype = {
    *
    * Returns a promise that fulfills on success or rejects on fail.
    */
-   rename: function(source, destination) {
+  rename: function (source, destination) {
     throw 'Not implemented: FileSystem rename invoked with [source=' + source + '] and [destination=' + destination + ']';
-   }
+  }
 };
 
 angular.module('fs')
