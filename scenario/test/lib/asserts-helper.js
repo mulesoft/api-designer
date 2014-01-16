@@ -32,6 +32,15 @@ AssertsHelper.prototype.checkSyntaxHignlight = function(line,pos,text){
   });
 
 };
+
+AssertsHelper.prototype.checkHignlightAndSwimLines = function(line,pos,text){
+  //Line is editor line, pos , text is the highlight class
+  line--;
+  editor.getSyntaxIndentClassArray(line,pos).then(function(classes){
+    expect(classes).toEqual(text);
+  });
+};
+
 //Editor Ends
 
 //Console Starts
