@@ -107,10 +107,10 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.createFile = function (name) {
-      var file = new RamlFile(name, defaultPath);
+      var file = new RamlFile(name, defaultPath, '');
       file.dirty = true;
       if (file.type === 'raml') {
-        file.contents  = ramlSnippets.getEmptyRaml();
+        file.contents = ramlSnippets.getEmptyRaml();
       }
       return file;
     };
