@@ -58,7 +58,8 @@ angular.module('ramlEditorApp')
       xml: { name: 'xml' },
       xsd: { name: 'xml', alignCDATA: true },
       json: { name: 'javascript', json: true },
-      md: { name: 'gfm' }
+      md: { name: 'gfm' },
+      raml: { name: 'raml' }
     };
 
     $window.setTheme = function setTheme(theme) {
@@ -71,10 +72,8 @@ angular.module('ramlEditorApp')
       editor.setValue(file.contents);
       $scope.fileParsable = $scope.getIsFileParsable(file);
 
-      var mode = MODES[file.type];
-      if (mode) {
-        editor.setOption('mode', mode);
-      }
+      var mode = MODES[file.type] || MODES.raml;
+      editor.setOption('mode', mode);
     });
 
     $scope.sourceUpdated = function sourceUpdated() {

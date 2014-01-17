@@ -154,6 +154,13 @@ describe('RAML Editor Main Controller', function () {
 
         setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'gfm'}));
       });
+
+      it('formats other extensions as raml', function() {
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.whatever', type: 'whatever', path: '/', contents: 'file1' });
+        scope.$digest();
+
+        setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'raml'}));
+      });
     });
   });
 
