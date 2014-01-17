@@ -1,6 +1,3 @@
-@splitter-size: 5px;
-@splitter-color: #EFEFEF;
-
 div .noselect {
   -webkit-user-select: none;
   -moz-user-select: -moz-none;
@@ -9,23 +6,40 @@ div .noselect {
 }
 
 [ng-splitter] {
-  box-shadow: (@splitter-color - #333333) 0px 0px 2px 1px inset;
-  background: @splitter-color;
-  cursor: col-resize;
+  position: relative;
   flex: 0;
+  cursor: col-resize;
 
-  & > i {
-    position: relative;
-    left: 8px;
+  .split {
+    position: absolute;
+    background-repeat: no-repeat;
     cursor: pointer;
-    z-index: 1000;
   }
 }
 
 [ng-splitter=vertical] {
-  min-width: @splitter-size;
-}
+  min-width: 8px;
 
-[ng-splitter=horizontal] {
-  min-height: @splitter-size;
+  .split {
+    width: 8px;
+    height: 48px;
+    top: 50%;
+    margin-top: -25px;
+  }
+
+  .split-left {
+    background-image: url(/images/mini-left.png);
+  }
+
+  &.collapsed .split-left {
+    background-image: url(/images/mini-right.png);
+  }
+
+  .split-right {
+    background-image: url(/images/mini-right.png);
+  }
+
+  &.collapsed .split-right {
+    background-image: url(/images/mini-left.png);
+  }
 }

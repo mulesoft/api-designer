@@ -98,8 +98,7 @@
     return {
       restrict: 'E',
       templateUrl: 'views/raml-editor-file-browser.tmpl.html',
-      controller: controller,
-      replace: true
+      controller: controller
     };
   });
 })();
