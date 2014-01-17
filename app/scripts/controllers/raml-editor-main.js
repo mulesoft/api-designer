@@ -96,8 +96,7 @@ angular.module('ramlEditorApp')
       codeMirrorErrors.clearAnnotations();
 
       if (definition.trim() === '') {
-        $scope.hasErrors      = false;
-        $scope.consoleEnabled = false;
+        $scope.hasErrors = false;
         return;
       }
 
@@ -115,20 +114,17 @@ angular.module('ramlEditorApp')
     });
 
     eventService.on('event:raml-parsed', safeApplyWrapper($scope, function (e, definition) {
-      $scope.title          = definition.title;
-      $scope.version        = definition.version;
-      $scope.hasErrors      = false;
-      $scope.consoleEnabled = true;
+      $scope.title     = definition.title;
+      $scope.version   = definition.version;
+      $scope.hasErrors = false;
     }));
 
     eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function (e, args) {
-      var error       = args;
-      var problemMark = 'problem_mark';
-      var line        = error[problemMark] ? error[problemMark].line   : 0;
-      var column      = error[problemMark] ? error[problemMark].column : 0;
-
-      $scope.hasErrors      = true;
-      $scope.consoleEnabled = false;
+      var error        = args;
+      var problemMark  = 'problem_mark';
+      var line         = error[problemMark] ? error[problemMark].line   : 0;
+      var column       = error[problemMark] ? error[problemMark].column : 0;
+      $scope.hasErrors = true;
 
       codeMirrorErrors.displayAnnotations([{
         line:    line + 1,
@@ -308,7 +304,6 @@ angular.module('ramlEditorApp')
 
     (function bootstrap() {
       $scope.hasErrors        = false;
-      $scope.consoleEnabled   = false;
       $scope.theme            = $rootScope.theme = config.get('theme', 'dark');
       $scope.shelf            = {};
       $scope.shelf.collapsed  = JSON.parse(config.get('shelf.collapsed', 'false'));

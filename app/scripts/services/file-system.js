@@ -134,12 +134,12 @@ FileSystem.prototype = {
 };
 
 angular.module('fs')
-  .factory('fileSystem', function ($injector, $window, config) {
-    var fsFactory = config.get('fsFactory');
+  .factory('fileSystem', function ($injector, config) {
+    var fsFactory    = config.get('fsFactory');
+    var hasFsFactory = fsFactory && $injector.has(fsFactory);
 
-    if (!fsFactory) {
-      fsFactory = 'localStorageFileSystem';
-      config.set('fsFactory', fsFactory);
+    if (!hasFsFactory) {
+      config.set('fsFactory', (fsFactory = 'localStorageFileSystem'));
     }
 
     return $injector.get(fsFactory);
