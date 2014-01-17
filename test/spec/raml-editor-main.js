@@ -4,9 +4,17 @@ var codeMirror, eventService, codeMirrorErrors,
   $rootScope, $controller, $q, applySuggestion;
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository, sandbox;
 
   beforeEach(module('ramlEditorApp'));
+
+  beforeEach(function() {
+    sandbox = sinon.sandbox.create();
+  });
+
+  afterEach(function() {
+    sandbox.restore();
+  });
 
   beforeEach(inject(function ($injector) {
     $rootScope = $injector.get('$rootScope');
@@ -35,9 +43,7 @@ describe('RAML Editor Main Controller', function () {
         annotationsToDisplay = annotations;
       },
 
-      clearAnnotations: function clearAnnotations() {
-
-      }
+      clearAnnotations: function clearAnnotations() {}
     };
 
     params = {
@@ -100,16 +106,54 @@ describe('RAML Editor Main Controller', function () {
   });
 
   describe('on event:raml-editor-file-selected', function () {
-    it('loads the new file in the editor', function () {
+    beforeEach(function() {
       scope.fileBrowser = {};
       ctrl = $controller('ramlEditorMain', params);
 
       editor.getValue().should.be.equal('');
+    });
 
+    it('loads the new file in the editor', function () {
       scope.$emit('event:raml-editor-file-selected', { name: 'api.raml', path: '/', contents: 'file1' });
       scope.$digest();
 
       editor.getValue().should.be.equal('file1');
+    });
+
+    describe('setting the editor mode', function() {
+      var setOptionStub;
+
+      beforeEach(function() {
+        setOptionStub = sinon.stub(editor, 'setOption');
+      });
+
+      it('formats xml', function() {
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.xml', path: '/', contents: 'file1' });
+        scope.$digest();
+
+        setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'xml'}));
+      });
+
+      it('formats xsd', function() {
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.xsd', path: '/', contents: 'file1' });
+        scope.$digest();
+
+        setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'xml'}));
+      });
+
+      it('formats json', function() {
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.json', path: '/', contents: 'file1' });
+        scope.$digest();
+
+        setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'javascript'}));
+      });
+
+      it('formats md', function() {
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.md', path: '/', contents: 'file1' });
+        scope.$digest();
+
+        setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'gfm'}));
+      });
     });
   });
 

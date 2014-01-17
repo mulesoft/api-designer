@@ -54,6 +54,14 @@ angular.module('ramlEditorApp')
     codeMirrorErrors, config, $prompt, $confirm, $modal, fileList
   ) {
     var editor;
+    var MODES = {
+      xml: { name: 'xml' },
+      xsd: { name: 'xml', alignCDATA: true },
+      json: { name: 'javascript', json: true },
+      md: { name: 'gfm' }
+    };
+
+    var FILE_EXTENSION_EXTRACTOR = /.*\.(.*)$/;
 
     $window.setTheme = function setTheme(theme) {
       config.set('theme', theme);
@@ -64,6 +72,15 @@ angular.module('ramlEditorApp')
     $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
       editor.setValue(file.contents);
       $scope.fileParsable = $scope.getIsFileParsable(file);
+
+      var match = FILE_EXTENSION_EXTRACTOR.exec(file.name);
+      if (match) {
+        var mode = MODES[match[1]];
+
+        if (mode) {
+          editor.setOption('mode', mode);
+        }
+      }
     });
 
     $scope.sourceUpdated = function sourceUpdated() {
