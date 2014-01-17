@@ -6,6 +6,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     var defaultPath = '/';
     var defaultName = 'untitled.raml';
 
+    var FILE_EXTENSION_EXTRACTOR = /.*\.(.*)$/;
     function RamlFile (name, path, contents) {
       this.path = path || defaultPath;
       this.name = name || defaultName;
@@ -13,6 +14,10 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
 
       this.dirty = false;
       this.persisted = false;
+      var extensionMatch = FILE_EXTENSION_EXTRACTOR.exec(this.name);
+      if (extensionMatch) {
+        this.type = extensionMatch[1];
+      }
     }
 
     RamlFile.prototype = {
@@ -102,8 +107,11 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.createFile = function (name) {
-      var file = new RamlFile(name, defaultPath, ramlSnippets.getEmptyRaml());
+      var file = new RamlFile(name, defaultPath);
       file.dirty = true;
+      if (file.type === 'raml') {
+        file.contents  = ramlSnippets.getEmptyRaml();
+      }
       return file;
     };
 

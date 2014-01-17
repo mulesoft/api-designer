@@ -61,8 +61,6 @@ angular.module('ramlEditorApp')
       md: { name: 'gfm' }
     };
 
-    var FILE_EXTENSION_EXTRACTOR = /.*\.(.*)$/;
-
     $window.setTheme = function setTheme(theme) {
       config.set('theme', theme);
       $scope.theme = $rootScope.theme = theme;
@@ -73,13 +71,9 @@ angular.module('ramlEditorApp')
       editor.setValue(file.contents);
       $scope.fileParsable = $scope.getIsFileParsable(file);
 
-      var match = FILE_EXTENSION_EXTRACTOR.exec(file.name);
-      if (match) {
-        var mode = MODES[match[1]];
-
-        if (mode) {
-          editor.setOption('mode', mode);
-        }
+      var mode = MODES[file.type];
+      if (mode) {
+        editor.setOption('mode', mode);
       }
     });
 
