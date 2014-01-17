@@ -11,8 +11,8 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       this.name = name || defaultName;
       this.contents = typeof contents === 'string' ? contents : null;
 
-      this.dirty = !name;
-      this.persisted = false;
+      this.dirty = false;
+      this.persisted = true;
     }
 
     RamlFile.prototype = {
@@ -101,8 +101,11 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       );
     };
 
-    service.createFile = function () {
-      return new RamlFile(null, defaultPath, ramlSnippets.getEmptyRaml());
+    service.createFile = function (name) {
+      var file = new RamlFile(name, defaultPath, ramlSnippets.getEmptyRaml());
+      file.dirty = true;
+      file.persisted = false;
+      return file;
     };
 
     service.bootstrap = function () {
