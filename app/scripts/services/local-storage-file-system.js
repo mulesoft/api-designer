@@ -3,7 +3,45 @@
 angular.module('fs')
   .constant('LOCAL_PERSISTENCE_KEY','localStorageFilePersistence')
   .constant('FOLDER', 'folder')
-  .factory('localStorageFileSystem', function ($q, $timeout, LOCAL_PERSISTENCE_KEY, FOLDER) {
+  .factory('localStorageHelper', function (LOCAL_PERSISTENCE_KEY) {
+    return {
+      forEach: function(fn) {
+        var i, key;
+
+        for (i = 0; i < localStorage.length; i++) {
+          key = localStorage.key(i);
+          // A key is a local storage file system entry if it starts 
+          //with LOCAL_PERSISTENCE_KEY + '.'
+          if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
+            fn(JSON.parse(localStorage.getItem(key)));
+          }
+        }
+      },
+      has: function(path) {
+        var has = false;
+        path = path || '/';
+        this.forEach(function(entry) {
+          if(entry.path.toLowerCase() === path.toLowerCase()){
+            has = true;
+          }
+        });
+        return has;
+      },
+      set: function(path, content) {
+        localStorage.setItem(
+          LOCAL_PERSISTENCE_KEY + '.' + path,
+          JSON.stringify(content)
+        );
+      },
+      get: function(path) {
+        return JSON.parse(localStorage.getItem(LOCAL_PERSISTENCE_KEY + '.' + path));
+      },
+      remove: function(path) {
+        localStorage.removeItem(LOCAL_PERSISTENCE_KEY + '.' + path);
+      }
+    };
+  })
+  .factory('localStorageFileSystem', function ($q, $timeout, localStorageHelper, FOLDER) {
     /**
      *
      * Save in localStorage entries.
@@ -58,55 +96,11 @@ angular.module('fs')
       return path.slice(path.lastIndexOf('/') + 1);
     }
 
-    function LocalStorageHelper(localStorage) {
-      this.localStorage = localStorage;
-    }
-
-    LocalStorageHelper.prototype = {
-      forEach: function(fn) {
-        var i, key;
-
-        for (i = 0; i < localStorage.length; i++) {
-          key = this.localStorage.key(i);
-          // A key is a local storage file system entry if it starts 
-          //with LOCAL_PERSISTENCE_KEY + '.'
-          if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
-            fn(JSON.parse(this.localStorage.getItem(key)));
-          }
-        }
-      },
-      has: function(path) {
-        var has = false;
-        path = path || '/';
-        this.forEach(function(entry) {
-          if(entry.path.toLowerCase() === path.toLowerCase()){
-            has = true;
-          }
-        });
-        return has;
-      },
-      set: function(path, content) {
-        this.localStorage.setItem(
-          LOCAL_PERSISTENCE_KEY + '.' + path,
-          JSON.stringify(content)
-        );
-      },
-      get: function(path) {
-        return JSON.parse(this.localStorage.getItem(LOCAL_PERSISTENCE_KEY + '.' + path));
-      },
-      remove: function(path) {
-        this.localStorage.removeItem(LOCAL_PERSISTENCE_KEY + '.' + path);
-      }
-    };
-
-    var localStorageHelper = new LocalStorageHelper(localStorage);
-
     /**
      * List files found in a given path.
      */
     service.list = function (path) {
       var deferred = $q.defer();
-
 
       $timeout(function () {
         var isValidPath = validatePath(path);
@@ -124,6 +118,14 @@ angular.module('fs')
         localStorageHelper.forEach(function (entry) {
           if (entry.path.toLowerCase() !== path.toLowerCase() &&
               entry.path.indexOf(path + entry.name) === 0) {
+
+            // if(entry.type === FOLDER) {
+            //   service.list(entry.path).then(function(entries){
+            //     entry.children = entries;
+            //   });
+            //   console.log('entry:', entry);
+            // }
+
             entries.push(entry);
           }
         });
@@ -132,7 +134,6 @@ angular.module('fs')
       }, delay);
 
       return deferred.promise;
-
     };
 
     /**
