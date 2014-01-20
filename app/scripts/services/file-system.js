@@ -84,7 +84,7 @@ FileSystem.prototype = {
    *
    * If the method is applied to a fullpath of type file an Entry with that data is fulfilled in the promise.
    */
-  list: function (fullpath) {
+  directory: function (fullpath) {
     throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
   },
 

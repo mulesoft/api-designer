@@ -28,11 +28,12 @@ describe('Local Storage File System', function () {
   describe('when empty', function () {
 
     describe('list', function () {
-      it('should return no entries', function () {
+      it('should return root with no entries', function () {
         localStorage.clear();
-        localStorageFileSystem.list('/')
-          .then(function (entries) {
-            entries.should.have.length(0);
+        localStorageFileSystem.directory('/')
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(0);
           }); //success
 
         $timeout.flush();
@@ -84,9 +85,10 @@ describe('Local Storage File System', function () {
       it('should list recently saved file among the entries', function () {
         localStorageFileSystem.save(path, content).then(
           function () {
-            localStorageFileSystem.list(folder).then(function (entries) {
-              entries.should.have.length(4);
-              hasPath(path).should.be.ok;
+            localStorageFileSystem.directory(folder).then(function (folder) {
+              folder.should.not.be.null;
+              folder.children.should.have.length(4);
+              hasPath(folder.children, path).should.be.ok;
             });
           },
           function (error) {
@@ -111,9 +113,10 @@ describe('Local Storage File System', function () {
     describe('remove', function () {
       it('should remove recently saved file', function () {
         localStorageFileSystem.remove(path).then(function () {
-          localStorageFileSystem.list(folder).then(function (entries) {
-            entries.should.have.length(3);
-            hasPath(entries, path).should.not.be.ok;
+          localStorageFileSystem.directory(folder).then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(3);
+            hasPath(folder.children, path).should.not.be.ok;
           });
         });
 
@@ -128,10 +131,11 @@ describe('Local Storage File System', function () {
 
         localStorageFileSystem.save(path, content).then(function () {
           localStorageFileSystem.rename(path, destination).then(function(){
-            localStorageFileSystem.list(folder).then(function(entries){
-              entries.should.have.length(4);
-              hasPath(entries, destination).should.be.ok;
-              hasPath(entries, path).should.not.be.ok;
+            localStorageFileSystem.directory(folder).then(function(folder){
+              folder.should.not.be.null;
+              folder.children.should.have.length(4);
+              hasPath(folder.children, destination).should.be.ok;
+              hasPath(folder.children, path).should.not.be.ok;
             });
           });
         });
@@ -147,12 +151,10 @@ describe('Local Storage File System', function () {
 
     describe('list', function () {
       it('should list files and folders for root folder', function (done) {
+        localStorageFileSystem.directory('/').then(function (folder) {
+          folder.should.not.be.null;
+          folder.children.should.have.length(3);
 
-        localStorageFileSystem.list('/').then(function (entries) {
-          entries.should.have.length(3);
-          // entries.should.be.deep.equal(files.map(function (file) {
-          //   return file.path;
-          // }));
           done();
         });
 
@@ -160,12 +162,12 @@ describe('Local Storage File System', function () {
       });
 
       it('should list files and folders for sub folders', function (done) {
+        localStorageFileSystem.directory('/folder').then(function (folder) {
+          folder.should.not.be.null;
+          folder.children.length.should.equal(3);
+          hasPath(folder.children, '/folder/example.raml').should.be.ok;
+          hasPath(folder.children, '/folder/subFolderA').should.be.ok;
 
-        localStorageFileSystem.list('/folder').then(function (entries) {
-          entries.length.should.equal(3);
-          // entries.should.be.deep.equal(files.map(function (file) {
-          //   return file.path;
-          // }));
           done();
         });
 
@@ -186,9 +188,10 @@ describe('Local Storage File System', function () {
 
       it('should create folders at root level', function (done) {
         localStorageFileSystem.createFolder('/newFolder').then(function () {
-          localStorageFileSystem.list('/').then(function (entries) {
-            entries.should.have.length(4);
-            hasPath('/newFolder').should.be.ok;
+          localStorageFileSystem.directory('/').then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(4);
+            hasPath(folder.children, '/newFolder').should.be.ok;
             done();
           });
         });
@@ -209,9 +212,11 @@ describe('Local Storage File System', function () {
 
       it('should support nested folders', function (done) {
         localStorageFileSystem.createFolder('/folder/newSubFolder').then(function () {
-          localStorageFileSystem.list('/folder', true).then(function (entries) {
-            entries.length.should.equal(4);
-            hasPath('/folder/newSubFolder').should.be.ok;
+          localStorageFileSystem.directory('/folder', true).then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.length.should.equal(4);
+            hasPath(folder.children, '/folder/newSubFolder').should.be.ok;
+
             done();
           });
         });
@@ -292,26 +297,21 @@ describe('Local Storage File System', function () {
       });
     });
 
-    // var error;
-    // beforeEach(function(){
-    //   error = sinon.spy();
-    // });
-    // afterEach(function(){
-    //   error.called.should.not.be.ok;
-    // });
     describe('rename', function () {
 
       it('should move a file to a different folder', function(){
         var error = sinon.spy();
 
         localStorageFileSystem.rename('/example.raml', '/emptyFolder/example.raml').then(function(){
-          localStorageFileSystem.list('/').then(function(entries){
-            entries.should.have.length(2);
-            hasPath('/example.raml').should.be.ok;
+          localStorageFileSystem.directory('/').then(function(folder){
+            folder.should.not.be.null;
+            folder.children.should.have.length(2);
+            hasPath(folder.children, '/example.raml').should.not.be.ok;
 
-            localStorageFileSystem.list('/emptyFolder').then(function(entries){
-              entries.should.have.length(1);
-              hasPath('/emptyFolder/example.raml').should.be.ok;
+            localStorageFileSystem.directory('/emptyFolder').then(function(folder){
+              folder.should.not.be.null;
+              folder.children.should.have.length(1);
+              hasPath(folder.children, '/emptyFolder/example.raml').should.be.ok;
             }, error);
           }, error);
         }, error);
@@ -327,14 +327,16 @@ describe('Local Storage File System', function () {
         var error = sinon.spy();
 
         localStorageFileSystem.rename('/folder', '/renamedFolder').then(function(){
-          localStorageFileSystem.list('/folder').then(function(entries){
-            entries.should.have.length(0);
+          localStorageFileSystem.directory('/folder').then(function(folder){
+            expect(folder).to.be.null;
 
-            localStorageFileSystem.list('/renamedFolder').then(function(entries){
-              entries.should.have.length(3);
+            localStorageFileSystem.directory('/renamedFolder').then(function(folder){
+              folder.should.not.be.null;
+              folder.children.should.have.length(3);
 
-              localStorageFileSystem.list('/renamedFolder/subFolderA').then(function(entries){
-                entries.should.have.length(1);
+              localStorageFileSystem.directory('/renamedFolder/subFolderA').then(function(folder){
+                folder.should.not.be.null;
+                folder.children.should.have.length(1);
               }, error);
             },error);
           }, error);

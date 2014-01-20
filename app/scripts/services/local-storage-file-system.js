@@ -42,6 +42,41 @@ angular.module('fs')
     };
   })
   .factory('localStorageFileSystem', function ($q, $timeout, localStorageHelper, FOLDER) {
+    function fileNotFoundMessage(path) {
+      return 'file with path="' + path + '" does not exist';
+    }
+
+    function addChildren(entry, fn) {
+      if(entry.type === FOLDER) {
+        entry.children = fn(entry.path);
+      }
+    }
+    function findFolder(path) {
+      var entries = [];
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() === path.toLowerCase()) {
+          addChildren(entry, findFiles);
+          entries.push(entry);
+        }
+      });
+      return entries.length > 0 ? entries[0] : null;
+    }
+    function findFiles(path) {
+      if(path.lastIndexOf('/') !== path.length - 1) {
+        path += '/';
+      }
+
+      var entries = [];
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() !== path.toLowerCase() &&
+            entry.path.indexOf(path + entry.name) === 0) {
+          addChildren(entry, findFiles);
+          entries.push(entry);
+        }
+      });
+      return entries;
+    }
+
     /**
      *
      * Save in localStorage entries.
@@ -53,7 +88,6 @@ angular.module('fs')
      */
     var service = {};
     var delay   = 500;
-    var entries = [];
 
     function validatePath(path) {
       if (path.indexOf('/') !== 0) {
@@ -99,7 +133,7 @@ angular.module('fs')
     /**
      * List files found in a given path.
      */
-    service.list = function (path) {
+    service.directory = function (path) {
       var deferred = $q.defer();
 
       $timeout(function () {
@@ -110,27 +144,18 @@ angular.module('fs')
           return deferred.promise;
         }
 
-        if(path.lastIndexOf('/') !== path.length - 1) {
-          path += '/';
+        if(!localStorageHelper.has('/')) {
+          localStorageHelper.set(path, {
+              path: '/',
+              name: '/',
+              type: 'folder',
+              meta: {
+                'created': Math.round(new Date().getTime()/1000.0)
+              }
+            });
         }
 
-        entries = [];
-        localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              entry.path.indexOf(path + entry.name) === 0) {
-
-            // if(entry.type === FOLDER) {
-            //   service.list(entry.path).then(function(entries){
-            //     entry.children = entries;
-            //   });
-            //   console.log('entry:', entry);
-            // }
-
-            entries.push(entry);
-          }
-        });
-
-        deferred.resolve(entries);
+        deferred.resolve(findFolder(path));
       }, delay);
 
       return deferred.promise;
@@ -233,7 +258,7 @@ angular.module('fs')
         if(entry && entry.type === 'file') {
           deferred.resolve(localStorageHelper.get(path).content);
         } else {
-          deferred.reject('file with path="' + path + '" does not exist');
+          deferred.reject(fileNotFoundMessage(path));
         }
 
       }, delay);

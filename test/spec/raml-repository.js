@@ -23,13 +23,19 @@ describe('RAML Repository', function () {
     it('should reflect the contents of a directory on success', function () {
       // Arrange
       var directoryDeferred = $q.defer();
-      var directoryStub = sinon.stub(fileSystem, 'list').returns(directoryDeferred.promise);
+      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var success = sinon.stub();
-      var files = [{
+      var files = {
         path: '/',
-        name: 'example.raml',
-        content: ''
-      }];
+        name: '/',
+        children: [
+          {
+            path: '/example.raml',
+            name: 'example.raml',
+            content: ''
+          }
+        ]
+      };
 
       // Act
       ramlRepository.getDirectory('/').then(success);
@@ -38,8 +44,8 @@ describe('RAML Repository', function () {
       $rootScope.$apply();
 
       // Assert
-      success.firstCall.args[0][0].path.should.be.equal('/');
-      success.firstCall.args[0][0].name.should.be.equal(files[0].name);
+      success.firstCall.args[0][0].path.should.be.equal(files.children[0].path);
+      success.firstCall.args[0][0].name.should.be.equal(files.children[0].name);
 
       // Restore
       directoryStub.restore();
@@ -48,7 +54,7 @@ describe('RAML Repository', function () {
     it('should handle errors', function () {
       // Arrange
       var directoryDeferred = $q.defer();
-      var directoryStub = sinon.stub(fileSystem, 'list').returns(directoryDeferred.promise);
+      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var error = sinon.stub();
       var errorData = {message: 'Error occurred'};
 
