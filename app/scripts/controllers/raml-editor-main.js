@@ -142,6 +142,20 @@ angular.module('ramlEditorApp')
       config.set('shelf.collapsed', $scope.shelf.collapsed);
     };
 
+    $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
+      var selectedFile = $scope.fileBrowser.selectedFile;
+      var absolutePath = '';
+
+      if (selectedFile) {
+        absolutePath = selectedFile.path + (selectedFile.path.slice(-1) === '/' ? '' : '/') + selectedFile.name;
+        if (selectedFile.dirty) {
+          absolutePath = '* ' + absolutePath;
+        }
+      }
+
+      return absolutePath;
+    };
+
     eventService.on('event:toggle-theme', function () {
       $window.setTheme(($scope.theme === 'dark') ? 'light' : 'dark');
     });

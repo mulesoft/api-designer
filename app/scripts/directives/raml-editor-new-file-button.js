@@ -4,7 +4,7 @@
   function ramlEditorNewFileButton(ramlEditorNewFilePrompt) {
     return {
       restrict: 'E',
-      template: '<i class="icon icon-plus-sign" role="new-button" ng-click="newFile()"></i>',
+      template: '<span role="new-button" ng-click="newFile()"><i class="icon-plus-sign"></i>&nbsp;New File</span>',
       link: function(scope) {
         scope.newFile = function() {
           ramlEditorNewFilePrompt.open();
