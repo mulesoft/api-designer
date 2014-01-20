@@ -16,12 +16,16 @@
       return event;
     },
 
-    keydown: function(which, metaKey) {
+    keydown: function(which, modifiers) {
+      modifiers = modifiers || {};
       var event = document.createEvent('Events');
       event.initEvent('keydown', true, true);
       event.keyCode = which;
       event.which = which;
-      event.metaKey = metaKey;
+      event.metaKey = modifiers.metaKey;
+      event.ctrlKey = modifiers.ctrlKey;
+      event.altKey = modifiers.altKey;
+      event.shiftKey = modifiers.shiftKey;
 
       return event;
     }

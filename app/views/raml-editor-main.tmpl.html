@@ -13,7 +13,9 @@
   </header>
 
   <div role="flexColumns">
-    <raml-editor-file-browser></raml-editor-file-browser>
+    <raml-editor-file-browser role="browser"></raml-editor-file-browser>
+
+    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>
 
     <div role="editor" ng-class="{error: hasErrors}">
       <div role="tabs">
@@ -33,7 +35,7 @@
       </div>
     </div>
 
-    <div ng-show="getIsConsoleVisible()" ng-splitter="vertical"><i id="consoleSplitter" class="icon-chevron-sign-right"></i></div>
+    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>
 
     <div ng-show="getIsConsoleVisible()" role="preview-wrapper">
       <div role="preview">
