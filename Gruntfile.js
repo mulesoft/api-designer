@@ -154,7 +154,7 @@ module.exports = function (grunt) {
       html: ['<%= yeoman.dist %>/{,*/}*.html'],
       css: ['<%= yeoman.dist %>/styles/{,*/}*.css'],
       options: {
-        dirs: ['<%= yeoman.dist %>']
+        assetsDirs: ['<%= yeoman.dist %>']
       }
     },
     htmlmin: {
@@ -244,7 +244,7 @@ module.exports = function (grunt) {
         expand: true,
         flatten: true,
         src: 'app/styles/less/*.less',
-        dest: 'app/styles/css',
+        dest: 'app/styles',
         ext: '.css'
       }
     },
