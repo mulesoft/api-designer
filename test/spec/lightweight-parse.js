@@ -144,9 +144,12 @@ describe('Lightweight Parse Module', function () {
       extractValue('title: bye').text.should.be.equal('bye');
     });
 
-    it('should return null if no pair', function () {
-      should.not.exist(extractValue('title:'));
+    it('should return null if key has no value', function () {
       should.not.exist(extractValue('title: '));
+    });
+
+    it('should return null for empty array elements', function () {
+      should.not.exist(extractValue('- '));
     });
 
     it('should handle the empty string and return null', function () {
@@ -169,6 +172,13 @@ describe('Lightweight Parse Module', function () {
       extractValue('  title: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
       extractValue('  - title: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
       extractValue('- title: "Muse: --- Mule Sales Enablement API"').text.should.be.equal('"Muse: --- Mule Sales Enablement API"');
+    });
+
+    it('should handle scalar value nodes', function () {
+      extractValue('b:').text.should.be.equal('b:');
+      extractValue('b:c').text.should.be.equal('b:c');
+      extractValue('hello world').text.should.be.equal('hello world');
+      extractValue('- hello').text.should.be.equal('hello');
     });
   });
 

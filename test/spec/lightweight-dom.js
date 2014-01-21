@@ -239,6 +239,16 @@ describe('Lightweight DOM Module', function () {
       var path = getNode(editor).getPath();
       path.length.should.be.equal(0);
     });
+
+    it('should return only the parent for an empty array element', function() {
+      var editor = getEditor(codeMirror, [
+        'documentation:',
+        '  - title: Hello',
+        '  - '
+      ], 2);
+      var path = getNode(editor).getPath();
+      path.length.should.be.equal(1);
+    });
   });
 
   describe('LazyNode.selfOrParent', function () {

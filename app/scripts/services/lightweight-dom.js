@@ -64,7 +64,7 @@ angular.module('lightweightDOM', ['lightweightParse'])
       this.line = editor.getLine(lineNum);
 
       this.isComment = isCommentStarter(this.line);
-      this.isEmpty = this.line.trim() === '';
+      this.isEmpty = this.line.trim() === '' || this.line.trim() === '-';
 
       this.tabCount = getTabCount(editor, lineNum, this.isEmpty);
       if (!this.isComment) {
@@ -84,11 +84,11 @@ angular.module('lightweightDOM', ['lightweightParse'])
      * @param lineNum The line to read the node from. Current editor cursor line if not specified.
      * @returns {Number} Number of tabs at line or at cursor
      */
-    function getTabCount(editor, lineNum, isEmpty) {
+    function getTabCount(editor, lineNum) {
       //Special case: If the current line is where the cursor is, AND
       //the line is empty:
       var line = editor.getLine(lineNum);
-      if (isEmpty) {
+      if (line.trim() === '') {
         var cursor = editor.getCursor();
         if (cursor.line === lineNum) {
           line = ((new Array(cursor.ch + 1)).join(' ')); //<- Line containing spaces up to cursor
@@ -219,6 +219,19 @@ angular.module('lightweightDOM', ['lightweightParse'])
           return prevNode;
         }
       }
+    };
+
+    /**
+     * @returns {[LazyNode]} All direct descendants of this node
+     */
+    LazyNode.prototype.getChildren = function getChildren() {
+      var children = [];
+      var child = this.getFirstChild();
+      while (child !== null) {
+        children.push(child);
+        child = child.getNextSibling();
+      }
+      return children;
     };
 
     /**

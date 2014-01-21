@@ -21,9 +21,12 @@ angular.module('ramlEditorApp')
       //then we should not do so.
       if (suggestion.isList && !lineIsArray) {
         var arrayStarterNode = node.selfOrPrevious(function(node) { return node.isArrayStarter; });
-        //1. If we don't find and array starter node, we start a new array.
+        //1. If we don't find an array starter node, we start a new array.
         //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
-        if (!arrayStarterNode || (node.tabCount === arrayStarterNode.tabCount && node.lineNum !== arrayStarterNode.lineNum)) {
+        //3. If the suggestion a text node, we start a new array.
+        if (!arrayStarterNode ||
+          (node.tabCount === arrayStarterNode.tabCount && node.lineNum !== arrayStarterNode.lineNum) ||
+          (suggestion.metadata && suggestion.metadata.isText)) {
           prefix = '- ';
         } else if (node.isArrayStarter) {
           //Add extra tab for children of root array node, e.g. those not prefixed with a '- '

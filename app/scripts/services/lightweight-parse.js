@@ -33,13 +33,14 @@ angular.module('lightweightParse', ['utils'])
   })
   .factory('extractKey', function (isArrayStarter) {
     return function(value) {
+
       function endsWith(string, searchString) {
         var position = string.length - searchString.length;
         var lastIndex = string.lastIndexOf(searchString);
         return lastIndex !== -1 && lastIndex === position;
       }
 
-      function clearSlashes(key) {
+      function clearDashes(key) {
         if (isArrayStarter(key)) {
           return key.replace(/^-\s*/, '');
         }
@@ -55,21 +56,21 @@ angular.module('lightweightParse', ['utils'])
       match = trimmedValue.trim().split(/:\s+/, 2);
       key = match && match.length > 1 ? match[0] : '';
       if (key){
-        return clearSlashes(key);
+        return clearDashes(key);
       }
 
       // There was no colon followed by a space, maybe it ends with a colon?
       if (endsWith(trimmedValue, ':')) {
-        return clearSlashes(trimmedValue.substr(0, trimmedValue.length - 1));
+        return clearDashes(trimmedValue.substr(0, trimmedValue.length - 1));
       }
 
       // No key found
       return '';
     };
   })
-  .factory('extractValue', function extractValueFactory() {
+  .factory('extractValue', function extractValueFactory(isArrayStarter) {
     /**
-     * @return {{ raw, text, isAlias, isReference}} the value of a node, or null if the
+     * @return {{ text, isAlias, isReference}} the value of a node, or null if the
      *         node contains a complex value. The string will
      *         additionally be decorated with metadata:
      *         For alias values, e.g. Foo: &Bar, 'isAlias' will be set to true
@@ -82,19 +83,29 @@ angular.module('lightweightParse', ['utils'])
       if (!line) {
         return null;
       }
-      var matches = /:\s+(.+)/.exec(line);
-      if (matches && matches[1]) {
-        var raw = matches[1].trim();
-        //Attach metadata to the string:
-        var isAlias = raw[0] === '&';
-        var isReference = raw[0] === '*';
-        return {
-          text: raw,
-          isAlias: isAlias,
-          isReference: isReference
-        };
+      var valueIndex = line.indexOf(': ') + 2;
+      var containsKey = valueIndex > 1;
+      //Extract a scalar value:
+      if (!containsKey) {
+        line = line.trimLeft();
+        if (isArrayStarter(line)) {
+          line = line.replace(/^-\s*/, '');
+        }
+        return line ? { text: line } : null;
       }
-      return null;
+      //: is last character, so return null
+      if (valueIndex >= line.length || valueIndex < 2) {
+        return null;
+      }
+
+      //Extract value member of key/value pair:
+      line = line.substr(valueIndex).trim();
+      //Attach metadata to the string:
+      return line ? {
+        text: line,
+        isAlias: line[0] === '&',
+        isReference: line[0] === '*'
+      } : null;
     };
   })
   .factory('getLineIndent', function (getTabCount) {
