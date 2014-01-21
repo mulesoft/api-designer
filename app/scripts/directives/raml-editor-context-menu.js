@@ -2,7 +2,7 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlEditorRemoveFilePrompt) {
+  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlEditorRemoveFilePrompt, scroll) {
     function Actions(file) {
       return [
         {
@@ -32,6 +32,7 @@
         }
 
         function close() {
+          scroll.enable();
           scope.$apply(function() {
             delete contextMenuController.file;
             scope.opened = false;
@@ -50,6 +51,7 @@
 
         var contextMenuController = {
           open: function(event, file) {
+            scroll.disable();
             this.file = file;
             scope.actions = Actions(file);
 
