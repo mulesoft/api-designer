@@ -2,9 +2,14 @@ div[role=raml-editor] .menubar {
   margin: 0;
   padding: 0;
   list-style: none;
+
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: row;
   flex-direction: row;
+  -webkit-align-items: center;
   align-items: center;
+
   color: gray;
   background-color: #343436;
   font-size: 14px;
@@ -33,6 +38,7 @@ div[role=raml-editor] .menubar {
   }
 
   .spacer {
+    -webkit-flex: 1;
     flex: 1;
     background-color: transparent;
   }
