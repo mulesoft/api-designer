@@ -1,0 +1,43 @@
+div[role=raml-editor] .menubar {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  color: gray;
+  background-color: #343436;
+  font-size: 14px;
+
+  border: 1px solid #2a2c33;
+  border-width: 1px 0;
+
+  li {
+    margin: 0;
+    padding: 5px 10px;
+    display: block;
+    background-color: #404040;
+  }
+
+  .menu-item:hover {
+    cursor: pointer;
+    color: white;
+  }
+
+  .menu-item-ll {
+    border-right: 1px solid #2a2c33;
+  }
+
+  .menu-item-fr {
+    border-left: 1px solid #2a2c33;
+  }
+
+  .spacer {
+    flex: 1;
+    background-color: transparent;
+  }
+
+  .file-absolute-path {
+    text-align: center;
+  }
+}

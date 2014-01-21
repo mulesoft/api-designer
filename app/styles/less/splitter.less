@@ -12,7 +12,8 @@ div .noselect {
   flex: 0;
 
   cursor: col-resize;
-  background-color: rgb(51, 51, 51);
+  background-color: #57585a;
+
   .split {
     position: absolute;
     background-repeat: no-repeat;
@@ -31,18 +32,18 @@ div .noselect {
   }
 
   .split-left {
-    background-image: url(/images/mini-left.png);
+    background-image: url(../images/mini-left.png);
   }
 
   &.collapsed .split-left {
-    background-image: url(/images/mini-right.png);
+    background-image: url(../images/mini-right.png);
   }
 
   .split-right {
-    background-image: url(/images/mini-right.png);
+    background-image: url(../images/mini-right.png);
   }
 
   &.collapsed .split-right {
-    background-image: url(/images/mini-left.png);
+    background-image: url(../images/mini-left.png);
   }
 }
