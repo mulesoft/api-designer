@@ -11,7 +11,10 @@
 
   flex: 0 0 200px;
 
+  display: -webkit-flex;
   display: flex;
+
+  -webkit-flex-direction: column;
   flex-direction: column;
 
   button {
@@ -61,6 +64,7 @@
     .box-shadow(2px 2px 7px -2px #333);
     color: #777;
 
+    -webkit-flex: 1;
     flex: 1;
 
     .file-item {
@@ -68,7 +72,9 @@
       cursor: pointer;
       white-space: nowrap;
 
+      display: -webkit-flex;
       display: flex;
+
       align-items: center;
 
       &:not(.currentfile):hover {
@@ -82,7 +88,9 @@
       }
 
       .file-name {
+        -webkit-flex: 1;
         flex: 1;
+
         overflow: hidden;
         text-overflow: ellipsis;
       }
