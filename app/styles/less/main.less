@@ -32,7 +32,10 @@ div[role=raml-editor] {
   height: 100%;
   background: rgb(52,52,54);
 
+  display: -webkit-flex;
   display: flex;
+
+  -webkit-flex-direction: column;
   flex-direction: column;
 }
 
@@ -75,6 +78,7 @@ div[role=raml-editor] > div[role=notifications] {
 
 div[role=raml-editor] > header {
   .box-sizing(border-box);
+  display: -webkit-flex;
   display: flex;
   align-items: center;
   padding: 10px 20px;
@@ -90,6 +94,8 @@ div[role=raml-editor] > header > h1 {
   .text-shadow(-1px 0 4px #222);
   color: white;
   letter-spacing: 1px;
+
+  -webkit-flex: 1;
   flex: 1;
 
   .help:hover {
@@ -111,8 +117,13 @@ div[role=raml-editor] > header > a[role=logo] {
 /* BEGIN HORIZONTAL COMPONENT COLUMNS */
 
 div[role=flexColumns] {
+  display: -webkit-flex;
   display: flex;
+
+  -webkit-flex-direction: row;
   flex-direction: row;
+
+  -webkit-flex: 1;
   flex: 1;
 }
 
@@ -123,9 +134,13 @@ div[role=editor] {
   background: rgb(11,11,13);
 
   position: relative;
+  display: -webkit-flex;
   display: flex;
+
+  -webkit-flex-direction: column;
   flex-direction: column;
 
+  -webkit-flex: 1;
   flex: 1;
 }
 
@@ -188,6 +203,8 @@ div[role=tab].active div[role=tab-box]{
 div[role=code] {
   overflow: auto;
   position: relative;
+
+  -webkit-flex: 1;
   flex: 1;
 }
 
@@ -213,7 +230,10 @@ div[role=preview-wrapper] {
   .box-sizing(border-box);
   overflow: auto;
   background: rgb(230,231,235);
+
+  -webkit-flex: 0 0 250px;
   flex: 0 0 250px;
+
   z-index: 70;
 }
 
