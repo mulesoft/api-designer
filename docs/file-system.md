@@ -36,7 +36,7 @@ An entry is a data structure representing either a file or a folder with the fol
 	</tr>
 	<tr>
 		<td>children</td>
-		<td></td>
+		<td>in the case of a folder, it contains all the entries within that path.</td>
 	</tr>
 	<tr>
 		<td>meta</td>
@@ -61,18 +61,36 @@ For example, a file named 'example.raml' stored at root level will look like thi
 }
 ```
 
-And a folder at root level will have this structure:
+And a folder at root level with two children will have this structure:
 
 ```
 {
   path: "/samples",
   name: "samples",
   type: "folder",
+  children: [
+  	{ 
+  	  path: "/samples/example.raml",
+  	  name: "example.raml",
+  	  type: "file",
+  	  content: "…",
+  	  meta: { … }
+  	},
+  	{ 
+  	  path: "/samples/subFolder"
+  	  name: "subFolder",
+  	  type: "folder",
+  	  children: [ … ],
+  	  meta: { … }
+  	}
+  ]
   meta: {
     created: 1389903212
   }
 }
 ```
+> every folder has a children element. It's the choice of the file system to return the whole tree or make it lazy.
+
 
 And a file two levels deep looks like this:
 
@@ -87,6 +105,7 @@ And a file two levels deep looks like this:
   }
 }
 ```
+> This file can be loaded by path or using the childrens element of the parent folder.
 
 ##File System Module
 
@@ -100,24 +119,9 @@ the 'fileSystem' module acts as a factory returning and instance of the service 
 
 All the actions return a promise that fulfills on success or rejects on fail.
 
-#####List
+#####Get Directory Tree
 
-The 'list' method takes a single parameter 'path', and returns a promise that, on success, provides an array of the entries at that level, excluding the entry corresponding to the path itself. For example, calling 'list' for '/' for the entries we've seen should return this:
-
-```
-[
-  { path: "/example.raml", name: "example.raml", type: "file", content: "here goes the content of the raml file", meta: {...}},
-  { path: "/samples", name: "samples", type: "folder", meta: {...}}
-]
-```
-
-and calling it for the '/samples' path, should return this:
-
-```
-[
-  { path: "/samples/folderA", name: "folderA", type: "folder", meta: {...}}
-]
-```
+The 'directory' method takes a single parameter 'path', and returns a promise that, on success, returns an object for that path, that has a 'children' property with an array of the entries for that element. This call is recursive. For example, if you call 'directory' for '/' it will return a representation of the whole file system.
 
 #####Save
 
