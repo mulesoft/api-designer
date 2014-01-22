@@ -8,7 +8,7 @@ describe('Lightweight DOM Module', function () {
   beforeEach(module('ramlEditorApp'));
   beforeEach(inject(function ($injector) {
     codeMirror = $injector.get('codeMirror');
-    getNode = $injector.get('getNode');
+    getNode    = $injector.get('getNode');
   }));
 
   //region Tests
@@ -28,22 +28,22 @@ describe('Lightweight DOM Module', function () {
         'baseUri: https://api.twilio.com/{version}',
         '  /Accounts:'
       ]);
-      node.key.should.be.equal('title');
+      node.getKey().should.be.equal('title');
       //Should skip the comment node on line 2
       node = node.getNextSibling();
       //Verify all the properties as a sanity check
-      node.key.should.be.equal('version');
+      node.getKey().should.be.equal('version');
       node.line.should.be.equal('version: 2010-04-01');
-      node.lineNum.should.be.equal(2);
+      node.lineNumber.should.be.equal(2);
       node.isComment.should.be.equal(false);
       node.getIsInArray().should.be.equal(false);
-      node.tabCount.should.be.equal(0);
+      node.lineIndent.tabCount.should.be.equal(0);
       //Ensure that we properly skip the indented comment
       node = node.getNextSibling();
-      node.key.should.be.equal('documentation');
+      node.getKey().should.be.equal('documentation');
       //Ensure that we properly skip the child arrays
       node = node.getNextSibling();
-      node.key.should.be.equal('baseUri');
+      node.getKey().should.be.equal('baseUri');
       //Done, no more siblings
       expect(node.getNextSibling()).to.not.exist;
     });
@@ -60,26 +60,26 @@ describe('Lightweight DOM Module', function () {
       node = node.getFirstChild();
       node.isArrayStarter.should.be.equal(true);
       node.getIsInArray().should.be.equal(true);
-      node.key.should.be.equal('title');
-      node.value.text.should.be.equal('Hello');
+      node.getKey().should.be.equal('title');
+      node.getValue().text.should.be.equal('Hello');
       node = node.getNextSibling();
       node.isArrayStarter.should.be.equal(false);
       node.getIsInArray().should.be.equal(true);
-      node.key.should.be.equal('content');
-      node.value.text.should.be.equal('World');
+      node.getKey().should.be.equal('content');
+      node.getValue().text.should.be.equal('World');
       //Iterator should skip to the next array:
       node = node.getNextSibling();
       node.isArrayStarter.should.be.equal(true);
       node.getIsInArray().should.be.equal(true);
-      node.key.should.be.equal('title');
-      node.value.text.should.be.equal('Foo');
+      node.getKey().should.be.equal('title');
+      node.getValue().text.should.be.equal('Foo');
       //final node
       node = node.getNextSibling();
       node.isArrayStarter.should.be.equal(false);
       node.getIsInArray().should.be.equal(true);
-      node.key.should.be.equal('content');
-      node.value.text.should.be.equal('Bar');
-      node.getParent().key.should.be.equal('documentation');
+      node.getKey().should.be.equal('content');
+      node.getValue().text.should.be.equal('Bar');
+      node.getParent().getKey().should.be.equal('documentation');
       //final node
       should.not.exist(node.getNextSibling());
       //Backward:
@@ -108,7 +108,7 @@ describe('Lightweight DOM Module', function () {
       //which is its parent:
       node.line.should.be.equal('    content: Bar');
       node = node.getParent();
-      node.lineNum.should.be.equal(0);
+      node.lineNumber.should.be.equal(0);
       node.line.should.be.equal('documentation:');
     });
 
@@ -134,19 +134,19 @@ describe('Lightweight DOM Module', function () {
       editor.setCursor({line: 1, ch: 2});
       var node = getNode(editor);
       //Sanity check:
-      node.lineNum.should.be.equal(1);
+      node.lineNumber.should.be.equal(1);
       //The line tab count is 2, but the cursor position is 1 tab over:
-      node.tabCount.should.be.equal(1);
+      node.lineIndent.tabCount.should.be.equal(1);
 
       //Move cursor away from node
       editor.setCursor({line: 0, ch: 0});
       node = getNode(editor, 1);
-      node.tabCount.should.be.equal(2);
+      node.lineIndent.tabCount.should.be.equal(2);
 
       //Move cursor to comment line
       editor.setCursor({line: 2, ch: 0});
       node = getNode(editor);
-      node.tabCount.should.be.equal(1);
+      node.lineIndent.tabCount.should.be.equal(0);
     });
   });
 
@@ -186,24 +186,24 @@ describe('Lightweight DOM Module', function () {
       ], 2);
       //Start with the second node in the first array:
       var node = getNode(editor);
-      node.value.text.should.be.equal('B');
+      node.getValue().text.should.be.equal('B');
       var nodes = node.getSelfAndNeighbors();
       nodes.length.should.be.equal(2);
-      nodes[0].value.text.should.be.equal('B');
-      nodes[1].value.text.should.be.equal('A');
+      nodes[0].getValue().text.should.be.equal('B');
+      nodes[1].getValue().text.should.be.equal('A');
 
       //Now try the first node in the first array:
       nodes = nodes[1].getSelfAndNeighbors();
       nodes.length.should.be.equal(2);
-      nodes[0].value.text.should.be.equal('A');
-      nodes[1].value.text.should.be.equal('B');
+      nodes[0].getValue().text.should.be.equal('A');
+      nodes[1].getValue().text.should.be.equal('B');
 
       //Try the same thing with the empty node in the last array:
       editor.setCursor({ line: 6, ch: 4 });
       nodes = getNode(editor).getSelfAndNeighbors();
       nodes.length.should.be.equal(2);
       nodes[0].isEmpty.should.be.equal(true);
-      nodes[1].value.text.should.be.equal('E');
+      nodes[1].getValue().text.should.be.equal('E');
     });
   });
 
@@ -227,7 +227,7 @@ describe('Lightweight DOM Module', function () {
         '          type: string'
       ], 13);
       //Start with the second node in the first array:
-      var path = getNode(editor).getPath().map(function(node) { return node.key; });
+      var path = getNode(editor).getPath().map(function(node) { return node.getKey(); });
       path.should.be.deep.equal(['baseUri', '/Accounts', '/{AccountSid}', 'uriParameters', 'AccountSid']);
     });
 
@@ -250,9 +250,9 @@ describe('Lightweight DOM Module', function () {
         'version: 2010-04-01'
       ], 2);
       var node = getNode(editor);
-      node = node.selfOrParent(function(node) { return node.value.text === '2010-04-01'; });
-      node.value.text.should.be.equal('2010-04-01');
-      node.key.should.be.equal('version');
+      node = node.selfOrParent(function(node) { return node.getValue().text === '2010-04-01'; });
+      node.getValue().text.should.be.equal('2010-04-01');
+      node.getKey().should.be.equal('version');
     });
 
     it('should return parent if self does not match', function() {
@@ -267,7 +267,7 @@ describe('Lightweight DOM Module', function () {
         '            An Account instance resource represents a single Twilio account.',
         '          type: string'
       ], 8);
-      var node = getNode(editor).selfOrParent(function(node) { return node.key === '/Accounts'; });
+      var node = getNode(editor).selfOrParent(function(node) { return node.getKey() === '/Accounts'; });
       node.should.be.ok;
     });
 
@@ -277,7 +277,7 @@ describe('Lightweight DOM Module', function () {
         'baseUri: https://api.twilio.com/{version}',
         '  /Accounts:',
       ], 2);
-      var node = getNode(editor).selfOrParent(function(node) { return node.key === 'xxx'; });
+      var node = getNode(editor).selfOrParent(function(node) { return node.getKey() === 'xxx'; });
       should.not.exist(node);
     });
   });
@@ -291,9 +291,9 @@ describe('Lightweight DOM Module', function () {
         'version: 2010-04-01'
       ], 2);
       var node = getNode(editor);
-      node = node.selfOrPrevious(function(node) { return node.value.text === '2010-04-01'; });
-      node.value.text.should.be.equal('2010-04-01');
-      node.key.should.be.equal('version');
+      node = node.selfOrPrevious(function(node) { return node.getValue().text === '2010-04-01'; });
+      node.getValue().text.should.be.equal('2010-04-01');
+      node.getKey().should.be.equal('version');
     });
 
     it('should return a previous sibling when matched', function() {
@@ -305,9 +305,9 @@ describe('Lightweight DOM Module', function () {
         '    Tricky: Hello'
       ], 3);
       var node = getNode(editor);
-      node = node.selfOrPrevious(function(node) { return node.value.text === 'Hello'; });
-      node.value.text.should.be.equal('Hello');
-      node.key.should.be.equal('title');
+      node = node.selfOrPrevious(function(node) { return node.getValue().text === 'Hello'; });
+      node.getValue().text.should.be.equal('Hello');
+      node.getKey().should.be.equal('title');
     });
 
     it('should return null when no matches are found', function() {
@@ -318,8 +318,23 @@ describe('Lightweight DOM Module', function () {
         '    content: world',
       ], 3);
       var node = getNode(editor);
-      node = node.selfOrPrevious(function(node) { return node.value.text === 'Foo'; });
+      node = node.selfOrPrevious(function(node) { return node.getValue().text === 'Foo'; });
       should.not.exist(node);
+    });
+  });
+
+  describe('LazyNode caching', function () {
+    it('should return the same LazyNode reference for the line that has NOT been changed', function () {
+      var editor = getEditor(codeMirror, ['key: value']);
+      getNode(editor).should.be.equal(getNode(editor));
+    });
+
+    it('should return different LazyNode reference for the line that has been changed', function () {
+      var editor     = getEditor(codeMirror, ['key1: value1']);
+      var cachedNode = getNode(editor);
+
+      editor.setLine(0, 'key2: value2');
+      getNode(editor).should.not.be.equal(cachedNode);
     });
   });
 
