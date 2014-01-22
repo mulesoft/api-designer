@@ -8,7 +8,7 @@ describe('Lightweight DOM Module', function () {
   beforeEach(module('ramlEditorApp'));
   beforeEach(inject(function ($injector) {
     codeMirror = $injector.get('codeMirror');
-    getNode = $injector.get('getNode');
+    getNode    = $injector.get('getNode');
   }));
 
   //region Tests
@@ -320,6 +320,21 @@ describe('Lightweight DOM Module', function () {
       var node = getNode(editor);
       node = node.selfOrPrevious(function(node) { return node.getValue().text === 'Foo'; });
       should.not.exist(node);
+    });
+  });
+
+  describe('LazyNode caching', function () {
+    it('should return the same LazyNode reference for the line that has NOT been changed', function () {
+      var editor = getEditor(codeMirror, ['key: value']);
+      getNode(editor).should.be.equal(getNode(editor));
+    });
+
+    it('should return different LazyNode reference for the line that has been changed', function () {
+      var editor     = getEditor(codeMirror, ['key1: value1']);
+      var cachedNode = getNode(editor);
+
+      editor.setLine(0, 'key2: value2');
+      getNode(editor).should.not.be.equal(cachedNode);
     });
   });
 
