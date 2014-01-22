@@ -13,7 +13,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       this.contents = typeof contents === 'string' ? contents : null;
 
       this.dirty = false;
-      this.persisted = false;
+      this.persisted = true;
       var extensionMatch = FILE_EXTENSION_EXTRACTOR.exec(this.name);
       if (extensionMatch) {
         this.type = extensionMatch[1];
@@ -112,6 +112,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       if (file.type === 'raml') {
         file.contents = ramlSnippets.getEmptyRaml();
       }
+      file.persisted = false;
       return file;
     };
 

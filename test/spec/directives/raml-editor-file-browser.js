@@ -233,7 +233,13 @@ describe('ramlEditorFileBrowser', function() {
     });
 
     it('saves when meta-s is pressed', function() {
-      var event = events.keydown(83, true);
+      var event = events.keydown(83, { metaKey: true});
+      document.dispatchEvent(event);
+      saveSpy.should.have.been.calledWith(ramlRepository.files[1]);
+    });
+
+    it('saves when ctrl-s is pressed', function() {
+      var event = events.keydown(83, { ctrlKey: true});
       document.dispatchEvent(event);
       saveSpy.should.have.been.calledWith(ramlRepository.files[1]);
     });

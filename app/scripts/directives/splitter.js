@@ -5,8 +5,6 @@
  */
 angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
   function($window, config) {
-    var collapsedSize = 20;
-
     // Extend angular jqlite with .prev as an opposite to .next
     if (!angular.element.prototype.prev) {
       /**
@@ -26,6 +24,18 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
       };
     }
 
+    function getCollapseTarget(splitter) {
+      return splitter.attr('ng-splitter-collapse-target');
+    }
+
+    function getCollapseTargetEl(splitter) {
+      return splitter[getCollapseTarget(splitter)]();
+    }
+
+    function getNonCollapseTargetEl(splitter) {
+      return splitter[{next: 'prev', prev: 'next'}[getCollapseTarget(splitter)]]();
+    }
+
     /**
      * Scales the splitter to the requested size, clipping the size based on
      * our constraints and toggling the resize chevron if the size of the
@@ -34,56 +44,36 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
      * @param splitter Splitter that was moved
      * @param size Pixels to resize to
      */
-    function resizeNextTo(splitter, preferredSize) {
-      var next      = splitter.next();
-      var size      = Math.max(preferredSize, collapsedSize);
-      var collapsed = size === collapsedSize;
-
-      setChevronState(splitter, collapsed);
-
-      next
-        .css('flex', '0 0 ' + size + 'px')
-        //Hide the scrollbar on collapse
-        .css('overflow', collapsed ? 'hidden' : 'auto')
-      ;
+    function resizeCollapseTarget(splitter, size) {
+      getCollapseTargetEl(splitter).css('flex', '0 0 ' + Math.max(0, size) + 'px');
+      return Math.max(0, size);
     }
 
     /**
      * @param splitter Splitter that was moved
      * @param sizeAttr 'width' or 'height'
      * @param delta Pixels to resize by
+     * @returns New collapse target size after it has been resized
      */
-    function resizeNextBy(splitter, sizeAttr, delta) {
-      var prev     = splitter.prev();
-      var prevSize = getOffsetSize(prev, sizeAttr);
-      var next     = splitter.next();
-      var nextSize = getOffsetSize(next, sizeAttr);
+    function performResizeCollapseTarget(splitter, sizeAttr, delta) {
+      var collapseTargetEl        = getCollapseTargetEl(splitter);
+      var collapseTargetElSize    = getOffsetSize(collapseTargetEl, sizeAttr);
+      var nonCollapseTargetEl     = getNonCollapseTargetEl(splitter);
+      var nonCollapseTargetElSize = getOffsetSize(nonCollapseTargetEl, sizeAttr);
+      var sign                    = {next: 1, prev: -1}[getCollapseTarget(splitter)];
 
       // Force delta to be as small as possible to make
-      // sure next container doesn't over grow if there is
-      // no space before it
-      if ((prevSize + (-delta)) < 0) {
-        delta = prevSize;
+      // sure collapse target doesn't over grow if there is
+      // no space left
+      if ((nonCollapseTargetElSize + (delta * sign)) < 0) {
+        delta = nonCollapseTargetElSize * sign * -1;
       }
 
       if (delta) {
-        resizeNextTo(splitter, nextSize + delta);
+        collapseTargetElSize = resizeCollapseTarget(splitter, collapseTargetElSize - (delta * sign));
       }
-    }
 
-    /**
-     * Toggles the chevron display
-     * @param splitter The splitter that owns the chevron
-     * @param collapsed False means expand chevron shown, true
-     * means collapse chevron is shown
-     */
-    function setChevronState(splitter, collapsed) {
-      splitter.children()
-        .toggleClass('icon-chevron-sign-left',   collapsed)
-        .toggleClass('icon-chevron-sign-right', !collapsed)
-      ;
-
-      saveIsCollapsed(splitter, collapsed);
+      return collapseTargetElSize;
     }
 
     /**
@@ -99,18 +89,6 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
     //region Splitter config
 
     /**
-     * Saves the splitter size
-     * @param splitter The splitter element. Should have a unique id.
-     * @param sizeAttr 'width' or 'height'
-     * @returns {Number} The size of the splitter
-     */
-    function saveSize(splitter, sizeAttr) {
-      var size = getOffsetSize(splitter.next(), sizeAttr);
-      config.set('splitterSize_' + splitter.attr('id'), size);
-      return size;
-    }
-
-    /**
      * Loads the splitter size and optionally applies it to the next element
      * after the splitter
      * @param splitter The splitter element. Should have a unique id.
@@ -123,12 +101,15 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
     }
 
     /**
-     * Saves whether the splitter is collapsed
+     * Saves the splitter size
      * @param splitter The splitter element. Should have a unique id.
-     * @param collapsed Whether the splitter is collapsed
+     * @param sizeAttr 'width' or 'height'
+     * @returns {Number} The size of the splitter
      */
-    function saveIsCollapsed(splitter, collapsed) {
-      config.set('splitterCollapsed_' + splitter.attr('id'), collapsed);
+    function saveSize(splitter, sizeAttr) {
+      var size = getOffsetSize(getCollapseTargetEl(splitter), sizeAttr);
+      config.set('splitterSize_' + splitter.attr('id'), size);
+      return size;
     }
 
     /**
@@ -138,6 +119,30 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
      */
     function loadIsCollapsed(splitter) {
       return config.get('splitterCollapsed_' + splitter.attr('id')) === 'true';
+    }
+
+    /**
+     * Saves whether the splitter is collapsed
+     * @param splitter The splitter element. Should have a unique id.
+     * @param collapsed Whether the splitter is collapsed
+     */
+    function saveIsCollapsed(splitter, collapsed) {
+      config.set('splitterCollapsed_' + splitter.attr('id'), collapsed);
+    }
+
+    /**
+     * Toggles the collapse target visibility
+     * @param splitter The splitter that owns the chevron
+     * @param collapsed False means expand collapse target, true
+     * means collapse target is shown
+     */
+    function toggleCollapseTarget(splitter, collapsed) {
+      collapsed = arguments.length > 1 ? collapsed : !loadIsCollapsed(splitter);
+
+      splitter.toggleClass('collapsed', collapsed);
+      getCollapseTargetEl(splitter).toggleClass('hide-display', collapsed);
+
+      saveIsCollapsed(splitter, collapsed);
     }
 
     //endregion
@@ -153,58 +158,76 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
         var isActive      = false;
         var vertical      = attrs.ngSplitter === 'vertical';
         var sizeAttr      = vertical ? 'width' : 'height';
-        var mousePos      = vertical ? 'clientX' : 'clientY';
+        var posAttr       = vertical ? 'clientX' : 'clientY';
         var lastPos;
-        var collapsed     = loadIsCollapsed(splitter);
-        var preferredSize = loadSize(splitter, sizeAttr);
+        var lastSize      = loadSize(splitter, sizeAttr);
+        var lastCollapsed = loadIsCollapsed(splitter);
         var parent        = splitter.parent();
 
-        resizeNextTo(splitter, collapsed ? collapsedSize : preferredSize);
+        // Restore collapse target state (size and collapsed)
+        // from last session
+        resizeCollapseTarget(splitter, lastSize);
+        toggleCollapseTarget(splitter, lastCollapsed);
 
         // Configure UI events
         splitter
-          .on('mousedown', function onMouseDown(e) {
-            // Only respond to left mouse button:
-            if (e.button !== 0) {
+          .on('mousedown', function onMouseDown(event) {
+            // Only respond to left mouse button
+            if (event.button !== 0) {
               return;
             }
 
-            isActive = true;
-            lastPos  = e[mousePos];
+            lastPos       = event[posAttr];
+            lastSize      = loadSize(splitter, sizeAttr);
+            lastCollapsed = loadIsCollapsed(splitter);
 
+            isActive  = true;
             parent.addClass('noselect');
           })
         ;
 
         angular.element($window)
-          .on('mousemove', function onMouseMove(e) {
+          .on('mousemove', function onMouseMove(event) {
             if (isActive) {
-              var delta = e[mousePos] - lastPos;
-              // Scale the elements
-              resizeNextBy(splitter, sizeAttr, -delta);
-              lastPos = e[mousePos];
+              // Scale the collapse target
+              var collapsed = performResizeCollapseTarget(splitter, sizeAttr, event[posAttr] - lastPos) === 0;
+
+              // Collapse the target if its size has reached zero
+              //
+              // We don't want to toggle the state every 1px and for
+              // that reason we compare current state with last one
+              if (collapsed !== lastCollapsed) {
+                toggleCollapseTarget(splitter, collapsed);
+              }
+
+              lastPos       = event[posAttr];
+              lastCollapsed = collapsed;
             }
           })
-          .on('mouseup', function onMouseUp(e) {
-            if (isActive && !loadIsCollapsed(splitter)) {
-              preferredSize = saveSize(splitter, sizeAttr);
+          .on('mouseup', function onMouseUp() {
+            if (isActive) {
+              if (lastCollapsed) {
+                // Preserve collapse target's size if it
+                // has reached collapsed state during drag & drop operation
+                //
+                // We do it to make sure collapsed target expands to proper size
+                // when users try to expand it in current or next session
+                toggleCollapseTarget(splitter, true);
+                resizeCollapseTarget(splitter, lastSize);
+              } else {
+                saveSize(splitter, sizeAttr);
+              }
+
+              isActive = false;
+              parent.removeClass('noselect');
             }
-
-            isActive = false;
-            lastPos  = e[mousePos];
-
-            parent.removeClass('noselect');
           })
         ;
 
-        // Wire up the chevron
-        splitter.children().on('click', function onClick() {
-          var isCollapsed = loadIsCollapsed(splitter);
-          var targetSize  = isCollapsed ? preferredSize : collapsedSize;
-
-          resizeNextTo(splitter, targetSize);
-
-          return false;
+        // Wire up the tiny button that handles
+        // collapse and expand operations
+        splitter.children('.split').on('click', function onClick() {
+          toggleCollapseTarget(splitter);
         });
       }
     };
