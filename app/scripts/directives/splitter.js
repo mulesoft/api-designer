@@ -45,7 +45,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
      * @param size Pixels to resize to
      */
     function resizeCollapseTarget(splitter, size) {
-      getCollapseTargetEl(splitter).css('flex', '0 0 ' + Math.max(0, size) + 'px');
+      getCollapseTargetEl(splitter).css('min-width', Math.max(0, size) + 'px');
       return Math.max(0, size);
     }
 

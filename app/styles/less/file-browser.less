@@ -9,9 +9,14 @@
   position: relative;
   z-index: 200;
 
-  flex: 0 0 200px;
+  -webkit-flex: 0;
+  flex: 0;
+  min-width: 200px;
 
+  display: -webkit-flex;
   display: flex;
+
+  -webkit-flex-direction: column;
   flex-direction: column;
 
   button {
@@ -60,6 +65,7 @@
     background-color: rgb(20,21,25);
     color: #777;
 
+    -webkit-flex: 1;
     flex: 1;
 
     .file-item {
@@ -67,7 +73,10 @@
       cursor: pointer;
       white-space: nowrap;
 
+      display: -webkit-flex;
       display: flex;
+
+      -webkit-align-items: center;
       align-items: center;
 
       &:not(.currentfile):hover {
@@ -81,7 +90,9 @@
       }
 
       .file-name {
+        -webkit-flex: 1;
         flex: 1;
+
         overflow: hidden;
         text-overflow: ellipsis;
       }
