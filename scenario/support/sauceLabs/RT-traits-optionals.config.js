@@ -9,8 +9,7 @@ exports.config = {
   },
 
   specs: [
-    '../../test/e2e/editor-shelf/resource-types/rt-root.js',
-    '../../test/e2e/editor-shelf/resource-types/rt-methods.js',
+    '../../test/e2e/RT-traits-optionals.js',
     '../../test/lib/*.js'
   ],
 

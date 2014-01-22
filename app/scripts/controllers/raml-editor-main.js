@@ -53,6 +53,18 @@ angular.module('ramlEditorApp')
   ) {
     var editor;
     var currentUpdateTimer;
+    var currentFile;
+    var extractCurrentFileLabel = function(file) {
+      var label = '';
+      if (file) {
+        label = file.path + (file.path.slice(-1) === '/' ? '' : '/') + file.name;
+        if (file.dirty) {
+          label = '* ' + label;
+        }
+      }
+
+      return label;
+    };
 
     $window.setTheme = function (theme) {
       config.set('theme', theme);
@@ -61,6 +73,8 @@ angular.module('ramlEditorApp')
     };
 
     $scope.$on('event:raml-editor-file-selected', function(event, file) {
+      currentFile = file;
+
       if (file.contents) {
         editor.setValue(file.contents);
       }
@@ -143,17 +157,7 @@ angular.module('ramlEditorApp')
     };
 
     $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
-      var selectedFile = $scope.fileBrowser.selectedFile;
-      var absolutePath = '';
-
-      if (selectedFile) {
-        absolutePath = selectedFile.path + (selectedFile.path.slice(-1) === '/' ? '' : '/') + selectedFile.name;
-        if (selectedFile.dirty) {
-          absolutePath = '* ' + absolutePath;
-        }
-      }
-
-      return absolutePath;
+      return extractCurrentFileLabel(currentFile);
     };
 
     eventService.on('event:toggle-theme', function () {

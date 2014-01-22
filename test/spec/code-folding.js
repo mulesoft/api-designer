@@ -3,93 +3,14 @@
 describe('code folding', function () {
   var codeMirror;
   var getFoldRange;
-  var getParentLine;
 
   beforeEach(module('codeMirror'));
   beforeEach(module('codeFolding'));
 
   beforeEach(inject(function ($injector) {
-    codeMirror    = $injector.get('codeMirror');
-    getFoldRange  = $injector.get('getFoldRange');
-    getParentLine = $injector.get('getParentLine');
+    codeMirror   = $injector.get('codeMirror');
+    getFoldRange = $injector.get('getFoldRange');
   }));
-
-  describe('document traversing', function () {
-    it('should detect parent correctly for trait items with and without dash', function () {
-      var parentLine;
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: document transversing',
-          'traits:',
-          '  - trait-one:',
-          '  - trait-two:',
-          '    trait-three:'
-        ],
-        {line: 0, ch: 0},
-        { indentUnit: indentUnit }
-      );
-
-      parentLine = getParentLine(editor, 2, 1);
-      parentLine.should.equal('traits:');
-
-      parentLine = getParentLine(editor, 3, 1);
-      parentLine.should.equal('traits:');
-
-      parentLine = getParentLine(editor, 4, 1);
-      parentLine.should.equal('traits:');
-    });
-
-    it('should detect parent correctly for resourceType items with and without dash', function () {
-      var parentLine;
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: document transversing',
-          'resourceTypes:',
-          '  - base:',
-          '  - image:',
-          '    video:',
-        ],
-        {line: 0, ch: 0},
-        { indentUnit: indentUnit }
-      );
-
-      parentLine = getParentLine(editor, 2, 1);
-      parentLine.should.equal('resourceTypes:');
-
-      parentLine = getParentLine(editor, 3, 1);
-      parentLine.should.equal('resourceTypes:');
-
-      parentLine = getParentLine(editor, 4, 2);
-      parentLine.should.equal('resourceTypes:');
-    });
-
-    it('should detect parent correctly for array items with and without dash', function () {
-      var parentLine;
-      var indentUnit = 2;
-      var editor     = getEditor(codeMirror,
-        [
-          'title: document transversing',
-          'key:',
-          '  - base:',
-          '  - image:',
-          '    video:',
-        ],
-        {line: 0, ch: 0},
-        { indentUnit: indentUnit }
-      );
-
-      parentLine = getParentLine(editor, 2, 1);
-      parentLine.should.equal('key:');
-
-      parentLine = getParentLine(editor, 3, 1);
-      parentLine.should.equal('key:');
-
-      parentLine = getParentLine(editor, 4, 2);
-      parentLine.should.equal('key:');
-    });
-  });
 
   it('should detect fold ranges of only one line', function () {
     var indentUnit = 2;
