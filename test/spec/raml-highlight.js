@@ -1,6 +1,8 @@
 'use strict';
 
 describe('RAML Syntax Highlight', function () {
+  var state;
+
   beforeEach(module('codeMirror'));
 
   describe('codeMirror', function () {
@@ -10,6 +12,7 @@ describe('RAML Syntax Highlight', function () {
 
       beforeEach(inject(function ($injector) {
         token = $injector.get('token');
+        state = $injector.get('startState');
       }));
 
       it('should mark string, almost identical to a RAML tag, as a comment (RT-346)', function () {
@@ -32,6 +35,56 @@ describe('RAML Syntax Highlight', function () {
         var stream = new CodeMirror.StringStream('#%RAML 0.8  ');
         token(stream, {}).should.be.equal('raml-tag');
       });
+
+      it('should handle arrays', function() {
+        var stream = new CodeMirror.StringStream('- title: My Title');
+        token(stream, state).should.be.equal('meta');
+
+        stream.start = stream.pos;
+        token(stream, state).should.be.equal('key');
+
+        stream.start = stream.pos;
+        token(stream, state).should.be.equal('meta');
+
+        stream.start = stream.pos;
+        should.not.exist(token(stream, state));
+
+        stream = new CodeMirror.StringStream('  content: My content');
+        token(stream, state).should.be.equal('key');
+
+        stream.start = stream.pos;
+        token(stream, state).should.be.equal('meta');
+
+        stream.start = stream.pos;
+        should.not.exist(token(stream, state));
+      });
+
+      it('should handle arrays with pipes', function() {
+        var stream = new CodeMirror.StringStream('- title: |');
+        token(stream, state).should.be.equal('meta');
+
+        stream.start = stream.pos;
+        token(stream, state).should.be.equal('key');
+
+        stream.start = stream.pos;
+        token(stream, state).should.be.equal('meta');
+
+        stream.start = stream.pos;
+        token(stream, state).should.be.equal('meta');
+
+        stream = new CodeMirror.StringStream('    My title');
+        token(stream, state).should.be.equal('none');
+
+        stream = new CodeMirror.StringStream('  content: Awesome content');
+        token(stream, state).should.be.equal('key');
+
+        stream.start = stream.pos;
+        token(stream, state).should.be.equal('meta');
+
+        stream.start = stream.pos;
+        should.not.exist(token(stream, state));
+      });
+
     });
   });
 });

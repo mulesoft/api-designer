@@ -1,5 +1,14 @@
 'use strict';
-function EditorHelper(){}
+var webdriver = require('selenium-webdriver');
+
+function EditorHelper(){
+  this.editorLinesListCssWithCol =  '.CodeMirror-code div[style="position: relative;"]';
+  this.editorLinesListCss =  '.CodeMirror-code div[style="position: relative;"] pre';
+//  Syntax highlight
+  this.keySHighlight = 'cm-key';
+  this.traitTitleSHighlight= 'cm-trait-title';
+  this.ramlTagSHighlight = 'cm-raml-tag';
+}
 
 EditorHelper.prototype = {};
 
@@ -65,6 +74,50 @@ EditorHelper.prototype.setValue = function(text){
 EditorHelper.prototype.setCursor = function(line, char){
   line --;
   browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
+};
+
+EditorHelper.prototype.getSHighlightClass = function(line, pos){
+  var that = this;
+  var d = webdriver.promise.defer();
+  browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
+    list[line].findElements(by.css('span')).then(function(lintext){
+      if(lintext[pos]) {
+        lintext[pos].getAttribute('class').then(function(classe){
+          d.fulfill(classe);
+        });
+      } else {
+        d.fulfill('');
+      }
+    });
+  });
+  return d.promise;
+};
+
+EditorHelper.prototype.getSyntaxIndentClassArray = function(line, posi){
+  var that = this;
+  var d = webdriver.promise.defer();
+  var listClase = [] ;
+  var i = 0;
+  browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
+    list[line].findElements(by.css('span')).then(function(lintext){
+      posi.forEach(function(pos){
+        var t = i ++;
+        if(lintext[pos]) {
+          lintext[pos].getAttribute('class').then(function(classe){
+            listClase[t] = classe;
+          }).then(function(){
+              if(t ===posi.length-1){
+                d.fulfill(listClase);
+              }
+            });
+        } else {
+          console.log('This has not a class');
+        }
+      });
+
+    });
+  });
+  return d.promise;
 };
 
 exports.EditorHelper = EditorHelper;

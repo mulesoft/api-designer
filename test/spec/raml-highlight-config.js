@@ -283,4 +283,77 @@ describe('RAML Highlight Config', function () {
 
     state.token.should.equal(codeMirrorHighLight._markdown);
   });
+
+  it('calculates the correct indentation when entering markdown mode (taking array starter into account)', function() {
+    var state = mode.startState();
+    var stream = new CodeMirror.StringStream('  - content: |');
+    // advance past first two spaces
+    state.token(stream, state);
+    stream.start = stream.pos;
+
+    state.token(stream, state).should.be.equal('meta');
+    state.localState.parentIndentation.should.be.equal(4);
+  });
+
+  describe('indentation', function() {
+    it('marks beginning indentation', function() {
+      var state = mode.startState();
+      var stream = new CodeMirror.StringStream('    description: text');
+      mode.token(stream, state).should.equal('indent indent-col-0');
+      stream.pos.should.equal(2);
+
+      stream.start = stream.pos;
+      mode.token(stream, state).should.equal('indent indent-col-2');
+      stream.pos.should.equal(4);
+    });
+
+    it('marks beginning partial indentation (1 trailing space)', function() {
+      var state = mode.startState();
+      var stream = new CodeMirror.StringStream('   description: text');
+      mode.token(stream, state).should.equal('indent indent-col-0');
+      stream.pos.should.equal(2);
+
+      stream.start = stream.pos;
+      mode.token(stream, state).should.equal('indent-incomplete');
+      stream.pos.should.equal(3);
+    });
+
+    it('does not mark indentation after non-whitespace', function() {
+      var state = mode.startState();
+      var stream = new CodeMirror.StringStream('description: text    ');
+      while (stream.pos < 17) {
+        mode.token(stream, state);
+        stream.start = stream.pos;
+      }
+      should.not.exist(mode.token(stream, state));
+      stream.string.slice(stream.start, stream.pos).should.equal(' ');
+    });
+
+    it('does not mark indentation within nested, non-raml modes', function() {
+      var state = mode.startState();
+      [
+        '/resource:',
+        '  description: |'
+      ].forEach(function(text) {
+        var stream = new CodeMirror.StringStream(text, 2);
+        while (!stream.eol()) {
+          mode.token(stream, state);
+          stream.start = stream.pos;
+        }
+      });
+
+      var stream = new CodeMirror.StringStream('      Some *markdown* text');
+      mode.token(stream, state).should.equal('indent indent-col-0');
+      stream.pos.should.equal(2);
+
+      stream.start = stream.pos;
+      mode.token(stream, state).should.equal('indent indent-col-2');
+      stream.pos.should.equal(4);
+
+      stream.start = stream.pos;
+      // there should be no vertical line for the third chunk of two spaces
+      // since they're nested within the markdown
+      should.not.exist(mode.token(stream, state));
+    });
+  });
 });
