@@ -74,12 +74,14 @@ angular.module('ramlEditorApp')
       });
     };
   })
-  .factory('getNeighborKeys', function (getNeighborLines, extractKey) {
+  .factory('getNeighborKeys', function (getNeighborLines, extractKeyValue) {
     return function (editor) {
-      return getNeighborLines(editor).map(extractKey);
+      return getNeighborLines(editor).map(function (line) {
+        return extractKeyValue(line).key;
+      });
     };
   })
-  .factory('ramlHint', function ramlHintFactory(getLineIndent, generateTabs, getNeighborKeys, getTabCount,
+  .factory('ramlHint', function ramlHintFactory(generateTabs, getNeighborKeys, getTabCount,
                                                 getScopes, getEditorTextAsArrayOfLines, getNode) {
     var hinter = {};
     var RAML_VERSION = '#%RAML 0.8';
@@ -109,8 +111,8 @@ angular.module('ramlEditorApp')
      */
     hinter.isSuggestionInUse = function (suggestionKey, suggestion, nodes) {
       var values = suggestion.metadata.isText ?
-        nodes.map(function (node) { return node.value ? node.value.text : null; })
-        : nodes.map(function (node) { return node.key; });
+        nodes.map(function (node) { return node.getValue() ? node.getValue().text : null; })
+        : nodes.map(function (node) { return node.getKey(); });
 
       return values.indexOf(suggestionKey) !== -1 ||
         //For key suggestions, e.g. where isText is not true, we also check for the key + '?'
@@ -139,7 +141,7 @@ angular.module('ramlEditorApp')
       //Pivotal 61664576: We use the DOM API to check to see if the current node or any
       //of its parents contains a YAML reference. If it does, then we provide no suggestions.
       var node = getNode(editor);
-      var refNode = node.selfOrParent(function(node) { return node.value && node.value.isReference; });
+      var refNode = node.selfOrParent(function(node) { return node.getValue() && node.getValue().isReference; });
       if (refNode) {
         return [];
       }
@@ -151,29 +153,31 @@ angular.module('ramlEditorApp')
       if (node.isEmpty) {
         var ch = editor.getCursor().ch;
         var cursorTabCount = getTabCount(ch);
-        if (cursorTabCount <= node.tabCount) {
+        if (cursorTabCount <= node.lineIndent.tabCount) {
           var atTabBoundary = ch % editor.getOption('indentUnit') === 0;
           if (!atTabBoundary) {
             return [];
           }
         }
-        cursorTabCount = Math.min(cursorTabCount, node.tabCount);
-        node = node.selfOrParent(function(node) { return node.tabCount === cursorTabCount; });
+        cursorTabCount = Math.min(cursorTabCount, node.lineIndent.tabCount);
+        node = node.selfOrParent(function(node) { return node.lineIndent.tabCount === cursorTabCount; });
       }
 
       var raml = null;
       var suggestions = [];
       var peerNodes = [];
+      
       if (node) {
-        var path     = node.getPath().map(function(node) { return node.key; });
+        var path = node.getPath().map(function(node) { return node.getKey(); });
         raml         = hinter.suggestRAML(path);
         suggestions  = raml.suggestions;
         var isText = Object.keys(suggestions).some(function(suggestion) { return suggestions[suggestion].metadata.isText; });
         //Get all structural nodes' keys/values so we can filter them out. This bit is tricky; if
         //we are in an array, and the elements of that array are text, then the peer group is
         //every array in the parent. Otherwise, the peer group is every key in the current array.
-        peerNodes = raml.metadata && raml.metadata.isList && isText ? node.getParent().getChildren() : node.getSelfAndNeighbors();
-        peerNodes = peerNodes.filter(function(node) { return node.getIsStructural(); });
+        var isTextNodeList = raml.metadata && raml.metadata.isList && isText;
+        peerNodes = isTextNodeList ? node.getParent().getChildren() : node.getSelfAndNeighbors();
+        peerNodes = peerNodes.filter(function(node) { return node.isStructural; });
       }
 
       //Next, filter out the keys from the returned suggestions
@@ -187,7 +191,7 @@ angular.module('ramlEditorApp')
           };
         });
       //Pull out display-relevant metadata
-      suggestions.isList = raml && raml.metadata ? raml.metadata.isList : false;
+      suggestions.isList = (raml && raml.metadata) ? raml.metadata.isList : false;
       return suggestions;
     };
 
