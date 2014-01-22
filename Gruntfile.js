@@ -57,7 +57,7 @@ module.exports = function (grunt) {
       },
       less: {
         files: '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.less',
-        tasks: 'less'
+        tasks: 'less-and-autoprefixer'
       }
     },
     connect: {
@@ -248,6 +248,14 @@ module.exports = function (grunt) {
         ext: '.css'
       }
     },
+    autoprefixer: {
+      options: {
+        browsers: ['last 2 versions']
+      },
+      app: {
+        src: 'app/styles/*.css'
+      }
+    },
     protractor: {
       local: {
         configFile: 'scenario/support/local.conf.js'
@@ -277,7 +285,7 @@ module.exports = function (grunt) {
     grunt.task.run([
       'clean:server',
       'jshint',
-      'less',
+      'less-and-autoprefixer',
       'configureProxies',
       'connect:livereload',
       'open',
@@ -294,7 +302,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'clean:dist',
     'jshint',
-    'less',
+    'less-and-autoprefixer',
     'useminPrepare',
     'ngtemplates:ramlEditorApp',
     'concat',
@@ -303,6 +311,11 @@ module.exports = function (grunt) {
     'ngmin',
     'rev',
     'usemin'
+  ]);
+
+  grunt.registerTask('less-and-autoprefixer', [
+    'less',
+    'autoprefixer'
   ]);
 
   grunt.registerTask('localScenario', [
@@ -323,6 +336,7 @@ module.exports = function (grunt) {
     'jshint',
     'protractor:saucelabs'
   ]);
+
   grunt.registerTask('default', [
     'test',
     'build'
