@@ -60,7 +60,7 @@ describe('RAML Editor Main Controller', function () {
     scope.$apply();
 
     sourceUpdatedSpy.called.should.be.true;
-    scope.hasErrors.should.be.false;
+    should.not.exist(scope.currentError);
 
     sourceUpdatedSpy.restore();
   });
@@ -77,7 +77,7 @@ describe('RAML Editor Main Controller', function () {
     setTimeout(function () {
       sourceUpdatedSpy.called.should.be.true;
 
-      scope.hasErrors.should.be.true;
+      scope.currentError.should.be.ok;
 
       sourceUpdatedSpy.restore();
 
@@ -100,7 +100,7 @@ describe('RAML Editor Main Controller', function () {
     setTimeout(function () {
       sourceUpdatedSpy.called.should.be.true;
 
-      scope.hasErrors.should.be.false;
+      should.not.exist(scope.currentError);
 
       sourceUpdatedSpy.restore();
 
@@ -133,7 +133,7 @@ describe('RAML Editor Main Controller', function () {
       var error = {
         message: 'Error without line or column!'
       };
-      scope.hasErrors.should.be.false;
+      should.not.exist(scope.currentError);
 
       // Act
       eventService.broadcast('event:raml-parser-error', error);
@@ -143,7 +143,74 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].line.should.be.equal(1);
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
-      scope.hasErrors.should.be.true;
+      scope.currentError.should.be.ok;
+    });
+
+    describe('code folding a block containing the errored line', function() {
+      it('lifts the error marker to the start of the fold', function() {
+        annotationsToDisplay = [];
+
+        ctrl = $controller('ramlEditorMain', params);
+        var error = {
+          message: 'Error without line or column!',
+          'problem_mark': {
+            line: 8
+          }
+        };
+
+        eventService.broadcast('event:raml-parser-error', error);
+        CodeMirror.signal(editor, 'fold', editor, {line: 6}, {line: 10});
+
+        annotationsToDisplay[0].line.should.be.equal(7);
+        annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
+      });
+
+      it('restores the error marker on unfolding', function() {
+        annotationsToDisplay = [];
+
+        ctrl = $controller('ramlEditorMain', params);
+        var error = {
+          message: 'Error without line or column!',
+          'problem_mark': {
+            line: 8
+          }
+        };
+
+        eventService.broadcast('event:raml-parser-error', error);
+        CodeMirror.signal(editor, 'fold', editor, {line: 6}, {line: 10});
+        CodeMirror.signal(editor, 'unfold', editor, {line: 6}, {line: 10});
+
+        annotationsToDisplay[0].line.should.be.equal(9);
+        annotationsToDisplay[0].message.should.be.equal(error.message);
+      });
+
+      it('moves the error marker to the next fold when nested', function() {
+        annotationsToDisplay = [];
+        sinon.stub(editor, 'findMarksAt', function() {
+          return [{
+            __isFold: true,
+            find: function() {
+              return {from: {line: 7}};
+            }
+          }];
+        });
+
+        ctrl = $controller('ramlEditorMain', params);
+        var error = {
+          message: 'Error without line or column!',
+          'problem_mark': {
+            line: 8
+          }
+        };
+
+        eventService.broadcast('event:raml-parser-error', error);
+        CodeMirror.signal(editor, 'fold', editor, {line: 7}, {line: 10});
+        CodeMirror.signal(editor, 'fold', editor, {line: 6}, {line: 10});
+        CodeMirror.signal(editor, 'unfold', editor, {line: 6}, {line: 10});
+
+        annotationsToDisplay[0].line.should.be.equal(8);
+        annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
+      });
     });
   });
 

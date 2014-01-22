@@ -55,9 +55,7 @@ angular.module('ramlEditorApp')
     ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm,
     safeApplyWrapper, $modal
   ) {
-    var editor;
-    var saveTimer;
-    var currentUpdateTimer;
+    var editor, saveTimer, currentUpdateTimer, lineOfCurrentError;
 
     $window.setTheme = function (theme) {
       config.set('theme', theme);
@@ -96,7 +94,8 @@ angular.module('ramlEditorApp')
       codeMirrorErrors.clearAnnotations();
 
       if (definition.trim() === '') {
-        $scope.hasErrors = false;
+        $scope.currentError = undefined;
+        lineOfCurrentError = undefined;
         return;
       }
 
@@ -116,7 +115,8 @@ angular.module('ramlEditorApp')
     eventService.on('event:raml-parsed', safeApplyWrapper($scope, function (e, definition) {
       $scope.title     = definition.title;
       $scope.version   = definition.version;
-      $scope.hasErrors = false;
+      $scope.currentError = undefined;
+      lineOfCurrentError = undefined;
     }));
 
     eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function (e, args) {
@@ -124,7 +124,8 @@ angular.module('ramlEditorApp')
       var problemMark  = 'problem_mark';
       var line         = error[problemMark] ? error[problemMark].line   : 0;
       var column       = error[problemMark] ? error[problemMark].column : 0;
-      $scope.hasErrors = true;
+      $scope.currentError = error;
+      lineOfCurrentError = line;
 
       codeMirrorErrors.displayAnnotations([{
         line:    line + 1,
@@ -300,7 +301,7 @@ angular.module('ramlEditorApp')
     };
 
     (function bootstrap() {
-      $scope.hasErrors        = false;
+      $scope.currentError     = undefined;
       $scope.theme            = $rootScope.theme = config.get('theme', 'dark');
       $scope.shelf            = {};
       $scope.shelf.collapsed  = JSON.parse(config.get('shelf.collapsed', 'false'));
@@ -308,6 +309,39 @@ angular.module('ramlEditorApp')
       $scope.browser          = {};
       $scope.browser.expanded = false;
       $scope.editor           = editor = codeMirror.initEditor();
+
+      editor.on('fold', function(cm, start, end) {
+        if (start.line <= lineOfCurrentError && lineOfCurrentError <= end.line) {
+          codeMirrorErrors.displayAnnotations([{
+            line:    start.line + 1,
+            message: 'Error on line ' + (lineOfCurrentError + 1) + ': ' + $scope.currentError.message
+          }]);
+        }
+      });
+
+      editor.on('unfold', function() {
+        var position = { line: lineOfCurrentError };
+        var onlyFolds = function (textMark) {
+          return textMark.__isFold;
+        };
+        var toStartingLine = function (textMark) {
+          return textMark.find().from.line;
+        };
+        var toMinimum = function (currentMin, val) {
+          return Math.min(currentMin, val);
+        };
+        var newLineForError = editor.findMarksAt(position).filter(onlyFolds).map(toStartingLine).reduce(toMinimum, lineOfCurrentError);
+
+        var message = $scope.currentError.message;
+        if (newLineForError !== lineOfCurrentError) {
+          message = 'Error on line ' + (lineOfCurrentError + 1) + ': ' + message;
+        }
+
+        codeMirrorErrors.displayAnnotations([{
+          line:    newLineForError + 1,
+          message: message
+        }]);
+      });
 
       editor.on('change', function () {
         var updateResponsivenessInterval = config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL);

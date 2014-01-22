@@ -13,7 +13,7 @@
     <div role="saveas-button" ng-class="{disabled: !canSaveAs()}" ng-click="saveAs()">Save As</div>
   </header>
 
-  <div role="editor" ng-class="{error: hasErrors, collapsed: !shelf.collapsed}">
+  <div role="editor" ng-class="{error: currentError, collapsed: !shelf.collapsed}">
     <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
       <div role="shelf-tab" ng-click="toggleShelf()">
         <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
