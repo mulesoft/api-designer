@@ -62,6 +62,12 @@ angular.module('ramlEditorApp')
       raml: { name: 'raml' }
     };
 
+    var autocomplete = function onChange(cm) {
+      if (cm.getLine(cm.getCursor().line).trim()) {
+        cm.execCommand('autocomplete');
+      }
+    };
+
     $window.setTheme = function setTheme(theme) {
       config.set('theme', theme);
       $scope.theme = $rootScope.theme = theme;
@@ -74,6 +80,11 @@ angular.module('ramlEditorApp')
 
       var mode = MODES[file.type] || MODES.raml;
       editor.setOption('mode', mode);
+      if (mode === MODES.raml) {
+        editor.on('change', autocomplete);
+      } else {
+        editor.off('change', autocomplete);
+      }
     });
 
     $scope.sourceUpdated = function sourceUpdated() {
@@ -194,11 +205,7 @@ angular.module('ramlEditorApp')
         $scope.sourceUpdated();
       }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL)));
 
-      editor.on('change', function onChange(cm) {
-        if (cm.getLine(cm.getCursor().line).trim()) {
-          cm.execCommand('autocomplete');
-        }
-      });
+      editor.on('change', autocomplete);
 
       // Warn before leaving the page
       $window.onbeforeunload = function () {
