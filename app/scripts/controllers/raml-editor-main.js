@@ -95,8 +95,8 @@ angular.module('ramlEditorApp')
       eventService.broadcast('event:raml-source-updated', $scope.definition);
     };
 
-    function loadRamlDefinition(definition) {
-      return ramlParser.load(definition, null, {
+    function loadRamlDefinition(definition, location) {
+      return ramlParser.load(definition, location, {
         validate : true,
         transform: true,
         compose  : true,
@@ -112,7 +112,7 @@ angular.module('ramlEditorApp')
         return;
       }
 
-      loadRamlDefinition(definition).then(
+      loadRamlDefinition(definition, (($scope.fileBrowser || {}).selectedFile || {}).path).then(
         // success
         safeApplyWrapper($scope, function (value) {
           eventService.broadcast('event:raml-parsed', value);
