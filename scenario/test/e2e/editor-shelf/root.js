@@ -40,7 +40,7 @@ describe('shelf',function(){
         designerAsserts.ShelfElementsByGroup(shelf.elemRootByGroup);
       });
 
-      describe('documentation', function(){
+      xdescribe('documentation', function(){ // enable when https://www.pivotaltracker.com/story/show/64386678 is fixed
         xdescribe('adding multiples documentation nodes - title first', function(){
 
           it('clear editor', function(){
