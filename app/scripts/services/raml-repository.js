@@ -18,24 +18,6 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       this.persisted = true;
     }
 
-    RamlFile.prototype = {
-      save: function () {
-        return service.saveFile(this);
-      },
-
-      reload: function () {
-        return service.loadFile(this);
-      },
-
-      remove: function () {
-        return service.removeFile(this);
-      },
-
-      hasContents: function () {
-        return !!this.contents;
-      }
-    };
-
     service.getDirectory = function (path) {
       path = path || defaultPath;
       return fileSystem.directory(path).then(function (folder) {
@@ -57,6 +39,25 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
 
         // failure
         function (error) {
+          file.error = error;
+
+          throw error;
+        }
+      );
+    };
+
+    service.renameFile = function(file, newName) {
+      newName = newName || file.name;
+      var newPath = file.path.replace(file.name, newName);
+
+      return fileSystem.rename(file.path, newPath).then(
+        function() {
+          file.name = newName;
+          file.path = newPath;
+
+          return file;
+        },
+        function(error) {
           file.error = error;
 
           throw error;
