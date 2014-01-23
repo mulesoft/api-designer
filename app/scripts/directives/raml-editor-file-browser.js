@@ -7,11 +7,17 @@
       $scope.fileBrowser = this;
       $scope.homeDirectory = fileList;
 
+      function promptWhenFileListIsEmpty() {
+        ramlEditorFilenamePrompt.open().then(function(filename) {
+          fileList.newFile(filename);
+        });
+      }
+
       ramlRepository.getDirectory().then(function() {
         $scope.$watch('homeDirectory.files', function(files) {
           if (files.length === 0) {
             setTimeout(function() {
-              ramlEditorFilenamePrompt.open();
+              promptWhenFileListIsEmpty();
             }, 0);
           }
         }, true);
@@ -27,7 +33,7 @@
 
           $scope.fileBrowser.selectFile(fileToOpen);
         } else {
-          ramlEditorFilenamePrompt.open();
+          promptWhenFileListIsEmpty();
         }
       });
 

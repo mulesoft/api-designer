@@ -77,7 +77,7 @@ describe('ramlEditorFileBrowser', function() {
       var openStub;
 
       beforeEach(inject(function(ramlEditorFilenamePrompt) {
-        openStub = sinon.stub(ramlEditorFilenamePrompt, 'open');
+        openStub = sinon.spy(ramlEditorFilenamePrompt, 'open');
       }));
 
       it('prompts you to name a new file', function(done) {
@@ -195,7 +195,7 @@ describe('ramlEditorFileBrowser', function() {
 
       beforeEach(inject(function($rootScope, fileList, ramlEditorFilenamePrompt) {
         var removed = fileList.files.pop();
-        openStub = sinon.stub(ramlEditorFilenamePrompt, 'open');
+        openStub = sinon.spy(ramlEditorFilenamePrompt, 'open');
 
         $rootScope.$broadcast('event:raml-editor-file-removed', removed);
         scope.$digest();
