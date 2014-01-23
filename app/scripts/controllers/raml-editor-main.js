@@ -57,7 +57,7 @@ angular.module('ramlEditorApp')
     var extractCurrentFileLabel = function(file) {
       var label = '';
       if (file) {
-        label = file.path + (file.path.slice(-1) === '/' ? '' : '/') + file.name;
+        label = file.path;
         if (file.dirty) {
           label = '* ' + label;
         }

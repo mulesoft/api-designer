@@ -25,7 +25,17 @@ describe('RAML Repository', function () {
       var directoryDeferred = $q.defer();
       var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var success = sinon.stub();
-      var files = ['myfile'];
+      var files = {
+        path: '/',
+        name: '/',
+        children: [
+          {
+            path: '/example.raml',
+            name: 'example.raml',
+            content: ''
+          }
+        ]
+      };
 
       // Act
       ramlRepository.getDirectory('/').then(success);
@@ -34,8 +44,8 @@ describe('RAML Repository', function () {
       $rootScope.$apply();
 
       // Assert
-      success.firstCall.args[0][0].path.should.be.equal('/');
-      success.firstCall.args[0][0].name.should.be.equal(files[0]);
+      success.firstCall.args[0][0].path.should.be.equal(files.children[0].path);
+      success.firstCall.args[0][0].name.should.be.equal(files.children[0].name);
       success.firstCall.args[0][0].dirty.should.be.false;
       success.firstCall.args[0][0].persisted.should.be.true;
 
@@ -166,7 +176,11 @@ describe('RAML Repository', function () {
       var saveDeferred = $q.defer();
       var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var success = sinon.stub();
-      var fileMock = {dirty: true};
+      var fileMock = {
+        path: '/',
+        name: 'example.raml',
+        dirty: true
+      };
       var file;
 
       // Act
@@ -190,7 +204,11 @@ describe('RAML Repository', function () {
       var saveDeferred = $q.defer();
       var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var error = sinon.stub();
-      var fileMock = {dirty: true};
+      var fileMock = {
+        path: '/',
+        name: 'example.raml',
+        dirty: true
+      };
       var errorData = {message: 'This is the error description'};
 
       // Act
@@ -220,7 +238,7 @@ describe('RAML Repository', function () {
       file = ramlRepository.createFile();
 
       // Assert
-      file.path.should.be.equal('/');
+      file.path.should.be.equal('/untitled.raml');
       file.name.should.be.equal('untitled.raml');
       file.contents.should.be.equal(snippet);
       file.dirty.should.be.true;
