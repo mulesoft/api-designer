@@ -1,12 +1,13 @@
 'use strict';
-require('jasmine-reporters');
-jasmine.getEnv().addReporter(
-  new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
+//require('jasmine-reporters');
+//jasmine.getEnv().addReporter(
+//  new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
 exports.config = {
 
   capabilities: {
-    'browserName': 'chrome'
+    'browserName': 'chrome',
     // firefox, safari
+    name: 'API-portal- Regression'
   },
 
   specs: [
@@ -17,8 +18,12 @@ exports.config = {
     '../test/e2e/editor-shelf/root.js',
     '../test/e2e/editor-shelf/traits.js',
     '../test/e2e/editor-shelf/shelf-regressions.js',
-//    '../test/e2e/RT-traits-optionals.js',
-    '../test/e2e/editor-parser/*.js',
+    '../test/e2e/RT-method-optionals.js',
+    '../test/e2e/RT-root-optionals.js',
+    '../test/e2e/traits-optionals.js',
+    '../test/e2e/editor-parser/parser-regressions.js',
+    '../test/e2e/editor-parser/parser-root.js',
+    '../test/e2e/editor-parser/parser-traits.js',
     '../test/e2e/editor-parser/resource/*.js',
     '../test/e2e/editor-parser/resourceTypes/*.js',
     '../test/e2e/raml-example/muse-e2e.js',
