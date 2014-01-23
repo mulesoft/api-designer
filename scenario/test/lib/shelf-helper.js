@@ -115,10 +115,13 @@ ShelfHelper.prototype.clickShelfElemByPos = function(pos){
   var d = webdriver.promise.defer();
   browser.wait(function(){
     return browser.isElementPresent(by.css(that.elemlistCss));
-  }).then(function () {
+  }).then(function(){
     that.getElementsPromise().then(function(list){
-      list[pos].click();
-      d.fulfill('done');
+      list[pos].click().then(function(){
+        d.fulfill('done');
+      },function(){
+        d.fulfill('error');
+      });
     });
   });
   return d.promise;
