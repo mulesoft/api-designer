@@ -77,11 +77,11 @@ describe('ramlEditorContextMenu', function() {
     });
 
     describe('renaming', function() {
-      var renameItem, moveFileStub, promptSpy, filenamePromptStub;
+      var renameItem, renameFileStub, promptSpy, filenamePromptStub;
 
       beforeEach(function() {
         inject(function(ramlRepository, ramlEditorFilenamePrompt) {
-          moveFileStub = sandbox.stub(ramlRepository, 'moveFile');
+          renameFileStub = sandbox.stub(ramlRepository, 'renameFile');
           filenamePromptStub = sandbox.stub(ramlEditorFilenamePrompt, 'open');
         });
         promptSpy = sandbox.stub(window, 'prompt');
@@ -105,7 +105,7 @@ describe('ramlEditorContextMenu', function() {
         });
 
         it('renames the file in the ramlRepository', function() {
-          moveFileStub.should.have.been.calledWith(file, 'NewName.raml');
+          renameFileStub.should.have.been.calledWith(file, 'NewName.raml');
         });
 
       });
@@ -117,7 +117,7 @@ describe('ramlEditorContextMenu', function() {
         });
 
         it('does not rename the file', function() {
-          moveFileStub.should.not.have.been.called;
+          renameFileStub.should.not.have.been.called;
         });
       });
     });

@@ -16,6 +16,13 @@ angular.module('testFs', [])
       return $q.when(file);
     };
 
+    service.renameFile = function (file, newName) {
+      file.name = newName || file.name;
+      file.path = file.path.replace(file.name, newName);
+
+      return $q.when(file);
+    };
+
     service.moveFile = function (file, newName, newPath) {
       file.name = newName || file.name;
       file.path = newPath || file.path;
