@@ -82,7 +82,7 @@
       };
 
       var saveListener = function(e) {
-        if (e.which === 83 && e.metaKey) {
+        if (e.which === 83 && (e.metaKey || e.ctrlKey) && !(e.shiftKey || e.altKey)) {
           e.preventDefault();
           $scope.$apply(function() {
             $scope.fileBrowser.saveFile($scope.fileBrowser.selectedFile);
@@ -100,8 +100,7 @@
     return {
       restrict: 'E',
       templateUrl: 'views/raml-editor-file-browser.tmpl.html',
-      controller: controller,
-      replace: true
+      controller: controller
     };
   });
 })();

@@ -5,14 +5,18 @@
 [role=browser] {
   font-size: 12px;
   color: grey;
-  padding-right: 3px;
   .disable-selection;
   position: relative;
   z-index: 200;
 
-  flex: 0 0 200px;
+  -webkit-flex: 0;
+  flex: 0;
+  min-width: 200px;
 
+  display: -webkit-flex;
   display: flex;
+
+  -webkit-flex-direction: column;
   flex-direction: column;
 
   button {
@@ -59,9 +63,9 @@
     list-style: none;
 
     background-color: rgb(20,21,25);
-    .box-shadow(2px 2px 7px -2px #333);
     color: #777;
 
+    -webkit-flex: 1;
     flex: 1;
 
     .file-item {
@@ -69,7 +73,10 @@
       cursor: pointer;
       white-space: nowrap;
 
+      display: -webkit-flex;
       display: flex;
+
+      -webkit-align-items: center;
       align-items: center;
 
       &:not(.currentfile):hover {
@@ -83,7 +90,9 @@
       }
 
       .file-name {
+        -webkit-flex: 1;
         flex: 1;
+
         overflow: hidden;
         text-overflow: ellipsis;
       }
@@ -91,6 +100,7 @@
       .icon {
         display: none;
         padding-left: 10px;
+        font-size: 15px;
       }
 
       &.geared .icon, &:hover .icon {
@@ -110,7 +120,6 @@ div[role=raml-editor].light [role=browser] {
 
   ul[role=file-list] {
     background-color: white;
-    .box-shadow(2px 2px 7px -2px #999);
     color: #aaa;
     background-color: white;
     border: 1px solid rgb(131,148,150);

@@ -9,23 +9,26 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     function RamlFile (name, path, contents) {
       this.path = path || defaultPath;
       this.name = name || defaultName;
-      this.contents = typeof contents === 'string' ? contents : null;
+      if (this.path.indexOf(this.name) === -1) {
+        this.path = this.path + this.name;
+      }
 
+      this.contents = typeof contents === 'string' ? contents : null;
       this.dirty = false;
-      this.persisted = false;
+      this.persisted = true;
     }
 
     service.getDirectory = function (path) {
       path = path || defaultPath;
-      return fileSystem.directory(path).then(function (entries) {
-        return entries.map(function (e) {
-          return new RamlFile(e, path);
+      return fileSystem.directory(path).then(function (folder) {
+        return folder.children.map(function (entry) {
+          return new RamlFile(entry.name, entry.path, entry.content);
         });
       });
     };
 
     service.saveFile = function (file) {
-      return fileSystem.save(file.path, file.name, file.contents).then(
+      return fileSystem.save(file.path, file.contents).then(
         // success
         function () {
           file.dirty = false;
@@ -43,13 +46,14 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       );
     };
 
-    service.moveFile = function(file, newName, newPath) {
+    service.renameFile = function(file, newName) {
       newName = newName || file.name;
-      newPath = newPath || file.path;
-      return fileSystem.move(file.path, file.name, newPath, newName).then(
-        function(movedFile) {
-          file.name = movedFile.name;
-          file.path = movedFile.path;
+      var newPath = file.path.replace(file.name, newName);
+
+      return fileSystem.rename(file.path, newPath).then(
+        function() {
+          file.name = newName;
+          file.path = newPath;
 
           return file;
         },
@@ -62,7 +66,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.loadFile = function (file) {
-      return fileSystem.load(file.path, file.name).then(
+      return fileSystem.load(file.path).then(
         // success
         function (data) {
           file.dirty = false;
@@ -84,7 +88,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.removeFile = function (file) {
-      return fileSystem.remove(file.path, file.name).then(
+      return fileSystem.remove(file.path).then(
         // success
         function () {
           file.dirty = false;
@@ -104,6 +108,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     service.createFile = function (name) {
       var file = new RamlFile(name, defaultPath, ramlSnippets.getEmptyRaml());
       file.dirty = true;
+      file.persisted = false;
       return file;
     };
 

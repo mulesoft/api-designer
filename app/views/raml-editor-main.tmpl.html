@@ -6,22 +6,28 @@
 
   <header>
     <h1>
-      <strong>API</strong> Designer <i class="help icon-question-sign" ng-click="openHelp()"></i>
+      <strong>API</strong> Designer
     </h1>
 
     <a role="logo" target="_blank" href="http://mulesoft.com"></a>
   </header>
 
+  <ul class="menubar">
+    <li class="menu-item menu-item-ll">
+      <raml-editor-new-file-button></raml-editor-new-file-button>
+    </li>
+    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>
+    <li class="menu-item menu-item-fr" ng-click="openHelp()">
+      <i class="help icon-question-sign"></i>&nbsp;Help
+    </li>
+  </ul>
+
   <div role="flexColumns">
-    <raml-editor-file-browser></raml-editor-file-browser>
+    <raml-editor-file-browser role="browser"></raml-editor-file-browser>
+
+    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>
 
     <div role="editor" ng-class="{error: hasErrors}">
-      <div role="tabs">
-        <div role="tab" class="active"><span ng-show="fileBrowser.selectedFile.dirty">*&nbsp;</span>{{fileBrowser.selectedFile.name}}<div role="tab-box"></div></div>
-      </div>
-
-      <raml-editor-new-file-button></raml-editor-new-file-button>
-
       <div id="code" role="code"></div>
 
       <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
@@ -33,12 +39,12 @@
       </div>
     </div>
 
-    <div ng-splitter="vertical"><i id="consoleSplitter" class="icon-chevron-sign-right"></i></div>
+    <div id="consoleAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>
 
     <div role="preview-wrapper">
       <div role="preview" class="bootstrap">
         <div role="console">
-          <raml-console></raml-console>
+          <raml-console with-root-documentation></raml-console>
         </div>
       </div>
     </div>

@@ -26,22 +26,6 @@ describe('Lightweight Parse Module', function () {
       indentInfo.spaceCount.should.be.equal(0);
     });
 
-    it('should not fail on null', function () {
-      var indentInfo = getLineIndent(null);
-
-      indentInfo.tabCount.should.be.equal(0);
-      indentInfo.content.should.be.equal('');
-      indentInfo.spaceCount.should.be.equal(0);
-    });
-
-    it('should not fail on undefined', function () {
-      var indentInfo = getLineIndent(undefined);
-
-      indentInfo.tabCount.should.be.equal(0);
-      indentInfo.content.should.be.equal('');
-      indentInfo.spaceCount.should.be.equal(0);
-    });
-
     it('should with lines of only spaces', function () {
       var indentInfo = getLineIndent('      ');
 
@@ -85,90 +69,71 @@ describe('Lightweight Parse Module', function () {
     });
   });
 
-  describe('extractKey', function () {
-    var extractKey;
+  describe('extractKeyValue', function () {
+    var extractKeyValue;
 
     beforeEach(inject(function($injector) {
-      extractKey = $injector.get('extractKey');
+      extractKeyValue = $injector.get('extractKeyValue');
     }));
 
-    it('should extract a key correctly from a pair', function () {
-      extractKey('title: bye').should.be.equal('title');
+    function getKeyAndValue(data) {
+      return {
+        key:   data.key,
+        value: data.value ? data.value.text : null
+      };
+    }
+
+    it('should extract key and value correctly from a pair', function () {
+      getKeyAndValue(extractKeyValue('key: value')).should.be.deep.equal({key: 'key', value: 'value'});
     });
 
-    it('should extract a key correctly without a pair', function () {
-      extractKey('title:').should.be.equal('title');
-      extractKey('title: ').should.be.equal('title');
+    it('should extract key and value with comments at the end', function () {
+      getKeyAndValue(extractKeyValue('key: value#value')).should.be.deep.equal({key: 'key', value: 'value'});
     });
 
-    it('should handle the empty string and return empty string', function () {
-      extractKey('').should.be.equal('');
+    it('should extract key and value with comments in between', function () {
+      getKeyAndValue(extractKeyValue('key:#value')).should.be.deep.equal({key: 'key', value: null});
     });
 
-    it('should handle falsy values (undefined, null)', function () {
-      extractKey(undefined).should.be.equal('');
-      extractKey(null).should.be.equal('');
+    it('should extract key and value correctly without a pair', function () {
+      getKeyAndValue(extractKeyValue('key')).should.be.deep.equal({key: null, value: 'key'});
+      getKeyAndValue(extractKeyValue('key:')).should.be.deep.equal({key: 'key', value: null});
+      getKeyAndValue(extractKeyValue('key: ')).should.be.deep.equal({key: 'key', value: null});
     });
 
-    it('should handle keys with : in their name', function () {
-      extractKey('a: b:c').should.be.equal('a');
-      extractKey('a:b: c').should.be.equal('a:b');
-      extractKey('a:b: c:d').should.be.equal('a:b');
+    it('should handle empty strings', function () {
+      getKeyAndValue(extractKeyValue('')).should.be.deep.equal({key: '', value: null});
+      getKeyAndValue(extractKeyValue(' ')).should.be.deep.equal({key: null, value: null});
+      getKeyAndValue(extractKeyValue(' # ')).should.be.deep.equal({key: null, value: null});
     });
 
-    it('should handle keys with : in their value', function () {
-      extractKey('  title:longerKey: "Muse: Mule Sales Enablement API"').should.be.equal('title:longerKey');
-      extractKey('  title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
-      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
-      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
+    it('should handle keys with : in their names', function () {
+      getKeyAndValue(extractKeyValue('a: b:c')).should.be.deep.equal({key: 'a', value: 'b:c'});
+      getKeyAndValue(extractKeyValue('a:b: c')).should.be.deep.equal({key: 'a:b', value: 'c'});
+      getKeyAndValue(extractKeyValue('a:b: c:d')).should.be.deep.equal({key: 'a:b', value: 'c:d'});
     });
 
-    it('should handle keys which start in an array', function () {
-      extractKey('  - title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
-      extractKey('- title: "Muse: Mule Sales Enablement API"').should.be.equal('title');
-      extractKey('  - title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
-      extractKey('- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('title');
-      extractKey('--- title: "Muse: --- Mule Sales Enablement API"').should.be.equal('--- title');
+    it('should handle keys with : in their values', function () {
+      getKeyAndValue(extractKeyValue('key: value1:value2')).should.be.deep.equal({key: 'key', value: 'value1:value2'});
+      getKeyAndValue(extractKeyValue('key: value1: value2')).should.be.deep.equal({key: 'key', value: 'value1: value2'});
     });
 
-  });
-
-  describe('extractValue', function () {
-    var extractValue;
-
-    beforeEach(inject(function($injector) {
-      extractValue = $injector.get('extractValue');
-    }));
-
-    it('should extract a value correctly from a pair', function () {
-      extractValue('title: bye').text.should.be.equal('bye');
+    it('should handle lines with an array', function () {
+      getKeyAndValue(extractKeyValue('- key: value')).should.be.deep.equal({key: 'key', value: 'value'});
+      getKeyAndValue(extractKeyValue('-  key: value')).should.be.deep.equal({key: 'key', value: 'value'});
+      getKeyAndValue(extractKeyValue('-  key : value')).should.be.deep.equal({key: 'key', value: 'value'});
+      getKeyAndValue(extractKeyValue('-  key :  value')).should.be.deep.equal({key: 'key', value: 'value'});
+      getKeyAndValue(extractKeyValue('-  key :  value ')).should.be.deep.equal({key: 'key', value: 'value'});
+      getKeyAndValue(extractKeyValue('-  value')).should.be.deep.equal({key: null, value: 'value'});
     });
 
-    it('should return null if no pair', function () {
-      should.not.exist(extractValue('title:'));
-      should.not.exist(extractValue('title: '));
-    });
-
-    it('should handle the empty string and return null', function () {
-      should.not.exist(extractValue(''));
-    });
-
-    it('should handle falsy values (undefined, null)', function () {
-      should.not.exist(extractValue(undefined));
-      should.not.exist(extractValue(null));
-    });
-
-    it('should handle keys or values with : in their name', function () {
-      extractValue('a: b:c').text.should.be.equal('b:c');
-      extractValue('a:b: c').text.should.be.equal('c');
-      extractValue('a:b: c:d').text.should.be.equal('c:d');
-    });
-
-    it('should handle keys with : in their value', function () {
-      extractValue('  title:longerKey: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
-      extractValue('  title: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
-      extractValue('  - title: "Muse: Mule Sales Enablement API"').text.should.be.equal('"Muse: Mule Sales Enablement API"');
-      extractValue('- title: "Muse: --- Mule Sales Enablement API"').text.should.be.equal('"Muse: --- Mule Sales Enablement API"');
+    it('should handle lines which a dash', function () {
+      getKeyAndValue(extractKeyValue('-value')).should.be.deep.equal({key: null, value: '-value'});
+      getKeyAndValue(extractKeyValue('-key:')).should.be.deep.equal({key: '-key', value: null});
+      getKeyAndValue(extractKeyValue('-key: value')).should.be.deep.equal({key: '-key', value: 'value'});
+      getKeyAndValue(extractKeyValue('-key: value#comment')).should.be.deep.equal({key: '-key', value: 'value'});
+      getKeyAndValue(extractKeyValue(' -key : value # comment ')).should.be.deep.equal({key: '-key', value: 'value'});
+      getKeyAndValue(extractKeyValue(' -ke:y : value # comment ')).should.be.deep.equal({key: '-ke:y', value: 'value'});
     });
   });
 
