@@ -57,14 +57,14 @@ describe('shelf',function(){
           editor.setCursor(4,2);
           shelf.selectShelfElemByPos(1);
           expect(editor.getLine(4)).toEqual('  - title: My API');
-          designerAsserts.checkSyntaxHignlight(4, 1, editor.keySHighlight);
+          designerAsserts.checkHignlightAndSwimLines(4, [0,2], ['cm-indent cm-indent-col-0',editor.keySHighlight]);
           shelf = new ShelfHelper();
           editor.setCursor(5,4);
           designerAsserts.shelfElementsNotDisplayed(['title'], shelf.elemDocumentationLevel);
           editor.setCursor(5,4);
           shelf.selectShelfElemByPos(0);
           expect(editor.getLine(5)).toEqual('    content:');
-          designerAsserts.checkSyntaxHignlight(5,0,editor.keySHighlight);
+          designerAsserts.checkHignlightAndSwimLines(5, [0,1,2], ['cm-indent cm-indent-col-0','cm-indent cm-indent-col-2',editor.keySHighlight]);
           shelf = new ShelfHelper();
           editor.setCursor(6,4);
           designerAsserts.shelfElementsNotDisplayed(['title','content'], shelf.elemDocumentationLevel);
@@ -73,7 +73,7 @@ describe('shelf',function(){
           designerAsserts.shelfElements(shelf.elemDocumentationLevel);
           shelf.selectShelfElemByPos(0);
           expect(editor.getLine(6)).toEqual('  - content:');
-          designerAsserts.checkSyntaxHignlight(6,1,editor.keySHighlight);
+          designerAsserts.checkHignlightAndSwimLines(6, [0,2], ['cm-indent cm-indent-col-0',editor.keySHighlight]);
           shelf = new ShelfHelper();
           editor.setCursor(7,4);
           designerAsserts.shelfElementsNotDisplayed(['content'], shelf.elemDocumentationLevel);
@@ -83,7 +83,7 @@ describe('shelf',function(){
           editor.setCursor(7,4);
           shelf.selectShelfElemByPos(0);
           expect(editor.getLine(7)).toEqual('    title: My API');
-          designerAsserts.checkSyntaxHignlight(7,0,editor.keySHighlight);
+          designerAsserts.checkHignlightAndSwimLines(7, [0,1,2], ['cm-indent cm-indent-col-0','cm-indent cm-indent-col-2',editor.keySHighlight]);
           shelf = new ShelfHelper();
           editor.setCursor(8,4);
           designerAsserts.shelfElementsNotDisplayed(['title','content'], shelf.elemDocumentationLevel);
@@ -132,10 +132,9 @@ describe('shelf',function(){
           designerAsserts.checkSyntaxHignlight(1,0,editor.ramlTagSHighlight);
           designerAsserts.checkSyntaxHignlight(2,0,editor.keySHighlight);
           designerAsserts.checkSyntaxHignlight(3,0,editor.keySHighlight);
-          designerAsserts.checkSyntaxHignlight(4,1,editor.keySHighlight);
-          designerAsserts.checkSyntaxHignlight(5,1,'');
-          designerAsserts.checkSyntaxHignlight(7,0,editor.keySHighlight);
-
+          designerAsserts.checkHignlightAndSwimLines(4, [0,2], ['cm-indent cm-indent-col-0',editor.keySHighlight]);
+          designerAsserts.checkHignlightAndSwimLines(5,[0,1,2],['cm-indent cm-indent-col-0','cm-indent cm-indent-col-2','cm-indent cm-indent-col-4']);
+          designerAsserts.checkHignlightAndSwimLines(7, [0,1,2], ['cm-indent cm-indent-col-0','cm-indent cm-indent-col-2',editor.keySHighlight]);
 
         });
 

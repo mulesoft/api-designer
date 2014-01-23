@@ -93,4 +93,31 @@ EditorHelper.prototype.getSHighlightClass = function(line, pos){
   return d.promise;
 };
 
+EditorHelper.prototype.getSyntaxIndentClassArray = function(line, posi){
+  var that = this;
+  var d = webdriver.promise.defer();
+  var listClase = [] ;
+  var i = 0;
+  browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
+    list[line].findElements(by.css('span')).then(function(lintext){
+      posi.forEach(function(pos){
+        var t = i ++;
+        if(lintext[pos]) {
+          lintext[pos].getAttribute('class').then(function(classe){
+            listClase[t] = classe;
+          }).then(function(){
+              if(t ===posi.length-1){
+                d.fulfill(listClase);
+              }
+            });
+        } else {
+          console.log('This has not a class');
+        }
+      });
+
+    });
+  });
+  return d.promise;
+};
+
 exports.EditorHelper = EditorHelper;

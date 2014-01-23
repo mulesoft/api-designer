@@ -228,7 +228,7 @@ describe('Shelf controller', function () {
           '  '
         ]);
 
-      applySuggestion(editor, {key: 'title', isList: true });
+      applySuggestion(editor, {key: 'title', isList: true});
       editor.getLine(1).should.be.equal('  - title: My API');
     });
 
@@ -250,7 +250,7 @@ describe('Shelf controller', function () {
           '  - a: Hello'
         ]);
 
-      applySuggestion(editor, {key: 'content', isList: true });
+      applySuggestion(editor, {key: 'content', isList: true});
       editor.getLine(2).should.be.equal('    content:');
     });
 
@@ -262,7 +262,7 @@ describe('Shelf controller', function () {
           '  '
         ]);
 
-      applySuggestion(editor, {key: 'b', isList: true });
+      applySuggestion(editor, {key: 'b', isList: true});
       editor.getLine(2).should.be.equal('  - b:');
     });
 
@@ -274,7 +274,7 @@ describe('Shelf controller', function () {
           '    '
         ]);
 
-      applySuggestion(editor, {key: 'content', isList: true });
+      applySuggestion(editor, {key: 'content', isList: true});
       editor.getLine(2).should.be.equal('    content:');
     });
 
@@ -287,7 +287,7 @@ describe('Shelf controller', function () {
           '  '
         ]);
 
-      applySuggestion(editor, {key: 'c', isList: true });
+      applySuggestion(editor, {key: 'c', isList: true});
       editor.getLine(3).should.be.equal('  - c:');
     });
 
@@ -300,7 +300,7 @@ describe('Shelf controller', function () {
           '    '
         ]);
 
-      applySuggestion(editor, {key: 'c', isList: true });
+      applySuggestion(editor, {key: 'c', isList: true});
       editor.getLine(3).should.be.equal('    c:');
     });
 
@@ -313,14 +313,13 @@ describe('Shelf controller', function () {
           '  '
         ], 1);
 
-      applySuggestion(editor, {key: 'content', isList: true });
+      applySuggestion(editor, {key: 'content', isList: true});
       editor.getLine(1).should.be.equal('  - title: Hello');
       editor.getLine(2).should.be.equal('    content:');
       editor.getLine(3).should.be.equal('  - title: World');
     });
 
     //endregion
-
   });
 
   //--------- Utility functions
@@ -333,10 +332,9 @@ describe('Shelf controller', function () {
    * @returns {Object} CodeMirror Editor containing the given code with the
    * cursor placed at cursorLine, cursorColumn
    */
-  function createEditor(linesArray, cursorLine, cursorColumn)
-  {
-    cursorLine = cursorLine || linesArray.length - 1;
-    cursorColumn = cursorColumn || linesArray[cursorLine].length;
+  function createEditor(linesArray, cursorLine, cursorColumn) {
+    cursorLine   = arguments.length > 1 ? cursorLine   : linesArray.length - 1;
+    cursorColumn = arguments.length > 2 ? cursorColumn : linesArray[cursorLine].length;
     return getEditor(codeMirror, linesArray.join('\n'), { line : cursorLine, ch: cursorColumn });
   }
 });

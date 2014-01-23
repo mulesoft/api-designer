@@ -347,7 +347,7 @@ describe('CodeMirror Service', function () {
 
     describe('within an array not inside resourceTypes or traits', function() {
       beforeEach(function() {
-        editor    = getEditor(codeMirror, ['- myKey:']);
+        editor = getEditor(codeMirror, ['- myKey:']);
       });
 
       it('keeps indentation level when enter is pressed at the beginning of a line', function () {
