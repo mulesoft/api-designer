@@ -21,33 +21,33 @@ describe('parser ',function(){
     it('stripe-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
-      editor.setLine(2,'!include https://www.apihub.com/stripe/api/stripe-api/stripe-api.raml');
+      editor.setLine(2,'!include http://api-portal.anypoint.mulesoft.com/stripe/api/stripe-api/stripe-api.raml');
       browser.wait(function(){
         return browser.$(consoleDesigner.titleCss).getText().then(function(text){
           return text === 'Stripe REST API';
         });
       }).then(
-        designerAsserts.consoleApiTitle('Stripe REST API')
-      );
+          designerAsserts.consoleApiTitle('Stripe REST API')
+        );
     });
 
     it('twitter-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
-      editor.setLine(2,'!include https://www.apihub.com/twitter/api/twitter-rest-api/twitter-rest-api.raml');
+      editor.setLine(2,'!include http://api-portal.anypoint.mulesoft.com/twitter/api/twitter-rest-api/twitter-rest-api.raml');
       browser.wait(function(){
         return browser.$(consoleDesigner.titleCss).getText().then(function(text){
           return text === 'Twitter API';
         });
       }).then(
-        designerAsserts.consoleApiTitle('Twitter API')
-      );
+          designerAsserts.consoleApiTitle('Twitter API')
+        );
     });
 
     it('Twilio-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
-      editor.setLine(2,'!include http://www.apihub.com/twilio/api/twilio-rest-api/twilio-rest-api.raml');
+      editor.setLine(2,'!include http://api-portal.anypoint.mulesoft.com/twilio/api/twilio-rest-api/twilio-rest-api.raml');
       browser.wait(function(){
         return browser.$(consoleDesigner.titleCss).getText().then(function(text){
           return text === 'Twilio API';
@@ -60,7 +60,7 @@ describe('parser ',function(){
     it('Box-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
-      editor.setLine(2,'!include http://www.apihub.com/box/api/box-api/box-api.raml');
+      editor.setLine(2,'!include http://api-portal.anypoint.mulesoft.com/box/api/box-api/box-api.raml');
       browser.wait(function(){
         return browser.$(consoleDesigner.titleCss).getText().then(function(text){
           return text === 'Box.com API';
@@ -73,7 +73,7 @@ describe('parser ',function(){
     it('Instagram-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
-      editor.setLine(2,'!include http://www.apihub.com/instagram/api/instagram-api/instagram-api.raml');
+      editor.setLine(2,'!include http://api-portal.anypoint.mulesoft.com/instagram/api/instagram-api/instagram-api.raml');
       browser.wait(function(){
         return browser.$(consoleDesigner.titleCss).getText().then(function(text){
           return text === 'Instagram API';
@@ -99,7 +99,7 @@ describe('parser ',function(){
     it('GitHub-api',function(){
       editor.setLine(1,'#%RAML 0.8\\n        ');
       designerAsserts.parserError('1','empty document');
-      editor.setLine(2,'!include http://www.apihub.com/github/api/github-api-v3/github-api-v3.raml');
+      editor.setLine(2,'!include http://api-portal.anypoint.mulesoft.com/github/api/github-api-v3/github-api-v3.raml');
       browser.wait(function(){
         return browser.$(consoleDesigner.titleCss).getText().then(function(text){
           return text === 'GitHub API';

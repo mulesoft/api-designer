@@ -218,6 +218,15 @@ AssertsHelper.prototype.consoleResourceDescription = function(descriptions){
 
 };
 
+AssertsHelper.prototype.consoleMethodDescriptionCollapsed = function(methods, desc){
+  apiConsole.getListOfMethodsDescriptionCollapsed().then(function(dic){
+    var i = 0;
+    methods.forEach(function(method){
+      expect(dic[method]).toEqual(desc[i]);
+      i++;
+    });
+  });
+};
 
 AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function(expTitle, expContent){
   apiConsole.getDocumentationSections().then(function(sections){
