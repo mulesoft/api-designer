@@ -34,7 +34,9 @@ describe('ramlEditorContextMenu', function() {
   });
 
   describe('when open', function() {
-    beforeEach(function() {
+    var scrollDisableStub, scrollEnableStub;
+
+    beforeEach(inject(function(scroll) {
       var event = {
         stopPropagation: angular.noop,
         target: {}
@@ -44,8 +46,14 @@ describe('ramlEditorContextMenu', function() {
         name: 'filename.raml'
       };
 
+      scrollDisableStub = sinon.stub(scroll, 'disable');
+      scrollEnableStub = sinon.stub(scroll, 'enable');
       contextMenu.open(event, file);
       scope.$digest();
+    }));
+
+    it('disables scroll', function() {
+      scrollDisableStub.should.have.been.called;
     });
 
     describe('saving a file', function() {
@@ -136,6 +144,11 @@ describe('ramlEditorContextMenu', function() {
         el[0].getBoundingClientRect().height.should.not.eql(0);
         el[0].dispatchEvent(event);
         el[0].getBoundingClientRect().height.should.eql(0);
+      });
+
+      it('enables scroll', function() {
+        document.body.dispatchEvent(events.click());
+        scrollEnableStub.should.have.been.called;
       });
     });
   });

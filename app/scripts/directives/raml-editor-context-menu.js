@@ -28,6 +28,14 @@
       ];
     }
 
+    function outOfWindow(el) {
+      var rect = el.getBoundingClientRect();
+      return !(rect.top >= 0 &&
+               rect.left >= 0 &&
+               rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+               rect.right <= (window.innerWidth || document.documentElement.clientWidth));
+    }
+
     return {
       restrict: 'E',
       templateUrl: 'views/raml-editor-context-menu.tmpl.html',
@@ -39,6 +47,12 @@
           var menuContainer = angular.element(element[0].children[0]);
           menuContainer.css('left', left + 'px');
           menuContainer.css('top', top + 'px');
+
+          setTimeout(function() {
+            if (outOfWindow(menuContainer[0])) {
+              menuContainer.css('top', top - menuContainer[0].offsetHeight + 'px');
+            }
+          }, 0);
         }
 
         function close() {
