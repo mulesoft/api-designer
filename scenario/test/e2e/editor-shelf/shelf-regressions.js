@@ -15,7 +15,6 @@ describe('shelf',function(){
   });
 
   it('groups',function(){
-    var  shelf = new ShelfHelper();
     var definition = [
       '#%RAML 0.8',
       'title: The API',
@@ -30,10 +29,9 @@ describe('shelf',function(){
 
   });
 
-  describe('elements',function(){
+  xdescribe('elements',function(){ // enable when https://www.pivotaltracker.com/story/show/64386678 is fixed
 
     it('added below on an array', function(){
-      var  shelf = new ShelfHelper();
       var definition = [
         '#%RAML 0.8',
         'title: hola',
@@ -50,7 +48,6 @@ describe('shelf',function(){
     });
 
     it('add in a line with blanks at the end', function(){
-      var  shelf = new ShelfHelper();
       var definition = [
         '#%RAML 0.8',
         'title: hola',
@@ -92,7 +89,6 @@ describe('shelf',function(){
     });
 
     it('root level - some lines with indent below', function(){
-      var  shelf = new ShelfHelper();
       var definition = [
         '#%RAML 0.8',
         'title: hola',
@@ -209,6 +205,42 @@ describe('shelf',function(){
     });
 
   }); // using alias & *
+
+  describe('suggester', function(){
+    it('Is not broken if a comments is in between', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: Test',
+        'baseUri: http://localhost ',
+        'version: 1.0',
+        'protocols: [HTTPS]',
+        '/users:',
+        '#comment',
+        '  get:  ',
+        '      '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(9,4);
+      designerAsserts.shelfElements(shelf.elemMethodLevel);
+    });
+
+    it('Is not broken if a empty line is in between', function(){
+      var definition = [
+        '#%RAML 0.8',
+        '---',
+        'title: Test Mock API',
+        '/shapes:',
+        '',
+        '  get:',
+        '    responses:',
+        '      200:',
+        '          '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(9,8);
+      designerAsserts.shelfElements(shelf.elemResponsesLevel);
+    });
+  });
 
 }); // Shelf
 

@@ -92,4 +92,43 @@ angular.module('utils', [])
   })
   .value('$confirm', function (message) {
     return window.confirm(message);
+  })
+  .factory('scroll', function(){
+    var keys = { 37:true, 38:true, 39:true, 40:true };
+
+    function preventDefault(e) {
+      e = e || window.event;
+      if (e.preventDefault){
+        e.preventDefault();
+      } else {
+        e.returnValue = false;
+      }
+    }
+
+    function keyDown(e) {
+      if (keys[e.keyCode]) {
+        preventDefault(e);
+        return;
+      }
+    }
+
+    function wheel(e) {
+      preventDefault(e);
+    }
+
+    return {
+      enable: function(){
+        if (window.removeEventListener) {
+          window.removeEventListener('DOMMouseScroll', wheel, false);
+        }
+        window.onmousewheel = document.onmousewheel = document.onkeydown = null;
+      },
+      disable: function () {
+        if (window.addEventListener) {
+          window.addEventListener('DOMMouseScroll', wheel, false);
+        }
+        window.onmousewheel = document.onmousewheel = wheel;
+        document.onkeydown = keyDown;
+      }
+    };
   });

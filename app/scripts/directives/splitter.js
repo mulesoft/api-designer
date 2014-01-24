@@ -45,7 +45,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
      * @param size Pixels to resize to
      */
     function resizeCollapseTarget(splitter, size) {
-      getCollapseTargetEl(splitter).css('flex', '0 0 ' + Math.max(0, size) + 'px');
+      getCollapseTargetEl(splitter).css('min-width', Math.max(0, size) + 'px');
       return Math.max(0, size);
     }
 
@@ -133,16 +133,16 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
     /**
      * Toggles the collapse target visibility
      * @param splitter The splitter that owns the chevron
-     * @param collapsed False means expand collapse target, true
+     * @param collapse False means expand collapse target, true
      * means collapse target is shown
      */
-    function toggleCollapseTarget(splitter, collapsed) {
-      collapsed = arguments.length > 1 ? collapsed : !loadIsCollapsed(splitter);
+    function toggleCollapseTarget(splitter, collapse) {
+      collapse = arguments.length > 1 ? collapse : !loadIsCollapsed(splitter);
 
-      splitter.toggleClass('collapsed', collapsed);
-      getCollapseTargetEl(splitter).toggleClass('hide-display', collapsed);
+      splitter.toggleClass('collapsed', collapse);
+      getCollapseTargetEl(splitter).toggleClass('hide-display', collapse);
 
-      saveIsCollapsed(splitter, collapsed);
+      saveIsCollapsed(splitter, collapse);
     }
 
     //endregion
@@ -156,6 +156,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
        */
       link: function(scope, splitter, attrs) {
         var isActive      = false;
+        var userIsDragging = true;
         var vertical      = attrs.ngSplitter === 'vertical';
         var sizeAttr      = vertical ? 'width' : 'height';
         var posAttr       = vertical ? 'clientX' : 'clientY';
@@ -189,6 +190,7 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
         angular.element($window)
           .on('mousemove', function onMouseMove(event) {
             if (isActive) {
+              userIsDragging = true;
               // Scale the collapse target
               var collapsed = performResizeCollapseTarget(splitter, sizeAttr, event[posAttr] - lastPos) === 0;
 
@@ -224,10 +226,17 @@ angular.module('splitter', []).directive('ngSplitter', ['$window', 'config',
           })
         ;
 
-        // Wire up the tiny button that handles
-        // collapse and expand operations
-        splitter.children('.split').on('click', function onClick() {
-          toggleCollapseTarget(splitter);
+        // Wire up the tiny button that handles collapse and expand operations
+        splitter.children('.split').on('mousedown', function onClick() {
+          userIsDragging = false;
+        });
+        splitter.children('.split').on('mouseup', function onClick() {
+          //Need to make sure that the user is clicking, not dragging:
+          if (!userIsDragging) {
+            toggleCollapseTarget(splitter);
+            userIsDragging = true;
+            isActive = false;
+          }
         });
       }
     };

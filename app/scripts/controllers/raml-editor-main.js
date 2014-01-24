@@ -68,6 +68,19 @@ angular.module('ramlEditorApp')
       }
     };
 
+    var currentFile;
+    var extractCurrentFileLabel = function(file) {
+      var label = '';
+      if (file) {
+        label = file.path;
+        if (file.dirty) {
+          label = '* ' + label;
+        }
+      }
+
+      return label;
+    };
+
     $window.setTheme = function setTheme(theme) {
       config.set('theme', theme);
       $scope.theme = $rootScope.theme = theme;
@@ -75,15 +88,18 @@ angular.module('ramlEditorApp')
     };
 
     $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
-      editor.setValue(file.contents);
-      $scope.fileParsable = $scope.getIsFileParsable(file);
-
       var mode = MODES[file.type] || MODES.raml;
       editor.setOption('mode', mode);
       if (mode === MODES.raml) {
         editor.on('change', autocomplete);
       } else {
         editor.off('change', autocomplete);
+      }
+      currentFile = file;
+
+      if (currentFile.contents) {
+        editor.setValue(file.contents);
+        $scope.fileParsable = $scope.getIsFileParsable(file);
       }
     });
 
@@ -101,8 +117,8 @@ angular.module('ramlEditorApp')
       eventService.broadcast('event:raml-source-updated', source);
     };
 
-    $scope.loadRaml = function loadRaml(raml) {
-      return ramlParser.load(raml, null, {
+    $scope.loadRaml = function loadRaml(definition, location) {
+      return ramlParser.load(definition, location, {
         validate : true,
         transform: true,
         compose:   true,
@@ -118,7 +134,7 @@ angular.module('ramlEditorApp')
         return;
       }
 
-      $scope.loadRaml(source).then(
+      $scope.loadRaml(source, (($scope.fileBrowser || {}).selectedFile || {}).path).then(
         // success
         safeApplyWrapper($scope, function success(value) {
           eventService.broadcast('event:raml-parsed', value);
@@ -188,6 +204,10 @@ angular.module('ramlEditorApp')
     $scope.toggleShelf = function toggleShelf() {
       $scope.shelf.collapsed = !$scope.shelf.collapsed;
       config.set('shelf.collapsed', $scope.shelf.collapsed);
+    };
+
+    $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
+      return extractCurrentFileLabel(currentFile);
     };
 
     eventService.on('event:toggle-theme', function onToggleTheme() {

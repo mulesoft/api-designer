@@ -5,7 +5,8 @@ exports.config = {
   sauceKey: process.env.SAUCE_KEY,
 
   capabilities: {
-    'browserName': 'chrome'
+    'browserName': process.env.BROWSER,
+    'name': 'API-Portal-parser'
   },
 
   specs: [

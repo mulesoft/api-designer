@@ -41,6 +41,7 @@
     "xdescribe": false,
     "xit": false,
     "compileTemplate": false,
-    "events": false
+    "events": false,
+    "promise": false
   }
 }

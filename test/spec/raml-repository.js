@@ -1,10 +1,7 @@
 'use strict';
 
 describe('RAML Repository', function () {
-  var $rootScope;
-  var $q;
-  var ramlRepository;
-  var fileSystem;
+  var $rootScope, $q, ramlRepository, fileSystem, sandbox;
 
   beforeEach(module('fs'));
   beforeEach(function () {
@@ -12,11 +9,13 @@ describe('RAML Repository', function () {
       $exceptionHandlerProvider.mode('log');
     });
   });
+
   beforeEach(inject(function ($injector) {
     $rootScope = $injector.get('$rootScope');
     $q = $injector.get('$q');
     ramlRepository = $injector.get('ramlRepository');
     fileSystem = $injector.get('fileSystem');
+    sandbox = sinon.sandbox.create();
   }));
 
   describe('getDirectory', function () {
@@ -25,7 +24,17 @@ describe('RAML Repository', function () {
       var directoryDeferred = $q.defer();
       var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var success = sinon.stub();
-      var files = ['myfile'];
+      var files = {
+        path: '/',
+        name: '/',
+        children: [
+          {
+            path: '/example.raml',
+            name: 'example.raml',
+            content: ''
+          }
+        ]
+      };
 
       // Act
       ramlRepository.getDirectory('/').then(success);
@@ -34,8 +43,8 @@ describe('RAML Repository', function () {
       $rootScope.$apply();
 
       // Assert
-      success.firstCall.args[0][0].path.should.be.equal('/');
-      success.firstCall.args[0][0].name.should.be.equal(files[0]);
+      success.firstCall.args[0][0].path.should.be.equal(files.children[0].path);
+      success.firstCall.args[0][0].name.should.be.equal(files.children[0].name);
       success.firstCall.args[0][0].dirty.should.be.false;
       success.firstCall.args[0][0].persisted.should.be.true;
 
@@ -166,7 +175,11 @@ describe('RAML Repository', function () {
       var saveDeferred = $q.defer();
       var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var success = sinon.stub();
-      var fileMock = {dirty: true};
+      var fileMock = {
+        path: '/',
+        name: 'example.raml',
+        dirty: true
+      };
       var file;
 
       // Act
@@ -190,7 +203,11 @@ describe('RAML Repository', function () {
       var saveDeferred = $q.defer();
       var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var error = sinon.stub();
-      var fileMock = {dirty: true};
+      var fileMock = {
+        path: '/',
+        name: 'example.raml',
+        dirty: true
+      };
       var errorData = {message: 'This is the error description'};
 
       // Act
@@ -209,6 +226,71 @@ describe('RAML Repository', function () {
     });
   });
 
+  describe('renameFile', function () {
+    var file, fileSystemMock, renameFile;
+
+    beforeEach(function() {
+      file = { name: 'currentName', path: '/currentPath/currentName' };
+      fileSystemMock = sandbox.stub(fileSystem, 'rename');
+    });
+
+    describe('by default', function() {
+      beforeEach(function() {
+        renameFile = function() {
+          ramlRepository.renameFile(file, 'newName');
+        };
+      });
+
+      it('delegates to the fileSystem, providing the file\'s current path', function() {
+        fileSystemMock.returns(promise.stub());
+        renameFile();
+
+        fileSystemMock.should.have.been.calledWith('/currentPath/currentName', '/currentPath/newName');
+      });
+
+      describe('upon fileSystem success', function() {
+        beforeEach(function() {
+          fileSystemMock.returns(promise.resolved());
+        });
+
+        it('updates the name', function() {
+          renameFile();
+
+          file.name.should.equal('newName');
+        });
+      });
+
+      describe('upon fileSystem failure', function() {
+        beforeEach(function() {
+          fileSystemMock.returns(promise.rejected('errorMessage'));
+        });
+
+        it('assigns the error message on the file', function() {
+          try {
+            renameFile();
+          } catch (e) {}
+
+          file.error.should.equal('errorMessage');
+        });
+      });
+    });
+
+    describe('without a name argument', function() {
+      beforeEach(function() {
+        renameFile = function() {
+          ramlRepository.renameFile(file, undefined, 'newPath');
+        };
+      });
+
+      it('delegates to the fileSystem, providing the file\'s current name', function() {
+        fileSystemMock.returns(promise.stub());
+        renameFile();
+
+        fileSystemMock.should.have.been.calledWith('/currentPath/currentName', '/currentPath/currentName');
+      });
+    });
+  });
+
   describe('createFile', function () {
     it('should return a new file with snippet content', inject(function (ramlSnippets) {
       // Arrange
@@ -220,7 +302,7 @@ describe('RAML Repository', function () {
       file = ramlRepository.createFile();
 
       // Assert
-      file.path.should.be.equal('/');
+      file.path.should.be.equal('/untitled.raml');
       file.name.should.be.equal('untitled.raml');
       file.contents.should.be.equal(snippet);
       file.dirty.should.be.true;

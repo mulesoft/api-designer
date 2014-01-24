@@ -5,13 +5,12 @@ exports.config = {
   sauceKey: process.env.SAUCE_KEY,
 
   capabilities: {
-    'browserName': process.env.BROWSER,
-    'name': 'API-Portal-shelfRT'
+    'browserName': process.env.BROWSER
   },
 
   specs: [
-    '../../test/e2e/editor-shelf/resource-types/rt-root.js',
-    '../../test/e2e/editor-shelf/resource-types/rt-methods.js',
+    '../../test/e2e/RT-root-optionals.js',
+    '../../test/e2e/traits-optionals.js',
     '../../test/lib/*.js'
   ],
 

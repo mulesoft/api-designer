@@ -10,8 +10,11 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     function RamlFile (name, path, contents) {
       this.path = path || defaultPath;
       this.name = name || defaultName;
-      this.contents = typeof contents === 'string' ? contents : null;
+      if (this.path.indexOf(this.name) === -1) {
+        this.path = this.path + this.name;
+      }
 
+      this.contents = typeof contents === 'string' ? contents : null;
       this.dirty = false;
       this.persisted = true;
       var extensionMatch = FILE_EXTENSION_EXTRACTOR.exec(this.name);
@@ -20,35 +23,17 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       }
     }
 
-    RamlFile.prototype = {
-      save: function () {
-        return service.saveFile(this);
-      },
-
-      reload: function () {
-        return service.loadFile(this);
-      },
-
-      remove: function () {
-        return service.removeFile(this);
-      },
-
-      hasContents: function () {
-        return !!this.contents;
-      }
-    };
-
     service.getDirectory = function (path) {
       path = path || defaultPath;
-      return fileSystem.directory(path).then(function (entries) {
-        return entries.map(function (e) {
-          return new RamlFile(e, path);
+      return fileSystem.directory(path).then(function (folder) {
+        return folder.children.map(function (entry) {
+          return new RamlFile(entry.name, entry.path, entry.content);
         });
       });
     };
 
     service.saveFile = function (file) {
-      return fileSystem.save(file.path, file.name, file.contents).then(
+      return fileSystem.save(file.path, file.contents).then(
         // success
         function () {
           file.dirty = false;
@@ -66,8 +51,27 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       );
     };
 
+    service.renameFile = function(file, newName) {
+      newName = newName || file.name;
+      var newPath = file.path.replace(file.name, newName);
+
+      return fileSystem.rename(file.path, newPath).then(
+        function() {
+          file.name = newName;
+          file.path = newPath;
+
+          return file;
+        },
+        function(error) {
+          file.error = error;
+
+          throw error;
+        }
+      );
+    };
+
     service.loadFile = function (file) {
-      return fileSystem.load(file.path, file.name).then(
+      return fileSystem.load(file.path).then(
         // success
         function (data) {
           file.dirty = false;
@@ -89,7 +93,7 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.removeFile = function (file) {
-      return fileSystem.remove(file.path, file.name).then(
+      return fileSystem.remove(file.path).then(
         // success
         function () {
           file.dirty = false;
