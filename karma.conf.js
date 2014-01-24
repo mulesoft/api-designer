@@ -48,7 +48,6 @@ module.exports = function(config) {
       'app/scripts/services/code-mirror.js',
       'app/scripts/services/code-mirror-errors.js',
       'app/scripts/services/event.js',
-      'app/scripts/services/raml-editor-file-list.js',
       'app/scripts/services/raml-editor-filename-prompt.js',
       'app/scripts/services/raml-editor-remove-file-prompt.js',
       'app/scripts/services/raml-hint.js',

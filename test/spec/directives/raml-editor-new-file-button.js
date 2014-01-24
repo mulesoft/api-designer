@@ -17,6 +17,7 @@ describe('ramlEditorNewFileButton', function() {
   beforeEach(inject(function($rootScope, ramlEditorFilenamePrompt) {
     sandbox = sinon.sandbox.create();
     scope = $rootScope.$new();
+    scope.homeDirectory = { path: '/' };
     newFilePrompt = ramlEditorFilenamePrompt;
   }));
 
@@ -27,20 +28,20 @@ describe('ramlEditorNewFileButton', function() {
   });
 
   describe('on success', function() {
-    var promptOpenSpy, fileListSpy;
+    var promptOpenSpy;
 
-    beforeEach(inject(function(fileList) {
-      fileListSpy = sandbox.spy(fileList, 'newFile');
+    beforeEach(function() {
+      scope.homeDirectory.createFile = sandbox.spy();
       promptOpenSpy = sandbox.stub(newFilePrompt, 'open').returns(promise.resolved('MyFile.raml'));
 
       compileNewFileButton();
       clickNewFileButton();
-    }));
+    });
 
-    it('calls fileList.newFile with the result', function() {
+    it('delegates to the raml repository', function() {
       promptOpenSpy.should.have.been.called;
 
-      fileListSpy.should.have.been.calledWith('MyFile.raml');
+      scope.homeDirectory.createFile.should.have.been.calledWith('MyFile.raml');
     });
   });
 });

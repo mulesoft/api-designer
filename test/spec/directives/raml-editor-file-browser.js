@@ -32,7 +32,6 @@ describe('ramlEditorFileBrowser', function() {
     setTimeout(verify, 10);
   }
 
-
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
@@ -52,7 +51,7 @@ describe('ramlEditorFileBrowser', function() {
   describe('when initialized', function() {
     describe('by default', function() {
       it('selects the first file', function() {
-        ramlRepository.files = [createMockFile('lastFile'), createMockFile('firstFile')];
+        ramlRepository.files = [createMockFile('firstFile'), createMockFile('lastFile')];
         compileFileBrowser();
         scope.fileBrowser.selectedFile.name.should.equal('firstFile');
       });
@@ -71,7 +70,6 @@ describe('ramlEditorFileBrowser', function() {
         scope.fileBrowser.selectedFile.name.should.equal('lastFile');
       });
     });
-
 
     describe('when there are no files', function() {
       var openStub;
@@ -185,16 +183,16 @@ describe('ramlEditorFileBrowser', function() {
   });
 
   describe('removing a file', function() {
-    beforeEach(inject(function(fileList) {
-      fileList.files.push(createMockFile('some.raml'));
+    beforeEach(inject(function(ramlRepository) {
+      ramlRepository.files.push(createMockFile('some.raml'));
       compileFileBrowser();
     }));
 
     describe('when it is the last file', function() {
       var openStub;
 
-      beforeEach(inject(function($rootScope, fileList, ramlEditorFilenamePrompt) {
-        var removed = fileList.files.pop();
+      beforeEach(inject(function($rootScope, ramlRepository, ramlEditorFilenamePrompt) {
+        var removed = ramlRepository.files.pop();
         openStub = sinon.spy(ramlEditorFilenamePrompt, 'open');
 
         $rootScope.$broadcast('event:raml-editor-file-removed', removed);
@@ -306,7 +304,6 @@ describe('ramlEditorFileBrowser', function() {
 
         file.dirty.should.be.true;
       });
-
     });
   });
 });

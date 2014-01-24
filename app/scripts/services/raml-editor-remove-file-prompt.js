@@ -1,13 +1,13 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').factory('ramlEditorRemoveFilePrompt', function($window, fileList) {
+  angular.module('ramlEditorApp').factory('ramlEditorRemoveFilePrompt', function($window) {
     return {
-      open: function(file) {
+      open: function(directory, file) {
         var confirmed = $window.confirm('Are you sure you want to delete "' + file.name + '"?');
 
         if (confirmed) {
-          fileList.removeFile(file);
+          directory.removeFile(file);
         }
       }
     };

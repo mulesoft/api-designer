@@ -10,20 +10,20 @@
     return 'Untitled-' + (currentMax + 1) + '.raml';
   }
 
-  angular.module('ramlEditorApp').factory('ramlEditorFilenamePrompt', function($window, fileList, $q) {
+  angular.module('ramlEditorApp').factory('ramlEditorFilenamePrompt', function($window, $q) {
     return {
-      open: function(suggestedFileName) {
+      open: function(directory, suggestedFileName) {
         var deferred = $q.defer();
-        suggestedFileName = suggestedFileName || generateFileName(fileList.files);
+        suggestedFileName = suggestedFileName || generateFileName(directory.files);
         var message = 'Choose a name:';
-        if (fileList.files.length === 0) {
+        if (directory.files.length === 0) {
           message = 'The file browser is empty. Create a new file:';
         }
 
         var filename = $window.prompt(message, suggestedFileName);
 
         if (filename) {
-          var filenameAlreadyTaken = fileList.files.some(function(file) {
+          var filenameAlreadyTaken = directory.files.some(function(file) {
             return file.name.toLowerCase() === filename.toLowerCase();
           });
 

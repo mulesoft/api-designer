@@ -2,25 +2,25 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorFilenamePrompt, scroll) {
-    function Actions(file) {
+  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorFilenamePrompt, scroll) {
+    function Actions(directory, file) {
       return [
         {
           label: 'Save',
           execute: function() {
-            fileList.saveFile(file);
+            ramlRepository.saveFile(file);
           }
         },
         {
           label: 'Delete',
           execute: function() {
-            ramlEditorRemoveFilePrompt.open(file);
+            ramlEditorRemoveFilePrompt.open(directory, file);
           }
         },
         {
           label: 'Rename',
           execute: function() {
-            ramlEditorFilenamePrompt.open(file.name).then(function(filename) {
+            ramlEditorFilenamePrompt.open(directory, file.name).then(function(filename) {
               ramlRepository.renameFile(file, filename);
             });
           }
@@ -77,7 +77,7 @@
           open: function(event, file) {
             scroll.disable();
             this.file = file;
-            scope.actions = Actions(file);
+            scope.actions = Actions(scope.homeDirectory, file);
 
             event.stopPropagation();
             positionMenu(element, event.target);

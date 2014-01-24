@@ -1,7 +1,7 @@
 describe('ramlEditorRemoveFilePrompt', function() {
   'use strict';
 
-  var sandbox, fileList, removeFilePrompt;
+  var sandbox, ramlRepository, removeFilePrompt;
 
   function createMockFile(name, options) {
     options = options || {};
@@ -18,12 +18,12 @@ describe('ramlEditorRemoveFilePrompt', function() {
 
   beforeEach(inject(function($rootScope, $injector, ramlEditorRemoveFilePrompt) {
     sandbox = sinon.sandbox.create();
-    fileList = $injector.get('fileList');
+    ramlRepository = $injector.get('ramlRepository');
     removeFilePrompt = ramlEditorRemoveFilePrompt;
   }));
 
   afterEach(function() {
-    fileList = removeFilePrompt = undefined;
+    ramlRepository = removeFilePrompt = undefined;
     sandbox.restore();
   });
 
@@ -32,11 +32,11 @@ describe('ramlEditorRemoveFilePrompt', function() {
 
     beforeEach(function() {
       confirmSpy = sandbox.stub(window, 'confirm');
-      fileList.files = [createMockFile('file1'), createMockFile('file2')];
+      ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
     });
 
     it('prompts user to confirm deletion', function() {
-      removeFilePrompt.open(fileList.files[1]);
+      removeFilePrompt.open(ramlRepository, ramlRepository.files[1]);
 
       confirmSpy.should.have.been.calledWith('Are you sure you want to delete "file2"?');
     });
@@ -46,11 +46,12 @@ describe('ramlEditorRemoveFilePrompt', function() {
         confirmSpy.returns(true);
       });
 
-      it('removes the file using fileList', function() {
-        var removeFileSpy = sandbox.spy(fileList, 'removeFile');
-        removeFilePrompt.open(fileList.files[1]);
+      it('removes the file using ramlRepository', function() {
+        var fileToRemove = ramlRepository.files[1];
+        var removeFileSpy = sandbox.spy(ramlRepository, 'removeFile');
+        removeFilePrompt.open(ramlRepository, fileToRemove);
 
-        removeFileSpy.should.have.been.calledWith(fileList.files[1]);
+        removeFileSpy.should.have.been.calledWith(fileToRemove);
       });
     });
 
@@ -60,8 +61,8 @@ describe('ramlEditorRemoveFilePrompt', function() {
       });
 
       it('does not remove the file', function() {
-        var removeFileSpy = sandbox.spy(fileList, 'removeFile');
-        removeFilePrompt.open(fileList.files[1]);
+        var removeFileSpy = sandbox.spy(ramlRepository, 'removeFile');
+        removeFilePrompt.open(ramlRepository, ramlRepository.files[1]);
 
         removeFileSpy.should.not.have.been.called;
       });

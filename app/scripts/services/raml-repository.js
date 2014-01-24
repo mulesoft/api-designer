@@ -1,29 +1,6 @@
 (function() {
   'use strict';
 
-  function RamlDirectory(path, meta, contents) {
-    if (!/\/$/.exec(path)) { path = path + '/'; }
-    contents = contents || [];
-
-    var strippedPath = path.substring(0, path.length - 1);
-    this.path = path;
-    this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
-    this.meta = meta;
-
-    var separated = { folder: [], file: [] };
-    contents.forEach(function(entry) {
-      separated[entry.type || 'file'].push(entry);
-    });
-
-    this.files = separated.file.map(function(file) {
-      return new RamlFile(file.path, file.contents, { dirty: false, persisted: true} );
-    });
-
-    this.directories = separated.folder.map(function(directory) {
-      return new RamlDirectory(directory.path, directory.meta, directory.children);
-    });
-  }
-
   function RamlFile (path, contents, options) {
     options = options || {};
 
@@ -38,6 +15,49 @@
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
       var service = {};
       var defaultPath = '/';
+
+      function RamlDirectory(path, meta, contents) {
+        if (!/\/$/.exec(path)) { path = path + '/'; }
+        contents = contents || [];
+
+        var strippedPath = path.substring(0, path.length - 1);
+        this.path = path;
+        this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
+        this.meta = meta;
+
+        var separated = { folder: [], file: [] };
+        contents.forEach(function(entry) {
+          separated[entry.type || 'file'].push(entry);
+        });
+
+        this.files = separated.file.map(function(file) {
+          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true} );
+        });
+
+        this.files.sort(function(file1, file2) {
+          return file1.name.localeCompare(file2.name);
+        });
+
+        this.directories = separated.folder.map(function(directory) {
+          return new RamlDirectory(directory.path, directory.meta, directory.children);
+        });
+      }
+
+      RamlDirectory.prototype.createFile = function (name) {
+        var file = service.createFile(name);
+        this.files.push(file);
+
+        return file;
+      };
+
+      RamlDirectory.prototype.removeFile = function (file) {
+        return service.removeFile(file).then(function() {
+          var index = this.files.indexOf(file);
+          if (index !== -1) {
+            this.files.splice(index, 1);
+          }
+        }.bind(this));
+      };
 
       function handleErrorFor(file) {
         return function markFileWithError(error) {

@@ -1,19 +1,20 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function($rootScope, $q, $window, ramlEditorFilenamePrompt, fileList, ramlRepository, config, eventService) {
+  angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', function($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService) {
     var controller = function($scope) {
       var unwatchSelectedFile = angular.noop, contextMenu;
       $scope.fileBrowser = this;
-      $scope.homeDirectory = fileList;
 
       function promptWhenFileListIsEmpty() {
-        ramlEditorFilenamePrompt.open().then(function(filename) {
-          fileList.newFile(filename);
+        ramlEditorFilenamePrompt.open($scope.homeDirectory).then(function(filename) {
+          $scope.homeDirectory.createFile(filename);
         });
       }
 
-      ramlRepository.getDirectory().then(function() {
+      ramlRepository.getDirectory().then(function(directory) {
+        $scope.homeDirectory = directory;
+
         $scope.$watch('homeDirectory.files', function(files) {
           if (files.length === 0) {
             setTimeout(function() {
@@ -22,14 +23,14 @@
           }
         }, true);
 
-        if (fileList.files.length > 0) {
+        if (directory.files.length > 0) {
           var lastFile = JSON.parse(config.get('currentFile', '{}'));
 
-          var fileToOpen = fileList.files.filter(function(file) {
+          var fileToOpen = directory.files.filter(function(file) {
             return file.name === lastFile.name && file.path === lastFile.path;
           })[0];
 
-          fileToOpen = fileToOpen || fileList.files[0];
+          fileToOpen = fileToOpen || directory.files[0];
 
           $scope.fileBrowser.selectFile(fileToOpen);
         } else {
@@ -42,8 +43,8 @@
       });
 
       $scope.$on('event:raml-editor-file-removed', function(event, file) {
-        if (file === $scope.fileBrowser.selectedFile && fileList.files.length > 0) {
-          $scope.fileBrowser.selectFile(fileList.files[0]);
+        if (file === $scope.fileBrowser.selectedFile && $scope.homeDirectory.files.length > 0) {
+          $scope.fileBrowser.selectFile($scope.homeDirectory.files[0]);
         }
       });
 
@@ -55,7 +56,6 @@
         var afterLoading = isLoaded ? $q.when(file) : ramlRepository.loadFile(file);
 
         afterLoading.then(function(file) {
-
           $scope.fileBrowser.selectedFile = file;
           $scope.$emit('event:raml-editor-file-selected', file);
           unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function(newContents, oldContents) {

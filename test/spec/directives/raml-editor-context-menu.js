@@ -3,6 +3,14 @@ describe('ramlEditorContextMenu', function() {
 
   var scope, el, sandbox, contextMenu, file;
 
+  var createScope = inject(function createScope($rootScope) {
+    scope = $rootScope.$new();
+    scope.homeDirectory = { path: '/' };
+    scope.registerContextMenu = function(cm) {
+      contextMenu = cm;
+    };
+  });
+
   function compileContextMenu() {
     el = compileTemplate('<raml-editor-context-menu></raml-editor-context-menu>', scope);
     document.body.appendChild(el[0]);
@@ -17,15 +25,12 @@ describe('ramlEditorContextMenu', function() {
   angular.module('contextMenuTest', ['ramlEditorApp', 'testFs', 'utils']);
   beforeEach(module('contextMenuTest'));
 
-  beforeEach(inject(function($rootScope) {
+  beforeEach(function() {
     sandbox = sinon.sandbox.create();
-    scope = $rootScope.$new();
-    scope.registerContextMenu = function(cm) {
-      contextMenu = cm;
-    };
 
+    createScope();
     compileContextMenu();
-  }));
+  });
 
   afterEach(function() {
     scope.$destroy();
@@ -82,7 +87,7 @@ describe('ramlEditorContextMenu', function() {
       }));
 
       it('delegates to the ramlRepository', function() {
-        openStub.should.have.been.calledWith(file);
+        openStub.should.have.been.calledWith(scope.homeDirectory, file);
       });
     });
 
@@ -105,7 +110,7 @@ describe('ramlEditorContextMenu', function() {
         filenamePromptStub.returns(promise.stub());
         renameItem.dispatchEvent(events.click());
 
-        filenamePromptStub.should.have.been.calledWith('filename.raml');
+        filenamePromptStub.should.have.been.calledWith(scope.homeDirectory, 'filename.raml');
       });
 
       describe('upon success', function() {
