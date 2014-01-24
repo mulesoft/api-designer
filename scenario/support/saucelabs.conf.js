@@ -9,8 +9,7 @@ exports.config = {
 
   capabilities: {
     'browserName': process.env.BROWSER,
-//    name: 'API-Portal-console'
-    name: 'API-Portal-rt-traits-optionals'
+    name: 'API-Portal-console'
   },
 
   specs: [
@@ -29,8 +28,8 @@ exports.config = {
 //    '../test/e2e/RT-method-optionals.js',
 //    '../test/e2e/traits-optionals.js',
     '../test/e2e/published-examples/examples-parser.js',
-    '../test/e2e/console/embedded-console.js',
     '../test/e2e/console/console-defaultview.js',
+    '../test/e2e/console/embedded-console.js',
     '../test/lib/*.js'
   ],
 
