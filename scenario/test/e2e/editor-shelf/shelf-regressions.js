@@ -29,7 +29,7 @@ describe('shelf',function(){
 
   });
 
-  describe('elements',function(){
+  xdescribe('elements',function(){ // enable when https://www.pivotaltracker.com/story/show/64386678 is fixed
 
     it('added below on an array', function(){
       var definition = [
