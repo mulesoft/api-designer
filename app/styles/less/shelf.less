@@ -8,12 +8,16 @@ div[role=shelf] {
   .box-sizing(border-box);
   font-size: 15px;
   transition: height .1s ease-in;
+
+  -webkit-flex: 0 0 0px;
   flex: 0 0 0px;
+
   .disable-selection;
   position: relative;
 }
 
 div[role=shelf].expanded {
+  -webkit-flex: 0 0 160px;
   flex: 0 0 160px;
 }
 
@@ -152,10 +156,6 @@ div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section]
 div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section] {
   color: #444;
   .text-shadow(1px 1px 1px #ddd);
-}
-
-div[role=code] {
-  border-top: 1px solid rgb(42,44,51);
 }
 
 /* Icon Sizes */

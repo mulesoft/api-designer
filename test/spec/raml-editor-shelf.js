@@ -138,7 +138,7 @@ describe('Shelf controller', function () {
           '  - trait1:',
           '      displayName:', // <--
           '  - trait2:',
-          '      displayName:',
+          '      displayName:'
         ],
         {
           line: 2,
@@ -218,5 +218,123 @@ describe('Shelf controller', function () {
       applySuggestion(editor, {key: 'title'});
       editor.getLine(1).should.be.equal('  - title: My API');
     });
+
+    //region Unit tests for isList metadata validation on list child items of documentation element
+
+    it ('should insert a documentation first child as a list item with a -', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  '
+        ]);
+
+      applySuggestion(editor, {key: 'title', isList: true});
+      editor.getLine(1).should.be.equal('  - title: My API');
+    });
+
+    it ('should not insert a documentation first child as a list item with a - is isList is false', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  '
+        ]);
+
+      applySuggestion(editor, {key: 'title', isList: false });
+      editor.getLine(1).should.be.equal('  title: My API');
+    });
+
+    it ('should insert a content node when cursor is at end of title array node', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello'
+        ]);
+
+      applySuggestion(editor, {key: 'content', isList: true});
+      editor.getLine(2).should.be.equal('    content:');
+    });
+
+    it ('should insert a documentation child at 1 tab over as array root', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello',
+          '  '
+        ]);
+
+      applySuggestion(editor, {key: 'b', isList: true});
+      editor.getLine(2).should.be.equal('  - b:');
+    });
+
+    it ('should insert a documentation second child as a list item without a - when cursor is 2 tabs over', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - title: Hello',
+          '    '
+        ]);
+
+      applySuggestion(editor, {key: 'content', isList: true});
+      editor.getLine(2).should.be.equal('    content:');
+    });
+
+    it ('should insert a documentation third child as a list item with a -', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello',
+          '    b: World',
+          '  '
+        ]);
+
+      applySuggestion(editor, {key: 'c', isList: true});
+      editor.getLine(3).should.be.equal('  - c:');
+    });
+
+    it ('should insert a documentation third array child without a -', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - a: Hello',
+          '    b: World',
+          '    '
+        ]);
+
+      applySuggestion(editor, {key: 'c', isList: true});
+      editor.getLine(3).should.be.equal('    c:');
+    });
+
+    it ('should insert a content element two array title starter elements when cursor is at end of line', function () {
+      var editor = createEditor(
+        [
+          'documentation:',
+          '  - title: Hello',
+          '  - title: World',
+          '  '
+        ], 1);
+
+      applySuggestion(editor, {key: 'content', isList: true});
+      editor.getLine(1).should.be.equal('  - title: Hello');
+      editor.getLine(2).should.be.equal('    content:');
+      editor.getLine(3).should.be.equal('  - title: World');
+    });
+
+    //endregion
   });
+
+  //--------- Utility functions
+
+  /**
+   *
+   * @param Code to place in editor
+   * @param Line on which to place the cursor, last line if not specified
+   * @param Column on which to place the cursor, last column if not specified.
+   * @returns {Object} CodeMirror Editor containing the given code with the
+   * cursor placed at cursorLine, cursorColumn
+   */
+  function createEditor(linesArray, cursorLine, cursorColumn) {
+    cursorLine   = arguments.length > 1 ? cursorLine   : linesArray.length - 1;
+    cursorColumn = arguments.length > 2 ? cursorColumn : linesArray[cursorLine].length;
+    return getEditor(codeMirror, linesArray.join('\n'), { line : cursorLine, ch: cursorColumn });
+  }
 });
