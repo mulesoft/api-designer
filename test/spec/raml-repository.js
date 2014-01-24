@@ -273,28 +273,27 @@ describe('RAML Repository', function () {
   });
 
   describe('createFile', function () {
-    it('should return a new file with snippet content', inject(function (ramlSnippets) {
-      // Arrange
-      var snippet = 'This is an empty RAML file content';
+    var broadcastSpy, file, snippet;
+
+    beforeEach(inject(function($rootScope, ramlSnippets) {
+      snippet = 'This is an empty RAML file content';
       sinon.stub(ramlSnippets, 'getEmptyRaml').returns(snippet);
-      var file;
 
-      // Act
+      broadcastSpy = sandbox.spy($rootScope, '$broadcast');
       file = ramlRepository.createFile('untitled.raml');
+    }));
 
+    it('should return a new file with snippet content', function () {
       // Assert
       file.path.should.be.equal('/untitled.raml');
       file.name.should.be.equal('untitled.raml');
       file.contents.should.be.equal(snippet);
       file.dirty.should.be.true;
       file.persisted.should.be.false;
-    }));
+    });
 
-    it('names the file according to the argument given', function() {
-      var file = ramlRepository.createFile('myfile.raml');
-
-      file.name.should.be.equal('myfile.raml');
-      file.dirty.should.be.true;
+    it('emits an event indicating that a file has been added', function() {
+      broadcastSpy.should.have.been.calledWith('event:raml-editor-file-created', sinon.match({ name: 'untitled.raml' }));
     });
   });
 });

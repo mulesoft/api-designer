@@ -35,7 +35,7 @@
   }
 
   angular.module('fs', ['ngCookies', 'raml', 'utils'])
-    .factory('ramlRepository', function ($q, ramlSnippets, fileSystem) {
+    .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
       var service = {};
       var defaultPath = '/';
 
@@ -94,6 +94,7 @@
         function modifyFile() {
           file.dirty = false;
           file.persisted = false;
+          $rootScope.$broadcast('event:raml-editor-file-removed', file);
 
           return Object.freeze(file);
         }
@@ -103,7 +104,10 @@
 
       service.createFile = function (name) {
         var path = defaultPath + name;
-        return new RamlFile(path, ramlSnippets.getEmptyRaml());
+        var file = new RamlFile(path, ramlSnippets.getEmptyRaml());
+        $rootScope.$broadcast('event:raml-editor-file-created', file);
+
+        return file;
       };
 
       return service;

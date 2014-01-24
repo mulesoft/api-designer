@@ -36,10 +36,6 @@ describe('FileList', function () {
     it('adds the file to the file list', function() {
       fileNames(files).should.include('shiny.raml');
     });
-
-    it('emits an event indicating that a file has been added', function() {
-      broadcastSpy.should.have.been.calledWith('event:raml-editor-file-created', sinon.match({ name: 'shiny.raml' }));
-    });
   });
 
   describe('saving a file', function() {
@@ -86,10 +82,6 @@ describe('FileList', function () {
 
       it('removes it from the repository', function() {
         removeFileSpy.should.have.been.calledWith(file);
-      });
-
-      it('broadcasts an event', function() {
-        broadcastSpy.should.have.been.calledWith('event:raml-editor-file-removed', sinon.match({name: 'some-file.raml'}));
       });
     });
 

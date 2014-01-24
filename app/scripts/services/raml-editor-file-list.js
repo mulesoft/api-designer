@@ -2,7 +2,7 @@
 (function() {
   'use strict';
 
-  function FileList(ramlRepository, $rootScope) {
+  function FileList(ramlRepository) {
     var files = [];
 
     ramlRepository.getDirectory().then(function(directory) {
@@ -20,7 +20,6 @@
       newFile: function(filename) {
         var file = ramlRepository.createFile(filename);
         this.files.push(file);
-        $rootScope.$broadcast('event:raml-editor-file-created', file);
 
         return file;
       },
@@ -31,8 +30,6 @@
 
       removeFile: function(file) {
         function groomFileList() {
-          $rootScope.$broadcast('event:raml-editor-file-removed', file);
-
           var index = files.indexOf(file);
           if (index !== -1) {
             files.splice(index, 1);
@@ -49,7 +46,7 @@
   }
 
   angular.module('ramlEditorApp')
-    .factory('fileList', function (ramlRepository, $rootScope) {
-      return FileList(ramlRepository, $rootScope);
+    .factory('fileList', function (ramlRepository) {
+      return FileList(ramlRepository);
     });
 })();
