@@ -10,6 +10,7 @@ describe('ramlEditorFileBrowser', function() {
       name: name,
       path: '/' + name,
       dirty: !!options.dirty,
+      persisted: options.persisted || true,
       contents: options.contents
     };
   }

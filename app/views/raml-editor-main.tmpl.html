@@ -30,7 +30,7 @@
     <div role="editor" ng-class="{error: hasErrors}">
       <div id="code" role="code"></div>
 
-      <div role="shelf" ng-class="{expanded: !shelf.collapsed}">
+      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
         <div role="shelf-tab" ng-click="toggleShelf()">
           <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
         </div>
@@ -39,10 +39,10 @@
       </div>
     </div>
 
-    <div id="consoleAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>
+    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>
 
-    <div role="preview-wrapper">
-      <div role="preview" class="bootstrap">
+    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">
+      <div role="preview">
         <div role="console">
           <raml-console with-root-documentation></raml-console>
         </div>

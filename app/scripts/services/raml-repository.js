@@ -1,11 +1,17 @@
 (function() {
   'use strict';
 
+  var FILE_EXTENSION_EXTRACTOR = /.*\.(.*)$/;
   function RamlFile (path, contents, options) {
     options = options || {};
 
     this.path = path;
     this.name = path.slice(path.lastIndexOf('/') + 1);
+    var extensionMatch = FILE_EXTENSION_EXTRACTOR.exec(this.name);
+    if (extensionMatch) {
+      this.extension = extensionMatch[1];
+    }
+
     this.contents = contents;
     this.persisted = options.persisted || false;
     this.dirty = options.dirty || !this.persisted;
