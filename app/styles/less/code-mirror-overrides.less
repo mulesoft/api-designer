@@ -72,6 +72,17 @@ div.CodeMirror {
   padding-left: 10px;
 }
 
+.cm-s-solarized {
+  .cm-indent, .cm-indent-incomplete {
+    &::before {
+      content: " ";
+      position: absolute;
+      height: 100%;
+      border-right: 1px solid rgba(255,255,255,0.15);
+    }
+  }
+}
+
 /* CodeMirror Overrides (Light) */
 body.light {
   .CodeMirror-code .CodeMirror-hint-ghost {
@@ -121,6 +132,14 @@ body.light {
 
     .CodeMirror-selected {
       background-color: #ddd;
+    }
+  }
+
+  .cm-s-solarized {
+    .cm-indent, .cm-indent-incomplete {
+      &::before {
+        border-right-color: rgba(0,0,0,0.15);
+      }
     }
   }
 }

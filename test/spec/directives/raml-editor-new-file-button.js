@@ -14,10 +14,10 @@ describe('ramlEditorNewFileButton', function() {
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
-  beforeEach(inject(function($rootScope, ramlEditorNewFilePrompt) {
+  beforeEach(inject(function($rootScope, ramlEditorFilenamePrompt) {
     sandbox = sinon.sandbox.create();
     scope = $rootScope.$new();
-    newFilePrompt = ramlEditorNewFilePrompt;
+    newFilePrompt = ramlEditorFilenamePrompt;
   }));
 
   afterEach(function() {
@@ -26,17 +26,21 @@ describe('ramlEditorNewFileButton', function() {
     sandbox.restore();
   });
 
-  describe('by default', function() {
-    var promptSpy;
+  describe('on success', function() {
+    var promptOpenSpy, fileListSpy;
 
-    beforeEach(function() {
-      promptSpy = sandbox.stub(newFilePrompt, 'open');
+    beforeEach(inject(function(fileList) {
+      fileListSpy = sandbox.spy(fileList, 'newFile');
+      promptOpenSpy = sandbox.stub(newFilePrompt, 'open').returns(promise.resolved('MyFile.raml'));
+
       compileNewFileButton();
       clickNewFileButton();
-    });
+    }));
 
-    it('prompts user for filename', function() {
-      promptSpy.should.have.been.called;
+    it('calls fileList.newFile with the result', function() {
+      promptOpenSpy.should.have.been.called;
+
+      fileListSpy.should.have.been.calledWith('MyFile.raml');
     });
   });
 });

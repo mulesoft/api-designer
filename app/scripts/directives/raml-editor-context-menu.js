@@ -2,7 +2,7 @@
 (function() {
   'use strict';
 
-  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlEditorRemoveFilePrompt, scroll) {
+  angular.module('ramlEditorApp').directive('ramlEditorContextMenu', function($window, fileList, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorFilenamePrompt, scroll) {
     function Actions(file) {
       return [
         {
@@ -11,11 +11,18 @@
             fileList.saveFile(file);
           }
         },
-
         {
           label: 'Delete',
           execute: function() {
             ramlEditorRemoveFilePrompt.open(file);
+          }
+        },
+        {
+          label: 'Rename',
+          execute: function() {
+            ramlEditorFilenamePrompt.open(file.name).then(function(filename) {
+              ramlRepository.renameFile(file, filename);
+            });
           }
         }
       ];
@@ -26,9 +33,12 @@
       templateUrl: 'views/raml-editor-context-menu.tmpl.html',
       link: function(scope, element) {
         function positionMenu(element, offsetTarget) {
+          var left = offsetTarget.offsetLeft + 0.5 * offsetTarget.offsetWidth,
+              top = offsetTarget.offsetTop + 0.5 * offsetTarget.offsetHeight;
+
           var menuContainer = angular.element(element[0].children[0]);
-          menuContainer.css('left', offsetTarget.offsetLeft + 0.5 * offsetTarget.offsetWidth + 'px');
-          menuContainer.css('top', offsetTarget.offsetTop + 0.5 * offsetTarget.offsetHeight + 'px');
+          menuContainer.css('left', left + 'px');
+          menuContainer.css('top', top + 'px');
         }
 
         function close() {

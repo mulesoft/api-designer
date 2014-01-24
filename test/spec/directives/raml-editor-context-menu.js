@@ -14,7 +14,7 @@ describe('ramlEditorContextMenu', function() {
     })[0];
   }
 
-  angular.module('contextMenuTest', ['ramlEditorApp', 'testFs']);
+  angular.module('contextMenuTest', ['ramlEditorApp', 'testFs', 'utils']);
   beforeEach(module('contextMenuTest'));
 
   beforeEach(inject(function($rootScope) {
@@ -39,9 +39,11 @@ describe('ramlEditorContextMenu', function() {
         stopPropagation: angular.noop,
         target: {}
       };
+
       file = {
         name: 'filename.raml'
       };
+
       contextMenu.open(event, file);
       scope.$digest();
     });
@@ -73,6 +75,52 @@ describe('ramlEditorContextMenu', function() {
 
       it('delegates to the ramlRepository', function() {
         openStub.should.have.been.calledWith(file);
+      });
+    });
+
+    describe('renaming', function() {
+      var renameItem, renameFileStub, promptSpy, filenamePromptStub;
+
+      beforeEach(function() {
+        inject(function(ramlRepository, ramlEditorFilenamePrompt) {
+          renameFileStub = sandbox.stub(ramlRepository, 'renameFile');
+          filenamePromptStub = sandbox.stub(ramlEditorFilenamePrompt, 'open');
+        });
+        promptSpy = sandbox.stub(window, 'prompt');
+
+        renameItem = Array.prototype.slice.call(el.children().children()).filter(function(child) {
+          return angular.element(child).text() === 'Rename';
+        })[0];
+      });
+
+      it('opens the filenamePrompt with the file\'s current name', function() {
+        filenamePromptStub.returns(promise.stub());
+        renameItem.dispatchEvent(events.click());
+
+        filenamePromptStub.should.have.been.calledWith('filename.raml');
+      });
+
+      describe('upon success', function() {
+        beforeEach(function() {
+          filenamePromptStub.returns(promise.resolved('NewName.raml'));
+          renameItem.dispatchEvent(events.click());
+        });
+
+        it('renames the file in the ramlRepository', function() {
+          renameFileStub.should.have.been.calledWith(file, 'NewName.raml');
+        });
+
+      });
+
+      describe('upon failure', function() {
+        beforeEach(function() {
+          filenamePromptStub.returns(promise.rejected());
+          renameItem.dispatchEvent(events.click());
+        });
+
+        it('does not rename the file', function() {
+          renameFileStub.should.not.have.been.called;
+        });
       });
     });
 

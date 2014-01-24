@@ -1,7 +1,7 @@
-describe('ramlEditorNewFilePrompt', function() {
+describe('ramlEditorFilenamePrompt', function() {
   'use strict';
 
-  var sandbox, fileList, newFilePrompt;
+  var sandbox, fileList, newFilePrompt, digest;
 
   function createMockFile(name, options) {
     options = options || {};
@@ -16,10 +16,12 @@ describe('ramlEditorNewFilePrompt', function() {
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
-  beforeEach(inject(function($rootScope, $injector, ramlEditorNewFilePrompt) {
+  beforeEach(inject(function($rootScope, $injector, ramlEditorFilenamePrompt) {
+    digest = function() { $rootScope.$digest(); };
+
     sandbox = sinon.sandbox.create();
     fileList = $injector.get('fileList');
-    newFilePrompt = ramlEditorNewFilePrompt;
+    newFilePrompt = ramlEditorFilenamePrompt;
   }));
 
   afterEach(function() {
@@ -38,7 +40,13 @@ describe('ramlEditorNewFilePrompt', function() {
     it('prompts user for filename', function() {
       newFilePrompt.open();
 
-      promptSpy.should.have.been.calledWith('Name your file:');
+      promptSpy.should.have.been.calledWith('Choose a name:');
+    });
+
+    it('allows the suggested name to be overridden', function() {
+      newFilePrompt.open('MyName.raml');
+
+      promptSpy.should.have.been.calledWith('Choose a name:', 'MyName.raml');
     });
 
     describe('upon choosing a name', function() {
@@ -46,46 +54,53 @@ describe('ramlEditorNewFilePrompt', function() {
         promptSpy.returns('MyFile.raml');
       });
 
-      it('creates the file using fileList', function() {
-        var newFileSpy = sandbox.spy(fileList, 'newFile');
-        newFilePrompt.open();
+      it('resolves the promise with the chosen file name', function(done) {
+        var promise = newFilePrompt.open();
 
-        newFileSpy.should.have.been.calledWith('MyFile.raml');
+        promise.then(function(chosenName) {
+          chosenName.should.equal('MyFile.raml');
+          done();
+        });
+        digest();
       });
 
       describe('when the name is already taken (case-insensitive)', function() {
-        var alertSpy, newFileSpy;
+        var alertSpy, promise;
 
         beforeEach(function() {
           alertSpy = sandbox.stub(window, 'alert');
-          newFileSpy = sandbox.spy(fileList, 'newFile');
           fileList.files.push(createMockFile('MYFILE.raml', { contents: 'my content' }));
 
-          newFilePrompt.open();
+          promise = newFilePrompt.open();
         });
 
         it('alerts the user', function() {
           alertSpy.should.have.been.calledWith('That filename is already taken.');
         });
 
-        it('does not create a new file', function() {
-          newFileSpy.should.not.have.been.called;
+        it('rejects the promise', function(done) {
+          promise.then(undefined, function() {
+            done();
+          });
+          digest();
         });
       });
     });
 
     describe('upon cancellation', function() {
-      var newFileSpy;
+      var promise;
 
       beforeEach(function() {
-        newFileSpy = sandbox.spy(fileList, 'newFile');
         promptSpy.returns(null);
 
-        newFilePrompt.open();
+        promise = newFilePrompt.open();
       });
 
-      it('does not add a file', function() {
-        newFileSpy.should.not.have.been.called;
+      it('rejects the promise', function(done) {
+        promise.then(undefined, function() {
+          done();
+        });
+        digest();
       });
     });
 
@@ -102,13 +117,18 @@ describe('ramlEditorNewFilePrompt', function() {
         promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-1.raml');
       });
 
-      it('defaults to Untitled-2.raml second', function() {
-        promptSpy.returns('Untitled-1.raml');
-        newFilePrompt.open();
-        promptSpy.returns('the-name-i-actually-give-the-second-file.raml');
-        newFilePrompt.open();
-        promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-2.raml');
+      describe('with an existing Untitled-1.raml', function() {
+        beforeEach(function() {
+          fileList.files = [createMockFile('Untitled-1.raml')];
+        });
+
+        it('defaults to Untitled-2.raml second', function() {
+          promptSpy.returns('the-name-i-actually-give-the-second-file.raml');
+          newFilePrompt.open();
+          promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-2.raml');
+        });
       });
+
 
       describe('given an existing Untitled-6.raml', function() {
         beforeEach(function() {

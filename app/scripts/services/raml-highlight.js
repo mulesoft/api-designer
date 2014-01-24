@@ -26,7 +26,7 @@ angular.module('codeMirror')
     return new RegExp('\\b((' + booleanValues.join(')|(') + '))$', 'i');
   })
   .factory('token', function (keywordRegex, highlightRootElement,
-    getLineIndent) {
+    getLineIndent, indentUnit) {
     return function(stream, state) {
       var ch = stream.peek();
       var esc = state.escaped;
@@ -57,7 +57,7 @@ angular.module('codeMirror')
         state.pairStart = false;
 
         /* document start */
-        if(stream.match(/---/)) {
+        if (stream.match(/---/)) {
           return 'def';
         }
 
@@ -80,6 +80,10 @@ angular.module('codeMirror')
 
         state.pair = true;
         state.keyCol = stream.indentation();
+
+        if (stream.string.match(/^\s*\- /i)) {
+          state.keyCol += indentUnit;
+        }
 
         /* methods */
         if (level <= state.methodLevel || key.indexOf('/') === 0) {

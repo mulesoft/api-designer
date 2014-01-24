@@ -88,8 +88,9 @@ angular.module('utils', [])
       e = e || window.event;
       if (e.preventDefault){
         e.preventDefault();
+      } else {
+        e.returnValue = false;
       }
-      e.returnValue = false;
     }
 
     function keyDown(e) {
