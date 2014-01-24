@@ -5,8 +5,8 @@
   function FileList(ramlRepository, $rootScope) {
     var files = [];
 
-    ramlRepository.getDirectory().then(function(storedFiles) {
-      storedFiles.forEach(function(file) {
+    ramlRepository.getDirectory().then(function(directory) {
+      directory.files.forEach(function(file) {
         files.push(file);
       });
 

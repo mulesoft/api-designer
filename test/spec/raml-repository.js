@@ -15,14 +15,19 @@ describe('RAML Repository', function () {
     $q = $injector.get('$q');
     ramlRepository = $injector.get('ramlRepository');
     fileSystem = $injector.get('fileSystem');
+
     sandbox = sinon.sandbox.create();
+  }));
+
+  afterEach(inject(function() {
+    sandbox.restore();
   }));
 
   describe('getDirectory', function () {
     it('should reflect the contents of a directory on success', function () {
       // Arrange
       var directoryDeferred = $q.defer();
-      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+      sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var success = sinon.stub();
       var files = {
         path: '/',
@@ -43,19 +48,17 @@ describe('RAML Repository', function () {
       $rootScope.$apply();
 
       // Assert
-      success.firstCall.args[0][0].path.should.be.equal(files.children[0].path);
-      success.firstCall.args[0][0].name.should.be.equal(files.children[0].name);
-      success.firstCall.args[0][0].dirty.should.be.false;
-      success.firstCall.args[0][0].persisted.should.be.true;
-
-      // Restore
-      directoryStub.restore();
+      var directory = success.firstCall.args[0];
+      directory.files[0].path.should.be.equal(files.children[0].path);
+      directory.files[0].name.should.be.equal(files.children[0].name);
+      directory.files[0].dirty.should.be.false;
+      directory.files[0].persisted.should.be.true;
     });
 
     it('should handle errors', function () {
       // Arrange
       var directoryDeferred = $q.defer();
-      var directoryStub = sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+      sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
       var error = sinon.stub();
       var errorData = {message: 'Error occurred'};
 
@@ -67,9 +70,6 @@ describe('RAML Repository', function () {
 
       // Assert
       error.firstCall.args[0].should.be.deep.equal(errorData);
-
-      // Restore
-      directoryStub.restore();
     });
   });
 
@@ -77,7 +77,7 @@ describe('RAML Repository', function () {
     it('should reflect the content of a file on success', function () {
       // Arrange
       var loadDeferred = $q.defer();
-      var loadStub = sinon.stub(fileSystem, 'load').returns(loadDeferred.promise);
+      sinon.stub(fileSystem, 'load').returns(loadDeferred.promise);
       var success = sinon.stub();
       var fileContent = 'this is the file content';
       var file;
@@ -93,15 +93,12 @@ describe('RAML Repository', function () {
       file.dirty.should.be.equal(false);
       file.contents.should.be.equal(fileContent);
       should.not.exist(file.error);
-
-      // Restore
-      loadStub.restore();
     });
 
     it('should handle errors', function () {
       // Arrange
       var loadDeferred = $q.defer();
-      var loadStub = sinon.stub(fileSystem, 'load').returns(loadDeferred.promise);
+      sinon.stub(fileSystem, 'load').returns(loadDeferred.promise);
       var error = sinon.stub();
       var errorData = {message: 'Error occurred'};
       var fileMock = {};
@@ -115,11 +112,7 @@ describe('RAML Repository', function () {
       // Assert
       error.firstCall.args[0].should.be.equal(errorData);
 
-      fileMock.dirty.should.be.equal(false);
       fileMock.error.should.be.equal(errorData);
-
-      // Restore
-      loadStub.restore();
     });
   });
 
@@ -127,7 +120,7 @@ describe('RAML Repository', function () {
     it('should update file on success', function () {
       // Arrange
       var removeDeferred = $q.defer();
-      var removeStub = sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
+      sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
       var success = sinon.stub();
       var fileMock = {};
 
@@ -140,15 +133,12 @@ describe('RAML Repository', function () {
       // Assert
       fileMock.dirty.should.be.equal(false);
       should.not.exist(fileMock.error);
-
-      // Restore
-      removeStub.restore();
     });
 
     it('should handle errors', function () {
       // Arrange
       var removeDeferred = $q.defer();
-      var removeStub = sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
+      sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
       var error = sinon.stub();
       var fileMock = {};
       var errorData = {message: 'This is the error description'};
@@ -163,9 +153,6 @@ describe('RAML Repository', function () {
       error.firstCall.args[0].should.be.equal(errorData);
 
       fileMock.error.should.be.equal(errorData);
-
-      // Restore
-      removeStub.restore();
     });
   });
 
@@ -173,7 +160,7 @@ describe('RAML Repository', function () {
     it('should update file state on success', function () {
       // Arrange
       var saveDeferred = $q.defer();
-      var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
+      sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var success = sinon.stub();
       var fileMock = {
         path: '/',
@@ -193,15 +180,12 @@ describe('RAML Repository', function () {
       file.dirty.should.be.equal(false);
       file.persisted.should.be.equal(true);
       should.not.exist(file.error);
-
-      // Restore
-      saveStub.restore();
     });
 
     it('should handle errors', function () {
       // Arrange
       var saveDeferred = $q.defer();
-      var saveStub = sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
+      sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var error = sinon.stub();
       var fileMock = {
         path: '/',
@@ -220,9 +204,6 @@ describe('RAML Repository', function () {
       error.firstCall.args[0].should.be.equal(errorData);
 
       fileMock.error.should.be.equal(errorData);
-
-      // Restore
-      saveStub.restore();
     });
   });
 
@@ -295,11 +276,11 @@ describe('RAML Repository', function () {
     it('should return a new file with snippet content', inject(function (ramlSnippets) {
       // Arrange
       var snippet = 'This is an empty RAML file content';
-      var getEmptyRamlStub = sinon.stub(ramlSnippets, 'getEmptyRaml').returns(snippet);
+      sinon.stub(ramlSnippets, 'getEmptyRaml').returns(snippet);
       var file;
 
       // Act
-      file = ramlRepository.createFile();
+      file = ramlRepository.createFile('untitled.raml');
 
       // Assert
       file.path.should.be.equal('/untitled.raml');
@@ -307,9 +288,6 @@ describe('RAML Repository', function () {
       file.contents.should.be.equal(snippet);
       file.dirty.should.be.true;
       file.persisted.should.be.false;
-
-      // Restore
-      getEmptyRamlStub.restore();
     }));
 
     it('names the file according to the argument given', function() {
@@ -317,54 +295,6 @@ describe('RAML Repository', function () {
 
       file.name.should.be.equal('myfile.raml');
       file.dirty.should.be.true;
-    });
-  });
-
-  describe('bootstrap', function () {
-    it('should create a new file if there are not file entries', function () {
-      // Arrange
-      var getDirectoryDeferred = $q.defer();
-      var getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory').returns(getDirectoryDeferred.promise);
-      var newFileContent = 'content';
-      var createFileStub = sinon.stub(ramlRepository, 'createFile').returns(newFileContent);
-      var success = sinon.stub();
-
-      // Act
-      ramlRepository.bootstrap().then(success);
-
-      getDirectoryDeferred.resolve([]);
-      $rootScope.$apply();
-
-      // Assert
-      success.firstCall.args[0].should.be.equal(newFileContent);
-
-      // Restore
-      getDirectoryStub.restore();
-      createFileStub.restore();
-    });
-
-    it('should open the first file entry if there are file entries', function () {
-      // Arrange
-      var getDirectoryDeferred = $q.defer();
-      var getDirectoryStub = sinon.stub(ramlRepository, 'getDirectory').returns(getDirectoryDeferred.promise);
-      var loadFileDeferred = $q.defer();
-      var loadFileStub = sinon.stub(ramlRepository, 'loadFile').returns(loadFileDeferred.promise);
-      var success = sinon.stub();
-      var fileMock = {};
-
-      // Act
-      ramlRepository.bootstrap().then(success);
-
-      getDirectoryDeferred.resolve([fileMock]);
-      loadFileDeferred.resolve(fileMock);
-      $rootScope.$apply();
-
-      // Assert
-      success.firstCall.args[0].should.be.equal(fileMock);
-
-      // Restore
-      getDirectoryStub.restore();
-      loadFileStub.restore();
     });
   });
 });
