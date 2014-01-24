@@ -50,65 +50,6 @@ describe('RAML Editor Main Controller', function () {
     };
   });
 
-  it('should disable console when document is empty', function () {
-    $controller('ramlEditorMain', params);
-
-    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
-    scope.editor.setValue('');
-
-    scope.$apply();
-    $timeout.flush();
-    scope.$apply();
-
-    sourceUpdatedSpy.called.should.be.true;
-    scope.hasErrors.should.be.false;
-
-    sourceUpdatedSpy.restore();
-  });
-
-  it('should disable console when parser has errors', function (done) {
-    $controller('ramlEditorMain', params);
-
-    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
-    scope.editor.setValue('#%RAML 0.8');
-
-    scope.$apply();
-    $timeout.flush();
-
-    setTimeout(function () {
-      sourceUpdatedSpy.called.should.be.true;
-
-      scope.hasErrors.should.be.true;
-
-      sourceUpdatedSpy.restore();
-
-      done();
-    });
-  });
-
-  it('should enable console when everything is good', function (done) {
-    $controller('ramlEditorMain', params);
-
-    var sourceUpdatedSpy = sinon.spy(scope, 'sourceUpdated');
-    scope.editor.setValue([
-      '#%RAML 0.8',
-      'title: Title'
-    ].join('\n'));
-
-    scope.$apply();
-    $timeout.flush();
-
-    setTimeout(function () {
-      sourceUpdatedSpy.called.should.be.true;
-
-      scope.hasErrors.should.be.false;
-
-      sourceUpdatedSpy.restore();
-
-      done();
-    });
-  });
-
   describe('leaving the page', function() {
     it('should ask user for confirmation if there are unsaved changes', function () {
       params.fileList = {
@@ -163,24 +104,27 @@ describe('RAML Editor Main Controller', function () {
       scope.fileBrowser = {};
       ctrl = $controller('ramlEditorMain', params);
 
-      editor.getValue().should.equal('');
+      editor.getValue().should.be.equal('');
 
       scope.$emit('event:raml-editor-file-selected', { name: 'api.raml', path: '/', contents: 'file1' });
       scope.$digest();
 
-      editor.getValue().should.equal('file1');
+      editor.getValue().should.be.equal('file1');
     });
   });
 
   describe('on changes to editor content', function() {
     it('updates the fileBrowser.selectedFile contents', function() {
       scope.fileBrowser = {
-        selectedFile: {}
+        selectedFile: {
+          name:     'api.raml',
+          contents: ''
+        }
       };
       $controller('ramlEditorMain', params);
 
       editor.setValue('updated editor contents');
-      scope.$apply();
+      scope.$digest();
       $timeout.flush();
 
       scope.fileBrowser.selectedFile.contents.should.equal('updated editor contents');
@@ -210,7 +154,7 @@ describe('RAML Editor Main Controller', function () {
       });
 
       // act
-      eventService.broadcast('event:raml-source-updated', [
+      scope.loadRaml([
         '#%RAML 0.8',
         '---',
         'title: !include title.raml'
@@ -238,12 +182,105 @@ describe('RAML Editor Main Controller', function () {
         });
 
         // act
-        eventService.broadcast('event:raml-source-updated', [
+        scope.loadRaml([
           '#%RAML 0.8',
           '---',
           'title: !include http://api.com/title.raml'
         ].join('\n'));
       });
+    });
+  });
+
+  describe('getIsFileParsable', function () {
+    var getIsFileParsable;
+
+    beforeEach(function () {
+      $controller('ramlEditorMain', params);
+      getIsFileParsable = scope.getIsFileParsable;
+    });
+
+    it('should return false for files without ".raml" extenstion', function () {
+      getIsFileParsable(
+        {
+          name: 'myApi.json'
+        }
+      ).should.be.false;
+    });
+
+    it('should return false for files without proper version tag as the very first line', function () {
+      getIsFileParsable(
+        {
+          name:     'myApi.raml',
+          contents: 'title: My API'
+        }
+      ).should.be.false;
+    });
+
+    it('should use passed RAML source (invalid) instead of provided by file model and return false', function () {
+      getIsFileParsable(
+        {
+          name:     'myApi.raml',
+          contents: ['#%RAML 0.8', '---', 'title: My API'].join('\n')
+        },
+        'title: My API'
+      ).should.be.false;
+    });
+
+    it('should return true for files with ".raml" extenstion and proper version tag as the very first line', function () {
+      getIsFileParsable(
+        {
+          name:     'myApi.raml',
+          contents: ['#%RAML 0.8', '---', 'title: My API'].join('\n')
+        }
+      ).should.be.true;
+    });
+
+    it('should use passed RAML source (valid) instead of provided by file model and return true', function () {
+      getIsFileParsable(
+        {
+          name:     'myApi.raml',
+          contents: 'title: My API'
+        },
+        ['#%RAML 0.8', '---', 'title: My API'].join('\n')
+      ).should.be.true;
+    });
+  });
+
+  describe('getIsShelfVisible', function () {
+    var getIsShelfVisible;
+
+    beforeEach(function () {
+      $controller('ramlEditorMain', params);
+      getIsShelfVisible = scope.getIsShelfVisible;
+    });
+
+    it('should return true when file is parsable', function () {
+      scope.fileParsable = true;
+      getIsShelfVisible().should.be.true;
+    });
+
+    it('should return false when file is NOT parsable', function () {
+      scope.fileParsable = false;
+      getIsShelfVisible().should.be.false;
+    });
+  });
+
+  describe('getIsConsoleVisible', function () {
+    var getIsConsoleVisible;
+
+    beforeEach(function () {
+      $controller('ramlEditorMain', params);
+      getIsConsoleVisible = scope.getIsConsoleVisible;
+    });
+
+    it('should return true when file is parsable', function () {
+      scope.fileParsable = true;
+      getIsConsoleVisible().should.be.true;
+    });
+
+    it('should return false when file is NOT parsable', function () {
+      scope.fileParsable = false;
+      getIsConsoleVisible().should.be.false;
     });
   });
 });

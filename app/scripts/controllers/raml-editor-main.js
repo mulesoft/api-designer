@@ -8,20 +8,22 @@ angular.module('ramlEditorApp')
       var name  = split.pop();
       var path  = split.join('/') || '/';
 
-      return ramlRepository.loadFile({path: path, name: name}).then(function (file) {
-        return file.contents;
-      });
+      return ramlRepository.loadFile({path: path, name: name}).then(
+        function success(file) {
+          return file.contents;
+        }
+      );
     }
 
     function readExtFile(file) {
       return $http.get(file).then(
         // success
-        function (response) {
+        function success(response) {
           return response.data;
         },
 
         // failure
-        function (response) {
+        function failure(response) {
           var error = 'cannot fetch ' + file + ', check that the server is up and that CORS is enabled';
           if (response.status) {
             error += '(HTTP ' + response.status + ')';
@@ -48,11 +50,10 @@ angular.module('ramlEditorApp')
     });
   })
   .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-    safeApply, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
-    codeMirrorErrors, config, $prompt, $confirm, safeApplyWrapper, $modal, fileList
+    safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
+    codeMirrorErrors, config, $prompt, $confirm, $modal, fileList
   ) {
     var editor;
-    var currentUpdateTimer;
     var currentFile;
     var extractCurrentFileLabel = function(file) {
       var label = '';
@@ -66,73 +67,72 @@ angular.module('ramlEditorApp')
       return label;
     };
 
-    $window.setTheme = function (theme) {
+    $window.setTheme = function setTheme(theme) {
       config.set('theme', theme);
       $scope.theme = $rootScope.theme = theme;
       safeApply($scope);
     };
 
-    $scope.$on('event:raml-editor-file-selected', function(event, file) {
+    $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
       currentFile = file;
 
       if (file.contents) {
         editor.setValue(file.contents);
+        $scope.fileParsable = $scope.getIsFileParsable(file);
       }
     });
 
-    $scope.sourceUpdated = function () {
-      var source = editor.getValue();
+    $scope.sourceUpdated = function sourceUpdated() {
+      var source       = editor.getValue();
+      var selectedFile = $scope.fileBrowser.selectedFile;
 
-      if (source === $scope.definition) {
+      if (source === selectedFile.contents) {
         return;
       }
 
-      if ($scope.fileBrowser && $scope.fileBrowser.selectedFile) {
-        $scope.fileBrowser.selectedFile.contents = source;
-      }
-      $scope.definition = source;
+      selectedFile.contents = source;
+      $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
-      eventService.broadcast('event:raml-source-updated', $scope.definition);
+      eventService.broadcast('event:raml-source-updated', source);
     };
 
-    function loadRamlDefinition(definition, location) {
+    $scope.loadRaml = function loadRaml(definition, location) {
       return ramlParser.load(definition, location, {
         validate : true,
         transform: true,
-        compose  : true,
-        reader   : ramlParserFileReader
+        compose:   true,
+        reader:    ramlParserFileReader
       });
-    }
+    };
 
-    eventService.on('event:raml-source-updated', function (e, definition) {
+    eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
       codeMirrorErrors.clearAnnotations();
 
-      if (definition.trim() === '') {
+      if (!$scope.fileParsable || source.trim() === '') {
         $scope.hasErrors = false;
         return;
       }
 
-      loadRamlDefinition(definition, (($scope.fileBrowser || {}).selectedFile || {}).path).then(
+      $scope.loadRaml(source, (($scope.fileBrowser || {}).selectedFile || {}).path).then(
         // success
-        safeApplyWrapper($scope, function (value) {
+        safeApplyWrapper($scope, function success(value) {
           eventService.broadcast('event:raml-parsed', value);
         }),
 
         // failure
-        safeApplyWrapper($scope, function (error) {
+        safeApplyWrapper($scope, function failure(error) {
           eventService.broadcast('event:raml-parser-error', error);
         })
       );
     });
 
-    eventService.on('event:raml-parsed', safeApplyWrapper($scope, function (e, definition) {
-      $scope.title     = definition.title;
-      $scope.version   = definition.version;
+    eventService.on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
+      $scope.title     = raml.title;
+      $scope.version   = raml.version;
       $scope.hasErrors = false;
     }));
 
-    eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function (e, args) {
-      var error        = args;
+    eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
       var problemMark  = 'problem_mark';
       var line         = error[problemMark] ? error[problemMark].line   : 0;
       var column       = error[problemMark] ? error[problemMark].column : 0;
@@ -151,7 +151,36 @@ angular.module('ramlEditorApp')
       });
     };
 
-    $scope.toggleShelf = function () {
+    $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
+      if (file.name.slice(-5) !== '.raml') {
+        return false;
+      }
+
+      contents = arguments.length > 1 ? contents : file.contents;
+      if (contents.indexOf('#%RAML 0.8\n') !== 0) {
+        return false;
+      }
+
+      return true;
+    };
+
+    $scope.getIsShelfVisible = function getIsShelfVisible() {
+      if (!$scope.fileParsable) {
+        return false;
+      }
+
+      return true;
+    };
+
+    $scope.getIsConsoleVisible = function getIsConsoleVisible() {
+      if (!$scope.fileParsable) {
+        return false;
+      }
+
+      return true;
+    };
+
+    $scope.toggleShelf = function toggleShelf() {
       $scope.shelf.collapsed = !$scope.shelf.collapsed;
       config.set('shelf.collapsed', $scope.shelf.collapsed);
     };
@@ -160,48 +189,37 @@ angular.module('ramlEditorApp')
       return extractCurrentFileLabel(currentFile);
     };
 
-    eventService.on('event:toggle-theme', function () {
+    eventService.on('event:toggle-theme', function onToggleTheme() {
       $window.setTheme(($scope.theme === 'dark') ? 'light' : 'dark');
     });
 
     (function bootstrap() {
-      $scope.hasErrors        = false;
-      $scope.theme            = $rootScope.theme = config.get('theme', 'dark');
-      $scope.shelf            = {};
-      $scope.shelf.collapsed  = JSON.parse(config.get('shelf.collapsed', 'false'));
-      $scope.editor           = editor = codeMirror.initEditor();
+      $scope.hasErrors       = false;
+      $scope.theme           = $rootScope.theme = config.get('theme', 'dark');
+      $scope.shelf           = {};
+      $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', 'false'));
+      $scope.editor          = editor = codeMirror.initEditor();
 
-      editor.on('change', function () {
-        var updateResponsivenessInterval = config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL);
+      editor.on('change', debounce(function onChange() {
+        $scope.sourceUpdated();
+      }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL)));
 
-        if (currentUpdateTimer) {
-          $timeout.cancel(currentUpdateTimer);
-        }
-
-        currentUpdateTimer = $timeout(function () {
-          $scope.sourceUpdated();
-          currentUpdateTimer = undefined;
-        }, updateResponsivenessInterval);
-      });
-
-      editor.on('change', function (cm) {
+      editor.on('change', function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
           cm.execCommand('autocomplete');
         }
       });
 
-      $timeout(function () {
-        eventService.broadcast('event:raml-editor-initialized', editor);
-      });
-
       // Warn before leaving the page
       $window.onbeforeunload = function () {
-        var anyUnsavedChanges = fileList.files.some(function(file) {
+        var anyUnsavedChanges = fileList.files.some(function (file) {
           return file.dirty;
         });
+
         if (anyUnsavedChanges) {
           return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
         }
       };
     })();
-  });
+  })
+;

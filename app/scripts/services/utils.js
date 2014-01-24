@@ -31,6 +31,18 @@ angular.module('utils', [])
       return new Date().getTime();
     });
   })
+  .factory('debounce', function debounceFactory($timeout) {
+    return function debounce(fn, delay, invokeApply) {
+      var timeout;
+      return function debounceWrapper() {
+        if (timeout) {
+          $timeout.cancel(timeout);
+        }
+
+        timeout = $timeout(fn, delay, invokeApply);
+      };
+    };
+  })
   .factory('throttle', function (getTime, $timeout) {
     function throttle(func, wait, options) {
       var context, args, result;
