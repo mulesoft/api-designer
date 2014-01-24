@@ -128,35 +128,35 @@ describe('RAML Editor Main Controller', function () {
       });
 
       it('formats xml', function() {
-        scope.$emit('event:raml-editor-file-selected', { name: 'api.xml', type: 'xml', path: '/', contents: 'file1' });
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.xml', extension: 'xml', path: '/', contents: 'file1' });
         scope.$digest();
 
         setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'xml'}));
       });
 
       it('formats xsd', function() {
-        scope.$emit('event:raml-editor-file-selected', { name: 'api.xsd', type: 'xsd', path: '/', contents: 'file1' });
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.xsd', extension: 'xsd', path: '/', contents: 'file1' });
         scope.$digest();
 
         setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'xml'}));
       });
 
       it('formats json', function() {
-        scope.$emit('event:raml-editor-file-selected', { name: 'api.json', type: 'json', path: '/', contents: 'file1' });
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.json', extension: 'json', path: '/', contents: 'file1' });
         scope.$digest();
 
         setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'javascript'}));
       });
 
       it('formats md', function() {
-        scope.$emit('event:raml-editor-file-selected', { name: 'api.md', type: 'md', path: '/', contents: 'file1' });
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.md', extension: 'md', path: '/', contents: 'file1' });
         scope.$digest();
 
         setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'gfm'}));
       });
 
       it('formats other extensions as raml', function() {
-        scope.$emit('event:raml-editor-file-selected', { name: 'api.whatever', type: 'whatever', path: '/', contents: 'file1' });
+        scope.$emit('event:raml-editor-file-selected', { name: 'api.whatever', extension: 'whatever', path: '/', contents: 'file1' });
         scope.$digest();
 
         setOptionStub.should.have.been.calledWith('mode', sinon.match({name: 'raml'}));

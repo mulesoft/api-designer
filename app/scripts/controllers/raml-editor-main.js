@@ -88,7 +88,7 @@ angular.module('ramlEditorApp')
     };
 
     $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
-      var mode = MODES[file.type] || MODES.raml;
+      var mode = MODES[file.extension] || MODES.raml;
       editor.setOption('mode', mode);
       if (mode === MODES.raml) {
         editor.on('change', autocomplete);
