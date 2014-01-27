@@ -8,7 +8,7 @@ describe('Muse: Mule Sales Enablement API', function () {
   var designerAsserts= new AssertsHelper();
   var editor= new EditorHelper();
   var shelf= new ShelfHelper();
- var consoleApi = new ConsoleHelper();
+  var consoleApi = new ConsoleHelper();
 
   describe('e2e validation', function(){
     it('clear editor', function(){
