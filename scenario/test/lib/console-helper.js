@@ -2,7 +2,7 @@
 function ConsoleHelper() {
   this.methodsList = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace', 'connect'];
   this.titleCss = '#raml-console-api-title';
-  this.listMainResourcesCss = '#raml-console-api-reference h1';
+  this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource"]:first-of-type h3';
   this.listResourceDescriptionCss = '[role=\'description\'] p';
   this.listResourcesCss = '[role="resource"]';
   this.listResourcesNameCss = '[role=\'resource\'] h3.path';
@@ -111,19 +111,12 @@ ConsoleHelper.prototype.areResourceGroupsCollapsed = function(){
   });
 };
 
-ConsoleHelper.prototype.expandCollapseResourcebyPos = function(pos){
+ConsoleHelper.prototype.toggleResourceExpansion = function(){
   var that = this;
-  pos--;
-//send 0 to expand all.
   browser.findElements(by.css(that.listResourcesNameCss)).then(function(resources){
-
-    if(pos === -1){
-      resources.forEach(function(resource){
-        resource.click();
-      });
-    }else{
-      resources[pos].click();
-    }
+    resources.forEach(function(resource){
+      resource.click();
+    });
   });
 };
 

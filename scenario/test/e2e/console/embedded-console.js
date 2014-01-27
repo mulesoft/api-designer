@@ -44,7 +44,7 @@ describe('Embedded-console',function(){
       editor.setValue(definition);
       var expList = ['/res1','/res1 /res2'];
       designerAsserts.consoleResourceName(expList);
-      apiConsole.expandCollapseResourcebyPos(0);
+      apiConsole.toggleResourceExpansion();
       var expDescriptions = ['this is res1 description','this is res1 description'];
       designerAsserts.consoleResourceDescription(expDescriptions);
     });

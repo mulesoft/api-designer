@@ -2,13 +2,13 @@
 var AssertsHelper = require('../../lib/asserts-helper.js').AssertsHelper;
 var EditorHelper = require('../../lib/editor-helper.js').EditorHelper;
 var ShelfHelper = require('../../lib/shelf-helper.js').ShelfHelper;
-//var ConsoleHelper = require('../../lib/console-helper.js').ConsoleHelper;
+var ConsoleHelper = require('../../lib/console-helper.js').ConsoleHelper;
 var definition = require('../../example-files/muse-raml.js').definition;
 describe('Muse: Mule Sales Enablement API', function () {
   var designerAsserts= new AssertsHelper();
   var editor= new EditorHelper();
   var shelf= new ShelfHelper();
-//  var consoleApi = new ConsoleHelper();
+ var consoleApi = new ConsoleHelper();
 
   describe('e2e validation', function(){
     it('clear editor', function(){
@@ -746,7 +746,9 @@ describe('Muse: Mule Sales Enablement API', function () {
             editor.setCursor(145,2);
             list2 =['type'];
             designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceLevel);
+            consoleApi.toggleResourceExpansion();
             designerAsserts.consoleResourceResourceType(['collection']);
+            consoleApi.toggleResourceExpansion();
           },
           145: function(){
             expect(editor.getLine(t)).toEqual('  is: [ secured ]');
@@ -776,7 +778,9 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           151: function(){
             expect(editor.getLine(t)).toEqual('    type: { member: { schema: presentation } }');
+            consoleApi.toggleResourceExpansion();
             designerAsserts.consoleResourceResourceType(['collection','member']);
+            consoleApi.toggleResourceExpansion();
             designerAsserts.consoleResourcesMethods(['GET','POST','GET','PUT','PATCH','DELETE']);
           },
           152: function(){
@@ -789,7 +793,9 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           154: function(){
             expect(editor.getLine(t)).toEqual('  type: { collection: { schema: product } }');
+            consoleApi.toggleResourceExpansion();
             designerAsserts.consoleResourceResourceType(['collection','member','collection']);
+            consoleApi.toggleResourceExpansion();
             designerAsserts.consoleResourcesMethods(['GET','POST','GET','PUT','PATCH','DELETE','GET','POST']);
           },
           155: function(){
@@ -813,7 +819,9 @@ describe('Muse: Mule Sales Enablement API', function () {
           },
           161: function(){
             expect(editor.getLine(t)).toEqual('    type: { member: { schema: product } }');
+            consoleApi.toggleResourceExpansion();
             designerAsserts.consoleResourceResourceType(['collection','member','collection','member']);
+            consoleApi.toggleResourceExpansion();
             designerAsserts.consoleResourcesMethods(['GET','POST','GET','PUT','PATCH','DELETE','GET','POST','GET','PUT','PATCH','DELETE']);
           },
           162: function(){
@@ -854,7 +862,9 @@ describe('Muse: Mule Sales Enablement API', function () {
 
       it('verify resources Resource-types', function(){
         var expList = ['collection','member','collection','member','collection','member'];
+        consoleApi.toggleResourceExpansion();
         designerAsserts.consoleResourceResourceType(expList);
+        consoleApi.toggleResourceExpansion();
       });
 
     }); // collapsed Console

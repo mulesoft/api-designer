@@ -102,18 +102,6 @@ AssertsHelper.prototype.consoleResourcesDescription = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourceResourceType = function(expList){
-  var consoleApi = new ConsoleHelper();
-  var i=0;
-  consoleApi.getListResourceType().then(function(list){
-    expect(list.length).toEqual(expList.length);
-    list.forEach(function(elem){
-      var t = i++;
-      expect(elem.getText()).toEqual(expList[t]);
-    });
-  });
-};
-
 AssertsHelper.prototype.consoleResourcesTraits = function(expList){
   var consoleApi = new ConsoleHelper();
   var i=0;
