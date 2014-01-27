@@ -17,5 +17,8 @@
   "devDependencies": {
     "sinonjs": "~1.7.1",
     "angular-mocks": "1.2.9"
+  },
+  "resolutions": {
+    "angular": "1.2.9"
   }
 }
