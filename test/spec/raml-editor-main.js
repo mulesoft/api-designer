@@ -295,6 +295,15 @@ describe('RAML Editor Main Controller', function () {
         ['#%RAML 0.8', '---', 'title: My API'].join('\n')
       ).should.be.true;
     });
+
+    it('should return true for version tag ending with whitespaces', function () {
+      getIsFileParsable(
+        {
+          name:     'myApi.raml',
+          contents: ['#%RAML 0.8 ', '---', 'title: My API'].join('\n')
+        }
+      ).should.be.true;
+    });
   });
 
   describe('getIsShelfVisible', function () {

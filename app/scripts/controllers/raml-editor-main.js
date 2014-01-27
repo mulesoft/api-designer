@@ -173,12 +173,14 @@ angular.module('ramlEditorApp')
     };
 
     $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
+      // check for file extenstion
       if (file.name.slice(-5) !== '.raml') {
         return false;
       }
 
+      // check for raml version tag as a very first line of the file
       contents = arguments.length > 1 ? contents : file.contents;
-      if (contents.indexOf('#%RAML 0.8\n') !== 0) {
+      if (contents.search(/^#%RAML 0.8\s*(\n|$)/) !== 0) {
         return false;
       }
 
