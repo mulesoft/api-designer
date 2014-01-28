@@ -52,10 +52,10 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
     };
 
     service.renameFile = function(file, newName) {
-      newName = newName || file.name;
       var newPath = file.path.replace(file.name, newName);
+      var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
 
-      return fileSystem.rename(file.path, newPath).then(
+      return promise.then(
         function() {
           file.name = newName;
           file.path = newPath;
