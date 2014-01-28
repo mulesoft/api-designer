@@ -26,7 +26,17 @@
       },
 
       saveFile: function(file) {
-        ramlRepository.saveFile(file);
+        ramlRepository.saveFile(file).then(function() {
+          $rootScope.$broadcast('event:notification', {
+            message: 'File saved.',
+            expires: true
+          });
+        }, function(error) {
+          $rootScope.$broadcast('event:notification', {
+            message: 'Failed: ' + error,
+            expires: true
+          });
+        });
       },
 
       removeFile: function(file) {
