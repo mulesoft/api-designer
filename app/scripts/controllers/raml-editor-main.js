@@ -3,20 +3,16 @@
 angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
   .service('ramlParserFileReader', function ($http, ramlParser, ramlRepository, safeApplyWrapper) {
-    function readLocFile(file) {
-      var split = file.split('/');
-      var name  = split.pop();
-      var path  = split.join('/') || '/';
-
-      return ramlRepository.loadFile({path: path, name: name}).then(
+    function readLocFile(path) {
+      return ramlRepository.loadFile({path: path}).then(
         function success(file) {
           return file.contents;
         }
       );
     }
 
-    function readExtFile(file) {
-      return $http.get(file).then(
+    function readExtFile(path) {
+      return $http.get(path).then(
         // success
         function success(response) {
           return response.data;
@@ -24,7 +20,7 @@ angular.module('ramlEditorApp')
 
         // failure
         function failure(response) {
-          var error = 'cannot fetch ' + file + ', check that the server is up and that CORS is enabled';
+          var error = 'cannot fetch ' + path + ', check that the server is up and that CORS is enabled';
           if (response.status) {
             error += '(HTTP ' + response.status + ')';
           }

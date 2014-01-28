@@ -191,8 +191,7 @@ describe('RAML Editor Main Controller', function () {
       var loadFileDeferred = $q.defer();
       var loadFileStub     = sinon.stub(ramlRepository, 'loadFile', function (file) {
         // assert
-        file.path.should.be.equal('/');
-        file.name.should.be.equal('title.raml');
+        file.path.should.be.equal('/2.raml');
 
         // restore
         loadFileStub.restore();
@@ -208,8 +207,8 @@ describe('RAML Editor Main Controller', function () {
       scope.loadRaml([
         '#%RAML 0.8',
         '---',
-        'title: !include title.raml'
-      ].join('\n'));
+        'title: !include 2.raml'
+      ].join('\n'), '/1.raml');
     });
 
     it('should use ramlParserFileReader to load included external files using $http service', function (done) {
