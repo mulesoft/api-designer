@@ -16,11 +16,16 @@
         var deferred = $q.defer();
         suggestedFileName = suggestedFileName || generateFileName(fileList.files);
         var message = 'Choose a name:';
+
         if (fileList.files.length === 0) {
-          message = 'The file browser is empty. Create a new file:';
+          message = 'The file browser is empty. Please provide a name for the new file:';
         }
 
         var filename = $window.prompt(message, suggestedFileName);
+
+        if (fileList.files.length === 0) {
+          filename = filename || suggestedFileName;
+        }
 
         if (filename) {
           var filenameAlreadyTaken = fileList.files.some(function(file) {
