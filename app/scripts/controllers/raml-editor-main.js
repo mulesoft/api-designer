@@ -121,7 +121,7 @@ angular.module('ramlEditorApp')
     $scope.clearErrorMarks = function clearErrorMarks() {
       codeMirrorErrors.clearAnnotations();
       $scope.hasErrors = false;
-    }
+    };
 
     eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
       $scope.clearErrorMarks();
