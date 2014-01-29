@@ -79,6 +79,13 @@ angular.module('ramlEditorApp')
       $scope.fileParsable = $scope.getIsFileParsable(file);
     });
 
+    $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
+      if (currentFile === file) {
+        currentFile = undefined;
+        editor.setValue('');
+      }
+    });
+
     $scope.sourceUpdated = function sourceUpdated() {
       var source       = editor.getValue();
       var selectedFile = $scope.fileBrowser.selectedFile;

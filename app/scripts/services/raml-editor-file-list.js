@@ -41,12 +41,12 @@
 
       removeFile: function(file) {
         function groomFileList() {
-          $rootScope.$broadcast('event:raml-editor-file-removed', file);
-
           var index = files.indexOf(file);
           if (index !== -1) {
             files.splice(index, 1);
           }
+
+          $rootScope.$broadcast('event:raml-editor-file-removed', file);
         }
 
         if (file.persisted) {
