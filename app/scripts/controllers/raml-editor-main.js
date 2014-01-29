@@ -49,23 +49,7 @@ angular.module('ramlEditorApp')
     safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
     codeMirrorErrors, config, $prompt, $confirm, $modal, fileList
   ) {
-    var editor;
-    var MODES = {
-      xml: { name: 'xml' },
-      xsd: { name: 'xml', alignCDATA: true },
-      json: { name: 'javascript', json: true },
-      md: { name: 'gfm' },
-      raml: { name: 'raml' }
-    };
-
-    var autocomplete = function onChange(cm) {
-      if (cm.getLine(cm.getCursor().line).trim()) {
-        cm.execCommand('autocomplete');
-      }
-    };
-
-    var currentFile;
-    var extractCurrentFileLabel = function(file) {
+    var editor, currentFile, extractCurrentFileLabel = function(file) {
       var label = '';
       if (file) {
         label = file.path;
@@ -84,13 +68,8 @@ angular.module('ramlEditorApp')
     };
 
     $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
-      var mode = MODES[file.extension] || MODES.raml;
-      editor.setOption('mode', mode);
-      if (mode === MODES.raml) {
-        editor.on('change', autocomplete);
-      } else {
-        editor.off('change', autocomplete);
-      }
+      codeMirror.configureEditor(editor, file.extension);
+
       currentFile = file;
 
       editor.setValue(file.contents);
@@ -222,8 +201,6 @@ angular.module('ramlEditorApp')
       editor.on('change', debounce(function onChange() {
         $scope.sourceUpdated();
       }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL)));
-
-      editor.on('change', autocomplete);
 
       // Warn before leaving the page
       $window.onbeforeunload = function () {
