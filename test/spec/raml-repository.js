@@ -211,7 +211,7 @@ describe('RAML Repository', function () {
     var file, fileSystemMock, renameFile;
 
     beforeEach(function() {
-      file = { name: 'currentName', path: '/currentPath/currentName' };
+      file = { name: 'currentName', path: '/currentPath/currentName', persisted: true };
       fileSystemMock = sandbox.stub(fileSystem, 'rename');
     });
 
@@ -256,18 +256,18 @@ describe('RAML Repository', function () {
       });
     });
 
-    describe('without a name argument', function() {
+    describe('unsaved files', function() {
       beforeEach(function() {
+        file.persisted = false;
         renameFile = function() {
-          ramlRepository.renameFile(file, undefined, 'newPath');
+          ramlRepository.renameFile(file, 'newName');
         };
       });
 
-      it('delegates to the fileSystem, providing the file\'s current name', function() {
-        fileSystemMock.returns(promise.stub());
+      it('does not delegate to the file system', function() {
         renameFile();
 
-        fileSystemMock.should.have.been.calledWith('/currentPath/currentName', '/currentPath/currentName');
+        fileSystemMock.should.not.have.been.called;
       });
     });
   });

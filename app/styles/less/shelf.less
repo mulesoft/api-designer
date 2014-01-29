@@ -1,23 +1,19 @@
-@import "utils.less";
-
 /* Shelf */
 div[role=shelf] {
   background: rgb(26,32,43);
   color: gray;
   border-top: 1px solid rgb(48,83,110);
-  .box-sizing(border-box);
+  box-sizing: border-box;
   font-size: 15px;
   transition: height .1s ease-in;
 
-  -webkit-flex: 0 0 0px;
   flex: 0 0 0px;
 
-  .disable-selection;
+  user-select: none;
   position: relative;
 }
 
 div[role=shelf].expanded {
-  -webkit-flex: 0 0 160px;
   flex: 0 0 160px;
 }
 
@@ -36,7 +32,7 @@ div[role=shelf] > div[role=shelf-tab] {
   right: 0;
   display: block;
   padding: 5px 10px;
-  .box-sizing(border-box);
+  box-sizing: border-box;
   background: rgb(26,32,43);
   z-index: 100;
   border-top: 1px solid rgb(48,83,110);
@@ -66,10 +62,9 @@ div[role=shelf] ul[role=sections] > li[role=section] {
   list-style-type: none;
   font-size: 11px;
   color: #ddd;
-  .text-shadow(1px 1px 1px black);
+  text-shadow: 1px 1px 1px black;
   letter-spacing: 1px;
   font-weight: bolder;
-  /*display: inline-block;*/
   float: left;
 }
 
@@ -114,7 +109,7 @@ div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
   list-style-type: none;
   margin: 2px 0;
   padding: 5px 7px 4px 6px;
-  .text-shadow(0 0);
+  text-shadow: 0 0;
   text-transform: none;
   transition: background-color 0.1s;
 }
@@ -150,12 +145,12 @@ div[role=raml-editor].light div[role=shelf] > div[role=shelf-tab] {
 div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section] > ul[role=items] > li {
   background-color: rgb(174,176,190);
   color: rgb(72,74,89);
-  .text-shadow(1px 1px 1px #ddd);
+  text-shadow: 1px 1px 1px #ddd;
 }
 
 div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section] {
   color: #444;
-  .text-shadow(1px 1px 1px #ddd);
+  text-shadow: 1px 1px 1px #ddd;
 }
 
 /* Icon Sizes */
@@ -168,7 +163,7 @@ div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section]
 }
 
 ul[role=items] > li > i{
-  .text-shadow(0 0 2px #000);
+  text-shadow: 0 0 2px #000;
 }
 
 /* Category colors */

@@ -17,10 +17,14 @@
         suggestedFileName = suggestedFileName || generateFileName(directory.files);
         var message = 'Choose a name:';
         if (directory.files.length === 0) {
-          message = 'The file browser is empty. Create a new file:';
+          message = 'The file browser is empty. Please provide a name for the new file:';
         }
 
         var filename = $window.prompt(message, suggestedFileName);
+
+        if (directory.files.length === 0) {
+          filename = filename || suggestedFileName;
+        }
 
         if (filename) {
           var filenameAlreadyTaken = directory.files.some(function(file) {

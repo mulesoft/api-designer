@@ -3,20 +3,16 @@
 angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
   .service('ramlParserFileReader', function ($http, ramlParser, ramlRepository, safeApplyWrapper) {
-    function readLocFile(file) {
-      var split = file.split('/');
-      var name  = split.pop();
-      var path  = split.join('/') || '/';
-
-      return ramlRepository.loadFile({path: path, name: name}).then(
+    function readLocFile(path) {
+      return ramlRepository.loadFile({path: path}).then(
         function success(file) {
           return file.contents;
         }
       );
     }
 
-    function readExtFile(file) {
-      return $http.get(file).then(
+    function readExtFile(path) {
+      return $http.get(path).then(
         // success
         function success(response) {
           return response.data;
@@ -24,7 +20,7 @@ angular.module('ramlEditorApp')
 
         // failure
         function failure(response) {
-          var error = 'cannot fetch ' + file + ', check that the server is up and that CORS is enabled';
+          var error = 'cannot fetch ' + path + ', check that the server is up and that CORS is enabled';
           if (response.status) {
             error += '(HTTP ' + response.status + ')';
           }
@@ -53,23 +49,7 @@ angular.module('ramlEditorApp')
     safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
     codeMirrorErrors, config, $prompt, $confirm, $modal
   ) {
-    var editor;
-    var MODES = {
-      xml: { name: 'xml' },
-      xsd: { name: 'xml', alignCDATA: true },
-      json: { name: 'javascript', json: true },
-      md: { name: 'gfm' },
-      raml: { name: 'raml' }
-    };
-
-    var autocomplete = function onChange(cm) {
-      if (cm.getLine(cm.getCursor().line).trim()) {
-        cm.execCommand('autocomplete');
-      }
-    };
-
-    var currentFile;
-    var extractCurrentFileLabel = function(file) {
+    var editor, currentFile, extractCurrentFileLabel = function(file) {
       var label = '';
       if (file) {
         label = file.path;
@@ -88,18 +68,21 @@ angular.module('ramlEditorApp')
     };
 
     $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
-      var mode = MODES[file.extension] || MODES.raml;
-      editor.setOption('mode', mode);
-      if (mode === MODES.raml) {
-        editor.on('change', autocomplete);
-      } else {
-        editor.off('change', autocomplete);
-      }
+      codeMirror.configureEditor(editor, file.extension);
+
       currentFile = file;
 
-      if (currentFile.contents) {
-        editor.setValue(file.contents);
-        $scope.fileParsable = $scope.getIsFileParsable(file);
+      // Empty console so that we remove content from previous open RAML file
+      eventService.broadcast('event:raml-parsed', {});
+
+      editor.setValue(file.contents);
+      $scope.fileParsable = $scope.getIsFileParsable(file);
+    });
+
+    $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
+      if (currentFile === file) {
+        currentFile = undefined;
+        editor.setValue('');
       }
     });
 
@@ -107,10 +90,7 @@ angular.module('ramlEditorApp')
       var source       = editor.getValue();
       var selectedFile = $scope.fileBrowser.selectedFile;
 
-      if (source === selectedFile.contents) {
-        return;
-      }
-
+      $scope.clearErrorMarks();
       selectedFile.contents = source;
       $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
@@ -126,8 +106,13 @@ angular.module('ramlEditorApp')
       });
     };
 
-    eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
+    $scope.clearErrorMarks = function clearErrorMarks() {
       codeMirrorErrors.clearAnnotations();
+      $scope.hasErrors = false;
+    };
+
+    eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
+      $scope.clearErrorMarks();
 
       if (!$scope.fileParsable || source.trim() === '') {
         $scope.hasErrors = false;
@@ -173,12 +158,14 @@ angular.module('ramlEditorApp')
     };
 
     $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
+      // check for file extenstion
       if (file.name.slice(-5) !== '.raml') {
         return false;
       }
 
+      // check for raml version tag as a very first line of the file
       contents = arguments.length > 1 ? contents : file.contents;
-      if (contents.indexOf('#%RAML 0.8\n') !== 0) {
+      if (contents.search(/^\s*#%RAML( \d*\.\d*)?\s*(\n|$)/) !== 0) {
         return false;
       }
 
@@ -224,8 +211,6 @@ angular.module('ramlEditorApp')
       editor.on('change', debounce(function onChange() {
         $scope.sourceUpdated();
       }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL)));
-
-      editor.on('change', autocomplete);
 
       // Warn before leaving the page
       $window.onbeforeunload = function () {

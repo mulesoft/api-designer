@@ -49,6 +49,10 @@
       });
 
       this.selectFile = function(file) {
+        if ($scope.fileBrowser.selectedFile === file) {
+          return;
+        }
+
         config.set('currentFile', JSON.stringify({ path: file.path, name: file.name }));
         unwatchSelectedFile();
 
