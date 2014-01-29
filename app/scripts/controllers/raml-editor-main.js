@@ -103,10 +103,6 @@ angular.module('ramlEditorApp')
       var source       = editor.getValue();
       var selectedFile = $scope.fileBrowser.selectedFile;
 
-      if (source === selectedFile.contents) {
-        return;
-      }
-
       selectedFile.contents = source;
       $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
@@ -176,7 +172,7 @@ angular.module('ramlEditorApp')
 
       // check for raml version tag as a very first line of the file
       contents = arguments.length > 1 ? contents : file.contents;
-      if (contents.search(/^#%RAML 0.8\s*(\n|$)/) !== 0) {
+      if (contents.search(/^\s*#%RAML\s+0.8\s*(\n|$)/) !== 0) {
         return false;
       }
 
