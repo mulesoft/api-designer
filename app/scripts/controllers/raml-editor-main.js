@@ -93,10 +93,8 @@ angular.module('ramlEditorApp')
       }
       currentFile = file;
 
-      if (currentFile.contents) {
-        editor.setValue(file.contents);
-        $scope.fileParsable = $scope.getIsFileParsable(file);
-      }
+      editor.setValue(file.contents);
+      $scope.fileParsable = $scope.getIsFileParsable(file);
     });
 
     $scope.sourceUpdated = function sourceUpdated() {

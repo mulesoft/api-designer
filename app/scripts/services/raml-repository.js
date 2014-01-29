@@ -115,6 +115,8 @@ angular.module('fs', ['ngCookies', 'raml', 'utils'])
       file.dirty = true;
       if (file.extension === 'raml') {
         file.contents = ramlSnippets.getEmptyRaml();
+      } else {
+        file.contents = '';
       }
       file.persisted = false;
       return file;
