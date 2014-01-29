@@ -93,6 +93,9 @@ angular.module('ramlEditorApp')
       }
       currentFile = file;
 
+      // Empty console so that we remove content from previous open RAML file
+      eventService.broadcast('event:raml-parsed', {});
+
       editor.setValue(file.contents);
       $scope.fileParsable = $scope.getIsFileParsable(file);
     });
