@@ -102,11 +102,7 @@ angular.module('ramlEditorApp')
     $scope.sourceUpdated = function sourceUpdated() {
       var source       = editor.getValue();
       var selectedFile = $scope.fileBrowser.selectedFile;
-
-      if (source === selectedFile.contents) {
-        return;
-      }
-
+      $scope.clearErrorMarks();
       selectedFile.contents = source;
       $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
@@ -122,8 +118,13 @@ angular.module('ramlEditorApp')
       });
     };
 
-    eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
+    $scope.clearErrorMarks = function clearErrorMarks() {
       codeMirrorErrors.clearAnnotations();
+      $scope.hasErrors = false;
+    };
+
+    eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
+      $scope.clearErrorMarks();
 
       if (!$scope.fileParsable || source.trim() === '') {
         $scope.hasErrors = false;
