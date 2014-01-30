@@ -31,9 +31,14 @@ describe('ramlEditorFilenamePrompt', function() {
 
   describe('by default', function() {
     var promptSpy;
+    var promptSpyReturns;
 
     beforeEach(function() {
-      promptSpy = sandbox.stub(window, 'prompt');
+      promptSpyReturns = ['MyFile.raml', 'Untaken.raml'];
+      promptSpy = sandbox.stub(window, 'prompt', function() {
+        return promptSpyReturns.shift();
+      });
+
       ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
     });
 
@@ -50,10 +55,6 @@ describe('ramlEditorFilenamePrompt', function() {
     });
 
     describe('upon choosing a name', function() {
-      beforeEach(function() {
-        promptSpy.returns('MyFile.raml');
-      });
-
       it('resolves the promise with the chosen file name', function(done) {
         var promise = newFilePrompt.open(ramlRepository);
 
@@ -78,8 +79,13 @@ describe('ramlEditorFilenamePrompt', function() {
           alertSpy.should.have.been.calledWith('That filename is already taken.');
         });
 
-        it('rejects the promise', function(done) {
-          promise.then(undefined, function() {
+        it('re-prompts the user for a unique filename', function() {
+          promptSpy.should.have.been.calledTwice;
+        });
+
+        it('returns the final unique filename', function(done) {
+          promise.then(function(chosenName) {
+            chosenName.should.equal('Untaken.raml');
             done();
           });
           digest();
@@ -91,7 +97,7 @@ describe('ramlEditorFilenamePrompt', function() {
       var promise;
 
       beforeEach(function() {
-        promptSpy.returns(null);
+        promptSpyReturns = [null];
 
         promise = newFilePrompt.open(ramlRepository);
       });
@@ -111,7 +117,7 @@ describe('ramlEditorFilenamePrompt', function() {
       });
 
       it('does not increment the filename if you cancel', function() {
-        promptSpy.returns(null);
+        promptSpyReturns = [null];
         newFilePrompt.open(ramlRepository);
         newFilePrompt.open(ramlRepository);
         promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-1.raml');
@@ -123,7 +129,7 @@ describe('ramlEditorFilenamePrompt', function() {
         });
 
         it('defaults to Untitled-2.raml second', function() {
-          promptSpy.returns('the-name-i-actually-give-the-second-file.raml');
+          promptSpyReturns = ['the-name-i-actually-give-the-second-file.raml'];
           newFilePrompt.open(ramlRepository);
           promptSpy.should.have.been.calledWith(sinon.match.any, 'Untitled-2.raml');
         });

@@ -11,7 +11,7 @@
   }
 
   angular.module('ramlEditorApp').factory('ramlEditorFilenamePrompt', function($window, $q) {
-    return {
+    var service = {
       open: function(directory, suggestedFileName) {
         var deferred = $q.defer();
         suggestedFileName = suggestedFileName || generateFileName(directory.files);
@@ -33,7 +33,7 @@
 
           if (filenameAlreadyTaken) {
             $window.alert('That filename is already taken.');
-            deferred.reject();
+            return service.open(directory, suggestedFileName);
           } else {
             deferred.resolve(filename);
           }
@@ -44,5 +44,7 @@
         return deferred.promise;
       }
     };
+
+    return service;
   });
 })();
