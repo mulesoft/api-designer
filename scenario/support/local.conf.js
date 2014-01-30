@@ -1,5 +1,7 @@
 exports.config = {
 
+  seleniumPort: 4444,
+
   capabilities: {
     'browserName': 'firefox'
   },
