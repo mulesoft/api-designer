@@ -79,6 +79,9 @@ describe('Embedded-console',function(){
 
       it('method + description', function (){
         editor.setLine(5, '  connect: \\n    description: this is connect method description \\n       ');
+        expect(editor.getLine(5)).toEqual('  connect: ');
+        expect(editor.getLine(6)).toEqual('    description: this is connect method description ');
+        browser.waitForAngular();
         designerAsserts.consoleMethodDescriptionCollapsed(['connect'],['this is connect method description']);
       });
 

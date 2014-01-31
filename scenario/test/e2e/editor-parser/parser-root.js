@@ -9,14 +9,15 @@ describe('parser',function(){
 
     describe('include', function () {
 
-      xit('file circular reference', function () {
+      it('file circular reference', function () {
+        editor.addNewFile('theExample.raml');
         var definition = [
           '#%RAML 0.8',
           '---',
-          'title: !include example.ramln'
+          'title: !include theExample.raml'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('3', 'detected circular !include of example.raml');
+        designerAsserts.parserError('3', 'detected circular !include of theExample.raml');
       });
 
       it('broken links', function () {
@@ -54,6 +55,14 @@ describe('parser',function(){
       ].join('\\n');
       editor.setValue(definition);
       designerAsserts.parserError('1','Unsupported RAML version: \'#%RAML 0.1\'');
+    });
+
+    it('should fail: unsupported raml version #%RAML', function () {
+      var definition = [
+        '#%RAML'
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.parserError('1','The first line must be: \'#%RAML 0.8\'');
     });
 
     it('should fail: document must be a map---', function () {

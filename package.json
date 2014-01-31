@@ -38,7 +38,7 @@
     "matchdep": "~0.1.2",
     "minijasminenode": "~0.2.7",
     "mocha": "~1.12.0",
-    "protractor": "0.16.1",
+    "protractor": "0.17.0",
     "selenium-webdriver": "*",
     "sinon": "~1.7.3",
     "sinon-chai": "~2.4.0"

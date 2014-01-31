@@ -9,12 +9,12 @@ describe('optionals Attributes',function(){
   var notOptNamedParam = ['description','displayName','example','default','maxLength','maximum','minLength','minimum','pattern','required','type'];
   var namedParamElems = shelf.elemNamedParametersLevel;
 
-  beforeEach(function(){
-    editor.setValue('');
-    expect(editor.getLine(1)).toEqual('');
-    designerAsserts.shelfElements(shelf.elemRamlVersion);
-    expect(editor.IsParserErrorDisplayed()).toBe(false);
-  });
+//  beforeEach(function(){
+//    editor.setValue('');
+//    expect(editor.getLine(1)).toEqual('');
+//    designerAsserts.shelfElements(shelf.elemRamlVersion);
+//    expect(editor.IsParserErrorDisplayed()).toBe(false);
+//  });
 
 
   describe('resourceTypes elements',function(){
