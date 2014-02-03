@@ -36,20 +36,14 @@ exports.config = {
 
   onPrepare: function() {
     browser.get('');
-    var ptor = protractor.getInstance();
+    browser.sleep(2000);
+    var alertDialog = browser.driver.switchTo().alert();
+    alertDialog.sendKeys('example.raml');
+    alertDialog.accept();
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 0;
       window.onbeforeunload = null;
     });
-
-    browser.sleep(2000);
-
-    var alertDialog = ptor.switchTo().alert();
-    alertDialog.sendKeys('example.raml');
-    alertDialog.accept();
-
-
-
   },
 
   jasmineNodeOpts: {
