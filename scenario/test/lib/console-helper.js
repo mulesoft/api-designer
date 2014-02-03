@@ -12,6 +12,7 @@ function ConsoleHelper() {
 //  this.methodDocumentationArea = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation';
   this.ListOftabs = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation div ul li a';
   this.documentationSectionlistCss = '[role="api-console"] div [role="root-documentation"] section';
+  this.consoleSection = '#consoleAndEditor';
 }
 
 ConsoleHelper.prototype = {};
@@ -32,8 +33,6 @@ ConsoleHelper.prototype.toggleDocumentationApiReference = function toggleDocumen
 ConsoleHelper.prototype.getDocumentationSections = function getDocumentationSections(){
   return browser.findElements(by.css(this.documentationSectionlistCss));
 };
-
-
 
 ConsoleHelper.prototype.getListMainResources = function getListMainResources(){
   var that = this;
@@ -141,7 +140,6 @@ ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function expandCollpaseMeth
   }
 };
 
-
 ConsoleHelper.prototype.selectTab = function selectTab(pos){
   var that = this;
   // 0 - request, 1- responses, 2 try it
@@ -164,7 +162,6 @@ ConsoleHelper.prototype.getListOfMethods = function getListOfMethods(){
 ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function getListOfMethodsDescriptionCollapsed(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
-
   browser.executeScript(function () {
     var dic = {};
     var keys = [];
@@ -172,7 +169,6 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function getListO
       dic[text]='';
       keys[index]=text;
     });
-
     $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="description"] p').text(function( index,text ) {
       dic[keys[index]]=text;
     });
@@ -181,7 +177,6 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function getListO
       d.fulfill(dic);
     });
   return d.promise;
-
 };
 
 ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function getListOfMethodsDescriptionExpanded(){
@@ -202,7 +197,6 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function getListOf
       d.fulfill(dic);
     });
   return d.promise;
-
 };
 
 ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResourceType(){

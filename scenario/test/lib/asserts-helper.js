@@ -23,14 +23,12 @@ AssertsHelper.prototype.parserError = function parserError(vLine, vMessage){
   return d.promise;
 };
 
-
 AssertsHelper.prototype.checkSyntaxHignlight = function checkSyntaxHignlight(line,pos,text){
   //Line is editor line, pos , text is the highlight class
   line--;
   editor.getSHighlightClass(line,pos).then(function(classe){
     expect(classe).toEqual(text);
   });
-
 };
 
 AssertsHelper.prototype.checkHignlightAndSwimLines = function checkHignlightAndSwimLines(line,pos,text){
@@ -53,9 +51,6 @@ AssertsHelper.prototype.editorCheckFileNameNotInList = function editorCheckFileN
   });
 };
 
-
-
-
 AssertsHelper.prototype.editorCheckNotificationBarIsDisplayed = function editorCheckNotificationBarIsDisplayed(){
   editor.getNotificationBar().then(function(notBar){
 //  var notBar = browser.findElements(by.css('[role="notifications"]'));
@@ -66,6 +61,11 @@ AssertsHelper.prototype.editorCheckNotificationBarIsDisplayed = function editorC
 //Editor Ends
 
 //Console Starts
+AssertsHelper.prototype.consoleSectionIsHidden= function consoleSectionIsHidden(){
+  var consoleApi = new ConsoleHelper();
+  expect(browser.$(consoleApi.consoleSection).getAttribute('class')).toEqual('ng-hide');
+};
+
 AssertsHelper.prototype.consoleApiTitle= function consoleApiTitle(title){
   var consoleApi = new ConsoleHelper();
   expect(browser.$(consoleApi.titleCss).getText()).toEqual(title);
@@ -75,7 +75,6 @@ AssertsHelper.prototype.consoleResourcesName = function consoleResourcesName(lis
   var i=0;
   var d = webdriver.promise.defer();
   expect(list.length).toEqual(expList.length);
-
   list.forEach(function (element) {
     element.getText().then(function (text) {
       expect(text).toEqual(expList[i]);
@@ -174,7 +173,6 @@ AssertsHelper.prototype.consoleResourceName = function consoleResourceName(expLi
   });
 };
 
-
 AssertsHelper.prototype.consoleResourceMethods = function consoleResourceMethods(expList){
   browser.findElements(by.css('[role="resource"]')).then(function(resources){
     var i =0;
@@ -209,7 +207,6 @@ AssertsHelper.prototype.consoleResourceResourceType = function consoleResourceRe
 AssertsHelper.prototype.consoleResourceTraits = function consoleResourceTraits(expList){
   browser.findElements(by.css('[role="resource"]')).then(function(resources){
     var i =0;
-//    expect(resources.length).toEqual(expList.length);
     resources.forEach(function(resource){
       var t = i++;
       resource.findElements(by.css('[role="trait"]')).then(function(traits){
@@ -237,7 +234,6 @@ AssertsHelper.prototype.consoleResourceDescription = function consoleResourceDes
       });
     });
   });
-
 };
 
 AssertsHelper.prototype.consoleMethodDescriptionCollapsed = function consoleMethodDescriptionCollapsed(methods, desc){
@@ -266,7 +262,6 @@ AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function 
     });
   });
 };
-
 
 //Console Ends
 
@@ -385,7 +380,6 @@ AssertsHelper.prototype.shelfIsNotDisplayed = function shelfIsNotDisplayed(){
     expect(shelf[0].getAttribute('class')).toEqual('expanded ng-hide');
   });
 };
-
 
 AssertsHelper.prototype.shelfIsDisplayed = function shelfIsDisplayed(){
   browser.findElements(by.css('[role="shelf"]')).then(function(shelf){

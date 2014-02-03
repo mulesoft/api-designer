@@ -122,8 +122,7 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClass
 };
 
 EditorHelper.prototype.newFilePopUp = function newFilePopUp(fileName, dismiss){
-  var ptor = protractor.getInstance();
-  var alertDialog = ptor.switchTo().alert();
+  var alertDialog = browser.driver.switchTo().alert();
   expect(alertDialog.getText()).toEqual('Choose a name:');
   if(dismiss){
     alertDialog.dismiss();
@@ -138,12 +137,9 @@ EditorHelper.prototype.addNewFile = function addNewFile(fileName){
   this.newFilePopUp(fileName);
 };
 
-
-
 EditorHelper.prototype.dismissAddNewFile = function dismissAddNewFile(){
   browser.findElement(by.css(this.newButton)).click();
-  var ptor = protractor.getInstance();
-  var alertDialog = ptor.switchTo().alert();
+  var alertDialog = browser.driver.switchTo().alert();
   expect(alertDialog.getText()).toEqual('Choose a name:');
   alertDialog.sendKeys();
   alertDialog.dismiss();
@@ -151,15 +147,10 @@ EditorHelper.prototype.dismissAddNewFile = function dismissAddNewFile(){
 
 EditorHelper.prototype.addNewFileWithExistingName = function addNewFileWithExistingName(fileName, filename1){
   this.addNewFile(fileName);
-  var ptor = protractor.getInstance();
-  var alertDialog = ptor.switchTo().alert();
+  var alertDialog = browser.driver.switchTo().alert();
   expect(alertDialog.getText()).toEqual('That filename is already taken.');
   alertDialog.accept();
   this.newFilePopUp(filename1);
-//  alertDialog = ptor.switchTo().alert();
-//  expect(alertDialog.getText()).toEqual('Choose a name:');
-//  alertDialog.sendKeys(filename1);
-//  alertDialog.accept();
 };
 
 EditorHelper.prototype.displayFileMenuPromise = function displayFileMenuPromise(pos){
@@ -182,8 +173,7 @@ EditorHelper.prototype.renameFile = function renameFile(pos, fileName){
   this.displayFileMenuPromise(pos).then(function(){
     browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
       list[2].click().then(function(){
-        var ptor = protractor.getInstance();
-        var alertDialog = ptor.switchTo().alert();
+        var alertDialog = browser.driver.switchTo().alert();
         expect(alertDialog.getText()).toEqual('Choose a name:');
         alertDialog.sendKeys(fileName);
         alertDialog.accept();
@@ -203,13 +193,12 @@ EditorHelper.prototype.deleteAFile = function deleteAFile(pos,fileName,last){
   this.displayFileMenuPromise(pos).then(function(){
     browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
       list[1].click().then(function(){
-        var ptor = protractor.getInstance();
-        var alertDialog = ptor.switchTo().alert();
+        var alertDialog = browser.driver.switchTo().alert();
         expect(alertDialog.getText()).toEqual('Are you sure you want to delete "'+fileName+'"?');
         alertDialog.accept();
         if(last){
-          browser.sleep(1000);
-          alertDialog = ptor.switchTo().alert();
+          browser.sleep(2000);
+          alertDialog = browser.driver.switchTo().alert();
           expect(alertDialog.getText()).toEqual('The file browser is empty. Please provide a name for the new file:');
           alertDialog.dismiss();
         }
@@ -225,8 +214,7 @@ EditorHelper.prototype.dismissDeleteAFile = function dismissDeleteAFile(pos,file
   this.displayFileMenuPromise(pos).then(function(){
     browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
       list[1].click().then(function(){
-        var ptor = protractor.getInstance();
-        var alertDialog = ptor.switchTo().alert();
+        var alertDialog = browser.driver.switchTo().alert();
         expect(alertDialog.getText()).toEqual('Are you sure you want to delete "'+fileName+'"?');
         alertDialog.dismiss();
         d.fulfill();
@@ -248,7 +236,6 @@ EditorHelper.prototype.saveFile = function saveFile(pos){
 };
 
 EditorHelper.prototype.getFileList = function getFileList(){
-
   return browser.executeScript(function () {
     var dic = {};
     $('.file-list li span').text(function( index,text ) {
@@ -256,7 +243,16 @@ EditorHelper.prototype.getFileList = function getFileList(){
     });
     return dic;
   });
+};
 
+EditorHelper.prototype.getFileListArray = function getFileList(){
+  return browser.executeScript(function () {
+    var list = [];
+    $('.file-list li span').text(function( index,text ) {
+      list[index] =text;
+    });
+    return list;
+  });
 };
 
 EditorHelper.prototype.getFileNameText = function getFileNameText(){
