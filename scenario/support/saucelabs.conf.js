@@ -14,6 +14,7 @@ exports.config = {
   },
 
   specs: [
+    '../test/e2e/file-browser.js',
 //    '../test/e2e/editor-shelf/resource/resource-methods.js',
 //    '../test/e2e/editor-shelf/resource/resource-root.js',
 //    '../test/e2e/editor-shelf/resource-types/rt-methods.js',
@@ -38,13 +39,13 @@ exports.config = {
 
   onPrepare: function() {
     browser.get('');
+    browser.sleep(2000);
+    var alertDialog = browser.driver.switchTo().alert();
+    alertDialog.sendKeys('example.raml');
+    alertDialog.accept();
     browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
+      localStorage['config.updateResponsivenessInterval'] = 0;
       window.onbeforeunload = null;
-    });
-
-    browser.wait(function(){
-      return browser.executeScript('return (editor.getLine(1) === \'title:\');');
     });
   },
 
