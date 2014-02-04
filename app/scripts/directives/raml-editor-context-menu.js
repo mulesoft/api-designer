@@ -41,8 +41,11 @@
       templateUrl: 'views/raml-editor-context-menu.tmpl.html',
       link: function(scope, element) {
         function positionMenu(element, offsetTarget) {
-          var left = offsetTarget.offsetLeft + 0.5 * offsetTarget.offsetWidth,
-              top = offsetTarget.offsetTop + 0.5 * offsetTarget.offsetHeight;
+          var rect = offsetTarget.getBoundingClientRect();
+
+
+          var left = rect.left + 0.5 * rect.width,
+              top = rect.top + 0.5 * rect.height;
 
           var menuContainer = angular.element(element[0].children[0]);
           menuContainer.css('left', left + 'px');
