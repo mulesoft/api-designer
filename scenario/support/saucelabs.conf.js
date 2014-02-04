@@ -38,9 +38,9 @@ exports.config = {
 
     require('jasmine-reporters');
     jasmine.getEnv().addReporter(
-      new jasmine.JUnitXmlReporter('/scenario/reports', true, true));
+      new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
 
-    browser.get('/tree/file_browser_bar');
+    browser.get('');
     browser.sleep(2000);
     var alertDialog = browser.driver.switchTo().alert();
     alertDialog.sendKeys('example.raml');
