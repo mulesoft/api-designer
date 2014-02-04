@@ -38,7 +38,7 @@ exports.config = {
 
     require('jasmine-reporters');
     jasmine.getEnv().addReporter(
-      new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
+      new jasmine.JUnitXmlReporter('scenario/support/', true, true));
 
     browser.get('');
     browser.sleep(2000);
