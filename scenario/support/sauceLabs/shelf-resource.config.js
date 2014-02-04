@@ -35,7 +35,7 @@ exports.config = {
 
   jasmineNodeOpts: {
     onComplete: null,
-    isVerbose: true,
+    isVerbose: false,
     showColors: false,
     includeStackTrace: false,
     defaultTimeoutInterval: 80000
