@@ -17,6 +17,10 @@ exports.config = {
   baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
+    require('jasmine-reporters');
+    jasmine.getEnv().addReporter(
+      new jasmine.JUnitXmlReporter('scenario/support/', true, true));
+
     browser.get('');
     browser.sleep(2000);
     var alertDialog = browser.driver.switchTo().alert();
@@ -30,7 +34,7 @@ exports.config = {
 
   jasmineNodeOpts: {
     onComplete: null,
-    isVerbose: false,
+    isVerbose: true,
     showColors: false,
     includeStackTrace: false,
     defaultTimeoutInterval: 80000
