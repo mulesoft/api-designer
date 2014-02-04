@@ -1,7 +1,4 @@
 'use strict';
-//require('jasmine-reporters');
-//jasmine.getEnv().addReporter(
-//  new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
 exports.config = {
 
   sauceUser: process.env.SAUCE_USER,
@@ -9,8 +6,7 @@ exports.config = {
 
   capabilities: {
     'browserName': process.env.BROWSER,
-//    name: 'API-Portal-console'
-    name: 'API-Portal-rt-traits-optionals'
+    name: 'API-Portal-console'
   },
 
   specs: [
@@ -29,6 +25,7 @@ exports.config = {
 //    '../test/e2e/RT-root-optionals.js',
 //    '../test/e2e/RT-method-optionals.js',
 //    '../test/e2e/traits-optionals.js',
+
     '../test/e2e/published-examples/examples-parser.js',
     '../test/e2e/console/console-defaultview.js',
     '../test/e2e/console/embedded-console.js',
@@ -38,7 +35,12 @@ exports.config = {
   baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
-    browser.get('');
+
+    require('jasmine-reporters');
+    jasmine.getEnv().addReporter(
+      new jasmine.JUnitXmlReporter('/scenario/reports', true, true));
+
+    browser.get('/tree/file_browser_bar');
     browser.sleep(2000);
     var alertDialog = browser.driver.switchTo().alert();
     alertDialog.sendKeys('example.raml');
