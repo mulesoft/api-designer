@@ -99,7 +99,7 @@ describe('file_browser ',function(){
     xit('attempt to delete not the current file', function(){
 
     });
-  });
+  }); // delete files
 
   describe('new file', function(){
 
@@ -237,7 +237,29 @@ describe('file_browser ',function(){
           designerAsserts.editorCheckFileNameInList('ahola.raml');
         });
     });
-  });
+
+  }); //rename a saved file
+
+  describe('save a file using save btn', function(){
+    it('Add new file', function(){
+      var fileName = 'resources.raml';
+      editor.addNewFile(fileName);
+      designerAsserts.editorCheckFileNameInList(fileName);
+    });
+
+    it('save the file',function(){
+      expect(editor.getFileNameText()).toEqual('* /resources.raml');
+      editor.saveFileButton();
+      browser.wait(function(){
+        return editor.getFileNameText().then(function(text){
+          return text === '/resources.raml';
+        });
+      }).then(function(){
+          expect(editor.getFileNameText()).toEqual('/resources.raml');
+        });
+    });
+
+  }); //save a file from using save btn
 
   describe('file browser list', function(){
 

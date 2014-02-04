@@ -9,6 +9,7 @@ function EditorHelper(){
   this.traitTitleSHighlight= 'cm-trait-title';
   this.ramlTagSHighlight = 'cm-raml-tag';
   this.newButton = '[role="new-button"]';
+  this.saveButton = '[role="save-button"]';
   this.notificationBar = '[role="notifications"]';
 }
 
@@ -136,6 +137,12 @@ EditorHelper.prototype.addNewFile = function addNewFile(fileName){
   browser.findElement(by.css(this.newButton)).click();
   this.newFilePopUp(fileName);
 };
+
+EditorHelper.prototype.saveFileButton = function saveFileButton(){
+  // this save the current file
+  browser.$(this.saveButton).click();
+};
+
 
 EditorHelper.prototype.dismissAddNewFile = function dismissAddNewFile(){
   browser.findElement(by.css(this.newButton)).click();
