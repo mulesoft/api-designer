@@ -1,11 +1,15 @@
 'use strict';
+//require('jasmine-reporters');
+//jasmine.getEnv().addReporter(
+//  new jasmine.JUnitXmlReporter('scenario/reports/', true, true));
 exports.config = {
 
   sauceUser: process.env.SAUCE_USER,
   sauceKey: process.env.SAUCE_KEY,
 
   capabilities: {
-    'browserName': process.env.BROWSER
+    'browserName': process.env.BROWSER,
+    name: 'API-Portal-console'
   },
 
   specs: [
@@ -20,9 +24,12 @@ exports.config = {
 //    '../test/e2e/editor-parser/resource/*.js',
 //    '../test/e2e/editor-parser/resourceTypes/*.js',
 //    '../test/e2e/raml-example/muse-e2e.js',
+//    '../test/e2e/RT-root-optionals.js',
+//    '../test/e2e/RT-method-optionals.js',
+//    '../test/e2e/traits-optionals.js',
     '../test/e2e/published-examples/examples-parser.js',
+    '../test/e2e/console/console-defaultview.js',
     '../test/e2e/console/embedded-console.js',
-
     '../test/lib/*.js'
   ],
 

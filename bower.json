@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "dependencies": {
     "CodeMirror": "marijnh/CodeMirror",
-    "angular": "1.2.2",
+    "angular": "1.2.9",
     "angular-cookies": "1.2.9",
     "angular-resource": "1.2.9",
     "angular-sanitize": "1.2.9",
@@ -17,8 +17,5 @@
   "devDependencies": {
     "sinonjs": "~1.7.1",
     "angular-mocks": "1.2.9"
-  },
-  "resolutions": {
-    "angular": "1.2.9"
   }
 }

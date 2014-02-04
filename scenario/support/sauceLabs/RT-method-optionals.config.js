@@ -6,12 +6,11 @@ exports.config = {
 
   capabilities: {
     'browserName': process.env.BROWSER,
-    'name': 'API-Portal-shelfRT'
+    'name': 'API-Portal-RT-Method'
   },
 
   specs: [
-    '../../test/e2e/editor-shelf/resource-types/rt-root.js',
-    '../../test/e2e/editor-shelf/resource-types/rt-methods.js',
+    '../../test/e2e/RT-method-optionals.js',
     '../../test/lib/*.js'
   ],
 

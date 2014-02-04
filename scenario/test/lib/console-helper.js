@@ -96,7 +96,7 @@ ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function(pos){
 };
 
 ConsoleHelper.prototype.areResourceGroupsExpanded = function(){
-  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"]')).then(function(groups){
+  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
     groups.forEach(function(group){
       expect(group.getAttribute('class')).toMatch('expanded');
     });
@@ -104,7 +104,7 @@ ConsoleHelper.prototype.areResourceGroupsExpanded = function(){
 };
 
 ConsoleHelper.prototype.areResourceGroupsCollapsed = function(){
-  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"]')).then(function(groups){
+  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
     groups.forEach(function(group){
       expect(group.getAttribute('class')).toMatch('collapsed');
     });
