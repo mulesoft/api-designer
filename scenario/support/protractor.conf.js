@@ -22,6 +22,7 @@ exports.config = {
     '../test/e2e/console/console-defaultview.js',
     '../test/e2e/console/embedded-console.js',
     '../test/e2e/RT-traits-optionals.js',
+    '../test/e2e/editor-shelf/protocols.js',
     '../test/lib/*.js'
   ],
 

@@ -8,6 +8,12 @@ function EditorHelper(){
   this.keySHighlight = 'cm-key';
   this.traitTitleSHighlight= 'cm-trait-title';
   this.ramlTagSHighlight = 'cm-raml-tag';
+  this.cmMeta = 'cm-meta'; //used for protocols
+  this.resourceTypes = 'cm-resource-type-title';
+  this.resourceTypeContent = 'cm-resource-type-content';
+  this.methodTitle = 'cm-method-title';
+  this.methodContent = 'cm-method-content';
+
 }
 
 EditorHelper.prototype = {};
@@ -98,6 +104,7 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function(line, posi){
   var d = webdriver.promise.defer();
   var listClase = [] ;
   var i = 0;
+  console.log('line', line);
   browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
     list[line].findElements(by.css('span')).then(function(lintext){
       posi.forEach(function(pos){
@@ -107,6 +114,7 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function(line, posi){
             listClase[t] = classe;
           }).then(function(){
               if(t ===posi.length-1){
+                console.log('listclase',listClase);
                 d.fulfill(listClase);
               }
             });

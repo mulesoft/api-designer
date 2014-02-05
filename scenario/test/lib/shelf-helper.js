@@ -79,7 +79,12 @@ function ShelfHelper() {
 // Documentation
   this.elemDocumentationLevelDocs = ['content','title'];
   this.elemDocumentationLevel = this.elemDocumentationLevelDocs;
+//  protocols
+  this.elemProtocolsLevel = ['HTTP', 'HTTPS'];
+  this.elemProtocolsByGroup = ' (2) HTTPHTTPS ';
+
   this.elemlistCss = '[ng-repeat=\'item in section.items\'] span';
+
 }
 
 ShelfHelper.prototype = {};
