@@ -8,11 +8,14 @@ function EditorHelper(){
   this.keySHighlight = 'cm-key';
   this.traitTitleSHighlight= 'cm-trait-title';
   this.ramlTagSHighlight = 'cm-raml-tag';
+  this.newButton = '[role="new-button"]';
+  this.saveButton = '[role="save-button"]';
+  this.notificationBar = '[role="notifications"]';
 }
 
 EditorHelper.prototype = {};
 
-EditorHelper.prototype.getErrorLineMessage = function(){
+EditorHelper.prototype.getErrorLineMessage = function getErrorLineMessage(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
   browser.wait(function () {
@@ -31,11 +34,11 @@ EditorHelper.prototype.getErrorLineMessage = function(){
   return d.promise;
 };
 
-EditorHelper.prototype.IsParserErrorDisplayed = function(){
+EditorHelper.prototype.IsParserErrorDisplayed = function IsParserErrorDisplayed(){
   return browser.isElementPresent(by.css('.CodeMirror-lint-marker-error'));
 };
 
-EditorHelper.prototype.getErrorMessage = function(){
+EditorHelper.prototype.getErrorMessage = function getErrorMessage(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
   this.getErrorLineMessage().then(function (list) {
@@ -45,7 +48,7 @@ EditorHelper.prototype.getErrorMessage = function(){
   return d.promise;
 };
 
-EditorHelper.prototype.getErrorLine = function(){
+EditorHelper.prototype.getErrorLine = function getErrorLine(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
   this.getErrorLineMessage().then(function (list) {
@@ -55,28 +58,28 @@ EditorHelper.prototype.getErrorLine = function(){
   return d.promise;
 };
 
-EditorHelper.prototype.setLine = function(line, text){
+EditorHelper.prototype.setLine = function setLine(line, text){
   line --;
   return browser.executeScript('window.editor.setLine(' + line + ',"' + text + '")');
 };
 
-EditorHelper.prototype.getLine = function(line){
+EditorHelper.prototype.getLine = function getLine(line){
   line --;
   return browser.executeScript('return window.editor.getLine(' + line + ')').then(function (text) {
     return text;
   });
 };
 
-EditorHelper.prototype.setValue = function(text){
+EditorHelper.prototype.setValue = function setValue(text){
   return browser.executeScript('window.editor.setValue(\'' + text + '\')');
 };
 
-EditorHelper.prototype.setCursor = function(line, char){
+EditorHelper.prototype.setCursor = function setCursor(line, char){
   line --;
   browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
 };
 
-EditorHelper.prototype.getSHighlightClass = function(line, pos){
+EditorHelper.prototype.getSHighlightClass = function getSHighlightClass(line, pos){
   var that = this;
   var d = webdriver.promise.defer();
   browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
@@ -93,7 +96,7 @@ EditorHelper.prototype.getSHighlightClass = function(line, pos){
   return d.promise;
 };
 
-EditorHelper.prototype.getSyntaxIndentClassArray = function(line, posi){
+EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClassArray(line, posi){
   var that = this;
   var d = webdriver.promise.defer();
   var listClase = [] ;
@@ -114,10 +117,153 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function(line, posi){
           console.log('This has not a class');
         }
       });
-
     });
   });
   return d.promise;
+};
+
+EditorHelper.prototype.newFilePopUp = function newFilePopUp(fileName, dismiss){
+  var alertDialog = browser.driver.switchTo().alert();
+  expect(alertDialog.getText()).toEqual('Choose a name:');
+  if(dismiss){
+    alertDialog.dismiss();
+  }else{
+    alertDialog.sendKeys(fileName);
+    alertDialog.accept();
+  }
+};
+
+EditorHelper.prototype.addNewFile = function addNewFile(fileName){
+  browser.findElement(by.css(this.newButton)).click();
+  this.newFilePopUp(fileName);
+};
+
+EditorHelper.prototype.saveFileButton = function saveFileButton(){
+  // this save the current file
+  browser.$(this.saveButton).click();
+};
+
+
+EditorHelper.prototype.dismissAddNewFile = function dismissAddNewFile(){
+  browser.findElement(by.css(this.newButton)).click();
+  var alertDialog = browser.driver.switchTo().alert();
+  expect(alertDialog.getText()).toEqual('Choose a name:');
+  alertDialog.sendKeys();
+  alertDialog.dismiss();
+};
+
+EditorHelper.prototype.addNewFileWithExistingName = function addNewFileWithExistingName(fileName, filename1){
+  this.addNewFile(fileName);
+  var alertDialog = browser.driver.switchTo().alert();
+  expect(alertDialog.getText()).toEqual('That filename is already taken.');
+  alertDialog.accept();
+  this.newFilePopUp(filename1);
+};
+
+EditorHelper.prototype.displayFileMenuPromise = function displayFileMenuPromise(pos){
+  pos --;
+  return browser.executeScript('$(\'.file-list li i\')[' + pos + '].click()');
+};
+
+EditorHelper.prototype.selectAFileByPos = function selectAFileByPos(pos){
+  var d = webdriver.promise.defer();
+  pos --;
+  browser.findElements(by.css('.file-list li')).then(function(list){
+    list[pos].click();
+    d.fulfill();
+  });
+  return d.promise;
+};
+
+EditorHelper.prototype.renameFile = function renameFile(pos, fileName){
+  var d = webdriver.promise.defer();
+  this.displayFileMenuPromise(pos).then(function(){
+    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+      list[2].click().then(function(){
+        var alertDialog = browser.driver.switchTo().alert();
+        expect(alertDialog.getText()).toEqual('Choose a name:');
+        alertDialog.sendKeys(fileName);
+        alertDialog.accept();
+        d.fulfill();
+      });
+    });
+  });
+  return d.promise;
+};
+
+EditorHelper.prototype.getNotificationBar = function getNotificationBar(){
+  return browser.findElements(by.css(this.notificationBar));
+};
+
+EditorHelper.prototype.deleteAFile = function deleteAFile(pos,fileName,last){
+  var d = webdriver.promise.defer();
+  this.displayFileMenuPromise(pos).then(function(){
+    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+      list[1].click().then(function(){
+        var alertDialog = browser.driver.switchTo().alert();
+        expect(alertDialog.getText()).toEqual('Are you sure you want to delete "'+fileName+'"?');
+        alertDialog.accept();
+        if(last){
+          browser.sleep(2000);
+          alertDialog = browser.driver.switchTo().alert();
+          expect(alertDialog.getText()).toEqual('The file browser is empty. Please provide a name for the new file:');
+          alertDialog.dismiss();
+        }
+        d.fulfill();
+      });
+    });
+  });
+  return d.promise;
+};
+
+EditorHelper.prototype.dismissDeleteAFile = function dismissDeleteAFile(pos,fileName){
+  var d = webdriver.promise.defer();
+  this.displayFileMenuPromise(pos).then(function(){
+    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+      list[1].click().then(function(){
+        var alertDialog = browser.driver.switchTo().alert();
+        expect(alertDialog.getText()).toEqual('Are you sure you want to delete "'+fileName+'"?');
+        alertDialog.dismiss();
+        d.fulfill();
+      });
+    });
+  });
+  return d.promise;
+};
+
+EditorHelper.prototype.saveFile = function saveFile(pos){
+  var d = webdriver.promise.defer();
+  this.displayFileMenuPromise(pos).then(function(){
+    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+      list[0].click();
+      d.fulfill();
+    });
+  });
+  return d.promise;
+};
+
+EditorHelper.prototype.getFileList = function getFileList(){
+  return browser.executeScript(function () {
+    var dic = {};
+    $('.file-list li span').text(function( index,text ) {
+      dic[text] =true;
+    });
+    return dic;
+  });
+};
+
+EditorHelper.prototype.getFileListArray = function getFileList(){
+  return browser.executeScript(function () {
+    var list = [];
+    $('.file-list li span').text(function( index,text ) {
+      list[index] =text;
+    });
+    return list;
+  });
+};
+
+EditorHelper.prototype.getFileNameText = function getFileNameText(){
+  return browser.executeScript(function(){return $('.menubar li[class="spacer file-absolute-path ng-binding"]').text();});
 };
 
 exports.EditorHelper = EditorHelper;

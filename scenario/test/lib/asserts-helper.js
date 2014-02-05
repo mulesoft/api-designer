@@ -12,7 +12,7 @@ var shelf = new ShelfHelper();
 var apiConsole = new ConsoleHelper();
 
 //Editor Starts
-AssertsHelper.prototype.parserError = function(vLine, vMessage){
+AssertsHelper.prototype.parserError = function parserError(vLine, vMessage){
   var d = webdriver.promise.defer();
   editor.getErrorLineMessage().then(function (list) {
     var line = list[0], message = list[1];
@@ -23,17 +23,15 @@ AssertsHelper.prototype.parserError = function(vLine, vMessage){
   return d.promise;
 };
 
-
-AssertsHelper.prototype.checkSyntaxHignlight = function(line,pos,text){
+AssertsHelper.prototype.checkSyntaxHignlight = function checkSyntaxHignlight(line,pos,text){
   //Line is editor line, pos , text is the highlight class
   line--;
   editor.getSHighlightClass(line,pos).then(function(classe){
     expect(classe).toEqual(text);
   });
-
 };
 
-AssertsHelper.prototype.checkHignlightAndSwimLines = function(line,pos,text){
+AssertsHelper.prototype.checkHignlightAndSwimLines = function checkHignlightAndSwimLines(line,pos,text){
   //Line is editor line, pos , text is the highlight class
   line--;
   editor.getSyntaxIndentClassArray(line,pos).then(function(classes){
@@ -41,19 +39,42 @@ AssertsHelper.prototype.checkHignlightAndSwimLines = function(line,pos,text){
   });
 };
 
+AssertsHelper.prototype.editorCheckFileNameInList = function editorCheckFileNameInList(fileName){
+  editor.getFileList().then(function(lista){
+    expect(fileName in lista).toEqual(true);
+  });
+};
+
+AssertsHelper.prototype.editorCheckFileNameNotInList = function editorCheckFileNameInList(fileName){
+  editor.getFileList().then(function(lista){
+    expect(fileName in lista).toEqual(false);
+  });
+};
+
+AssertsHelper.prototype.editorCheckNotificationBarIsDisplayed = function editorCheckNotificationBarIsDisplayed(){
+  editor.getNotificationBar().then(function(notBar){
+//  var notBar = browser.findElements(by.css('[role="notifications"]'));
+    console.log('notBar',notBar);
+    expect(notBar[0].getAttribute('class')).toEqual('hola');
+  });
+};
 //Editor Ends
 
 //Console Starts
-AssertsHelper.prototype.consoleApiTitle= function(title){
+AssertsHelper.prototype.consoleSectionIsHidden= function consoleSectionIsHidden(){
+  var consoleApi = new ConsoleHelper();
+  expect(browser.$(consoleApi.consoleSection).getAttribute('class')).toEqual('ng-hide');
+};
+
+AssertsHelper.prototype.consoleApiTitle= function consoleApiTitle(title){
   var consoleApi = new ConsoleHelper();
   expect(browser.$(consoleApi.titleCss).getText()).toEqual(title);
 };
 
-AssertsHelper.prototype.consoleResourcesName = function(list, expList){
+AssertsHelper.prototype.consoleResourcesName = function consoleResourcesName(list, expList){
   var i=0;
   var d = webdriver.promise.defer();
   expect(list.length).toEqual(expList.length);
-
   list.forEach(function (element) {
     element.getText().then(function (text) {
       expect(text).toEqual(expList[i]);
@@ -66,7 +87,7 @@ AssertsHelper.prototype.consoleResourcesName = function(list, expList){
   return d;
 };
 
-AssertsHelper.prototype.consoleMainResources = function(expList){
+AssertsHelper.prototype.consoleMainResources = function consoleMainResources(expList){
   var consoleApi = new ConsoleHelper();
   var i = 0;
   consoleApi.getListMainResources().then(function(list){
@@ -78,7 +99,7 @@ AssertsHelper.prototype.consoleMainResources = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResources = function(expList){
+AssertsHelper.prototype.consoleResources = function consoleResources(expList){
   var consoleApi = new ConsoleHelper();
   var i = 0;
   consoleApi.getListResourcesName().then(function(list){
@@ -90,7 +111,7 @@ AssertsHelper.prototype.consoleResources = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourcesDescription = function(expList){
+AssertsHelper.prototype.consoleResourcesDescription = function consoleResourcesDescription(expList){
   var consoleApi = new ConsoleHelper();
   var i = 0;
   consoleApi.getListResourcesDescription().then(function(list){
@@ -102,7 +123,7 @@ AssertsHelper.prototype.consoleResourcesDescription = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourceResourceType = function(expList){
+AssertsHelper.prototype.consoleResourceResourceType = function consoleResourceResourceType(expList){
   var consoleApi = new ConsoleHelper();
   var i=0;
   consoleApi.getListResourceType().then(function(list){
@@ -114,7 +135,7 @@ AssertsHelper.prototype.consoleResourceResourceType = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourcesTraits = function(expList){
+AssertsHelper.prototype.consoleResourcesTraits = function consoleResourcesTraits(expList){
   var consoleApi = new ConsoleHelper();
   var i=0;
   consoleApi.getListTrait().then(function(list){
@@ -126,7 +147,7 @@ AssertsHelper.prototype.consoleResourcesTraits = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourcesMethods = function(expList){
+AssertsHelper.prototype.consoleResourcesMethods = function consoleResourcesMethods(expList){
   var consoleApi = new ConsoleHelper();
   var i=0;
   consoleApi.getListMethods().then(function(list){
@@ -138,7 +159,7 @@ AssertsHelper.prototype.consoleResourcesMethods = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourceName = function(expList){
+AssertsHelper.prototype.consoleResourceName = function consoleResourceName(expList){
   browser.findElements(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     expect(resources.length).toEqual(expList.length);
@@ -152,8 +173,7 @@ AssertsHelper.prototype.consoleResourceName = function(expList){
   });
 };
 
-
-AssertsHelper.prototype.consoleResourceMethods = function(expList){
+AssertsHelper.prototype.consoleResourceMethods = function consoleResourceMethods(expList){
   browser.findElements(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     resources.forEach(function(resource){
@@ -170,7 +190,7 @@ AssertsHelper.prototype.consoleResourceMethods = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourceResourceType = function(expList){
+AssertsHelper.prototype.consoleResourceResourceType = function consoleResourceResourceType(expList){
   browser.findElements(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     expect(resources.length).toEqual(expList.length);
@@ -184,10 +204,9 @@ AssertsHelper.prototype.consoleResourceResourceType = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourceTraits = function(expList){
+AssertsHelper.prototype.consoleResourceTraits = function consoleResourceTraits(expList){
   browser.findElements(by.css('[role="resource"]')).then(function(resources){
     var i =0;
-//    expect(resources.length).toEqual(expList.length);
     resources.forEach(function(resource){
       var t = i++;
       resource.findElements(by.css('[role="trait"]')).then(function(traits){
@@ -202,7 +221,7 @@ AssertsHelper.prototype.consoleResourceTraits = function(expList){
   });
 };
 
-AssertsHelper.prototype.consoleResourceDescription = function(descriptions){
+AssertsHelper.prototype.consoleResourceDescription = function consoleResourceDescription(descriptions){
   var i =0;
   var apiConsole = new ConsoleHelper();
   browser.findElements(by.css(apiConsole.listResourcesCss)).then(function(resources){
@@ -215,10 +234,9 @@ AssertsHelper.prototype.consoleResourceDescription = function(descriptions){
       });
     });
   });
-
 };
 
-AssertsHelper.prototype.consoleMethodDescriptionCollapsed = function(methods, desc){
+AssertsHelper.prototype.consoleMethodDescriptionCollapsed = function consoleMethodDescriptionCollapsed(methods, desc){
   apiConsole.getListOfMethodsDescriptionCollapsed().then(function(dic){
     var i = 0;
     methods.forEach(function(method){
@@ -228,7 +246,7 @@ AssertsHelper.prototype.consoleMethodDescriptionCollapsed = function(methods, de
   });
 };
 
-AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function(expTitle, expContent){
+AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function consoleValidateDocumentationSectionPlainText(expTitle, expContent){
   apiConsole.getDocumentationSections().then(function(sections){
     expect(sections.length).toEqual(expTitle.length);
     var i = 0;
@@ -245,11 +263,10 @@ AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function(
   });
 };
 
-
 //Console Ends
 
 //Shelf starts
-AssertsHelper.prototype.shelfElementsx = function(list, expList){
+AssertsHelper.prototype.shelfElementsx = function shelfElementsx(list, expList){
   expect(list.length).toEqual(expList.length);
   list.forEach(function(element){
     element.getText().then(function(text){
@@ -258,7 +275,7 @@ AssertsHelper.prototype.shelfElementsx = function(list, expList){
   });
 };
 
-AssertsHelper.prototype.shelfElementsSlow = function(expList){
+AssertsHelper.prototype.shelfElementsSlow = function shelfElementsSlow(expList){
   shelf = new ShelfHelper();
   shelf.getElements().then(function(list){
     expect(list.length).toEqual(expList.length);
@@ -270,13 +287,13 @@ AssertsHelper.prototype.shelfElementsSlow = function(expList){
   });
 };
 
-AssertsHelper.prototype.shelfElements = function(expList){
+AssertsHelper.prototype.shelfElements = function shelfElements(expList){
   shelf = new ShelfHelper();
   var lista = shelf.getElements();
   expect(lista).toEqual(expList);
 };
 
-AssertsHelper.prototype.shelfElementsNotDisplayed = function(list2, expList){
+AssertsHelper.prototype.shelfElementsNotDisplayed = function shelfElementsNotDisplayed(list2, expList){
   var that = this;
   list2.forEach(function(element){
     if(element !== '#%RAML 0.8'){
@@ -286,7 +303,7 @@ AssertsHelper.prototype.shelfElementsNotDisplayed = function(list2, expList){
   that.shelfElements(expList);
 };
 
-AssertsHelper.prototype.shelfElementsNotDisplayedSlow = function(list2, expList){
+AssertsHelper.prototype.shelfElementsNotDisplayedSlow = function shelfElementsNotDisplayedSlow(list2, expList){
   var that = this;
   list2.forEach(function(element){
     if(element !== '#%RAML 0.8'){
@@ -296,7 +313,7 @@ AssertsHelper.prototype.shelfElementsNotDisplayedSlow = function(list2, expList)
   that.shelfElementsSlow(expList);
 };
 
-AssertsHelper.prototype.shelfElementsByGroupSlow = function(groupInfo, byGroup){
+AssertsHelper.prototype.shelfElementsByGroupSlow = function shelfElementsByGroupSlow(groupInfo, byGroup){
   var that = this ;
   var j, dic1 = {}, dic2 = {} ;
   var d = webdriver.promise.defer();
@@ -344,7 +361,7 @@ AssertsHelper.prototype.shelfElementsByGroupSlow = function(groupInfo, byGroup){
   });
 };
 
-AssertsHelper.prototype.ShelfElementsByGroup = function(textByGroup){
+AssertsHelper.prototype.ShelfElementsByGroup = function ShelfElementsByGroup(textByGroup){
   var text = browser.executeScript(function () {
     var t = $('[role="section"]').text();
     return  t.replace(/\s+/g,' ');
@@ -352,65 +369,21 @@ AssertsHelper.prototype.ShelfElementsByGroup = function(textByGroup){
   expect(text).toEqual(textByGroup);
 };
 
-AssertsHelper.prototype.shelfElementsRootByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemRootLevelRoot,shelf.elemRootLevelDocs,shelf.elemRootLevelParameters,shelf.elemRootLevelSecurity,shelf.elemRootLevelResources,shelf.elemRootLevelTraitsAndTypes, shelf.elemRootLevelSchemas];
-  var groupInfo = ['ROOT (5)\nbaseUri\nmediaType\nprotocols\ntitle\nversion','DOCS (1)\ndocumentation','PARAMETERS (1)\nbaseUriParameters','SECURITY (2)\nsecuredBy\nsecuritySchemes','RESOURCES (1)\nNew Resource','TRAITS AND TYPES (2)\nresourceTypes\ntraits','SCHEMAS (1)\nschemas'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfElementsResourceByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemResourceLevelDocs,shelf.elemResourceLevelMethods,shelf.elemResourceLevelParameters,shelf.elemResourceLevelSecurity, shelf.elemResourceLevelResources,shelf.elemResourceLevelTraitsAndTypes];
-  var groupInfo = ['DOCS (2)\ndescription\ndisplayName','METHODS (9)\nconnect\ndelete\nget\nhead\noptions\npatch\npost\nput\ntrace','PARAMETERS (2)\nbaseUriParameters\nuriParameters','SECURITY (1)\nsecuredBy','RESOURCES (1)\nNew Resource','TRAITS AND TYPES (2)\nis\ntype'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfElementsMethodsByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemMethodLevelRoot,shelf.elemMethodLevelDocs,shelf.elemMethodLevelParameters, shelf.elemMethodLevelResponses,shelf.elemMethodLevelSecurity,shelf.elemMethodLevelTraitsAndTypes, shelf.elemMethodLevelBody];
-  var groupInfo = ['ROOT (1)\nprotocols','DOCS (1)\ndescription','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (1)\nis','BODY (1)\nbody'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfElemNamedParametersByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemNamedParametersLevelDocs,shelf.elemNamedParametersLevelParameters];
-  var groupInfo = ['DOCS (3)\ndescription\ndisplayName\nexample','PARAMETERS (9)\ndefault\nenum\nmaxLength\nmaximum\nminLength\nminimum\npattern\nrequired\ntype'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfElemTraitsByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemTraitsLevelRoot,shelf.elemTraitsLevelDocs,shelf.elemTraitsLevelParameters,shelf.elemTraitsLevelResponses,shelf.elemTraitsLevelSecurity,shelf.elemTraitsLevelBody];
-  var groupInfo = ['ROOT (1)\nprotocols','DOCS (3)\ndescription\ndisplayName\nusage','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','BODY (1)\nbody'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfElemResponsesByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemResponsesLevelDocs,shelf.elemResponsesLevelBody];
-  var groupInfo = ['DOCS (1)\ndescription','RESPONSES (1)\nbody'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfElemResourceTypesByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemResourceTypeLevelDocs,shelf.elemResourceTypeLevelMethods,shelf.elemResourceTypeLevelParameters,shelf.elemResourceTypeLevelSecurity,shelf.elemResourceTypeLevelTraitsAndTypes];
-  var groupInfo = ['DOCS (3)\ndescription\ndisplayName\nusage','METHODS (9)\nconnect\ndelete\nget\nhead\noptions\npatch\npost\nput\ntrace','PARAMETERS (2)\nbaseUriParameters\nuriParameters','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (2)\nis\ntype'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfElementsRTMethodsByGroup = function(){
-  var that = this;
-  var byGroup = [shelf.elemRtMethodLevelRoot,shelf.elemRtMethodLevelDocs,shelf.elemRtMethodLevelParameters, shelf.elemRtMethodLevelResponses,shelf.elemRtMethodLevelSecurity,shelf.elemRtMethodLevelTraitsAndTypes, shelf.elemRtMethodLevelBody];
-  var groupInfo = ['ROOT (1)\nprotocols','DOCS (1)\ndescription','PARAMETERS (3)\nbaseUriParameters\nheaders\nqueryParameters','RESPONSES (1)\nresponses','SECURITY (1)\nsecuredBy','TRAITS AND TYPES (1)\nis','BODY (1)\nbody'];
-  that.shelfElementsByGroup(groupInfo, byGroup);
-};
-
-AssertsHelper.prototype.shelfWithNoElements = function(){
+AssertsHelper.prototype.shelfWithNoElements = function shelfWithNoElements(){
   shelf.getElements().then(function(list){
     expect(list.length).toEqual(0);
+  });
+};
+
+AssertsHelper.prototype.shelfIsNotDisplayed = function shelfIsNotDisplayed(){
+  browser.findElements(by.css('[role="shelf"]')).then(function(shelf){
+    expect(shelf[0].getAttribute('class')).toEqual('expanded ng-hide');
+  });
+};
+
+AssertsHelper.prototype.shelfIsDisplayed = function shelfIsDisplayed(){
+  browser.findElements(by.css('[role="shelf"]')).then(function(shelf){
+    expect(shelf[0].getAttribute('class')).toEqual('expanded');
   });
 };
 //Shelf ends

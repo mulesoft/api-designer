@@ -17,6 +17,10 @@ exports.config = {
   baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
+    require('jasmine-reporters');
+    jasmine.getEnv().addReporter(
+      new jasmine.JUnitXmlReporter('scenario/support/', true, true));
+
     browser.get('');
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;

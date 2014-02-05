@@ -1,0 +1,3 @@
+<ul role="context-menu" ng-show="opened">
+  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>
+</ul>
