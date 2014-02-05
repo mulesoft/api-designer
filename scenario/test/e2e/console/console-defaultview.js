@@ -99,8 +99,9 @@ describe('Console',function(){
 
       it('resource types per resource', function(){
         var expList = ['resourceT1','resourceT2','resourceT2','resourceT1'];
+        apiConsole.toggleResourceExpansion();
         designerAsserts.consoleResourceResourceType(expList);
-
+        apiConsole.toggleResourceExpansion();
       });
 
     }); // Resources

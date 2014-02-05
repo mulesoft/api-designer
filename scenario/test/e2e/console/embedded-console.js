@@ -46,7 +46,7 @@ describe('Embedded-console',function(){
         editor.setValue(definition);
         var expList = ['/resource1','/resource1 /resource2'];
         designerAsserts.consoleResourceName(expList);
-        apiConsole.expandCollapseResourcebyPos(0);
+        apiConsole.toggleResourceExpansion();
         var expDescriptions = ['this is resource1 description','this is resource1 description'];
         designerAsserts.consoleResourceDescription(expDescriptions);
       });
@@ -72,14 +72,9 @@ describe('Embedded-console',function(){
           '/presentations:  \\n        '
         ].join('\\n');
         editor.setValue(definition);
-        apiConsole.expandCollapseResourcebyPos(0);
+        apiConsole.toggleResourceExpansion();
         editor.setLine(4,'  description: this is presentation resource description \\n     ');
         designerAsserts.consoleResourcesDescription(['this is presentation resource description']);
-      });
-
-      it('method + description', function (){
-        editor.setLine(5, '  connect: \\n    description: this is connect method description \\n       ');
-        designerAsserts.consoleMethodDescriptionCollapsed(['connect'],['this is connect method description']);
       });
 
     });

@@ -2,7 +2,7 @@
 function ConsoleHelper() {
   this.methodsList = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace', 'connect'];
   this.titleCss = '#raml-console-api-title';
-  this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource"]:first-of-type h3';
+  this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource-placeholder"]:first-of-type h3';
   this.listResourceDescriptionCss = '[role=\'description\'] p';
   this.listResourcesCss = '[role="resource"]';
   this.listResourcesNameCss = '[role=\'resource\'] h3.path';
@@ -153,29 +153,6 @@ ConsoleHelper.prototype.getListOfMethods = function(){
     });
     return list;
   });
-};
-
-ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function(){
-  var webdriver = require('selenium-webdriver');
-  var d = webdriver.promise.defer();
-
-  browser.executeScript(function () {
-    var dic = {};
-    var keys = [];
-    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]').text(function( index,text ) {
-      dic[text]='';
-      keys[index]=text;
-    });
-
-    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="description"] p').text(function( index,text ) {
-      dic[keys[index]]=text;
-    });
-    return dic;
-  }).then(function(dic){
-      d.fulfill(dic);
-    });
-  return d.promise;
-
 };
 
 ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function(){

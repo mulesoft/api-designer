@@ -37,6 +37,7 @@ module.exports = function(config) {
       'bower_components/sinonjs/sinon.js',
 
       'bower_components/raml-js-parser/dist/raml-parser.js',
+      'bower_components/api-console/dist/scripts/vendor/angular-animate.js',
       'bower_components/api-console/dist/scripts/app.js',
       'bower_components/raml-grammar/dist/suggest.js',
 
