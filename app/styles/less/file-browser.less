@@ -1,96 +1,131 @@
-@import "utils.less";
+@import "colors.less";
+@import "mixins.less";
 
-/* Browser */
-div[role=browser] {
-  position: absolute;
-  top: 9px;
-  left: 16px;
-  overflow: show;
-  cursor: pointer;
+[role=browser] {
+  font-size: 12px;
   color: grey;
-  padding-bottom: 10px;
-  padding-right: 30px;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
-  z-index: 50;
-}
-
-div[role=raml-editor].light div[role=browser] {
-  color: rgb(202,204,212);
-}
-
-div[role=browser]:hover > div[role=browser-toggle-button] > i {
-  color: #aaa;
-}
-
-div[role=raml-editor].light div[role=browser]:hover > div[role=browser-toggle-button] > i {
-  color: #eee;
-}
-
-div[role=browser] > ul[role=file-list] {
-  padding: 6px 0px;
-  margin: 0px;
-  position: absolute;
-  top: 24px;
-  left: -16px;
-  list-style: none;
-  font-size: 13px;
-  border-radius: 0px 3px 3px 0px;
-  min-width: 140px;
-  background-color: white;
-  .box-shadow(2px 2px 7px -2px #333);
-  color: #777;
-  background-color: rgb(20,21,25);
-  border: 1px solid rgb(48,83,110);
-  display: none;
-}
-
-div[role=browser].expanded > ul[role=file-list] {
-  display: block;
-  transition: ease-in 0.1s;
-}
-
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] {
-  background-color: white;
-  .box-shadow(2px 2px 7px -2px #999);
-  color: #aaa;
-  background-color: white;
-  border: 1px solid rgb(131,148,150);
-}
-
-div[role=browser] > ul[role=file-list] > li {
-  padding: 2px 40px 2px 13px;
-  cursor: pointer;
-  line-height: 18px;
   position: relative;
-  white-space: nowrap;
+  z-index: 200;
+
+  flex: 0;
+  min-width: 200px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  button {
+    .button;
+    float: left;
+    margin: 4px 4px 4px 0;
+  }
+
+  [role="context-menu"] {
+    position: fixed;
+    z-index: 5;
+    list-style: none;
+    margin: 0;
+    border: 1px solid #AAA;
+    background-color: #EEE;
+    color: #666;
+
+    padding: 3px 0;
+    min-width: 145px;
+    font-size: 13px;
+    border-radius: 2px;
+    box-shadow: 3px 3px 10px 0 rgba(0,0,0,0.25);
+    opacity: 0.95;
+
+    li {
+      padding: 2px 5px;
+
+      &:hover {
+        background: @cello_blue;
+        color: #DDD;
+      }
+    }
+  }
+
+  [role="context-menu-item"] {
+    cursor: pointer;
+  }
+
+  .file-list {
+    margin: 0;
+    padding: 0;
+    overflow: auto;
+    list-style: none;
+    line-height: 15px;
+
+    background-color: rgb(20,21,25);
+    color: #777;
+
+    flex: 1;
+
+    .file-item {
+      padding: 5px 10px;
+      cursor: pointer;
+      white-space: nowrap;
+
+      display: flex;
+
+      align-items: center;
+
+      &:not(.currentfile):hover {
+        color: #ccc;
+        background-color: #808395;
+      }
+
+      &.currentfile {
+        color: #ddd;
+        background-color: @cello_blue;
+      }
+
+      .file-name {
+        flex: 1;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .icon {
+        display: none;
+        padding-left: 10px;
+        font-size: 15px;
+      }
+
+      &.geared .icon, &:hover .icon {
+        display: block;
+      }
+
+      &.dirty .file-name:before {
+        content: '* ';
+      }
+    }
+  }
 }
 
-div[role=browser] > ul[role=file-list] > li.read-only {
-  cursor: default;
-}
+/* Light theme */
+div[role=raml-editor].light [role=browser] {
+  color: rgb(202,204,212);
 
-div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
-  color: #ccc;
-  background-color: rgb(30,79,106);
-}
+  ul[role=file-list] {
+    background-color: white;
+    color: #aaa;
+    background-color: white;
+    border: 1px solid rgb(131,148,150);
 
-div[role=raml-editor].light div[role=browser] > ul[role=file-list] > li:not(.read-only):hover {
-  color: #eee;
-  background-color: rgb(47,124,166);
-}
+    li {
+      &:not(.currentfile):hover {
+        color: #eee;
+        background-color: #caccd4;
+      }
 
-div[role=browser] > ul[role=file-list] > li > i {
-  padding-right: 8px;
-}
-
-div[role=browser] > ul[role=file-list] > li > i.icon-trash {
-  position: absolute;
-  right: 7px;
-  top: 4px;
-  font-size: 14px;
+      &.currentfile {
+        color: #ddd;
+        background-color: rgb(47,124,166);
+      }
+    }
+  }
 }

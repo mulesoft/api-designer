@@ -15,14 +15,16 @@
 
     <link rel="stylesheet" href="bower_components/api-console/dist/styles/app.css">
 
-    <link rel="stylesheet" href="styles/css/main.css">
-    <link rel="stylesheet" href="styles/css/shelf.css">
-    <link rel="stylesheet" href="styles/css/errors.css">
-    <link rel="stylesheet" href="styles/css/file-browser.css">
-    <link rel="stylesheet" href="styles/css/console-overrides.css">
-    <link rel="stylesheet" href="styles/css/code-mirror-overrides.css">
-    <link rel="stylesheet" href="styles/css/font-awesome-overrides.css">
-    <link rel="stylesheet" href="styles/css/modal.css">
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/shelf.css">
+    <link rel="stylesheet" href="styles/splitter.css">
+    <link rel="stylesheet" href="styles/errors.css">
+    <link rel="stylesheet" href="styles/file-browser.css">
+    <link rel="stylesheet" href="styles/console-overrides.css">
+    <link rel="stylesheet" href="styles/code-mirror-overrides.css">
+    <link rel="stylesheet" href="styles/font-awesome-overrides.css">
+    <link rel="stylesheet" href="styles/modal.css">
+    <link rel="stylesheet" href="styles/menubar.css">
     <!-- endbuild -->
   </head>
   <body ng-app="ramlEditorApp" class="{{$root.theme}}">
@@ -73,12 +75,18 @@
     <script src="scripts/services/request-executor.js"></script>
     <script src="scripts/services/request-builder.js"></script>
     <script src="scripts/services/file-system.js"></script>
-    <script src="scripts/services/mock-file-system.js"></script>
-    <script src="scripts/services/remote-file-system.js"></script>
+    <script src="scripts/directives/splitter.js"></script>
+    <script src="scripts/services/raml-editor-filename-prompt.js"></script>
+    <script src="scripts/services/raml-editor-remove-file-prompt.js"></script>
+    <script src="scripts/services/local-storage-file-system.js"></script>
     <script src="scripts/filters/string-filters.js"></script>
     <script src="scripts/controllers/raml-editor-main.js"></script>
     <script src="scripts/controllers/raml-editor-shelf.js"></script>
     <script src="scripts/controllers/notifications.js"></script>
+    <script src="scripts/directives/raml-editor-context-menu.js"></script>
+    <script src="scripts/directives/raml-editor-file-browser.js"></script>
+    <script src="scripts/directives/raml-editor-save-file-button.js"></script>
+    <script src="scripts/directives/raml-editor-new-file-button.js"></script>
     <!-- endbuild -->
   </body>
 </html>

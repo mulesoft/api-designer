@@ -1,9 +1,8 @@
-@import "utils.less";
-
 /* CodeMirror Overrides */
 
 div.CodeMirror {
   font-size: 12px;
+  position: absolute;
 }
 
 .CodeMirror-foldgutter {
@@ -71,6 +70,17 @@ div.CodeMirror {
   padding-left: 10px;
 }
 
+.cm-s-solarized {
+  .cm-indent, .cm-indent-incomplete {
+    &::before {
+      content: " ";
+      position: absolute;
+      height: 100%;
+      border-right: 1px solid rgba(255,255,255,0.15);
+    }
+  }
+}
+
 /* CodeMirror Overrides (Light) */
 body.light {
   .CodeMirror-code .CodeMirror-hint-ghost {
@@ -86,12 +96,12 @@ body.light {
   }
 
   div.cm-s-solarized.cm-s-dark {
-    .text-shadow(#fefefe 0 1px);
+    text-shadow: #fefefe 0 1px;
     background-color: white;
   }
 
   .cm-s-solarized.CodeMirror {
-    .box-shadow(none);
+    box-shadow: none;
   }
 
   div[role=tab-box],
@@ -101,7 +111,7 @@ body.light {
   }
 
   div[role=tab].active {
-    .text-shadow(#eee 0 1px);
+    text-shadow: #eee 0 1px;
   }
 
   div[role=code] {
@@ -115,11 +125,19 @@ body.light {
     }
 
     .CodeMirror-linenumber {
-      .text-shadow(#fefefe 0 1px);
+      text-shadow: #fefefe 0 1px;
     }
 
     .CodeMirror-selected {
       background-color: #ddd;
+    }
+  }
+
+  .cm-s-solarized {
+    .cm-indent, .cm-indent-incomplete {
+      &::before {
+        border-right-color: rgba(0,0,0,0.15);
+      }
     }
   }
 }

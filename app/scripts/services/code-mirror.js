@@ -2,9 +2,8 @@
 
 angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
   .factory('codeMirror', function (
-    ramlHint, codeMirrorHighLight, eventService, getLineIndent, generateSpaces, generateTabs,
-    getParentLine, getParentLineNumber, getFirstChildLine, getFoldRange, isArrayStarter, isArrayElement,
-    config, extractKey
+    ramlHint, codeMirrorHighLight, eventService, generateSpaces, generateTabs,
+    getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue
   ) {
     var editor  = null;
     var service = {
@@ -12,8 +11,8 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     };
 
     service.removeTabs = function (line, indentUnit) {
-      var tabRegExp = new RegExp('( ){' + indentUnit + '}', 'g');
-      return line.replace(tabRegExp, '');
+      var spaceCount = getTabCount(getSpaceCount(line), indentUnit) * indentUnit;
+      return spaceCount ? line.slice(spaceCount) : line;
     };
 
     service.tabKey = function (cm) {
@@ -68,21 +67,53 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       cm.deleteH(-1, 'char');
     };
 
-    service.enterKey = function (cm) {
-      function getSpaceCount(line) {
-        for (var i = 0; i < line.length; i++) {
-          if (line[i] !== ' ') {
-            break;
-          }
-        }
+    var MODES = {
+      xml: { name: 'xml' },
+      xsd: { name: 'xml', alignCDATA: true },
+      json: { name: 'javascript', json: true },
+      md: { name: 'gfm' },
+      raml: { name: 'raml' }
+    };
 
-        return i;
+    var defaultKeys = {
+      'Cmd-S': 'save',
+      'Ctrl-S': 'save',
+      'Shift-Tab': 'indentLess',
+      'Shift-Ctrl-T': 'toggleTheme'
+    };
+
+    var ramlKeys = {
+      'Ctrl-Space': 'autocomplete',
+      'Cmd-S': 'save',
+      'Ctrl-S': 'save',
+      'Shift-Tab': 'indentLess',
+      'Shift-Ctrl-T': 'toggleTheme'
+    };
+
+    var autocomplete = function onChange(cm) {
+      if (cm.getLine(cm.getCursor().line).trim()) {
+        cm.execCommand('autocomplete');
       }
+    };
 
+    service.configureEditor = function(editor, extension) {
+      var mode = MODES[extension] || MODES.raml;
+
+      editor.setOption('mode', mode);
+      if (mode.name === 'raml') {
+        editor.setOption('extraKeys', ramlKeys);
+        editor.on('change', autocomplete);
+      } else {
+        editor.setOption('extraKeys', defaultKeys);
+        editor.off('change', autocomplete);
+      }
+    };
+
+    service.enterKey = function (cm) {
       function getParent(lineNumber, spaceCount) {
         for (var i = lineNumber - 1; i >= 0; i--) {
           if (getSpaceCount(cm.getLine(i)) < spaceCount) {
-            return extractKey(cm.getLine(i));
+            return extractKeyValue(cm.getLine(i)).key;
           }
         }
       }
@@ -147,13 +178,6 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
         indentWithTabs: false,
         indentUnit: 2,
         tabSize: 2,
-        extraKeys: {
-          'Ctrl-Space': 'autocomplete',
-          'Cmd-S': 'save',
-          'Ctrl-S': 'save',
-          'Shift-Tab': 'indentLess',
-          'Shift-Ctrl-T': 'toggleTheme'
-        },
         keyMap: 'tabSpace',
         foldGutter: foldGutterConfig,
         gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter']
@@ -166,7 +190,7 @@ angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
       }
 
       cm = new CodeMirror(el, options);
-      cm.setSize(null, '100%');
+      cm.setSize('100%', '100%');
       cm.foldCode(0, {
         rangeFinder: CodeMirror.fold.indent
       });
