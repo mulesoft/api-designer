@@ -4,6 +4,7 @@ var EditorHelper = require('../../lib/editor-helper.js').EditorHelper;
 var ShelfHelper = require('../../lib/shelf-helper.js').ShelfHelper;
 var ConsoleHelper = require('../../lib/console-helper.js').ConsoleHelper;
 var definition = require('../../example-files/muse-raml.js').definition;
+
 describe('Muse: Mule Sales Enablement API', function () {
   var designerAsserts= new AssertsHelper();
   var editor= new EditorHelper();

@@ -1,5 +1,3 @@
-@import "utils.less";
-
 /* The lint marker gutter */
 .CodeMirror-lint-markers {
   width: 16px;
@@ -19,10 +17,6 @@
   max-width: 600px;
   opacity: 0;
   transition: opacity .4s;
-  -moz-transition: opacity .4s;
-  -webkit-transition: opacity .4s;
-  -o-transition: opacity .4s;
-  -ms-transition: opacity .4s;
 }
 
 .CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
@@ -75,7 +69,7 @@
 
 .cm-s-solarized .CodeMirror-gutters {
   padding: 0 5px 0 0;
-  .box-shadow(none);
+  box-shadow: none;
 }
 
 .cm-s-solarized .CodeMirror-linenumber {

@@ -1,0 +1,46 @@
+div .noselect {
+  user-select: none;
+}
+
+[ng-splitter] {
+  position: relative;
+  z-index: 101;
+
+  flex: 0;
+
+  cursor: col-resize;
+  background-color: #57585a;
+
+  .split {
+    position: absolute;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+}
+
+[ng-splitter=vertical] {
+  min-width: 8px;
+
+  .split {
+    width: 8px;
+    height: 48px;
+    top: 50%;
+    margin-top: -25px;
+  }
+
+  .split-left {
+    background-image: url(../images/mini-left.png);
+  }
+
+  &.collapsed .split-left {
+    background-image: url(../images/mini-right.png);
+  }
+
+  .split-right {
+    background-image: url(../images/mini-right.png);
+  }
+
+  &.collapsed .split-right {
+    background-image: url(../images/mini-left.png);
+  }
+}
