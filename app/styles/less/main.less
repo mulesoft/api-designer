@@ -1,50 +1,43 @@
-@import "utils.less";
+@import "variables.less";
 
 html {
+  box-sizing: border-box;
   height: 100%;
-  .box-sizing(border-box);
 }
 
 body {
+  box-sizing: border-box;
   background: #fafafa;
   color: #333;
+  width: 100%;
   height: 100%;
-  .box-sizing(border-box);
   margin: 0;
-  padding-bottom: 0;
+  padding: 0;
   font-family: Ubuntu, sans-serif;
 }
 
+.hide-display {
+  display: none !important;
+}
+
 div.container {
-  height: inherit;
-  .box-sizing(border-box);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
 }
 
 div[role=raml-editor] {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding-top: 60px;
-  padding-left: 4px;
-  .box-sizing(border-box);
-  position: relative;
-  background: rgb(52,52,54);
+  background: #57585a;
+
+  display: flex;
+
+  flex-direction: column;
 }
 
-div[role=raml-editor] > header {
-  .box-sizing(border-box);
-  position: absolute;
-  top: 0;
-  left: 0;
-  margin-left: 4px;
-  padding-top: 12px;
-  padding-left: 18px;
-  right: 0;
-  background: rgb(87,88,90);
-  height: 60px;
-  border-radius: 5px 0 0 0;
-}
-
-div[role=raml-editor] > header > div[role=notifications] {
+div[role=raml-editor] > div[role=notifications] {
   background-color: #caccd4;
   position: absolute;
   top: 0px;
@@ -58,7 +51,7 @@ div[role=raml-editor] > header > div[role=notifications] {
 
   transition: 0.2s ease-out;
 
-  .disable-selection;
+  user-select: none;
 
   > i {
     position: absolute;
@@ -75,23 +68,31 @@ div[role=raml-editor] > header > div[role=notifications] {
     }
   }
 
-
   &.hidden {
     opacity: 0;
     top: -26px;
   }
 }
 
+div[role=raml-editor] > header {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgb(87,88,90);
+}
+
 div[role=raml-editor] > header > h1 {
+  box-sizing: border-box;
+  margin: 0;
   padding: 0;
-  margin: 5px 0 10px 0;
-  .box-sizing(border-box);
   font-size: 24px;
   font-weight: lighter;
-  .text-shadow(-1px 0 4px #222);
+  text-shadow: -1px 0 4px #222;
   color: white;
   letter-spacing: 1px;
-  position: relative;
+
+  flex: 1;
 
   .help:hover {
     cursor: pointer;
@@ -102,59 +103,48 @@ div[role=raml-editor] > header > h1 > strong {
   font-weight: bold;
 }
 
-div[role=raml-editor] > header > div[role$=button] {
-  position: absolute;
-  top: 51%;
-  right: 0;
-  margin: -19px 15px 0 0;
-  padding: 10px 13px;
-  background-color: rgb(87,152,202);
-  color: white;
-  border-radius: 2px;
-  font-size: 13px;
-  cursor: pointer;
+div[role=raml-editor] > header > a[role=logo] {
+  width: 178px;
+  height: 31px;
+  display: block;
+  background-image: @lightLogo;
 }
 
-div[role=raml-editor] > header > div[role=save-button] {
-  margin: -19px 100px 0px 0px;
-}
+/* BEGIN HORIZONTAL COMPONENT COLUMNS */
 
-div[role=raml-editor] > header > div[role=save-button].disabled,
-div[role=raml-editor] > header > div[role=saveas-button].disabled {
-  background-color: #999;
-  cursor: default;
+div[role=flexColumns] {
+  display: flex;
+
+  flex-direction: row;
+
+  flex: 1;
 }
 
 div[role=editor] {
-  width: 60%;
-  height: 100%;
-  float: left;
-  padding: 0;
-  .box-sizing(border-box);
-  position: relative;
-  transition: padding-bottom .05s ease-in;
-  padding-top: 32px;
-  background: rgb(11,11,13);
-}
+  box-sizing: border-box;
 
-div[role=editor].collapsed {
-  padding-bottom: 161px;
+  transition: padding-bottom .05s ease-in;
+  background: rgb(11,11,13);
+
+  position: relative;
+  display: flex;
+
+  flex-direction: column;
+
+  flex: 1;
 }
 
 div[role=editor].error {
-  .box-shadow(0 0 5px 1px red);
+  border: solid 1px red;
   transition: all .5s ease-out;
+  z-index: 4;
 }
 
 /* Tabs */
 
 div[role=tabs] {
-  padding: 0 0 0 0;
-  overflow:visible;
-  position: absolute;
-  top: 3px;
-  left: 53px;
-  .box-sizing(border-box);
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 div[role=tab] {
@@ -164,9 +154,9 @@ div[role=tab] {
   float:left;
   margin:0 -10px 0 0;
   position: relative;
-  .box-sizing(border-box);
+  box-sizing: border-box;
   color: #839496;
-  .text-shadow(#002b36 0 1px);
+  text-shadow: #002b36 0 1px;
   font-size: 12px;
   line-height: 32px;
   padding-left: 21px;
@@ -179,13 +169,13 @@ div[role=tab-box] {
   border-radius: 4px;
   border:1px solid rgb(42,44,51);
   border-top-width: 2px;
-  margin:0 8px 0;
-  .transform(perspective(100px) rotateX(20deg));
+  margin:0 2px 0;
+  transform: perspective(100px) rotateX(20deg);
   position: absolute;
   top: 0;
   left: 0;
   width: 140px;
-  .box-sizing(border-box);
+  box-sizing: border-box;
   z-index: -1;
 }
 
@@ -196,56 +186,36 @@ div[role=tab].active {
   border-bottom: 1px;
 }
 
-div[role=tab].active div[role=tab-box]{
+div[role=tab].active div[role=tab-box] {
   background-color: rgb(24,25,29);
 }
 
-div[role=actions] {
-  color: gray;
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 25px;
-}
+div[role=code] {
+  overflow: auto;
+  position: relative;
 
-div[role=actions] div[role=new-button] {
-  cursor: pointer;
-  padding: 8px 5px;
-  width: 15px;
-  position: absolute;
-  right: 0;
-}
-
-div[role=actions] div[role=new-button]:hover {
-  color: white;
+  flex: 1;
 }
 
 /* Preview - Console */
 
 div[role=preview-wrapper] {
-  width: 40%;
-  height: 100%;
-  float: left;
-  .box-sizing(border-box);
+  box-sizing: border-box;
+  overflow: auto;
   background: rgb(230,231,235);
-  padding: 0px 20px 10px 20px;
+
+  flex: 0;
+  min-width: 250px;
+
+  z-index: 70;
 }
 
 div[role=preview] {
+  padding: 20px;
   height: 100%;
   position: relative;
 }
 
 div[role=preview] > div[role=console] {
-  height: ~"calc(100% - 80px)";
-}
-
-div[role=preview] > a[role=logo] {
-  display: block;
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  height: 31px;
-  width: 178px;
-  background-image: url(data:image/png;base64,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);
+  height: ~"calc(100% - 40px)";
 }

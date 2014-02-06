@@ -89,12 +89,12 @@ function ShelfHelper() {
 
 ShelfHelper.prototype = {};
 
-ShelfHelper.prototype.getElementsPromise = function(){
+ShelfHelper.prototype.getElementsPromise = function getElementsPromise(){
   var that = this;
   return browser.findElements(by.css(that.elemlistCss));
 };
 
-ShelfHelper.prototype.getElements = function(){
+ShelfHelper.prototype.getElements = function getElements(){
   return browser.executeScript(function () {
     var list = [];
     $('[ng-repeat="item in section.items"] span').text(function( index,text ) {
@@ -104,7 +104,7 @@ ShelfHelper.prototype.getElements = function(){
   });
 };
 
-ShelfHelper.prototype.selectFirstElem = function(){
+ShelfHelper.prototype.selectFirstElem = function selectFirstElem(){
   var that = this;
   return browser.wait(function(){
     return browser.isElementPresent(by.css(that.elemlistCss));
@@ -115,42 +115,46 @@ ShelfHelper.prototype.selectFirstElem = function(){
   });
 };
 
-ShelfHelper.prototype.clickShelfElemByPos = function(pos){
+ShelfHelper.prototype.clickShelfElemByPos = function clickShelfElemByPos(pos){
   var that = this;
   var d = webdriver.promise.defer();
   browser.wait(function(){
     return browser.isElementPresent(by.css(that.elemlistCss));
-  }).then(function () {
+  }).then(function(){
     that.getElementsPromise().then(function(list){
-      list[pos].click();
-      d.fulfill('done');
+      list[pos].click().then(function(){
+        d.fulfill('done');
+      },function(){
+        d.fulfill('error');
+      });
     });
   });
   return d.promise;
 };
 
-ShelfHelper.prototype.selectShelfElemByPos = function(pos){
+ShelfHelper.prototype.selectShelfElemByPos = function selectShelfElemByPos(pos){
   this.clickShelfElemByPos(pos).then(function(text){
     expect(text).toEqual('done');
   });
 };
 
-ShelfHelper.prototype.getElementsByGroup = function(group){
+ShelfHelper.prototype.getElementsByGroup = function getElementsByGroup(group){
   return browser.findElements(by.css('.'+group+' ul li span'));
 };
 
-ShelfHelper.prototype.getSections = function(){
+ShelfHelper.prototype.getSections = function getSections(){
   return browser.findElements(by.css('[role=\'section\']'));
 };
 
-ShelfHelper.prototype.itemsInSection = function(){
+ShelfHelper.prototype.itemsInSection = function itemsInSection(){
   return '[role=\'items\'] li span';
 };
 
 
-ShelfHelper.prototype.getTextFromShelf = function(){
+ShelfHelper.prototype.getTextFromShelf = function getTextFromShelf(){
   return browser.findElements(by.css('[role=\'shelf-container\']'));
 };
+
 exports.ShelfHelper = ShelfHelper;
 
 

@@ -102,19 +102,14 @@ angular.module('ramlEditorApp')
       return model;
     };
   })
-  .controller('ramlEditorShelf', function ($scope, eventService, codeMirror, safeApply, applySuggestion, updateSuggestions) {
-    eventService.on('event:raml-editor-initialized', function () {
-      var editor = codeMirror.getEditor();
-      editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
+  .controller('ramlEditorShelf', function ($scope, safeApplyWrapper, applySuggestion, updateSuggestions) {
+    var editor = $scope.editor;
+
+    $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
+      $scope.model = updateSuggestions(editor);
     });
 
-    $scope.cursorMoved = function () {
-      $scope.model = updateSuggestions(codeMirror.getEditor());
-
-      safeApply($scope);
-    };
-
-    $scope.orderSections = function (section) {
+    $scope.orderSections = function orderSections(section) {
       var index = [
         'root',
         'docs',
@@ -129,7 +124,10 @@ angular.module('ramlEditorApp')
       return (index === -1) ? index.length : index;
     };
 
-    $scope.itemClick = function (suggestion) {
-      applySuggestion(codeMirror.getEditor(), suggestion);
+    $scope.itemClick = function itemClick(suggestion) {
+      applySuggestion(editor, suggestion);
     };
-  });
+
+    editor.on('cursorActivity', $scope.cursorMoved);
+  })
+;

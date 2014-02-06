@@ -57,7 +57,7 @@ module.exports = function (grunt) {
       },
       less: {
         files: '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.less',
-        tasks: 'less'
+        tasks: 'less-and-autoprefixer'
       }
     },
     connect: {
@@ -119,7 +119,10 @@ module.exports = function (grunt) {
     },
     jshint: {
       options: {
-        jshintrc: '.jshintrc'
+        jshintrc: '.jshintrc',
+        ignores: [
+          'test/spec/support/templates.js'
+        ]
       },
       all: [
         'Gruntfile.js',
@@ -151,7 +154,7 @@ module.exports = function (grunt) {
       html: ['<%= yeoman.dist %>/{,*/}*.html'],
       css: ['<%= yeoman.dist %>/styles/{,*/}*.css'],
       options: {
-        dirs: ['<%= yeoman.dist %>']
+        assetsDirs: ['<%= yeoman.dist %>']
       }
     },
     htmlmin: {
@@ -178,7 +181,7 @@ module.exports = function (grunt) {
             src: [
               '*.{ico,png,txt}',
               '.htaccess',
-              'images/{,*/}*.{gif,webp,svg}',
+              'images/{,*/}*.{gif,webp,svg,png}',
               'styles/fonts/*'
             ]
           },
@@ -219,13 +222,21 @@ module.exports = function (grunt) {
       }
     },
     ngtemplates: {
-      ramlConsoleApp: {
+      ramlEditorApp: {
         options: {
           base: 'app',
           concat: 'dist/scripts/scripts.js'
         },
         src: 'app/views/**/*.html',
         dest: 'dist/templates.js'
+      },
+      test: {
+        options: {
+          base: 'app',
+          module: 'ramlEditorApp'
+        },
+        src: 'app/views/**/*.html',
+        dest: 'test/spec/support/templates.js'
       }
     },
     less: {
@@ -233,8 +244,16 @@ module.exports = function (grunt) {
         expand: true,
         flatten: true,
         src: 'app/styles/less/*.less',
-        dest: 'app/styles/css',
+        dest: 'app/styles',
         ext: '.css'
+      }
+    },
+    autoprefixer: {
+      options: {
+        browsers: ['last 2 versions']
+      },
+      app: {
+        src: 'app/styles/*.css'
       }
     },
     protractor: {
@@ -266,7 +285,7 @@ module.exports = function (grunt) {
     grunt.task.run([
       'clean:server',
       'jshint',
-      'less',
+      'less-and-autoprefixer',
       'configureProxies',
       'connect:livereload',
       'open',
@@ -276,21 +295,27 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'jshint',
+    'ngtemplates:test',
     'karma'
   ]);
 
   grunt.registerTask('build', [
     'clean:dist',
     'jshint',
-    'less',
+    'less-and-autoprefixer',
     'useminPrepare',
-    'ngtemplates',
+    'ngtemplates:ramlEditorApp',
     'concat',
     'htmlmin',
     'copy:dist',
     'ngmin',
     'rev',
     'usemin'
+  ]);
+
+  grunt.registerTask('less-and-autoprefixer', [
+    'less',
+    'autoprefixer'
   ]);
 
   grunt.registerTask('localScenario', [
@@ -311,6 +336,7 @@ module.exports = function (grunt) {
     'jshint',
     'protractor:saucelabs'
   ]);
+
   grunt.registerTask('default', [
     'test',
     'build'

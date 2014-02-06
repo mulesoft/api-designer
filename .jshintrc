@@ -39,6 +39,9 @@
     "should": false,
     "sinon": false,
     "xdescribe": false,
-    "xit": false
+    "xit": false,
+    "compileTemplate": false,
+    "events": false,
+    "promise": false
   }
 }
