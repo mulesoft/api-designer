@@ -1,124 +1,162 @@
 'use strict';
 
 angular.module('lightweightParse', ['utils'])
-  .factory('getEditorTextAsArrayOfLines', function () {
-    var lastStringCache;
+  .factory('getEditorTextAsArrayOfLines', function getEditorTextAsArrayOfLinesFactory() {
+    var cachedValue = '';
+    var cachedLines = [];
 
-    return function (editor) {
-      var textAsList = [], i;
-
-      if ( lastStringCache && lastStringCache.key === editor.getValue() ) {
-        return lastStringCache.value;
+    return function getEditorTextAsArrayOfLines(editor) {
+      if (cachedValue === editor.getValue()) {
+        return cachedLines;
       }
 
-      for (i = 0; i < editor.lineCount(); i++) {
-        textAsList.push(editor.getLine(i));
+      cachedValue = editor.getValue();
+      cachedLines = [];
+
+      for (var i = 0, lineCount = editor.lineCount(); i < lineCount; i++) {
+        cachedLines.push(editor.getLine(i));
       }
 
-      lastStringCache = {key: editor.getValue(), value: textAsList};
-
-      return textAsList;
-    };
-
-  })
-  .factory('isArrayStarter', function() {
-    return function(line) {
-      return (line || '').trimLeft().indexOf('- ') === 0;
+      return cachedLines;
     };
   })
-  .factory('isCommentStarter', function() {
-    return function(line) {
-      return (line || '').trimLeft().indexOf('#') === 0;
-    };
-  })
-  .factory('extractKey', function (isArrayStarter) {
-    return function(value) {
-      function endsWith(string, searchString) {
-        var position = string.length - searchString.length;
-        var lastIndex = string.lastIndexOf(searchString);
-        return lastIndex !== -1 && lastIndex === position;
-      }
-
-      function clearSlashes(key) {
-        if (isArrayStarter(key)) {
-          return key.replace(/^-\s*/, '');
+  .factory('getSpaceCount', function getSpaceCountFactory() {
+    return function getSpaceCount(line) {
+      for (var i = 0, length = line.length; i < length; i++) {
+        if (line[i] !== ' ') {
+          break;
         }
-        return key;
       }
 
-      var trimmedValue = value ? value.trim() : '', match, key;
-      if (!trimmedValue) {
-        return '';
-      }
-
-      // Keys are the first thing in the line, that is separated by a ": " (colon space)
-      match = trimmedValue.trim().split(/:\s+/, 2);
-      key = match && match.length > 1 ? match[0] : '';
-      if (key){
-        return clearSlashes(key);
-      }
-
-      // There was no colon followed by a space, maybe it ends with a colon?
-      if (endsWith(trimmedValue, ':')) {
-        return clearSlashes(trimmedValue.substr(0, trimmedValue.length - 1));
-      }
-
-      // No key found
-      return '';
-    };
-  })
-  .factory('extractValue', function extractValueFactory() {
-    /**
-     * @return {{ raw, text, isAlias, isReference}} the value of a node, or null if the
-     *         node contains a complex value. The string will
-     *         additionally be decorated with metadata:
-     *         For alias values, e.g. Foo: &Bar, 'isAlias' will be set to true
-     *         For reference values, e.g. Foo: *Bar, 'isReference' will be set to true
-     * @example 'foo: bar' returns {text: "bar", isAlias: false, isReference: false}
-     * @example 'foo: *bar' returns {text: bar, isAlias: false, isReference: true}
-     * @example 'foo: &bar' returns {text: bar, isAlias: true, isReference: false}
-     */
-    return function extractValue(line) {
-      if (!line) {
-        return null;
-      }
-      var matches = /:\s+(.+)/.exec(line);
-      if (matches && matches[1]) {
-        var raw = matches[1].trim();
-        //Attach metadata to the string:
-        var isAlias = raw[0] === '&';
-        var isReference = raw[0] === '*';
-        return {
-          text: raw,
-          isAlias: isAlias,
-          isReference: isReference
-        };
-      }
-      return null;
-    };
-  })
-  .factory('getLineIndent', function (getTabCount) {
-    return function (string, indentSize) {
-      var result = /^(\s*)(.*)$/.exec(string);
-
-      if (!string) {
-        return {tabCount: 0, spaceCount: 0, content: ''};
-      }
-
-      return {
-        tabCount: getTabCount((result[1] || '').length, indentSize),
-        content: result[2] || '',
-        spaceCount: (result[1] || '').length
-      };
+      return i;
     };
   })
   .factory('getTabCount', function getTabCountFactory(indentUnit) {
-    return function getTabCount(numSpaces, indentSize) {
+    return function getTabCount(spaceCount, indentSize) {
       indentSize = indentSize || indentUnit;
-      return Math.floor(numSpaces / indentSize);
+      return Math.floor(spaceCount / indentSize);
     };
   })
-  .factory('getScopes', function (getLineIndent) {
+  .factory('getLineIndent', function getLineIndentFactory(getSpaceCount, getTabCount) {
+    return function getLineIndent(line, indentSize) {
+      var spaceCount = getSpaceCount(line);
+
+      return {
+        spaceCount: spaceCount,
+        tabCount:   getTabCount(spaceCount, indentSize),
+        content:    spaceCount ? line.slice(spaceCount) : line
+      };
+    };
+  })
+  .factory('isArrayStarter', function isArrayStarterFactory(getSpaceCount) {
+    return function isArrayStarter(line) {
+      var spaceCount = getSpaceCount(line);
+      return line[spaceCount] === '-' && line[spaceCount + 1] === ' ';
+    };
+  })
+  .factory('isCommentStarter', function isCommentStarterFactory(getSpaceCount) {
+    return function isCommentStarter(line) {
+      var spaceCount = getSpaceCount(line);
+      return line[spaceCount] === '#';
+    };
+  })
+  .factory('extractKeyValue', function extractKeyValueFactory() {
+    /**
+     * Removes the whitespaces from the line between start and end indices.
+     *
+     * @param line The line that needs to be trimmed.
+     * @param start The index of left border of the line where trimming should begin.
+     * If value is negative, it'll be computed based on length of the line as [length + start].
+     * @param end The index of the right border of the line where trimming should end.
+     * If value is negative, it'll be computed based on length of the line as [length + end].
+     *
+     * @returns The trimmed line without whitespaces between start and end.
+     */
+    function trim(line, start, end) {
+      start = start || 0;
+      end   = end   || line.length;
+
+      if (start < 0) {
+        start = line.length + start;
+      }
+
+      if (end < 0) {
+        end = line.length + end;
+      }
+
+      while (start < end && line[start] === ' ') {
+        start += 1;
+      }
+
+      while (start < end && line[end - 1] === ' ') {
+        end -= 1;
+      }
+
+      if (start === 0 && end === line.length) {
+        return line;
+      }
+
+      return line.slice(start, end);
+    }
+
+    /**
+     * Transforms a value which is a string into an object that provides additional
+     * information such as whether value is an alias or a reference.
+     *
+     * @param value The value that needs to be transformed.
+     *
+     * @returns An object with text, isAlias and isReference keys.
+     */
+    function transformValue(value) {
+      if (!value) {
+        return null;
+      }
+
+      return {
+        text:        value,
+        isAlias:     value[0] === '&',
+        isReference: value[0] === '*'
+      };
+    }
+
+    return function extractKeyValue(line) {
+      var indexOf = -1;
+      var start   = 0;
+      var end     = line.length;
+
+      indexOf = line.indexOf('#');
+      if (indexOf !== -1) {
+        end = indexOf;
+      }
+
+      indexOf = line.indexOf('- ');
+      if (indexOf !== -1 && indexOf < end) {
+        start = indexOf + 2;
+      }
+
+      indexOf = line.indexOf(': ', start);
+      if (indexOf !== -1 && indexOf < end) {
+        return {
+          key:   trim(line, start,       indexOf),
+          value: transformValue(trim(line, indexOf + 2, end))
+        };
+      }
+
+      indexOf = line.lastIndexOf(':', end);
+      if (indexOf === (end - 1)) {
+        return {
+          key:   trim(line, start, end - 1),
+          value: null
+        };
+      }
+
+      return {
+        key:   null,
+        value: transformValue(trim(line, start, end))
+      };
+    };
+  })
+  .factory('getScopes', function getScopesFactory(getLineIndent) {
     var lastArrayCache;
 
     function areArraysEqual(a, b) {
@@ -137,10 +175,9 @@ angular.module('lightweightParse', ['utils'])
       }
 
       return true;
-
     }
 
-    return function (arrayOfLines) {
+    return function getScopes(arrayOfLines) {
       var zipValues = [], currentIndexes = {};
 
       if (lastArrayCache && areArraysEqual(lastArrayCache.key, arrayOfLines)) {

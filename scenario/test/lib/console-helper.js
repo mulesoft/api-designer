@@ -12,75 +12,74 @@ function ConsoleHelper() {
 //  this.methodDocumentationArea = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation';
   this.ListOftabs = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation div ul li a';
   this.documentationSectionlistCss = '[role="api-console"] div [role="root-documentation"] section';
+  this.consoleSection = '#consoleAndEditor';
 }
 
 ConsoleHelper.prototype = {};
 
-ConsoleHelper.prototype.toggleDocumentationApiReference = function(view){
+ConsoleHelper.prototype.toggleDocumentationApiReference = function toggleDocumentationApiReference(view){
   var button = browser.findElement(by.css('[role="api-console"] nav a'));
   if (view === 'api'){
-//    console.log('to select api view');
     expect(button.getAttribute('ng-click')).toEqual('ramlConsole.gotoView("apiReference")');
     button.click();
   }else {
     if (view ==='documentation'){
-//      console.log('to select documentation view');
       expect(button.getAttribute('ng-click')).toEqual('ramlConsole.gotoView("rootDocumentation")');
       button.click();
     }
   }
-
 };
 
-ConsoleHelper.prototype.getDocumentationSections = function(){
+ConsoleHelper.prototype.getDocumentationSections = function getDocumentationSections(){
   return browser.findElements(by.css(this.documentationSectionlistCss));
 };
 
-
-
-ConsoleHelper.prototype.getListMainResources = function(){
+ConsoleHelper.prototype.getListMainResources = function getListMainResources(){
   var that = this;
   return browser.findElements(by.css(that.listMainResourcesCss));
 };
-ConsoleHelper.prototype.getListResourcesDescription = function(){
+
+ConsoleHelper.prototype.getListResourcesDescription = function getListResourcesDescription(){
   var that = this;
   return browser.findElements(by.css(that.listResourceDescriptionCss));
 };
-ConsoleHelper.prototype.getListResourcesName = function(){
+
+ConsoleHelper.prototype.getListResourcesName = function getListResourcesName(){
   var that = this;
   return browser.findElements(by.css(that.listResourcesNameCss));
 };
-ConsoleHelper.prototype.getListResourceType = function(){
+
+ConsoleHelper.prototype.getListResourceType = function getListResourceType(){
   var that = this;
   return  browser.findElements(by.css(that.listResourceRTCss));
 };
-ConsoleHelper.prototype.getListTrait = function(){
+ConsoleHelper.prototype.getListTrait = function getListTrait(){
   var that = this;
   return  browser.findElements(by.css(that.listResourceTraitsCss));
 };
-ConsoleHelper.prototype.getListMethods = function(){
+ConsoleHelper.prototype.getListMethods = function getListMethods(){
   var that = this ;
   return browser.findElements(by.css(that.listResourceMethodsCss));
 };
-ConsoleHelper.prototype.getListResources = function(){
+ConsoleHelper.prototype.getListResources = function getListResources(){
   var that = this;
   return browser.findElements(by.css(that.listResourcesCss));
 };
-ConsoleHelper.prototype.getResourceTypeForAResource = function(t){
+ConsoleHelper.prototype.getResourceTypeForAResource = function getResourceTypeForAResource(t){
 //  var that = this;
   var resource = this.getListResources();
   return resource[t].findElements(by.css('.modifiers [role=\'resource-type\']'));
 };
 
-ConsoleHelper.prototype.getListResourcesDisplayName = function(){
+ConsoleHelper.prototype.getListResourcesDisplayName = function getListResourcesDisplayName(){
   return browser.findElements(by.css('[ng-show=\'resource.name\']'));
 };
 
-ConsoleHelper.prototype.getListOfMethodByResourceCss = function(){
+ConsoleHelper.prototype.getListOfMethodByResourceCss = function getListOfMethodByResourceCss(){
     //$('[role=\'resourceSummary\']').filter(function(){ return /^\s+\/classes\s*$/.test($(this).find("h2").text());})
 };
 
-ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function(pos){
+ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function expandCollapseMainResourcebyPos(pos){
 //  resource needed to be expanded.
   pos--;
 //send 0 to expand all.
@@ -95,28 +94,27 @@ ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function(pos){
   }
 };
 
-ConsoleHelper.prototype.areResourceGroupsExpanded = function(){
-  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"]')).then(function(groups){
+ConsoleHelper.prototype.areResourceGroupsExpanded = function areResourceGroupsExpanded(){
+  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
     groups.forEach(function(group){
       expect(group.getAttribute('class')).toMatch('expanded');
     });
   });
 };
 
-ConsoleHelper.prototype.areResourceGroupsCollapsed = function(){
-  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"]')).then(function(groups){
+ConsoleHelper.prototype.areResourceGroupsCollapsed = function areResourceGroupsCollapsed(){
+  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
     groups.forEach(function(group){
       expect(group.getAttribute('class')).toMatch('collapsed');
     });
   });
 };
 
-ConsoleHelper.prototype.expandCollapseResourcebyPos = function(pos){
+ConsoleHelper.prototype.expandCollapseResourcebyPos = function expandCollapseResourcebyPos(pos){
   var that = this;
   pos--;
 //send 0 to expand all.
   browser.findElements(by.css(that.listResourcesNameCss)).then(function(resources){
-
     if(pos === -1){
       resources.forEach(function(resource){
         resource.click();
@@ -127,7 +125,7 @@ ConsoleHelper.prototype.expandCollapseResourcebyPos = function(pos){
   });
 };
 
-ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function(pos){
+ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function expandCollpaseMethodsbyPos(pos){
 //  resource needed to be expanded.
   pos--;
 //send 0 to expand all.
@@ -142,8 +140,7 @@ ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function(pos){
   }
 };
 
-
-ConsoleHelper.prototype.selectTab = function(pos){
+ConsoleHelper.prototype.selectTab = function selectTab(pos){
   var that = this;
   // 0 - request, 1- responses, 2 try it
   browser.findElements(by.css(that.ListOftabs)).then(function(tab){
@@ -151,7 +148,7 @@ ConsoleHelper.prototype.selectTab = function(pos){
   });
 };
 
-ConsoleHelper.prototype.getListOfMethods = function(){
+ConsoleHelper.prototype.getListOfMethods = function getListOfMethods(){
   //works for collapsed and expanded console.
   return browser.executeScript(function () {
     var list = [];
@@ -162,10 +159,9 @@ ConsoleHelper.prototype.getListOfMethods = function(){
   });
 };
 
-ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function(){
+ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function getListOfMethodsDescriptionCollapsed(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
-
   browser.executeScript(function () {
     var dic = {};
     var keys = [];
@@ -173,7 +169,6 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function(){
       dic[text]='';
       keys[index]=text;
     });
-
     $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="description"] p').text(function( index,text ) {
       dic[keys[index]]=text;
     });
@@ -182,13 +177,11 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionCollapsed = function(){
       d.fulfill(dic);
     });
   return d.promise;
-
 };
 
-ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function(){
+ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function getListOfMethodsDescriptionExpanded(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
-
   browser.executeScript(function () {
     var dic = {};
     var keys = [];
@@ -204,13 +197,11 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function(){
       d.fulfill(dic);
     });
   return d.promise;
-
 };
 
-ConsoleHelper.prototype.getResourcesResourceType = function(){
+ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResourceType(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
-
   browser.executeScript(function () {
     var dic = {};
     var keys = [];
@@ -251,7 +242,7 @@ ConsoleHelper.prototype.getResourcesResourceType = function(){
 //  return d.promise;
 //};
 
-ConsoleHelper.prototype.getMethodsTraits = function(){
+ConsoleHelper.prototype.getMethodsTraits = function getMethodsTraits(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
   browser.executeScript(function () {

@@ -1,0 +1,60 @@
+div[role=raml-editor] .menubar {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  color: gray;
+  background-color: #343436;
+  font-size: 14px;
+
+  border: 1px solid #2c2c2e;
+  border-width: 1px 0;
+
+  li {
+    margin: 0;
+    padding: 5px 25px;
+    display: block;
+    background-color: #404040;
+    span {
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+    }
+
+    i {
+      font-size: 12px;
+    }
+  }
+
+  .menu-item {
+    box-shadow: inset 1px 1px 1px #4c4c5E;
+  }
+
+  .menu-item:hover {
+    cursor: pointer;
+    color: white;
+    background-color: lighten(#343436, 20%);
+  }
+
+  .menu-item-ll {
+    border-right: 1px solid #2a2c33;
+  }
+
+  .menu-item-fr {
+    border-left: 1px solid #2a2c33;
+  }
+
+  .spacer {
+    flex: 1;
+    background-color: transparent;
+  }
+
+  .file-absolute-path {
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

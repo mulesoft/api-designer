@@ -1,32 +1,31 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .factory('applySuggestion', function applySuggestionFactory(ramlHint, ramlSnippets, getLineIndent, generateTabs,
-                                                              isArrayStarter, getNode) {
+  .factory('applySuggestion', function applySuggestionFactory(ramlSnippets, generateTabs, getNode) {
     return function applySuggestion(editor, suggestion) {
-      var snippet         = ramlSnippets.getSnippet(suggestion);
-      var node            = getNode(editor);
-      var lineIsArray     = node.line.trim() === '-';
-      var tabCount        = node.tabCount;
+      var snippet     = ramlSnippets.getSnippet(suggestion);
+      var node        = getNode(editor);
+      var lineIsArray = node.line.trim() === '-';
+      var tabCount    = node.lineIndent.tabCount;
 
-      //Need to compute a prefix, such as '- ' or ' ' for the snippet
-      //as well as a padding for every line in the snippet. The padding
-      //is simply the current node tabbing, or the cursor position if
-      //there is no current node, which exactly what node.tabCount does:
-      var prefix = lineIsArray ? ' ' : '';
+      // Need to compute a prefix, such as '- ' or ' ' for the snippet
+      // as well as a padding for every line in the snippet. The padding
+      // is simply the current node tabbing, or the cursor position if
+      // there is no current node, which exactly what node.lineIndent.tabCount does:
+      var prefix  = lineIsArray ? ' ' : '';
       var padding = lineIsArray ? '' : generateTabs(tabCount);
 
-      //For list element suggestions, we need to know whether or not to add the '- ' list
-      //indicator: If a previous element at our tab depth already added the list indicator
-      //then we should not do so.
+      // For list element suggestions, we need to know whether or not to add the '- ' list
+      // indicator: If a previous element at our tab depth already added the list indicator
+      // then we should not do so.
       if (suggestion.isList && !lineIsArray) {
         var arrayStarterNode = node.selfOrPrevious(function(node) { return node.isArrayStarter; });
-        //1. If we don't find and array starter node, we start a new array.
-        //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
-        if (!arrayStarterNode || (node.tabCount === arrayStarterNode.tabCount && node.lineNum !== arrayStarterNode.lineNum)) {
+        // 1. If we don't find and array starter node, we start a new array.
+        // 2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
+        if (!arrayStarterNode || (node.lineIndent.tabCount === arrayStarterNode.lineIndent.tabCount && node.lineNumber !== arrayStarterNode.lineNumber)) {
           prefix = '- ';
         } else if (node.isArrayStarter) {
-          //Add extra tab for children of root array node, e.g. those not prefixed with a '- '
+          // Add extra tab for children of root array node, e.g. those not prefixed with a '- '
           padding = generateTabs(tabCount + 1);
         }
       }
@@ -36,21 +35,23 @@ angular.module('ramlEditorApp')
         return padding + (index === 0 ? prefix : '') + line;
       }).join('\n');
 
-      //Search for a line that is empty or has the same indentation as current line
-      while(true) {
+      // Search for a line that is empty or has the same indentation as current line
+      while (true) {
         if (node.isEmpty) {
-          break; //Empty node, place code there
+          break; // Empty node, place code there
         }
-        var nextNode = getNode(editor, node.lineNum + 1);
-        if (!nextNode || nextNode.tabCount <= tabCount) {
-          break; //At end of raml, place node here
+
+        var nextNode = getNode(editor, node.lineNumber + 1);
+        if (!nextNode || nextNode.lineIndent.tabCount <= tabCount) {
+          break; // At end of raml, place node here
         }
+
         node = nextNode;
       }
 
-      //Calculate the place to insert the code:
-      //+ Make sure to start at end of node content so we don't erase anything!
-      var from = { line: node.lineNum, ch: node.line.trimRight().length };
+      // Calculate the place to insert the code:
+      // + Make sure to start at end of node content so we don't erase anything!
+      var from = { line: node.lineNumber, ch: node.line.trimRight().length };
       var to = { line: from.line, ch: node.line.length };
       var nodeHasContent = !node.isEmpty && !lineIsArray;
 
@@ -98,19 +99,14 @@ angular.module('ramlEditorApp')
       return model;
     };
   })
-  .controller('ramlEditorShelf', function ($scope, eventService, codeMirror, safeApply, applySuggestion, updateSuggestions) {
-    eventService.on('event:raml-editor-initialized', function () {
-      var editor = codeMirror.getEditor();
-      editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
+  .controller('ramlEditorShelf', function ($scope, safeApplyWrapper, applySuggestion, updateSuggestions) {
+    var editor = $scope.editor;
+
+    $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
+      $scope.model = updateSuggestions(editor);
     });
 
-    $scope.cursorMoved = function () {
-      $scope.model = updateSuggestions(codeMirror.getEditor());
-
-      safeApply($scope);
-    };
-
-    $scope.orderSections = function (section) {
+    $scope.orderSections = function orderSections(section) {
       var index = [
         'root',
         'docs',
@@ -125,7 +121,10 @@ angular.module('ramlEditorApp')
       return (index === -1) ? index.length : index;
     };
 
-    $scope.itemClick = function (suggestion) {
-      applySuggestion(codeMirror.getEditor(), suggestion);
+    $scope.itemClick = function itemClick(suggestion) {
+      applySuggestion(editor, suggestion);
     };
-  });
+
+    editor.on('cursorActivity', $scope.cursorMoved);
+  })
+;

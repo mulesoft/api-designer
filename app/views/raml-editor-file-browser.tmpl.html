@@ -1,0 +1,10 @@
+<raml-editor-context-menu></raml-editor-context-menu>
+<ul class="file-list">
+  <li class="file-item"
+      ng-repeat="file in homeDirectory.files | orderBy:'name'"
+      ng-click="fileBrowser.selectFile(file)"
+      ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty, geared: fileBrowser.contextMenuOpenedFor(file)}">
+    <span class="file-name">{{file.name}}</span>
+    <i class="icon icon-cog" ng-click="fileBrowser.showContextMenu($event, file)"></i>
+  </li>
+</ul>
