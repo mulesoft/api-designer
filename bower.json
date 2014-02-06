@@ -10,13 +10,13 @@
     "angular-bootstrap": "0.7.0",
     "es5-shim": "~2.0.8",
     "showdown": "~0.3.1",
-    "raml-js-parser": "raml-org/raml-js-parser#8464ed557ceda02a7a02ab50b0354d07fe13be83"
+    "raml-js-parser": "raml-org/raml-js-parser#5142ab49910cba21b19509aa560c32f896e5d393"
   },
   "devDependencies": {
     "sinonjs": "~1.7.1",
     "angular-mocks": "1.2.9"
   },
   "resolutions": {
-    "raml-js-parser": "8464ed557ceda02a7a02ab50b0354d07fe13be83"
+    "raml-js-parser": "5142ab49910cba21b19509aa560c32f896e5d393"
   }
 }
