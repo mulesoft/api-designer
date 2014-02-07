@@ -1,5 +1,4 @@
 'use strict';
-
 exports.config = {
 
   capabilities: {
@@ -7,6 +6,8 @@ exports.config = {
     // firefox, safari
     name: 'API-portal- Regression'
   },
+
+  allScriptsTimeout: 50000,
 
   specs: [
     '../test/e2e/file-browser.js',
@@ -23,7 +24,6 @@ exports.config = {
     '../test/e2e/editor-parser/parser-regressions.js',
     '../test/e2e/editor-parser/parser-root.js',
     '../test/e2e/editor-parser/parser-traits.js',
-    '../test/e2e/editor-parser/resource/*.js',
     '../test/e2e/editor-parser/resourceTypes/*.js',
     '../test/e2e/raml-example/muse-e2e.js',
     '../test/e2e/published-examples/examples-parser.js',

@@ -9,6 +9,8 @@ exports.config = {
     'name': 'API-Portal-sanity'
   },
 
+  allScriptsTimeout: 50000,
+
   specs: [
     '../../test/e2e/raml-example/muse-e2e.js',
     '../../test/lib/*.js'
