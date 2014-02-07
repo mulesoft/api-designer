@@ -9,6 +9,8 @@ exports.config = {
     'name': 'API-Portal-shelfResource'
   },
 
+  allScriptsTimeout: 50000,
+
   specs: [
     '../../test/e2e/editor-shelf/resource/resource-root.js',
     '../../test/e2e/editor-shelf/resource/resource-methods.js',

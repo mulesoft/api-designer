@@ -9,6 +9,8 @@ exports.config = {
     'name': 'API-Portal-shelfRoot'
   },
 
+  allScriptsTimeout: 50000,
+
   specs: [
     '../../test/e2e/editor-shelf/*.js',
     '../../test/lib/*.js'
