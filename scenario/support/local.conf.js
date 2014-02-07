@@ -2,6 +2,8 @@ exports.config = {
 
   seleniumPort: 4444,
 
+  allScriptsTimeout: 50000,
+
   capabilities: {
     'browserName': 'firefox'
   },
