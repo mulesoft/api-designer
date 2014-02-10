@@ -15,6 +15,7 @@ exports.config = {
     '../test/e2e/editor-shelf/resource/resource-root.js',
     '../test/e2e/editor-shelf/resource-types/rt-methods.js',
     '../test/e2e/editor-shelf/resource-types/rt-root.js',
+    '../test/e2e/editor-shelf/protocols.js',
     '../test/e2e/editor-shelf/root.js',
     '../test/e2e/editor-shelf/traits.js',
     '../test/e2e/editor-shelf/shelf-regressions.js',
@@ -29,7 +30,6 @@ exports.config = {
     '../test/e2e/published-examples/examples-parser.js',
     '../test/e2e/console/console-defaultview.js',
     '../test/e2e/console/embedded-console.js',
-    '../test/e2e/editor-shelf/protocols.js',
     '../test/lib/*.js'
   ],
 

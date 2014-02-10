@@ -106,7 +106,6 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClass
   var d = webdriver.promise.defer();
   var listClase = [] ;
   var i = 0;
-  console.log('line', line);
   browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
     list[line].findElements(by.css('span')).then(function(lintext){
       posi.forEach(function(pos){
@@ -116,12 +115,12 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClass
             listClase[t] = classe;
           }).then(function(){
               if(t ===posi.length-1){
-                console.log('listclase',listClase);
+//                console.log('listclase',listClase);
                 d.fulfill(listClase);
               }
             });
         } else {
-          console.log('This has not a class');
+//          console.log('This has not a class');
         }
       });
     });
