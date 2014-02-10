@@ -52,7 +52,7 @@
     "node": ">=0.8.0"
   },
   "scripts": {
-    "test": "grunt --verbose"
+    "test": "grunt test"
   },
   "repository": {
     "type": "git",
