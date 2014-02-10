@@ -50,8 +50,7 @@ describe('parser ',function(){
   });
 
 
-  xit('nested resource name /type', function(){
-//    https://www.pivotaltracker.com/story/show/63391674
+  it('nested resource name /type', function(){
     var ramlexam = [
       '#%RAML 0.8',
       'title: my api',
