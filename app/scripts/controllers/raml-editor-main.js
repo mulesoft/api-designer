@@ -150,6 +150,10 @@ angular.module('ramlEditorApp')
       $scope.loadRaml(source, (($scope.fileBrowser || {}).selectedFile || {}).path).then(
         // success
         safeApplyWrapper($scope, function success(value) {
+          // hack: we have to make a full copy of an object because console modifies
+          // it later and makes it unusable for mocking service
+          $scope.fileBrowser.selectedFile.raml = angular.copy(value);
+
           eventService.broadcast('event:raml-parsed', value);
         }),
 
@@ -205,6 +209,14 @@ angular.module('ramlEditorApp')
       // check for raml version tag as a very first line of the file
       contents = arguments.length > 1 ? contents : file.contents;
       if (contents.search(/^\s*#%RAML( \d*\.\d*)?\s*(\n|$)/) !== 0) {
+        return false;
+      }
+
+      return true;
+    };
+
+    $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
+      if (!$scope.fileParsable) {
         return false;
       }
 

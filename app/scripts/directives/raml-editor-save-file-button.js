@@ -4,7 +4,7 @@
   function ramlEditorSaveFileButton($rootScope, ramlRepository) {
     return {
       restrict: 'E',
-      template: '<span role="save-button" ng-click="saveFile()">Save</span>',
+      template: '<span role="save-button" ng-click="saveFile()"><i class="icon-save"></i>&nbsp;Save</span>',
       link: function(scope) {
         scope.saveFile = function() {
           var file = scope.fileBrowser.selectedFile;
