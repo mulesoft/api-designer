@@ -37,14 +37,14 @@
     "matchdep": "~0.1.2",
     "minijasminenode": "~0.2.7",
     "mocha": "~1.12.0",
-    "protractor": "0.17.0",
+    "protractor": "0.18.1",
     "selenium-webdriver": "*"
   },
   "engines": {
     "node": ">=0.8.0"
   },
   "scripts": {
-    "test": "grunt --verbose"
+    "test": "grunt test localScenario"
   },
   "repository": {
     "type": "git",

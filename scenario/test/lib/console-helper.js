@@ -1,4 +1,6 @@
 'use strict';
+var webdriver = require('selenium-webdriver');
+
 function ConsoleHelper() {
   this.methodsList = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace', 'connect'];
   this.titleCss = '#raml-console-api-title';
@@ -13,9 +15,32 @@ function ConsoleHelper() {
   this.ListOftabs = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation div ul li a';
   this.documentationSectionlistCss = '[role="api-console"] div [role="root-documentation"] section';
   this.consoleSection = '#consoleAndEditor';
+  this.expandAll = '.toggle-resource-groups [role="expand-all"]';
+  this.collapseAll ='.toggle-resource-groups [role="collapse-all"]';
+  this.resourceGroupExpandedClass  = 'resource-group ng-scope expanded';
+  this.resourceGroupCollapsedClass = 'resource-group ng-scope collapsed';
 }
 
 ConsoleHelper.prototype = {};
+
+ConsoleHelper.prototype.expandCollapseAllMainResourcesPromise = function expandCollapseAllMainResources(expandCollapse){
+  var d = webdriver.promise.defer();
+
+  if (expandCollapse === 'collapse'){
+    browser.$(this.collapseAll).click();
+    d.fulfill();
+  }else{
+    if (expandCollapse ==='expand'){
+      browser.$(this.expandAll).click();
+      d.fulfill();
+    }else{
+      console.log('invalid option - should be collapse/expand');
+      d.fulfill();
+    }
+  }
+
+  return d.promise;
+};
 
 ConsoleHelper.prototype.toggleDocumentationApiReference = function toggleDocumentationApiReference(view){
   var button = browser.findElement(by.css('[role="api-console"] nav a'));

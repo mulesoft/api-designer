@@ -71,6 +71,25 @@ AssertsHelper.prototype.consoleApiTitle= function consoleApiTitle(title){
   expect(browser.$(consoleApi.titleCss).getText()).toEqual(title);
 };
 
+AssertsHelper.prototype.consoleResourceGroupCollapsedExpanded = function consoleResourceGroupCollapsedExpanded(collapsedExpanded){
+
+  browser.findElements(by.css('[role="resource-group"]')).then(function(resourcesGroup){
+    resourcesGroup.forEach(function(resgroup){
+      expect(resgroup.getAttribute('class')).toEqual(collapsedExpanded);
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleResourceGroupCollapsedExpandedArray = function consoleResourceGroupCollapsedExpanded(collapsedExpanded){
+  var i = 0;
+  browser.findElements(by.css('[role="resource-group"]')).then(function(resourcesGroup){
+    resourcesGroup.forEach(function(resgroup){
+      var t = i++;
+      expect(resgroup.getAttribute('class')).toEqual(collapsedExpanded[t]);
+    });
+  });
+};
+
 AssertsHelper.prototype.consoleResourcesName = function consoleResourcesName(list, expList){
   var i=0;
   var d = webdriver.promise.defer();

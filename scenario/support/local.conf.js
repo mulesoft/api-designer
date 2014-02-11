@@ -5,6 +5,7 @@ exports.config = {
   capabilities: {
     'browserName': 'firefox'
   },
+  allScriptsTimeout: 50000,
 
   specs: [
     '../test/e2e/raml-example/muse-e2e.js',
@@ -25,6 +26,8 @@ exports.config = {
       return browser.executeScript('return (editor.getLine(1) === \'title:\');');
     });
   },
+
+  framework: 'jasmine',
 
   jasmineNodeOpts: {
     showColors: true,

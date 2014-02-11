@@ -10,16 +10,53 @@ describe('Embedded-console',function(){
   var shelf = new ShelfHelper();
   var apiConsole = new ConsoleHelper();
 
-  describe('generals', function(){
 
-    beforeEach(function(){
-      editor.setValue('');
-      expect(editor.getLine(1)).toEqual('');
-      designerAsserts.shelfElements(shelf.elemRamlVersion);
-      expect(editor.IsParserErrorDisplayed()).toBe(false);
+  describe('Resource Group - expand/collapse all', function(){
+    it('expanded by default - 1 resource and nested resource', function (){
+      var definition = [
+        '#%RAML 0.8',
+        'title: console restyling',
+        '/res1:',
+        '  /res1.1:',
+        '            '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('console restyling');
+      var expList = ['/res1','/res1 /res1.1'];
+      designerAsserts.consoleResourceName(expList);
+      designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupExpandedClass);
     });
 
-    xit('it is not displayed if are parser errors', function(){
+    it('collapse all resource group - 1 resource', function(){
+      apiConsole.expandCollapseAllMainResourcesPromise('collapse').then(function(){
+        designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupCollapsedClass);
+      });
+    });
+
+    it('expand all resource group - 1 resource', function(){
+      apiConsole.expandCollapseAllMainResourcesPromise('expand').then(function(){
+        designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupExpandedClass);
+      });
+    });
+
+    it('add a new resource and exapnd all', function(){
+      apiConsole.expandCollapseAllMainResourcesPromise('collapse').then(function(){
+        designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupCollapsedClass);
+      });
+      editor.setLine(5, '/res2: \\n  /res2.1:\\n       ');
+      designerAsserts.consoleResourceGroupCollapsedExpandedArray([apiConsole.resourceGroupCollapsedClass, apiConsole.resourceGroupExpandedClass]);
+      apiConsole.expandCollapseAllMainResourcesPromise('collapse').then(function(){
+        designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupCollapsedClass);
+      });
+      apiConsole.expandCollapseAllMainResourcesPromise('expand').then(function(){
+        designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupExpandedClass);
+      });
+    });
+  });
+
+  describe('generals', function(){
+
+    it('it is not displayed if are parser errors', function(){
       var definition = [
         '#%RAML 0.8',
         'title: My API',
@@ -34,7 +71,7 @@ describe('Embedded-console',function(){
       expect(embeddedConsole.getAttribute('class')).not.toContain('ng-hide');
     });
 
-    xdescribe('verify parser response on the console', function(){
+    describe('verify parser response on the console', function(){
       it('using alias', function(){
         var definition = [
           '#%RAML 0.8 ',
