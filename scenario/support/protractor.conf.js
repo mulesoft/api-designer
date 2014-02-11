@@ -2,7 +2,7 @@
 exports.config = {
 
   capabilities: {
-    'browserName': 'firefox',
+    'browserName': 'chrome',
     // firefox, safari
     name: 'API-portal- Regression'
   },
