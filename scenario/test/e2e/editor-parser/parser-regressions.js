@@ -34,7 +34,7 @@ describe('parser ',function(){
     });
   });//alias
 
-  xit('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
+  it('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
     var definition = [
       '#%RAML 0.8',
       '---',
@@ -46,6 +46,21 @@ describe('parser ',function(){
       '    responses: '
     ].join('\\n');
     editor.setValue(definition);
+    expect(editor.IsParserErrorDisplayed()).toBe(false);
+  });
+
+
+  it('nested resource name /type', function(){
+    var ramlexam = [
+      '#%RAML 0.8',
+      'title: my api',
+      'resourceTypes:',
+      '  - hola:',
+      '      description: this is hola description',
+      '/type:',
+      '  /type:'
+    ].join('\\n');
+    editor.setValue(ramlexam);
     expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
 

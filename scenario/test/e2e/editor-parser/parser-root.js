@@ -13,32 +13,29 @@ describe('parser',function(){
         editor.addNewFile('theExample.raml');
         var definition = [
           '#%RAML 0.8',
-          '---',
           'title: !include theExample.raml'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('3', 'detected circular !include of theExample.raml');
+        designerAsserts.parserError('2', 'detected circular !include of theExample.raml');
       });
 
       it('broken links', function () {
         var definition = [
           '#%RAML 0.8',
-          '---',
-          'title: !include http://some.broken.link.com/'
+          'title: !include https://some.broken.link.com/'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('3','error: cannot fetch http://some.broken.link.com/, check that the server is up and that CORS is enabled(HTTP 404)');
+        designerAsserts.parserError('2','error: cannot fetch https://some.broken.link.com/, check that the server is up and that CORS is enabled(HTTP 404)');
       });
 
       it('file name/URL cannot be null', function () {
         var definition = [
           '#%RAML 0.8',
-          '---',
           'title: Mi Api',
-          'trait: !include'
+          'traits: !include'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('4', 'file name/URL cannot be null');
+        designerAsserts.parserError('3', 'file name/URL cannot be null');
       });
 
     }); //include
@@ -77,11 +74,10 @@ describe('parser',function(){
     it('should fail: document must be a map(titl)', function () {
       var definition = [
         '#%RAML 0.8',
-        '---',
         'titl'
       ].join('\\n');
       editor.setValue(definition);
-      designerAsserts.parserError('3','document must be a map');
+      designerAsserts.parserError('2','document must be a map');
     });
 
     it('should fail: empty document (only comments)', function () {
@@ -96,34 +92,31 @@ describe('parser',function(){
     it('should fail: block map end ...', function () {
       var definition = [
         '#%RAML 0.8',
-        '---',
         'title: Example Api',
         '...',
         'version: 1.0'
       ].join('\\n');
       editor.setValue(definition);
-      designerAsserts.parserError('5','expected \'<document start>\', but found <block mapping end>');
+      designerAsserts.parserError('4','expected \'<document start>\', but found <block mapping end>');
     });
 
     it('should fail: missing title', function () {
       var definition = [
         '#%RAML 0.8',
-        '---',
         'version: v1'
       ].join('\\n');
       editor.setValue(definition);
-      designerAsserts.parserError('3','missing title');
+      designerAsserts.parserError('2','missing title');
     });
 
     it('should fail: missing version', function () {
       var definition = [
         '#%RAML 0.8',
-        '---',
         'title: hola',
         'baseUri: http://server/api/{version}'
       ].join('\\n');
       editor.setValue(definition);
-      designerAsserts.parserError('3','missing version');
+      designerAsserts.parserError('2','missing version');
     });
 
     describe('baseUri', function () {
@@ -131,12 +124,11 @@ describe('parser',function(){
       it('should fail: baseUri must have a value', function () {
         var definition = [
           '#%RAML 0.8',
-          '---',
           'title: My API',
           'baseUri:'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('4','baseUri must have a value');
+        designerAsserts.parserError('3','baseUri must have a value');
       });
 
     }); //baseUri
@@ -146,7 +138,6 @@ describe('parser',function(){
       it('should fail: invalid map - baseUriParameters/Uri1/{require}', function () {
         var definition = [
           '#%RAML 0.8',
-          '---',
           'title: Test',
           'baseUri: http://server/api/{version}/{uri1}',
           'version: v1',
@@ -155,7 +146,7 @@ describe('parser',function(){
           '    require'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('7','URI parameter must be a map');
+        designerAsserts.parserError('6','URI parameter must be a map');
       });
 
       it('should fail: baseUriParameter - version parameter not allowed here', function () {

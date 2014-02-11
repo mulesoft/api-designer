@@ -2,6 +2,8 @@ exports.config = {
 
   seleniumPort: 4444,
 
+  allScriptsTimeout: 60000,
+
   capabilities: {
     'browserName': 'firefox'
   },
@@ -28,7 +30,7 @@ exports.config = {
 
   jasmineNodeOpts: {
     showColors: true,
-    defaultTimeoutInterval: 15000,
+    defaultTimeoutInterval: 60000,
     isVerbose: false,
     includeStackTrace: true
   }
