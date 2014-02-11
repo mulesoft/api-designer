@@ -2,11 +2,10 @@
 exports.config = {
 
   capabilities: {
-    'browserName': 'chrome',
+    'browserName': 'firefox',
     // firefox, safari
     name: 'API-portal- Regression'
   },
-
   allScriptsTimeout: 50000,
 
   specs: [
@@ -46,6 +45,7 @@ exports.config = {
     });
   },
 
+  framework: 'jasmine',
   jasmineNodeOpts: {
     onComplete: null,
     isVerbose: false,
