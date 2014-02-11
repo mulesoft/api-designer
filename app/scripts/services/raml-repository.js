@@ -145,7 +145,11 @@
 
       service.saveMeta = function saveMeta(file, meta) {
         var metaFile = new RamlFile(file.path + '.meta', JSON.stringify(meta));
-        return service.saveFile(metaFile);
+        return service.saveFile(metaFile)
+          .then(function () {
+            return meta;
+          })
+        ;
       };
 
       service.loadMeta = function loadMeta(file) {
