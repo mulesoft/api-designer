@@ -11,17 +11,16 @@ describe('RAML Repository', function () {
   });
 
   beforeEach(inject(function ($injector) {
-    $rootScope = $injector.get('$rootScope');
-    $q = $injector.get('$q');
+    $rootScope     = $injector.get('$rootScope');
+    $q             = $injector.get('$q');
+    fileSystem     = $injector.get('fileSystem');
     ramlRepository = $injector.get('ramlRepository');
-    fileSystem = $injector.get('fileSystem');
-
-    sandbox = sinon.sandbox.create();
+    sandbox        = sinon.sandbox.create();
   }));
 
-  afterEach(inject(function() {
+  afterEach(function() {
     sandbox.restore();
-  }));
+  });
 
   describe('getDirectory', function () {
     it('should reflect the contents of a directory on success', function () {
@@ -70,6 +69,37 @@ describe('RAML Repository', function () {
 
       // Assert
       error.firstCall.args[0].should.be.deep.equal(errorData);
+    });
+
+    it('should filter out meta files', function () {
+      // Arrange
+      var success = sinon.stub();
+      var folder  = {
+        path: '/',
+        name: '/',
+        children: [
+          {
+            path: '/example.raml',
+            name: 'example.raml',
+            content: ''
+          },
+          {
+            path: '/example.raml.meta',
+            name: 'example.raml.meta',
+            content: '{"key": "value"}'
+          }
+        ]
+      };
+
+      // Act
+      sinon.stub(fileSystem, 'directory').returns($q.when(folder));
+      ramlRepository.getDirectory('/').then(success);
+      $rootScope.$apply();
+
+      // Assert
+      success.should.have.been.called;
+      success.firstCall.args[0].files.should.have.length(1);
+      success.firstCall.args[0].files[0].should.have.property('path', '/example.raml');
     });
   });
 
@@ -294,6 +324,58 @@ describe('RAML Repository', function () {
 
     it('emits an event indicating that a file has been added', function() {
       broadcastSpy.should.have.been.calledWith('event:raml-editor-file-created', sinon.match({ name: 'untitled.raml' }));
+    });
+  });
+
+  describe('saveMeta', function () {
+    it('should call saveFile with proper file and path', function () {
+      var path = '/api.raml';
+
+      sinon.stub(ramlRepository, 'saveFile').returns($q.defer().promise);
+      ramlRepository.saveMeta({path: path}, {key: 'value'});
+
+      ramlRepository.saveFile.should.have.been.called;
+      ramlRepository.saveFile.firstCall.args[0].should
+        .have.property('path')
+        .and
+        .be.equal(path + '.meta')
+      ;
+    });
+  });
+
+  describe('loadMeta', function () {
+    it('should call loadFile with proper file and path and return meta', function () {
+      var success = sinon.stub();
+      var meta    = {key: 'value'};
+      var path    = '/api.raml';
+
+      sinon.stub(ramlRepository, 'loadFile').returns($q.when({contents: JSON.stringify(meta)}));
+      ramlRepository.loadMeta({path: path}).then(success);
+
+      $rootScope.$apply();
+
+      ramlRepository.loadFile.should.have.been.called;
+      ramlRepository.loadFile.firstCall.args[0].should
+        .have.property('path')
+        .and
+        .be.equal(path + '.meta')
+      ;
+
+      success.should.have.been.called;
+      success.firstCall.args[0].should.be.deep.equal(meta);
+    });
+
+    it('should return an empty meta when something is wrong', function () {
+      var success = sinon.stub();
+      var path    = '/api.raml';
+
+      sinon.stub(ramlRepository, 'loadFile').returns($q.reject(new Error('Ups!')));
+      ramlRepository.loadMeta({path: path}).then(success);
+
+      $rootScope.$apply();
+
+      success.should.have.been.called;
+      success.firstCall.args[0].should.be.deep.equal({});
     });
   });
 });

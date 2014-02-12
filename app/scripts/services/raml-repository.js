@@ -22,6 +22,10 @@
       var service = {};
       var defaultPath = '/';
 
+      function notMetaFile(file) {
+        return file.path.slice(-5) !== '.meta';
+      }
+
       function RamlDirectory(path, meta, contents) {
         if (!/\/$/.exec(path)) { path = path + '/'; }
         contents = contents || [];
@@ -36,7 +40,7 @@
           separated[entry.type || 'file'].push(entry);
         });
 
-        this.files = separated.file.map(function(file) {
+        this.files = separated.file.filter(notMetaFile).map(function(file) {
           return new RamlFile(file.path, file.contents, { dirty: false, persisted: true} );
         });
 
@@ -49,14 +53,14 @@
         });
       }
 
-      RamlDirectory.prototype.createFile = function (name) {
+      RamlDirectory.prototype.createFile = function createFile(name) {
         var file = service.createFile(name);
         this.files.push(file);
 
         return file;
       };
 
-      RamlDirectory.prototype.removeFile = function (file) {
+      RamlDirectory.prototype.removeFile = function removeFile(file) {
         return service.removeFile(file).then(function() {
           var index = this.files.indexOf(file);
           if (index !== -1) {
@@ -72,14 +76,14 @@
         };
       }
 
-      service.getDirectory = function (path) {
+      service.getDirectory = function getDirectory(path) {
         path = path || defaultPath;
         return fileSystem.directory(path).then(function (folder) {
           return new RamlDirectory(folder.path, folder.meta, folder.children);
         });
       };
 
-      service.saveFile = function (file) {
+      service.saveFile = function saveFile(file) {
         function modifyFile() {
           file.dirty = false;
           file.persisted = true;
@@ -90,7 +94,7 @@
         return fileSystem.save(file.path, file.contents).then(modifyFile, handleErrorFor(file));
       };
 
-      service.renameFile = function(file, newName) {
+      service.renameFile = function renameFile(file, newName) {
         var newPath = file.path.replace(file.name, newName);
         var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
 
@@ -104,7 +108,7 @@
         return promise.then(modifyFile, handleErrorFor(file));
       };
 
-      service.loadFile = function (file) {
+      service.loadFile = function loadFile(file) {
         function modifyFile(data) {
           file.dirty = false;
           file.persisted = true;
@@ -116,7 +120,7 @@
         return fileSystem.load(file.path).then(modifyFile, handleErrorFor(file));
       };
 
-      service.removeFile = function (file) {
+      service.removeFile = function removeFile(file) {
         function modifyFile() {
           file.dirty = false;
           file.persisted = false;
@@ -128,7 +132,7 @@
         return fileSystem.remove(file.path).then(modifyFile, handleErrorFor(file));
       };
 
-      service.createFile = function (name) {
+      service.createFile = function createFile(name) {
         var path = defaultPath + name;
         var file = new RamlFile(path, ramlSnippets.getEmptyRaml());
         if (file.extension !== 'raml') {
@@ -137,6 +141,24 @@
         $rootScope.$broadcast('event:raml-editor-file-created', file);
 
         return file;
+      };
+
+      service.saveMeta = function saveMeta(file, meta) {
+        var metaFile = new RamlFile(file.path + '.meta', JSON.stringify(meta));
+        return service.saveFile(metaFile);
+      };
+
+      service.loadMeta = function loadMeta(file) {
+        var metaFile = new RamlFile(file.path + '.meta');
+        return service.loadFile(metaFile).then(
+          function success(file) {
+            return JSON.parse(file.contents);
+          },
+
+          function failure() {
+            return {};
+          }
+        );
       };
 
       return service;
