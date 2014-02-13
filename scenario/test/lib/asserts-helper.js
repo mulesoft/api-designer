@@ -103,19 +103,24 @@ AssertsHelper.prototype.consoleResourcesName = function consoleResourcesName(lis
       }
     });
   });
-  return d;
+  return d.promise;
 };
 
 AssertsHelper.prototype.consoleMainResources = function consoleMainResources(expList){
   var consoleApi = new ConsoleHelper();
   var i = 0;
+  var d = webdriver.promise.defer();
   consoleApi.getListMainResources().then(function(list){
     expect(list.length).toEqual(expList.length);
     list.forEach(function(elem){
       var t = i++;
       expect(elem.getText()).toEqual(expList[t]);
+      if (t === expList.length){
+        d.fulfill();
+      }
     });
   });
+  return d.promise;
 };
 
 AssertsHelper.prototype.consoleResources = function consoleResources(expList){
@@ -140,6 +145,21 @@ AssertsHelper.prototype.consoleResourcesDescription = function consoleResourcesD
       expect(elem.getText()).toEqual(expList[t]);
     });
   });
+};
+
+AssertsHelper.prototype.isResourceCollapsedByPos = function isResourceCollapsedByPos(pos){
+  var d = webdriver.promise.defer();
+  pos --;
+  if(pos ===-1){
+    // check that all resources are collapsed
+    d.fulfill();
+  }else{
+    browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [ng-show="resourceView.expanded"]')).then(function(resources){
+      expect(resources[pos].getAttribute('class')).toEqual('modifiers ng-hide');
+      d.fulfill();
+    });
+  }
+  return d.promise;
 };
 
 AssertsHelper.prototype.consoleResourcesTraits = function consoleResourcesTraits(expList){
@@ -198,6 +218,7 @@ AssertsHelper.prototype.consoleResourceMethods = function consoleResourceMethods
 };
 
 AssertsHelper.prototype.consoleResourceResourceType = function consoleResourceResourceType(expList){
+  var d = webdriver.promise.defer();
   browser.findElements(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     expect(resources.length).toEqual(expList.length);
@@ -206,9 +227,14 @@ AssertsHelper.prototype.consoleResourceResourceType = function consoleResourceRe
       resource.findElements(by.css('[role="resource-type"]')).then(function(h3){
         expect(h3.length).toEqual(1);
         expect(h3[0].getText()).toEqual(expList[t]);
+        if (t === expList.length){
+          d.fulfill();
+        }
       });
     });
   });
+
+  return d.promise;
 };
 
 AssertsHelper.prototype.consoleResourceTraits = function consoleResourceTraits(expList){
@@ -259,6 +285,37 @@ AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function 
     });
   });
 };
+
+  // method start
+AssertsHelper.prototype.consoleValidateCurrentMethodName = function consoleValidateCurrentMethodName(name){
+  apiConsole.getCurrentMethod().getText().then(function(text){
+    expect(text).toEqual(name);
+  });
+
+};
+
+    //traits starts
+AssertsHelper.prototype.consoleValidateMethodTraits = function consoleValidateMethodTraits(expList){
+  var d = webdriver.promise.defer();
+  var i =0;
+  apiConsole.getMethodsTraits().then(function(traits){
+    traits.forEach(function(trait){
+      var t=i++;
+      trait.getText().then(function(text){
+        expect(text).toEqual(expList[t]);
+        if (t===expList.length){
+          d.fulfill();
+        }
+      });
+    });
+  });
+  return d.promise;
+} ;
+    //traits ends
+
+  // method ends
+
+
 
 //Console Ends
 

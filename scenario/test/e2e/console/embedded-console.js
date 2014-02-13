@@ -10,7 +10,6 @@ describe('Embedded-console',function(){
   var shelf = new ShelfHelper();
   var apiConsole = new ConsoleHelper();
 
-
   describe('Resource Group - expand/collapse all', function(){
     it('expanded by default - 1 resource and nested resource', function (){
       var definition = [
@@ -28,30 +27,175 @@ describe('Embedded-console',function(){
     });
 
     it('collapse all resource group - 1 resource', function(){
-      apiConsole.expandCollapseAllMainResourcesPromise('collapse').then(function(){
+      apiConsole.expandCollapseAllResourcesGroupPromise('collapse').then(function(){
         designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupCollapsedClass);
       });
     });
 
     it('expand all resource group - 1 resource', function(){
-      apiConsole.expandCollapseAllMainResourcesPromise('expand').then(function(){
+      apiConsole.expandCollapseAllResourcesGroupPromise('expand').then(function(){
         designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupExpandedClass);
       });
     });
 
     it('add a new resource and exapnd all', function(){
-      apiConsole.expandCollapseAllMainResourcesPromise('collapse').then(function(){
+      apiConsole.expandCollapseAllResourcesGroupPromise('collapse').then(function(){
         designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupCollapsedClass);
       });
       editor.setLine(5, '/res2: \\n  /res2.1:\\n       ');
       designerAsserts.consoleResourceGroupCollapsedExpandedArray([apiConsole.resourceGroupCollapsedClass, apiConsole.resourceGroupExpandedClass]);
-      apiConsole.expandCollapseAllMainResourcesPromise('collapse').then(function(){
+      apiConsole.expandCollapseAllResourcesGroupPromise('collapse').then(function(){
         designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupCollapsedClass);
       });
-      apiConsole.expandCollapseAllMainResourcesPromise('expand').then(function(){
+      apiConsole.expandCollapseAllResourcesGroupPromise('expand').then(function(){
         designerAsserts.consoleResourceGroupCollapsedExpanded(apiConsole.resourceGroupExpandedClass);
       });
     });
+  });
+
+  describe('ResourceType Traits information', function(){
+// checking on multiples resources.
+
+    it('resource type information is not displayed on the collapsed resource', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: raml with resources',
+        'resourceTypes: ',
+        '  - restyp1: ',
+        '      description: res1 description',
+        '      get: ',
+        '        responses:',
+        '          200: ',
+        '            description: 200 ok',
+        '/res1:',
+        '  type: restyp1',
+        '         '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('raml with resources');
+      designerAsserts.isResourceCollapsedByPos(1).then(function(){
+        designerAsserts.consoleResourceResourceType(['']);
+      });
+    });
+
+    it('resource type information is displayed on the expanded resource', function(){
+      apiConsole.expandCollapseResourcebyPos(1).then(function(){
+        designerAsserts.consoleResourceResourceType(['restyp1']);
+      });
+    });
+
+    it('traits information is not displayed on the collapsed resource - single trait', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: raml with traits',
+        'traits:',
+        '  - trait1:',
+        '      description: this is trait1',
+        '  - trait2: ',
+        '      description: this is trait2 description',
+        '/pos1:',
+        '  is: ',
+        '    - trait1',
+        '           '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('raml with traits');
+      designerAsserts.isResourceCollapsedByPos(1).then(function(){
+        var expList = {
+          'r0':['']
+        };
+        designerAsserts.consoleResourceTraits(expList);
+      });
+    });
+
+    it('trait information applied at resource level is displayed on the expanded resourcce -  single trait', function(){
+      apiConsole.expandCollapseResourcebyPos(1).then(function(){
+        var expList = {
+          'r0':['trait1']
+        };
+        designerAsserts.consoleResourceTraits(expList);
+      });
+    });
+
+    it('traits information is not displayed on the collapsed resource - 2 traits', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: raml with traits 2',
+        'traits:',
+        '  - trait1:',
+        '      description: this is trait1',
+        '  - trait2: ',
+        '      description: this is trait2 description',
+        '/pes1:',
+        '  is: ',
+        '    - trait1',
+        '    - trait2'
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('raml with traits 2');
+      designerAsserts.isResourceCollapsedByPos(1).then(function(){
+        var expList = {
+          'r0':['', '']
+        };
+        designerAsserts.consoleResourceTraits(expList);
+      });
+
+
+    });
+
+    it('trait information applied at resource level is displayed on the expanded resourcce -  2 traits', function(){
+      apiConsole.expandCollapseResourcebyPos(1).then(function(){
+        var expList = {
+          'r0':['trait1','trait2']
+        };
+        designerAsserts.consoleResourceTraits(expList);
+      });
+    });
+
+    it('trait information applied at method level is displayed on expanded method - single trait', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: raml with traits at method level',
+        'traits:',
+        '  - trait1:',
+        '      description: this is trait1',
+        '  - trait2: ',
+        '      description: this is trait2 description',
+        '/pos1:',
+        '  get:',
+        '    is: ',
+        '      - trait1',
+        '             '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('raml with traits at method level');
+      apiConsole.expandCollpaseMethodsbyPos(1);
+      designerAsserts.consoleValidateCurrentMethodName('GET');
+      designerAsserts.consoleValidateMethodTraits(['trait1']);
+      apiConsole.closeMethodPopUp();
+    });
+
+    it('trait information applied at method level is displayed on expanded method 2 traits', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: raml with traits at method level',
+        'traits:',
+        '  - trait1:',
+        '      description: this is trait1',
+        '  - trait2: ',
+        '      description: this is trait2 description',
+        '/posi1:',
+        '  post:',
+        '    is: [trait1,trait2]'
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('raml with traits at method level');
+      apiConsole.expandCollpaseMethodsbyPos(1);
+      designerAsserts.consoleValidateCurrentMethodName('POST');
+      designerAsserts.consoleValidateMethodTraits(['trait1','trait2']);
+      apiConsole.closeMethodPopUp();
+    });
+
   });
 
   describe('generals', function(){
@@ -176,7 +320,6 @@ describe('Embedded-console',function(){
       it('validate lists', function(){
 
       });
-
 
     });//Markdown
   });//documentation section

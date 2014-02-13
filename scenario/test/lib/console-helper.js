@@ -19,13 +19,17 @@ function ConsoleHelper() {
   this.collapseAll ='.toggle-resource-groups [role="collapse-all"]';
   this.resourceGroupExpandedClass  = 'resource-group ng-scope expanded';
   this.resourceGroupCollapsedClass = 'resource-group ng-scope collapsed';
+  this.currentmethod = '[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]';
+  this.closeMethodbtn = '[role="resource"] div i[class="icon-remove collapse"]';
 }
+
 
 ConsoleHelper.prototype = {};
 
-ConsoleHelper.prototype.expandCollapseAllMainResourcesPromise = function expandCollapseAllMainResources(expandCollapse){
-  var d = webdriver.promise.defer();
+// Resource Groups - start
 
+ConsoleHelper.prototype.expandCollapseAllResourcesGroupPromise = function expandCollapseAllResourcesGroupPromise(expandCollapse){
+  var d = webdriver.promise.defer();
   if (expandCollapse === 'collapse'){
     browser.$(this.collapseAll).click();
     d.fulfill();
@@ -38,9 +42,12 @@ ConsoleHelper.prototype.expandCollapseAllMainResourcesPromise = function expandC
       d.fulfill();
     }
   }
-
   return d.promise;
 };
+
+// Resource Groups - end
+
+// Documentation section - stars
 
 ConsoleHelper.prototype.toggleDocumentationApiReference = function toggleDocumentationApiReference(view){
   var button = browser.findElement(by.css('[role="api-console"] nav a'));
@@ -59,7 +66,14 @@ ConsoleHelper.prototype.getDocumentationSections = function getDocumentationSect
   return browser.findElements(by.css(this.documentationSectionlistCss));
 };
 
+// Documentation section - ends
+
 ConsoleHelper.prototype.getListMainResources = function getListMainResources(){
+//  var that = this;
+  return browser.findElements(by.css(this.listMainResourcesCss));
+};
+
+ConsoleHelper.prototype.getListMainResourcesName = function getListMainResourcesName(){
   var that = this;
   return browser.findElements(by.css(that.listMainResourcesCss));
 };
@@ -90,6 +104,7 @@ ConsoleHelper.prototype.getListResources = function getListResources(){
   var that = this;
   return browser.findElements(by.css(that.listResourcesCss));
 };
+
 ConsoleHelper.prototype.getResourceTypeForAResource = function getResourceTypeForAResource(t){
 //  var that = this;
   var resource = this.getListResources();
@@ -106,17 +121,41 @@ ConsoleHelper.prototype.getListOfMethodByResourceCss = function getListOfMethodB
 
 ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function expandCollapseMainResourcebyPos(pos){
 //  resource needed to be expanded.
+  var d = webdriver.promise.defer();
   pos--;
 //send 0 to expand all.
   if(pos ===-1){
     browser.executeScript(function(){
       $('#raml-console-api-reference h1').click();
+    }).then(function(){
+      d.fulfill();
     });
   }else{
     browser.findElements(by.css('#raml-console-api-reference h1')).then(function(mainResources){
       mainResources[pos].click();
+      d.fulfill();
     });
   }
+  return d.promise;
+};
+
+ConsoleHelper.prototype.expandCollapseResourcebyPos = function expandCollapseResourcebyPos(pos){
+//  resource needed to be expanded.
+  var d = webdriver.promise.defer();
+  pos--;
+//send 0 to expand all.
+  if(pos ===-1){
+    browser.executeScript(function(){
+      $('[role="resource"] [role="resource-summary"] h3').click();
+      d.fulfill();
+    });
+  }else{
+    browser.findElements(by.css('[role="resource"] [role="resource-summary"] h3')).then(function(resources){
+      resources[pos].click();
+      d.fulfill();
+    });
+  }
+  return d.promise;
 };
 
 ConsoleHelper.prototype.areResourceGroupsExpanded = function areResourceGroupsExpanded(){
@@ -146,17 +185,13 @@ ConsoleHelper.prototype.toggleResourceExpansion = function toggleResourceExpansi
 
 ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function expandCollpaseMethodsbyPos(pos){
 //  resource needed to be expanded.
+//  var d = webdriver.promise.defer();
   pos--;
-//send 0 to expand all.
-  if(pos ===-1){
-    browser.executeScript(function(){
-      $('[role="api-console"] [role="resource"] [role="method"] [role="methodSummary"]').click();
-    });
-  }else{
-    browser.findElements(by.css('[role="api-console"] [role="resource"] [role="method"] [role="methodSummary"]')).then(function(methods){
-      methods[pos].click();
-    });
-  }
+  browser.findElements(by.css('[role="api-console"] [role="resource"] [role="methods"] li')).then(function(methods){
+    methods[pos].click();
+//    d.fulfill();
+  });
+//  return d.promise();
 };
 
 ConsoleHelper.prototype.selectTab = function selectTab(pos){
@@ -179,7 +214,6 @@ ConsoleHelper.prototype.getListOfMethods = function getListOfMethods(){
 };
 
 ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function getListOfMethodsDescriptionExpanded(){
-  var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
   browser.executeScript(function () {
     var dic = {};
@@ -199,7 +233,6 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function getListOf
 };
 
 ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResourceType(){
-  var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
   browser.executeScript(function () {
     var dic = {};
@@ -209,7 +242,7 @@ ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResource
       dic[texto]='';
       keys[index]=texto;
     });
-    $('[role="api-console"] [role="resource"] [role="resource-summary"] [role="resource-type"]').text(function( index,text ) {
+    $('[role="api-console"] [role="resource"] [role="resource-summary"] [ng-show="resourceView.expanded"] [role="resource-type"]').text(function( index,text ) {
       dic[keys[index]]=text.replace(/\s+/g,'');
     });
     return dic;
@@ -219,45 +252,19 @@ ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResource
   return d.promise;
 };
 
-//ConsoleHelper.prototype.getResourcesTraits = function(){
-//  var webdriver = require('selenium-webdriver');
-//  var d = webdriver.promise.defer();
-//
-//  browser.executeScript(function () {
-//    var dic = {};
-//    var keys = [];
-//    $('[role=\'resource\'] h3.path').text(function( index,text ) {
-//      var texto = text.replace(/\s+/g,'');
-//      dic[texto]='';
-//      keys[index]=texto;
-//    });
-//    $('[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]').text(function( index,text ) {
-//      dic[keys[index]]=text.replace(/\s+/g,'');
-//    });
-//    return dic;
-//  }).then(function(dic){
-//      d.fulfill(dic);
-//    });
-//  return d.promise;
-//};
+ConsoleHelper.prototype.getCurrentMethod = function getCurrentMethod (){
+  return browser.$(this.currentmethod);
+};
+
+ConsoleHelper.prototype.closeMethodPopUp = function closeMethodPopUp() {
+  browser.executeScript(function () {
+    $('[role="resource"] div i[class="icon-remove collapse"]').click();
+  });
+};
 
 ConsoleHelper.prototype.getMethodsTraits = function getMethodsTraits(){
-  var webdriver = require('selenium-webdriver');
-  var d = webdriver.promise.defer();
-  browser.executeScript(function () {
-    var dic = {};
-    var keys = [];
-    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]').text(function( index,text ) {
-      dic[text]='';
-      keys[index]=text;
-    });
-    $('[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation [role="traits"]').text(function( index,text ) {
-      dic[keys[index]]=text.replace(/\s+/g,' ');
-    });
-    return dic;
-  }).then(function(dic){
-      d.fulfill(dic);
-    });
-  return d.promise;
+
+  return browser.findElements(by.css('[role="method"] [role="documentation"] .modifiers [role="traits"] li'));
+
 };
 exports.ConsoleHelper = ConsoleHelper;
