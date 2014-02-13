@@ -73,6 +73,7 @@ describe('Console',function(){
         var expList = ['/res1','/ress1'];
         designerAsserts.consoleMainResources(expList);
       });
+
       it('expand all resources tree', function (){
         apiConsole.expandCollapseMainResourcebyPos(0);
         apiConsole.areResourceGroupsExpanded();

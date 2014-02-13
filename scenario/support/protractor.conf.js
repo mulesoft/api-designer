@@ -34,7 +34,7 @@ exports.config = {
   baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
-    browser.get('/tree/epic/console-restyling');
+    browser.get('');
     browser.sleep(2000);
     var alertDialog = browser.driver.switchTo().alert();
     alertDialog.sendKeys('example.raml');
