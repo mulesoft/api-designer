@@ -9,7 +9,7 @@ exports.config = {
     name: 'API-Portal-console'
   },
 
-  allScriptsTimeout: 50000,
+  allScriptsTimeout: 90000,
 
   specs: [
     '../test/e2e/file-browser.js',

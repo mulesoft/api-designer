@@ -36,10 +36,9 @@ angular.module('raml')
       }
 
       if (metadata.isText) {
-        return [
-          key,
-          ''
-        ];
+        //For text elements that are part of an array
+        //we do not add an empty line break:
+        return suggestion.isList ? [key] : [key, ''];
       }
 
       return [
