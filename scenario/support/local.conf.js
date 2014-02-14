@@ -1,3 +1,4 @@
+'use strict';
 exports.config = {
 
   seleniumPort: 4444,

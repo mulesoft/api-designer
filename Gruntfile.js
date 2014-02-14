@@ -129,7 +129,8 @@ module.exports = function (grunt) {
         'test/mock/{,*/}*.js',
         'test/spec/{,*/}*.js',
         'scenario/test/e2e/{,*/}*.js',
-        'scenario/test/lib/{,*/}*.js'
+        'scenario/test/lib/{,*/}*.js',
+        'scenario/support/{,*/}*.js'
       ]
     },
     rev: {
