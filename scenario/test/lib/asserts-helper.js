@@ -68,12 +68,12 @@ AssertsHelper.prototype.consoleSectionIsHidden= function consoleSectionIsHidden(
 
 AssertsHelper.prototype.consoleApiTitle= function consoleApiTitle(title){
   var consoleApi = new ConsoleHelper();
-  expect(browser.$(consoleApi.titleCss).getText()).toEqual(title);
+  expect($(consoleApi.titleCss).getText()).toEqual(title);
 };
 
 AssertsHelper.prototype.consoleResourceGroupCollapsedExpanded = function consoleResourceGroupCollapsedExpanded(collapsedExpanded){
 
-  browser.findElements(by.css('[role="resource-group"]')).then(function(resourcesGroup){
+  element.all(by.css('[role="resource-group"]')).then(function(resourcesGroup){
     resourcesGroup.forEach(function(resgroup){
       expect(resgroup.getAttribute('class')).toEqual(collapsedExpanded);
     });
@@ -82,7 +82,7 @@ AssertsHelper.prototype.consoleResourceGroupCollapsedExpanded = function console
 
 AssertsHelper.prototype.consoleResourceGroupCollapsedExpandedArray = function consoleResourceGroupCollapsedExpanded(collapsedExpanded){
   var i = 0;
-  browser.findElements(by.css('[role="resource-group"]')).then(function(resourcesGroup){
+  element.all(by.css('[role="resource-group"]')).then(function(resourcesGroup){
     resourcesGroup.forEach(function(resgroup){
       var t = i++;
       expect(resgroup.getAttribute('class')).toEqual(collapsedExpanded[t]);
@@ -154,7 +154,7 @@ AssertsHelper.prototype.isResourceCollapsedByPos = function isResourceCollapsedB
     // check that all resources are collapsed
     d.fulfill();
   }else{
-    browser.findElements(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [ng-show="resourceView.expanded"]')).then(function(resources){
+    element.all(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [ng-show="resourceView.expanded"]')).then(function(resources){
       expect(resources[pos].getAttribute('class')).toEqual('modifiers ng-hide');
       d.fulfill();
     });
@@ -187,7 +187,7 @@ AssertsHelper.prototype.consoleResourcesMethods = function consoleResourcesMetho
 };
 
 AssertsHelper.prototype.consoleResourceName = function consoleResourceName(expList){
-  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+  element.all(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     expect(resources.length).toEqual(expList.length);
     resources.forEach(function(resource){
@@ -201,7 +201,7 @@ AssertsHelper.prototype.consoleResourceName = function consoleResourceName(expLi
 };
 
 AssertsHelper.prototype.consoleResourceMethods = function consoleResourceMethods(expList){
-  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+  element.all(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     resources.forEach(function(resource){
       var t = i++;
@@ -219,7 +219,7 @@ AssertsHelper.prototype.consoleResourceMethods = function consoleResourceMethods
 
 AssertsHelper.prototype.consoleResourceResourceType = function consoleResourceResourceType(expList){
   var d = webdriver.promise.defer();
-  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+  element.all(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     expect(resources.length).toEqual(expList.length);
     resources.forEach(function(resource){
@@ -238,7 +238,7 @@ AssertsHelper.prototype.consoleResourceResourceType = function consoleResourceRe
 };
 
 AssertsHelper.prototype.consoleResourceTraits = function consoleResourceTraits(expList){
-  browser.findElements(by.css('[role="resource"]')).then(function(resources){
+  element.all(by.css('[role="resource"]')).then(function(resources){
     var i =0;
     resources.forEach(function(resource){
       var t = i++;
@@ -257,7 +257,7 @@ AssertsHelper.prototype.consoleResourceTraits = function consoleResourceTraits(e
 AssertsHelper.prototype.consoleResourceDescription = function consoleResourceDescription(descriptions){
   var i =0;
   var apiConsole = new ConsoleHelper();
-  browser.findElements(by.css(apiConsole.listResourcesCss)).then(function(resources){
+  element.all(by.css(apiConsole.listResourcesCss)).then(function(resources){
     expect(resources.length).toEqual(descriptions.length);
     resources.forEach(function(resource){
       var t = i++;
@@ -314,8 +314,6 @@ AssertsHelper.prototype.consoleValidateMethodTraits = function consoleValidateMe
     //traits ends
 
   // method ends
-
-
 
 //Console Ends
 
@@ -430,13 +428,13 @@ AssertsHelper.prototype.shelfWithNoElements = function shelfWithNoElements(){
 };
 
 AssertsHelper.prototype.shelfIsNotDisplayed = function shelfIsNotDisplayed(){
-  browser.findElements(by.css('[role="shelf"]')).then(function(shelf){
+  element.all(by.css('[role="shelf"]')).then(function(shelf){
     expect(shelf[0].getAttribute('class')).toEqual('expanded ng-hide');
   });
 };
 
 AssertsHelper.prototype.shelfIsDisplayed = function shelfIsDisplayed(){
-  browser.findElements(by.css('[role="shelf"]')).then(function(shelf){
+  element.all(by.css('[role="shelf"]')).then(function(shelf){
     expect(shelf[0].getAttribute('class')).toEqual('expanded');
   });
 };

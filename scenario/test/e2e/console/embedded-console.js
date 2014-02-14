@@ -309,6 +309,7 @@ describe('Embedded-console',function(){
         expect(list.length).toEqual(0);
       });
       designerAsserts.consoleValidateDocumentationSectionPlainText(expTitle, expContent);
+      apiConsole.toggleDocumentationApiReference('api');
     });
 
     xdescribe('Markdown', function(){

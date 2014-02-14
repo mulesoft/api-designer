@@ -13,32 +13,29 @@ describe('parser',function(){
         editor.addNewFile('theExample.raml');
         var definition = [
           '#%RAML 0.8',
-          '---',
           'title: !include theExample.raml'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('3', 'detected circular !include of theExample.raml');
+        designerAsserts.parserError('2', 'detected circular !include of theExample.raml');
       });
 
       it('broken links', function () {
         var definition = [
           '#%RAML 0.8',
-          '---',
           'title: !include http://some.broken.link.com/'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('3','error: cannot fetch http://some.broken.link.com/, check that the server is up and that CORS is enabled(HTTP 404)');
+        designerAsserts.parserError('2','error: cannot fetch http://some.broken.link.com/, check that the server is up and that CORS is enabled(HTTP 404)');
       });
 
       it('file name/URL cannot be null', function () {
         var definition = [
           '#%RAML 0.8',
-          '---',
           'title: Mi Api',
           'trait: !include'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('4', 'file name/URL cannot be null');
+        designerAsserts.parserError('3', 'file name/URL cannot be null');
       });
 
     }); //include
@@ -77,11 +74,10 @@ describe('parser',function(){
     it('should fail: document must be a map(titl)', function () {
       var definition = [
         '#%RAML 0.8',
-        '---',
         'titl'
       ].join('\\n');
       editor.setValue(definition);
-      designerAsserts.parserError('3','document must be a map');
+      designerAsserts.parserError('2','document must be a map');
     });
 
     it('should fail: empty document (only comments)', function () {

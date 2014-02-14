@@ -86,7 +86,7 @@ ShelfHelper.prototype = {};
 
 ShelfHelper.prototype.getElementsPromise = function getElementsPromise(){
   var that = this;
-  return browser.findElements(by.css(that.elemlistCss));
+  return element.all(by.css(that.elemlistCss));
 };
 
 ShelfHelper.prototype.getElements = function getElements(){
@@ -134,11 +134,11 @@ ShelfHelper.prototype.selectShelfElemByPos = function selectShelfElemByPos(pos){
 };
 
 ShelfHelper.prototype.getElementsByGroup = function getElementsByGroup(group){
-  return browser.findElements(by.css('.'+group+' ul li span'));
+  return element.all(by.css('.'+group+' ul li span'));
 };
 
 ShelfHelper.prototype.getSections = function getSections(){
-  return browser.findElements(by.css('[role=\'section\']'));
+  return element.all(by.css('[role=\'section\']'));
 };
 
 ShelfHelper.prototype.itemsInSection = function itemsInSection(){
@@ -147,7 +147,7 @@ ShelfHelper.prototype.itemsInSection = function itemsInSection(){
 
 
 ShelfHelper.prototype.getTextFromShelf = function getTextFromShelf(){
-  return browser.findElements(by.css('[role=\'shelf-container\']'));
+  return element.all(by.css('[role=\'shelf-container\']'));
 };
 
 exports.ShelfHelper = ShelfHelper;

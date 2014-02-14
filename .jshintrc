@@ -26,6 +26,7 @@
     "beforeEach": false,
     "browser": false,
     "$": false,
+    "element": false,
     "by": false,
     "CodeMirror": false,
     "describe": false,

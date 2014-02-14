@@ -25,7 +25,6 @@ var mountFolder = function (connect, dir, route) {
 module.exports = function (grunt) {
   // load all grunt tasks
   require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
-  require('./tasks/protractor.js')(grunt);
 
   // configurable paths
   var yeomanConfig = {

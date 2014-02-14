@@ -82,7 +82,7 @@ EditorHelper.prototype.setCursor = function setCursor(line, char){
 EditorHelper.prototype.getSHighlightClass = function getSHighlightClass(line, pos){
   var that = this;
   var d = webdriver.promise.defer();
-  browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
+  element.all(by.css(that.editorLinesListCss)).then(function(list){
     list[line].findElements(by.css('span')).then(function(lintext){
       if(lintext[pos]) {
         lintext[pos].getAttribute('class').then(function(classe){
@@ -101,7 +101,7 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClass
   var d = webdriver.promise.defer();
   var listClase = [] ;
   var i = 0;
-  browser.findElements(by.css(that.editorLinesListCss)).then(function(list){
+  element.all(by.css(that.editorLinesListCss)).then(function(list){
     list[line].findElements(by.css('span')).then(function(lintext){
       posi.forEach(function(pos){
         var t = i ++;
@@ -134,7 +134,7 @@ EditorHelper.prototype.newFilePopUp = function newFilePopUp(fileName, dismiss){
 };
 
 EditorHelper.prototype.addNewFile = function addNewFile(fileName){
-  browser.findElement(by.css(this.newButton)).click();
+  $(this.newButton).click();
   this.newFilePopUp(fileName);
 };
 
@@ -145,7 +145,7 @@ EditorHelper.prototype.saveFileButton = function saveFileButton(){
 
 
 EditorHelper.prototype.dismissAddNewFile = function dismissAddNewFile(){
-  browser.findElement(by.css(this.newButton)).click();
+  $(this.newButton).click();
   var alertDialog = browser.driver.switchTo().alert();
   expect(alertDialog.getText()).toEqual('Choose a name:');
   alertDialog.sendKeys();
@@ -168,7 +168,7 @@ EditorHelper.prototype.displayFileMenuPromise = function displayFileMenuPromise(
 EditorHelper.prototype.selectAFileByPos = function selectAFileByPos(pos){
   var d = webdriver.promise.defer();
   pos --;
-  browser.findElements(by.css('.file-list li')).then(function(list){
+  element.all(by.css('.file-list li')).then(function(list){
     list[pos].click();
     d.fulfill();
   });
@@ -178,7 +178,7 @@ EditorHelper.prototype.selectAFileByPos = function selectAFileByPos(pos){
 EditorHelper.prototype.renameFile = function renameFile(pos, fileName){
   var d = webdriver.promise.defer();
   this.displayFileMenuPromise(pos).then(function(){
-    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+    element.all(by.css('[role="context-menu"] li')).then(function(list){
       list[2].click().then(function(){
         var alertDialog = browser.driver.switchTo().alert();
         expect(alertDialog.getText()).toEqual('Choose a name:');
@@ -192,13 +192,13 @@ EditorHelper.prototype.renameFile = function renameFile(pos, fileName){
 };
 
 EditorHelper.prototype.getNotificationBar = function getNotificationBar(){
-  return browser.findElements(by.css(this.notificationBar));
+  return element.all(by.css(this.notificationBar));
 };
 
 EditorHelper.prototype.deleteAFile = function deleteAFile(pos,fileName,last){
   var d = webdriver.promise.defer();
   this.displayFileMenuPromise(pos).then(function(){
-    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+    element.all(by.css('[role="context-menu"] li')).then(function(list){
       list[1].click().then(function(){
         var alertDialog = browser.driver.switchTo().alert();
         expect(alertDialog.getText()).toEqual('Are you sure you want to delete "'+fileName+'"?');
@@ -219,7 +219,7 @@ EditorHelper.prototype.deleteAFile = function deleteAFile(pos,fileName,last){
 EditorHelper.prototype.dismissDeleteAFile = function dismissDeleteAFile(pos,fileName){
   var d = webdriver.promise.defer();
   this.displayFileMenuPromise(pos).then(function(){
-    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+    element.all(by.css('[role="context-menu"] li')).then(function(list){
       list[1].click().then(function(){
         var alertDialog = browser.driver.switchTo().alert();
         expect(alertDialog.getText()).toEqual('Are you sure you want to delete "'+fileName+'"?');
@@ -234,7 +234,7 @@ EditorHelper.prototype.dismissDeleteAFile = function dismissDeleteAFile(pos,file
 EditorHelper.prototype.saveFile = function saveFile(pos){
   var d = webdriver.promise.defer();
   this.displayFileMenuPromise(pos).then(function(){
-    browser.findElements(by.css('[role="context-menu"] li')).then(function(list){
+    element.all(by.css('[role="context-menu"] li')).then(function(list){
       list[0].click();
       d.fulfill();
     });

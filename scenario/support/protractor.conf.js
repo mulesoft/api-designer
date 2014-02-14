@@ -1,5 +1,4 @@
 'use strict';
-
 exports.config = {
 
   capabilities: {
@@ -7,7 +6,7 @@ exports.config = {
     // firefox, safari
     name: 'API-portal- Regression'
   },
-  allScriptsTimeout: 50000,
+//  allScriptsTimeout: 50000,
   specs: [
     '../test/e2e/file-browser.js',
     '../test/e2e/editor-shelf/resource/resource-methods.js',
@@ -23,7 +22,10 @@ exports.config = {
     '../test/e2e/editor-parser/parser-regressions.js',
     '../test/e2e/editor-parser/parser-root.js',
     '../test/e2e/editor-parser/parser-traits.js',
-    '../test/e2e/editor-parser/resourceTypes/*.js',
+    '../test/e2e/editor-parser/resource/parser-resource-method.js',
+    '../test/e2e/editor-parser/resource/parser-resource-root.js',
+    '../test/e2e/editor-parser/resourceTypes/parser-rt-root.js',
+    '../test/e2e/editor-parser/resourceTypes/parser-rt-method.js',
     '../test/e2e/raml-example/muse-e2e.js',
     '../test/e2e/published-examples/examples-parser.js',
     '../test/e2e/console/console-defaultview.js',
@@ -35,7 +37,7 @@ exports.config = {
   baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
-    browser.get('');
+    browser.get('/tree/epic/console-restyling');
     browser.sleep(2000);
     var alertDialog = browser.driver.switchTo().alert();
     alertDialog.sendKeys('example.raml');

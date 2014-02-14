@@ -12,6 +12,33 @@ describe('Embedded-console Methods',function(){
 
 	describe('common view', function(){
 
+    it('console is displayed for a different raml if the method popup remind opened', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: raml with traits at method level',
+        'traits:',
+        '  - trait1:',
+        '      description: this is trait1',
+        '  - trait2: ',
+        '      description: this is trait2 description',
+        '/product:',
+        '  get:',
+        '    is: ',
+        '      - trait1',
+        '             '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('raml with traits at method level');
+      apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+        definition = [
+          '#%RAML 0.8',
+          'title: another api'
+        ].join('\\n');
+        editor.setValue(definition);
+        designerAsserts.consoleApiTitle('another api');
+      });
+    });
+
 		describe('traits', function(){
 
 			it('trait information applied at method level is displayed on expanded method - single trait', function(){

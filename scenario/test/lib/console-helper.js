@@ -50,7 +50,7 @@ ConsoleHelper.prototype.expandCollapseAllResourcesGroupPromise = function expand
 // Documentation section - stars
 
 ConsoleHelper.prototype.toggleDocumentationApiReference = function toggleDocumentationApiReference(view){
-  var button = browser.findElement(by.css('[role="api-console"] nav a'));
+  var button = $('[role="api-console"] nav a');
   if (view === 'api'){
     expect(button.getAttribute('ng-click')).toEqual('ramlConsole.gotoView("apiReference")');
     button.click();
@@ -63,46 +63,46 @@ ConsoleHelper.prototype.toggleDocumentationApiReference = function toggleDocumen
 };
 
 ConsoleHelper.prototype.getDocumentationSections = function getDocumentationSections(){
-  return browser.findElements(by.css(this.documentationSectionlistCss));
+  return element.all(by.css(this.documentationSectionlistCss));
 };
 
 // Documentation section - ends
 
 ConsoleHelper.prototype.getListMainResources = function getListMainResources(){
 //  var that = this;
-  return browser.findElements(by.css(this.listMainResourcesCss));
+  return element.all(by.css(this.listMainResourcesCss));
 };
 
 ConsoleHelper.prototype.getListMainResourcesName = function getListMainResourcesName(){
   var that = this;
-  return browser.findElements(by.css(that.listMainResourcesCss));
+  return element.all(by.css(that.listMainResourcesCss));
 };
 
 ConsoleHelper.prototype.getListResourcesDescription = function getListResourcesDescription(){
   var that = this;
-  return browser.findElements(by.css(that.listResourceDescriptionCss));
+  return element.all(by.css(that.listResourceDescriptionCss));
 };
 
 ConsoleHelper.prototype.getListResourcesName = function getListResourcesName(){
   var that = this;
-  return browser.findElements(by.css(that.listResourcesNameCss));
+  return element.all(by.css(that.listResourcesNameCss));
 };
 
 ConsoleHelper.prototype.getListResourceType = function getListResourceType(){
   var that = this;
-  return  browser.findElements(by.css(that.listResourceRTCss));
+  return  element.all(by.css(that.listResourceRTCss));
 };
 ConsoleHelper.prototype.getListTrait = function getListTrait(){
   var that = this;
-  return  browser.findElements(by.css(that.listResourceTraitsCss));
+  return  element.all(by.css(that.listResourceTraitsCss));
 };
 ConsoleHelper.prototype.getListMethods = function getListMethods(){
   var that = this ;
-  return browser.findElements(by.css(that.listResourceMethodsCss));
+  return element.all(by.css(that.listResourceMethodsCss));
 };
 ConsoleHelper.prototype.getListResources = function getListResources(){
   var that = this;
-  return browser.findElements(by.css(that.listResourcesCss));
+  return element.all(by.css(that.listResourcesCss));
 };
 
 ConsoleHelper.prototype.getResourceTypeForAResource = function getResourceTypeForAResource(t){
@@ -112,7 +112,7 @@ ConsoleHelper.prototype.getResourceTypeForAResource = function getResourceTypeFo
 };
 
 ConsoleHelper.prototype.getListResourcesDisplayName = function getListResourcesDisplayName(){
-  return browser.findElements(by.css('[ng-show=\'resource.name\']'));
+  return element.all(by.css('[ng-show=\'resource.name\']'));
 };
 
 ConsoleHelper.prototype.getListOfMethodByResourceCss = function getListOfMethodByResourceCss(){
@@ -131,7 +131,7 @@ ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function expandCollaps
       d.fulfill();
     });
   }else{
-    browser.findElements(by.css('#raml-console-api-reference h1')).then(function(mainResources){
+    element.all(by.css('#raml-console-api-reference h1')).then(function(mainResources){
       mainResources[pos].click();
       d.fulfill();
     });
@@ -150,7 +150,7 @@ ConsoleHelper.prototype.expandCollapseResourcebyPos = function expandCollapseRes
       d.fulfill();
     });
   }else{
-    browser.findElements(by.css('[role="resource"] [role="resource-summary"] h3')).then(function(resources){
+    element.all(by.css('[role="resource"] [role="resource-summary"] h3')).then(function(resources){
       resources[pos].click();
       d.fulfill();
     });
@@ -159,7 +159,7 @@ ConsoleHelper.prototype.expandCollapseResourcebyPos = function expandCollapseRes
 };
 
 ConsoleHelper.prototype.areResourceGroupsExpanded = function areResourceGroupsExpanded(){
-  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
+  element.all(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
     groups.forEach(function(group){
       expect(group.getAttribute('class')).toMatch('expanded');
     });
@@ -167,7 +167,7 @@ ConsoleHelper.prototype.areResourceGroupsExpanded = function areResourceGroupsEx
 };
 
 ConsoleHelper.prototype.areResourceGroupsCollapsed = function areResourceGroupsCollapsed(){
-  browser.findElements(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
+  element.all(by.css('#raml-console-api-reference [role="resource-group"] div[ng-transclude]')).then(function(groups){
     groups.forEach(function(group){
       expect(group.getAttribute('class')).toMatch('collapsed');
     });
@@ -176,7 +176,7 @@ ConsoleHelper.prototype.areResourceGroupsCollapsed = function areResourceGroupsC
 
 ConsoleHelper.prototype.toggleResourceExpansion = function toggleResourceExpansion(){
   var that = this;
-  browser.findElements(by.css(that.listResourcesNameCss)).then(function(resources){
+  element.all(by.css(that.listResourcesNameCss)).then(function(resources){
     resources.forEach(function(resource){
       resource.click();
     });
@@ -185,19 +185,19 @@ ConsoleHelper.prototype.toggleResourceExpansion = function toggleResourceExpansi
 
 ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function expandCollpaseMethodsbyPos(pos){
 //  resource needed to be expanded.
-//  var d = webdriver.promise.defer();
+  var d = webdriver.promise.defer();
   pos--;
-  browser.findElements(by.css('[role="api-console"] [role="resource"] [role="methods"] li')).then(function(methods){
+  element.all(by.css('[role="api-console"] [role="resource"] [role="methods"] li')).then(function(methods){
     methods[pos].click();
-//    d.fulfill();
+    d.fulfill();
   });
-//  return d.promise();
+  return d.promise;
 };
 
 ConsoleHelper.prototype.selectTab = function selectTab(pos){
   var that = this;
   // 0 - request, 1- responses, 2 try it
-  browser.findElements(by.css(that.ListOftabs)).then(function(tab){
+  element.all(by.css(that.ListOftabs)).then(function(tab){
     tab[pos].click();
   });
 };
@@ -253,7 +253,7 @@ ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResource
 };
 
 ConsoleHelper.prototype.getCurrentMethod = function getCurrentMethod (){
-  return browser.$(this.currentmethod);
+  return $(this.currentmethod);
 };
 
 ConsoleHelper.prototype.closeMethodPopUp = function closeMethodPopUp() {
@@ -264,7 +264,7 @@ ConsoleHelper.prototype.closeMethodPopUp = function closeMethodPopUp() {
 
 ConsoleHelper.prototype.getMethodsTraits = function getMethodsTraits(){
 
-  return browser.findElements(by.css('[role="method"] [role="documentation"] .modifiers [role="traits"] li'));
+  return element.all(by.css('[role="method"] [role="documentation"] .modifiers [role="traits"] li'));
 
 };
 exports.ConsoleHelper = ConsoleHelper;
