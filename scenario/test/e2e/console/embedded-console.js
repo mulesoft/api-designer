@@ -312,6 +312,39 @@ describe('Embedded-console',function(){
       apiConsole.toggleDocumentationApiReference('api');
     });
 
+    xit('current raml with documentation section - change to a raml without documentation section  - console should be displayed.',function(){
+//    https://www.pivotaltracker.com/story/show/65812464
+      var definition = [
+        '#%RAML 0.8',
+        'title: My api',
+        'documentation:',
+        '  - title: My document title1',
+        '    content: | ',
+        '      content of my doccument title 1',
+        '  - title: My document title2',
+        '    content: content of my document title 2',
+        '/documentation: ',
+        '  description: presentation resource description'
+      ].join('\\n');
+      editor.setValue(definition);
+      var expTitle = ['My document title1', 'My document title2'];
+      var expContent = ['content of my doccument title 1','content of my document title 2' ];
+      apiConsole.toggleDocumentationApiReference('documentation');
+      apiConsole.getListMainResources().then(function(list){
+        expect(list.length).toEqual(0);
+      });
+      designerAsserts.consoleValidateDocumentationSectionPlainText(expTitle, expContent).then(function(){
+        definition = [
+          '#%RAML 0.8',
+          'title: api without documentation',
+          '/oneresource:',
+          '  description: this is oneresource description'
+        ].join('\\n');
+        editor.setValue(definition);
+        designerAsserts.consoleResourceName(['oneresource']);
+      });
+    });
+
     xdescribe('Markdown', function(){
 
       it('validate titles',function(){

@@ -270,6 +270,7 @@ AssertsHelper.prototype.consoleResourceDescription = function consoleResourceDes
 };
 
 AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function consoleValidateDocumentationSectionPlainText(expTitle, expContent){
+  var d = webdriver.promise.defer();
   apiConsole.getDocumentationSections().then(function(sections){
     expect(sections.length).toEqual(expTitle.length);
     var i = 0;
@@ -282,8 +283,12 @@ AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function 
       section.findElement(by.css('p')).then(function(content){
         expect(content.getText()).toEqual(expContent[p]);
       });
+      if(p === section.length){
+        d.fulfill();
+      }
     });
   });
+  return d.promise;
 };
 
   // method start

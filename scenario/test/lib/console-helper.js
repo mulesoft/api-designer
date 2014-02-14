@@ -20,7 +20,7 @@ function ConsoleHelper() {
   this.resourceGroupExpandedClass  = 'resource-group ng-scope expanded';
   this.resourceGroupCollapsedClass = 'resource-group ng-scope collapsed';
   this.currentmethod = '[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]';
-  this.closeMethodbtn = '[role="resource"] div i[class="icon-remove collapse"]';
+//  this.closeMethodbtn = '[role="resource"] div i[class="icon-remove collapse"]';
 }
 
 
