@@ -60,13 +60,13 @@
         return file;
       };
 
-      RamlDirectory.prototype.removeFile = function removeFile(file) {
-        return service.removeFile(file).then(function() {
-          var index = this.files.indexOf(file);
-          if (index !== -1) {
-            this.files.splice(index, 1);
-          }
-        }.bind(this));
+      RamlDirectory.prototype.removeFile = function (file) {
+        var index = this.files.indexOf(file);
+        if (index !== -1) {
+          this.files.splice(index, 1);
+        }
+
+        return service.removeFile(file);
       };
 
       function handleErrorFor(file) {
@@ -124,11 +124,11 @@
         function modifyFile() {
           file.dirty = false;
           file.persisted = false;
-          $rootScope.$broadcast('event:raml-editor-file-removed', file);
 
           return Object.freeze(file);
         }
 
+        $rootScope.$broadcast('event:raml-editor-file-removed', file);
         return fileSystem.remove(file.path).then(modifyFile, handleErrorFor(file));
       };
 
@@ -138,8 +138,8 @@
         if (file.extension !== 'raml') {
           file.contents = '';
         }
-        $rootScope.$broadcast('event:raml-editor-file-created', file);
 
+        $rootScope.$broadcast('event:raml-editor-file-created', file);
         return file;
       };
 
