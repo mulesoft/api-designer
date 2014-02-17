@@ -5,7 +5,7 @@ describe('parser ',function(){
   var designerAsserts= new AssertsHelper();
   var editor= new EditorHelper();
 
-  describe('alias', function(){
+  xdescribe('alias', function(){
 
     it('found undefined alias', function(){
       var definition = [
@@ -34,7 +34,7 @@ describe('parser ',function(){
     });
   });//alias
 
-  it('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
+  xit('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
     var definition = [
       '#%RAML 0.8',
       '---',
@@ -50,7 +50,7 @@ describe('parser ',function(){
   });
 
 
-  it('nested resource name /type', function(){
+  xit('nested resource name /type', function(){
     var ramlexam = [
       '#%RAML 0.8',
       'title: my api',
@@ -63,5 +63,58 @@ describe('parser ',function(){
     editor.setValue(ramlexam);
     expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
+
+  describe('error mark is displayed when code is folded', function(){
+
+    it('error displayed when the code is  folded', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: errorCollapsed',
+        '/collapsed1:',
+        '  /collapsed2:',
+        '    description: this is res2 description',
+        '    /collapsed3:',
+        '      /collapsed4:',
+        '        post:',
+        '          headers:',
+        '            hola2:',
+        '              type integer'
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.parserError('11','each header must be a map');
+      editor.foldCodebyPos(6);
+      designerAsserts.parserError('9','Error on line 11: each header must be a map');
+      editor.foldCodebyPos(5);
+      designerAsserts.parserError('8','Error on line 11: each header must be a map');
+      editor.foldCodebyPos(4);
+      designerAsserts.parserError('7','Error on line 11: each header must be a map');
+      editor.foldCodebyPos(3);
+      designerAsserts.parserError('6','Error on line 11: each header must be a map');
+      editor.foldCodebyPos(2);
+      designerAsserts.parserError('4','Error on line 11: each header must be a map');
+      editor.foldCodebyPos(1);
+      designerAsserts.parserError('3','Error on line 11: each header must be a map');
+    });
+
+    it('error message - code folded - edit raml', function(){
+      var definition= [
+        '#%RAML 0.8',
+        'title: error when code is folded.',
+        '/res:',
+        '  post:',
+        '    baseUriParameters:',
+        '       ',
+        '  patch:',
+        '    '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.parserError('5','base uri parameters defined when there is no baseUri');
+      editor.foldCodebyPos(2);
+      designerAsserts.parserError('4','Error on line 5: base uri parameters defined when there is no baseUri');
+      editor.setLine(8, '    description: this is a description');
+      designerAsserts.parserError('4','Error on line 5: base uri parameters defined when there is no baseUri');
+    });
+  });
+
 
 });// parser

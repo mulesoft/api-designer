@@ -35,7 +35,7 @@ exports.config = {
   baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
-    browser.get('');
+    browser.get('/tree/features/display-error-messages-for-collapsed-code-62912124/');
     browser.sleep(2000);
     var alertDialog = browser.driver.switchTo().alert();
     alertDialog.sendKeys('example.raml');
