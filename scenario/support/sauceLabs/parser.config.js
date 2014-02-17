@@ -8,7 +8,7 @@ exports.config = {
     'browserName': process.env.BROWSER,
     'name': 'API-Portal-parser'
   },
-  allScriptsTimeout: 50000,
+  allScriptsTimeout: 90000,
   specs: [
     '../../test/e2e/editor-parser/*.js',
     '../../test/e2e/editor-parser/resource/*.js',
@@ -36,7 +36,7 @@ exports.config = {
 
   jasmineNodeOpts: {
     onComplete: null,
-    isVerbose: true,
+    isVerbose: false,
     showColors: false,
     includeStackTrace: false,
     defaultTimeoutInterval: 80000

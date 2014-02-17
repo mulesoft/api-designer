@@ -105,7 +105,7 @@ angular.module('lightweightParse', ['utils'])
      *
      * @param value The value that needs to be transformed.
      *
-     * @returns An object with text, isAlias and isReference keys.
+     * @returns {{text, isAlias, isReference}}
      */
     function transformValue(value) {
       if (!value) {
@@ -120,11 +120,10 @@ angular.module('lightweightParse', ['utils'])
     }
 
     return function extractKeyValue(line) {
-      var indexOf = -1;
       var start   = 0;
       var end     = line.length;
+      var indexOf = line.indexOf('#');
 
-      indexOf = line.indexOf('#');
       if (indexOf !== -1) {
         end = indexOf;
       }
@@ -178,13 +177,12 @@ angular.module('lightweightParse', ['utils'])
     }
 
     return function getScopes(arrayOfLines) {
-      var zipValues = [], currentIndexes = {};
-
       if (lastArrayCache && areArraysEqual(lastArrayCache.key, arrayOfLines)) {
         return lastArrayCache.value;
       }
 
-      zipValues = arrayOfLines.map(function (line, index) {
+      var currentIndexes = {};
+      var zipValues = arrayOfLines.map(function (line, index) {
         var lineIndentInfo = getLineIndent(line);
         return {tabCount: lineIndentInfo.tabCount, content: lineIndentInfo.content, lineNumber: index};
       });
