@@ -147,6 +147,28 @@ AssertsHelper.prototype.consoleResourcesDescription = function consoleResourcesD
   });
 };
 
+AssertsHelper.prototype.consoleResourceDescription = function consoleResourceDescription(descriptions){
+  var i =0;
+  var apiConsole = new ConsoleHelper();
+  element.all(by.css(apiConsole.listResourcesCss)).then(function(resources){
+    expect(resources.length).toEqual(descriptions.length);
+    resources.forEach(function(resource){
+      var t = i++;
+      resource.findElements(by.css(apiConsole.listResourceDescriptionCss)).then(function(description){
+        expect(description.length).toEqual(1);
+        expect(description[0].getText()).toEqual(descriptions[t]);
+      });
+    });
+  });
+};
+
+AssertsHelper.prototype.consoleValidateMethodDescription = function consoleValidateMethodDescription(description){
+  var apiConsole = new ConsoleHelper();
+  apiConsole.getMethodDescription().then(function(desc){
+    expect(desc[0].getText()).toEqual(description);
+  });
+};
+
 AssertsHelper.prototype.isResourceCollapsedByPos = function isResourceCollapsedByPos(pos){
   var d = webdriver.promise.defer();
   pos --;
@@ -254,20 +276,7 @@ AssertsHelper.prototype.consoleResourceTraits = function consoleResourceTraits(e
   });
 };
 
-AssertsHelper.prototype.consoleResourceDescription = function consoleResourceDescription(descriptions){
-  var i =0;
-  var apiConsole = new ConsoleHelper();
-  element.all(by.css(apiConsole.listResourcesCss)).then(function(resources){
-    expect(resources.length).toEqual(descriptions.length);
-    resources.forEach(function(resource){
-      var t = i++;
-      resource.findElements(by.css(apiConsole.listResourceDescriptionCss)).then(function(description){
-        expect(description.length).toEqual(1);
-        expect(description[0].getText()).toEqual(descriptions[t]);
-      });
-    });
-  });
-};
+
 
 AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function consoleValidateDocumentationSectionPlainText(expTitle, expContent){
   var d = webdriver.promise.defer();

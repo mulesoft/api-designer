@@ -63,6 +63,11 @@ EditorHelper.prototype.setLine = function setLine(line, text){
   return browser.executeScript('window.editor.setLine(' + line + ',"' + text + '")');
 };
 
+EditorHelper.prototype.removeLine = function removeLine(line){
+  line --;
+  return browser.executeScript('window.editor.removeLine(' + line + ')');
+};
+
 EditorHelper.prototype.getLine = function getLine(line){
   line --;
   return browser.executeScript('return window.editor.getLine(' + line + ')').then(function (text) {

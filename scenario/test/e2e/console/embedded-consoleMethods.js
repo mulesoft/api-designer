@@ -1,14 +1,15 @@
 'use strict';
 var EditorHelper = require('../../lib/editor-helper.js').EditorHelper;
 var AssertsHelper = require('../../lib/asserts-helper.js').AssertsHelper;
-//var ShelfHelper = require('../../lib/shelf-helper.js').ShelfHelper;
+var ShelfHelper = require('../../lib/shelf-helper.js').ShelfHelper;
 var ConsoleHelper = require('../../lib/console-helper.js').ConsoleHelper;
 
 describe('Embedded-console Methods',function(){
 	var editor = new EditorHelper();
 	var designerAsserts= new AssertsHelper();
-	// var shelf = new ShelfHelper();
 	var apiConsole = new ConsoleHelper();
+  var shelf = new ShelfHelper();
+  var methods = shelf.elemResourceLevelMethods;
 
 	describe('common view', function(){
 
@@ -88,35 +89,114 @@ describe('Embedded-console Methods',function(){
 		}); // traits
 
 		describe('description', function(){
-
+      methods.forEach(function(method){
+        it(method+' description is displayed on the method popup', function(){
+          var definition = [
+            '#%RAML 0.8',
+            'title: methods with description',
+            '/res:',
+            '  '+method+': ',
+            '    description: this is '+method+' description'
+          ].join('\\n');
+          editor.setValue(definition);
+          apiConsole.expandCollpaseMethodsbyPos(1);
+          designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+          designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
+          apiConsole.closeMethodPopUp();
+        });
+      });
 		}); // description
 
 
-		xit('when the method popup is opened - change the resource name', function(){
-				// currently the console is not displayed anymore. 
+		it('when the method popup is opened - change the resource name', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: change resource Name',
+        '/cont:',
+        '  get:',
+        '    description: this is get method description',
+        '        '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('change resource Name');
+      designerAsserts.consoleResourceName(['/cont']);
+      apiConsole.expandCollpaseMethodsbyPos(1);
+      designerAsserts.consoleValidateCurrentMethodName('GET');
+      designerAsserts.consoleValidateMethodDescription('this is get method description');
+      editor.setLine(3,'/create: ');
+      designerAsserts.consoleResourceName(['/create']);
+    });
 
+		it('open a method change to a different one and edit it', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: toggle and edit',
+        '/contacts:',
+        '  get:',
+        '    description: this is get method description',
+        '  post:',
+        '        '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('toggle and edit');
+      apiConsole.expandCollpaseMethodsbyPos(1);
+      designerAsserts.consoleValidateCurrentMethodName('GET');
+      designerAsserts.consoleValidateMethodDescription('this is get method description');
+      apiConsole.toggleBetweenMethodByPos('post');
+      editor.setLine(7,'    description: post method description');
+      designerAsserts.consoleValidateCurrentMethodName('POST');
+      designerAsserts.consoleValidateMethodDescription('post method description');
 		});
 
-		xit('open a method change to a different one and edit it', function(){
-
-			// console  should displayed method and displayed the updates
-				// currently when the method is edited the console turn and displayed the first opened method. 
+		it('open a method  and then delete it', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: delete current method',
+        '/credentials:',
+        '  get:',
+        '    description: this is get method description',
+        '        '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('delete current method');
+      apiConsole.expandCollpaseMethodsbyPos(1);
+      designerAsserts.consoleValidateCurrentMethodName('GET');
+      editor.removeLine(4);
+      editor.removeLine(4);
+      apiConsole.getListMethods().then(function(methods){
+        expect(methods.length).toEqual(0);
+      });
 		});
 
-		xit('open a method  and then delete it', function(){
-			// currently  afther the method is deleted the console displayed the list of resource 
-			// same behaviour with one or more methods
-
-		});
-
-		xit('open a method change to another and then delete it', function (){
-		// currently  afther the 2nd opened method is deleted, the console displayed the 1st opened method.
-		//  I think this should have the same behavior as the other  -  
+		it('open a method change to another and then delete it', function (){
+      var definition = [
+        '#%RAML 0.8',
+        'title: delete current method',
+        '/protocols:',
+        '  get:',
+        '    description: this is get method description',
+        '  patch:',
+        '    description: this is patch method',
+        '        '
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.consoleApiTitle('delete current method');
+      apiConsole.expandCollpaseMethodsbyPos(1);
+      designerAsserts.consoleValidateCurrentMethodName('GET');
+      apiConsole.toggleBetweenMethodByPos('patch');
+      editor.removeLine(6);
+      editor.removeLine(6);
+      var expList ={
+        'r0':['GET']
+      };
+      designerAsserts.consoleResourceMethods(expList);
+      apiConsole.expandCollpaseMethodsbyPos(1);
+      designerAsserts.consoleValidateCurrentMethodName('GET');
 		});
 
 	});  // common view
 
-	describe('request tab', function(){
+	xdescribe('request tab', function(){
 
 		describe('headers', function(){
 
@@ -130,7 +210,7 @@ describe('Embedded-console Methods',function(){
 	}); //request tab
 
 
-	describe('respnse tab', function(){
+	xdescribe('respnse tab', function(){
 
 		describe('responses', function(){
 
@@ -139,7 +219,7 @@ describe('Embedded-console Methods',function(){
 	}); //response tab
 
 
-	describe('try it tab', function(){
+	xdescribe('try it tab', function(){
 
 		// WHAT ABOUT REMEMBER TRYIT DATA?
 

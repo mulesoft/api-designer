@@ -139,8 +139,6 @@ describe('Embedded-console',function(){
         };
         designerAsserts.consoleResourceTraits(expList);
       });
-
-
     });
 
     it('trait information applied at resource level is displayed on the expanded resourcce -  2 traits', function(){
@@ -195,7 +193,6 @@ describe('Embedded-console',function(){
       designerAsserts.consoleValidateMethodTraits(['trait1','trait2']);
       apiConsole.closeMethodPopUp();
     });
-
   });
 
   describe('generals', function(){
@@ -257,7 +254,6 @@ describe('Embedded-console',function(){
         editor.setLine(4,'  description: this is presentation resource description \\n     ');
         designerAsserts.consoleResourcesDescription(['this is presentation resource description']);
       });
-
     });
 
   }); // partial refresh

@@ -21,6 +21,7 @@ function ConsoleHelper() {
   this.resourceGroupCollapsedClass = 'resource-group ng-scope collapsed';
   this.currentmethod = '[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]';
 //  this.closeMethodbtn = '[role="resource"] div i[class="icon-remove collapse"]';
+  this.methodDescriptionCss = '[role="method"] [role="full-description"]' ;
 }
 
 
@@ -194,6 +195,10 @@ ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function expandCollpaseMeth
   return d.promise;
 };
 
+ConsoleHelper.prototype.toggleBetweenMethodByPos = function toggleBetweenMethodByPos(method){
+  $('[class="method-name ng-scope ng-binding '+method+'"]').click();
+};
+
 ConsoleHelper.prototype.selectTab = function selectTab(pos){
   var that = this;
   // 0 - request, 1- responses, 2 try it
@@ -230,6 +235,10 @@ ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function getListOf
       d.fulfill(dic);
     });
   return d.promise;
+};
+
+ConsoleHelper.prototype.getMethodDescription = function getMethodDescription (){
+  return element.all(by.css(this.methodDescriptionCss));
 };
 
 ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResourceType(){

@@ -22,10 +22,10 @@ describe('parser',function(){
       it('broken links', function () {
         var definition = [
           '#%RAML 0.8',
-          'title: !include http://some.broken.link.com/'
+          'title: !include https://some.broken.link.com/'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('2','error: cannot fetch http://some.broken.link.com/, check that the server is up and that CORS is enabled(HTTP 404)');
+        designerAsserts.parserError('2','error: cannot fetch https://some.broken.link.com/, check that the server is up and that CORS is enabled(HTTP 404)');
       });
 
       it('file name/URL cannot be null', function () {
