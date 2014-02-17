@@ -5,7 +5,7 @@ describe('parser ',function(){
   var designerAsserts= new AssertsHelper();
   var editor= new EditorHelper();
 
-  xdescribe('alias', function(){
+  describe('alias', function(){
 
     it('found undefined alias', function(){
       var definition = [
@@ -19,7 +19,7 @@ describe('parser ',function(){
       designerAsserts.parserError('5','found undefined alias res');
     });
 
-    xit('expected alphabetic or numeric character but found ', function(){ //https://www.pivotaltracker.com/story/show/63038252
+    it('expected alphabetic or numeric character but found ', function(){
       var definition = [
         '#%RAML 0.8 ',
         'title: My api',
@@ -30,11 +30,27 @@ describe('parser ',function(){
         '  get: &'
       ].join('\\n');
       editor.setValue(definition);
-      designerAsserts.parserError('7','expected alphabetic or numeric character but found ');
+      designerAsserts.parserError('7','expected alphabetic or numeric character but found \'\'');
+    });
+
+    xit('error using alias is displayed on the correct lien ', function(){
+    //https://www.pivotaltracker.com/story/show/63038252
+      var definition = [
+        '#%RAML 0.8',
+        'title: My api',
+        'version: v1',
+        '/res1: &res1',
+        '  description: this is res1 description',
+        '  displayName: resource 1',
+        '/res3: ',
+        '  get: *res1'
+      ].join('\\n');
+      editor.setValue(definition);
+      designerAsserts.parserError('8','property: \'displayName\' is invalid in a method');
     });
   });//alias
 
-  xit('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
+  it('responses null', function(){ //https://www.pivotaltracker.com/story/show/62857424
     var definition = [
       '#%RAML 0.8',
       '---',
@@ -50,7 +66,7 @@ describe('parser ',function(){
   });
 
 
-  xit('nested resource name /type', function(){
+  it('nested resource name /type', function(){
     var ramlexam = [
       '#%RAML 0.8',
       'title: my api',
