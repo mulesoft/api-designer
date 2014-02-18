@@ -103,10 +103,23 @@ angular.module('ramlEditorApp')
       ;
     };
 
-    hinter.isSuggestionInUse = function (suggestionKey, suggestion, neighborKeys) {
-      return neighborKeys.indexOf(suggestionKey) !== -1 ||
-             (suggestion.metadata.canBeOptional && neighborKeys.indexOf(suggestionKey + '?') !== -1)
-      ;
+    /**
+     * @param suggestionKey The key to consider suggestion to the user
+     * @param suggestion The suggestion metadata for the key
+     * @param nodes The nodes to check for the suggestion
+     * @returns {boolean} Whether the suggestion is in use
+     */
+    hinter.isSuggestionInUse = function (suggestionKey, suggestion, nodes) {
+      var values = suggestion.metadata.isText ?
+        nodes.map(function (node) { return node.getValue() ? node.getValue().text : null; })
+        : nodes.map(function (node) { return node.getKey(); });
+
+      return values.indexOf(suggestionKey) !== -1 ||
+        //For key suggestions, e.g. where isText is not true, we also check for the key + '?'
+        //if the suggestion can be optional:
+        (!suggestion.metadata.isText &&
+          suggestion.metadata.canBeOptional &&
+          values.indexOf(suggestionKey + '?') !== -1);
     };
 
     /**
@@ -133,10 +146,6 @@ angular.module('ramlEditorApp')
         return [];
       }
 
-      var raml = null;
-      var suggestions = [];
-      var neighborKeys = [];
-
       //Designer policy: If the cursor is at an empty line, then we
       //provide shelf contents based on the node only. If the cursor is
       //on a non-structural line, such as an empty line, then we provide
@@ -147,27 +156,33 @@ angular.module('ramlEditorApp')
         if (cursorTabCount <= node.lineIndent.tabCount) {
           var atTabBoundary = ch % editor.getOption('indentUnit') === 0;
           if (!atTabBoundary) {
-            return suggestions;
+            return [];
           }
         }
         cursorTabCount = Math.min(cursorTabCount, node.lineIndent.tabCount);
         node = node.selfOrParent(function(node) { return node.lineIndent.tabCount === cursorTabCount; });
       }
 
+      var raml = null;
+      var suggestions = [];
+      var peerNodes = [];
+      
       if (node) {
         var path = node.getPath().map(function(node) { return node.getKey(); });
         raml         = hinter.suggestRAML(path);
         suggestions  = raml.suggestions;
-        //Get all structural nodes' keys so we can filter them out
-        neighborKeys = node.getSelfAndNeighbors()
-                      .filter(function(node) { return node.isStructural && node.getKey(); })
-                      .map(function (node) { return node.getKey(); })
-                      ;
+        var isText = Object.keys(suggestions).some(function(suggestion) { return suggestions[suggestion].metadata.isText; });
+        //Get all structural nodes' keys/values so we can filter them out. This bit is tricky; if
+        //we are in an array, and the elements of that array are text, then the peer group is
+        //every array in the parent. Otherwise, the peer group is every key in the current array.
+        var isTextNodeList = raml.metadata && raml.metadata.isList && isText;
+        peerNodes = isTextNodeList ? node.getParent().getChildren() : node.getSelfAndNeighbors();
+        peerNodes = peerNodes.filter(function(node) { return node.isStructural; });
       }
 
       //Next, filter out the keys from the returned suggestions
       suggestions = Object.keys(suggestions)
-        .filter(function (key) { return !hinter.isSuggestionInUse(key, suggestions[key], neighborKeys); })
+        .filter(function (key) { return !hinter.isSuggestionInUse(key, suggestions[key], peerNodes); })
         .sort()
         .map(function (key) {
           return {
@@ -176,7 +191,7 @@ angular.module('ramlEditorApp')
           };
         });
       //Pull out display-relevant metadata
-      suggestions.isList = raml && raml.metadata ? raml.metadata.isList : false;
+      suggestions.isList = (raml && raml.metadata) ? raml.metadata.isList : false;
       return suggestions;
     };
 

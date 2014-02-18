@@ -8,6 +8,11 @@ function EditorHelper(){
   this.keySHighlight = 'cm-key';
   this.traitTitleSHighlight= 'cm-trait-title';
   this.ramlTagSHighlight = 'cm-raml-tag';
+  this.cmMeta = 'cm-meta'; //used for protocols
+  this.resourceTypes = 'cm-resource-type-title';
+  this.resourceTypeContent = 'cm-resource-type-content';
+  this.methodTitle = 'cm-method-title';
+  this.methodContent = 'cm-method-content';
   this.newButton = '[role="new-button"]';
   this.saveButton = '[role="save-button"]';
   this.notificationBar = '[role="notifications"]';
@@ -110,11 +115,12 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClass
             listClase[t] = classe;
           }).then(function(){
               if(t ===posi.length-1){
+//                console.log('listclase',listClase);
                 d.fulfill(listClase);
               }
             });
         } else {
-          console.log('This has not a class');
+//          console.log('This has not a class');
         }
       });
     });

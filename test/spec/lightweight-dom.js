@@ -169,7 +169,31 @@ describe('Lightweight DOM Module', function () {
       node = getNode(editor);
       node.getParent().line.should.be.equal('documentation:');
     });
+  });
 
+  //Specific method tests:
+  describe('LazyNode.getChildren', function () {
+
+    it('should return all direct children of a node', function() {
+      var editor = getEditor(codeMirror, [
+        'resourceTypes:',
+        '  - collection:',
+        '      usage: This resourceType should be used for any collection of items',
+        '        description: The collection of <<resourcePathName>>',
+        '      get:',
+        '        description: Get all <<resourcePathName>>, optionally filtered',
+        '      post:',
+        '        description: Create a new <<resourcePathName | !singularize>>'
+      ]);
+      editor.setCursor({line:1, ch: 0});
+      var node = getNode(editor);
+      var children = node.getChildren();
+
+      children[0].getKey().should.be.equal('usage');
+      children[1].getKey().should.be.equal('get');
+      children[2].getKey().should.be.equal('post');
+      should.not.exist(children[3]);
+    });
   });
 
   describe('LazyNode.getSelfAndNeighbors', function () {
@@ -238,6 +262,16 @@ describe('Lightweight DOM Module', function () {
       //Start with the second node in the first array:
       var path = getNode(editor).getPath();
       path.length.should.be.equal(0);
+    });
+
+    it('should return only the parent for an empty array element', function() {
+      var editor = getEditor(codeMirror, [
+        'documentation:',
+        '  - title: Hello',
+        '  - '
+      ], 2);
+      var path = getNode(editor).getPath();
+      path.length.should.be.equal(1);
     });
   });
 
