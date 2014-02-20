@@ -276,8 +276,6 @@ AssertsHelper.prototype.consoleResourceTraits = function consoleResourceTraits(e
   });
 };
 
-
-
 AssertsHelper.prototype.consoleValidateDocumentationSectionPlainText = function consoleValidateDocumentationSectionPlainText(expTitle, expContent){
   var d = webdriver.promise.defer();
   apiConsole.getDocumentationSections().then(function(sections){
@@ -305,8 +303,94 @@ AssertsHelper.prototype.consoleValidateCurrentMethodName = function consoleValid
   apiConsole.getCurrentMethod().getText().then(function(text){
     expect(text).toEqual(name);
   });
-
 };
+
+AssertsHelper.prototype.consoleValidateActiveTab = function consoleValidateActiveTab(activeTabName){
+  apiConsole.getActiveTab().getText().then(function(text){
+    expect(text).toEqual(activeTabName);
+  });
+};
+
+
+AssertsHelper.prototype.consoleMethodValidateAllTabDisable = function consoleMethodValidateAllTabDisable (expList){
+//  exp list has the method in apperCase and the tabs disabled
+  var apiConsole = new ConsoleHelper();
+  var d = webdriver.promise.defer();
+  var i = 0;
+  element.all(by.css(apiConsole.currentDisabledTabs)).then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+      if(t === expList.length){
+        d.fulfill();
+      }
+    });
+  });
+  return d.promise;
+};
+
+  //request tab
+AssertsHelper.prototype.consoleValidateHeadersH2 = function(){
+  apiConsole.getrequestTabHeaderh2().getText().then(function(text){
+    expect(text).toEqual('Headers');
+  });
+};
+
+AssertsHelper.prototype.consoleValidateHeadersDisplayNameList = function consoleValidateHeadersDisplayNameList (expList){
+  var d = webdriver.promise.defer();
+  var apiConsole = new ConsoleHelper();
+  var i = 0;
+  element.all(by.css(apiConsole.requestTabHeadersListDisplayName)).then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+      if(t === expList.length){
+        d.fulfill();
+      }
+    });
+  });
+  return d.promise;
+};
+
+
+
+AssertsHelper.prototype.consoleValidateHeadersDescription = function consoleValidateHeadersDescription (expList){
+  var d = webdriver.promise.defer();
+  var apiConsole = new ConsoleHelper();
+  var i = 0;
+  element.all(by.css(apiConsole.requestTabHeadersDescription)).then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+      if(t === expList.length){
+        d.fulfill();
+      }
+    });
+  });
+  return d.promise;
+};
+
+
+AssertsHelper.prototype.consoleValidateHeadersConstraints = function consoleValidateHeadersConstraints (expList){
+  var d = webdriver.promise.defer();
+  var apiConsole = new ConsoleHelper();
+  var i = 0;
+  element.all(by.css(apiConsole.requestTabHeadersConstraints)).then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+      if(t === expList.length){
+        d.fulfill();
+      }
+    });
+  });
+  return d.promise;
+};
+
 
     //traits starts
 AssertsHelper.prototype.consoleValidateMethodTraits = function consoleValidateMethodTraits(expList){

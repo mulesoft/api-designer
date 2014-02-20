@@ -12,16 +12,36 @@ function ConsoleHelper() {
   this.listResourceTraitsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]';
   this.listResourceMethodsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li';
 //  this.methodDocumentationArea = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation';
-  this.ListOftabs = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation div ul li a';
   this.documentationSectionlistCss = '[role="api-console"] div [role="root-documentation"] section';
   this.consoleSection = '#consoleAndEditor';
   this.expandAll = '.toggle-resource-groups [role="expand-all"]';
   this.collapseAll ='.toggle-resource-groups [role="collapse-all"]';
   this.resourceGroupExpandedClass  = 'resource-group ng-scope expanded';
   this.resourceGroupCollapsedClass = 'resource-group ng-scope collapsed';
-  this.currentmethod = '[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]';
+//  this.currentmethod = '[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]';
+  this.currentmethod = '[role="api-console"] [role="method"] .nav [class="ng-scope disabled"]:first-of-type a';
+  this.currentEnableTabs = '[role="api-console"] [role="method"] .nav [class="ng-scope"] a';
+  this.currentDisabledTabs = '[role="api-console"] [role="method"] .nav [class="ng-scope disabled"] a';
+  this.activeTab = '[role="api-console"] [role="method"] .nav [class="ng-scope active"] a';
+
 //  this.closeMethodbtn = '[role="resource"] div i[class="icon-remove collapse"]';
-  this.methodDescriptionCss = '[role="method"] [role="full-description"]' ;
+  this.methodDescriptionCss = '[role="method"] [role="full-description"] p' ;
+
+//  tabs
+  this.requestTab = '[role="method"] .tab-content [role="documentation-requests"]';
+  //request
+    //headers
+  this.requestTabHeaders = '[role="method"] .tab-content [role="documentation-requests"] [heading="Headers"]';
+  this.requestTabHeadersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="Headers"] section h2';
+  this.requestTabHeadersListDisplayName = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
+  this.requestTabHeadersConstraints = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
+  this.requestTabHeadersDescription = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
+  this.requestTabUriParameters = '[role="method"] .tab-content [role="documentation-requests"] [heading="URI Parameters"]';
+  this.requestTabQuertParameters = '[role="method"] .tab-content [role="documentation-requests"] [heading="Query Parameters"]';
+  this.requestTabBodyDocmentation = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation';
+
+  this.responseTab = '';
+  this.tryitTab = '';
 }
 
 
@@ -265,6 +285,11 @@ ConsoleHelper.prototype.getCurrentMethod = function getCurrentMethod (){
   return $(this.currentmethod);
 };
 
+
+ConsoleHelper.prototype.getActiveTab = function getActiveTab(){
+  return $(this.activeTab);
+};
+
 ConsoleHelper.prototype.closeMethodPopUp = function closeMethodPopUp() {
   browser.executeScript(function () {
     $('[role="resource"] div i[class="icon-remove collapse"]').click();
@@ -275,5 +300,10 @@ ConsoleHelper.prototype.getMethodsTraits = function getMethodsTraits(){
 
   return element.all(by.css('[role="method"] [role="documentation"] .modifiers [role="traits"] li'));
 
+};
+
+//request tab
+ConsoleHelper.prototype.getrequestTabHeaderh2 = function getrequestTabHeaderh2(){
+  return $(this.requestTabHeadersh2);
 };
 exports.ConsoleHelper = ConsoleHelper;

@@ -149,50 +149,6 @@ describe('Embedded-console',function(){
         designerAsserts.consoleResourceTraits(expList);
       });
     });
-
-    it('trait information applied at method level is displayed on expanded method - single trait', function(){
-      var definition = [
-        '#%RAML 0.8',
-        'title: raml with traits at method level',
-        'traits:',
-        '  - trait1:',
-        '      description: this is trait1',
-        '  - trait2: ',
-        '      description: this is trait2 description',
-        '/pos1:',
-        '  get:',
-        '    is: ',
-        '      - trait1',
-        '             '
-      ].join('\\n');
-      editor.setValue(definition);
-      designerAsserts.consoleApiTitle('raml with traits at method level');
-      apiConsole.expandCollpaseMethodsbyPos(1);
-      designerAsserts.consoleValidateCurrentMethodName('GET');
-      designerAsserts.consoleValidateMethodTraits(['trait1']);
-      apiConsole.closeMethodPopUp();
-    });
-
-    it('trait information applied at method level is displayed on expanded method 2 traits', function(){
-      var definition = [
-        '#%RAML 0.8',
-        'title: raml with traits at method level',
-        'traits:',
-        '  - trait1:',
-        '      description: this is trait1',
-        '  - trait2: ',
-        '      description: this is trait2 description',
-        '/posi1:',
-        '  post:',
-        '    is: [trait1,trait2]'
-      ].join('\\n');
-      editor.setValue(definition);
-      designerAsserts.consoleApiTitle('raml with traits at method level');
-      apiConsole.expandCollpaseMethodsbyPos(1);
-      designerAsserts.consoleValidateCurrentMethodName('POST');
-      designerAsserts.consoleValidateMethodTraits(['trait1','trait2']);
-      apiConsole.closeMethodPopUp();
-    });
   });
 
   describe('generals', function(){
