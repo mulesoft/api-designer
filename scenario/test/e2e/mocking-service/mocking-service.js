@@ -60,12 +60,23 @@ describe('Mocking service',function(){
 
   describe('with baseUri', function(){
 
+    browser.get('');
+    browser.sleep(2000);
+    var alertDialog = browser.driver.switchTo().alert();
+    alertDialog.sendKeys('example.raml');
+    alertDialog.accept();
+    browser.executeScript(function () {
+      localStorage['config.updateResponsivenessInterval'] = 0;
+      window.onbeforeunload = null;
+    });
+
     it('mocking service is disable by default',function(){
       var definition = [
 				'#%RAML 0.8',
 				'title: mocking with base Uri',
 				'baseUri: http://myapi.com',
-				'/res:'
+				'/resres:',
+        '  get:'
 			].join('\\n');
 			editor.setValue(definition);
       expect(editor.isEnableMockingService()).toEqual('unchecked');
@@ -102,7 +113,7 @@ describe('Mocking service',function(){
     });
 
     it('mocked baseUri should be removed', function(){
-      expect(editor.getLine(4)).toEqual('/res:');
+      expect(editor.getLine(4)).toEqual('/resres:');
     });
   });//with baseUri
 
