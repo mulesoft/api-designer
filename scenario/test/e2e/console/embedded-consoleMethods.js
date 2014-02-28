@@ -10,8 +10,10 @@ describe('Embedded-console Methods',function(){
 	var apiConsole = new ConsoleHelper();
   var shelf = new ShelfHelper();
   var methods = shelf.elemResourceLevelMethods;
+  var options = ['headers', 'queryParameters'];
 
-	describe('common view', function(){
+
+  describe('common view', function(){
 
     it('console is displayed for a different raml if the method popup remind opened', function(){
       var definition = [
@@ -216,19 +218,85 @@ describe('Embedded-console Methods',function(){
       });
     });
 
-		describe('headers', function(){
-      methods.forEach(function(method){
-        it(method+' description is displayed on the method popup', function(){
+    options.forEach(function(option){
+      describe(option+'bla bla', function(){
+        methods.forEach(function(method){
+          it(method+' add the raml', function(){
 
+            var definition = [
+              '#%RAML 0.8',
+              'title: methods with description',
+              '/res:',
+              '  '+method+': ',
+              '    description: this is '+method+' description',
+              '    '+option+':',
+              '      header1:',
+//            '        description: this is header 1 description',
+              '        required: true',
+              '        type: integer',
+              '        displayName: HEADER 1',
+              '        example: uno',
+              '        default: DOS',
+              '        maximum: 10',
+              '        minimum: 4',
+              '      header2:',
+              '        description: this is the description header1',
+              '        required: false',
+              '        type: string',
+              '        example: hola',
+              '        default: chau',
+              '        maxLength: 6',
+              '        minLength: 2',
+              '        pattern: "a*a"',
+              '        enum: [hola, chau, adios]'
+            ].join('\\n');
+            editor.setValue(definition);
+            apiConsole.expandCollpaseMethodsbyPos(1);
+          });
+
+          it('Validate current method name', function(){
+            designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+          });
+
+          it('validate active tab', function(){
+            designerAsserts.consoleValidateActiveTab('Request');
+          });
+
+          it('validate method description', function(){
+            designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
+          });
+
+          it('validate Section header', function(){
+            designerAsserts.consoleValidateHeadersH2(option);
+          });
+
+          it(method+' '+option+'headers with and without display name',function(){
+            designerAsserts.consoleValidateHeadersDisplayNameList(option,['HEADER 1','header2']);
+          });
+          it(method+' headers with and without description', function(){
+            designerAsserts.consoleValidateHeadersDescription(option,['','this is the description header1']);
+          });
+
+          it(method+' headers constrains - type, default, min, max etc', function(){
+            designerAsserts.consoleValidateHeadersConstraints(option,['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
+            apiConsole.closeMethodPopUp();
+
+          });
+        });
+
+      }); // headers
+    });
+
+    describe('uriParamters', function(){
+      methods.forEach(function(method){
+        var option = 'uriParameters';
+        it(method+' add the raml', function(){
           var definition = [
             '#%RAML 0.8',
             'title: methods with description',
-            '/res:',
-            '  '+method+': ',
-            '    description: this is '+method+' description',
-            '    headers:',
+            '/res/{header1}/{header2}:',
+            '  uriParameters:',
             '      header1:',
-//            '        description: this is header 1 description',
             '        required: true',
             '        type: integer',
             '        displayName: HEADER 1',
@@ -245,36 +313,48 @@ describe('Embedded-console Methods',function(){
             '        maxLength: 6',
             '        minLength: 2',
             '        pattern: "a*a"',
-            '        enum: [hola, chau, adios]'
+            '        enum: [hola, chau, adios]',
+            '  '+method+': ',
+            '    description: this is '+method+' description',
+            '  '
           ].join('\\n');
           editor.setValue(definition);
           apiConsole.expandCollpaseMethodsbyPos(1);
-          designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
-          designerAsserts.consoleValidateActiveTab('Request');
-          designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
-          designerAsserts.consoleValidateHeadersH2();
         });
 
-        it(method+' headers with and without display name',function(){
-          designerAsserts.consoleValidateHeadersDisplayNameList(['HEADER 1','header2']);
+        it('Validate current method name', function(){
+          designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+        });
+
+        it('validate active tab', function(){
+          designerAsserts.consoleValidateActiveTab('Request');
+        });
+
+        it('validate method description', function(){
+          designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
+        });
+
+        it('validate Section header', function(){
+          designerAsserts.consoleValidateHeadersH2(option);
+        });
+
+        it(method+' '+option+'headers with and without display name',function(){
+          designerAsserts.consoleValidateHeadersDisplayNameList(option,['HEADER 1','header2']);
         });
         it(method+' headers with and without description', function(){
-          designerAsserts.consoleValidateHeadersDescription(['','this is the description header1']);
+          designerAsserts.consoleValidateHeadersDescription(option,['','this is the description header1']);
         });
 
         it(method+' headers constrains - type, default, min, max etc', function(){
-          designerAsserts.consoleValidateHeadersConstraints(['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
+          designerAsserts.consoleValidateHeadersConstraints(option,['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
           apiConsole.closeMethodPopUp();
 
         });
       });
 
-		}); // headers
+    }); // headers
 
 
-		describe('queryParameters', function(){
-
-		}); // queryParameters
 
 	}); //request tab
 
@@ -286,7 +366,9 @@ describe('Embedded-console Methods',function(){
 
     describe('responses', function(){
 
-		}); // responses
+//if schema is multipart/form-data: or  application/x-www-form-urlencoded: on the console is only to be displayed formParameters if those are defined  -
+
+    }); // responses
 
 	}); //response tab
 

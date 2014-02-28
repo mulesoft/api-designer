@@ -4,7 +4,10 @@ var webdriver = require('selenium-webdriver');
 function ConsoleHelper() {
   this.methodsList = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace', 'connect'];
   this.titleCss = '#raml-console-api-title';
-  this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource-placeholder"]:first-of-type h3';
+  this.listResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource-placeholder"]:first-of-type h3';
+  // this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource-placeholder"]:first-of-type h3';
+  this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [ng-repeat="resource in resourceGroup"]:first-of-type h3';
+  // this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [ng-init="resource = resourceGroup[0]"] h3 span';
   this.listResourceDescriptionCss = '[role=\'description\'] p';
   this.listResourcesCss = '[role="resource"]';
   this.listResourcesNameCss = '[role=\'resource\'] h3.path';
@@ -32,12 +35,23 @@ function ConsoleHelper() {
   //request
     //headers
   this.requestTabHeaders = '[role="method"] .tab-content [role="documentation-requests"] [heading="Headers"]';
-  this.requestTabHeadersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="Headers"] section h2';
+  this.requestTabHeadersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="Headers"] h2';
   this.requestTabHeadersListDisplayName = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
   this.requestTabHeadersConstraints = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
   this.requestTabHeadersDescription = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
+  //UriParameters
   this.requestTabUriParameters = '[role="method"] .tab-content [role="documentation-requests"] [heading="URI Parameters"]';
+  this.requestTabUriParametersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="URI Parameters"] h2';
+  this.requestTabUriParametersListDisplayName = '[heading="URI Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
+  this.requestTabUriParametersConstraints = '[heading="URI Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
+  this.requestTabUriParametersDescription = '[heading="URI Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
+  //QueryParameters
   this.requestTabQuertParameters = '[role="method"] .tab-content [role="documentation-requests"] [heading="Query Parameters"]';
+  this.requestTabQueryParametersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="Query Parameters"] h2';
+  this.requestTabQueryParametersListDisplayName = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
+  this.requestTabQueryParametersConstraints = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
+  this.requestTabQueryParametersDescription = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
+
   this.requestTabBodyDocmentation = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation';
 
   this.responseTab = '';
@@ -96,7 +110,7 @@ ConsoleHelper.prototype.getListMainResources = function getListMainResources(){
 
 ConsoleHelper.prototype.getListMainResourcesName = function getListMainResourcesName(){
   var that = this;
-  return element.all(by.css(that.listMainResourcesCss));
+  return element.all(by.css(that.listResourcesCss));
 };
 
 ConsoleHelper.prototype.getListResourcesDescription = function getListResourcesDescription(){
@@ -306,4 +320,14 @@ ConsoleHelper.prototype.getMethodsTraits = function getMethodsTraits(){
 ConsoleHelper.prototype.getrequestTabHeaderh2 = function getrequestTabHeaderh2(){
   return $(this.requestTabHeadersh2);
 };
+
+ConsoleHelper.prototype.getrequestTabUriParametersh2 = function getrequestTabHeaderh2(){
+  return $(this.requestTabUriParametersh2);
+};
+
+ConsoleHelper.prototype.getrequestTabQueryParametersh2 = function getrequestTabHeaderh2(){
+  return $(this.requestTabQueryParametersh2);
+};
+
+
 exports.ConsoleHelper = ConsoleHelper;
