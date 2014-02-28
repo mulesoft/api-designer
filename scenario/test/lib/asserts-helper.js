@@ -331,63 +331,173 @@ AssertsHelper.prototype.consoleMethodValidateAllTabDisable = function consoleMet
 };
 
   //request tab
-AssertsHelper.prototype.consoleValidateHeadersH2 = function(){
-  apiConsole.getrequestTabHeaderh2().getText().then(function(text){
-    expect(text).toEqual('Headers');
-  });
+AssertsHelper.prototype.consoleValidateHeadersH2 = function consoleValidateHeadersH2 (option){
+  var d = webdriver.promise.defer();
+
+  var dic = {
+    'uriParameters' : function() {
+      apiConsole.getrequestTabUriParametersh2().getText().then(function(text){
+        expect(text).toEqual('URI Parameters');
+        d.fulfill();
+      });
+    },
+    'headers': function() {
+      apiConsole.getrequestTabHeaderh2().getText().then(function(text){
+        expect(text).toEqual('Headers');
+        d.fulfill();
+      });
+    },
+    'queryParameters' : function() {
+      apiConsole.getrequestTabQueryParametersh2().getText().then(function(text){
+        expect(text).toEqual('Query Parameters');
+        d.fulfill();
+      });
+    }
+  };
+
+  dic[option]();
+  return d.promise;
 };
 
-AssertsHelper.prototype.consoleValidateHeadersDisplayNameList = function consoleValidateHeadersDisplayNameList (expList){
+AssertsHelper.prototype.consoleValidateHeadersDisplayNameList = function consoleValidateHeadersDisplayNameList (option,expList){
   var d = webdriver.promise.defer();
   var apiConsole = new ConsoleHelper();
   var i = 0;
-  element.all(by.css(apiConsole.requestTabHeadersListDisplayName)).then(function(list){
-    expect(list.length).toEqual(expList.length);
-    list.forEach(function(elem){
-      var t = i++;
-      expect(elem.getText()).toEqual(expList[t]);
-      if(t === expList.length){
-        d.fulfill();
-      }
-    });
-  });
+  var dic = {
+    'uriParameters' : function() {
+      element.all(by.css(apiConsole.requestTabUriParametersListDisplayName)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'headers': function() {
+      element.all(by.css(apiConsole.requestTabHeadersListDisplayName)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'queryParameters' : function() {
+      element.all(by.css(apiConsole.requestTabQueryParametersListDisplayName)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    }
+  };
+  dic[option]();
   return d.promise;
 };
 
 
 
-AssertsHelper.prototype.consoleValidateHeadersDescription = function consoleValidateHeadersDescription (expList){
+AssertsHelper.prototype.consoleValidateHeadersDescription = function consoleValidateHeadersDescription (option,expList){
   var d = webdriver.promise.defer();
   var apiConsole = new ConsoleHelper();
   var i = 0;
-  element.all(by.css(apiConsole.requestTabHeadersDescription)).then(function(list){
-    expect(list.length).toEqual(expList.length);
-    list.forEach(function(elem){
-      var t = i++;
-      expect(elem.getText()).toEqual(expList[t]);
-      if(t === expList.length){
-        d.fulfill();
-      }
-    });
-  });
+  var dic = {
+    'uriParameters' : function() {
+      element.all(by.css(apiConsole.requestTabUriParametersDescription)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'headers': function() {
+      element.all(by.css(apiConsole.requestTabHeadersDescription)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'queryParameters' : function() {
+      element.all(by.css(apiConsole.requestTabQueryParametersDescription)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    }
+  };
+  dic[option]();
   return d.promise;
 };
 
 
-AssertsHelper.prototype.consoleValidateHeadersConstraints = function consoleValidateHeadersConstraints (expList){
+AssertsHelper.prototype.consoleValidateHeadersConstraints = function consoleValidateHeadersConstraints (option,expList){
   var d = webdriver.promise.defer();
   var apiConsole = new ConsoleHelper();
   var i = 0;
-  element.all(by.css(apiConsole.requestTabHeadersConstraints)).then(function(list){
-    expect(list.length).toEqual(expList.length);
-    list.forEach(function(elem){
-      var t = i++;
-      expect(elem.getText()).toEqual(expList[t]);
-      if(t === expList.length){
-        d.fulfill();
-      }
-    });
-  });
+
+  var dic = {
+    'uriParameters' : function() {
+      element.all(by.css(apiConsole.requestTabUriParametersConstraints)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'headers': function() {
+      element.all(by.css(apiConsole.requestTabHeadersConstraints)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'queryParameters' : function() {
+      element.all(by.css(apiConsole.requestTabQueryParametersConstraints)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    }
+  };
+  dic[option]();
   return d.promise;
 };
 
