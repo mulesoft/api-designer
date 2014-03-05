@@ -328,11 +328,15 @@ describe('RAML Repository', function () {
   });
 
   describe('saveMeta', function () {
-    it('should call saveFile with proper file and path', function () {
-      var path = '/api.raml';
+    it('should call saveFile with proper file and path, and return meta', function () {
+      var success = sinon.stub();
+      var path    = '/api.raml';
+      var meta    = {key: 'value'};
 
-      sinon.stub(ramlRepository, 'saveFile').returns($q.defer().promise);
-      ramlRepository.saveMeta({path: path}, {key: 'value'});
+      sinon.stub(ramlRepository, 'saveFile').returns($q.when({contents: JSON.stringify(meta)}));
+      ramlRepository.saveMeta({path: path}, meta).then(success);
+
+      $rootScope.$apply();
 
       ramlRepository.saveFile.should.have.been.called;
       ramlRepository.saveFile.firstCall.args[0].should
@@ -340,6 +344,9 @@ describe('RAML Repository', function () {
         .and
         .be.equal(path + '.meta')
       ;
+
+      success.should.have.been.called;
+      success.firstCall.args[0].should.be.deep.equal(meta);
     });
   });
 

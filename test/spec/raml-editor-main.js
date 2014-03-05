@@ -371,6 +371,25 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
+  describe('getIsMockingServiceVisible', function () {
+    var getIsMockingServiceVisible;
+
+    beforeEach(function () {
+      $controller('ramlEditorMain', params);
+      getIsMockingServiceVisible = scope.getIsMockingServiceVisible;
+    });
+
+    it('should return true when file is parsable', function () {
+      scope.fileParsable = true;
+      getIsMockingServiceVisible().should.be.true;
+    });
+
+    it('should return false when file is NOT parsable', function () {
+      scope.fileParsable = false;
+      getIsMockingServiceVisible().should.be.false;
+    });
+  });
+
   describe('getIsShelfVisible', function () {
     var getIsShelfVisible;
 
