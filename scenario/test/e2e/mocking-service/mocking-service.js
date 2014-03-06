@@ -38,7 +38,7 @@ describe('Mocking service',function(){
 
     it('check that new baseUri was added', function(){
       browser.sleep(5000);
-      expect(editor.getLine(4)).toMatch(/baseUri: http:\/\/ec2-54-235-9-197.compute-1.amazonaws.com:8080\/mocks\/.*\/\{hola\}\/next\/\{hola2\}/);
+      expect(editor.getLine(4)).toMatch(/baseUri: http:\/\/mocksvc.mulesoft.com\/mocks\/.*\/\{hola\}\/next\/\{hola2\}/);
 
     });
 
@@ -98,7 +98,7 @@ describe('Mocking service',function(){
     });
 
     it('check that new baseUri was added', function(){
-      expect(editor.getLine(4)).toMatch(/baseUri: http:\/\/ec2-54-235-9-197.compute-1.amazonaws.com:8080\/mocks\/.*/);
+      expect(editor.getLine(4)).toMatch(/baseUri: http:\/\/mocksvc.mulesoft.com\/mocks\/.*/);
 
     });
 
