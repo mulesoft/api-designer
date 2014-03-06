@@ -20,12 +20,12 @@
       <raml-editor-save-file-button></raml-editor-save-file-button>
     </li>
     <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>
-    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController">
+    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">
       <div class="title"><span class="beta">BETA</span>Mocking Service</div>
       <div class="field-wrapper" ng-class="{loading: loading}" ng-switch="!!loading">
         <i class="icon-spin icon-spinner" ng-switch-when="true"></i>
         <div class="field" ng-switch-when="false">
-          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="toggleMockingService($event)" />
+          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />
           <label for="mockingServiceEnabled"></label>
         </div>
       </div>

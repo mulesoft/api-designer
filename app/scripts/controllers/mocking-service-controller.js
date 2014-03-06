@@ -104,11 +104,7 @@ angular.module('ramlEditorApp')
       );
     }
 
-    $scope.toggleMockingService = function toggleMockingService($event) {
-      if ($event) {
-        $event.preventDefault();
-      }
-
+    $scope.toggleMockingService = function toggleMockingService() {
       if (!$scope.fileBrowser.selectedFile) {
         return;
       }
