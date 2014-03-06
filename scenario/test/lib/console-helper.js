@@ -5,9 +5,7 @@ function ConsoleHelper() {
   this.methodsList = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace', 'connect'];
   this.titleCss = '#raml-console-api-title';
   this.listResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource-placeholder"]:first-of-type h3';
-  // this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource-placeholder"]:first-of-type h3';
   this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [ng-repeat="resource in resourceGroup"]:first-of-type h3';
-  // this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [ng-init="resource = resourceGroup[0]"] h3 span';
   this.listResourceDescriptionCss = '[role=\'description\'] p';
   this.listResourcesCss = '[role="resource"]';
   this.listResourcesNameCss = '[role=\'resource\'] h3.path';
@@ -51,9 +49,17 @@ function ConsoleHelper() {
   this.requestTabQueryParametersListDisplayName = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
   this.requestTabQueryParametersConstraints = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
   this.requestTabQueryParametersDescription = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
-
+  //body
   this.requestTabBodyDocmentation = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation';
-
+  this.requestTabBodyh2 = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation h2';
+  this.requestTabBodyDisplayNameListNP = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation [role="display-name"]';
+  this.requestTabBodyConstraintsNP = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation .constraints';
+  this.requestTabBodyDescriptionNP = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation .info [role="description"]';
+  this.requestTabBodyMediaTypeList = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation fieldset label span';
+  this.requestTabBodyMediaTypeListStatus = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation fieldset label';
+  this.requestTabBodySchemaLink = '';
+  this.requestTabBodySchemaContent = '';
+  this.requestTabBodyExample = '';
   this.responseTab = '';
   this.tryitTab = '';
 }
@@ -229,7 +235,7 @@ ConsoleHelper.prototype.expandCollpaseMethodsbyPos = function expandCollpaseMeth
   return d.promise;
 };
 
-ConsoleHelper.prototype.toggleBetweenMethodByPos = function toggleBetweenMethodByPos(method){
+ConsoleHelper.prototype.toggleBetweenMethodByName = function toggleBetweenMethodByName(method){
   $('[class="method-name ng-scope ng-binding '+method+'"]').click();
 };
 
@@ -321,12 +327,20 @@ ConsoleHelper.prototype.getrequestTabHeaderh2 = function getrequestTabHeaderh2()
   return $(this.requestTabHeadersh2);
 };
 
-ConsoleHelper.prototype.getrequestTabUriParametersh2 = function getrequestTabHeaderh2(){
+ConsoleHelper.prototype.getrequestTabUriParametersh2 = function getrequestTabUriParametersh2(){
   return $(this.requestTabUriParametersh2);
 };
 
-ConsoleHelper.prototype.getrequestTabQueryParametersh2 = function getrequestTabHeaderh2(){
+ConsoleHelper.prototype.getrequestTabQueryParametersh2 = function getrequestTabQueryParametersh2(){
   return $(this.requestTabQueryParametersh2);
+};
+
+ConsoleHelper.prototype.getrequestTabBodyh2 = function getrequestTabBodyh2(){
+  return $(this.requestTabBodyh2);
+};
+
+ConsoleHelper.prototype.getrequestTabBodyMediaTypeList = function getrequestTabBodyMediaTypeList (){
+  return element.all(this.requestTabBodyMediaTypeList);
 };
 
 

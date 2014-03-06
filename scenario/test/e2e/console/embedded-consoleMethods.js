@@ -142,7 +142,7 @@ describe('Embedded-console Methods',function(){
       apiConsole.expandCollpaseMethodsbyPos(1);
       designerAsserts.consoleValidateCurrentMethodName('GET');
 //      designerAsserts.consoleValidateMethodDescription('this is get method description');
-      apiConsole.toggleBetweenMethodByPos('post');
+      apiConsole.toggleBetweenMethodByName('post');
       editor.setLine(7,'    description: post method description');
       designerAsserts.consoleValidateCurrentMethodName('POST');
 //      designerAsserts.consoleValidateMethodDescription('post method description');
@@ -183,7 +183,7 @@ describe('Embedded-console Methods',function(){
       designerAsserts.consoleApiTitle('delete current method');
       apiConsole.expandCollpaseMethodsbyPos(1);
       designerAsserts.consoleValidateCurrentMethodName('GET');
-      apiConsole.toggleBetweenMethodByPos('patch');
+      apiConsole.toggleBetweenMethodByName('patch');
       editor.removeLine(6);
       editor.removeLine(6);
       var expList ={
@@ -219,10 +219,9 @@ describe('Embedded-console Methods',function(){
     });
 
     options.forEach(function(option){
-      describe(option+'bla bla', function(){
+      describe(option+' namedParameter', function(){
         methods.forEach(function(method){
           it(method+' add the raml', function(){
-
             var definition = [
               '#%RAML 0.8',
               'title: methods with description',
@@ -231,7 +230,7 @@ describe('Embedded-console Methods',function(){
               '    description: this is '+method+' description',
               '    '+option+':',
               '      header1:',
-//            '        description: this is header 1 description',
+           //'        description: this is header 1 description',
               '        required: true',
               '        type: integer',
               '        displayName: HEADER 1',
@@ -287,7 +286,7 @@ describe('Embedded-console Methods',function(){
       }); // headers
     });
 
-    describe('uriParamters', function(){
+    xdescribe('uriParamters', function(){
       methods.forEach(function(method){
         var option = 'uriParameters';
         it(method+' add the raml', function(){
@@ -352,9 +351,143 @@ describe('Embedded-console Methods',function(){
         });
       });
 
-    }); // headers
+    }); // UriParameters
+
+    xdescribe('body', function(){
+      var options = ['multipart/form-data', 'application/x-www-form-urlencoded'];
+      options.forEach(function(option){
+        describe(option+' for body with formParameters', function(){
+          methods.forEach(function(method){
+            it(method+' add the raml', function(){
+              var definition = [
+                '#%RAML 0.8',
+                'title: methods with description',
+                '/res:',
+                '  '+method+': ',
+                '    description: this is '+method+' description',
+                '    body:',
+                '      '+option+':',
+                '        header1:',
+                '          required: true',
+                '          type: integer',
+                '          displayName: HEADER 1',
+                '          example: uno',
+                '          default: DOS',
+                '          maximum: 10',
+                '          minimum: 4',
+                '        header2:',
+                '          description: this is the description header1',
+                '          required: false',
+                '          type: string',
+                '          example: hola',
+                '          default: chau',
+                '          maxLength: 6',
+                '          minLength: 2',
+                '          pattern: "a*a"',
+                '          enum: [hola, chau, adios]'
+              ].join('\\n');
+              editor.setValue(definition);
+              apiConsole.expandCollpaseMethodsbyPos(1);
+            });
+
+            it('Validate current method name', function(){
+              designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+            });
+
+            it('validate active tab', function(){
+              designerAsserts.consoleValidateActiveTab('Request');
+            });
+
+            it('validate method description', function(){
+              designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
+            });
+
+            it('validate Section header', function(){
+              designerAsserts.consoleValidateHeadersH2('Body');
+            });
+
+            it('validate media tyoes', function(){
+              designerAsserts.consoleValidateBodyMediaTypes([option]);
+            });
+
+            it(method+' '+option+'headers with and without display name',function(){
+              designerAsserts.consoleValidateHeadersDisplayNameList('Body',['HEADER 1','header2']);
+            });
+            it(method+' headers with and without description', function(){
+              designerAsserts.consoleValidateHeadersDescription('Body',['','this is the description header1']);
+            });
+
+            it(method+' headers constrains - type, default, min, max etc', function(){
+              designerAsserts.consoleValidateHeadersConstraints('Body',['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
+              apiConsole.closeMethodPopUp();
+            });
+          });
+        });
 
 
+      }); //body with formParameters
+
+
+      var options = ['application/json', 'application/xml'];
+      options.forEach(function(option){
+        describe('body: '+option+' with schema and example', function(){
+
+          methods.forEach(function(method){
+            it(method+' add the raml', function(){
+              var definition = [
+                '#%RAML 0.8',
+                'title: methods with description',
+                '/res:',
+                '  '+method+': ',
+                '    description: this is '+method+' description',
+                '    body:',
+                '      '+option+':',
+                '        example: |      ',
+                '            ',
+                '        schema: | ',
+                ''
+              ].join('\\n');
+              editor.setValue(definition);
+              apiConsole.expandCollpaseMethodsbyPos(1);
+            });
+
+            it('Validate current method name', function(){
+              designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+            });
+
+            it('validate active tab', function(){
+              designerAsserts.consoleValidateActiveTab('Request');
+            });
+
+            it('validate method description', function(){
+              designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
+            });
+
+            it('validate Section header', function(){
+              designerAsserts.consoleValidateHeadersH2('Body');
+            });
+
+            it('validate media tyoes', function(){
+              designerAsserts.consoleValidateBodyMediaTypes([option]);
+            });
+
+            it('validate example', function(){
+              //to do
+            });
+
+            it('validate schema link', function(){
+              //to do
+            });
+
+            it('validate schema content', function(){
+              //to do
+            });
+          });
+        });
+
+      }); //body with schema and example
+
+    }); // body
 
 	}); //request tab
 
@@ -376,6 +509,14 @@ describe('Embedded-console Methods',function(){
 	xdescribe('try it tab', function(){
 
 		// WHAT ABOUT REMEMBER TRYIT DATA?
+
+    // validate required  information
+    //headers
+    //uriParameters
+    //baseUriParameters
+    //queryParameters
+    //formParameters
+
     it('description should not be displayed', function(){
 //      on try it tab description should not be displayed
     });

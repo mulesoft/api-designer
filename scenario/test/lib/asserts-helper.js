@@ -90,6 +90,22 @@ AssertsHelper.prototype.consoleResourceGroupCollapsedExpandedArray = function co
   });
 };
 
+AssertsHelper.prototype.consoleValidateBodyMediaTypes = function consoleValidateBodyMediaTypes(expList){
+  var i=0;
+  var d = webdriver.promise.defer();
+  apiConsole.getrequestTabBodyMediaTypeList().then(function(list){
+    expect(list.length).toEqual(expList.length);
+    list.forEach(function (element) {
+      var t = i++;
+      expect(element.getText()).toEqual(expList[t]);
+      if (t === list.length){
+        d.fulfill();
+      }
+    });
+  });
+  return d.promise;
+};
+
 AssertsHelper.prototype.consoleResourcesName = function consoleResourcesName(list, expList){
   var i=0;
   var d = webdriver.promise.defer();
@@ -335,21 +351,27 @@ AssertsHelper.prototype.consoleValidateHeadersH2 = function consoleValidateHeade
   var d = webdriver.promise.defer();
 
   var dic = {
-    'uriParameters' : function() {
+    'uriParameters' : function(){
       apiConsole.getrequestTabUriParametersh2().getText().then(function(text){
         expect(text).toEqual('URI Parameters');
         d.fulfill();
       });
     },
-    'headers': function() {
+    'headers': function(){
       apiConsole.getrequestTabHeaderh2().getText().then(function(text){
         expect(text).toEqual('Headers');
         d.fulfill();
       });
     },
-    'queryParameters' : function() {
+    'queryParameters' : function(){
       apiConsole.getrequestTabQueryParametersh2().getText().then(function(text){
         expect(text).toEqual('Query Parameters');
+        d.fulfill();
+      });
+    },
+    'Body' : function (){
+      apiConsole.getrequestTabBodyh2().getText().then(function(text){
+        expect(text).toEqual(option);
         d.fulfill();
       });
     }
@@ -390,6 +412,18 @@ AssertsHelper.prototype.consoleValidateHeadersDisplayNameList = function console
     },
     'queryParameters' : function() {
       element.all(by.css(apiConsole.requestTabQueryParametersListDisplayName)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'Body' : function(){
+      element.all(by.css(apiConsole.requestTabBodyDisplayNameListNP)).then(function(list){
         expect(list.length).toEqual(expList.length);
         list.forEach(function(elem){
           var t = i++;
@@ -447,6 +481,18 @@ AssertsHelper.prototype.consoleValidateHeadersDescription = function consoleVali
           }
         });
       });
+    },
+    'Body': function(){
+      element.all(by.css(apiConsole.requestTabBodyDescriptionNP)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
     }
   };
   dic[option]();
@@ -495,12 +541,30 @@ AssertsHelper.prototype.consoleValidateHeadersConstraints = function consoleVali
           }
         });
       });
+    },
+    'Body': function(){
+      element.all(by.css(apiConsole.requestTabBodyConstraintsNP)).then(function(list){
+        expect(list.length).toEqual(expList.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expList[t]);
+          if(t === expList.length){
+            d.fulfill();
+          }
+        });
+      });
     }
   };
   dic[option]();
   return d.promise;
 };
 
+
+AssertsHelper.prototype.consoleValidaActiveMediaTypeByPos = function consoleValidaActiveMediaTypeByPos (pos){
+  browser.all(apiConsole.requestTabBodyMediaTypeListStatus).then(function(list){
+    expect(list[pos].getAttribute('class')).toEqual('expanded ng-hide');
+  });
+};
 
     //traits starts
 AssertsHelper.prototype.consoleValidateMethodTraits = function consoleValidateMethodTraits(expList){
@@ -518,7 +582,7 @@ AssertsHelper.prototype.consoleValidateMethodTraits = function consoleValidateMe
     });
   });
   return d.promise;
-} ;
+};
     //traits ends
 
   // method ends
