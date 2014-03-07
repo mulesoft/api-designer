@@ -4,6 +4,7 @@ var webdriver = require('selenium-webdriver');
 function EditorHelper(){
   this.editorLinesListCssWithCol =  '.CodeMirror-code div[style="position: relative;"]';
   this.editorLinesListCss =  '.CodeMirror-code div[style="position: relative;"] pre';
+  this.codeFoldingOpen = '.CodeMirror-foldgutter-open';
 //  Syntax highlight
   this.keySHighlight = 'cm-key';
   this.traitTitleSHighlight= 'cm-trait-title';
@@ -19,7 +20,6 @@ function EditorHelper(){
 }
 
 EditorHelper.prototype = {};
-
 EditorHelper.prototype.getErrorLineMessage = function getErrorLineMessage(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
@@ -270,6 +270,16 @@ EditorHelper.prototype.getFileListArray = function getFileList(){
 
 EditorHelper.prototype.getFileNameText = function getFileNameText(){
   return browser.executeScript(function(){return $('.menubar li[class="spacer file-absolute-path ng-binding"]').text();});
+};
+
+EditorHelper.prototype.foldCodebyPos = function (pos){
+  var d = webdriver.promise.defer();
+  pos --;
+  element.all(by.css(this.codeFoldingOpen)).then(function(fold){
+    fold[pos].click();
+    d.fulfill();
+  });
+  return d.promise;
 };
 
 exports.EditorHelper = EditorHelper;

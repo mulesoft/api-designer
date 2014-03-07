@@ -29,6 +29,7 @@
     "by": false,
     "CodeMirror": false,
     "describe": false,
+    "element": false,
     "expect": false,
     "getEditor": false,
     "inject": false,
