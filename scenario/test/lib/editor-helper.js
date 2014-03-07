@@ -282,4 +282,50 @@ EditorHelper.prototype.foldCodebyPos = function (pos){
   return d.promise;
 };
 
+EditorHelper.prototype.enableDisableMockingService = function enableDisableMockingService(){
+  var d = webdriver.promise.defer();
+  browser.executeScript('$(\'[class="menu-item menu-item-fr menu-item-mocking-service ng-scope"] [type="checkbox"]\').click()');
+  browser.waitForAngular();
+  d.fulfill();
+  return d.promise;
+};
+
+EditorHelper.prototype.isEnableMockingService = function isEnableMockingService(){
+  var d = webdriver.promise.defer();
+  browser.executeScript(function () {
+    var button = document.querySelector('[class="menu-item menu-item-fr menu-item-mocking-service ng-scope"] [type="checkbox"]');
+    return button.getAttribute('checked');
+  }).then(function(attribute){
+      if(attribute === 'checked'){
+        d.fulfill(attribute);
+      }else{
+        if(attribute === null){
+          d.fulfill('unchecked');
+        }else{
+          console.log('attribute', attribute);
+          d.fulfill('unchecked');
+        }
+      }
+    },function(){
+      d.fulfill('unchecked');
+    });
+  return d.promise;
+};
+
+EditorHelper.prototype.isMockingServiceHidden = function (){
+  var d = webdriver.promise.defer();
+  browser.executeScript(function () {
+    return  document.querySelector('[class="menu-item menu-item-fr menu-item-mocking-service ng-scope"] [type="checkbox"]');
+  }).then(function(button){
+      if(button === null){
+        d.fulfill('hidden');
+      }else{
+        d.fulfill('not hidden');
+      }
+    },function(){
+      d.fulfill('error');
+    });
+  return d.promise;
+};
+
 exports.EditorHelper = EditorHelper;

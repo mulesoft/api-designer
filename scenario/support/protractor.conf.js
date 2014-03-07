@@ -32,6 +32,7 @@ exports.config = {
     '../test/e2e/optionals/RT-root-optionals.js',
     '../test/e2e/optionals/traits-optionals.js',
     '../test/e2e/published-examples/examples-parser.js',
+    '../test/e2e/mocking-service/mocking-service.js',
     '../test/lib/*.js'
   ],
 
