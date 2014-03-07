@@ -11,6 +11,7 @@ before_install:
 after_success:
   - test $TRAVIS_PULL_REQUEST != false && exit 0
   - grunt build
+  - tar -czf dist.tar.gz dist
   - echo -n $id_rsa_{00..30} >> ~/.ssh/id_rsa_base64
   - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
@@ -18,7 +19,7 @@ after_success:
   - export DIST_DIR="html/${TRAVIS_BRANCH}"
   - ssh ${ACCEPTANCE_USER}@${ACCEPTANCE_HOST} rm -rf ${DIST_DIR}
   - ssh ${ACCEPTANCE_USER}@${ACCEPTANCE_HOST} mkdir -p ${DIST_DIR}
-  - scp -r dist/* ${ACCEPTANCE_USER}@${ACCEPTANCE_HOST}:${DIST_DIR}/
+  - scp -r dist.tar.gz dist/* ${ACCEPTANCE_USER}@${ACCEPTANCE_HOST}:${DIST_DIR}/
 env:
   global:
     - secure: "i6aD/NEugSc2H/0dKVKw59fgo1Zy8GvbUVjUVPGqUt9IykCGJD0rzFKA4P+A7oHfN0I84tH+AVKLRHFDXXLSczD1pZuTJJUODQ4k6dHBQcoXFcJJ2QlfFO87gwif4hceJ3+otkXF8r6pCAjjUVmuEK6pnmZqs19gj02lgBSWWas="
