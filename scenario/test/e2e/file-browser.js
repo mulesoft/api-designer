@@ -143,7 +143,7 @@ describe('file_browser ',function(){
     describe('not a raml file', function(){
 
       it('create the non raml file', function(){
-        var fileName = 'notraml.txt';
+        var fileName = 'notraml.yaml';
         editor.addNewFile(fileName);
         designerAsserts.editorCheckFileNameInList(fileName);
       });
@@ -164,6 +164,10 @@ describe('file_browser ',function(){
 
       it('console is not displayed', function(){
         designerAsserts.consoleSectionIsHidden();
+      });
+
+      it('mocking-service is not displayed', function(){
+        expect(editor.isMockingServiceHidden()).toEqual('hidden');
       });
 
     }); //not a raml file
