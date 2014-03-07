@@ -6,13 +6,13 @@ exports.config = {
 
   capabilities: {
     'browserName': process.env.BROWSER,
-    'name': 'API-Portal-RT-Method'
+    name: 'API-Portal-console'
   },
 
-  allScriptsTimeout: 50000,
+  allScriptsTimeout: 90000,
 
   specs: [
-    '../../test/e2e/optionals/RT-method-optionals.js',
+    '../../test/e2e/mocking-service/*.js',
     '../../test/lib/*.js'
   ],
 
@@ -22,7 +22,6 @@ exports.config = {
     require('jasmine-reporters');
     jasmine.getEnv().addReporter(
       new jasmine.JUnitXmlReporter('scenario/support/', true, true));
-
     browser.get('');
     browser.sleep(2000);
     var alertDialog = browser.driver.switchTo().alert();
@@ -33,6 +32,7 @@ exports.config = {
       window.onbeforeunload = null;
     });
   },
+
 
   jasmineNodeOpts: {
     onComplete: null,

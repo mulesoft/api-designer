@@ -19,6 +19,7 @@
     "grunt-contrib-less": "~0.7.0",
     "grunt-contrib-uglify": "~0.2.0",
     "grunt-contrib-watch": "~0.5.3",
+    "grunt-protractor-runner": "~0.2.3",
     "grunt-ngmin": "~0.0.2",
     "grunt-open": "~0.2.0",
     "grunt-rev": "~0.1.0",
@@ -28,7 +29,7 @@
     "matchdep": "~0.1.2",
     "minijasminenode": "~0.2.7",
     "mocha": "~1.12.0",
-    "protractor": "0.17.0",
+    "protractor": "0.18.1",
     "selenium-webdriver": "*",
     "grunt-karma": "~0.6.2",
     "karma": "~0.10.9",
@@ -53,7 +54,7 @@
     "node": ">=0.8.0"
   },
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test localScenario"
   },
   "repository": {
     "type": "git",

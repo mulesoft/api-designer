@@ -99,8 +99,6 @@ describe('file_browser ',function(){
       editor.dismissDeleteAFile(1,'example1.raml');
       designerAsserts.editorCheckFileNameInList('example1.raml');
       designerAsserts.editorCheckFileNameInList('example5.raml');
-//      browser.sleep(5000);
-//      cleanup
       editor.selectAFileByPos(1).then(function(){
         editor.deleteAFile(1,'example1.raml',false);
         designerAsserts.editorCheckFileNameNotInList('example1.raml');
@@ -109,8 +107,6 @@ describe('file_browser ',function(){
         editor.deleteAFile(1,'example5.raml',true);
         designerAsserts.editorCheckFileNameNotInList('example5.raml');
       });
-
-
     });
   }); // delete files
 
@@ -167,7 +163,9 @@ describe('file_browser ',function(){
       });
 
       it('mocking-service is not displayed', function(){
-        expect(editor.isMockingServiceHidden()).toEqual('hidden');
+        editor.isMockingServiceHidden().then(function(text){
+          expect(text).toEqual('hidden');
+        });
       });
 
     }); //not a raml file
@@ -225,14 +223,12 @@ describe('file_browser ',function(){
       });
     });
 
-
     it('change to another file', function(){
       editor.selectAFileByPos(2);
       expect(editor.getLine(1)).toEqual('This is some text to be added on this non raml filel');
     });
 
     it('go back to the previous file', function(){
-//      browser.get('/tree/file_browser_bar/');
       editor.selectAFileByPos(1).then(function(){
         expect(editor.getLine(1)).toEqual('#%RAML 0.8');
         designerAsserts.parserError('3','invalid resourceTypes definition, it must be an array');
@@ -256,6 +252,7 @@ describe('file_browser ',function(){
   }); //rename a saved file
 
   describe('save a file using save btn', function(){
+
     it('Add new file', function(){
       var fileName = 'resources.raml';
       editor.addNewFile(fileName);

@@ -6,7 +6,6 @@ describe('shelf',function(){
   var shelf = new ShelfHelper();
   var designerAsserts = new AssertsHelper();
   var editor = new EditorHelper();
-  var methods = shelf.elemResourceLevelMethods;
 
   describe('protocols', function(){
 
@@ -48,7 +47,7 @@ describe('shelf',function(){
       }); //root level
 
       describe('resource type method level', function(){
-
+        var methods = shelf.elemResourceLevelMethods;
         methods.forEach(function(method){
           it(method+' protocols elements displayed on the shelf', function(){
             var definition = [
@@ -79,9 +78,6 @@ describe('shelf',function(){
             expect(editor.getLine(8)).toEqual('          - HTTPS');
             designerAsserts.shelfElementsNotDisplayed(['HTTP', 'HTTPS'], shelf.elemProtocolsLevel);
           });
-
-
-
         });
       }); //resource type methods
 
@@ -99,7 +95,6 @@ describe('shelf',function(){
           editor.setValue(definition);
           editor.setCursor(6,8);
           designerAsserts.ShelfElementsByGroup(shelf.elemProtocolsByGroup);
-
         });
 
         it('add HTTP', function(){
@@ -120,12 +115,13 @@ describe('shelf',function(){
       }); //traits
 
       describe('resource method', function(){
+        var methods = shelf.elemResourceLevelMethods;
         methods.forEach(function(method){
           it(method+' protocols elements displayed on the shelf', function(){
             var definition = [
               '#%RAML 0.8',
               'title: my api',
-              '/res:',
+              '/tecno:',
               '  '+method+':',
               '    protocols:',
               '          '
@@ -133,7 +129,6 @@ describe('shelf',function(){
             editor.setValue(definition);
             editor.setCursor(6,6);
             designerAsserts.ShelfElementsByGroup(shelf.elemProtocolsByGroup);
-
           });
 
           it(method+' add HTTP', function(){
