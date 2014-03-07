@@ -12,7 +12,7 @@ exports.config = {
   allScriptsTimeout: 50000,
 
   specs: [
-    '../../test/e2e/optionals/RT-method-optionals.js',
+    '../../test/e2e/optionals/RT-method-namedParam.js',
     '../../test/lib/*.js'
   ],
 

@@ -1,7 +1,7 @@
 'use strict';
-var ShelfHelper = require('../lib/shelf-helper.js').ShelfHelper;
-var AssertsHelper = require ('../lib/asserts-helper.js').AssertsHelper;
-var EditorHelper = require ('../lib/editor-helper.js').EditorHelper;
+var ShelfHelper = require('../../lib/shelf-helper.js').ShelfHelper;
+var AssertsHelper = require ('../../lib/asserts-helper.js').AssertsHelper;
+var EditorHelper = require ('../../lib/editor-helper.js').EditorHelper;
 describe('optionals Attributes',function(){
   var  shelf = new ShelfHelper();
   var designerAsserts = new AssertsHelper();
