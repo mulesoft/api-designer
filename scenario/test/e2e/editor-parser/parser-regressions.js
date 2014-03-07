@@ -80,9 +80,9 @@ describe('parser ',function(){
     expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
 
-  describe('error mark is displayed when code is folded', function(){
+  describe('error mark is displayed', function(){
 
-    it('error displayed when the code is  folded', function(){
+    it('when the code is  folded', function(){
       var definition = [
         '#%RAML 0.8',
         'title: errorCollapsed',
@@ -98,18 +98,24 @@ describe('parser ',function(){
       ].join('\\n');
       editor.setValue(definition);
       designerAsserts.parserError('11','each header must be a map');
-      editor.foldCodebyPos(6);
-      designerAsserts.parserError('9','Error on line 11: each header must be a map');
-      editor.foldCodebyPos(5);
-      designerAsserts.parserError('8','Error on line 11: each header must be a map');
-      editor.foldCodebyPos(4);
-      designerAsserts.parserError('7','Error on line 11: each header must be a map');
-      editor.foldCodebyPos(3);
-      designerAsserts.parserError('6','Error on line 11: each header must be a map');
-      editor.foldCodebyPos(2);
-      designerAsserts.parserError('4','Error on line 11: each header must be a map');
-      editor.foldCodebyPos(1);
-      designerAsserts.parserError('3','Error on line 11: each header must be a map');
+      editor.foldCodebyPos(6).then(function(){
+        designerAsserts.parserError('9','Error on line 11: each header must be a map');
+      });
+      editor.foldCodebyPos(5).then(function(){
+        designerAsserts.parserError('8','Error on line 11: each header must be a map');
+      });
+      editor.foldCodebyPos(4).then(function(){
+        designerAsserts.parserError('7','Error on line 11: each header must be a map');
+      });
+      editor.foldCodebyPos(3).then(function(){
+        designerAsserts.parserError('6','Error on line 11: each header must be a map');
+      });
+      editor.foldCodebyPos(2).then(function(){
+        designerAsserts.parserError('4','Error on line 11: each header must be a map');
+      });
+      editor.foldCodebyPos(1).then(function(){
+        designerAsserts.parserError('3','Error on line 11: each header must be a map');
+      });
     });
 
     it('error message - code folded - edit raml', function(){
