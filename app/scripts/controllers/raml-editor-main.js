@@ -2,7 +2,7 @@
 
 angular.module('ramlEditorApp')
   .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
-  .service('ramlParserFileReader', function ($http, ramlParser, ramlRepository, safeApplyWrapper) {
+  .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
     function readLocFile(path) {
       return ramlRepository.loadFile({path: path}).then(
         function success(file) {
@@ -12,7 +12,7 @@ angular.module('ramlEditorApp')
     }
 
     function readExtFile(path) {
-      return $http.get(path).then(
+      return $http.get(path, { transformResponse: null }).then(
         // success
         function success(response) {
           return response.data;
@@ -32,7 +32,7 @@ angular.module('ramlEditorApp')
 
     this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
       var deferredSrc = /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
-      var deferredDst = new ramlParser.RamlParser({}).q.defer();
+      var deferredDst = new $q.defer();
 
       deferredSrc.then(
         // success
