@@ -354,7 +354,7 @@ describe('Embedded-console Methods',function(){
     }); // UriParameters
 
     xdescribe('body', function(){
-      var options = ['multipart/form-data', 'application/x-www-form-urlencoded'];
+      options = ['multipart/form-data', 'application/x-www-form-urlencoded'];
       options.forEach(function(option){
         describe(option+' for body with formParameters', function(){
           methods.forEach(function(method){
@@ -428,7 +428,7 @@ describe('Embedded-console Methods',function(){
       }); //body with formParameters
 
 
-      var options = ['application/json', 'application/xml'];
+      options = ['application/json', 'application/xml'];
       options.forEach(function(option){
         describe('body: '+option+' with schema and example', function(){
 
