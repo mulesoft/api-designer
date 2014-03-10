@@ -205,6 +205,19 @@
     };
 
     /**
+     * @returns {[LazyNode]} All direct descendants of this node
+     */
+    LazyNode.prototype.getChildren = function getChildren() {
+      var children = [];
+      var child = this.getFirstChild();
+      while (child !== null) {
+        children.push(child);
+        child = child.getNextSibling();
+      }
+      return children;
+    };
+
+    /**
      * @returns {[LazyNode]} The current node plus any nodes at the same tab
      * level with the same parent. For arrays, returns all members of the
      * node's array. Array consists first of current node, then previous neighbors

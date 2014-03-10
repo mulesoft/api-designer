@@ -9,9 +9,11 @@ exports.config = {
     'name': 'API-Portal-traits-optionals'
   },
 
+  allScriptsTimeout: 50000,
+
   specs: [
-    '../../test/e2e/RT-root-optionals.js',
-    '../../test/e2e/traits-optionals.js',
+    '../../test/e2e/optionals/RT-root-optionals.js',
+    '../../test/e2e/optionals/traits-optionals.js',
     '../../test/lib/*.js'
   ],
 

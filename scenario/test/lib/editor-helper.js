@@ -4,17 +4,22 @@ var webdriver = require('selenium-webdriver');
 function EditorHelper(){
   this.editorLinesListCssWithCol =  '.CodeMirror-code div[style="position: relative;"]';
   this.editorLinesListCss =  '.CodeMirror-code div[style="position: relative;"] pre';
+  this.codeFoldingOpen = '.CodeMirror-foldgutter-open';
 //  Syntax highlight
   this.keySHighlight = 'cm-key';
   this.traitTitleSHighlight= 'cm-trait-title';
   this.ramlTagSHighlight = 'cm-raml-tag';
+  this.cmMeta = 'cm-meta'; //used for protocols
+  this.resourceTypes = 'cm-resource-type-title';
+  this.resourceTypeContent = 'cm-resource-type-content';
+  this.methodTitle = 'cm-method-title';
+  this.methodContent = 'cm-method-content';
   this.newButton = '[role="new-button"]';
   this.saveButton = '[role="save-button"]';
   this.notificationBar = '[role="notifications"]';
 }
 
 EditorHelper.prototype = {};
-
 EditorHelper.prototype.getErrorLineMessage = function getErrorLineMessage(){
   var webdriver = require('selenium-webdriver');
   var d = webdriver.promise.defer();
@@ -115,11 +120,12 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClass
             listClase[t] = classe;
           }).then(function(){
               if(t ===posi.length-1){
+//                console.log('listclase',listClase);
                 d.fulfill(listClase);
               }
             });
         } else {
-          console.log('This has not a class');
+//          console.log('This has not a class');
         }
       });
     });
@@ -269,6 +275,62 @@ EditorHelper.prototype.getFileListArray = function getFileList(){
 
 EditorHelper.prototype.getFileNameText = function getFileNameText(){
   return browser.executeScript(function(){return $('.menubar li[class="spacer file-absolute-path ng-binding"]').text();});
+};
+
+EditorHelper.prototype.foldCodebyPos = function (pos){
+  var d = webdriver.promise.defer();
+  pos --;
+  element.all(by.css(this.codeFoldingOpen)).then(function(fold){
+    fold[pos].click();
+    d.fulfill();
+  });
+  return d.promise;
+};
+
+EditorHelper.prototype.enableDisableMockingService = function enableDisableMockingService(){
+  var d = webdriver.promise.defer();
+  browser.executeScript('$(\'[class="menu-item menu-item-fr menu-item-mocking-service ng-scope"] [type="checkbox"]\').click()');
+  browser.waitForAngular();
+  d.fulfill();
+  return d.promise;
+};
+
+EditorHelper.prototype.isEnableMockingService = function isEnableMockingService(){
+  var d = webdriver.promise.defer();
+  browser.executeScript(function () {
+    var button = document.querySelector('[class="menu-item menu-item-fr menu-item-mocking-service ng-scope"] [type="checkbox"]');
+    return button.getAttribute('checked');
+  }).then(function(attribute){
+      if(attribute === 'checked'){
+        d.fulfill(attribute);
+      }else{
+        if(attribute === null){
+          d.fulfill('unchecked');
+        }else{
+          console.log('attribute', attribute);
+          d.fulfill('unchecked');
+        }
+      }
+    },function(){
+      d.fulfill('unchecked');
+    });
+  return d.promise;
+};
+
+EditorHelper.prototype.isMockingServiceHidden = function (){
+  var d = webdriver.promise.defer();
+  browser.executeScript(function () {
+    return  document.querySelector('[class="menu-item menu-item-fr menu-item-mocking-service ng-scope"] [type="checkbox"]');
+  }).then(function(button){
+      if(button === null){
+        d.fulfill('hidden');
+      }else{
+        d.fulfill('not hidden');
+      }
+    },function(){
+      d.fulfill('error');
+    });
+  return d.promise;
 };
 
 exports.EditorHelper = EditorHelper;

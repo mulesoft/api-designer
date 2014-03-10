@@ -9,8 +9,10 @@ exports.config = {
     'name': 'API-Portal-RT-Method'
   },
 
+  allScriptsTimeout: 50000,
+
   specs: [
-    '../../test/e2e/RT-method-optionals.js',
+    '../../test/e2e/optionals/RT-method-optionals.js',
     '../../test/lib/*.js'
   ],
 
