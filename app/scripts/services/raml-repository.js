@@ -1,119 +1,170 @@
-'use strict';
+(function() {
+  'use strict';
 
-angular.module('fs', ['ngCookies', 'raml', 'utils'])
-  .factory('ramlRepository', function ($q, ramlSnippets, fileSystem) {
-    var service = {};
-    var defaultPath = '/';
-    var defaultName = 'untitled.raml';
+  var FILE_EXTENSION_EXTRACTOR = /.*\.(.*)$/;
+  function RamlFile (path, contents, options) {
+    options = options || {};
 
-    function RamlFile (name, path, contents) {
-      this.path = path || defaultPath;
-      this.name = name || defaultName;
-      this.contents = typeof contents === 'string' ? contents : null;
-
-      this.dirty = !name;
-      this.persisted = false;
+    this.path = path;
+    this.name = path.slice(path.lastIndexOf('/') + 1);
+    var extensionMatch = FILE_EXTENSION_EXTRACTOR.exec(this.name);
+    if (extensionMatch) {
+      this.extension = extensionMatch[1];
     }
 
-    RamlFile.prototype = {
-      save: function () {
-        return service.saveFile(this);
-      },
+    this.contents = contents;
+    this.persisted = options.persisted || false;
+    this.dirty = options.dirty || !this.persisted;
+  }
 
-      reload: function () {
-        return service.loadFile(this);
-      },
+  angular.module('fs', ['ngCookies', 'raml', 'utils'])
+    .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
+      var service = {};
+      var defaultPath = '/';
 
-      remove: function () {
-        return service.removeFile(this);
-      },
-
-      hasContents: function () {
-        return !!this.contents;
+      function notMetaFile(file) {
+        return file.path.slice(-5) !== '.meta';
       }
-    };
 
-    service.getDirectory = function (path) {
-      path = path || defaultPath;
-      return fileSystem.directory(path).then(function (entries) {
-        return entries.map(function (e) {
-          return new RamlFile(e, path);
+      function RamlDirectory(path, meta, contents) {
+        if (!/\/$/.exec(path)) { path = path + '/'; }
+        contents = contents || [];
+
+        var strippedPath = path.substring(0, path.length - 1);
+        this.path = path;
+        this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
+        this.meta = meta;
+
+        var separated = { folder: [], file: [] };
+        contents.forEach(function(entry) {
+          separated[entry.type || 'file'].push(entry);
         });
-      });
-    };
 
-    service.saveFile = function (file) {
-      return fileSystem.save(file.path, file.name, file.contents).then(
-        // success
-        function () {
-          file.dirty = false;
-          file.persisted = true;
+        this.files = separated.file.filter(notMetaFile).map(function(file) {
+          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true} );
+        });
 
-          return file;
-        },
+        this.files.sort(function(file1, file2) {
+          return file1.name.localeCompare(file2.name);
+        });
 
-        // failure
-        function (error) {
+        this.directories = separated.folder.map(function(directory) {
+          return new RamlDirectory(directory.path, directory.meta, directory.children);
+        });
+      }
+
+      RamlDirectory.prototype.createFile = function createFile(name) {
+        var file = service.createFile(name);
+        this.files.push(file);
+
+        return file;
+      };
+
+      RamlDirectory.prototype.removeFile = function (file) {
+        var index = this.files.indexOf(file);
+        if (index !== -1) {
+          this.files.splice(index, 1);
+        }
+
+        return service.removeFile(file);
+      };
+
+      function handleErrorFor(file) {
+        return function markFileWithError(error) {
           file.error = error;
-
           throw error;
-        }
-      );
-    };
+        };
+      }
 
-    service.loadFile = function (file) {
-      return fileSystem.load(file.path, file.name).then(
-        // success
-        function (data) {
+      service.getDirectory = function getDirectory(path) {
+        path = path || defaultPath;
+        return fileSystem.directory(path).then(function (folder) {
+          return new RamlDirectory(folder.path, folder.meta, folder.children);
+        });
+      };
+
+      service.saveFile = function saveFile(file) {
+        function modifyFile() {
           file.dirty = false;
           file.persisted = true;
-          file.contents  = data;
 
           return file;
-        },
+        }
 
-        // failure
-        function (error) {
+        return fileSystem.save(file.path, file.contents).then(modifyFile, handleErrorFor(file));
+      };
+
+      service.renameFile = function renameFile(file, newName) {
+        var newPath = file.path.replace(file.name, newName);
+        var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
+
+        function modifyFile() {
+          file.name = newName;
+          file.path = newPath;
+
+          return file;
+        }
+
+        return promise.then(modifyFile, handleErrorFor(file));
+      };
+
+      service.loadFile = function loadFile(file) {
+        function modifyFile(data) {
           file.dirty = false;
           file.persisted = true;
-          file.error     = error;
-
-          throw error;
-        }
-      );
-    };
-
-    service.removeFile = function (file) {
-      return fileSystem.remove(file.path, file.name).then(
-        // success
-        function () {
-          file.dirty = false;
+          file.contents = data;
 
           return file;
-        },
-
-        // failure
-        function (error) {
-          file.error = error;
-
-          throw error;
         }
-      );
-    };
 
-    service.createFile = function () {
-      return new RamlFile(null, defaultPath, ramlSnippets.getEmptyRaml());
-    };
+        return fileSystem.load(file.path).then(modifyFile, handleErrorFor(file));
+      };
 
-    service.bootstrap = function () {
-      return service.getDirectory(defaultPath).then(function (files) {
-        if (files.length) {
-          return service.loadFile(files[0]);
-        } else {
-          return service.createFile();
+      service.removeFile = function removeFile(file) {
+        function modifyFile() {
+          file.dirty = false;
+          file.persisted = false;
+
+          return Object.freeze(file);
         }
-      });
-    };
 
-    return service;
-  });
+        $rootScope.$broadcast('event:raml-editor-file-removed', file);
+        return fileSystem.remove(file.path).then(modifyFile, handleErrorFor(file));
+      };
+
+      service.createFile = function createFile(name) {
+        var path = defaultPath + name;
+        var file = new RamlFile(path, ramlSnippets.getEmptyRaml());
+        if (file.extension !== 'raml') {
+          file.contents = '';
+        }
+
+        $rootScope.$broadcast('event:raml-editor-file-created', file);
+        return file;
+      };
+
+      service.saveMeta = function saveMeta(file, meta) {
+        var metaFile = new RamlFile(file.path + '.meta', JSON.stringify(meta));
+        return service.saveFile(metaFile)
+          .then(function () {
+            return meta;
+          })
+        ;
+      };
+
+      service.loadMeta = function loadMeta(file) {
+        var metaFile = new RamlFile(file.path + '.meta');
+        return service.loadFile(metaFile).then(
+          function success(file) {
+            return JSON.parse(file.contents);
+          },
+
+          function failure() {
+            return {};
+          }
+        );
+      };
+
+      return service;
+    });
+})();

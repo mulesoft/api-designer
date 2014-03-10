@@ -1,71 +1,75 @@
 'use strict';
 
 angular.module('ramlEditorApp')
-  .factory('applySuggestion', function (ramlHint, ramlSnippets, getLineIndent, generateTabs) {
-    return function (editor, suggestion) {
-      var snippet           = ramlSnippets.getSnippet(suggestion);
-      var snippetLinesCount = snippet.length;
-      var cursor            = editor.getCursor();
-      var line              = editor.getLine(cursor.line);
-      var lineIndent        = getLineIndent(line);
-      var lineHasPadding    = lineIndent.tabCount > 0;
-      var lineIsEmpty       = line.trim() === '';
-      var lineIsArray       = line.trim() === '-';
-      var i                 = cursor.line + 1;
-      var nextLine          = editor.getLine(i);
-      var nextLineIndent    = nextLine && getLineIndent(nextLine);
-      var path              = ramlHint.computePath(editor);
-      var padding           = cursor.line === 0 ? '' : generateTabs(path.length - 1 + (path.length > 1 ? path.listsTraveled : 0));
+  .factory('applySuggestion', function applySuggestionFactory(ramlSnippets, generateTabs, getNode) {
+    return function applySuggestion(editor, suggestion) {
+      var snippet     = ramlSnippets.getSnippet(suggestion);
+      var node        = getNode(editor);
+      var lineIsArray = node.line.trim() === '-';
+      var tabCount    = node.lineIndent.tabCount;
 
-      // add paddings to snippet lines
-      snippet = snippet.map(function (line, index) {
-        if (index === 0) {
-          if (lineIsArray) {
-            return ' ' + line;
-          }
+      // Need to compute a prefix, such as '- ' or ' ' for the snippet
+      // as well as a padding for every line in the snippet. The padding
+      // is simply the current node tabbing, or the cursor position if
+      // there is no current node, which exactly what node.lineIndent.tabCount does:
+      var prefix  = lineIsArray ? ' ' : '';
+      var padding = lineIsArray ? '' : generateTabs(tabCount);
 
-          if (lineIsEmpty && lineHasPadding) {
-            return line;
-          }
+      // For list element suggestions, we need to know whether or not to add the '- ' list
+      // indicator: If a previous element at our tab depth already added the list indicator
+      // then we should not do so.
+      if (suggestion.isList && !lineIsArray) {
+        var arrayStarterNode = node.selfOrPrevious(function(node) { return node.isArrayStarter; });
+        //1. If we don't find an array starter node, we start a new array.
+        //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
+        //3. If the suggestion a text node, we start a new array.
+        if (!arrayStarterNode ||
+          (node.lineIndent.tabCount === arrayStarterNode.lineIndent.tabCount && node.lineNumber !== arrayStarterNode.lineNumber) ||
+          (suggestion.metadata && suggestion.metadata.isText)) {
+          prefix = '- ';
+        } else if (node.isArrayStarter) {
+          // Add extra tab for children of root array node, e.g. those not prefixed with a '- '
+          padding = generateTabs(tabCount + 1);
         }
+      }
 
-        return padding + line;
+       // Add prefix and padding to snippet lines:
+      var codeToInsert = snippet.map(function (line, index) {
+        return padding + (index === 0 ? prefix : '') + line;
       }).join('\n');
 
-      // insert into current cursor's position
-      // to re-use indentation as there is nothing else
-      if (!(lineIsEmpty || lineIsArray)) {
-        snippet = '\n' + snippet;
-      }
-
-      // search for a line that has the same indentation as
-      // current line or descending
-      while ((nextLine || '').trim() && nextLineIndent.tabCount > lineIndent.tabCount) {
-        nextLine       = editor.getLine(++i);
-        nextLineIndent = nextLine && getLineIndent(nextLine);
-      }
-
-      editor.replaceRange(snippet,
-        // from
-        {
-          line: i - 1,
-          ch:   lineIsArray ? (line.indexOf('-') + 1) : lineIsEmpty ? padding.length : null
-        },
-        // to
-        {
-          line: i - 1
+      // Search for a line that is empty or has the same indentation as current line
+      while (true) {
+        if (node.isEmpty) {
+          break; // Empty node, place code there
         }
-      );
+
+        var nextNode = getNode(editor, node.lineNumber + 1);
+        if (!nextNode || nextNode.lineIndent.tabCount <= tabCount) {
+          break; // At end of raml, place node here
+        }
+
+        node = nextNode;
+      }
+
+      // Calculate the place to insert the code:
+      // + Make sure to start at end of node content so we don't erase anything!
+      var from = { line: node.lineNumber, ch: node.line.trimRight().length };
+      var to = { line: from.line, ch: node.line.length };
+      var nodeHasContent = !node.isEmpty && !lineIsArray;
+
+      // If cursor is on a non-empty/array starter line, add a newline:
+      if (nodeHasContent) {
+        codeToInsert = '\n' + codeToInsert;
+      }
+
+      editor.replaceRange(codeToInsert, from, to);
 
       // in case of inserting into current line we're
       // moving cursor one line less further as we're
       // re-using current line
-      if (lineIsEmpty || lineIsArray) {
-        i = i - 1;
-      }
-
       editor.setCursor({
-        line: i + snippetLinesCount - 1
+        line: from.line + snippet.length - (nodeHasContent ? 0 : 1)
       });
 
       editor.focus();
@@ -85,6 +89,9 @@ angular.module('ramlEditorApp')
 
         sections[item.metadata.category] = sections[item.metadata.category] || {name: item.metadata.category, items: []};
         sections[item.metadata.category].items.push(item);
+        //61553714: Because item is the model passed into the designer, we need to copy the
+        //isList property into it so that the designer can format things properly.
+        item.isList = suggestions.isList;
       });
 
       Object.keys(sections).forEach(function (key) {
@@ -95,19 +102,14 @@ angular.module('ramlEditorApp')
       return model;
     };
   })
-  .controller('ramlEditorShelf', function ($scope, eventService, codeMirror, safeApply, applySuggestion, updateSuggestions) {
-    eventService.on('event:raml-editor-initialized', function () {
-      var editor = codeMirror.getEditor();
-      editor.on('cursorActivity', $scope.cursorMoved.bind($scope));
+  .controller('ramlEditorShelf', function ($scope, safeApplyWrapper, applySuggestion, updateSuggestions) {
+    var editor = $scope.editor;
+
+    $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
+      $scope.model = updateSuggestions(editor);
     });
 
-    $scope.cursorMoved = function () {
-      $scope.model = updateSuggestions(codeMirror.getEditor());
-
-      safeApply($scope);
-    };
-
-    $scope.orderSections = function (section) {
+    $scope.orderSections = function orderSections(section) {
       var index = [
         'root',
         'docs',
@@ -122,7 +124,10 @@ angular.module('ramlEditorApp')
       return (index === -1) ? index.length : index;
     };
 
-    $scope.itemClick = function (suggestion) {
-      applySuggestion(codeMirror.getEditor(), suggestion);
+    $scope.itemClick = function itemClick(suggestion) {
+      applySuggestion(editor, suggestion);
     };
-  });
+
+    editor.on('cursorActivity', $scope.cursorMoved);
+  })
+;

@@ -26,7 +26,7 @@ angular.module('raml')
       ].join('\n');
     };
 
-    service.getSnippet = function (suggestion) {
+    service.getSnippet = function getSnippet(suggestion) {
       var key      = suggestion.key;
       var metadata = suggestion.metadata || {};
       var snippet  = snippets[key.toLowerCase()];
@@ -36,10 +36,9 @@ angular.module('raml')
       }
 
       if (metadata.isText) {
-        return [
-          key,
-          ''
-        ];
+        //For text elements that are part of an array
+        //we do not add an empty line break:
+        return suggestion.isList ? [key] : [key, ''];
       }
 
       return [

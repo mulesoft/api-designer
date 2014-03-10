@@ -19,11 +19,12 @@ angular.module('ramlEditorApp',
     'helpers',
     'raml',
     'stringFilters',
-    'utils'
+    'utils',
+    'lightweightDOM',
+    'splitter'
   ]
 )
   .run(function ($window) {
     // Adding proxy settings for api console
     $window.RAML.Settings.proxy = '/proxy/';
-  })
-;
+  });

@@ -5,26 +5,32 @@ exports.config = {
   sauceKey: process.env.SAUCE_KEY,
 
   capabilities: {
-    'browserName': 'chrome'
+    'browserName': process.env.BROWSER,
+    'name': 'API-Portal-shelfRoot'
   },
+
+  allScriptsTimeout: 50000,
 
   specs: [
     '../../test/e2e/editor-shelf/*.js',
-
     '../../test/lib/*.js'
   ],
 
-  baseUrl:  'https://ramltooling:ram10ve@j0hnqa.mulesoft.org/',
+  baseUrl: process.env.BASE_URL,
 
   onPrepare: function() {
-    browser.get('');
-    browser.executeScript(function () {
-      localStorage['config.updateResponsivenessInterval'] = 1;
-      window.onbeforeunload = null;
-    });
+    require('jasmine-reporters');
+    jasmine.getEnv().addReporter(
+      new jasmine.JUnitXmlReporter('scenario/support/', true, true));
 
-    browser.wait(function(){
-      return browser.executeScript('return (editor.getLine(1) === \'title:\');');
+    browser.get('');
+    browser.sleep(2000);
+    var alertDialog = browser.driver.switchTo().alert();
+    alertDialog.sendKeys('example.raml');
+    alertDialog.accept();
+    browser.executeScript(function () {
+      localStorage['config.updateResponsivenessInterval'] = 0;
+      window.onbeforeunload = null;
     });
   },
 

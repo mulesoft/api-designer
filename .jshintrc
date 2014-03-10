@@ -29,6 +29,7 @@
     "by": false,
     "CodeMirror": false,
     "describe": false,
+    "element": false,
     "expect": false,
     "getEditor": false,
     "inject": false,
@@ -39,6 +40,9 @@
     "should": false,
     "sinon": false,
     "xdescribe": false,
-    "xit": false
+    "xit": false,
+    "compileTemplate": false,
+    "events": false,
+    "promise": false
   }
 }

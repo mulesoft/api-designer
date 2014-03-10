@@ -15,201 +15,6 @@ describe('ramlEditorApp', function () {
       ramlHint = $injector.get('ramlHint');
     }));
 
-    describe('computePath', function () {
-      it('should stop travelling when root level has been reached', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'traits:',
-            '  - trait:',
-            '      displayName: trait',
-            '/:',
-            '  options:',
-            '    description:'
-          ],
-          {
-            line: 5,
-            ch:   0
-          }
-        );
-
-        var path = ramlHint.computePath(editor);
-        [].concat(path).should.be.deep.equal(['/', 'options', 'description']);
-        path.listsTraveled.should.be.equal(0);
-      });
-
-      it('should return NULL for the first line', function () {
-        var path = ramlHint.computePath(getEditor(codeMirror, ''));
-        should.equal(path, null);
-      });
-
-      it('should handle root level paths', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api'
-          ],
-          {line: 1, ch: 4}
-        );
-
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['version']);
-      });
-
-      it('should handle second level paths', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    get:',
-          ],
-          {line: 5, ch: 4}
-        );
-
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['/hello', '/bye', 'get']);
-      });
-
-      it('should inform when tab levels are invalid', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            '/hello:',
-            '  /bye:',
-            '    /foo:',
-            '              '
-          ],
-          {line: 6, ch: 14}
-        );
-
-        should.not.exist(ramlHint.computePath(editor));
-      });
-
-      it('should offer computePath to lists at the same level', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '  - hello2:',
-            '      displayName: hello2',
-            '  '
-          ],
-          {line: 8, ch: 2}
-        );
-
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', '']);
-      });
-
-      it('should offer options to valid elements inside lists', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-            'traits:',
-            '  - hello:',
-            '      displayName: hello',
-            '  - hello2:',
-            '      displayName: hello',
-            '      '
-          ],
-          {line: 8, ch: 6}
-        );
-
-        [].concat(ramlHint.computePath(editor)).should.be.deep.equal(['traits', 'hello2', '']);
-      });
-
-      it('should return null for first line first char', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api'
-          ],
-          {line: 0, ch: 0}
-        );
-
-        should.not.exist(ramlHint.computePath(editor));
-      });
-
-      it('should return null for first line non first char', function () {
-        var editor = getEditor(codeMirror,
-          [
-            'title: hello',
-            'version: v1.0',
-            'baseUri: http://example.com/api',
-          ],
-          {line: 0, ch: 4}
-        );
-
-        should.not.exist(ramlHint.computePath(editor));
-      });
-
-      it('should detect valid number of traveled lists #1', function () {
-        ramlHint.computePath(getEditor(codeMirror,
-          [
-            'traits',
-            '  - trait1:',
-            '      displayName:' // <--
-          ],
-          {
-            line: 2,
-            ch:   6
-          }
-        )).listsTraveled.should.be.equal(1);
-      });
-
-      it('should detect valid number of traveled lists #2', function () {
-        ramlHint.computePath(getEditor(codeMirror,
-          [
-            'traits',
-            '  - trait1:',
-            '      displayName:',
-            '  - trait2:',
-            '      displayName:' // <--
-          ],
-          {
-            line: 4,
-            ch:   6
-          }
-        )).listsTraveled.should.be.equal(1);
-      });
-
-      it('should detect valid number of traveled lists #3', function () {
-        ramlHint.computePath(getEditor(codeMirror,
-          [
-            '- list1:',
-            '    - list2:',
-            '        key1:' // <--
-          ],
-          {
-            line: 2,
-            ch:   8
-          }
-        )).listsTraveled.should.be.equal(2);
-      });
-
-      it('should detect valid number of traveled lists #4', function () {
-        ramlHint.computePath(getEditor(codeMirror,
-          [
-            'documentation:',
-            '  - title:'
-          ],
-          {
-            line: 1,
-            ch:   4
-          }
-        )).listsTraveled.should.be.equal(1);
-      });
-    });
-
     describe('getSuggestions', function () {
       it('should exclude optional keys', function () {
         var suggestions = ramlHint.getSuggestions(getEditor(codeMirror,
@@ -262,7 +67,7 @@ describe('ramlEditorApp', function () {
         });
       });
 
-      it('should not exclude keys from another array', function () {
+      it('should not exclude keys from another array for documentation suggestions', function () {
         var editor = getEditor(codeMirror,
           [
             'documentation:',
@@ -283,6 +88,53 @@ describe('ramlEditorApp', function () {
 
         suggestions.should.include.key('title');
         suggestions.should.include.key('content');
+      });
+
+      it('should include values from array for protocol suggestions', function() {
+        var editor = getEditor(codeMirror,
+          [
+            'protocols:',
+            '  - HTTP',
+            '  '
+          ],
+          {
+            line: 2,
+            ch:   2
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.key] = true;
+        });
+
+        suggestions.should.include.key('HTTPS');
+        suggestions.should.not.include.key('HTTP');
+      });
+
+      it('should include values from array for resource method protocol suggestions', function() {
+        var editor = getEditor(codeMirror,
+          [
+            '/newResource:',
+            '  displayName: resourceName',
+            '  get:',
+            '    protocols:',
+            '      - HTTPS',
+            '      '
+          ],
+          {
+            line: 5,
+            ch:   7
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.key] = true;
+        });
+
+        suggestions.should.include.key('HTTP');
+        suggestions.should.not.include.key('HTTPS');
       });
 
       it('should exclude "title" and "version" keys at root level', function () {
@@ -348,6 +200,35 @@ describe('ramlEditorApp', function () {
         var sortedNames = names.slice().sort();
 
         names.should.be.deep.equal(sortedNames);
+      });
+
+      it('should not show any suggestions for nodes whose value is a reference', function() {
+        var editor = getEditor(codeMirror,
+        [
+          '/res1: &res1',
+          '  description: this is res1 description',
+          '  displayName: resource 1',
+          '  get:',
+          '    description: get into resource 1',
+          '/res2: *res1',
+          '  illegalnode: nothing',
+          '  '
+        ],
+        {
+          line: 5,
+          ch: 12
+        });
+
+        //Cursor is to right of *res1, should get no suggestions
+        ramlHint.getSuggestions(editor).should.be.empty;
+        editor.setCursor({line:6, ch:0});
+        ramlHint.getSuggestions(editor).should.be.empty;
+        editor.setCursor({line:6, ch:2});
+        ramlHint.getSuggestions(editor).should.be.empty;
+        editor.setCursor({line:7, ch:0});
+        ramlHint.getSuggestions(editor).should.not.be.empty;
+        editor.setCursor({line:7, ch:2});
+        ramlHint.getSuggestions(editor).should.be.empty;
       });
     });
 
@@ -431,7 +312,7 @@ describe('ramlEditorApp', function () {
       it('should not allow autocomplete for resource', function () {
         ramlHint.canAutocomplete(getEditor(codeMirror,
           [
-            '/resource:',
+            '/resource:'
           ],
           {line: 0, ch: 0}
         )).should.be.false;

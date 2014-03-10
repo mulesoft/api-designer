@@ -40,7 +40,7 @@ angular.module('ramlEditorApp')
 
           // level is increasing, but we still can get back
           continue;
-        } else if (lineIsArray && isArrayStarter(nextLine)) {
+        } else if (isArrayStarter(nextLine)) {
           break;
         }
 
@@ -62,6 +62,8 @@ angular.module('ramlEditorApp')
             // level is increasing, but we still can get back
             continue;
           }
+        } else if (isArrayStarter(nextLine)) {
+          break;
         }
 
         lineNumbers.push(i);
@@ -72,150 +74,20 @@ angular.module('ramlEditorApp')
       });
     };
   })
-  .factory('getNeighborKeys', function (getNeighborLines, extractKey) {
+  .factory('getNeighborKeys', function (getNeighborLines, extractKeyValue) {
     return function (editor) {
-      return getNeighborLines(editor).map(extractKey);
+      return getNeighborLines(editor).map(function (line) {
+        return extractKeyValue(line).key;
+      });
     };
   })
-  .factory('ramlHint', function (getLineIndent, generateTabs, getNeighborKeys,
-    getScopes, getEditorTextAsArrayOfLines) {
+  .factory('ramlHint', function ramlHintFactory(generateTabs, getNeighborKeys, getTabCount,
+                                                getScopes, getEditorTextAsArrayOfLines, getNode) {
     var hinter = {};
     var RAML_VERSION = '#%RAML 0.8';
     var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
 
     hinter.suggestRAML = window.suggestRAML;
-
-    hinter.computePath = function (editor) {
-      var cursor = editor.getCursor();
-      var line = cursor.line;
-      var ch = cursor.ch;
-      var listsTraveled = 0;
-      var lastTraveledListSpaceCount;
-      var lines;
-      var textAsList;
-      var rootIsFound;
-
-      if (line === 0) {
-        return null;
-      }
-
-      textAsList = getEditorTextAsArrayOfLines(editor).slice(0, line + 1).reverse();
-      if (textAsList[0].trim() === '') {
-        textAsList[0] = textAsList[0].slice(0, ch);
-      }
-
-      // It should have at least one element
-      if (!textAsList.length) {
-        return [];
-      }
-
-      lastTraveledListSpaceCount = getLineIndent(textAsList[0]).spaceCount;
-      if ((lastTraveledListSpaceCount % editor.getOption('indentUnit')) !== 0) {
-        return;
-      }
-
-      lines = textAsList
-        .filter(function (line, index) {
-          var spaceCount;
-
-          // current line is good
-          if (index === 0) {
-            return true;
-          }
-
-          // comments are good
-          if (line.trimLeft().indexOf('#') === 0) {
-            return true;
-          }
-
-          // lines with bigger indentation are not good
-          spaceCount = getLineIndent(line).spaceCount;
-          if (spaceCount > lastTraveledListSpaceCount) {
-            return false;
-          }
-
-          // lines after root are not good
-          if (rootIsFound) {
-            return false;
-          }
-
-          // lines with indentation are good until we find the root
-          if (spaceCount) {
-            return true;
-          }
-
-          rootIsFound = true;
-
-          return true;
-        })
-        .map(function (line, index) {
-          var result         = {};
-          var lineIndentInfo = getLineIndent(line);
-          var listMatcher;
-
-          result.tabCount = lineIndentInfo.tabCount;
-          line = lineIndentInfo.content;
-
-          listMatcher = /^(- )(.*)$/.exec(line) || {index: -1};
-
-          // case is a list
-          if (listMatcher.index === 0) {
-            result.isList = true;
-            line = listMatcher[2];
-
-            if (index === 0 || lineIndentInfo.spaceCount < lastTraveledListSpaceCount) {
-              listsTraveled++;
-              lastTraveledListSpaceCount = lineIndentInfo.spaceCount;
-            }
-          }
-
-          line = /^(.+)(: |:\s*$)/.exec(line);
-
-          result.content = line ? line[1] : '';
-
-          return result;
-        })
-      ;
-
-      var result = lines.slice(1).reduce(function (state, lineData) {
-        var prev = state[state.length - 1];
-
-        // Ignore line if greater in tabs
-        if (lineData.tabCount >= prev.tabCount) {
-          return state;
-        } else if (lineData.tabCount === prev.tabCount - 1) {
-          if (lineData.isList) {
-            prev.isList = true;
-            return state;
-          }
-        }
-
-        state.push(lineData);
-
-        return state;
-      }, [lines[0]]);
-
-      result = result.slice(1).reduce(function (state, lineData) {
-        if (state.path[0].tabCount > lineData.tabCount + 1) {
-          if (!state.path[0].isList && !lineData.isList) {
-            state.invalid = true;
-          }
-        }
-        state.path.unshift(lineData);
-        return state;
-      }, {invalid: false, path: [result[0]]});
-
-      if (result.invalid) {
-        return;
-      }
-
-      var path = result.path.map(function (e) {
-        return e.content;
-      });
-      path.listsTraveled = listsTraveled;
-
-      return path;
-    };
 
     hinter.getScopes = function (editor) {
       return getScopes(getEditorTextAsArrayOfLines(editor));
@@ -231,13 +103,31 @@ angular.module('ramlEditorApp')
       ;
     };
 
-    hinter.isSuggestionInUse = function (suggestionKey, suggestion, neighborKeys) {
-      return neighborKeys.indexOf(suggestionKey) !== -1 ||
-             (suggestion.metadata.canBeOptional && neighborKeys.indexOf(suggestionKey + '?') !== -1)
-      ;
+    /**
+     * @param suggestionKey The key to consider suggestion to the user
+     * @param suggestion The suggestion metadata for the key
+     * @param nodes The nodes to check for the suggestion
+     * @returns {boolean} Whether the suggestion is in use
+     */
+    hinter.isSuggestionInUse = function (suggestionKey, suggestion, nodes) {
+      var values = suggestion.metadata.isText ?
+        nodes.map(function (node) { return node.getValue() ? node.getValue().text : null; })
+        : nodes.map(function (node) { return node.getKey(); });
+
+      return values.indexOf(suggestionKey) !== -1 ||
+        //For key suggestions, e.g. where isText is not true, we also check for the key + '?'
+        //if the suggestion can be optional:
+        (!suggestion.metadata.isText &&
+          suggestion.metadata.canBeOptional &&
+          values.indexOf(suggestionKey + '?') !== -1);
     };
 
-    hinter.getSuggestions = function (editor) {
+    /**
+     * @param editor The RAML editor
+     * @returns {{key, metadata {category, isText}}} Where keys are the RAML node names, and metadata
+     *          contains extra information about the node, such as its category
+     */
+    hinter.getSuggestions = function getSuggestions(editor) {
       if (hinter.shouldSuggestVersion(editor)) {
         return [{
           key:     '#%RAML 0.8',
@@ -248,24 +138,61 @@ angular.module('ramlEditorApp')
         }];
       }
 
-      var path         = hinter.computePath(editor);
-      var suggestions  = path ? hinter.suggestRAML(path.slice(0, -1)).suggestions : {};
-      var neighborKeys = getNeighborKeys(editor);
+      //Pivotal 61664576: We use the DOM API to check to see if the current node or any
+      //of its parents contains a YAML reference. If it does, then we provide no suggestions.
+      var node = getNode(editor);
+      var refNode = node.selfOrParent(function(node) { return node.getValue() && node.getValue().isReference; });
+      if (refNode) {
+        return [];
+      }
 
-      return Object.keys(suggestions)
-        .filter(function (key) {
-          return !hinter.isSuggestionInUse(key, suggestions[key], neighborKeys);
-        })
+      //Designer policy: If the cursor is at an empty line, then we
+      //provide shelf contents based on the node only. If the cursor is
+      //on a non-structural line, such as an empty line, then we provide
+      //shelf contents based on the tab level of the node.
+      if (node.isEmpty) {
+        var ch = editor.getCursor().ch;
+        var cursorTabCount = getTabCount(ch);
+        if (cursorTabCount <= node.lineIndent.tabCount) {
+          var atTabBoundary = ch % editor.getOption('indentUnit') === 0;
+          if (!atTabBoundary) {
+            return [];
+          }
+        }
+        cursorTabCount = Math.min(cursorTabCount, node.lineIndent.tabCount);
+        node = node.selfOrParent(function(node) { return node.lineIndent.tabCount === cursorTabCount; });
+      }
 
+      var raml = null;
+      var suggestions = [];
+      var peerNodes = [];
+      
+      if (node) {
+        var path = node.getPath().map(function(node) { return node.getKey(); });
+        raml         = hinter.suggestRAML(path);
+        suggestions  = raml.suggestions;
+        var isText = Object.keys(suggestions).some(function(suggestion) { return suggestions[suggestion].metadata.isText; });
+        //Get all structural nodes' keys/values so we can filter them out. This bit is tricky; if
+        //we are in an array, and the elements of that array are text, then the peer group is
+        //every array in the parent. Otherwise, the peer group is every key in the current array.
+        var isTextNodeList = raml.metadata && raml.metadata.isList && isText;
+        peerNodes = isTextNodeList ? node.getParent().getChildren() : node.getSelfAndNeighbors();
+        peerNodes = peerNodes.filter(function(node) { return node.isStructural; });
+      }
+
+      //Next, filter out the keys from the returned suggestions
+      suggestions = Object.keys(suggestions)
+        .filter(function (key) { return !hinter.isSuggestionInUse(key, suggestions[key], peerNodes); })
         .sort()
-
         .map(function (key) {
           return {
             key:      key,
             metadata: suggestions[key].metadata
           };
-        })
-      ;
+        });
+      //Pull out display-relevant metadata
+      suggestions.isList = (raml && raml.metadata) ? raml.metadata.isList : false;
+      return suggestions;
     };
 
     hinter.canAutocomplete = function (cm) {
@@ -418,5 +345,4 @@ angular.module('ramlEditorApp')
     };
 
     return hinter;
-  })
-;
+  });

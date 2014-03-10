@@ -14,7 +14,7 @@ describe('shelf',function(){
     expect(editor.IsParserErrorDisplayed()).toBe(false);
   });
 
-  xit('groups',function(){
+  it('groups',function(){
     var definition = [
       '#%RAML 0.8',
       'title: The API',
@@ -29,8 +29,7 @@ describe('shelf',function(){
 
   });
 
-
-  describe('elements',function(){
+  xdescribe('elements',function(){ // enable when https://www.pivotaltracker.com/story/show/64386678 is fixed
 
     it('added below on an array', function(){
       var definition = [
@@ -64,6 +63,7 @@ describe('shelf',function(){
     });
 
     it('are added below', function(){
+      var  shelf = new ShelfHelper();
       editor.setCursor(1,0);
       var lista = ['#%RAML 0.8', 'baseUri: http://server/api/{version}', 'mediaType:',
         'protocols:', 'title: My API', 'version: v0.1', 'documentation:', 'baseUriParameters:',
@@ -110,6 +110,137 @@ describe('shelf',function(){
     });
 
   });// adding elements from shelf
+
+  describe('using alias & *', function(){
+
+    it('in a resource', function(){
+      var  shelf = new ShelfHelper();
+      var definition = [
+        '#%RAML 0.8 ',
+        'title: My api',
+        'version: v1',
+        '/res1: &res1',
+        '  description: this is res1 description',
+        '  displayName: resource 1',
+        '  get:',
+        '    description: get into resource 1',
+        '/res2: *res1',
+        '                '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(10,0);
+      var list2 = ['title', 'version'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
+      editor.setCursor(10, 2);
+      designerAsserts.shelfWithNoElements();
+    });
+
+    it('in a method', function(){
+      var  shelf = new ShelfHelper();
+      var definition = [
+        '#%RAML 0.8 ',
+        'title: My api',
+        'version: v1',
+        '/res1: ',
+        '  description: this is res1 description',
+        '  displayName: resource 1     ',
+        '  get: &metho1',
+        '    description: this is method description',
+        '    body:',
+        '      application/json:',
+        '    responses:',
+        '      200:',
+        '        description: 200 ok',
+        '        body: ',
+        '          application/json:     ',
+        '/res3: ',
+        '  get: *metho1',
+        '            '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(18,0);
+      var list2 = ['title', 'version'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
+      var list22 = ['get'];
+      editor.setCursor(18, 2);
+      designerAsserts.shelfElementsNotDisplayed(list22, shelf.elemResourceLevel);
+      editor.setCursor(18, 4);
+      designerAsserts.shelfWithNoElements();
+    });
+
+    it('in a Named Parameter', function(){
+      var  shelf = new ShelfHelper();
+      var definition = [
+        '#%RAML 0.8 ',
+        'title: My api',
+        'version: v1',
+        '/res1: ',
+        '  description: this is res1 description',
+        '  displayName: resource 1     ',
+        '  get: ',
+        '    description: this is method description',
+        '    headers: &head1',
+        '      head1:',
+        '        displayName: head1 DN',
+        '        description: head1 description',
+        '        type: integer',
+        '  ',
+        '/res3: ',
+        '  post:',
+        '    headers: *head1',
+        '            '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(18,0);
+      var list2 = ['title', 'version'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemRootLevel);
+      editor.setCursor(18, 2);
+      list2 = ['post'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemResourceLevel);
+      editor.setCursor(18, 4);
+      list2 = ['headers'];
+      designerAsserts.shelfElementsNotDisplayed(list2, shelf.elemMethodLevel);
+      editor.setCursor(18, 6);
+      designerAsserts.shelfWithNoElements();
+    });
+
+  }); // using alias & *
+
+  describe('suggester', function(){
+    it('Is not broken if a comments is in between', function(){
+      var definition = [
+        '#%RAML 0.8',
+        'title: Test',
+        'baseUri: http://localhost ',
+        'version: 1.0',
+        'protocols: [HTTPS]',
+        '/users:',
+        '#comment',
+        '  get:  ',
+        '      '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(9,4);
+      designerAsserts.shelfElements(shelf.elemMethodLevel);
+    });
+
+    it('Is not broken if a empty line is in between', function(){
+      var definition = [
+        '#%RAML 0.8',
+        '---',
+        'title: Test Mock API',
+        '/shapes:',
+        '',
+        '  get:',
+        '    responses:',
+        '      200:',
+        '          '
+      ].join('\\n');
+      editor.setValue(definition);
+      editor.setCursor(9,8);
+      designerAsserts.shelfElements(shelf.elemResponsesLevel);
+    });
+  });
 
 }); // Shelf
 

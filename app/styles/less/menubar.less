@@ -1,0 +1,138 @@
+div[role=raml-editor] .menubar {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  color: gray;
+  background-color: #343436;
+  font-size: 14px;
+  line-height: 1em;
+
+  border: 1px solid #2c2c2e;
+  border-width: 1px 0;
+
+  li {
+    margin: 0;
+    padding: 5px 10px;
+    display: block;
+    background-color: #404040;
+    span {
+      text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .menu-item {
+    box-shadow: inset 1px 1px 1px #4c4c5E;
+  }
+
+  .menu-item:hover {
+    cursor: pointer;
+    color: white;
+    background-color: lighten(#343436, 20%);
+  }
+
+  .menu-item-ll {
+    border-right: 1px solid #2a2c33;
+  }
+
+  .menu-item-fr {
+    border-left: 1px solid #2a2c33;
+  }
+
+  .spacer {
+    flex: 1;
+    background-color: transparent;
+  }
+
+  .file-absolute-path {
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-item-mocking-service {
+    .beta {
+      background-color: #859900;
+      border-radius: 10px;
+      padding: 0px 5px;
+      color: #fff;
+      font-size: xx-small;
+      margin-right: 10px;
+    }
+
+    .title {
+      float: left;
+      margin-right: 10px;
+    }
+
+    .field-wrapper {
+      float: right;
+      width: 4.5em;
+      height: 1em;
+
+      &.loading {
+        text-align: center;
+      }
+    }
+
+    .field {
+      width: 100%;
+      height: 100%;
+      background: #333;
+      position: relative;
+      border-radius: 50px;
+      box-shadow: inset 0px 1px 1px rgba(0,0,0,0.5), 0px 1px 0px rgba(255,255,255,0.2);
+
+      &:after {
+        content: 'OFF';
+        color: #000;
+        position: absolute;
+        top: 0px;
+        right: 3px;
+        z-index: 0;
+        font-size: 0.7em;
+        font-weight: bold;
+        text-shadow: 1px 1px 0px rgba(255,255,255,.15);
+      }
+
+      &:before {
+        content: 'ON';
+        color: #00bf00;
+        position: absolute;
+        top: 0px;
+        left: 3px;
+        z-index: 0;
+        font-size: 0.7em;
+        font-weight: bold;
+      }
+
+      label {
+        display: block;
+        width: 2em;
+        height: 0.7em;
+        cursor: pointer;
+        position: absolute;
+        top: 2px;
+        left: 3px;
+        z-index: 1;
+        background: #fcfff4;
+        background: linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
+        border-radius: 50px;
+        transition: all .4s ease;
+        box-shadow: 0px 2px 5px 0px rgba(0,0,0,0.3);
+      }
+
+      input[type=checkbox] {
+        visibility: hidden;
+        &:checked + label {
+          left: ~"calc(100% - 2em - 3px)"; // 100% - <label-widht> - <initial-left-position>
+        }
+      }
+    }
+  }
+}

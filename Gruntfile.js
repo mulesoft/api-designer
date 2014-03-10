@@ -1,20 +1,58 @@
-// Generated on 2013-07-12 using generator-angular 0.3.0
 'use strict';
+
 var LIVERELOAD_PORT = 35730;
-var proxySnippet = require('grunt-connect-proxy/lib/utils').proxyRequest;
-var lrSnippet = require('connect-livereload')({ port: LIVERELOAD_PORT });
-var mountFolder = function (connect, dir, route) {
+var lrSnippet       = require('connect-livereload')({port: LIVERELOAD_PORT});
+
+function connectStatic(connect, dir, route) {
   var staticMiddleware = connect.static(require('path').resolve(dir));
   return {
-    route : route,
-    handle: function (req, res, next) {
+    route:  route,
+    handle: function connectStaticMiddleware(req, res, next) {
       if (route) {
         req.url = req.url.replace(route, '');
       }
       staticMiddleware(req, res, next);
     }
   };
-};
+}
+
+function connectProxy(connect, route) {
+  var url     = require('url');
+  var request = require('request');
+
+  return function connectProxyMiddleware(req, res, next) {
+    if (req.url.indexOf(route) !== 0) {
+      return next();
+    }
+
+    if (req.method.toUpperCase() === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin',  '*');
+      res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
+      return next();
+    }
+
+    var proxy = request({
+      uri: url.parse(req.url.substr(route.length), true)
+    });
+
+    // Proxy the error message back to the client.
+    proxy.on('error', function (error) {
+      res.writeHead(500);
+      return res.end(error.message);
+    });
+
+    // Workaround for some remote services that do not handle
+    // multi-valued Accept header properly by omitting precedence
+    if (req.headers.accept) {
+      req.headers.accept = req.headers.accept.split(',')[0].trim();
+    }
+
+    // Pipe the request data directly into the proxy request and back to the
+    // response object. This avoids having to buffer the request body in cases
+    // where they could be unexepectedly large and/or slow.
+    return req.pipe(proxy).pipe(res);
+  };
+}
 
 // # Globbing
 // for performance reasons we're only matching one level down:
@@ -29,7 +67,7 @@ module.exports = function (grunt) {
 
   // configurable paths
   var yeomanConfig = {
-    app: 'app',
+    app:  'app',
     dist: 'dist'
   };
 
@@ -40,11 +78,13 @@ module.exports = function (grunt) {
 
   grunt.initConfig({
     yeoman: yeomanConfig,
+
     watch: {
       livereload: {
         options: {
           livereload: LIVERELOAD_PORT
         },
+
         files: [
           '<%= yeoman.app %>/{,*/}*.html',
           '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
@@ -55,53 +95,53 @@ module.exports = function (grunt) {
           '{.tmp,<%= yeoman.app %>}/vendor/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
         ]
       },
+
       less: {
         files: '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.less',
-        tasks: 'less'
+        tasks: 'less-and-autoprefixer'
       }
     },
+
     connect: {
       options: {
-        port: grunt.option('port') || 9013,
-        // Change this to '0.0.0.0' to access the server from outside.
-        hostname: 'localhost'
+        hostname: 'localhost',
+        port:      grunt.option('port') || 9013
       },
+
       livereload: {
         options: {
           middleware: function (connect) {
             return [
               lrSnippet,
-              mountFolder(connect, '.tmp'),
-              mountFolder(connect, yeomanConfig.app),
-              mountFolder(connect, 'bower_components', '/bower_components'),
-              proxySnippet
+
+              connectStatic(connect, '.tmp'),
+              connectStatic(connect, yeomanConfig.app),
+              connectStatic(connect, 'bower_components', '/bower_components'),
+
+              connectProxy (connect, '/proxy/')
             ];
           }
         }
       },
+
       dist: {
         options: {
           middleware: function (connect) {
             return [
-              mountFolder(connect, yeomanConfig.dist)
+              connectStatic(connect, yeomanConfig.dist),
+              connectProxy (connect, '/proxy/')
             ];
           }
         }
-      },
-      proxies: [
-        {
-          context: '/',
-          host: 'localhost',
-          port: 8080,
-          changeOrigin: true
-        }
-      ]
+      }
     },
+
     open: {
       server: {
         url: 'http://localhost:<%= connect.options.port %>'
       }
     },
+
     clean: {
       dist: {
         files: [
@@ -117,10 +157,15 @@ module.exports = function (grunt) {
       },
       server: '.tmp'
     },
+
     jshint: {
       options: {
-        jshintrc: '.jshintrc'
+        jshintrc: '.jshintrc',
+        ignores:  [
+          'test/spec/support/templates.js'
+        ]
       },
+
       all: [
         'Gruntfile.js',
         '<%= yeoman.app %>/scripts/{,*/}*.js',
@@ -130,6 +175,7 @@ module.exports = function (grunt) {
         'scenario/test/lib/{,*/}*.js'
       ]
     },
+
     rev: {
       dist: {
         files: {
@@ -141,19 +187,22 @@ module.exports = function (grunt) {
         }
       }
     },
+
     useminPrepare: {
       html: '<%= yeoman.app %>/index.html',
       options: {
         dest: '<%= yeoman.dist %>'
       }
     },
+
     usemin: {
       html: ['<%= yeoman.dist %>/{,*/}*.html'],
       css: ['<%= yeoman.dist %>/styles/{,*/}*.css'],
       options: {
-        dirs: ['<%= yeoman.dist %>']
+        assetsDirs: ['<%= yeoman.dist %>']
       }
     },
+
     htmlmin: {
       dist: {
         files: [
@@ -166,6 +215,7 @@ module.exports = function (grunt) {
         ]
       }
     },
+
     // Put files not handled in other tasks here
     copy: {
       dist: {
@@ -178,7 +228,7 @@ module.exports = function (grunt) {
             src: [
               '*.{ico,png,txt}',
               '.htaccess',
-              'images/{,*/}*.{gif,webp,svg}',
+              'images/{,*/}*.{gif,webp,svg,png}',
               'styles/fonts/*'
             ]
           },
@@ -191,12 +241,14 @@ module.exports = function (grunt) {
         ]
       }
     },
+
     karma: {
       unit: {
         configFile: 'karma.conf.js',
         singleRun: true
       }
     },
+
     ngmin: {
       dist: {
         files: [
@@ -209,6 +261,7 @@ module.exports = function (grunt) {
         ]
       }
     },
+
     uglify: {
       dist: {
         files: {
@@ -218,36 +271,61 @@ module.exports = function (grunt) {
         }
       }
     },
+
     ngtemplates: {
-      ramlConsoleApp: {
+      options: {
+        module: 'ramlEditorApp',
+        base:   'app'
+      },
+
+      app: {
         options: {
-          base: 'app',
           concat: 'dist/scripts/scripts.js'
         },
-        src: 'app/views/**/*.html',
+
+        src:  'app/views/**/*.html',
         dest: 'dist/templates.js'
+      },
+
+      test: {
+        src:  'app/views/**/*.html',
+        dest: 'test/spec/support/templates.js'
       }
     },
+
     less: {
       files: {
         expand: true,
         flatten: true,
         src: 'app/styles/less/*.less',
-        dest: 'app/styles/css',
+        dest: 'app/styles',
         ext: '.css'
       }
     },
+
+    autoprefixer: {
+      options: {
+        browsers: ['last 2 versions']
+      },
+      app: {
+        src: 'app/styles/*.css'
+      }
+    },
+
     protractor: {
       local: {
         configFile: 'scenario/support/local.conf.js'
       },
+
       scenario: {
         configFile: 'scenario/support/protractor.conf.js'
       },
+
       debug: {
         configFile: 'scenario/support/protractor.conf.js',
         debug: true
       },
+
       saucelabs: {
         configFile: 'scenario/support/saucelabs.conf.js'
       }
@@ -266,8 +344,7 @@ module.exports = function (grunt) {
     grunt.task.run([
       'clean:server',
       'jshint',
-      'less',
-      'configureProxies',
+      'less-and-autoprefixer',
       'connect:livereload',
       'open',
       'watch'
@@ -276,21 +353,27 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'jshint',
+    'ngtemplates:test',
     'karma'
   ]);
 
   grunt.registerTask('build', [
     'clean:dist',
     'jshint',
-    'less',
+    'less-and-autoprefixer',
     'useminPrepare',
-    'ngtemplates',
+    'ngtemplates:app',
     'concat',
     'htmlmin',
     'copy:dist',
     'ngmin',
     'rev',
     'usemin'
+  ]);
+
+  grunt.registerTask('less-and-autoprefixer', [
+    'less',
+    'autoprefixer'
   ]);
 
   grunt.registerTask('localScenario', [
@@ -311,6 +394,7 @@ module.exports = function (grunt) {
     'jshint',
     'protractor:saucelabs'
   ]);
+
   grunt.registerTask('default', [
     'test',
     'build'
