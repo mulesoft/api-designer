@@ -1,6 +1,5 @@
 node_modules
 bower_components
-dist
 .tmp
 .sass-cache
 .DS_Store
@@ -15,5 +14,6 @@ test-results.xml
 keyfile
 app/styles/*.css
 app/styles/css
+dist/templates.js
 scenario/Sauce-Connect-latest
 test/spec/support/templates.js

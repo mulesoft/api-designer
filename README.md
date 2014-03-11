@@ -25,6 +25,11 @@ Install bower modules
 bower install
 ```
 
+Install webdriver required to run `localScenario` task
+```
+node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
+```
+
 Run the application locally
 ```
 grunt server
