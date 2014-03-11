@@ -6,13 +6,13 @@ exports.config = {
 
   capabilities: {
     'browserName': process.env.BROWSER,
-    'name': 'API-Portal-parser'
+    'name': 'API-Portal-RT-Method'
   },
-  allScriptsTimeout: 90000,
+
+  allScriptsTimeout: 50000,
+
   specs: [
-    '../../test/e2e/editor-parser/*.js',
-    '../../test/e2e/editor-parser/resource/*.js',
-    '../../test/e2e/editor-parser/resourceTypes/*.js',
+    '../../test/e2e/optionals/RT-method-namedParam.js',
     '../../test/lib/*.js'
   ],
 

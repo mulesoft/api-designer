@@ -67,7 +67,7 @@ describe('ramlEditorApp', function () {
         });
       });
 
-      it('should not exclude keys from another array', function () {
+      it('should not exclude keys from another array for documentation suggestions', function () {
         var editor = getEditor(codeMirror,
           [
             'documentation:',
@@ -88,6 +88,53 @@ describe('ramlEditorApp', function () {
 
         suggestions.should.include.key('title');
         suggestions.should.include.key('content');
+      });
+
+      it('should include values from array for protocol suggestions', function() {
+        var editor = getEditor(codeMirror,
+          [
+            'protocols:',
+            '  - HTTP',
+            '  '
+          ],
+          {
+            line: 2,
+            ch:   2
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.key] = true;
+        });
+
+        suggestions.should.include.key('HTTPS');
+        suggestions.should.not.include.key('HTTP');
+      });
+
+      it('should include values from array for resource method protocol suggestions', function() {
+        var editor = getEditor(codeMirror,
+          [
+            '/newResource:',
+            '  displayName: resourceName',
+            '  get:',
+            '    protocols:',
+            '      - HTTPS',
+            '      '
+          ],
+          {
+            line: 5,
+            ch:   7
+          }
+        );
+
+        var suggestions = {};
+        ramlHint.getSuggestions(editor).map(function (suggestion) {
+          suggestions[suggestion.key] = true;
+        });
+
+        suggestions.should.include.key('HTTP');
+        suggestions.should.not.include.key('HTTPS');
       });
 
       it('should exclude "title" and "version" keys at root level', function () {
@@ -265,7 +312,7 @@ describe('ramlEditorApp', function () {
       it('should not allow autocomplete for resource', function () {
         ramlHint.canAutocomplete(getEditor(codeMirror,
           [
-            '/resource:',
+            '/resource:'
           ],
           {line: 0, ch: 0}
         )).should.be.false;

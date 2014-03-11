@@ -1,13 +1,9 @@
 'use strict';
 var AssertsHelper = require ('../lib/asserts-helper.js').AssertsHelper;
 var EditorHelper = require ('../lib/editor-helper.js').EditorHelper;
-//var ShelfHelper = require('../lib/shelf-helper.js').ShelfHelper;
-//var ConsoleHelper = require('../lib/console-helper.js').ConsoleHelper;
 describe('file_browser ',function(){
   var designerAsserts= new AssertsHelper();
   var editor= new EditorHelper();
-//  var shelf = new ShelfHelper();
-//  var consoleDesigner = new ConsoleHelper();
 
   describe('delete files', function(){
 
@@ -26,45 +22,49 @@ describe('file_browser ',function(){
       });
     });
 
-    xit('delete current file', function(){
-//   https://www.pivotaltracker.com/story/show/64933904
-      var fileName = 'example.raml';
+    it('delete current file', function(){
+      var fileName = 'example1.raml';
       editor.addNewFile(fileName);
       var definition = [
         '#%RAML 0.8',
-        'title: My  API'
+        'title: My API new example'
       ].join('\\n');
       editor.setValue(definition);
       editor.selectAFileByPos(2).then(function(){
-        editor.deleteAFile(2,'Untitled-1.raml',true);
+        designerAsserts.consoleApiTitle('');
+        editor.deleteAFile(2,'Untitled-1.raml',false);
         designerAsserts.editorCheckFileNameNotInList('Untitled-1.raml');
-        designerAsserts.editorCheckFileNameInList('example.raml');
+        designerAsserts.editorCheckFileNameInList('example1.raml');
       });
-      designerAsserts.consoleApiTitle('My API');
+      designerAsserts.consoleApiTitle('My API new example');
     });
 
-    xit('delete current file - saved', function(){
-//   https://www.pivotaltracker.com/story/show/64933904
+    it('delete current file - saved', function(){
       var fileName = 'example.raml';
       editor.addNewFile(fileName);
       var definition = [
         '#%RAML 0.8',
-        'title: My  API'
+        'title: My  API example1'
       ].join('\\n');
       editor.setValue(definition);
       editor.saveFile(1);
-      expect(editor.getFileNameText()).toEqual('/example.raml');
-      editor.selectAFileByPos(2).then(function(){
-        editor.saveFile(2);
-        editor.deleteAFile(2,'Untitled-1.raml',true);
-        designerAsserts.editorCheckFileNameNotInList('Untitled-1.raml');
-        designerAsserts.editorCheckFileNameInList('example.raml');
+      browser.wait(function(){
+        return editor.getFileNameText().then(function(text){
+          return text === '/example.raml';
+        });
+      }).then(function(){
+          expect(editor.getFileNameText()).toEqual('/example.raml');
+        });
+      editor.selectAFileByPos(1).then(function(){
+        editor.saveFile(1);
+        editor.deleteAFile(1,'example.raml',false);
+        designerAsserts.editorCheckFileNameNotInList('example.raml');
+        designerAsserts.editorCheckFileNameInList('example1.raml');
       });
-      designerAsserts.consoleApiTitle('My API');
+      designerAsserts.consoleApiTitle('My API new example');
     });
 
-    xit('delete not current file', function(){
-//      https://www.pivotaltracker.com/story/show/64933904
+    it('delete not current file', function(){
       var fileName = 'example3.raml';
       editor.addNewFile(fileName);
       var definition = [
@@ -72,32 +72,41 @@ describe('file_browser ',function(){
         'title: My  API example 3'
       ].join('\\n');
       editor.setValue(definition);
-      editor.saveFile(1);
-      designerAsserts.editorCheckFileNameInList('example3.raml');
-      expect(editor.getFileNameText()).toEqual('/example3.raml');
-      var fileName1 = 'example4.raml';
-      editor.addNewFile(fileName1);
-      var definition2 = [
-        '#%RAML 0.8',
-        'title: My  API example 4'
-      ].join('\\n');
-      editor.setValue(definition2);
-      editor.saveFile(2);
-      editor.selectAFileByPos(1).then(function(){
-        editor.deleteAFile(1,'example3.raml',true);
+      expect(editor.getFileNameText()).toEqual('* /example3.raml');
+      editor.selectAFileByPos(2).then(function(){
+        editor.deleteAFile(2,'example3.raml',false);
         designerAsserts.editorCheckFileNameNotInList('example3.raml');
       });
-      designerAsserts.consoleApiTitle('My API example 4');
+      designerAsserts.consoleApiTitle('My API new example');
     });
 
-    xit('attempt to delete the current  file but then cancel it', function(){
-      //check that the file is not deleted
-      //check file name
-      // check theconsole
+    it('attempt to delete the current  file but then cancel it', function(){
+      editor.dismissDeleteAFile(1,'example1.raml');
+      designerAsserts.editorCheckFileNameInList('example1.raml');
+      designerAsserts.consoleApiTitle('My API new example');
     });
 
-    xit('attempt to delete not the current file', function(){
-
+    it('attempt to delete not the current file', function(){
+      var fileName = 'example5.raml';
+      editor.addNewFile(fileName);
+      var definition = [
+        '#%RAML 0.8',
+        'title: My  API example 5'
+      ].join('\\n');
+      editor.setValue(definition);
+      expect(editor.getFileNameText()).toEqual('* /example5.raml');
+      designerAsserts.consoleApiTitle('My API example 5');
+      editor.dismissDeleteAFile(1,'example1.raml');
+      designerAsserts.editorCheckFileNameInList('example1.raml');
+      designerAsserts.editorCheckFileNameInList('example5.raml');
+      editor.selectAFileByPos(1).then(function(){
+        editor.deleteAFile(1,'example1.raml',false);
+        designerAsserts.editorCheckFileNameNotInList('example1.raml');
+      });
+      editor.selectAFileByPos(1).then(function(){
+        editor.deleteAFile(1,'example5.raml',true);
+        designerAsserts.editorCheckFileNameNotInList('example5.raml');
+      });
     });
   }); // delete files
 
@@ -130,7 +139,7 @@ describe('file_browser ',function(){
     describe('not a raml file', function(){
 
       it('create the non raml file', function(){
-        var fileName = 'notraml.txt';
+        var fileName = 'notraml.yaml';
         editor.addNewFile(fileName);
         designerAsserts.editorCheckFileNameInList(fileName);
       });
@@ -153,9 +162,13 @@ describe('file_browser ',function(){
         designerAsserts.consoleSectionIsHidden();
       });
 
+      it('mocking-service is not displayed', function(){
+        editor.isMockingServiceHidden().then(function(text){
+          expect(text).toEqual('hidden');
+        });
+      });
 
     }); //not a raml file
-
   }); // new file
 
 
@@ -210,14 +223,12 @@ describe('file_browser ',function(){
       });
     });
 
-
     it('change to another file', function(){
       editor.selectAFileByPos(2);
       expect(editor.getLine(1)).toEqual('This is some text to be added on this non raml filel');
     });
 
     it('go back to the previous file', function(){
-//      browser.get('/tree/file_browser_bar/');
       editor.selectAFileByPos(1).then(function(){
         expect(editor.getLine(1)).toEqual('#%RAML 0.8');
         designerAsserts.parserError('3','invalid resourceTypes definition, it must be an array');
@@ -241,6 +252,7 @@ describe('file_browser ',function(){
   }); //rename a saved file
 
   describe('save a file using save btn', function(){
+
     it('Add new file', function(){
       var fileName = 'resources.raml';
       editor.addNewFile(fileName);
