@@ -10,7 +10,7 @@
     "angular-bootstrap": "0.7.0",
     "es5-shim": "~2.0.8",
     "showdown": "~0.3.1",
-    "api-console": "mulesoft/api-console#88d29f5cd6cfd752058b551a98f8e888e60d52cf",
+    "api-console": "mulesoft/api-console#95b55480916f14161855bcea3177fd9a46284ca1",
     "raml-grammar": "mulesoft/raml-grammar#538811151dc8ac6b145ce967b6c6975fa86be07b",
     "raml-js-parser": "raml-org/raml-js-parser#813516e20d5da1226b1f07ef105a656e01a89bb3"
   },
