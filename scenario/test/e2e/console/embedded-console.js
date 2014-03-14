@@ -53,10 +53,9 @@ describe('Embedded-console',function(){
     });
   });
 
-  describe('ResourceType Traits information', function(){
-// checking on multiples resources.
+  describe('ResourceType - Traits', function(){
 
-    it('resource type information is not displayed on the collapsed resource', function(){
+    it('resource type information is displayed on the expanded resource', function(){
       var definition = [
         '#%RAML 0.8',
         'title: raml with resources',
@@ -67,18 +66,12 @@ describe('Embedded-console',function(){
         '        responses:',
         '          200: ',
         '            description: 200 ok',
-        '/res1:',
+        '/resRT1:',
         '  type: restyp1',
         '         '
       ].join('\\n');
       editor.setValue(definition);
       designerAsserts.consoleApiTitle('raml with resources');
-      designerAsserts.isResourceCollapsedByPos(1).then(function(){
-        designerAsserts.consoleResourceResourceType(['']);
-      });
-    });
-
-    it('resource type information is displayed on the expanded resource', function(){
       apiConsole.expandCollapseResourcebyPos(1).then(function(){
         designerAsserts.consoleResourceResourceType(['restyp1']);
       });
@@ -153,7 +146,7 @@ describe('Embedded-console',function(){
 
   describe('generals', function(){
 
-    it('it is not displayed if are parser errors', function(){
+    it('Console is not displayed if are parser errors', function(){
       var definition = [
         '#%RAML 0.8',
         'title: My API',
@@ -162,7 +155,7 @@ describe('Embedded-console',function(){
         '  /ressss2:'
       ].join('\\n');
       editor.setValue(definition);
-      var embeddedConsole = browser.findElement(by.css('[role="console"]'));
+      var embeddedConsole = browser.findElement(by.css('[role="preview-wrapper"]'));
       expect(embeddedConsole.getAttribute('class')).toEqual('');
       editor.setLine(5,'  resss2:');
       expect(embeddedConsole.getAttribute('class')).not.toContain('ng-hide');
@@ -219,28 +212,34 @@ describe('Embedded-console',function(){
 
     describe('toggle between views (documentation and api reference', function(){
 
-      it('set raml and toggle to documentation section', function(){
-//      this test verify that by default the documentation section is hidden
-        var definition = [
-          '#%RAML 0.8',
-          'title: My api',
-          'documentation:',
-          '  - title: My docs1',
-          '    content: | ',
-          '      content of my doc1',
-          '/presentaciones: ',
-          '  description: presentation resource description'
-        ].join('\\n');
-        editor.setValue(definition);
-        apiConsole.toggleDocumentationApiReference('documentation');
+      describe('set raml and toggle to documentation section', function(){
 
-
-        apiConsole.getListMainResources().then(function(list){
-          expect(list.length).toEqual(0);
+        it('set raml - documentation section is hidden by default ', function(){
+          var definition = [
+            '#%RAML 0.8',
+            'title: My api',
+            'documentation:',
+            '  - title: My docs1',
+            '    content: | ',
+            '      content of my doc1',
+            '/presentaciones: ',
+            '  description: presentation resource description'
+          ].join('\\n');
+          editor.setValue(definition);
+          apiConsole.toggleDocumentationApiReference('documentation');
         });
-        apiConsole.toggleDocumentationApiReference('api');
-        apiConsole.getListMainResources().then(function(list){
-          expect(list.length).toEqual(1);
+
+        it('validate that you are on documentation section', function(){
+          apiConsole.getListMainResources().then(function(list){
+            expect(list.length).toEqual(0);
+          });
+        });
+
+        it('move to api documentation and validate that api information is displayed', function(){
+          apiConsole.toggleDocumentationApiReference('api');
+          apiConsole.getListMainResources().then(function(list){
+            expect(list.length).toEqual(1);
+          });
         });
       });
 
