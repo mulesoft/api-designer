@@ -1,8 +1,8 @@
 'use strict';
-var EditorHelper = require('../../lib/editor-helper.js').EditorHelper;
-var AssertsHelper = require('../../lib/asserts-helper.js').AssertsHelper;
-var ShelfHelper = require('../../lib/shelf-helper.js').ShelfHelper;
-var ConsoleHelper = require('../../lib/console-helper.js').ConsoleHelper;
+var EditorHelper = require('../../../lib/editor-helper.js').EditorHelper;
+var AssertsHelper = require('../../../lib/asserts-helper.js').AssertsHelper;
+var ShelfHelper = require('../../../lib/shelf-helper.js').ShelfHelper;
+var ConsoleHelper = require('../../../lib/console-helper.js').ConsoleHelper;
 
 describe('Embedded-console',function(){
   var editor = new EditorHelper();
@@ -124,6 +124,22 @@ describe('Embedded-console',function(){
       designerAsserts.consoleApiTitle('methods with description');
     });
 
+    it('enable mocking-service', function(){
+      editor.enableDisableMockingService().then(function(){
+        editor.isEnableMockingService().then(function(text){
+          expect(text).toEqual('checked');
+        });
+      });
+    });
+
+    it('check that new baseUri was added', function(){
+      // browser.executeScript('return window.editor.getValue()').then(function(ramls){
+      //   console.log(ramls);
+      // });
+      expect(editor.getLine(2)).toMatch(/baseUri: http:\/\/mocksvc.mulesoft.com\/mocks\/.*/);
+
+    });
+
     methods.forEach(function(method){
       it(method+' select method by Name', function(){
         apiConsole.toggleBetweenMethodByName(method);
@@ -239,8 +255,6 @@ describe('Embedded-console',function(){
             designerAsserts.consoleValidateHeadersH2('Body');
           });
 
-//            namedParameters
-
           it(method+' headers with and without display name',function(){
             designerAsserts.consoleValidateHeadersDisplayNameList('Body',['formdata11','formdata22']);
           });
@@ -257,8 +271,101 @@ describe('Embedded-console',function(){
 
       }); //request tab
 
+      describe('response tab', function(){
 
-    });
 
+
+      }); //response tab
+
+      describe('try it tab', function(){
+
+        it('select try it tab', function(){
+          apiConsole.selectTab(2);
+          designerAsserts.consoleValidateActiveTab('Try It');
+        });
+
+        it('Validate path',function(){
+          designerAsserts.consoleValidateTryPath(true,'');
+        });
+
+        describe('Authentication', function(){
+
+          it('validate Authentication section Header', function(){
+            designerAsserts.consoleValidateTryItH2('authentication');
+          });
+
+          xit('should be displayed authentication type list', function(){
+//            by default is only displayed anonymous
+          });
+        }); //Authentication
+
+        describe('headers', function(){
+
+          it('validate Headers section Header', function(){
+            designerAsserts.consoleValidateTryItH2('headers');
+          });
+
+          it('validate header display Name and if it is required', function(){
+            var expDic = [
+              { key: '* HEADER 1', required: true },
+              { key: 'header2', required : false}
+            ];
+            designerAsserts.consoleValidateTryItDisplayNameList('headers', expDic);
+          });
+
+          it('header field should be displayed and send a value',function(){
+            apiConsole.sendKeysToHeaderFieldByPos(1,'heaField2');
+            designerAsserts.validateValueSetHeaderByPos(1,'heaField2');
+          });
+
+        }); //headers
+
+        describe('Query Parameters', function(){
+
+          it('validate Query Parameters section Header', function(){
+            designerAsserts.consoleValidateTryItH2('queryParameters');
+          });
+
+          it('validate header display Name and if it is required', function(){
+            var expDic = [
+              { key: '* QUEPAR 1', required: true },
+              { key: 'quePar2', required: false}
+            ];
+            designerAsserts.consoleValidateTryItDisplayNameList('queryParameters', expDic);
+          });
+
+          it('queryParam  field should be displayed and send a value',function(){
+            apiConsole.sendKeysToQueParFieldByPos(0,'querPArm1');
+            designerAsserts.validateValueSetQueParamByPos(0,'querPArm1');
+          });
+
+        }); //Query Paramenters
+
+        describe('Body', function(){
+
+          it('validate body section Header', function(){
+            designerAsserts.consoleValidateTryItH2('Body');
+          });
+
+          it('validate header display Name and if it is required', function(){
+            var expDic = [
+              { key: '* formdata11', required: true },
+              { key: '* formdata22', required: true}
+            ];
+            designerAsserts.consoleValidateTryItDisplayNameList('Body',expDic);
+          });
+
+          it('body  field should be displayed and send a value',function(){
+            apiConsole.sendKeysToBodyFieldByPos(0,'formpar1');
+            designerAsserts.validateValueSetBodyByPos(0,'formpar1');
+          });
+
+        }); //Body
+
+        // check try it button - should be labeled as the method.
+
+      }); // try it
+
+    });  // for each method
   }); //toggle between method
 }); //Embedded-console

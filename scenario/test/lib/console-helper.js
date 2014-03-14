@@ -2,66 +2,73 @@
 var webdriver = require('selenium-webdriver');
 
 function ConsoleHelper() {
-  this.methodsList = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace', 'connect'];
   this.titleCss = '#raml-console-api-title';
   this.listResourcesCss = '#raml-console-api-reference [role="resource-group"] [role="resource-placeholder"]:first-of-type h3';
   this.listMainResourcesCss = '#raml-console-api-reference [role="resource-group"] [ng-repeat="resource in resourceGroup"]:first-of-type h3';
   this.listResourceDescriptionCss = '[role=\'description\'] p';
   this.listResourcesCss = '[role="resource"]';
   this.listResourcesNameCss = '[role=\'resource\'] h3.path';
-  this.listResourceRTCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="resource-type"]';
   this.listResourceTraitsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="trait"]';
+  this.rtAndTraitsSection = '[role="resource"] [role="resource-summary"] div';
   this.listResourceMethodsCss = '[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li';
-//  this.methodDocumentationArea = '[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation';
   this.documentationSectionlistCss = '[role="api-console"] div [role="root-documentation"] section';
   this.consoleSection = '#consoleAndEditor';
   this.expandAll = '.toggle-resource-groups [role="expand-all"]';
   this.collapseAll ='.toggle-resource-groups [role="collapse-all"]';
   this.resourceGroupExpandedClass  = 'resource-group ng-scope expanded';
   this.resourceGroupCollapsedClass = 'resource-group ng-scope collapsed';
-//  this.currentmethod = '[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]';
-  this.currentmethod = '[role="api-console"] [role="method"] .nav [class="ng-scope disabled"]:first-of-type a';
-  this.currentEnableTabs = '[role="api-console"] [role="method"] .nav [class="ng-scope"] a';
-  this.currentDisabledTabs = '[role="api-console"] [role="method"] .nav [class="ng-scope disabled"] a';
-  this.activeTab = '[role="api-console"] [role="method"] .nav [class="ng-scope active"] a';
-
-//  this.closeMethodbtn = '[role="resource"] div i[class="icon-remove collapse"]';
+  this.currentmethod = '[role="method"] [role="documentation"] .method-nav ul.method-nav-group :first-of-type a';
+  this.Alltabs = '[role="method"] [role="documentation"] .method-nav ul.method-nav-group .method-nav-item a';
+  this.currentEnableTabs = '[role="method"] [role="documentation"] .method-nav ul.method-nav-group [class="method-nav-item ng-scope"] a';
+  this.currentDisabledTabs = '[role="method"] [role="documentation"] .method-nav ul.method-nav-group [class="method-nav-item ng-scope disabled"] a';
+  this.activeTab = '[role="method"] [role="documentation"] .method-nav ul.method-nav-group [class="method-nav-item ng-scope active"] a';
   this.methodDescriptionCss = '[role="method"] [role="full-description"] p' ;
 
 //  tabs
-  this.requestTab = '[role="method"] .tab-content [role="documentation-requests"]';
+  this.requestTab = '[role="method"] [role="documentation"] [role="documentation-requests"]';
   //request
     //headers
-  this.requestTabHeaders = '[role="method"] .tab-content [role="documentation-requests"] [heading="Headers"]';
-  this.requestTabHeadersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="Headers"] h2';
+  this.requestTabHeaders = '[role="method"] [role="documentation"] [role="documentation-requests"] [heading="Headers"]';
+  this.requestTabHeadersh2 = '[role="method"] [role="documentation"] [role="documentation-requests"] [heading="Headers"] h2';
   this.requestTabHeadersListDisplayName = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
   this.requestTabHeadersConstraints = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
   this.requestTabHeadersDescription = '[heading="Headers"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
   //UriParameters
-  this.requestTabUriParameters = '[role="method"] .tab-content [role="documentation-requests"] [heading="URI Parameters"]';
-  this.requestTabUriParametersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="URI Parameters"] h2';
+  this.requestTabUriParameters = '[role="method"] [role="documentation"] [role="documentation-requests"] [heading="URI Parameters"]';
+  this.requestTabUriParametersh2 = '[role="method"] [role="documentation"] [role="documentation-requests"] [heading="URI Parameters"] h2';
   this.requestTabUriParametersListDisplayName = '[heading="URI Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
   this.requestTabUriParametersConstraints = '[heading="URI Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
   this.requestTabUriParametersDescription = '[heading="URI Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
   //QueryParameters
-  this.requestTabQuertParameters = '[role="method"] .tab-content [role="documentation-requests"] [heading="Query Parameters"]';
-  this.requestTabQueryParametersh2 = '[role="method"] .tab-content [role="documentation-requests"] [heading="Query Parameters"] h2';
+  this.requestTabQuertParameters = '[role="method"] [role="documentation"] [role="documentation-requests"] [heading="Query Parameters"]';
+  this.requestTabQueryParametersh2 = '[role="method"] [role="documentation"] [role="documentation-requests"] [heading="Query Parameters"] h2';
   this.requestTabQueryParametersListDisplayName = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] [role="display-name"]';
   this.requestTabQueryParametersConstraints = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .constraints';
   this.requestTabQueryParametersDescription = '[heading="Query Parameters"] [role="parameter"] [ng-repeat="definition in parameter"] .info [role="description"]';
   //body
-  this.requestTabBodyDocmentation = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation';
-  this.requestTabBodyh2 = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation h2';
-  this.requestTabBodyDisplayNameListNP = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation [role="display-name"]';
-  this.requestTabBodyConstraintsNP = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation .constraints';
-  this.requestTabBodyDescriptionNP = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation .info [role="description"]';
-  this.requestTabBodyMediaTypeList = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation fieldset label span';
-  this.requestTabBodyMediaTypeListStatus = '[role="method"] .tab-content [role="documentation-requests"] .body-documentation fieldset label';
+  this.requestTabBodyDocmentation = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation';
+  this.requestTabBodyh2 = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation h2';
+  this.requestTabBodyDisplayNameListNP = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation [role="display-name"]';
+  this.requestTabBodyConstraintsNP = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation .constraints';
+  this.requestTabBodyDescriptionNP = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation .info [role="description"]';
+  this.requestTabBodyMediaTypeList = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation fieldset label span';
+  this.requestTabBodyMediaTypeListStatus = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation fieldset label';
   this.requestTabBodySchemaLink = '';
   this.requestTabBodySchemaContent = '';
   this.requestTabBodyExample = '';
   this.responseTab = '';
   this.tryitTab = '';
+  this.tryItPath = '[role="method"] [role="documentation"] .method-nav [role="path"] [class="segment ng-scope ng-binding"]'; // does not include the field parameters
+  this.tryItTabAuthenticationh2 = '[role="method"] [role="documentation"] [role="try-it"] .try-it [class="documentation-section authentication ng-isolate-scope"] h2';
+  this.tryItTabHeadersh2 = '[role="method"] [role="documentation"] [role="try-it"] .try-it [heading="Headers"] h2';
+  this.tryItTabHeadersNameList = '[role="method"] [role="documentation"] [role="try-it"] .try-it [heading="Headers"] [ng-if="!repeatable"] label';
+  this.tryItHeadersFieldsList = '[role="method"] [role="documentation"] [role="try-it"] .try-it [heading="Headers"] [ng-if="!repeatable"] input';
+  this.tryItTabQueryParametersh2  = '[role="method"] [role="documentation"] [role="try-it"] .try-it [heading="Query Parameters"] h2';
+  this.tryItTabQueryParametersNameList = '[role="method"] [role="documentation"] [role="try-it"] .try-it [heading="Query Parameters"] [ng-if="!repeatable"] label';
+  this.tryItTabQueryParametersFieldsList ='[role="method"] [role="documentation"] [role="try-it"] .try-it [heading="Query Parameters"] [ng-if="!repeatable"] input';
+  this.tryItTabBodyh2 = '[role="method"] [role="documentation"] [role="try-it"] .try-it [class="documentation-section request-body ng-isolate-scope"] h2';
+  this.tryItTabBodyNameList = '[role="method"] [role="documentation"] [role="try-it"] .try-it [class="documentation-section request-body ng-isolate-scope"] [ng-if="!repeatable"] label';
+  this.tryItTabBodyFieldList = '[role="method"] [role="documentation"] [role="try-it"] .try-it [class="documentation-section request-body ng-isolate-scope"] [ng-if="!repeatable"] input';
 }
 
 
@@ -114,11 +121,6 @@ ConsoleHelper.prototype.getListMainResources = function getListMainResources(){
   return element.all(by.css(this.listMainResourcesCss));
 };
 
-ConsoleHelper.prototype.getListMainResourcesName = function getListMainResourcesName(){
-  var that = this;
-  return element.all(by.css(that.listResourcesCss));
-};
-
 ConsoleHelper.prototype.getListResourcesDescription = function getListResourcesDescription(){
   var that = this;
   return element.all(by.css(that.listResourceDescriptionCss));
@@ -129,35 +131,14 @@ ConsoleHelper.prototype.getListResourcesName = function getListResourcesName(){
   return element.all(by.css(that.listResourcesNameCss));
 };
 
-ConsoleHelper.prototype.getListResourceType = function getListResourceType(){
-  var that = this;
-  return  element.all(by.css(that.listResourceRTCss));
-};
 ConsoleHelper.prototype.getListTrait = function getListTrait(){
   var that = this;
   return  element.all(by.css(that.listResourceTraitsCss));
 };
+
 ConsoleHelper.prototype.getListMethods = function getListMethods(){
   var that = this ;
   return element.all(by.css(that.listResourceMethodsCss));
-};
-ConsoleHelper.prototype.getListResources = function getListResources(){
-  var that = this;
-  return element.all(by.css(that.listResourcesCss));
-};
-
-ConsoleHelper.prototype.getResourceTypeForAResource = function getResourceTypeForAResource(t){
-//  var that = this;
-  var resource = this.getListResources();
-  return resource[t].findElements(by.css('.modifiers [role=\'resource-type\']'));
-};
-
-ConsoleHelper.prototype.getListResourcesDisplayName = function getListResourcesDisplayName(){
-  return element.all(by.css('[ng-show=\'resource.name\']'));
-};
-
-ConsoleHelper.prototype.getListOfMethodByResourceCss = function getListOfMethodByResourceCss(){
-    //$('[role=\'resourceSummary\']').filter(function(){ return /^\s+\/classes\s*$/.test($(this).find("h2").text());})
 };
 
 ConsoleHelper.prototype.expandCollapseMainResourcebyPos = function expandCollapseMainResourcebyPos(pos){
@@ -240,71 +221,19 @@ ConsoleHelper.prototype.toggleBetweenMethodByName = function toggleBetweenMethod
 };
 
 ConsoleHelper.prototype.selectTab = function selectTab(pos){
-  var that = this;
-  // 0 - request, 1- responses, 2 try it
-  element.all(by.css(that.ListOftabs)).then(function(tab){
+  // pos --;
+  element.all(by.css(this.Alltabs)).then(function(tab){
     tab[pos].click();
   });
-};
-
-ConsoleHelper.prototype.getListOfMethods = function getListOfMethods(){
-  //works for collapsed and expanded console.
-  return browser.executeScript(function () {
-    var list = [];
-    $('[role="api-console"] [role="resource"] [role="resource-summary"] [role="methods"] li').text(function( index,text ) {
-      list[index] =text;
-    });
-    return list;
-  });
-};
-
-ConsoleHelper.prototype.getListOfMethodsDescriptionExpanded = function getListOfMethodsDescriptionExpanded(){
-  var d = webdriver.promise.defer();
-  browser.executeScript(function () {
-    var dic = {};
-    var keys = [];
-    $('[role="api-console"] [role="resource"] [role="methodSummary"] [role="verb"]').text(function( index,text ) {
-      dic[text]='';
-      keys[index]=text;
-    });
-    $('[role="api-console"] [role="resource"] [role="method"] [ng-show="methodView.expanded"] .documentation [role="full-description"]').text(function( index,text ) {
-      dic[keys[index]]=text;
-    });
-    return dic;
-  }).then(function(dic){
-      d.fulfill(dic);
-    });
-  return d.promise;
 };
 
 ConsoleHelper.prototype.getMethodDescription = function getMethodDescription (){
   return element.all(by.css(this.methodDescriptionCss));
 };
 
-ConsoleHelper.prototype.getResourcesResourceType = function getResourcesResourceType(){
-  var d = webdriver.promise.defer();
-  browser.executeScript(function () {
-    var dic = {};
-    var keys = [];
-    $('[role=\'resource\'] h3.path').text(function( index,text ) {
-      var texto = text.replace(/\s+/g,'');
-      dic[texto]='';
-      keys[index]=texto;
-    });
-    $('[role="api-console"] [role="resource"] [role="resource-summary"] [ng-show="resourceView.expanded"] [role="resource-type"]').text(function( index,text ) {
-      dic[keys[index]]=text.replace(/\s+/g,'');
-    });
-    return dic;
-  }).then(function(dic){
-      d.fulfill(dic);
-    });
-  return d.promise;
-};
-
 ConsoleHelper.prototype.getCurrentMethod = function getCurrentMethod (){
   return $(this.currentmethod);
 };
-
 
 ConsoleHelper.prototype.getActiveTab = function getActiveTab(){
   return $(this.activeTab);
@@ -317,9 +246,7 @@ ConsoleHelper.prototype.closeMethodPopUp = function closeMethodPopUp() {
 };
 
 ConsoleHelper.prototype.getMethodsTraits = function getMethodsTraits(){
-
   return element.all(by.css('[role="method"] [role="documentation"] .modifiers [role="traits"] li'));
-
 };
 
 //request tab
@@ -340,7 +267,55 @@ ConsoleHelper.prototype.getrequestTabBodyh2 = function getrequestTabBodyh2(){
 };
 
 ConsoleHelper.prototype.getrequestTabBodyMediaTypeList = function getrequestTabBodyMediaTypeList (){
-  return element.all(this.requestTabBodyMediaTypeList);
+  return element.all(by.css(this.requestTabBodyMediaTypeList));
+};
+
+// try it
+ConsoleHelper.prototype.getTryItAuthenticationh2 = function getTryItAuthenticationh2(){
+  return $(this.tryItTabAuthenticationh2);
+};
+
+ConsoleHelper.prototype.getTryItHeadersh2 = function getTryItHeadersh2(){
+  return $(this.tryItTabHeadersh2);
+};
+
+ConsoleHelper.prototype.getHeaderFieldList = function getHeaderFieldList(){
+  return element.all(by.css(this.tryItHeadersFieldsList));
+};
+
+ConsoleHelper.prototype.getQuerParamFieldList = function getHeaderFieldList(){
+  return element.all(by.css(this.tryItTabQueryParametersFieldsList));
+};
+
+ConsoleHelper.prototype.getBodyFieldList = function getHeaderFieldList(){
+  return element.all(by.css(this.tryItTabBodyFieldList));
+};
+
+ConsoleHelper.prototype.sendKeysToHeaderFieldByPos = function sendKeysToHeaderFieldByPos(pos, value){
+  this.getHeaderFieldList().then(function(list){
+    list[pos].sendKeys(value);
+  });
+};
+
+ConsoleHelper.prototype.sendKeysToQueParFieldByPos = function sendKeysToQueParFieldByPos(pos, value){
+  this.getQuerParamFieldList().then(function(list){
+    list[pos].sendKeys(value);
+  });
+};
+
+ConsoleHelper.prototype.sendKeysToBodyFieldByPos = function sendKeysToBodyByPos(pos, value){
+  this.getBodyFieldList().then(function(list){
+    list[pos].sendKeys(value);
+  });
+
+};
+
+ConsoleHelper.prototype.getTryItQueryParametersh2 = function getTryItQueryParametersh2(){
+  return $(this.tryItTabQueryParametersh2);
+};
+
+ConsoleHelper.prototype.getTryItBodyh2 = function getTryItBodyh2(){
+  return $(this.tryItTabBodyh2);
 };
 
 

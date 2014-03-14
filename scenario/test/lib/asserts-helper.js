@@ -106,22 +106,6 @@ AssertsHelper.prototype.consoleValidateBodyMediaTypes = function consoleValidate
   return d.promise;
 };
 
-AssertsHelper.prototype.consoleResourcesName = function consoleResourcesName(list, expList){
-  var i=0;
-  var d = webdriver.promise.defer();
-  expect(list.length).toEqual(expList.length);
-  list.forEach(function (element) {
-    element.getText().then(function (text) {
-      expect(text).toEqual(expList[i]);
-      i++;
-      if (i === list.length){
-        d.fulfill();
-      }
-    });
-  });
-  return d.promise;
-};
-
 AssertsHelper.prototype.consoleMainResources = function consoleMainResources(expList){
   var consoleApi = new ConsoleHelper();
   var i = 0;
@@ -193,23 +177,11 @@ AssertsHelper.prototype.isResourceCollapsedByPos = function isResourceCollapsedB
     d.fulfill();
   }else{
     element.all(by.css('[role="api-console"] [role="resource"] [role="resource-summary"] [ng-show="resourceView.expanded"]')).then(function(resources){
-      expect(resources[pos].getAttribute('class')).toEqual('modifiers ng-hide');
+      expect(resources[pos].getAttribute('class')).toEqual('trait ng-scope ng-binding ng-hide');
       d.fulfill();
     });
   }
   return d.promise;
-};
-
-AssertsHelper.prototype.consoleResourcesTraits = function consoleResourcesTraits(expList){
-  var consoleApi = new ConsoleHelper();
-  var i=0;
-  consoleApi.getListTrait().then(function(list){
-    expect(list.length).toEqual(expList.length);
-    list.forEach(function(elem){
-      var t = i++;
-      expect(elem.getText()).toEqual(expList[t]);
-    });
-  });
 };
 
 AssertsHelper.prototype.consoleResourcesMethods = function consoleResourcesMethods(expList){
@@ -439,8 +411,6 @@ AssertsHelper.prototype.consoleValidateHeadersDisplayNameList = function console
   return d.promise;
 };
 
-
-
 AssertsHelper.prototype.consoleValidateHeadersDescription = function consoleValidateHeadersDescription (option,expList){
   var d = webdriver.promise.defer();
   var apiConsole = new ConsoleHelper();
@@ -499,12 +469,10 @@ AssertsHelper.prototype.consoleValidateHeadersDescription = function consoleVali
   return d.promise;
 };
 
-
 AssertsHelper.prototype.consoleValidateHeadersConstraints = function consoleValidateHeadersConstraints (option,expList){
   var d = webdriver.promise.defer();
   var apiConsole = new ConsoleHelper();
   var i = 0;
-
   var dic = {
     'uriParameters' : function() {
       element.all(by.css(apiConsole.requestTabUriParametersConstraints)).then(function(list){
@@ -559,10 +527,196 @@ AssertsHelper.prototype.consoleValidateHeadersConstraints = function consoleVali
   return d.promise;
 };
 
-
 AssertsHelper.prototype.consoleValidaActiveMediaTypeByPos = function consoleValidaActiveMediaTypeByPos (pos){
   browser.all(apiConsole.requestTabBodyMediaTypeListStatus).then(function(list){
     expect(list[pos].getAttribute('class')).toEqual('expanded ng-hide');
+  });
+};
+
+// try it tab
+
+AssertsHelper.prototype.consoleValidateTryPath= function consoleApiTitle(mockServ, path){
+//    this is not checking the uriPArameters fields - just the text
+  if (mockServ){
+    expect($(apiConsole.tryItPath).getText()).toMatch(/http:\/\/mocksvc.mulesoft.com\/mocks\/.*/);
+  } else {
+    expect($(apiConsole.tryItPath).getText()).toEqual(path);
+
+  }
+
+};
+
+AssertsHelper.prototype.consoleValidateTryItH2 = function consoleValidateTryItH2 (option){
+  var d = webdriver.promise.defer();
+  var dic = {
+    'authentication' : function(){
+      apiConsole.getTryItAuthenticationh2().getText().then(function(text){
+        expect(text).toEqual('Authentication');
+        d.fulfill();
+      });
+    },
+    'uriParameters' : function(){
+      apiConsole.getrequestTabUriParametersh2().getText().then(function(text){
+        expect(text).toEqual('URI Parameters');
+        d.fulfill();
+      });
+    },
+    'headers': function(){
+      apiConsole.getTryItHeadersh2().getText().then(function(text){
+        expect(text).toEqual('Headers');
+        d.fulfill();
+      });
+    },
+    'queryParameters' : function(){
+      apiConsole.getTryItQueryParametersh2().getText().then(function(text){
+        expect(text).toEqual('Query Parameters');
+        d.fulfill();
+      });
+    },
+    'Body' : function (){
+      apiConsole.getTryItBodyh2().getText().then(function(text){
+        expect(text).toEqual(option);
+        d.fulfill();
+      });
+    }
+  };
+
+  dic[option]();
+  return d.promise;
+};
+
+AssertsHelper.prototype.consoleValidateTryItDisplayNameList = function consoleValidateTryItDisplayNameList(option,expDic){
+  var d = webdriver.promise.defer();
+  var apiConsole = new ConsoleHelper();
+  var i = 0;
+  var dic = {
+    'headers': function() {
+      element.all(by.css(apiConsole.tryItTabHeadersNameList)).then(function(list){
+        expect(list.length).toEqual(expDic.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expDic[t].key);
+          elem.findElements(by.css('span')).then(function(eleSpan){
+            if(eleSpan[0]) {
+              expect(eleSpan.length).toEqual(1);
+              eleSpan[0].getAttribute('class').then(function(classe){
+                expect(classe).toEqual('required ng-scope');
+                expect(true).toEqual(expDic[t].required);
+              });
+            } else {
+              expect(eleSpan.length).toEqual(0);
+              expect(false).toEqual(expDic[t].required);
+            }
+          });
+          if(t === expDic.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'queryParameters' : function() {
+      element.all(by.css(apiConsole.tryItTabQueryParametersNameList)).then(function(list){
+        expect(list.length).toEqual(expDic.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expDic[t].key);
+          elem.findElements(by.css('span')).then(function(eleSpan){
+            if(eleSpan[0]) {
+              expect(eleSpan.length).toEqual(1);
+              eleSpan[0].getAttribute('class').then(function(classe){
+                expect(classe).toEqual('required ng-scope');
+                expect(true).toEqual(expDic[t].required);
+              });
+            } else {
+              expect(eleSpan.length).toEqual(0);
+              expect(false).toEqual(expDic[t].required);
+            }
+          });
+          if(t === expDic.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'Body' : function(){
+      element.all(by.css(apiConsole.tryItTabBodyNameList)).then(function(list){
+        expect(list.length).toEqual(expDic.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getText()).toEqual(expDic[t].key);
+          elem.findElements(by.css('span')).then(function(eleSpan){
+            if(eleSpan[0]) {
+              expect(eleSpan.length).toEqual(1);
+              eleSpan[0].getAttribute('class').then(function(classe){
+                expect(classe).toEqual('required ng-scope');
+                expect(true).toEqual(expDic[t].required);
+              });
+            } else {
+              expect(eleSpan.length).toEqual(0);
+              expect(false).toEqual(expDic[t].required);
+            }
+          });
+          if(t === expDic.length){
+            d.fulfill();
+          }
+        });
+      });
+    }
+  };
+  dic[option]();
+  return d.promise;
+};
+
+AssertsHelper.prototype.consoleCheckFieldRequired = function consoleCheckFieldRequired(option,expDic){
+  var d = webdriver.promise.defer();
+  var apiConsole = new ConsoleHelper();
+  var i = 0;
+  var dic = {
+    'headers': function() {
+      element.all(by.css(apiConsole.tryItHeadersFieldsList)).then(function(list){
+        expect(list.length).toEqual(expDic.length);
+        list.forEach(function(elem){
+          var t = i++;
+          expect(elem.getAttribute('name')).toEqual(expDic[t].inputName);
+          if(expDic[t].required){
+            console.log('required??? '+ t, expDic[t].required);
+            expect(elem.getAttribute('class')).toEqual('ng-valid ng-dirty warning');
+          } else {
+            console.log('required??? '+ t, expDic[t].required);
+            expect(elem.getAttribute('class')).toEqual('ng-scope ng-pristine ng-valid');
+          }
+          if(t === expDic.length){
+            d.fulfill();
+          }
+        });
+      });
+    },
+    'queryParameters' : function() {
+     
+    },
+    'Body' : function(){
+
+    }
+  };
+  dic[option]();
+  return d.promise;
+};
+
+AssertsHelper.prototype.validateValueSetHeaderByPos = function validateValueSetHeaderByPos(pos, value){
+  apiConsole.getHeaderFieldList().then(function(list){
+    expect(list[pos].getAttribute('value')).toEqual(value);
+  });
+};
+
+AssertsHelper.prototype.validateValueSetQueParamByPos = function validateValueSetQueParamByPos(pos, value){
+  apiConsole.getQuerParamFieldList().then(function(list){
+    expect(list[pos].getAttribute('value')).toEqual(value);
+  });
+};
+
+AssertsHelper.prototype.validateValueSetBodyByPos = function validateValueSetHeaderByPos(pos, value){
+  apiConsole.getBodyFieldList().then(function(list){
+    expect(list[pos].getAttribute('value')).toEqual(value);
   });
 };
 

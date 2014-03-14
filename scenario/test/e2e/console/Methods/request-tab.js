@@ -1,8 +1,8 @@
 'use strict';
-var EditorHelper = require('../../lib/editor-helper.js').EditorHelper;
-var AssertsHelper = require('../../lib/asserts-helper.js').AssertsHelper;
-var ShelfHelper = require('../../lib/shelf-helper.js').ShelfHelper;
-var ConsoleHelper = require('../../lib/console-helper.js').ConsoleHelper;
+var EditorHelper = require('../../../lib/editor-helper.js').EditorHelper;
+var AssertsHelper = require('../../../lib/asserts-helper.js').AssertsHelper;
+var ShelfHelper = require('../../../lib/shelf-helper.js').ShelfHelper;
+var ConsoleHelper = require('../../../lib/console-helper.js').ConsoleHelper;
 
 describe('Embedded-console Methods',function(){
 	var editor = new EditorHelper();
@@ -52,11 +52,9 @@ describe('Embedded-console Methods',function(){
           '      description:  '
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.consoleApiTitle('methods with empty tabs');
         apiConsole.expandCollpaseMethodsbyPos(1);
-        designerAsserts.consoleMethodValidateAllTabDisable([method.toUpperCase(),'Request','Responses', 'Try It']);
+        designerAsserts.consoleMethodValidateAllTabDisable(['Request','Responses', 'Try It']);
         apiConsole.closeMethodPopUp();
-
       });
     });
 
@@ -84,6 +82,48 @@ describe('Embedded-console Methods',function(){
 				designerAsserts.consoleValidateMethodTraits(['trait1']);
 				apiConsole.closeMethodPopUp();
 			});
+
+      describe('resource level trait and resource Types  after a partial refresh', function(){
+        var expList = {
+          'r0':['responses']
+        };
+
+        it('set the raml and check trait is displayed the first time', function(){
+          var definition = [
+            '#%RAML 0.8',
+            'title: after partial refresh',
+            'resourceTypes:',
+            '  - general:',
+            '      description: this is trait description',
+            'traits:',
+            '  - responses:',
+            '      description: this is response trait description',
+            '/aftPartRefresh:',
+            '  type: general',
+            '  is: [responses]',
+            '  post:',
+            '            '
+          ].join('\\n');
+          editor.setValue(definition);
+          designerAsserts.consoleApiTitle('after partial refresh');
+          apiConsole.expandCollpaseMethodsbyPos(1);
+          designerAsserts.consoleValidateCurrentMethodName('POST');
+          designerAsserts.consoleResourceTraits(expList);
+          designerAsserts.consoleResourceResourceType(['general']);
+        });
+
+        xit('trait is displayed after the partial refresh', function(){
+//       uncomment when this is fixed ->  https://www.pivotaltracker.com/story/show/67511204
+          editor.setLine(13,'    description: this is another description\\n');
+          designerAsserts.consoleResourceTraits(expList);
+        });
+
+        it('resourceType is displayed after a partial refresh', function(){
+          designerAsserts.consoleResourceResourceType(['general']);
+          apiConsole.closeMethodPopUp();
+        });
+
+      }); //resource level trait and resource Types  after a partial refresh
 
 			it('trait information applied at method level is displayed on expanded method 2 traits', function(){
 				var definition = [
@@ -141,11 +181,9 @@ describe('Embedded-console Methods',function(){
       designerAsserts.consoleApiTitle('toggle and edit');
       apiConsole.expandCollpaseMethodsbyPos(1);
       designerAsserts.consoleValidateCurrentMethodName('GET');
-//      designerAsserts.consoleValidateMethodDescription('this is get method description');
       apiConsole.toggleBetweenMethodByName('post');
       editor.setLine(7,'    description: post method description');
       designerAsserts.consoleValidateCurrentMethodName('POST');
-//      designerAsserts.consoleValidateMethodDescription('post method description');
 		});
 
 		it('open a method  and then delete it', function(){
@@ -200,7 +238,6 @@ describe('Embedded-console Methods',function(){
 
     describe('description', function(){
       methods.forEach(function(method){
-
         it(method+' description added at method level but not other request infromation', function(){
           var definition = [
             '#%RAML 0.8',
@@ -230,7 +267,6 @@ describe('Embedded-console Methods',function(){
               '    description: this is '+method+' description',
               '    '+option+':',
               '      header1:',
-           //'        description: this is header 1 description',
               '        required: true',
               '        type: integer',
               '        displayName: HEADER 1',
@@ -493,13 +529,49 @@ describe('Embedded-console Methods',function(){
 
 
 	xdescribe('response tab', function(){
-    it('description should not be displayed', function(){
+    xit('description should not be displayed', function(){
 //      on response tab description should not be displayed
     });
 
     describe('responses', function(){
 
 //if schema is multipart/form-data: or  application/x-www-form-urlencoded: on the console is only to be displayed formParameters if those are defined  -
+      xit('list of response codes are displayed on the header section',function(){
+        // to do
+        // each of it is a link that should scroll to that response code information on the console
+      });
+
+      xit('response code header', function(){
+
+      });
+
+      xit('response code description', function(){
+
+      });
+
+      xit('body header is displayed', function(){
+
+      });
+
+      xit('list of media types are displayed', function(){
+
+      });
+
+      xit('toggle between media types', function(){
+
+      });
+
+      xit('response code example  displayed by default', function(){
+
+      });
+
+      xit('response code schema show as a link by default', function(){
+
+      });
+
+      xit('after clicnking on schema link the schema should be displayed', function(){
+
+      });
 
     }); // responses
 
