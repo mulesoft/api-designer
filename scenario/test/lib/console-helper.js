@@ -53,10 +53,25 @@ function ConsoleHelper() {
   this.requestTabBodyDescriptionNP = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation .info [role="description"]';
   this.requestTabBodyMediaTypeList = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation fieldset label span';
   this.requestTabBodyMediaTypeListStatus = '[role="method"] [role="documentation"] [role="documentation-requests"] .body-documentation fieldset label';
-  this.requestTabBodySchemaLink = '';
+  this.bodySchemaLink = '[role="method"] [role="documentation"] [class="method-content-container"] .item-content [role="schema"] a';
   this.requestTabBodySchemaContent = '';
   this.requestTabBodyExample = '';
-  this.responseTab = '';
+
+  this.responseNavSubmenuTitle = '[role="method"] [role="documentation"] .method-nav ul[ng-repeat="item in tabset.tabs"] :first-of-type a';
+  this.responseNavResponseCodeList = '[role="method"] [role="documentation"] .method-nav ul[ng-repeat="item in tabset.tabs"] [ng-repeat="subItem in item.subtabs"] a';
+  this.responseNavResponseCodeActive = '[role="method"] [role="documentation"] .method-nav ul[ng-repeat="item in tabset.tabs"] [class="method-nav-item ng-scope active"] a';
+  this.responseCodeHeader = '[role="method"] [role="documentation"] [class="method-content-container"] .responses [role="response-code"]';
+  this.responseCodeDescription = '[role="method"] [role="documentation"] [class="method-content-container"] .responses [role="response"] [markdown="response.description"]';
+  this.responseCodeHeadersh2 = '[role="method"] [role="documentation"] [class="method-content-container"] .responses [role="response"] [heading="Headers"] h2';
+
+
+  this.responseCodeBodyh2List = '[role="method"] [role="documentation"] [class="method-content-container"] .responses [role="response"] .body-documentation h2';
+  this.bodyExampleh5 = '[role="method"] [role="documentation"] [class="method-content-container"] .item-content [role="example"] h5';
+  this.bodyExampleContentList = '[role="method"] [role="documentation"] [class="method-content-container"] .item-content [role="example"] .CodeMirror-code';
+
+  this.bodySchemah5 = '[role="method"] [role="documentation"] [class="method-content-container"] .item-content [role="schema"] h5';
+  this.bodySchemaContentList = '[role="method"] [role="documentation"] [class="method-content-container"] .item-content [role="schema"] .CodeMirror-code';
+
   this.tryitTab = '';
   this.tryItPath = '[role="method"] [role="documentation"] .method-nav [role="path"] [class="segment ng-scope ng-binding"]'; // does not include the field parameters
   this.tryItTabAuthenticationh2 = '[role="method"] [role="documentation"] [role="try-it"] .try-it [class="documentation-section authentication ng-isolate-scope"] h2';
@@ -70,7 +85,6 @@ function ConsoleHelper() {
   this.tryItTabBodyNameList = '[role="method"] [role="documentation"] [role="try-it"] .try-it [class="documentation-section request-body ng-isolate-scope"] [ng-if="!repeatable"] label';
   this.tryItTabBodyFieldList = '[role="method"] [role="documentation"] [role="try-it"] .try-it [class="documentation-section request-body ng-isolate-scope"] [ng-if="!repeatable"] input';
 }
-
 
 ConsoleHelper.prototype = {};
 
@@ -269,6 +283,43 @@ ConsoleHelper.prototype.getrequestTabBodyh2 = function getrequestTabBodyh2(){
 ConsoleHelper.prototype.getrequestTabBodyMediaTypeList = function getrequestTabBodyMediaTypeList (){
   return element.all(by.css(this.requestTabBodyMediaTypeList));
 };
+// response
+
+ConsoleHelper.prototype.getListOfResponseCode = function getListOfResponseCode() {
+  return element.all(by.css(this.responseNavResponseCodeList));
+};
+
+ConsoleHelper.prototype.getListResponseCodeHeader = function getListResponseCodeHeader(){
+  return element.all(by.css(this.responseCodeHeader));
+};
+
+ConsoleHelper.prototype.getListResponseCodeDescription = function getListResponseCodeDescription(){
+  return element.all(by.css(this.responseCodeDescription));
+};
+
+ConsoleHelper.prototype.getresponseCodeHeadersh2List = function getresponseCodeHeadersh2List(){
+  return element.all(by.css(this.responseCodeHeadersh2));
+};
+
+ConsoleHelper.prototype.getresponseCodeBodyh2List = function getresponseCodeHeadersh2List(){
+  return element.all(by.css(this.responseCodeBodyh2List));
+};
+
+ConsoleHelper.prototype.getBodyExampleh5 = function getresponseCodeExampleh5(){
+  return element.all(by.css(this.bodyExampleh5));
+};
+
+ConsoleHelper.prototype.getBodyExampleContentList = function getresponseCodeExampleContentList(){
+  return element.all(by.css(this.bodyExampleContentList));
+};
+
+ConsoleHelper.prototype.getBodySchemah5 = function getresponseCodeSchemah5(){
+  return element.all(by.css(this.bodySchemah5));
+};
+
+ConsoleHelper.prototype.getBodySchemaContentList = function getresponseCodeExampleContentList(){
+  return element.all(by.css(this.bodySchemaContentList));
+};
 
 // try it
 ConsoleHelper.prototype.getTryItAuthenticationh2 = function getTryItAuthenticationh2(){
@@ -307,7 +358,6 @@ ConsoleHelper.prototype.sendKeysToBodyFieldByPos = function sendKeysToBodyByPos(
   this.getBodyFieldList().then(function(list){
     list[pos].sendKeys(value);
   });
-
 };
 
 ConsoleHelper.prototype.getTryItQueryParametersh2 = function getTryItQueryParametersh2(){
@@ -318,5 +368,22 @@ ConsoleHelper.prototype.getTryItBodyh2 = function getTryItBodyh2(){
   return $(this.tryItTabBodyh2);
 };
 
+ConsoleHelper.prototype.expandSchemaByPos = function expandSchemaByPos(pos){
+  //  resource needed to be expanded.
+  var d = webdriver.promise.defer();
+  pos--;
+  element.all(by.css(this.bodySchemaLink)).then(function(links){
+    if( pos === -1){
+      for(var i =0; i<links.length;i++ ){
+        links[i].click();
+      }
+      d.fulfill();
+    } else {
+      links[pos].click();
+      d.fulfill();
+    }
+  });
+  return d.promise;
+};
 
 exports.ConsoleHelper = ConsoleHelper;

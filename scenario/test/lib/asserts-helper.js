@@ -533,6 +533,208 @@ AssertsHelper.prototype.consoleValidaActiveMediaTypeByPos = function consoleVali
   });
 };
 
+// response tab
+
+AssertsHelper.prototype.checkResponseNavSubmenuTitle= function consoleApiTitle(title){
+  expect($(apiConsole.responseNavSubmenuTitle).getText()).toEqual(title);
+};
+
+AssertsHelper.prototype.checkSubNavResponseCodeList = function checkSubNavResponseCodeList(expList){
+  var i = 0;
+  var d =  webdriver.promise.defer();
+  apiConsole.getListOfResponseCode().then(function(list){
+
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+      if (t === expList.length){
+        d.fulfill();
+      }
+    });
+
+  });
+  return d.promise;
+};
+
+AssertsHelper.prototype.checkResponseCodeHeaderList = function checkResponseCodeHeaderList(expList){
+//  getListResponseCodeHeader
+  var i = 0;
+  var d =  webdriver.promise.defer();
+  apiConsole.getListResponseCodeHeader().then(function(list){
+
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+      if (t === expList.length){
+        d.fulfill();
+      }
+    });
+
+  });
+  return d.promise;
+};
+
+AssertsHelper.prototype.checkResponseCodeDescriptionList = function checkResponseCodeDescriptionList(expList){
+  var i = 0;
+  var d =  webdriver.promise.defer();
+  apiConsole.getListResponseCodeDescription().then(function(list){
+
+    list.forEach(function(elem){
+      var t = i++;
+      expect(elem.getText()).toEqual(expList[t]);
+      if (t === expList.length){
+        d.fulfill();
+      }
+    });
+
+  });
+  return d.promise;
+};
+
+AssertsHelper.prototype.consoleValidateREsponseTabHeadersH2 = function consoleValidateREsponseTabHeadersH2 (option){
+  var d = webdriver.promise.defer();
+  var i = 0;
+  var dic = {
+    'headers': function(){
+      apiConsole.getresponseCodeHeadersh2List().then(function(list){
+        list.forEach(function(elem){
+          elem.getText().then(function(text){
+            var t = i++;
+            expect(text).toEqual('Headers');
+            if (t===list.length){
+              d.fulfill();
+            }
+          });
+        });
+      });
+    },
+    'Body' : function (){
+      apiConsole.getresponseCodeBodyh2List().then(function(list){
+        list.forEach(function(elem){
+          elem.getText().then(function(text){
+            var t = i++;
+            expect(text).toEqual(option);
+            if (t===list.length){
+              d.fulfill();
+            }
+          });
+        });
+      });
+    },
+    'EXAMPLE': function(){
+      apiConsole.getBodyExampleh5().then(function(list){
+        list.forEach(function(elem){
+          elem.getText().then(function(text){
+            var t = i++;
+            expect(text).toEqual(option);
+            if (t===list.length){
+              d.fulfill();
+            }
+          });
+        });
+      });
+    },
+    'SCHEMA' : function(){
+//      this is displayed after clicking on Show Schema link
+      apiConsole.getBodySchemah5().then(function(list){
+        list.forEach(function(elem){
+          elem.getText().then(function(text){
+            var t = i++;
+            expect(text).toEqual(option);
+            if (t===list.length){
+              d.fulfill();
+            }
+          });
+        });
+      });
+    }
+
+  };
+
+  dic[option]();
+  return d.promise;
+};
+
+AssertsHelper.prototype.consoleValidateExampleSchemaContent = function consoleValidateExampleSchemaContent (option, expList){
+  var d = webdriver.promise.defer();
+  var i = 0;
+  var dic = {
+    'example': function(){
+      apiConsole.getBodyExampleContentList().then(function(list){
+        list.forEach(function(example){
+          var t = i++;
+          example.findElements(by.css('pre')).then(function(lines){
+            var texto = '';
+            var c = 1;
+            lines.forEach(function(line){
+              line.getText().then(function(ttt){
+                var j = c++;
+                texto += ttt;
+                if(j===lines.length){
+                  expect(texto).toEqual(expList[t]);
+                  if (t===list.length){
+                    d.fulfill();
+                  }
+                }
+              });
+            });
+          });
+        });
+      });
+    },
+    'schema' : function (){
+      apiConsole.getBodySchemaContentList().then(function(list){
+        list.forEach(function(example){
+          var t = i++;
+          example.findElements(by.css('pre')).then(function(lines){
+            var texto = '';
+            var c = 1;
+            lines.forEach(function(line){
+              line.getText().then(function(ttt){
+                var j = c++;
+                texto += ttt;
+                if(j===lines.length){
+                  expect(texto).toEqual(expList[t]);
+                  if (t===list.length){
+                    d.fulfill();
+                  }
+                }
+              });
+            });
+          });
+        });
+      });
+    }
+  };
+
+  dic[option]();
+  return d.promise;
+};
+
+AssertsHelper.prototype.consoleCheckSchemaLinksAreHiddenByPos = function consoleCheckSchemaLinksAreHiddenByPos(pos) {
+  var d = webdriver.promise.defer();
+  pos --;
+  var i = 0;
+
+  element.all(by.css(apiConsole.bodySchemaLink)).then(function(list){
+    if(pos=== -1){
+      list.forEach(function(elem){
+        var t = i++;
+        expect(elem.getAttribute('class')).toEqual('schema-toggle ng-hide');
+        if(t===list.length){
+          d.fulfill();
+        }
+      });
+
+    } else {
+      expect(list[pos].getAttribute('class')).toEqual('expanded ng-hide');
+      d.fulfill();
+
+    }
+  });
+  return d.promise;
+};
+
 // try it tab
 
 AssertsHelper.prototype.consoleValidateTryPath= function consoleApiTitle(mockServ, path){
