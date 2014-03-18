@@ -120,7 +120,7 @@ describe('console Methods',function(){
       });
 
       it('headers constraint', function(){
-        designerAsserts.consoleValidateHeadersConstraints('headers',['required, string']);
+        designerAsserts.consoleValidateHeadersConstraints('headers',['string']);
       });
 
       it('body header h2 is displayed', function(){
