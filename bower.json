@@ -12,13 +12,13 @@
     "showdown": "~0.3.1",
     "api-console": "mulesoft/api-console#9df6c768313bed660b69a91b81c8c704d2a08d0e",
     "raml-grammar": "mulesoft/raml-grammar#538811151dc8ac6b145ce967b6c6975fa86be07b",
-    "raml-js-parser": "raml-org/raml-js-parser#813516e20d5da1226b1f07ef105a656e01a89bb3"
+    "raml-js-parser": "raml-org/raml-js-parser#01bf587031db75b1e91b29ce71e05125b9c5314a"
   },
   "devDependencies": {
     "sinonjs": "~1.7.1",
     "angular-mocks": "1.2.9"
   },
   "resolutions": {
-    "raml-js-parser": "813516e20d5da1226b1f07ef105a656e01a89bb3"
+    "raml-js-parser": "01bf587031db75b1e91b29ce71e05125b9c5314a"
   }
 }
