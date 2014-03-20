@@ -101,6 +101,33 @@ describe('RAML Repository', function () {
       success.firstCall.args[0].files.should.have.length(1);
       success.firstCall.args[0].files[0].should.have.property('path', '/example.raml');
     });
+
+    it('should copy `root` property of files', function () {
+      // Arrange
+      var success = sinon.stub();
+      var folder  = {
+        path:     '/',
+        name:     '/',
+        children: [
+          {
+            path:    '/file1.raml',
+            name:    'file1.raml',
+            content: '',
+            root:    true
+          }
+        ]
+      };
+
+      // Act
+      sinon.stub(fileSystem, 'directory').returns($q.when(folder));
+      ramlRepository.getDirectory('/').then(success);
+      $rootScope.$apply();
+
+      // Assert
+      success.should.have.been.called;
+      success.firstCall.args[0].files.should.have.length(1);
+      success.firstCall.args[0].files[0].should.have.property('root').and.be.true;
+    });
   });
 
   describe('loadFile', function () {
@@ -383,6 +410,16 @@ describe('RAML Repository', function () {
 
       success.should.have.been.called;
       success.firstCall.args[0].should.be.deep.equal({});
+    });
+  });
+
+  describe('RamlFile', function () {
+    it('should have a proper extension value extracted from name', function () {
+      ramlRepository.createFile('api.raml').should.have.property('extension', 'raml');
+    });
+
+    it('should not extract an extension from name started with a dot', function () {
+      ramlRepository.createFile('.raml').should.not.have.property('extension');
     });
   });
 });
