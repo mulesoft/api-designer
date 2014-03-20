@@ -6,13 +6,14 @@ exports.config = {
 
   capabilities: {
     'browserName': process.env.BROWSER,
-    name: 'API-Portal-Mocking Service'
+    name: 'API-Portal-console-methods'
   },
 
   allScriptsTimeout: 90000,
 
   specs: [
-    '../../test/e2e/mocking-service/*.js',
+    '../../test/e2e/console/methods/request-tab.js',
+    '../../test/e2e/console/methods/response-tab.js',
     '../../test/lib/*.js'
   ],
 

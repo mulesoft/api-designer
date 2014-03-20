@@ -62,14 +62,9 @@ describe('console Methods',function(){
           '              <xs:element name="note">',
           '                <xs:complexType>',
           '                  <xs:sequence>',
-          '                    <xs:element name="to" type="xs:string"/>',
-          '                    <xs:element name="from" type="xs:string"/>',
-          '                    <xs:element name="heading" type="xs:string"/>',
-          '                     <xs:element name="body" type="xs:string"/>',
           '                  </xs:sequence>',
           '                </xs:complexType>',
           '              </xs:element>',
-          '              </xs:schema>',
           '            example: |',
           '              <name>',
           '                texto',
@@ -79,9 +74,9 @@ describe('console Methods',function(){
         designerAsserts.consoleApiTitle('to test response tab');
         apiConsole.expandCollpaseMethodsbyPos(1);
 
-  //      browser.executeScript('return window.editor.getValue()').then(function(ramls){
-  //        console.log(ramls);
-  //      })  ;
+//        browser.executeScript('return window.editor.getValue()').then(function(ramls){
+//          console.log(ramls);
+//        })  ;
       });
 
 
@@ -160,7 +155,7 @@ describe('console Methods',function(){
 
       it('after clicking on schema link the schema should be displayed', function(){
         designerAsserts.consoleValidateExampleSchemaContent('schema',['{    "title": "Example Schema",    "type": "object",    "properties": {        "firstName": {            "type": "string"        },        "lastName": {            "type": "string"        },        "age": {            "description": "Age in years",            "type": "integer",            "minimum": 0        }    },    "required": [        "firstName",        "lastName"    ]}',
-        '<xs:element name="note">  <xs:complexType>    <xs:sequence>      <xs:element name="to" type=/>      <xs:element name="from" type=/>      <xs:element name="heading" ="xs:string"/>       <xs:element name="body" type=/>    </xs:sequence>  </xs:complexType></xs:element></xs:schema> ']);
+          '<xs:element name="note">  <xs:complexType>    <xs:sequence>    </xs:sequence>  </xs:complexType></xs:element> ']);
       });
 
     });

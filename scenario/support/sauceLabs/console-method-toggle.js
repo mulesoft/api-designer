@@ -6,13 +6,13 @@ exports.config = {
 
   capabilities: {
     'browserName': process.env.BROWSER,
-    name: 'API-Portal-Mocking Service'
+    name: 'console-methods-toggle'
   },
 
   allScriptsTimeout: 90000,
 
   specs: [
-    '../../test/e2e/mocking-service/*.js',
+    '../../test/e2e/console/methods/console-method-toggle.js',
     '../../test/lib/*.js'
   ],
 
