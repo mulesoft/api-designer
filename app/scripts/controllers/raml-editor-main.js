@@ -12,7 +12,7 @@ angular.module('ramlEditorApp')
     }
 
     function readExtFile(path) {
-      return $http.get(path, { transformResponse: null }).then(
+      return $http.get(path, {transformResponse: null}).then(
         // success
         function success(response) {
           return response.data;
@@ -201,14 +201,19 @@ angular.module('ramlEditorApp')
     };
 
     $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
-      // check for file extenstion
-      if (file.name.slice(-5) !== '.raml') {
+      // check for file extension
+      if (file.extension !== 'raml') {
         return false;
       }
 
       // check for raml version tag as a very first line of the file
       contents = arguments.length > 1 ? contents : file.contents;
       if (contents.search(/^\s*#%RAML( \d*\.\d*)?\s*(\n|$)/) !== 0) {
+        return false;
+      }
+
+      // if there is root file only that file is marked as parsable
+      if ((($scope.fileBrowser || {}).rootFile || file) !== file) {
         return false;
       }
 
@@ -253,13 +258,13 @@ angular.module('ramlEditorApp')
     });
 
     (function bootstrap() {
-      $scope.currentError     = undefined;
+      $scope.currentError    = undefined;
       $scope.theme           = $rootScope.theme = config.get('theme', 'dark');
       $scope.shelf           = {};
       $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', 'false'));
       $scope.editor          = editor = codeMirror.initEditor();
 
-      editor.on('fold', function(cm, start, end) {
+      editor.on('fold', function (cm, start, end) {
         if (start.line <= lineOfCurrentError && lineOfCurrentError <= end.line) {
           codeMirrorErrors.displayAnnotations([{
             line:    start.line + 1,
@@ -268,7 +273,7 @@ angular.module('ramlEditorApp')
         }
       });
 
-      editor.on('unfold', function() {
+      editor.on('unfold', function () {
         var displayLine = calculatePositionOfErrorMark(lineOfCurrentError);
 
         var message = formatErrorMessage($scope.currentError.message, lineOfCurrentError, displayLine);
@@ -284,7 +289,7 @@ angular.module('ramlEditorApp')
 
       // Warn before leaving the page
       $window.onbeforeunload = function () {
-        var anyUnsavedChanges = $scope.homeDirectory.files.some(function(file) {
+        var anyUnsavedChanges = $scope.homeDirectory.files.some(function (file) {
           return file.dirty;
         });
 
