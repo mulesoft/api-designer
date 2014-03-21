@@ -184,9 +184,10 @@ describe('Embedded-console Methods',function(){
       apiConsole.toggleBetweenMethodByName('post');
       editor.setLine(7,'    description: post method description');
       designerAsserts.consoleValidateCurrentMethodName('POST');
+      apiConsole.closeMethodPopUp();
 		});
 
-		it('open a method  and then delete it', function(){
+		it('open a method and then delete it', function(){
       var definition = [
         '#%RAML 0.8',
         'title: delete current method',
@@ -228,8 +229,8 @@ describe('Embedded-console Methods',function(){
         'r0':['GET']
       };
       designerAsserts.consoleResourceMethods(expList);
-      apiConsole.expandCollpaseMethodsbyPos(1);
       designerAsserts.consoleValidateCurrentMethodName('GET');
+      apiConsole.closeMethodPopUp();
 		});
 
 	});  // common view
@@ -619,4 +620,4 @@ describe('Embedded-console Methods',function(){
 
 
 
-}); // Embebed-console Methods 
+}); // Embebed-console Methods

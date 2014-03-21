@@ -156,6 +156,7 @@ describe('console Methods',function(){
       it('after clicking on schema link the schema should be displayed', function(){
         designerAsserts.consoleValidateExampleSchemaContent('schema',['{    "title": "Example Schema",    "type": "object",    "properties": {        "firstName": {            "type": "string"        },        "lastName": {            "type": "string"        },        "age": {            "description": "Age in years",            "type": "integer",            "minimum": 0        }    },    "required": [        "firstName",        "lastName"    ]}',
           '<xs:element name="note">  <xs:complexType>    <xs:sequence>    </xs:sequence>  </xs:complexType></xs:element> ']);
+        apiConsole.closeMethodPopUp();
       });
 
     });
