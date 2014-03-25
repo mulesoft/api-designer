@@ -17,24 +17,23 @@ describe('RAML Editor Main Controller', function () {
   });
 
   beforeEach(inject(function ($injector) {
-    $rootScope = $injector.get('$rootScope');
-    $controller = $injector.get('$controller');
-    $q = $injector.get('$q');
-    $timeout = $injector.get('$timeout');
-    $confirm = $injector.get('$confirm');
-    $window = $injector.get('$window');
-    codeMirror = $injector.get('codeMirror');
-    eventService = $injector.get('eventService');
+    $rootScope      = $injector.get('$rootScope');
+    $controller     = $injector.get('$controller');
+    $q              = $injector.get('$q');
+    $timeout        = $injector.get('$timeout');
+    $confirm        = $injector.get('$confirm');
+    $window         = $injector.get('$window');
+    codeMirror      = $injector.get('codeMirror');
+    eventService    = $injector.get('eventService');
     applySuggestion = $injector.get('applySuggestion');
-    ramlRepository = $injector.get('ramlRepository');
+    ramlRepository  = $injector.get('ramlRepository');
   }));
 
   beforeEach(function () {
-    scope = $rootScope.$new();
-
+    scope  = $rootScope.$new();
     editor = getEditor(codeMirror);
 
-    codeMirror.initEditor = function (){
+    codeMirror.initEditor = function initEditor() {
       return editor;
     };
 
@@ -315,10 +314,11 @@ describe('RAML Editor Main Controller', function () {
       getIsFileParsable = scope.getIsFileParsable;
     });
 
-    it('should return false for files without ".raml" extenstion', function () {
+    it('should return false for files without ".raml" extension', function () {
       getIsFileParsable(
         {
-          name: 'myApi.json'
+          name:      'myApi.json',
+          extension: 'json'
         }
       ).should.be.false;
     });
@@ -326,8 +326,9 @@ describe('RAML Editor Main Controller', function () {
     it('should return false for files without proper version tag as the very first line', function () {
       getIsFileParsable(
         {
-          name:     'myApi.raml',
-          contents: 'title: My API'
+          name:      'myApi.raml',
+          extension: 'raml',
+          contents:  'title: My API'
         }
       ).should.be.false;
     });
@@ -335,18 +336,20 @@ describe('RAML Editor Main Controller', function () {
     it('should use passed RAML source (invalid) instead of provided by file model and return false', function () {
       getIsFileParsable(
         {
-          name:     'myApi.raml',
-          contents: ['#%RAML 0.8', '---', 'title: My API'].join('\n')
+          name:      'myApi.raml',
+          extension: 'raml',
+          contents:  ['#%RAML 0.8', '---', 'title: My API'].join('\n')
         },
         'title: My API'
       ).should.be.false;
     });
 
-    it('should return true for files with ".raml" extenstion and proper version tag as the very first line', function () {
+    it('should return true for files with ".raml" extension  and proper version tag as the very first line', function () {
       getIsFileParsable(
         {
-          name:     'myApi.raml',
-          contents: ['#%RAML 0.8', '---', 'title: My API'].join('\n')
+          name:      'myApi.raml',
+          extension: 'raml',
+          contents:  ['#%RAML 0.8', '---', 'title: My API'].join('\n')
         }
       ).should.be.true;
     });
@@ -354,8 +357,9 @@ describe('RAML Editor Main Controller', function () {
     it('should use passed RAML source (valid) instead of provided by file model and return true', function () {
       getIsFileParsable(
         {
-          name:     'myApi.raml',
-          contents: 'title: My API'
+          name:      'myApi.raml',
+          extension: 'raml',
+          contents:  'title: My API'
         },
         ['#%RAML 0.8', '---', 'title: My API'].join('\n')
       ).should.be.true;
@@ -364,10 +368,47 @@ describe('RAML Editor Main Controller', function () {
     it('should return true for version tag ending with whitespaces', function () {
       getIsFileParsable(
         {
-          name:     'myApi.raml',
-          contents: ['#%RAML 0.8 ', '---', 'title: My API'].join('\n')
+          name:      'myApi.raml',
+          extension: 'raml',
+          contents:  ['#%RAML 0.8 ', '---', 'title: My API'].join('\n')
         }
       ).should.be.true;
+    });
+
+    describe('with root file', function () {
+      beforeEach(function () {
+        scope.fileBrowser = {
+          rootFile: {
+            name:      'root.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 0.8', '---', 'title: My API'].join('\n')
+          }
+        };
+      });
+
+      describe('as selected file', function () {
+        beforeEach(function () {
+          scope.fileBrowser.selectedFile = scope.fileBrowser.rootFile;
+        });
+
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.selectedFile).should.be.true;
+        });
+      });
+
+      describe('not being selected', function () {
+        beforeEach(function () {
+          scope.fileBrowser.selectedFile = {
+            name:       'selected.raml',
+            extension:  'raml',
+            contents:   ['#%RAML 0.8', '---', 'title: My API'].join('\n')
+          };
+        });
+
+        it('should return false', function () {
+          getIsFileParsable(scope.fileBrowser.selectedFile).should.be.false;
+        });
+      });
     });
   });
 

@@ -1,25 +1,27 @@
-(function() {
+(function () {
   'use strict';
 
-  var FILE_EXTENSION_EXTRACTOR = /.*\.(.*)$/;
-  function RamlFile (path, contents, options) {
+  function RamlFile(path, contents, options) {
     options = options || {};
 
+    this.type = 'file';
     this.path = path;
     this.name = path.slice(path.lastIndexOf('/') + 1);
-    var extensionMatch = FILE_EXTENSION_EXTRACTOR.exec(this.name);
-    if (extensionMatch) {
-      this.extension = extensionMatch[1];
+
+    // extract extension
+    if (this.name.lastIndexOf('.') > 0) {
+      this.extension = this.name.slice(this.name.lastIndexOf('.') + 1);
     }
 
-    this.contents = contents;
+    this.contents  = contents || '';
     this.persisted = options.persisted || false;
-    this.dirty = options.dirty || !this.persisted;
+    this.dirty     = options.dirty || !this.persisted;
+    this.root      = options.root;
   }
 
   angular.module('fs', ['ngCookies', 'raml', 'utils'])
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
-      var service = {};
+      var service     = {};
       var defaultPath = '/';
 
       function notMetaFile(file) {
@@ -27,28 +29,33 @@
       }
 
       function RamlDirectory(path, meta, contents) {
-        if (!/\/$/.exec(path)) { path = path + '/'; }
+        // add trailing slash to path if it doesn't exist
+        if (path.slice(-1) !== '/') {
+          path = path + '/';
+        }
+
         contents = contents || [];
 
         var strippedPath = path.substring(0, path.length - 1);
+        this.type = 'directory';
         this.path = path;
         this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
         this.meta = meta;
 
         var separated = { folder: [], file: [] };
-        contents.forEach(function(entry) {
+        contents.forEach(function (entry) {
           separated[entry.type || 'file'].push(entry);
         });
 
-        this.files = separated.file.filter(notMetaFile).map(function(file) {
-          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true} );
+        this.files = separated.file.filter(notMetaFile).map(function (file) {
+          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true, root: file.root} );
         });
 
-        this.files.sort(function(file1, file2) {
+        this.files.sort(function (file1, file2) {
           return file1.name.localeCompare(file2.name);
         });
 
-        this.directories = separated.folder.map(function(directory) {
+        this.directories = separated.folder.map(function (directory) {
           return new RamlDirectory(directory.path, directory.meta, directory.children);
         });
       }
@@ -85,7 +92,7 @@
 
       service.saveFile = function saveFile(file) {
         function modifyFile() {
-          file.dirty = false;
+          file.dirty     = false;
           file.persisted = true;
 
           return file;
@@ -110,9 +117,9 @@
 
       service.loadFile = function loadFile(file) {
         function modifyFile(data) {
-          file.dirty = false;
+          file.dirty     = false;
           file.persisted = true;
-          file.contents = data;
+          file.contents  = data;
 
           return file;
         }
@@ -122,7 +129,7 @@
 
       service.removeFile = function removeFile(file) {
         function modifyFile() {
-          file.dirty = false;
+          file.dirty     = false;
           file.persisted = false;
 
           return Object.freeze(file);
@@ -134,9 +141,10 @@
 
       service.createFile = function createFile(name) {
         var path = defaultPath + name;
-        var file = new RamlFile(path, ramlSnippets.getEmptyRaml());
-        if (file.extension !== 'raml') {
-          file.contents = '';
+        var file = new RamlFile(path);
+
+        if (file.extension === 'raml') {
+          file.contents = ramlSnippets.getEmptyRaml();
         }
 
         $rootScope.$broadcast('event:raml-editor-file-created', file);
