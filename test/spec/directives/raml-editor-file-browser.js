@@ -171,6 +171,7 @@ describe('ramlEditorFileBrowser', function () {
 
     describe('when the file is loaded', function () {
       beforeEach(function () {
+        ramlRepository.files[1].loaded   = true;
         ramlRepository.files[1].contents = 'raml';
         angular.element(fileToClick).triggerHandler('click');
       });

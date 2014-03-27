@@ -16,7 +16,7 @@
           config.set('currentFile', JSON.stringify({path: file.path, name: file.name}));
           unwatchSelectedFile();
 
-          var isLoaded     = !file.persisted || angular.isString(file.contents);
+          var isLoaded     = file.loaded || !file.persisted;
           var afterLoading = isLoaded ? $q.when(file) : ramlRepository.loadFile(file);
 
           afterLoading
