@@ -56,8 +56,6 @@ module.exports = function(config) {
       'app/scripts/services/raml-highlight.js',
       'app/scripts/services/raml-highlight-config.js',
       'app/scripts/services/raml-repository.js',
-      'app/scripts/services/request-executor.js',
-      'app/scripts/services/request-builder.js',
       'app/scripts/services/file-system.js',
       'app/scripts/services/local-storage-file-system.js',
       'app/scripts/services/mocking-service-client.js',
@@ -123,7 +121,7 @@ module.exports = function(config) {
     browsers: ['PhantomJS'],
 
     // If browser does not capture in given timeout [ms], kill it
-    captureTimeout: 60000,
+    captureTimeout: 120000,
 
     // Continuous Integration mode
     // if true, it capture browsers, run tests and exit
