@@ -9,7 +9,7 @@ exports.config = {
     name: 'API-Portal-console'
   },
 
-  allScriptsTimeout: 90000,
+  allScriptsTimeout: 150000,
 
   specs: [
     '../test/e2e/file-browser.js',
@@ -41,6 +41,6 @@ exports.config = {
     isVerbose: false,
     showColors: false,
     includeStackTrace: false,
-    defaultTimeoutInterval: 80000
+    defaultTimeoutInterval: 90000
   }
 };

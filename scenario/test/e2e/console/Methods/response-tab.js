@@ -74,9 +74,6 @@ describe('console Methods',function(){
         designerAsserts.consoleApiTitle('to test response tab');
         apiConsole.expandCollpaseMethodsbyPos(1);
 
-//        browser.executeScript('return window.editor.getValue()').then(function(ramls){
-//          console.log(ramls);
-//        })  ;
       });
 
 
@@ -138,12 +135,12 @@ describe('console Methods',function(){
         designerAsserts.consoleValidateExampleSchemaContent('example',['{    "firstName": "Ana",    "lastName": "Last Name",    "age": 8}','<name>  texto</name>']);
       });
 
-      if (method === 'connect'){
-//        this if was added since is only needed to show the link the first time as part of the partial refresh functionality this remains expanded.
-        it('response code schema show as a link by default', function(){
-          apiConsole.expandSchemaByPos(0);
-        });
-      }
+      // if (method === 'connect'){
+       // this if was added since is only needed to show the link the first time as part of the partial refresh functionality this remains expanded.
+      it('response code schema show as a link by default', function(){
+        apiConsole.expandSchemaByPos(0);
+      });
+      // }
 
       it('verify that schema links are hidden', function(){
         designerAsserts.consoleCheckSchemaLinksAreHiddenByPos(0);

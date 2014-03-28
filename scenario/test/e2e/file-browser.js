@@ -230,11 +230,16 @@ describe('file_browser ',function(){
 
     it('go back to the previous file', function(){
       editor.selectAFileByPos(1).then(function(){
-        expect(editor.getLine(1)).toEqual('#%RAML 0.8');
-        designerAsserts.parserError('3','invalid resourceTypes definition, it must be an array');
-        designerAsserts.consoleApiTitle('');
+        browser.wait(function(){
+          return editor.getLine(1).then(function(text){
+            return  text === '#%RAML 0.8';
+          });
+        }).then(function(){
+            expect(editor.getLine(1)).toEqual('#%RAML 0.8');
+            designerAsserts.parserError('3','invalid resourceTypes definition, it must be an array');
+            designerAsserts.consoleApiTitle('');
+          });
       });
-
     });
 
     it('rename file', function(){
@@ -272,6 +277,50 @@ describe('file_browser ',function(){
     });
 
   }); //save a file from using save btn
+
+  describe('add a file and then reload the page', function(){
+    var ram = [
+      '#%RAML 0.8',
+      'title: this is one example',
+      '/refdsds:',
+      '         '
+    ].join('\\n');
+
+    it('add new file and add some content', function(){
+      var fileName = 'untest.raml';
+      editor.addNewFile(fileName);
+      designerAsserts.editorCheckFileNameInList(fileName);
+
+      editor.setValue(ram);
+      editor.saveFileButton();
+      browser.wait(function(){
+        return editor.getFileNameText().then(function(text){
+          return text === '/untest.raml';
+        });
+      }).then(function(){
+          expect(editor.getFileNameText()).toEqual('/untest.raml');
+        });
+    });
+    it('validate file content and reload the page', function(){
+      editor.getValue().then(function(newraml){
+        expect(newraml).toMatch(ram);
+        browser.get('/');
+      });
+    });
+
+    it('validate editor content after reload', function(){
+      browser.wait(function(){
+        return editor.getLine(1).then(function(text){
+          return  text === '#%RAML 0.8';
+        });
+      }).then(function(){
+        editor.getValue().then(function(otrraml){
+          expect(otrraml).toMatch(ram);
+        });
+      });
+    });
+
+  });
 
   describe('file browser list', function(){
 

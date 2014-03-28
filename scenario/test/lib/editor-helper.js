@@ -84,6 +84,10 @@ EditorHelper.prototype.setValue = function setValue(text){
   return browser.executeScript('window.editor.setValue(\'' + text + '\')');
 };
 
+EditorHelper.prototype.getValue = function getValue(){
+  return browser.executeScript('return window.editor.getValue()');
+};
+
 EditorHelper.prototype.setCursor = function setCursor(line, char){
   line --;
   browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
