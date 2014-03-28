@@ -133,11 +133,7 @@ describe('Embedded-console',function(){
     });
 
     it('check that new baseUri was added', function(){
-      // browser.executeScript('return window.editor.getValue()').then(function(ramls){
-      //   console.log(ramls);
-      // });
       expect(editor.getLine(2)).toMatch(/baseUri: http:\/\/mocksvc.mulesoft.com\/mocks\/.*/);
-
     });
 
     methods.forEach(function(method){

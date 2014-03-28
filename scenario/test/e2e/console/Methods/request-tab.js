@@ -52,9 +52,10 @@ describe('Embedded-console Methods',function(){
           '      description:  '
         ].join('\\n');
         editor.setValue(definition);
-        apiConsole.expandCollpaseMethodsbyPos(1);
-        designerAsserts.consoleMethodValidateAllTabDisable(['Request','Responses', 'Try It']);
-        apiConsole.closeMethodPopUp();
+        apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+          designerAsserts.consoleMethodValidateAllTabDisable(['Request','Responses', 'Try It']);
+          apiConsole.closeMethodPopUp();
+        })
       });
     });
 
@@ -77,10 +78,11 @@ describe('Embedded-console Methods',function(){
 				].join('\\n');
 				editor.setValue(definition);
 				designerAsserts.consoleApiTitle('raml with traits at method level');
-				apiConsole.expandCollpaseMethodsbyPos(1);
-				designerAsserts.consoleValidateCurrentMethodName('GET');
-				designerAsserts.consoleValidateMethodTraits(['trait1']);
-				apiConsole.closeMethodPopUp();
+				apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+          designerAsserts.consoleValidateCurrentMethodName('GET');
+          designerAsserts.consoleValidateMethodTraits(['trait1']);
+          apiConsole.closeMethodPopUp();
+        });
 			});
 
       describe('resource level trait and resource Types  after a partial refresh', function(){
@@ -106,10 +108,11 @@ describe('Embedded-console Methods',function(){
           ].join('\\n');
           editor.setValue(definition);
           designerAsserts.consoleApiTitle('after partial refresh');
-          apiConsole.expandCollpaseMethodsbyPos(1);
-          designerAsserts.consoleValidateCurrentMethodName('POST');
-          designerAsserts.consoleResourceTraits(expList);
-          designerAsserts.consoleResourceResourceType(['general']);
+          apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+            designerAsserts.consoleValidateCurrentMethodName('POST');
+            designerAsserts.consoleResourceTraits(expList);
+            designerAsserts.consoleResourceResourceType(['general']);
+          });
         });
 
         xit('trait is displayed after the partial refresh', function(){
@@ -140,10 +143,11 @@ describe('Embedded-console Methods',function(){
 				].join('\\n');
 				editor.setValue(definition);
 				designerAsserts.consoleApiTitle('raml with traits at method level');
-				apiConsole.expandCollpaseMethodsbyPos(1);
-				designerAsserts.consoleValidateCurrentMethodName('POST');
-				designerAsserts.consoleValidateMethodTraits(['trait1','trait2']);
-				apiConsole.closeMethodPopUp();
+				apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+          designerAsserts.consoleValidateCurrentMethodName('POST');
+          designerAsserts.consoleValidateMethodTraits(['trait1','trait2']);
+          apiConsole.closeMethodPopUp();
+        });
 			});
 
 		}); // traits
@@ -160,11 +164,12 @@ describe('Embedded-console Methods',function(){
       editor.setValue(definition);
       designerAsserts.consoleApiTitle('change resource Name');
       designerAsserts.consoleResourceName(['/cont']);
-      apiConsole.expandCollpaseMethodsbyPos(1);
-      designerAsserts.consoleValidateCurrentMethodName('GET');
-//      designerAsserts.consoleValidateMethodDescription('this is get method description');
+      apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+        designerAsserts.consoleValidateCurrentMethodName('GET');
+        designerAsserts.consoleValidateMethodDescription('this is get method description');
+      });
       editor.setLine(3,'/create: ');
-      designerAsserts.consoleResourceName(['/create']);
+      designerAsserts.consoleResourceName(['/create']);     
     });
 
 		it('open a method change to a different one and edit it', function(){
@@ -179,12 +184,13 @@ describe('Embedded-console Methods',function(){
       ].join('\\n');
       editor.setValue(definition);
       designerAsserts.consoleApiTitle('toggle and edit');
-      apiConsole.expandCollpaseMethodsbyPos(1);
-      designerAsserts.consoleValidateCurrentMethodName('GET');
-      apiConsole.toggleBetweenMethodByName('post');
-      editor.setLine(7,'    description: post method description');
-      designerAsserts.consoleValidateCurrentMethodName('POST');
-      apiConsole.closeMethodPopUp();
+      apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+        designerAsserts.consoleValidateCurrentMethodName('GET');
+        apiConsole.toggleBetweenMethodByName('post');
+        editor.setLine(7,'    description: post method description');
+        designerAsserts.consoleValidateCurrentMethodName('POST');
+        apiConsole.closeMethodPopUp();
+      });
 		});
 
 		it('open a method and then delete it', function(){
@@ -220,17 +226,18 @@ describe('Embedded-console Methods',function(){
       ].join('\\n');
       editor.setValue(definition);
       designerAsserts.consoleApiTitle('delete current method');
-      apiConsole.expandCollpaseMethodsbyPos(1);
-      designerAsserts.consoleValidateCurrentMethodName('GET');
-      apiConsole.toggleBetweenMethodByName('patch');
-      editor.removeLine(6);
-      editor.removeLine(6);
-      var expList ={
-        'r0':['GET']
-      };
-      designerAsserts.consoleResourceMethods(expList);
-      designerAsserts.consoleValidateCurrentMethodName('GET');
-      apiConsole.closeMethodPopUp();
+      apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+        designerAsserts.consoleValidateCurrentMethodName('GET');
+        apiConsole.toggleBetweenMethodByName('patch');
+        editor.removeLine(6);
+        editor.removeLine(6);
+        var expList ={
+          'r0':['GET']
+        };
+        designerAsserts.consoleResourceMethods(expList);
+        designerAsserts.consoleValidateCurrentMethodName('GET');
+        apiConsole.closeMethodPopUp();
+      });
 		});
 
 	});  // common view
@@ -248,10 +255,10 @@ describe('Embedded-console Methods',function(){
             '    description: this is '+method+' description at method level'
           ].join('\\n');
           editor.setValue(definition);
-          apiConsole.expandCollpaseMethodsbyPos(1);
-          designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
-          designerAsserts.consoleValidateMethodDescription('this is '+method+' description at method level');
-          apiConsole.closeMethodPopUp();
+          apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+            designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+            apiConsole.closeMethodPopUp();
+          });
         });
       });
     });
@@ -287,36 +294,16 @@ describe('Embedded-console Methods',function(){
               '        enum: [hola, chau, adios]'
             ].join('\\n');
             editor.setValue(definition);
-            apiConsole.expandCollpaseMethodsbyPos(1);
-          });
-
-          it('Validate current method name', function(){
-            designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
-          });
-
-          it('validate active tab', function(){
-            designerAsserts.consoleValidateActiveTab('Request');
-          });
-
-          it('validate method description', function(){
-            designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
-          });
-
-          it('validate Section header', function(){
-            designerAsserts.consoleValidateHeadersH2(option);
-          });
-
-          it(method+' '+option+'headers with and without display name',function(){
-            designerAsserts.consoleValidateHeadersDisplayNameList(option,['HEADER 1','header2']);
-          });
-          it(method+' headers with and without description', function(){
-            designerAsserts.consoleValidateHeadersDescription(option,['','this is the description header1']);
-          });
-
-          it(method+' headers constrains - type, default, min, max etc', function(){
-            designerAsserts.consoleValidateHeadersConstraints(option,['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
-            apiConsole.closeMethodPopUp();
-
+            apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+              designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+              designerAsserts.consoleValidateActiveTab('Request');
+              designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
+              designerAsserts.consoleValidateHeadersH2(option);
+              designerAsserts.consoleValidateHeadersDisplayNameList(option,['HEADER 1','header2']);
+              designerAsserts.consoleValidateHeadersDescription(option,['','this is the description header1']);
+              designerAsserts.consoleValidateHeadersConstraints(option,['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
+              apiConsole.closeMethodPopUp();
+            });
           });
         });
 
@@ -424,39 +411,17 @@ describe('Embedded-console Methods',function(){
                 '          enum: [hola, chau, adios]'
               ].join('\\n');
               editor.setValue(definition);
-              apiConsole.expandCollpaseMethodsbyPos(1);
-            });
-
-            it('Validate current method name', function(){
-              designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
-            });
-
-            it('validate active tab', function(){
-              designerAsserts.consoleValidateActiveTab('Request');
-            });
-
-            it('validate method description', function(){
-              designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
-            });
-
-            it('validate Section header', function(){
-              designerAsserts.consoleValidateHeadersH2('Body');
-            });
-
-            it('validate media tyoes', function(){
-              designerAsserts.consoleValidateBodyMediaTypes([option]);
-            });
-
-            it(method+' '+option+'headers with and without display name',function(){
-              designerAsserts.consoleValidateHeadersDisplayNameList('Body',['HEADER 1','header2']);
-            });
-            it(method+' headers with and without description', function(){
-              designerAsserts.consoleValidateHeadersDescription('Body',['','this is the description header1']);
-            });
-
-            it(method+' headers constrains - type, default, min, max etc', function(){
-              designerAsserts.consoleValidateHeadersConstraints('Body',['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
-              apiConsole.closeMethodPopUp();
+              apiConsole.expandCollpaseMethodsbyPos(1).then(function(){
+                designerAsserts.consoleValidateCurrentMethodName(method.toUpperCase());
+                designerAsserts.consoleValidateActiveTab('Request');
+                designerAsserts.consoleValidateMethodDescription('this is '+method+' description');
+                designerAsserts.consoleValidateHeadersH2('Body');
+                designerAsserts.consoleValidateBodyMediaTypes([option]);
+                designerAsserts.consoleValidateHeadersDisplayNameList('Body',['HEADER 1','header2']);
+                designerAsserts.consoleValidateHeadersDescription('Body',['','this is the description header1']);
+                designerAsserts.consoleValidateHeadersConstraints('Body',['required, integer between 4-10, default: DOS','one of (hola, chau, adios) matching a*a, 2-6 characters, default: chau']);
+                apiConsole.closeMethodPopUp();
+              });
             });
           });
         });
