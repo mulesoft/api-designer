@@ -119,6 +119,7 @@
         function modifyFile(data) {
           file.dirty     = false;
           file.persisted = true;
+          file.loaded    = true;
           file.contents  = data;
 
           return file;
