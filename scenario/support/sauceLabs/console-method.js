@@ -9,11 +9,11 @@ exports.config = {
     name: 'API-Portal-console-methods'
   },
 
-  allScriptsTimeout: 90000,
+  allScriptsTimeout: 100000,
 
   specs: [
-    '../../test/e2e/console/methods/request-tab.js',
-    '../../test/e2e/console/methods/response-tab.js',
+    '../../test/e2e/console/Methods/request-tab.js',
+    '../../test/e2e/console/Methods/response-tab.js',
     '../../test/lib/*.js'
   ],
 
