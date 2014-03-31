@@ -6,7 +6,7 @@ exports.config = {
     // firefox, safari
     name: 'API-portal- Regression'
   },
-  allScriptsTimeout: 50000,
+  allScriptsTimeout: 100000,
 
   specs: [
     '../test/e2e/file-browser.js',
@@ -14,9 +14,9 @@ exports.config = {
     '../test/e2e/raml-example/muse-e2e.js',
     '../test/e2e/console/console-defaultview.js',
     '../test/e2e/console/embedded-console.js',
-    '../test/e2e/console/methods/request-tab.js',
-    '../test/e2e/console/methods/response-tab.js',
-    '../test/e2e/console/methods/console-method-toggle.js',
+    '../test/e2e/console/Methods/request-tab.js',
+    '../test/e2e/console/Methods/response-tab.js',
+    '../test/e2e/console/Methods/console-method-toggle.js',
     '../test/e2e/editor-parser/parser-regressions.js',
     '../test/e2e/editor-parser/parser-root.js',
     '../test/e2e/editor-parser/parser-traits.js',

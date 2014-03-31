@@ -29,8 +29,14 @@ describe('Mocking service',function(){
     });
 
     it('mocking servise button is displayed', function(){
-      editor.isMockingServiceHidden().then(function(text){
-        expect(text).toEqual('not hidden');
+      browser.wait(function(){
+        return editor.isMockingServiceHidden().then(function(text){
+          return (text)==='not hidden';
+        });
+      }).then(function(){
+        editor.isMockingServiceHidden().then(function(text){
+          expect(text).toEqual('not hidden');
+        });
       });
     });
 

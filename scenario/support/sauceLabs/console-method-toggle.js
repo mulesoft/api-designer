@@ -9,10 +9,10 @@ exports.config = {
     name: 'console-methods-toggle'
   },
 
-  allScriptsTimeout: 90000,
+  allScriptsTimeout: 100000,
 
   specs: [
-    '../../test/e2e/console/methods/console-method-toggle.js',
+    '../../test/e2e/console/Methods/console-method-toggle.js',
     '../../test/lib/*.js'
   ],
 
