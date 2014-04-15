@@ -1,9 +1,9 @@
-html {
+html[role=api-designer] {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   height: 100%;
 }
-body {
+html[role=api-designer] body {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   background: #fafafa;
@@ -14,10 +14,10 @@ body {
   padding: 0;
   font-family: 'Open Sans', sans-serif;
 }
-.hide-display {
+html[role=api-designer] .hide-display {
   display: none !important;
 }
-div.container {
+html[role=api-designer] div.container {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   width: 100%;

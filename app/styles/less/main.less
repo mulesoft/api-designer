@@ -1,29 +1,29 @@
 @import "variables.less";
 
-html {
+html[role=api-designer] {
   box-sizing: border-box;
   height: 100%;
-}
 
-body {
-  box-sizing: border-box;
-  background: #fafafa;
-  color: #333;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: 'Open Sans', sans-serif;
-}
+  body {
+    box-sizing: border-box;
+    background: #fafafa;
+    color: #333;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: 'Open Sans', sans-serif;
+  }
 
-.hide-display {
-  display: none !important;
-}
+  .hide-display {
+    display: none !important;
+  }
 
-div.container {
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
+  div.container {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 div[role=raml-editor] {
