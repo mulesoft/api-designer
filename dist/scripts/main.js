@@ -1975,12 +1975,15 @@
         this.files.push(file);
         return file;
       };
-      RamlDirectory.prototype.removeFile = function (file) {
-        var index = this.files.indexOf(file);
-        if (index !== -1) {
-          this.files.splice(index, 1);
-        }
-        return service.removeFile(file);
+      RamlDirectory.prototype.removeFile = function removeFile(file) {
+        var self = this;
+        return service.removeFile(file).then(function () {
+          var index = self.files.indexOf(file);
+          if (index !== -1) {
+            self.files.splice(index, 1);
+          }
+        });
+        ;
       };
       function handleErrorFor(file) {
         return function markFileWithError(error) {
@@ -2021,6 +2024,7 @@
           return file;
         }
         return fileSystem.load(file.path).then(modifyFile, handleErrorFor(file));
+        ;
       };
       service.removeFile = function removeFile(file) {
         function modifyFile() {
@@ -2028,8 +2032,10 @@
           file.persisted = false;
           return Object.freeze(file);
         }
-        $rootScope.$broadcast('event:raml-editor-file-removed', file);
-        return fileSystem.remove(file.path).then(modifyFile, handleErrorFor(file));
+        return fileSystem.remove(file.path).then(modifyFile, handleErrorFor(file)).then(function (file) {
+          $rootScope.$broadcast('event:raml-editor-file-removed', file);
+        });
+        ;
       };
       service.createFile = function createFile(name) {
         var path = defaultPath + name;
