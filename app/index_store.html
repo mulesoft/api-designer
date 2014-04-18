@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>API Designer</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+
+    <!-- build:css({.,.tmp,app}) styles/main.css -->
+    <link rel="stylesheet" href="vendor/styles/font-awesome.css">
+    <link rel="stylesheet" href="vendor/styles/codemirror.css">
+    <link rel="stylesheet" href="vendor/styles/solarized.css">
+    <link rel="stylesheet" href="vendor/styles/show-hint.css">
+
+    <link rel="stylesheet" href="bower_components/api-console/dist/styles/app.css">
+
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/shelf.css">
+    <link rel="stylesheet" href="styles/splitter.css">
+    <link rel="stylesheet" href="styles/errors.css">
+    <link rel="stylesheet" href="styles/file-browser.css">
+    <!--
+    <link rel="stylesheet" href="styles/console-overrides.css">
+    -->
+    <link rel="stylesheet" href="styles/code-mirror-overrides.css">
+    <link rel="stylesheet" href="styles/font-awesome-overrides.css">
+    <link rel="stylesheet" href="styles/modal.css">
+    <link rel="stylesheet" href="styles/menubar.css">
+    <!-- endbuild -->
+  </head>
+  <body ng-app="ramlEditorApp" class="{{$root.theme}}">
+    <div class="container" ng-include src="'views/raml-editor-main.tmpl.html'"></div>
+
+    <!-- build:js({.,.tmp,app}) scripts/vendor.js -->
+    <script src="vendor/scripts/codemirror.js"></script>
+    <script src="vendor/scripts/foldcode.js"></script>
+    <script src="vendor/scripts/foldgutter.js"></script>
+    <script src="vendor/scripts/gfm.js"></script>
+    <script src="vendor/scripts/javascript.js"></script>
+    <script src="vendor/scripts/markdown.js"></script>
+    <script src="vendor/scripts/overlay.js"></script>
+    <script src="vendor/scripts/show-hint.js"></script>
+    <script src="vendor/scripts/xml.js"></script>
+
+    <script src="bower_components/angular/angular.js"></script>
+    <script src="bower_components/angular-cookies/angular-cookies.js"></script>
+    <script src="bower_components/angular-resource/angular-resource.js"></script>
+    <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
+    <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
+    <script src="bower_components/es5-shim/es5-shim.js"></script>
+    <script src="bower_components/showdown/src/showdown.js"></script>
+    <script src="bower_components/showdown/src/extensions/table.js"></script>
+
+    <script src="bower_components/raml-js-parser/dist/raml-parser.js"></script>
+    <script src="bower_components/api-console/dist/scripts/vendor/jquery.js"></script>
+    <script src="bower_components/api-console/dist/scripts/vendor/vkbeautify.js"></script>
+    <script src="bower_components/api-console/dist/scripts/app.js"></script>
+    <script src="bower_components/raml-grammar/dist/suggest.js"></script>
+    <!-- endbuild -->
+
+    <!-- build:js({.,.tmp,app}) scripts/scripts.js -->
+    <script src="scripts/app.js"></script>
+    <script src="scripts/services/utils.js"></script>
+    <script src="scripts/services/config.js"></script>
+    <script src="scripts/services/lightweight-dom.js"></script>
+    <script src="scripts/services/lightweight-parse.js"></script>
+    <script src="scripts/services/code-folding.js"></script>
+    <script src="scripts/services/code-mirror.js"></script>
+    <script src="scripts/services/code-mirror-errors.js"></script>
+    <script src="scripts/services/event.js"></script>
+    <script src="scripts/services/raml-hint.js"></script>
+    <script src="scripts/services/raml-snippets.js"></script>
+    <script src="scripts/services/raml-highlight.js"></script>
+    <script src="scripts/services/raml-highlight-config.js"></script>
+    <script src="scripts/services/raml-repository.js"></script>
+    <script src="scripts/services/file-system.js"></script>
+    <script src="scripts/services/raml-editor-filename-prompt.js"></script>
+    <script src="scripts/services/raml-editor-remove-file-prompt.js"></script>
+    <script src="scripts/services/api-storage-file-system.js"></script>
+    <script src="scripts/services/mocking-service-client.js"></script>
+    <script src="scripts/services/mocking-service.js"></script>
+    <script src="scripts/filters/string-filters.js"></script>
+    <script src="scripts/controllers/raml-editor-main.js"></script>
+    <script src="scripts/controllers/raml-editor-shelf.js"></script>
+    <script src="scripts/controllers/notifications.js"></script>
+    <script src="scripts/controllers/mocking-service-controller.js"></script>
+    <script src="scripts/directives/splitter.js"></script>
+    <script src="scripts/directives/raml-editor-context-menu.js"></script>
+    <script src="scripts/directives/raml-editor-file-browser.js"></script>
+    <script src="scripts/directives/raml-editor-save-file-button.js"></script>
+    <script src="scripts/directives/raml-editor-new-file-button.js"></script>
+    <!-- endbuild -->
+  </body>
+</html>
