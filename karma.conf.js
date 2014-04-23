@@ -83,8 +83,7 @@ module.exports = function(config) {
     // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
     reporters: [
       'dots',
-      'coverage',
-      'junit'
+      'coverage'
     ],
 
     preprocessors: {

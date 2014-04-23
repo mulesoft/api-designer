@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html role="api-designer">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
@@ -7,20 +7,21 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
 
-    <!-- build:css({.,.tmp,app}) styles/main.css -->
+    <!-- build:css({.,.tmp,app}) styles/vendor.css -->
     <link rel="stylesheet" href="vendor/styles/font-awesome.css">
     <link rel="stylesheet" href="vendor/styles/codemirror.css">
     <link rel="stylesheet" href="vendor/styles/solarized.css">
     <link rel="stylesheet" href="vendor/styles/show-hint.css">
 
     <link rel="stylesheet" href="bower_components/api-console/dist/styles/app.css">
+    <!-- endbuild -->
 
+    <!-- build:css({.,.tmp,app}) styles/main.css -->
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/shelf.css">
     <link rel="stylesheet" href="styles/splitter.css">
     <link rel="stylesheet" href="styles/errors.css">
     <link rel="stylesheet" href="styles/file-browser.css">
-    <link rel="stylesheet" href="styles/console-overrides.css">
     <link rel="stylesheet" href="styles/code-mirror-overrides.css">
     <link rel="stylesheet" href="styles/font-awesome-overrides.css">
     <link rel="stylesheet" href="styles/modal.css">
@@ -28,7 +29,9 @@
     <!-- endbuild -->
   </head>
   <body ng-app="ramlEditorApp" class="{{$root.theme}}">
-    <div class="container" ng-include src="'views/raml-editor-main.tmpl.html'"></div>
+    <div class="container">
+        <raml-editor></raml-editor>
+    </div>
 
     <!-- build:js({.,.tmp,app}) scripts/vendor.js -->
     <script src="vendor/scripts/codemirror.js"></script>
@@ -57,7 +60,7 @@
     <script src="bower_components/raml-grammar/dist/suggest.js"></script>
     <!-- endbuild -->
 
-    <!-- build:js({.,.tmp,app}) scripts/scripts.js -->
+    <!-- build:js({.,.tmp,app}) scripts/main.js -->
     <script src="scripts/app.js"></script>
     <script src="scripts/services/utils.js"></script>
     <script src="scripts/services/config.js"></script>
@@ -84,6 +87,7 @@
     <script src="scripts/controllers/notifications.js"></script>
     <script src="scripts/controllers/mocking-service-controller.js"></script>
     <script src="scripts/directives/splitter.js"></script>
+    <script src="scripts/directives/raml-editor.js"></script>
     <script src="scripts/directives/raml-editor-context-menu.js"></script>
     <script src="scripts/directives/raml-editor-file-browser.js"></script>
     <script src="scripts/directives/raml-editor-save-file-button.js"></script>

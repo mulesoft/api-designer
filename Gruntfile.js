@@ -3,28 +3,11 @@
 var LIVERELOAD_PORT = 35730;
 var lrSnippet       = require('connect-livereload')({port: LIVERELOAD_PORT});
 
-function connectStatic(connect, dir, route) {
-  var staticMiddleware = connect.static(require('path').resolve(dir));
-  return {
-    route:  route,
-    handle: function connectStaticMiddleware(req, res, next) {
-      if (route) {
-        req.url = req.url.replace(route, '');
-      }
-      staticMiddleware(req, res, next);
-    }
-  };
-}
-
-function connectProxy(connect, route) {
+function proxy() {
   var url     = require('url');
   var request = require('request');
 
-  return function connectProxyMiddleware(req, res, next) {
-    if (req.url.indexOf(route) !== 0) {
-      return next();
-    }
-
+  return function proxyMiddleware(req, res, next) {
     if (req.method.toUpperCase() === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Origin',  '*');
       res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With');
@@ -32,7 +15,7 @@ function connectProxy(connect, route) {
     }
 
     var proxy = request({
-      uri: url.parse(req.url.substr(route.length), true)
+      uri: url.parse(req.url.slice(1), true)
     });
 
     // Proxy the error message back to the client.
@@ -62,7 +45,7 @@ function connectProxy(connect, route) {
 
 module.exports = function (grunt) {
   // load all grunt tasks
-  require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks);
+  require('load-grunt-tasks')(grunt);
 
   // configurable paths
   var yeomanConfig = {
@@ -86,17 +69,17 @@ module.exports = function (grunt) {
 
         files: [
           '<%= yeoman.app %>/{,*/}*.html',
-          '{.tmp,<%= yeoman.app %>}/scripts/{,*/}*.js',
-          '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.css',
-          '{.tmp,<%= yeoman.app %>}/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
-          '{.tmp,<%= yeoman.app %>}/vendor/scripts/{,*/}*.js',
-          '{.tmp,<%= yeoman.app %>}/vendor/styles/{,*/}*.css',
-          '{.tmp,<%= yeoman.app %>}/vendor/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
+          '<%= yeoman.app %>/scripts/{,*/}*.js',
+          '<%= yeoman.app %>/styles/{,*/}*.css',
+          '<%= yeoman.app %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}',
+          '<%= yeoman.app %>/vendor/scripts/{,*/}*.js',
+          '<%= yeoman.app %>/vendor/styles/{,*/}*.css',
+          '<%= yeoman.app %>/vendor/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
         ]
       },
 
       less: {
-        files: '{.tmp,<%= yeoman.app %>}/styles/{,*/}*.less',
+        files: '<%= yeoman.app %>/styles/{,*/}*.less',
         tasks: 'less-and-autoprefixer'
       }
     },
@@ -113,22 +96,9 @@ module.exports = function (grunt) {
             return [
               lrSnippet,
 
-              connectStatic(connect, '.tmp'),
-              connectStatic(connect, yeomanConfig.app),
-              connectStatic(connect, 'bower_components', '/bower_components'),
-
-              connectProxy (connect, '/proxy/')
-            ];
-          }
-        }
-      },
-
-      dist: {
-        options: {
-          middleware: function (connect) {
-            return [
-              connectStatic(connect, yeomanConfig.dist),
-              connectProxy (connect, '/proxy/')
+              connect().use('/',                 connect.static(yeomanConfig.app)),
+              connect().use('/bower_components', connect.static('./bower_components')),
+              connect().use('/proxy/',           proxy())
             ];
           }
         }
@@ -142,19 +112,15 @@ module.exports = function (grunt) {
     },
 
     clean: {
-      dist: {
-        files: [
-          {
-            dot: true,
-            src: [
-              '.tmp',
-              '<%= yeoman.dist %>/*',
-              '!<%= yeoman.dist %>/.git*'
-            ]
-          }
-        ]
-      },
-      server: '.tmp'
+      build: {
+        files: [{
+          dot: true,
+          src: [
+            '.tmp',
+            '<%= yeoman.dist %>'
+          ]
+        }]
+      }
     },
 
     jshint: {
@@ -176,67 +142,44 @@ module.exports = function (grunt) {
       ]
     },
 
-    rev: {
-      dist: {
-        files: {
-          src: [
-            '<%= yeoman.dist %>/scripts/{,*/}*.js',
-            '<%= yeoman.dist %>/styles/{,*/}*.css',
-            '<%= yeoman.dist %>/images/{,*/}*.{png,jpg,jpeg,gif,webp,svg}'
-          ]
-        }
-      }
-    },
-
     useminPrepare: {
-      html: '<%= yeoman.app %>/index.html',
       options: {
-        dest: '<%= yeoman.dist %>'
-      }
+        dest: '<%= yeoman.dist %>',
+        flow: {
+          steps: {
+            js: [require('./tasks/copy_vendor'), 'concat'],
+            css: ['concat']
+          },
+          post: {}
+        }
+      },
+
+      html: '<%= yeoman.app %>/index.html'
     },
 
     usemin: {
-      html: ['<%= yeoman.dist %>/{,*/}*.html'],
-      css: ['<%= yeoman.dist %>/styles/{,*/}*.css'],
       options: {
-        assetsDirs: ['<%= yeoman.dist %>']
-      }
+        dirs: ['<%= yeoman.dist %>']
+      },
+
+      html: '<%= yeoman.dist %>/index.html'
     },
 
-    htmlmin: {
-      dist: {
-        files: [
-          {
-            expand: true,
-            cwd: '<%= yeoman.app %>',
-            src: ['*.html'],
-            dest: '<%= yeoman.dist %>'
-          }
-        ]
-      }
-    },
-
-    // Put files not handled in other tasks here
     copy: {
       dist: {
         files: [
           {
             expand: true,
-            dot: true,
-            cwd: '<%= yeoman.app %>',
-            dest: '<%= yeoman.dist %>',
-            src: [
-              '*.{ico,png,txt}',
-              '.htaccess',
-              'images/{,*/}*.{gif,webp,svg,png}',
-              'styles/fonts/*'
-            ]
+            cwd:    '<%= yeoman.app %>',
+            src:    '*.html',
+            dest:   '<%= yeoman.dist %>'
           },
+
           {
             expand: true,
-            cwd: '<%= yeoman.app %>/vendor/font/',
-            dest: '<%= yeoman.dist %>/font/',
-            src: ['*']
+            cwd:    '<%= yeoman.app %>/vendor/font',
+            src:    '*',
+            dest:   '<%= yeoman.dist %>/font'
           }
         ]
       }
@@ -245,29 +188,32 @@ module.exports = function (grunt) {
     karma: {
       unit: {
         configFile: 'karma.conf.js',
-        singleRun: true
+        singleRun:  true
       }
     },
 
     ngmin: {
       dist: {
-        files: [
-          {
-            expand: true,
-            cwd: '<%= yeoman.dist %>/scripts',
-            src: '*.js',
-            dest: '<%= yeoman.dist %>/scripts'
-          }
-        ]
+        files: {
+          '<%= yeoman.dist %>/scripts/main.js': '<%= yeoman.dist %>/scripts/main.js'
+        }
       }
     },
 
     uglify: {
       dist: {
         files: {
-          '<%= yeoman.dist %>/scripts/scripts.js': [
-            '<%= yeoman.dist %>/scripts/scripts.js'
-          ]
+          '<%= yeoman.dist %>/scripts/main.min.js':   '<%= yeoman.dist %>/scripts/main.js',
+          '<%= yeoman.dist %>/scripts/vendor.min.js': '<%= yeoman.dist %>/scripts/vendor.js'
+        }
+      }
+    },
+
+    cssmin: {
+      dist: {
+        files: {
+          '<%= yeoman.dist %>/styles/main.min.css':   '<%= yeoman.dist %>/styles/main.css',
+          '<%= yeoman.dist %>/styles/vendor.min.css': '<%= yeoman.dist %>/styles/vendor.css'
         }
       }
     },
@@ -280,26 +226,28 @@ module.exports = function (grunt) {
 
       app: {
         options: {
-          concat: 'dist/scripts/scripts.js'
+          concat: 'generated'
         },
 
-        src:  'app/views/**/*.html',
+        cwd: 'app',
+        src:  'views/**/*.html',
         dest: 'dist/templates.js'
       },
 
       test: {
-        src:  'app/views/**/*.html',
+        cwd: 'app',
+        src:  'views/**/*.html',
         dest: 'test/spec/support/templates.js'
       }
     },
 
     less: {
       files: {
-        expand: true,
+        expand:  true,
         flatten: true,
-        src: 'app/styles/less/*.less',
-        dest: 'app/styles',
-        ext: '.css'
+        src:     'app/styles/less/*.less',
+        dest:    'app/styles',
+        ext:     '.css'
       }
     },
 
@@ -307,6 +255,7 @@ module.exports = function (grunt) {
       options: {
         browsers: ['last 2 versions']
       },
+
       app: {
         src: 'app/styles/*.css'
       }
@@ -323,7 +272,7 @@ module.exports = function (grunt) {
 
       debug: {
         configFile: 'scenario/support/protractor.conf.js',
-        debug: true
+        debug:      true
       },
 
       saucelabs: {
@@ -332,70 +281,68 @@ module.exports = function (grunt) {
     }
   });
 
-  grunt.registerTask('server', function (target) {
-    if (target === 'dist') {
-      return grunt.task.run([
-        'build',
-        'connect:dist:keepalive',
-        'open'
-      ]);
-    }
-
-    grunt.task.run([
-      'clean:server',
-      'jshint',
-      'less-and-autoprefixer',
-      'connect:livereload',
-      'open',
-      'watch'
-    ]);
-  });
-
-  grunt.registerTask('test', [
-    'jshint',
-    'ngtemplates:test',
-    'karma'
-  ]);
-
-  grunt.registerTask('build', [
-    'clean:dist',
-    'jshint',
-    'less-and-autoprefixer',
-    'useminPrepare',
-    'ngtemplates:app',
-    'concat',
-    'htmlmin',
-    'copy:dist',
-    'ngmin',
-    'rev',
-    'usemin'
-  ]);
+  grunt.registerTask('jshint-once', (function jshintOnceFactory() {
+    var jshinted = false;
+    return function jshintOnce() {
+      if (!jshinted) {
+        jshinted = true;
+        grunt.task.run('jshint');
+      }
+    };
+  })());
 
   grunt.registerTask('less-and-autoprefixer', [
     'less',
     'autoprefixer'
   ]);
 
+  grunt.registerTask('server', [
+    'jshint-once',
+    'less-and-autoprefixer',
+    'connect:livereload',
+    'open',
+    'watch'
+  ]);
+
+  grunt.registerTask('build', [
+    'jshint-once',
+    'clean:build',
+    'useminPrepare',
+    'less-and-autoprefixer',
+    'ngtemplates:app',
+    'concat',
+    'copy:dist',
+    'copy:generated',
+    'ngmin',
+    'uglify:dist',
+    'cssmin:dist',
+    'usemin'
+  ]);
+
+  grunt.registerTask('test', [
+    'jshint-once',
+    'ngtemplates:test',
+    'karma'
+  ]);
+
   grunt.registerTask('localScenario', [
-    'clean:server',
-    'jshint',
+    'jshint-once',
     'connect:livereload',
     'protractor:local'
   ]);
 
   grunt.registerTask('scenario', [
-    'clean:server',
-    'jshint',
+    'jshint-once',
     'protractor:scenario'
   ]);
 
   grunt.registerTask('saucelabs', [
-    'clean:server',
-    'jshint',
+    'jshint-once',
     'protractor:saucelabs'
   ]);
 
   grunt.registerTask('default', [
+    'jshint-once',
     'test',
     'build'
   ]);

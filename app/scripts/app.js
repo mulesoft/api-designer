@@ -1,7 +1,7 @@
-'use strict';
+(function () {
+  'use strict';
 
-angular.module('ramlEditorApp',
-  [
+  angular.module('ramlEditorApp', [
     // angular
     'ngResource',
     'ngSanitize',
@@ -22,9 +22,10 @@ angular.module('ramlEditorApp',
     'utils',
     'lightweightDOM',
     'splitter'
-  ]
-)
-  .run(function ($window) {
-    // Adding proxy settings for api console
-    $window.RAML.Settings.proxy = '/proxy/';
-  });
+  ])
+    .run(function ($window) {
+      // Adding proxy settings for api console
+      $window.RAML.Settings.proxy = '/proxy/';
+    })
+  ;
+})();
