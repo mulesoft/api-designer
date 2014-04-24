@@ -224,6 +224,7 @@ EditorHelper.prototype.deleteAFile = function deleteAFile(pos,fileName,last){
           expect(alertDialog.getText()).toEqual('The file browser is empty. Please provide a name for the new file:');
           alertDialog.dismiss();
         }
+        browser.sleep(1000);
         d.fulfill();
       });
     });

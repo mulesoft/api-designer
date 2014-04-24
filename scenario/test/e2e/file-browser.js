@@ -30,13 +30,15 @@ describe('file_browser ',function(){
         'title: My API new example'
       ].join('\\n');
       editor.setValue(definition);
+      designerAsserts.consoleApiTitle('My API new example');
+
       editor.selectAFileByPos(2).then(function(){
         designerAsserts.consoleApiTitle('');
-        editor.deleteAFile(2,'Untitled-1.raml',false);
-        designerAsserts.editorCheckFileNameNotInList('Untitled-1.raml');
-        designerAsserts.editorCheckFileNameInList('example1.raml');
+        editor.deleteAFile(2,'Untitled-1.raml',false).then(function(){
+          designerAsserts.editorCheckFileNameNotInList('Untitled-1.raml');
+          designerAsserts.editorCheckFileNameInList('example1.raml');
+        });
       });
-      designerAsserts.consoleApiTitle('My API new example');
     });
 
     it('delete current file - saved', function(){

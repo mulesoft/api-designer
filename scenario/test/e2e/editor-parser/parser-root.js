@@ -25,7 +25,7 @@ describe('parser',function(){
           'title: !include https://some.broken.link.com/'
         ].join('\\n');
         editor.setValue(definition);
-        designerAsserts.parserError('2','error: cannot fetch https://some.broken.link.com/, check that the server is up and that CORS is enabled(HTTP 404)');
+        designerAsserts.parserError('2','error: cannot fetch https://some.broken.link.com/, check that the server is up and that CORS is enabled');
       });
 
       it('file name/URL cannot be null', function () {
