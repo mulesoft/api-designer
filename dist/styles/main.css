@@ -372,70 +372,63 @@ div[role=raml-editor].light div[role=shelf] ul[role=sections] > li[role=section]
   color: #444;
   text-shadow: 1px 1px 1px #ddd;
 }
-/* Icon Sizes */
-.icon-big {
-  font-size: 19px;
-}
-.icon-small {
-  font-size: 14px;
-}
 ul[role=items] > li > i {
   text-shadow: 0 0 2px #000;
 }
 /* Category colors */
 /* TODO: extract color on less files */
-/*li.parameters > ul[role=items] > li > i.icon-reply {
+/*li.parameters > ul[role=items] > li > i.fa-reply {
   color: #1f77b4;
 }
-li.security > ul[role=items] > li > i.icon-reply {
+li.security > ul[role=items] > li > i.fa-reply {
   color: #ff7f0e;
 }
-li.root > ul[role=items] > li > i.icon-reply {
+li.root > ul[role=items] > li > i.fa-reply {
   color: #2ca02c;
 }
-li.docs > ul[role=items] > li > i.icon-reply {
+li.docs > ul[role=items] > li > i.fa-reply {
   color: #d62728;
 }
-li.methods > ul[role=items] > li > i.icon-reply {
+li.methods > ul[role=items] > li > i.fa-reply {
   color: #9467bd;
 }
-li.responses > ul[role=items] > li > i.icon-reply {
+li.responses > ul[role=items] > li > i.fa-reply {
   color: #e377c2;
 }
-li.resources > ul[role=items] > li > i.icon-reply {
+li.resources > ul[role=items] > li > i.fa-reply {
   color: #bcbd22;
 }
-li.traits-and-types ul[role=items] > li > i.icon-reply {
+li.traits-and-types ul[role=items] > li > i.fa-reply {
   color: #17becf;
 }*/
-li.main > ul[role=items] > li > i.icon-reply {
+li.main > ul[role=items] > li > i.fa-reply {
   color: #859900;
 }
-li.parameters > ul[role=items] > li > i.icon-reply {
+li.parameters > ul[role=items] > li > i.fa-reply {
   color: #17becf;
 }
-li.security > ul[role=items] > li > i.icon-reply {
+li.security > ul[role=items] > li > i.fa-reply {
   color: #d33682;
 }
-li.root > ul[role=items] > li > i.icon-reply {
+li.root > ul[role=items] > li > i.fa-reply {
   color: #ff7f0e;
 }
-li.docs > ul[role=items] > li > i.icon-reply {
+li.docs > ul[role=items] > li > i.fa-reply {
   color: #ff7f0e;
 }
-li.methods > ul[role=items] > li > i.icon-reply {
+li.methods > ul[role=items] > li > i.fa-reply {
   color: #1f77b4;
 }
-li.responses > ul[role=items] > li > i.icon-reply {
+li.responses > ul[role=items] > li > i.fa-reply {
   color: #17becf;
 }
-li.body > ul[role=items] > li > i.icon-reply {
+li.body > ul[role=items] > li > i.fa-reply {
   color: #17becf;
 }
-li.resources > ul[role=items] > li > i.icon-reply {
+li.resources > ul[role=items] > li > i.fa-reply {
   color: #d62728;
 }
-li.traits-and-types ul[role=items] > li > i.icon-reply {
+li.traits-and-types ul[role=items] > li > i.fa-reply {
   color: #d33682;
 }
 
@@ -709,13 +702,13 @@ div .noselect {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-[role=browser] .file-list .file-item .icon {
+[role=browser] .file-list .file-item .fa {
   display: none;
   padding-left: 10px;
   font-size: 15px;
 }
-[role=browser] .file-list .file-item.geared .icon,
-[role=browser] .file-list .file-item:hover .icon {
+[role=browser] .file-list .file-item.geared .fa,
+[role=browser] .file-list .file-item:hover .fa {
   display: block;
 }
 [role=browser] .file-list .file-item.dirty .file-name:before {
@@ -1095,129 +1088,3 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   left: -webkit-calc(100% - 2em - 3px);
   left: calc(100% - 2em - 3px);
 }
-
-angular.module('ramlEditorApp').run(['$templateCache', function($templateCache) {
-  'use strict';
-
-  $templateCache.put('views/help.html',
-    "<div class=\"modal-header\">\n" +
-    "    <h3><i class=\"icon-question-sign\"></i> Help</h3>\n" +
-    "</div>\n" +
-    "\n" +
-    "<div class=\"modal-body\">\n" +
-    "    <p>\n" +
-    "        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n" +
-    "        <br />\n" +
-    "        <br />\n" +
-    "        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n" +
-    "    </p>\n" +
-    "\n" +
-    "    <p>\n" +
-    "        To learn more about the RAML specification and other tools which support RAML, please visit <a href=\"http://www.raml.org\" target=\"_blank\">http://www.raml.org</a>.\n" +
-    "        <br />\n" +
-    "        <br />\n" +
-    "        For specific questions, or to get help from the community, head to the community forum at <a href=\"http://forums.raml.org\" target=\"_blank\">http://forums.raml.org</a>.\n" +
-    "    </p>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('views/raml-editor-context-menu.tmpl.html',
-    "<ul role=\"context-menu\" ng-show=\"opened\">\n" +
-    "  <li role=\"context-menu-item\" ng-repeat=\"action in actions\" ng-click=\"action.execute()\">{{ action.label }}</li>\n" +
-    "</ul>\n"
-  );
-
-
-  $templateCache.put('views/raml-editor-file-browser.tmpl.html',
-    "<raml-editor-context-menu></raml-editor-context-menu>\n" +
-    "<ul class=\"file-list\">\n" +
-    "  <li class=\"file-item\"\n" +
-    "      ng-repeat=\"file in homeDirectory.files | orderBy:'name'\"\n" +
-    "      ng-click=\"fileBrowser.selectFile(file)\"\n" +
-    "      ng-class=\"{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty, geared: fileBrowser.contextMenuOpenedFor(file)}\">\n" +
-    "    <span class=\"file-name\">{{file.name}}</span>\n" +
-    "    <i class=\"icon icon-cog\" ng-click=\"fileBrowser.showContextMenu($event, file)\"></i>\n" +
-    "  </li>\n" +
-    "</ul>\n"
-  );
-
-
-  $templateCache.put('views/raml-editor-main.tmpl.html',
-    "<div role=\"raml-editor\" class=\"{{theme}}\">\n" +
-    "  <div role=\"notifications\" ng-controller=\"notifications\" class=\"hidden\" ng-class=\"{hidden: !shouldDisplayNotifications}\">\n" +
-    "    {{message}}\n" +
-    "    <i class=\"icon-ok\" ng-click=\"hideNotifications()\"></i>\n" +
-    "  </div>\n" +
-    "\n" +
-    "  <header>\n" +
-    "    <h1>\n" +
-    "      <strong>API</strong> Designer\n" +
-    "    </h1>\n" +
-    "\n" +
-    "    <a role=\"logo\" target=\"_blank\" href=\"http://mulesoft.com\"></a>\n" +
-    "  </header>\n" +
-    "\n" +
-    "  <ul class=\"menubar\">\n" +
-    "    <li class=\"menu-item menu-item-ll\">\n" +
-    "      <raml-editor-new-file-button></raml-editor-new-file-button>\n" +
-    "    </li>\n" +
-    "    <li class=\"menu-item menu-item-ll\">\n" +
-    "      <raml-editor-save-file-button></raml-editor-save-file-button>\n" +
-    "    </li>\n" +
-    "    <li class=\"spacer file-absolute-path\">{{getSelectedFileAbsolutePath()}}</li>\n" +
-    "    <li class=\"menu-item menu-item-fr menu-item-mocking-service\" ng-show=\"getIsMockingServiceVisible()\" ng-controller=\"mockingServiceController\" ng-click=\"toggleMockingService()\">\n" +
-    "      <div class=\"title\"><span class=\"beta\">BETA</span>Mocking Service</div>\n" +
-    "      <div class=\"field-wrapper\" ng-class=\"{loading: loading}\">\n" +
-    "        <span ng-if=\"loading\"><i class=\"icon-spin icon-spinner\"></i></span>\n" +
-    "        <div class=\"field\" ng-if=\"!loading\">\n" +
-    "          <input type=\"checkbox\" value=\"None\" id=\"mockingServiceEnabled\" ng-checked=\"enabled\" ng-click=\"$event.preventDefault()\" />\n" +
-    "          <label for=\"mockingServiceEnabled\"></label>\n" +
-    "        </div>\n" +
-    "      </div>\n" +
-    "    </li>\n" +
-    "    <li class=\"menu-item menu-item-fr\" ng-click=\"openHelp()\">\n" +
-    "      <i class=\"help icon-question-sign\"></i>\n" +
-    "      <span>&nbsp;Help</span>\n" +
-    "    </li>\n" +
-    "  </ul>\n" +
-    "\n" +
-    "  <div role=\"flexColumns\">\n" +
-    "    <raml-editor-file-browser role=\"browser\"></raml-editor-file-browser>\n" +
-    "\n" +
-    "    <div id=\"browserAndEditor\" ng-splitter=\"vertical\" ng-splitter-collapse-target=\"prev\"><div class=\"split split-left\">&nbsp;</div></div>\n" +
-    "\n" +
-    "    <div role=\"editor\" ng-class=\"{error: currentError}\">\n" +
-    "      <div id=\"code\" role=\"code\"></div>\n" +
-    "\n" +
-    "      <div role=\"shelf\" ng-show=\"getIsShelfVisible()\" ng-class=\"{expanded: !shelf.collapsed}\">\n" +
-    "        <div role=\"shelf-tab\" ng-click=\"toggleShelf()\">\n" +
-    "          <i class=\"icon-inbox icon-large\"></i><i ng-class=\"shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'\"></i>\n" +
-    "        </div>\n" +
-    "\n" +
-    "        <div role=\"shelf-container\" ng-show=\"!shelf.collapsed\" ng-include src=\"'views/raml-editor-shelf.tmpl.html'\"></div>\n" +
-    "      </div>\n" +
-    "    </div>\n" +
-    "\n" +
-    "    <div id=\"consoleAndEditor\" ng-show=\"getIsConsoleVisible()\" ng-splitter=\"vertical\" ng-splitter-collapse-target=\"next\"><div class=\"split split-right\">&nbsp;</div></div>\n" +
-    "\n" +
-    "    <div ng-show=\"getIsConsoleVisible()\" role=\"preview-wrapper\">\n" +
-    "      <raml-console with-root-documentation></raml-console>\n" +
-    "    </div>\n" +
-    "  </div>\n" +
-    "</div>\n"
-  );
-
-
-  $templateCache.put('views/raml-editor-shelf.tmpl.html',
-    "<ul role=\"sections\" ng-controller=\"ramlEditorShelf\">\n" +
-    "  <li role=\"section\" ng-repeat=\"section in model.sections | orderBy:orderSections\" class=\"{{section.name | dasherize}}\">\n" +
-    "    {{section.name}}&nbsp;({{section.items.length}})\n" +
-    "    <ul role=\"items\">\n" +
-    "      <li ng-repeat=\"item in section.items\" ng-click=\"itemClick(item)\"><i class=\"icon-reply\"></i><span>{{item.title}}</span></li>\n" +
-    "    </ul>\n" +
-    "  </li>\n" +
-    "</ul>\n"
-  );
-
-}]);

@@ -188,7 +188,7 @@ describe('ramlEditorFileBrowser', function () {
     beforeEach(function () {
       ramlRepository.files = [createMockFile('file1'), createMockFile('file2')];
       compileFileBrowser();
-      iconToClick = el[0].querySelectorAll('.file-item .icon')[1];
+      iconToClick = el[0].querySelectorAll('.file-item .fa')[1];
 
       sandbox.spy(ramlRepository, 'loadFile');
     });

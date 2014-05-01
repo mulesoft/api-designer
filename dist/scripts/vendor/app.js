@@ -2749,7 +2749,7 @@ RAML.Inspector = (function() {
     return {
       require: '^repeatable',
       restrict: 'E',
-      template: '<i class="icon icon-plus-sign-alt" ng-show="visible" ng-click="new()"></i>',
+      template: '<i class="fa fa-plus-square" ng-show="visible" ng-click="new()"></i>',
       scope: true,
       link: function(scope, element, attrs, controller) {
         scope.$watch('$last', function(last) {
@@ -2771,7 +2771,7 @@ RAML.Inspector = (function() {
     return {
       require: '^repeatable',
       restrict: 'E',
-      template: '<i class="icon icon-remove-sign" ng-show="visible" ng-click="remove()"></i>',
+      template: '<i class="fa fa-times-circle" ng-show="visible" ng-click="remove()"></i>',
       scope: true,
       link: function(scope, element, attrs, controller) {
         scope.$watch('repeatableModel.length', function(length) {
@@ -3305,7 +3305,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "  </div>\n" +
     "\n" +
     "  <div collapsible collapsed='apiResources.collapsed[apiResources.keyFor(resourceGroup)]' role=\"resource-group\" class=\"resource-group\" ng-repeat=\"resourceGroup in api.resourceGroups\">\n" +
-    "    <i collapsible-toggle ng-class=\"{'icon-caret-right': collapsed, 'icon-caret-down': !collapsed}\"></i>\n" +
+    "    <i collapsible-toggle class=\"fa\" ng-class=\"{'fa-caret-right': collapsed, 'fa-caret-down': !collapsed}\"></i>\n" +
     "\n" +
     "    <div collapsible-toggle class=\"resource\" role=\"resource-group-placeholder\" ng-show=\"collapsed\" ng-init=\"resource = resourceGroup[0]\">\n" +
     "      <div class=\"resource-placeholder\" role=\"resource-placeholder\">\n" +
@@ -3577,10 +3577,10 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
   $templateCache.put('views/parameterized_parameter.tmpl.html',
     "<div class=\"labelled-inline\">\n" +
     "  <label for=\"{{parameterName}}\">{{parameterName}}:</label>\n" +
-    "  <a href='#' role=\"open-factory\" ng-click=\"parameterFactory.open($event)\" ng-hide=\"parameterFactory.opened\">Add Header<i class='icon icon-plus-sign-alt'></i></a>\n" +
+    "  <a href='#' role=\"open-factory\" ng-click=\"parameterFactory.open($event)\" ng-hide=\"parameterFactory.opened\">Add Header<i class='fa fa-plus-square'></i></a>\n" +
     "  <span ng-show=\"parameterFactory.opened\">\n" +
     "    <input type=\"text\" name=\"{{parameterName}}\" ng-model=\"parameterFactory.value\" ng-class=\"parameterFactory.status\"/>\n" +
-    "    <a href='#' role='create-parameter' ng-click=\"parameterFactory.create($event)\"><i class='icon icon-plus-sign-alt'></i></a>\n" +
+    "    <a href='#' role='create-parameter' ng-click=\"parameterFactory.create($event)\"><i class='fa fa-plus-square'></i></a>\n" +
     "  </span>\n" +
     "</div>\n"
   );
@@ -3673,7 +3673,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "  <div class=\"resource-container\">\n" +
     "    <div class=\"resource expanded\" ng-if=\"resource\">\n" +
     "      <div>\n" +
-    "        <i class=\"icon-remove collapse\" ng-click='closePopover($event)'></i>\n" +
+    "        <i class=\"fa fa-times collapse\" ng-click='closePopover($event)'></i>\n" +
     "\n" +
     "        <div class=\"summary accordion-toggle\" role=\"resource-summary\">\n" +
     "          <div class=\"modifiers expanded\">\n" +
@@ -3851,7 +3851,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "\n" +
     "    <div class=\"form-actions\">\n" +
-    "      <i ng-show='apiClient.inProgress()' class=\"icon-spinner icon-spin icon-large\"></i>\n" +
+    "      <i ng-show='apiClient.inProgress()' class=\"fa fa-spinner fa-spin fa-lg\"></i>\n" +
     "\n" +
     "      <div role=\"error\" class=\"error\" ng-show=\"apiClient.missingUriParameters\">\n" +
     "        Required URI Parameters must be entered\n" +

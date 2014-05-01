@@ -146,11 +146,11 @@ module.exports = function (grunt) {
       options: {
         dest: '<%= yeoman.dist %>',
         flow: {
+          post:  {},
           steps: {
-            js: [require('./tasks/copy_vendor'), 'concat'],
-            css: ['concat']
-          },
-          post: {}
+            js:  [require('./tasks/copy_vendor'), 'concat'],
+            css: [require('./tasks/copy_vendor'), 'concat']
+          }
         }
       },
 
@@ -165,6 +165,16 @@ module.exports = function (grunt) {
       html: '<%= yeoman.dist %>/index.html'
     },
 
+    concat: {
+      dist: {
+        dest: '<%= yeoman.dist %>/scripts/main.js',
+        src:  [
+          '<%= yeoman.dist %>/scripts/main.js',
+          '.tmp/templates.js'
+        ]
+      }
+    },
+
     copy: {
       dist: {
         files: [
@@ -177,9 +187,16 @@ module.exports = function (grunt) {
 
           {
             expand: true,
-            cwd:    '<%= yeoman.app %>/vendor/font',
+            cwd:    '<%= yeoman.app %>/vendor/fonts',
             src:    '*',
-            dest:   '<%= yeoman.dist %>/font'
+            dest:   '<%= yeoman.dist %>/fonts'
+          },
+
+          {
+            expand: true,
+            cwd:    'bower_components/font-awesome/fonts',
+            src:    '*',
+            dest:   '<%= yeoman.dist %>/fonts'
           }
         ]
       }
@@ -224,20 +241,10 @@ module.exports = function (grunt) {
         base:   'app'
       },
 
-      app: {
-        options: {
-          concat: 'generated'
-        },
-
-        cwd: 'app',
+      files: {
+        cwd:  'app',
         src:  'views/**/*.html',
-        dest: 'dist/templates.js'
-      },
-
-      test: {
-        cwd: 'app',
-        src:  'views/**/*.html',
-        dest: 'test/spec/support/templates.js'
+        dest: '.tmp/templates.js'
       }
     },
 
@@ -309,10 +316,11 @@ module.exports = function (grunt) {
     'clean:build',
     'useminPrepare',
     'less-and-autoprefixer',
-    'ngtemplates:app',
-    'concat',
-    'copy:dist',
+    'ngtemplates',
+    'concat:generated',
+    'concat:dist',
     'copy:generated',
+    'copy:dist',
     'ngmin',
     'uglify:dist',
     'cssmin:dist',
@@ -321,7 +329,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'jshint-once',
-    'ngtemplates:test',
+    'ngtemplates',
     'karma'
   ]);
 

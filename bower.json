@@ -12,10 +12,11 @@
     "angular-cookies": "~1.2.16",
     "angular-resource": "~1.2.16",
     "angular-sanitize": "~1.2.16",
-    "api-console": "mulesoft/api-console#d037bab25ff1280508d380a1cab3a94ff5e6c838",
+    "api-console": "mulesoft/api-console#bd15fe082ee0abf3a34fc2514e5cbadb1637c879",
     "es5-shim": "~2.0.8",
+    "font-awesome": "~4.0.3",
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",
-    "raml-js-parser": "raml-org/raml-js-parser#01bf587031db75b1e91b29ce71e05125b9c5314a",
+    "raml-js-parser": "raml-org/raml-js-parser#3d7f702b618a99afcc56f85deb4693921af8bbe5",
     "showdown": "~0.3.1"
   },
   "devDependencies": {

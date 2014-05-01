@@ -3,18 +3,17 @@
 exports.name = 'copy';
 
 exports.createConfig = function(context, block) {
-  context.outDir = context.inDir;
+  context.outDir   = context.inDir;
   context.outFiles = context.inFiles;
 
-  if (block.type === 'js' && /vendor/.exec(block.dest)) {
-
+  if (['js', 'css'].indexOf(block.type) !== -1 && /vendor/.exec(block.dest)) {
     var cfg = {
       files: [{
-        expand: true,
-        dot: true,
-        dest: 'dist/scripts/vendor',
+        expand:  true,
+        dot:     true,
+        dest:    block.type === 'js' ? 'dist/scripts/vendor' : 'dist/styles/vendor',
         flatten: true,
-        src: []
+        src:     []
       }]
     };
 

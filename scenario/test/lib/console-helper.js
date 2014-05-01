@@ -255,7 +255,7 @@ ConsoleHelper.prototype.getActiveTab = function getActiveTab(){
 
 ConsoleHelper.prototype.closeMethodPopUp = function closeMethodPopUp() {
   browser.executeScript(function () {
-    $('resource-documentation i[class="icon-remove collapse"]').click();
+    $('resource-documentation i[class="fa fa-times collapse"]').click();
   });
 };
 

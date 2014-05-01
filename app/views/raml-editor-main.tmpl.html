@@ -1,7 +1,7 @@
 <div role="raml-editor" class="{{theme}}">
   <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
     {{message}}
-    <i class="icon-ok" ng-click="hideNotifications()"></i>
+    <i class="fa fa-check" ng-click="hideNotifications()"></i>
   </div>
 
   <header>
@@ -23,7 +23,7 @@
     <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">
       <div class="title"><span class="beta">BETA</span>Mocking Service</div>
       <div class="field-wrapper" ng-class="{loading: loading}">
-        <span ng-if="loading"><i class="icon-spin icon-spinner"></i></span>
+        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>
         <div class="field" ng-if="!loading">
           <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />
           <label for="mockingServiceEnabled"></label>
@@ -31,7 +31,7 @@
       </div>
     </li>
     <li class="menu-item menu-item-fr" ng-click="openHelp()">
-      <i class="help icon-question-sign"></i>
+      <i class="help fa fa-question-circle"></i>
       <span>&nbsp;Help</span>
     </li>
   </ul>
@@ -46,7 +46,7 @@
 
       <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
         <div role="shelf-tab" ng-click="toggleShelf()">
-          <i class="icon-inbox icon-large"></i><i ng-class="shelf.collapsed ? 'icon-caret-up' : 'icon-caret-down'"></i>
+          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? 'fa-caret-up' : 'fa-caret-down'"></i>
         </div>
 
         <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
