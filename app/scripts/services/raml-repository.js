@@ -137,6 +137,8 @@
       };
 
       service.removeFile = function removeFile(file) {
+        var promise;
+
         function modifyFile() {
           file.dirty     = false;
           file.persisted = false;
@@ -144,8 +146,15 @@
           return Object.freeze(file);
         }
 
-        return fileSystem
-          .remove(file.path)
+        // call to file system only when file is persisted
+        // otherwise it's unknown because it's never been saved
+        if (file.persisted) {
+          promise = fileSystem.remove(file.path);
+        } else {
+          promise = $q.when(file);
+        }
+
+        return promise
           .then(modifyFile, handleErrorFor(file))
           .then(function (file) {
             $rootScope.$broadcast('event:raml-editor-file-removed', file);
