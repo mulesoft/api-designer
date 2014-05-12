@@ -174,6 +174,27 @@ describe('RAML Repository', function () {
   });
 
   describe('removeFile', function () {
+    describe('when file is nonpersistent', function () {
+      beforeEach(function () {
+        sinon.spy(fileSystem, 'remove');
+
+        ramlRepository.removeFile({
+          persisted: false
+        });
+      });
+
+      it('should not make call to file system', function () {
+        fileSystem.remove.should.not.be.called;
+      });
+
+      it('should still broadcast an event', function (done) {
+        $rootScope.$on('event:raml-editor-file-removed', function () {
+          done();
+        });
+        $rootScope.$apply();
+      });
+    });
+
     it('should update file on success', function () {
       // Arrange
       var removeDeferred = $q.defer();
@@ -197,7 +218,7 @@ describe('RAML Repository', function () {
       var removeDeferred = $q.defer();
       sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
       var error = sinon.stub();
-      var fileMock = {};
+      var fileMock = {persisted: true};
       var errorData = {message: 'This is the error description'};
 
       // Act
