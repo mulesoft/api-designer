@@ -114,6 +114,10 @@
         }
       });
 
+      $scope.canExportFiles = function canExportFiles() {
+        return ramlRepository.canExport();
+      };
+
       $scope.sourceUpdated = function sourceUpdated() {
         var source       = editor.getValue();
         var selectedFile = $scope.fileBrowser.selectedFile;

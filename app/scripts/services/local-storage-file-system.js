@@ -291,6 +291,14 @@
       };
 
       /**
+       * This fileSystem does not support export
+       */
+      service.canExport = function canExport() {
+        return false;
+      };
+
+
+      /**
        * Ranames a file or directory
        */
       service.rename = function (source, destination) {
