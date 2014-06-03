@@ -88,6 +88,14 @@
         };
       }
 
+      service.canExport = function canExport() {
+        return fileSystem.canExport();
+      };
+
+      service.exportFiles = function exportFiles() {
+        return fileSystem.exportFiles();
+      };
+
       service.getDirectory = function getDirectory(path) {
         path = path || defaultPath;
         return fileSystem.directory(path).then(function (folder) {
