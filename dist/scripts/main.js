@@ -3641,7 +3641,7 @@
         restrict: 'E',
         template: '<span role="export-button" ng-click="exportFiles()"><i class="fa fa-download"></i>&nbsp;Export files</span>',
         link: function (scope) {
-          scope.exportFiles = function saveFile() {
+          scope.exportFiles = function exportFiles() {
             ramlRepository.exportFiles();
           };
         }
