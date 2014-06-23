@@ -2641,6 +2641,7 @@ raml-console article#raml-console input[type="password"],
 }
 raml-console article#raml-console .parameter-field-input input[type="text"],
 #raml-console-loader .parameter-field-input input[type="text"] {
+  color: #666666;
   font-size: 12px;
   padding: 1px 3px;
 }
