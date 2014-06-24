@@ -9,6 +9,7 @@
     // angular-ui
     'ui.bootstrap.modal',
     'ui.bootstrap.tpls',
+    'ui.tree',
 
     // console
     'ramlConsoleApp',

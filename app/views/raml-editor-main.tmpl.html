@@ -1,7 +1,7 @@
 <div role="raml-editor" class="{{theme}}">
-  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
+  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === 'error'}">
     {{message}}
-    <i class="fa fa-check" ng-click="hideNotifications()"></i>
+    <i class="fa" ng-class="{'fa-check': level === 'info', 'fa-warning': level === 'error'}" ng-click="hideNotifications()"></i>
   </div>
 
   <header>
@@ -15,6 +15,9 @@
   <ul class="menubar">
     <li class="menu-item menu-item-ll">
       <raml-editor-new-file-button></raml-editor-new-file-button>
+    </li>
+    <li ng-show="supportsFolders" class="menu-item menu-item-ll">
+      <raml-editor-new-folder-button></raml-editor-new-folder-button>
     </li>
     <li class="menu-item menu-item-ll">
       <raml-editor-save-file-button></raml-editor-save-file-button>

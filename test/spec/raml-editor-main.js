@@ -57,11 +57,16 @@ describe('RAML Editor Main Controller', function () {
   describe('leaving the page', function() {
     it('should ask user for confirmation if there are unsaved changes', function () {
       scope.homeDirectory = {
-        files: [
+        children: [
           { dirty: false },
           { dirty: true },
           { dirty: false }
-        ]
+        ],
+        forEachChildDo: function(action) {
+          for (var i = 0; i < this.children.length; i++) {
+            action.call(this.children[i], this.children[i]);
+          }
+        }
       };
       ctrl = $controller('ramlEditorMain', params);
 
@@ -70,11 +75,16 @@ describe('RAML Editor Main Controller', function () {
 
     it('should not ask user for confirmation if there are no unsaved changes', function () {
       scope.homeDirectory = {
-        files: [
+        children: [
           { dirty: false },
           { dirty: false },
           { dirty: false }
-        ]
+        ],
+        forEachChildDo: function(action) {
+          for (var i = 0; i < this.children.length; i++) {
+            action.call(this.children[i], this.children[i]);
+          }
+        }
       };
       ctrl = $controller('ramlEditorMain', params);
 
@@ -172,7 +182,11 @@ describe('RAML Editor Main Controller', function () {
 
   describe('on event:raml-editor-file-selected', function () {
     beforeEach(function() {
-      scope.fileBrowser = {};
+      scope.fileBrowser = {
+        selectedFile: {
+
+        }
+      };
       ctrl = $controller('ramlEditorMain', params);
 
       editor.getValue().should.be.equal('');

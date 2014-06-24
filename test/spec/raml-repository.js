@@ -1,7 +1,7 @@
 'use strict';
 
 describe('RAML Repository', function () {
-  var $rootScope, $q, ramlRepository, fileSystem, sandbox;
+  var $rootScope, $q, $timeout, ramlRepository, fileSystem, sandbox;
 
   beforeEach(module('fs'));
   beforeEach(function () {
@@ -13,6 +13,7 @@ describe('RAML Repository', function () {
   beforeEach(inject(function ($injector) {
     $rootScope     = $injector.get('$rootScope');
     $q             = $injector.get('$q');
+    $timeout       = $injector.get('$timeout');
     fileSystem     = $injector.get('fileSystem');
     ramlRepository = $injector.get('ramlRepository');
     sandbox        = sinon.sandbox.create();
@@ -22,7 +23,7 @@ describe('RAML Repository', function () {
     sandbox.restore();
   });
 
-  describe('getDirectory', function () {
+  describe('loadDirectory', function () {
     it('should reflect the contents of a directory on success', function () {
       // Arrange
       var directoryDeferred = $q.defer();
@@ -41,17 +42,17 @@ describe('RAML Repository', function () {
       };
 
       // Act
-      ramlRepository.getDirectory('/').then(success);
+      ramlRepository.loadDirectory('/').then(success);
 
       directoryDeferred.resolve(files);
       $rootScope.$apply();
 
       // Assert
       var directory = success.firstCall.args[0];
-      directory.files[0].path.should.be.equal(files.children[0].path);
-      directory.files[0].name.should.be.equal(files.children[0].name);
-      directory.files[0].dirty.should.be.false;
-      directory.files[0].persisted.should.be.true;
+      directory.getFiles()[0].path.should.be.equal(files.children[0].path);
+      directory.getFiles()[0].name.should.be.equal(files.children[0].name);
+      directory.getFiles()[0].dirty.should.be.false;
+      directory.getFiles()[0].persisted.should.be.true;
     });
 
     it('should handle errors', function () {
@@ -62,7 +63,7 @@ describe('RAML Repository', function () {
       var errorData = {message: 'Error occurred'};
 
       // Act
-      ramlRepository.getDirectory('/').then(function () {}, error);
+      ramlRepository.loadDirectory('/').then(function () {}, error);
 
       directoryDeferred.reject(errorData);
       $rootScope.$apply();
@@ -93,13 +94,13 @@ describe('RAML Repository', function () {
 
       // Act
       sinon.stub(fileSystem, 'directory').returns($q.when(folder));
-      ramlRepository.getDirectory('/').then(success);
+      ramlRepository.loadDirectory('/').then(success);
       $rootScope.$apply();
 
       // Assert
       success.should.have.been.called;
-      success.firstCall.args[0].files.should.have.length(1);
-      success.firstCall.args[0].files[0].should.have.property('path', '/example.raml');
+      success.firstCall.args[0].getFiles().should.have.length(1);
+      success.firstCall.args[0].getFiles()[0].should.have.property('path', '/example.raml');
     });
 
     it('should copy `root` property of files', function () {
@@ -120,13 +121,249 @@ describe('RAML Repository', function () {
 
       // Act
       sinon.stub(fileSystem, 'directory').returns($q.when(folder));
-      ramlRepository.getDirectory('/').then(success);
+      ramlRepository.loadDirectory('/').then(success);
       $rootScope.$apply();
 
       // Assert
       success.should.have.been.called;
-      success.firstCall.args[0].files.should.have.length(1);
-      success.firstCall.args[0].files[0].should.have.property('root').and.be.true;
+      success.firstCall.args[0].getFiles().should.have.length(1);
+      success.firstCall.args[0].getFiles()[0].should.have.property('root').and.be.true;
+    });
+  });
+
+  describe('directory operations', function () {
+    var rootDirectory, files, directoryDeferred;
+
+    beforeEach(function () {
+      // set up root directory for testing
+      // Arrange
+      directoryDeferred = $q.defer();
+      sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+      var success = sinon.stub();
+
+      files = {
+        path: '/',
+        name: '/',
+        type: 'folder',
+        children: [
+          {
+            path: '/example.raml',
+            name: 'example.raml',
+            type: 'file'
+          },
+          {
+            path: '/folder',
+            name: 'folder',
+            children: [
+              {
+                path: '/folder/test.raml',
+                name: 'test.raml',
+                type: 'file',
+                root: true
+              },
+              {
+                path: '/folder/subfolder',
+                name: 'subfolder',
+                type: 'folder',
+                children: []
+              }
+            ],
+            type: 'folder'
+          },
+          {
+            path: '/example.raml.meta',
+            name: 'example.raml.meta',
+            content: '{"key": "value"}'
+          }
+        ]
+      };
+
+      // Act
+      ramlRepository.loadDirectory().then(success);
+
+      directoryDeferred.resolve(files);
+      $rootScope.$apply();
+
+      rootDirectory = success.firstCall.args[0];
+    });
+
+    describe('createDirectory', function () {
+      var createDirDeferred, createFolderSpy;
+
+      beforeEach(function () {
+        createDirDeferred = $q.defer();
+        createFolderSpy = sinon.stub(fileSystem, 'createFolder').returns(createDirDeferred.promise);
+      });
+
+      it('should be able to create a ramlDirectory object under root directory', function () {
+        ramlRepository.createDirectory(rootDirectory, 'newFolder');
+
+        createDirDeferred.resolve();
+        $rootScope.$apply();
+
+        rootDirectory.children.length.should.equals(3);
+        rootDirectory.getFiles().length.should.equals(1);
+        rootDirectory.getDirectories().length.should.equals(2);
+        rootDirectory.getDirectories()[1].name.should.equals('newFolder');
+        rootDirectory.getDirectories()[1].path.should.equals('/newFolder');
+      });
+
+      it('should be able to create a ramlDirectory object under another directory', function () {
+        var folder = rootDirectory.getDirectories()[0];
+        ramlRepository.createDirectory(folder, 'folder');
+
+        createDirDeferred.resolve();
+        $rootScope.$apply();
+
+        rootDirectory.children.length.should.equals(2);
+        rootDirectory.getFiles().length.should.equals(1);
+        rootDirectory.getDirectories().length.should.equals(1);
+        folder.children.length.should.equals(3);
+        folder.getFiles().length.should.equals(1);
+        folder.getDirectories().length.should.equals(2);
+        folder.getDirectories()[0].name.should.equals('folder');
+        folder.getDirectories()[0].path.should.equals('/folder/folder');
+      });
+
+      it('should broadcast an event on success', function (done) {
+        ramlRepository.createDirectory(rootDirectory, 'newFolder');
+        createDirDeferred.resolve();
+        $rootScope.$on('event:raml-editor-directory-created', function () {
+          done();
+        });
+        $rootScope.$apply();
+      });
+
+      it('should create an entry in the file system', function () {
+        ramlRepository.createDirectory(rootDirectory, 'newFolder');
+        createDirDeferred.resolve();
+        $rootScope.$apply();
+
+        createFolderSpy.should.have.been.calledWith('/newFolder');
+      });
+    });
+
+    describe('getByPath', function () {
+      it('returns the subtree representing the directory identified by path', function () {
+        var folder = ramlRepository.getByPath('/folder');
+
+        folder.children.length.should.equals(2);
+        folder.getFiles().length.should.equals(1);
+        folder.getDirectories().length.should.equals(1);
+
+        var empty = ramlRepository.getByPath('/folder/subfolder', rootDirectory);
+        empty.children.length.should.equals(0);
+        empty.getFiles().length.should.equals(0);
+        empty.getDirectories().length.should.equals(0);
+      });
+
+      it('returns undefined if the path is not found in the tree', function () {
+        expect(ramlRepository.getByPath('/notFound', rootDirectory)).to.be.undefined;
+        expect(ramlRepository.getByPath('/folder/notFound', rootDirectory.getDirectories()[0])).to.be.undefined;
+      });
+    });
+
+    describe('removeDirectory', function () {
+      var removeSpy, removeDeferred;
+
+      beforeEach(function () {
+        removeDeferred = $q.defer();
+        removeSpy = sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
+
+        ramlRepository.removeDirectory(rootDirectory.getDirectories()[0]);
+        removeDeferred.resolve();
+      });
+
+      it('should remove a folder and all of its children', function () {
+        rootDirectory.children.length.should.equals(1);
+        rootDirectory.getFiles().length.should.equals(1);
+        rootDirectory.getDirectories().length.should.equals(0);
+      });
+
+      it('should remove a folder and its children from file system', function () {
+        $rootScope.$apply();
+        removeSpy.should.have.been.calledThrice;
+      });
+
+      it('should broadcast an event on success', function (done) {
+        $rootScope.$on('event:raml-editor-directory-removed', function () {
+          done();
+        });
+        $rootScope.$apply();
+      });
+    });
+
+    describe('renameDirectory', function () {
+      var folder;
+
+      beforeEach(function () {
+        folder = rootDirectory.getDirectories()[0];
+        sinon.stub(fileSystem, 'rename').returns($q.when());
+      });
+
+      it('should not change tree structure', function () {
+        ramlRepository.renameDirectory(folder.getDirectories()[0], 'folder2');
+        $timeout.flush();
+
+        folder.children.length.should.equals(2);
+        folder.getFiles().length.should.equals(1);
+        folder.getDirectories().length.should.equals(1);
+        folder.getDirectories()[0].path.should.equals('/folder/folder2');
+      });
+
+      it('should update the path of all its children', function () {
+        ramlRepository.renameDirectory(rootDirectory.getDirectories()[0], 'foo');
+        $timeout.flush();
+
+        rootDirectory.getDirectories()[0].path.should.equals('/foo');
+
+        folder.children.length.should.equals(2);
+        folder.getFiles().length.should.equals(1);
+        folder.getFiles()[0].path.should.equals('/foo/test.raml');
+        folder.getDirectories().length.should.equals(1);
+        folder.getDirectories()[0].path.should.equals('/foo/subfolder');
+      });
+    });
+
+    describe('creating a new file in a folder', function () {
+      it('should give the correct tree structure', function () {
+        var folder = rootDirectory.getDirectories()[0];
+
+        ramlRepository.createFile(rootDirectory, 'new.raml');
+        ramlRepository.createFile(folder, 'another.raml');
+
+        rootDirectory.children.length.should.equals(3);
+        rootDirectory.getFiles().length.should.equals(2);
+        rootDirectory.getFiles()[1].path.should.equals('/new.raml');
+        rootDirectory.getDirectories().length.should.equals(1);
+
+        folder.children.length.should.equals(3);
+        folder.getFiles().length.should.equals(2);
+        folder.getFiles()[0].path.should.equals('/folder/another.raml');
+        folder.getDirectories().length.should.equals(1);
+      });
+
+    });
+
+    describe('renaming a file in a folder', function () {
+      it('should not change tree structure', function () {
+        var folder = rootDirectory.getDirectories()[0];
+        sinon.stub(fileSystem, 'rename').returns($q.when());
+
+        ramlRepository.renameFile(rootDirectory.getFiles()[0], 'newName.raml');
+        ramlRepository.renameFile(folder.getFiles()[0], 'newName.raml');
+        $timeout.flush();
+
+        rootDirectory.children.length.should.equals(2);
+        rootDirectory.getFiles().length.should.equals(1);
+        rootDirectory.getFiles()[0].path.should.equals('/newName.raml');
+        rootDirectory.getDirectories().length.should.equals(1);
+
+        folder.children.length.should.equals(2);
+        folder.getFiles().length.should.equals(1);
+        folder.getFiles()[0].path.should.equals('/folder/newName.raml');
+        folder.getDirectories().length.should.equals(1);
+      });
     });
   });
 
@@ -174,24 +411,62 @@ describe('RAML Repository', function () {
   });
 
   describe('removeFile', function () {
+    beforeEach(function () {
+      // set up root directory for testing
+      // Arrange
+      var directoryDeferred = $q.defer();
+      sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+
+      var files = {
+        path: '/',
+        name: '/',
+        type: 'folder',
+        children: [
+          {
+            path: '/example.raml',
+            name: 'example.raml',
+            type: 'file'
+          },
+          {
+            path: '/folder',
+            name: 'folder',
+            children: [
+              {
+                path: '/folder/test.raml',
+                name: 'test.raml',
+                type: 'file',
+              },
+              {
+                path: '/folder/subfolder',
+                name: 'subfolder',
+                type: 'folder',
+                children: []
+              }
+            ],
+            type: 'folder'
+          }
+        ]
+      };
+
+      // Act
+      ramlRepository.loadDirectory();
+
+      directoryDeferred.resolve(files);
+      $rootScope.$apply();
+    });
+
     describe('when file is nonpersistent', function () {
       beforeEach(function () {
         sinon.spy(fileSystem, 'remove');
 
         ramlRepository.removeFile({
+          path: '/file.raml',
           persisted: false
         });
       });
 
       it('should not make call to file system', function () {
         fileSystem.remove.should.not.be.called;
-      });
-
-      it('should still broadcast an event', function (done) {
-        $rootScope.$on('event:raml-editor-file-removed', function () {
-          done();
-        });
-        $rootScope.$apply();
       });
     });
 
@@ -200,7 +475,7 @@ describe('RAML Repository', function () {
       var removeDeferred = $q.defer();
       sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
       var success = sinon.stub();
-      var fileMock = {};
+      var fileMock = {path:'/mock.raml'};
 
       // Act
       ramlRepository.removeFile(fileMock).then(success);
@@ -218,7 +493,7 @@ describe('RAML Repository', function () {
       var removeDeferred = $q.defer();
       sinon.stub(fileSystem, 'remove').returns(removeDeferred.promise);
       var error = sinon.stub();
-      var fileMock = {persisted: true};
+      var fileMock = {persisted: true, path:'/mock.raml'};
       var errorData = {message: 'This is the error description'};
 
       // Act
@@ -241,7 +516,7 @@ describe('RAML Repository', function () {
       sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var success = sinon.stub();
       var fileMock = {
-        path: '/',
+        path: '/example.raml',
         name: 'example.raml',
         dirty: true
       };
@@ -266,7 +541,7 @@ describe('RAML Repository', function () {
       sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
       var error = sinon.stub();
       var fileMock = {
-        path: '/',
+        path: '/example.raml',
         name: 'example.raml',
         dirty: true
       };
@@ -358,7 +633,25 @@ describe('RAML Repository', function () {
       sinon.stub(ramlSnippets, 'getEmptyRaml').returns(snippet);
 
       broadcastSpy = sandbox.spy($rootScope, '$broadcast');
-      file = ramlRepository.createFile('untitled.raml');
+
+      var directoryDeferred = $q.defer();
+      sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+      var success = sinon.stub();
+      var files = {
+        path: '/',
+        name: '/',
+        children: []
+      };
+
+      // Act
+      ramlRepository.loadDirectory('/').then(success);
+      directoryDeferred.resolve(files);
+      $rootScope.$apply();
+
+      // Assert
+      var directory = success.firstCall.args[0];
+
+      file = ramlRepository.createFile(directory, 'untitled.raml');
     }));
 
     it('should return a new file with snippet content', function () {
@@ -435,12 +728,33 @@ describe('RAML Repository', function () {
   });
 
   describe('RamlFile', function () {
+    var directory;
+
+    beforeEach(inject(function($rootScope) {
+      var directoryDeferred = $q.defer();
+      sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);
+      var success = sinon.stub();
+      var files = {
+        path: '/',
+        name: '/',
+        children: []
+      };
+
+      // Act
+      ramlRepository.loadDirectory('/').then(success);
+      directoryDeferred.resolve(files);
+      $rootScope.$apply();
+
+      // Assert
+      directory = success.firstCall.args[0];
+    }));
+
     it('should have a proper extension value extracted from name', function () {
-      ramlRepository.createFile('api.raml').should.have.property('extension', 'raml');
+      ramlRepository.createFile(directory, 'api.raml').should.have.property('extension', 'raml');
     });
 
     it('should not extract an extension from name started with a dot', function () {
-      ramlRepository.createFile('.raml').should.not.have.property('extension');
+      ramlRepository.createFile(directory, '.raml').should.not.have.property('extension');
     });
   });
 });

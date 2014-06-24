@@ -59,9 +59,13 @@
     line-height: 15px;
 
     background-color: rgb(20,21,25);
-    color: #777;
+    color: #888;
 
     flex: 1;
+
+    .drag-elm div {
+      color: #333;
+    }
 
     .file-item {
       padding: 5px 10px;
@@ -72,14 +76,40 @@
 
       align-items: center;
 
-      &:not(.currentfile):hover {
-        color: #ccc;
-        background-color: #808395;
+      &.dummy {
+        padding: 0;
+        background: none !important;
+        &.top {
+          height: 6px;
+          min-height: 6px;
+        }
+        &.bottom {
+          height: 80px;
+        }
+      }
+
+      &:not(.currentfile):hover{
+        color: #ddd;
       }
 
       &.currentfile {
         color: #ddd;
         background-color: @cello_blue;
+      }
+
+      &.dragover {
+        color: #ddd;
+        background-color: #222;
+
+        &.directory {
+          background-color: darken(@cello_blue, 10%);
+        }
+        &.top {
+          border-bottom: 1px #888 dotted;
+        }
+        &.bottom {
+          border-top: 1px #888 dotted;
+        }
       }
 
       .file-name {
@@ -89,43 +119,94 @@
         text-overflow: ellipsis;
       }
 
-      .fa {
+      .fa:not(.icon) {
         display: none;
         padding-left: 10px;
         font-size: 15px;
       }
 
-      &.geared .fa, &:hover .fa {
+      &.geared .fa:not(.icon), &:hover .fa:not(.icon) {
         display: block;
       }
 
       &.dirty .file-name:before {
         content: '* ';
       }
+
+      &.no-drop {
+        cursor: no-drop !important;
+      }
+
+      &.copy {
+        cursor: copy !important;
+      }
+
+      /* Patch for embedded designer */
+      [ng-click] {
+        cursor: inherit;
+      }
     }
   }
 }
 
+.hidden {
+  display: none!important;
+  visibility: hidden!important;
+}
+
+/* angular ui tree overrides */
+.angular-ui-tree-handle {
+  font-weight: normal;
+}
+
+.angular-ui-tree-drag {
+  color: white;
+  font-size: 12px;
+  div {
+    padding: 5px 10px;
+  }
+  .fa-cog {
+    display: none!important;
+  }
+}
+
 /* Light theme */
-div[role=raml-editor].light [role=browser] {
-  color: rgb(202,204,212);
+div[role=raml-editor].light {
+  [role=browser] {
+    color: rgb(202,204,212);
 
-  ul[role=file-list] {
-    background-color: white;
-    color: #aaa;
-    background-color: white;
-    border: 1px solid rgb(131,148,150);
+    .file-list {
+      color: #999;
+      background-color: white;
+      border: 1px solid rgb(131,148,150);
 
-    li {
-      &:not(.currentfile):hover {
-        color: #eee;
-        background-color: #caccd4;
+      .drag-elm div {
+        color: #ddd;
       }
 
-      &.currentfile {
-        color: #ddd;
-        background-color: rgb(47,124,166);
+      .file-item {
+        &:not(.currentfile):hover {
+          color: #444;
+        }
+
+        &.currentfile {
+          color: #ddd;
+          background-color: lighten(@cello_blue, 30%);
+        }
+
+        &.dragover {
+          color: #444;
+          background-color: #ddd;
+
+          &.directory {
+            background-color: lighten(@cello_blue, 50%);
+          }
+        }
       }
     }
   }
+}
+
+.drag-light {
+  color: #444;
 }

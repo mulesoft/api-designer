@@ -7902,7 +7902,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
   CodeMirror.defineMIME("text/html", {name: "xml", htmlMode: true});
 
 /**
- * @license AngularJS v1.2.23
+ * @license AngularJS v1.2.26
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -7971,7 +7971,7 @@ function minErr(module) {
       return match;
     });
 
-    message = message + '\nhttp://errors.angularjs.org/1.2.23/' +
+    message = message + '\nhttp://errors.angularjs.org/1.2.26/' +
       (module ? module + '/' : '') + code;
     for (i = 2; i < arguments.length; i++) {
       message = message + (i == 2 ? '?' : '&') + 'p' + (i-2) + '=' +
@@ -8320,7 +8320,7 @@ function setHashKey(obj, h) {
  * @kind function
  *
  * @description
- * Extends the destination object `dst` by copying all of the properties from the `src` object(s)
+ * Extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
  * to `dst`. You can specify multiple `src` objects.
  *
  * @param {Object} dst Destination object.
@@ -9890,11 +9890,11 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.23',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.26',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
-  dot: 23,
-  codeName: 'superficial-malady'
+  dot: 26,
+  codeName: 'zucchini-expansion'
 };
 
 
@@ -12485,6 +12485,13 @@ function Browser(window, document, $log, $sniffer) {
     return callback;
   };
 
+  /**
+   * Checks whether the url has changed outside of Angular.
+   * Needs to be exported to be able to check for changes that have been done in sync,
+   * as hashchange/popstate events fire in async.
+   */
+  self.$$checkUrlChange = fireUrlChange;
+
   //////////////////////////////////////////////////////////////
   // Misc API
   //////////////////////////////////////////////////////////////
@@ -13425,7 +13432,7 @@ function $TemplateCacheProvider() {
  * }
  * ```
  *
- * Below is an example using `$compileProvider`.
+ * ## Example
  *
  * <div class="alert alert-warning">
  * **Note**: Typically directives are registered with `module.directive`. The example below is
@@ -15933,12 +15940,13 @@ function $HttpProvider() {
     expect(data.getText()).toMatch(/Hello, \$http!/);
   });
 
-  it('should make a JSONP request to angularjs.org', function() {
-    sampleJsonpBtn.click();
-    fetchBtn.click();
-    expect(status.getText()).toMatch('200');
-    expect(data.getText()).toMatch(/Super Hero!/);
-  });
+// Commented out due to flakes. See https://github.com/angular/angular.js/issues/9185
+// it('should make a JSONP request to angularjs.org', function() {
+//   sampleJsonpBtn.click();
+//   fetchBtn.click();
+//   expect(status.getText()).toMatch('200');
+//   expect(data.getText()).toMatch(/Super Hero!/);
+// });
 
   it('should make JSONP request to invalid URL and invoke the error handler',
       function() {
@@ -16310,7 +16318,7 @@ function $HttpProvider() {
           if (isObject(v)) {
             if (isDate(v)){
               v = v.toISOString();
-            } else if (isObject(v)) {
+            } else {
               v = toJson(v);
             }
           }
@@ -16760,7 +16768,7 @@ function $InterpolateProvider() {
      * @description
      * Symbol to denote the start of expression in the interpolated string. Defaults to `{{`.
      *
-     * Use {@link ng.$interpolateProvider#startSymbol $interpolateProvider#startSymbol} to change
+     * Use {@link ng.$interpolateProvider#startSymbol `$interpolateProvider.startSymbol`} to change
      * the symbol.
      *
      * @returns {string} start symbol.
@@ -16776,7 +16784,7 @@ function $InterpolateProvider() {
      * @description
      * Symbol to denote the end of expression in the interpolated string. Defaults to `}}`.
      *
-     * Use {@link ng.$interpolateProvider#endSymbol $interpolateProvider#endSymbol} to change
+     * Use {@link ng.$interpolateProvider#endSymbol `$interpolateProvider.endSymbol`} to change
      * the symbol.
      *
      * @returns {string} end symbol.
@@ -17366,17 +17374,16 @@ LocationHashbangInHtml5Url.prototype =
    * Change path, search and hash, when called with parameter and return `$location`.
    *
    * @param {string=} url New url without base prefix (e.g. `/path?a=b#hash`)
-   * @param {string=} replace The path that will be changed
    * @return {string} url
    */
-  url: function(url, replace) {
+  url: function(url) {
     if (isUndefined(url))
       return this.$$url;
 
     var match = PATH_MATCH.exec(url);
     if (match[1]) this.path(decodeURIComponent(match[1]));
     if (match[2] || match[1]) this.search(match[3] || '');
-    this.hash(match[5] || '', replace);
+    this.hash(match[5] || '');
 
     return this;
   },
@@ -17434,10 +17441,11 @@ LocationHashbangInHtml5Url.prototype =
    * Note: Path should always begin with forward slash (/), this method will add the forward slash
    * if it is missing.
    *
-   * @param {string=} path New path
+   * @param {(string|number)=} path New path
    * @return {string} path
    */
   path: locationGetterSetter('$$path', function(path) {
+    path = path ? path.toString() : '';
     return path.charAt(0) == '/' ? path : '/' + path;
   }),
 
@@ -17473,7 +17481,7 @@ LocationHashbangInHtml5Url.prototype =
    * If the argument is a hash object containing an array of values, these values will be encoded
    * as duplicate search parameters in the url.
    *
-   * @param {(string|Array<string>|boolean)=} paramValue If `search` is a string, then `paramValue`
+   * @param {(string|Number|Array<string>|boolean)=} paramValue If `search` is a string or number, then `paramValue`
    * will override only a single search property.
    *
    * If `paramValue` is an array, it will override the property of the `search` component of
@@ -17492,7 +17500,8 @@ LocationHashbangInHtml5Url.prototype =
       case 0:
         return this.$$search;
       case 1:
-        if (isString(search)) {
+        if (isString(search) || isNumber(search)) {
+          search = search.toString();
           this.$$search = parseKeyValue(search);
         } else if (isObject(search)) {
           // remove object undefined or null properties
@@ -17529,10 +17538,12 @@ LocationHashbangInHtml5Url.prototype =
    *
    * Change hash fragment when called with parameter and return `$location`.
    *
-   * @param {string=} hash New hash fragment
+   * @param {(string|number)=} hash New hash fragment
    * @return {string} hash
    */
-  hash: locationGetterSetter('$$hash', identity),
+  hash: locationGetterSetter('$$hash', function(hash) {
+    return hash ? hash.toString() : '';
+  }),
 
   /**
    * @ngdoc method
@@ -18727,7 +18738,7 @@ Parser.prototype = {
       var context = contextGetter ? contextGetter(scope, locals) : scope;
 
       for (var i = 0; i < argsFn.length; i++) {
-        args.push(argsFn[i](scope, locals));
+        args.push(ensureSafeObject(argsFn[i](scope, locals), parser.text));
       }
       var fnPtr = fn(scope, locals, context) || noop;
 
@@ -18815,13 +18826,15 @@ Parser.prototype = {
 //////////////////////////////////////////////////
 
 function setter(obj, path, setValue, fullExp, options) {
+  ensureSafeObject(obj, fullExp);
+
   //needed?
   options = options || {};
 
   var element = path.split('.'), key;
   for (var i = 0; element.length > 1; i++) {
     key = ensureSafeMemberName(element.shift(), fullExp);
-    var propertyObj = obj[key];
+    var propertyObj = ensureSafeObject(obj[key], fullExp);
     if (!propertyObj) {
       propertyObj = {};
       obj[key] = propertyObj;
@@ -18841,7 +18854,6 @@ function setter(obj, path, setValue, fullExp, options) {
     }
   }
   key = ensureSafeMemberName(element.shift(), fullExp);
-  ensureSafeObject(obj, fullExp);
   ensureSafeObject(obj[key], fullExp);
   obj[key] = setValue;
   return setValue;
@@ -19905,10 +19917,26 @@ function $RootScopeProvider(){
     /**
      * @ngdoc property
      * @name $rootScope.Scope#$id
-     * @returns {number} Unique scope ID (monotonically increasing alphanumeric sequence) useful for
-     *   debugging.
+     *
+     * @description
+     * Unique scope ID (monotonically increasing) useful for debugging.
      */
 
+     /**
+      * @ngdoc property
+      * @name $rootScope.Scope#$parent
+      *
+      * @description
+      * Reference to the parent scope.
+      */
+
+      /**
+       * @ngdoc property
+       * @name $rootScope.Scope#$root
+       *
+       * @description
+       * Reference to the root scope.
+       */
 
     Scope.prototype = {
       constructor: Scope,
@@ -19920,9 +19948,8 @@ function $RootScopeProvider(){
        * @description
        * Creates a new child {@link ng.$rootScope.Scope scope}.
        *
-       * The parent scope will propagate the {@link ng.$rootScope.Scope#$digest $digest()} and
-       * {@link ng.$rootScope.Scope#$digest $digest()} events. The scope can be removed from the
-       * scope hierarchy using {@link ng.$rootScope.Scope#$destroy $destroy()}.
+       * The parent scope will propagate the {@link ng.$rootScope.Scope#$digest $digest()} event.
+       * The scope can be removed from the scope hierarchy using {@link ng.$rootScope.Scope#$destroy $destroy()}.
        *
        * {@link ng.$rootScope.Scope#$destroy $destroy()} must be called on a scope when it is
        * desired for the scope and its child scopes to be permanently detached from the parent and
@@ -20375,6 +20402,8 @@ function $RootScopeProvider(){
             logIdx, logMsg, asyncTask;
 
         beginPhase('$digest');
+        // Check for changes to browser url that happened in sync before the call to $digest
+        $browser.$$checkUrlChange();
 
         lastDirtyWatch = null;
 
@@ -22428,16 +22457,6 @@ function $WindowProvider(){
  * For more information about how angular filters work, and how to create your own filters, see
  * {@link guide/filter Filters} in the Angular Developer Guide.
  */
-/**
- * @ngdoc method
- * @name $filterProvider#register
- * @description
- * Register filter factory function.
- *
- * @param {String} name Name of the filter.
- * @param {Function} fn The filter factory function which is injectable.
- */
-
 
 /**
  * @ngdoc service
@@ -22476,7 +22495,7 @@ function $FilterProvider($provide) {
 
   /**
    * @ngdoc method
-   * @name $controllerProvider#register
+   * @name $filterProvider#register
    * @param {string|Object} name Name of the filter function, or an object map of filters where
    *    the keys are the filter names and the values are the filter factories.
    * @returns {Object} Registered filter instance, or if a map of filters was provided then a map
@@ -22549,7 +22568,9 @@ function $FilterProvider($provide) {
  *     which have property `name` containing "M" and property `phone` containing "1". A special
  *     property name `$` can be used (as in `{$:"text"}`) to accept a match against any
  *     property of the object. That's equivalent to the simple substring match with a `string`
- *     as described above.
+ *     as described above. The predicate can be negated by prefixing the string with `!`.
+ *     For Example `{name: "!M"}` predicate will return an array of items which have property `name`
+ *     not containing "M".
  *
  *   - `function(value)`: A predicate function can be used to write arbitrary filters. The function is
  *     called for each element of `array`. The final result is an array of those elements that
@@ -22898,6 +22919,10 @@ function formatNumber(number, pattern, groupSep, decimalSep, fractionSize) {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round
     number = +(Math.round(+(number.toString() + 'e' + fractionSize)).toString() + 'e' + -fractionSize);
 
+    if (number === 0) {
+      isNegative = false;
+    }
+
     var fraction = ('' + number).split(DECIMAL_SEP);
     var whole = fraction[0];
     fraction = fraction[1] || '';
@@ -23067,8 +23092,8 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
  *   * `'mediumTime'`: equivalent to `'h:mm:ss a'` for en_US locale (e.g. 12:05:08 pm)
  *   * `'shortTime'`: equivalent to `'h:mm a'` for en_US locale (e.g. 12:05 pm)
  *
- *   `format` string can contain literal values. These need to be quoted with single quotes (e.g.
- *   `"h 'in the morning'"`). In order to output single quote, use two single quotes in a sequence
+ *   `format` string can contain literal values. These need to be escaped by surrounding with single quotes (e.g.
+ *   `"h 'in the morning'"`). In order to output a single quote, escape it - i.e., two single quotes in a sequence
  *   (e.g. `"h 'o''clock'"`).
  *
  * @param {(Date|number|string)} date Date to format either as Date object, milliseconds (string or
@@ -23088,6 +23113,8 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
           <span>{{1288323623006 | date:'yyyy-MM-dd HH:mm:ss Z'}}</span><br>
        <span ng-non-bindable>{{1288323623006 | date:'MM/dd/yyyy @ h:mma'}}</span>:
           <span>{{'1288323623006' | date:'MM/dd/yyyy @ h:mma'}}</span><br>
+       <span ng-non-bindable>{{1288323623006 | date:"MM/dd/yyyy 'at' h:mma"}}</span>:
+          <span>{{'1288323623006' | date:"MM/dd/yyyy 'at' h:mma"}}</span><br>
      </file>
      <file name="protractor.js" type="protractor">
        it('should format date', function() {
@@ -23097,6 +23124,8 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
             toMatch(/2010\-10\-2\d \d{2}:\d{2}:\d{2} (\-|\+)?\d{4}/);
          expect(element(by.binding("'1288323623006' | date:'MM/dd/yyyy @ h:mma'")).getText()).
             toMatch(/10\/2\d\/2010 @ \d{1,2}:\d{2}(AM|PM)/);
+         expect(element(by.binding("'1288323623006' | date:\"MM/dd/yyyy 'at' h:mma\"")).getText()).
+            toMatch(/10\/2\d\/2010 at \d{1,2}:\d{2}(AM|PM)/);
        });
      </file>
    </example>
@@ -23260,9 +23289,9 @@ var uppercaseFilter = valueFn(uppercase);
            }]);
        </script>
        <div ng-controller="ExampleController">
-         Limit {{numbers}} to: <input type="integer" ng-model="numLimit">
+         Limit {{numbers}} to: <input type="number" step="1" ng-model="numLimit">
          <p>Output numbers: {{ numbers | limitTo:numLimit }}</p>
-         Limit {{letters}} to: <input type="integer" ng-model="letterLimit">
+         Limit {{letters}} to: <input type="number" step="1" ng-model="letterLimit">
          <p>Output letters: {{ letters | limitTo:letterLimit }}</p>
        </div>
      </file>
@@ -23279,14 +23308,15 @@ var uppercaseFilter = valueFn(uppercase);
          expect(limitedLetters.getText()).toEqual('Output letters: abc');
        });
 
-       it('should update the output when -3 is entered', function() {
-         numLimitInput.clear();
-         numLimitInput.sendKeys('-3');
-         letterLimitInput.clear();
-         letterLimitInput.sendKeys('-3');
-         expect(limitedNumbers.getText()).toEqual('Output numbers: [7,8,9]');
-         expect(limitedLetters.getText()).toEqual('Output letters: ghi');
-       });
+       // There is a bug in safari and protractor that doesn't like the minus key
+       // it('should update the output when -3 is entered', function() {
+       //   numLimitInput.clear();
+       //   numLimitInput.sendKeys('-3');
+       //   letterLimitInput.clear();
+       //   letterLimitInput.sendKeys('-3');
+       //   expect(limitedNumbers.getText()).toEqual('Output numbers: [7,8,9]');
+       //   expect(limitedLetters.getText()).toEqual('Output letters: ghi');
+       // });
 
        it('should not exceed the maximum size of input array', function() {
          numLimitInput.clear();
@@ -23458,7 +23488,7 @@ function limitToFilter(){
 orderByFilter.$inject = ['$parse'];
 function orderByFilter($parse){
   return function(array, sortPredicate, reverseOrder) {
-    if (!isArray(array)) return array;
+    if (!(isArrayLike(array))) return array;
     if (!sortPredicate) return array;
     sortPredicate = isArray(sortPredicate) ? sortPredicate: [sortPredicate];
     sortPredicate = map(sortPredicate, function(predicate){
@@ -24045,8 +24075,9 @@ function FormController(element, attrs, $scope, $animate) {
   // convenience method for easy toggling of classes
   function toggleValidCss(isValid, validationErrorKey) {
     validationErrorKey = validationErrorKey ? '-' + snake_case(validationErrorKey, '-') : '';
-    $animate.removeClass(element, (isValid ? INVALID_CLASS : VALID_CLASS) + validationErrorKey);
-    $animate.addClass(element, (isValid ? VALID_CLASS : INVALID_CLASS) + validationErrorKey);
+    $animate.setClass(element,
+      (isValid ? VALID_CLASS : INVALID_CLASS) + validationErrorKey,
+      (isValid ? INVALID_CLASS : VALID_CLASS) + validationErrorKey);
   }
 
   /**
@@ -24261,8 +24292,6 @@ function FormController(element, attrs, $scope, $animate) {
  * hitting enter in any of the input fields will trigger the click handler on the *first* button or
  * input[type=submit] (`ngClick`) *and* a submit handler on the enclosing form (`ngSubmit`)
  *
- * @param {string=} name Name of the form. If specified, the form controller will be published into
- *                       related scope, under this name.
  *
  * ## Animation Hooks
  *
@@ -24340,6 +24369,8 @@ function FormController(element, attrs, $scope, $animate) {
       </file>
     </example>
  *
+ * @param {string=} name Name of the form. If specified, the form controller will be published into
+ *                       related scope, under this name.
  */
 var formDirectiveFactory = function(isNgForm) {
   return ['$timeout', function($timeout) {
@@ -24923,7 +24954,7 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
     // a row.
     var revalidate = validity && ctrl.$$hasNativeValidators;
     if (ctrl.$viewValue !== value || (value === '' && revalidate)) {
-      if (scope.$$phase) {
+      if (scope.$root.$$phase) {
         ctrl.$setViewValue(value);
       } else {
         scope.$apply(function() {
@@ -26687,6 +26718,7 @@ var ngCloakDirective = ngDirective({
  *
  * @element ANY
  * @scope
+ * @priority 500
  * @param {expression} ngController Name of a globally accessible constructor function or an
  *     {@link guide/expression expression} that on the current scope evaluates to a
  *     constructor function. The controller instance can be published into a scope property
@@ -26965,7 +26997,9 @@ var ngControllerDirective = [function() {
       <button ng-click="count = count + 1" ng-init="count=0">
         Increment
       </button>
-      count: {{count}}
+      <span>
+        count: {{count}}
+      <span>
      </file>
      <file name="protractor.js" type="protractor">
        it('should check ng-click', function() {
@@ -26983,19 +27017,32 @@ var ngControllerDirective = [function() {
  * Events that are handled via these handler are always configured not to propagate further.
  */
 var ngEventDirectives = {};
+
+// For events that might fire synchronously during DOM manipulation
+// we need to execute their event handlers asynchronously using $evalAsync,
+// so that they are not executed in an inconsistent state.
+var forceAsyncEvents = {
+  'blur': true,
+  'focus': true
+};
 forEach(
   'click dblclick mousedown mouseup mouseover mouseout mousemove mouseenter mouseleave keydown keyup keypress submit focus blur copy cut paste'.split(' '),
-  function(name) {
-    var directiveName = directiveNormalize('ng-' + name);
-    ngEventDirectives[directiveName] = ['$parse', function($parse) {
+  function(eventName) {
+    var directiveName = directiveNormalize('ng-' + eventName);
+    ngEventDirectives[directiveName] = ['$parse', '$rootScope', function($parse, $rootScope) {
       return {
         compile: function($element, attr) {
           var fn = $parse(attr[directiveName]);
           return function ngEventHandler(scope, element) {
-            element.on(lowercase(name), function(event) {
-              scope.$apply(function() {
+            element.on(eventName, function(event) {
+              var callback = function() {
                 fn(scope, {$event:event});
-              });
+              };
+              if (forceAsyncEvents[eventName] && $rootScope.$$phase) {
+                scope.$evalAsync(callback);
+              } else {
+                scope.$apply(callback);
+              }
             });
           };
         }
@@ -27312,6 +27359,10 @@ forEach(
  * @description
  * Specify custom behavior on focus event.
  *
+ * Note: As the `focus` event is executed synchronously when calling `input.focus()`
+ * AngularJS executes the expression using `scope.$evalAsync` if the event is fired
+ * during an `$apply` to ensure a consistent state.
+ *
  * @element window, input, select, textarea, a
  * @priority 0
  * @param {expression} ngFocus {@link guide/expression Expression} to evaluate upon
@@ -27327,6 +27378,14 @@ forEach(
  *
  * @description
  * Specify custom behavior on blur event.
+ *
+ * A [blur event](https://developer.mozilla.org/en-US/docs/Web/Events/blur) fires when
+ * an element has lost focus.
+ *
+ * Note: As the `blur` event is executed synchronously also during DOM manipulations
+ * (e.g. removing a focussed input),
+ * AngularJS executes the expression using `scope.$evalAsync` if the event is fired
+ * during an `$apply` to ensure a consistent state.
  *
  * @element window, input, select, textarea, a
  * @priority 0
@@ -28408,8 +28467,9 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
                if (block && block.scope) lastBlockMap[block.id] = block;
              });
              // This is a duplicate and we need to throw an error
-             throw ngRepeatMinErr('dupes', "Duplicates in a repeater are not allowed. Use 'track by' expression to specify unique keys. Repeater: {0}, Duplicate key: {1}",
-                                                                                                                                                    expression,       trackById);
+             throw ngRepeatMinErr('dupes',
+                  "Duplicates in a repeater are not allowed. Use 'track by' expression to specify unique keys. Repeater: {0}, Duplicate key: {1}, Duplicate value: {2}",
+                  expression, trackById, toJson(value));
            } else {
              // new never before seen block
              nextBlockOrder[index] = { id: trackById };
@@ -28500,8 +28560,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * @description
  * The `ngShow` directive shows or hides the given HTML element based on the expression
- * provided to the ngShow attribute. The element is shown or hidden by removing or adding
- * the `ng-hide` CSS class onto the element. The `.ng-hide` CSS class is predefined
+ * provided to the `ngShow` attribute. The element is shown or hidden by removing or adding
+ * the `.ng-hide` CSS class onto the element. The `.ng-hide` CSS class is predefined
  * in AngularJS and sets the display style to none (using an !important flag).
  * For CSP mode please add `angular-csp.css` to your html file (see {@link ng.directive:ngCsp ngCsp}).
  *
@@ -28513,8 +28573,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  * <div ng-show="myValue" class="ng-hide"></div>
  * ```
  *
- * When the ngShow expression evaluates to false then the ng-hide CSS class is added to the class attribute
- * on the element causing it to become hidden. When true, the ng-hide CSS class is removed
+ * When the `ngShow` expression evaluates to false then the `.ng-hide` CSS class is added to the class attribute
+ * on the element causing it to become hidden. When true, the `.ng-hide` CSS class is removed
  * from the element causing the element not to appear hidden.
  *
  * <div class="alert alert-warning">
@@ -28524,7 +28584,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * ## Why is !important used?
  *
- * You may be wondering why !important is used for the .ng-hide CSS class. This is because the `.ng-hide` selector
+ * You may be wondering why !important is used for the `.ng-hide` CSS class. This is because the `.ng-hide` selector
  * can be easily overridden by heavier selectors. For example, something as simple
  * as changing the display style on a HTML list item would make hidden elements appear visible.
  * This also becomes a bigger issue when dealing with CSS frameworks.
@@ -28533,7 +28593,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  * specificity (when !important isn't used with any conflicting styles). If a developer chooses to override the
  * styling to change how to hide an element then it is just a matter of using !important in their own CSS code.
  *
- * ### Overriding .ng-hide
+ * ### Overriding `.ng-hide`
  *
  * By default, the `.ng-hide` class will style the element with `display:none!important`. If you wish to change
  * the hide behavior with ngShow/ngHide then this can be achieved by restating the styles for the `.ng-hide`
@@ -28551,7 +28611,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * By default you don't need to override in CSS anything and the animations will work around the display style.
  *
- * ## A note about animations with ngShow
+ * ## A note about animations with `ngShow`
  *
  * Animations in ngShow/ngHide work with the show and hide events that are triggered when the directive expression
  * is true and false. This system works like the animation system present with ngClass except that
@@ -28576,8 +28636,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  * property to block during animation states--ngAnimate will handle the style toggling automatically for you.
  *
  * @animations
- * addClass: .ng-hide - happens after the ngShow expression evaluates to a truthy value and the just before contents are set to visible
- * removeClass: .ng-hide - happens after the ngShow expression evaluates to a non truthy value and just before the contents are set to hidden
+ * addClass: `.ng-hide` - happens after the `ngShow` expression evaluates to a truthy value and the just before contents are set to visible
+ * removeClass: `.ng-hide` - happens after the `ngShow` expression evaluates to a non truthy value and just before the contents are set to hidden
  *
  * @element ANY
  * @param {expression} ngShow If the {@link guide/expression expression} is truthy
@@ -28657,7 +28717,7 @@ var ngShowDirective = ['$animate', function($animate) {
  *
  * @description
  * The `ngHide` directive shows or hides the given HTML element based on the expression
- * provided to the ngHide attribute. The element is shown or hidden by removing or adding
+ * provided to the `ngHide` attribute. The element is shown or hidden by removing or adding
  * the `ng-hide` CSS class onto the element. The `.ng-hide` CSS class is predefined
  * in AngularJS and sets the display style to none (using an !important flag).
  * For CSP mode please add `angular-csp.css` to your html file (see {@link ng.directive:ngCsp ngCsp}).
@@ -28670,8 +28730,8 @@ var ngShowDirective = ['$animate', function($animate) {
  * <div ng-hide="myValue"></div>
  * ```
  *
- * When the ngHide expression evaluates to true then the .ng-hide CSS class is added to the class attribute
- * on the element causing it to become hidden. When false, the ng-hide CSS class is removed
+ * When the `.ngHide` expression evaluates to true then the `.ng-hide` CSS class is added to the class attribute
+ * on the element causing it to become hidden. When false, the `.ng-hide` CSS class is removed
  * from the element causing the element not to appear hidden.
  *
  * <div class="alert alert-warning">
@@ -28681,7 +28741,7 @@ var ngShowDirective = ['$animate', function($animate) {
  *
  * ## Why is !important used?
  *
- * You may be wondering why !important is used for the .ng-hide CSS class. This is because the `.ng-hide` selector
+ * You may be wondering why !important is used for the `.ng-hide` CSS class. This is because the `.ng-hide` selector
  * can be easily overridden by heavier selectors. For example, something as simple
  * as changing the display style on a HTML list item would make hidden elements appear visible.
  * This also becomes a bigger issue when dealing with CSS frameworks.
@@ -28690,7 +28750,7 @@ var ngShowDirective = ['$animate', function($animate) {
  * specificity (when !important isn't used with any conflicting styles). If a developer chooses to override the
  * styling to change how to hide an element then it is just a matter of using !important in their own CSS code.
  *
- * ### Overriding .ng-hide
+ * ### Overriding `.ng-hide`
  *
  * By default, the `.ng-hide` class will style the element with `display:none!important`. If you wish to change
  * the hide behavior with ngShow/ngHide then this can be achieved by restating the styles for the `.ng-hide`
@@ -28708,7 +28768,7 @@ var ngShowDirective = ['$animate', function($animate) {
  *
  * By default you don't need to override in CSS anything and the animations will work around the display style.
  *
- * ## A note about animations with ngHide
+ * ## A note about animations with `ngHide`
  *
  * Animations in ngShow/ngHide work with the show and hide events that are triggered when the directive expression
  * is true and false. This system works like the animation system present with ngClass, except that the `.ng-hide`
@@ -28732,8 +28792,8 @@ var ngShowDirective = ['$animate', function($animate) {
  * property to block during animation states--ngAnimate will handle the style toggling automatically for you.
  *
  * @animations
- * removeClass: .ng-hide - happens after the ngHide expression evaluates to a truthy value and just before the contents are set to hidden
- * addClass: .ng-hide - happens after the ngHide expression evaluates to a non truthy value and just before the contents are set to visible
+ * removeClass: `.ng-hide` - happens after the `ngHide` expression evaluates to a truthy value and just before the contents are set to hidden
+ * addClass: `.ng-hide` - happens after the `ngHide` expression evaluates to a non truthy value and just before the contents are set to visible
  *
  * @element ANY
  * @param {expression} ngHide If the {@link guide/expression expression} is truthy then
@@ -29586,6 +29646,19 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
         ctrl.$render = render;
 
         scope.$watchCollection(valuesFn, render);
+        scope.$watchCollection(function () {
+          var locals = {},
+              values = valuesFn(scope);
+          if (values) {
+            var toDisplay = new Array(values.length);
+            for (var i = 0, ii = values.length; i < ii; i++) {
+              locals[valueName] = values[i];
+              toDisplay[i] = displayFn(scope, locals);
+            }
+            return toDisplay;
+          }
+        }, render);
+
         if ( multiple ) {
           scope.$watchCollection(function() { return ctrl.$modelValue; }, render);
         }
@@ -29758,6 +29831,7 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
                     id: option.id,
                     selected: option.selected
                 });
+                selectCtrl.addOption(option.label, element);
                 if (lastElement) {
                   lastElement.after(element);
                 } else {
@@ -29769,7 +29843,9 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
             // remove any excessive OPTIONs in a group
             index++; // increment since the existingOptions[0] is parent element not OPTION
             while(existingOptions.length > index) {
-              existingOptions.pop().element.remove();
+              option = existingOptions.pop();
+              selectCtrl.removeOption(option.label);
+              option.element.remove();
             }
           }
           // remove any excessive OPTGROUPs from select
@@ -29856,7 +29932,7 @@ var styleDirective = valueFn({
 
 !window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}.ng-animate-block-transitions{transition:0s all!important;-webkit-transition:0s all!important;}.ng-hide-add-active,.ng-hide-remove{display:block!important;}</style>');
 /**
- * @license AngularJS v1.2.23
+ * @license AngularJS v1.2.26
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30063,7 +30139,7 @@ angular.module('ngCookies', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.23
+ * @license AngularJS v1.2.26
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30193,10 +30269,16 @@ function shallowClearAndCopy(src, dst) {
  *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
  *     transform function or an array of such functions. The transform function takes the http
  *     request body and headers and returns its transformed (typically serialized) version.
+ *     By default, transformRequest will contain one function that checks if the request data is
+ *     an object and serializes to using `angular.toJson`. To prevent this behavior, set
+ *     `transformRequest` to an empty array: `transformRequest: []`
  *   - **`transformResponse`** –
  *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
  *     transform function or an array of such functions. The transform function takes the http
  *     response body and headers and returns its transformed (typically deserialized) version.
+ *     By default, transformResponse will contain one function that checks if the response looks like
+ *     a JSON string and deserializes it using `angular.fromJson`. To prevent this behavior, set
+ *     `transformResponse` to an empty array: `transformResponse: []`
  *   - **`cache`** – `{boolean|Cache}` – If true, a default $http cache will be used to cache the
  *     GET request, otherwise if a cache instance built with
  *     {@link ng.$cacheFactory $cacheFactory}, this cache will be used for
@@ -30685,7 +30767,7 @@ angular.module('ngResource', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.23
+ * @license AngularJS v1.2.26
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -31336,7 +31418,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
  * angular-ui-bootstrap
  * http://angular-ui.github.io/bootstrap/
 
- * Version: 0.11.0 - 2014-05-01
+ * Version: 0.11.2 - 2014-09-26
  * License: MIT
  */
 angular.module("ui.bootstrap", ["ui.bootstrap.tpls", "ui.bootstrap.transition","ui.bootstrap.collapse","ui.bootstrap.accordion","ui.bootstrap.alert","ui.bootstrap.bindHtml","ui.bootstrap.buttons","ui.bootstrap.carousel","ui.bootstrap.dateparser","ui.bootstrap.position","ui.bootstrap.datepicker","ui.bootstrap.dropdown","ui.bootstrap.modal","ui.bootstrap.pagination","ui.bootstrap.tooltip","ui.bootstrap.popover","ui.bootstrap.progressbar","ui.bootstrap.rating","ui.bootstrap.tabs","ui.bootstrap.timepicker","ui.bootstrap.typeahead"]);
@@ -32081,7 +32163,7 @@ angular.module('ui.bootstrap.dateparser', [])
     }
   };
 
-  this.createParser = function(format) {
+  function createParser(format) {
     var map = [], regex = format.split('');
 
     angular.forEach(formatCodeToRegex, function(data, code) {
@@ -32106,17 +32188,17 @@ angular.module('ui.bootstrap.dateparser', [])
       regex: new RegExp('^' + regex.join('') + '$'),
       map: orderByFilter(map, 'index')
     };
-  };
+  }
 
   this.parse = function(input, format) {
-    if ( !angular.isString(input) ) {
+    if ( !angular.isString(input) || !format ) {
       return input;
     }
 
     format = $locale.DATETIME_FORMATS[format] || format;
 
     if ( !this.parsers[format] ) {
-      this.parsers[format] = this.createParser(format);
+      this.parsers[format] = createParser(format);
     }
 
     var parser = this.parsers[format],
@@ -32342,7 +32424,7 @@ angular.module('ui.bootstrap.datepicker', ['ui.bootstrap.dateparser', 'ui.bootst
     self[key] = angular.isDefined($attrs[key]) ? (index < 8 ? $interpolate($attrs[key])($scope.$parent) : $scope.$parent.$eval($attrs[key])) : datepickerConfig[key];
   });
 
-  // Watchable attributes
+  // Watchable date attributes
   angular.forEach(['minDate', 'maxDate'], function( key ) {
     if ( $attrs[key] ) {
       $scope.$parent.$watch($parse($attrs[key]), function(value) {
@@ -32789,12 +32871,24 @@ function ($compile, $parse, $document, $position, dateFilter, dateParser, datepi
         });
       }
 
-      angular.forEach(['minDate', 'maxDate'], function( key ) {
+      scope.watchData = {};
+      angular.forEach(['minDate', 'maxDate', 'datepickerMode'], function( key ) {
         if ( attrs[key] ) {
-          scope.$parent.$watch($parse(attrs[key]), function(value){
-            scope[key] = value;
+          var getAttribute = $parse(attrs[key]);
+          scope.$parent.$watch(getAttribute, function(value){
+            scope.watchData[key] = value;
           });
-          datepickerEl.attr(cameltoDash(key), key);
+          datepickerEl.attr(cameltoDash(key), 'watchData.' + key);
+
+          // Propagate changes from datepicker to outside
+          if ( key === 'datepickerMode' ) {
+            var setAttribute = getAttribute.assign;
+            scope.$watch('watchData.' + key, function(value, oldvalue) {
+              if ( value !== oldvalue ) {
+                setAttribute(scope.$parent, value);
+              }
+            });
+          }
         }
       });
       if (attrs.dateDisabled) {
@@ -32905,6 +32999,9 @@ function ($compile, $parse, $document, $position, dateFilter, dateParser, datepi
       };
 
       var $popup = $compile(popupEl)(scope);
+      // Prevent jQuery cache memory leak (template is now redundant after linking)
+      popupEl.remove();
+
       if ( appendToBody ) {
         $document.find('body').append($popup);
       } else {
@@ -32966,7 +33063,8 @@ angular.module('ui.bootstrap.dropdown', [])
   };
 
   var closeDropdown = function( evt ) {
-    if (evt && evt.isDefaultPrevented()) {
+    var toggleElement = openScope.getToggleElement();
+    if ( evt && toggleElement && toggleElement[0].contains(evt.target) ) {
         return;
     }
 
@@ -33011,6 +33109,10 @@ angular.module('ui.bootstrap.dropdown', [])
   // Allow other directives to watch status
   this.isOpen = function() {
     return scope.isOpen;
+  };
+
+  scope.getToggleElement = function() {
+    return self.toggleElement;
   };
 
   scope.focusToggleElement = function() {
@@ -33154,7 +33256,8 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
       restrict: 'EA',
       replace: true,
       templateUrl: 'template/modal/backdrop.html',
-      link: function (scope) {
+      link: function (scope, element, attrs) {
+        scope.backdropClass = attrs.backdropClass || '';
 
         scope.animate = false;
 
@@ -33185,8 +33288,18 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
         $timeout(function () {
           // trigger CSS transitions
           scope.animate = true;
-          // focus a freshly-opened modal
-          element[0].focus();
+
+          /**
+           * Auto-focusing of a freshly-opened modal element causes any child elements
+           * with the autofocus attribute to loose focus. This is an issue on touch
+           * based devices which will show and then hide the onscreen keyboard.
+           * Attempts to refocus the autofocus element via JavaScript will not reopen
+           * the onscreen keyboard. Fixed by updated the focusing logic to only autofocus
+           * the modal element if the modal does not contain an autofocus element.
+           */
+          if (!element[0].querySelectorAll('[autofocus]').length) {
+            element[0].focus();
+          }
         });
 
         scope.close = function (evt) {
@@ -33200,6 +33313,17 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
       }
     };
   }])
+
+  .directive('modalTransclude', function () {
+    return {
+      link: function($scope, $element, $attrs, controller, $transclude) {
+        $transclude($scope.$parent, function(clone) {
+          $element.empty();
+          $element.append(clone);
+        });
+      }
+    };
+  })
 
   .factory('$modalStack', ['$transition', '$timeout', '$document', '$compile', '$rootScope', '$$stackedMap',
     function ($transition, $timeout, $document, $compile, $rootScope, $$stackedMap) {
@@ -33272,7 +33396,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
           });
         } else {
           // Ensure this call is async
-          $timeout(afterAnimating, 0);
+          $timeout(afterAnimating);
         }
 
         function afterAnimating() {
@@ -33317,7 +33441,9 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
         if (currBackdropIndex >= 0 && !backdropDomEl) {
           backdropScope = $rootScope.$new(true);
           backdropScope.index = currBackdropIndex;
-          backdropDomEl = $compile('<div modal-backdrop></div>')(backdropScope);
+          var angularBackgroundDomEl = angular.element('<div modal-backdrop></div>');
+          angularBackgroundDomEl.attr('backdrop-class', modal.backdropClass);
+          backdropDomEl = $compile(angularBackgroundDomEl)(backdropScope);
           body.append(backdropDomEl);
         }
 
@@ -33337,17 +33463,17 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
       };
 
       $modalStack.close = function (modalInstance, result) {
-        var modalWindow = openedWindows.get(modalInstance).value;
+        var modalWindow = openedWindows.get(modalInstance);
         if (modalWindow) {
-          modalWindow.deferred.resolve(result);
+          modalWindow.value.deferred.resolve(result);
           removeModalWindow(modalInstance);
         }
       };
 
       $modalStack.dismiss = function (modalInstance, reason) {
-        var modalWindow = openedWindows.get(modalInstance).value;
+        var modalWindow = openedWindows.get(modalInstance);
         if (modalWindow) {
-          modalWindow.deferred.reject(reason);
+          modalWindow.value.deferred.reject(reason);
           removeModalWindow(modalInstance);
         }
       };
@@ -33381,14 +33507,15 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
 
           function getTemplatePromise(options) {
             return options.template ? $q.when(options.template) :
-              $http.get(options.templateUrl, {cache: $templateCache}).then(function (result) {
-                return result.data;
+              $http.get(angular.isFunction(options.templateUrl) ? (options.templateUrl)() : options.templateUrl,
+                {cache: $templateCache}).then(function (result) {
+                  return result.data;
               });
           }
 
           function getResolvePromises(resolves) {
             var promisesArr = [];
-            angular.forEach(resolves, function (value, key) {
+            angular.forEach(resolves, function (value) {
               if (angular.isFunction(value) || angular.isArray(value)) {
                 promisesArr.push($q.when($injector.invoke(value)));
               }
@@ -33444,6 +33571,9 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
                 });
 
                 ctrlInstance = $controller(modalOptions.controller, ctrlLocals);
+                if (modalOptions.controllerAs) {
+                  modalScope[modalOptions.controllerAs] = ctrlInstance;
+                }
               }
 
               $modalStack.open(modalInstance, {
@@ -33452,6 +33582,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
                 content: tplAndVars[0],
                 backdrop: modalOptions.backdrop,
                 keyboard: modalOptions.keyboard,
+                backdropClass: modalOptions.backdropClass,
                 windowClass: modalOptions.windowClass,
                 windowTemplateUrl: modalOptions.windowTemplateUrl,
                 size: modalOptions.size
@@ -34762,7 +34893,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
   .factory('typeaheadParser', ['$parse', function ($parse) {
 
   //                      00000111000000000000022200000000000000003333333333333330000000000044000
-  var TYPEAHEAD_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/;
+  var TYPEAHEAD_REGEXP = /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+([\s\S]+?)$/;
 
   return {
     parse:function (input) {
@@ -34928,6 +35059,18 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       //Declare the timeout promise var outside the function scope so that stacked calls can be cancelled later 
       var timeoutPromise;
 
+      var scheduleSearchWithTimeout = function(inputValue) {
+        timeoutPromise = $timeout(function () {
+          getMatchesAsync(inputValue);
+        }, waitTime);
+      };
+
+      var cancelPreviousTimeout = function() {
+        if (timeoutPromise) {
+          $timeout.cancel(timeoutPromise);
+        }
+      };
+
       //plug into $parsers pipeline to open a typeahead on view changes initiated from DOM
       //$parsers kick-in on all the changes coming from the view as well as manually triggered by $setViewValue
       modelCtrl.$parsers.unshift(function (inputValue) {
@@ -34936,17 +35079,14 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
         if (inputValue && inputValue.length >= minSearch) {
           if (waitTime > 0) {
-            if (timeoutPromise) {
-              $timeout.cancel(timeoutPromise);//cancel previous timeout
-            }
-            timeoutPromise = $timeout(function () {
-              getMatchesAsync(inputValue);
-            }, waitTime);
+            cancelPreviousTimeout();
+            scheduleSearchWithTimeout(inputValue);
           } else {
             getMatchesAsync(inputValue);
           }
         } else {
           isLoadingSetter(originalScope, false);
+          cancelPreviousTimeout();
           resetMatches();
         }
 
@@ -35154,7 +35294,7 @@ angular.module("template/accordion/accordion.html", []).run(["$templateCache", f
 
 angular.module("template/alert/alert.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/alert/alert.html",
-    "<div class=\"alert\" ng-class=\"{'alert-{{type || 'warning'}}': true, 'alert-dismissable': closeable}\" role=\"alert\">\n" +
+    "<div class=\"alert\" ng-class=\"['alert-' + (type || 'warning'), closeable ? 'alert-dismissable' : null]\" role=\"alert\">\n" +
     "    <button ng-show=\"closeable\" type=\"button\" class=\"close\" ng-click=\"close()\">\n" +
     "        <span aria-hidden=\"true\">&times;</span>\n" +
     "        <span class=\"sr-only\">Close</span>\n" +
@@ -35283,7 +35423,7 @@ angular.module("template/datepicker/year.html", []).run(["$templateCache", funct
 
 angular.module("template/modal/backdrop.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/modal/backdrop.html",
-    "<div class=\"modal-backdrop fade\"\n" +
+    "<div class=\"modal-backdrop fade {{ backdropClass }}\"\n" +
     "     ng-class=\"{in: animate}\"\n" +
     "     ng-style=\"{'z-index': 1040 + (index && 1 || 0) + index*10}\"\n" +
     "></div>\n" +
@@ -35293,7 +35433,7 @@ angular.module("template/modal/backdrop.html", []).run(["$templateCache", functi
 angular.module("template/modal/window.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/modal/window.html",
     "<div tabindex=\"-1\" role=\"dialog\" class=\"modal fade\" ng-class=\"{in: animate}\" ng-style=\"{'z-index': 1050 + index*10, display: 'block'}\" ng-click=\"close($event)\">\n" +
-    "    <div class=\"modal-dialog\" ng-class=\"{'modal-sm': size == 'sm', 'modal-lg': size == 'lg'}\"><div class=\"modal-content\" ng-transclude></div></div>\n" +
+    "    <div class=\"modal-dialog\" ng-class=\"{'modal-sm': size == 'sm', 'modal-lg': size == 'lg'}\"><div class=\"modal-content\" modal-transclude></div></div>\n" +
     "</div>");
 }]);
 
@@ -35381,16 +35521,8 @@ angular.module("template/tabs/tab.html", []).run(["$templateCache", function($te
     "");
 }]);
 
-angular.module("template/tabs/tabset-titles.html", []).run(["$templateCache", function($templateCache) {
-  $templateCache.put("template/tabs/tabset-titles.html",
-    "<ul class=\"nav {{type && 'nav-' + type}}\" ng-class=\"{'nav-stacked': vertical}\">\n" +
-    "</ul>\n" +
-    "");
-}]);
-
 angular.module("template/tabs/tabset.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/tabs/tabset.html",
-    "\n" +
     "<div>\n" +
     "  <ul class=\"nav nav-{{type || 'tabs'}}\" ng-class=\"{'nav-stacked': vertical, 'nav-justified': justified}\" ng-transclude></ul>\n" +
     "  <div class=\"tab-content\">\n" +
@@ -35442,12 +35574,1257 @@ angular.module("template/typeahead/typeahead-match.html", []).run(["$templateCac
 
 angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/typeahead/typeahead-popup.html",
-    "<ul class=\"dropdown-menu\" ng-if=\"isOpen()\" ng-style=\"{top: position.top+'px', left: position.left+'px'}\" style=\"display: block;\" role=\"listbox\" aria-hidden=\"{{!isOpen()}}\">\n" +
+    "<ul class=\"dropdown-menu\" ng-show=\"isOpen()\" ng-style=\"{top: position.top+'px', left: position.left+'px'}\" style=\"display: block;\" role=\"listbox\" aria-hidden=\"{{!isOpen()}}\">\n" +
     "    <li ng-repeat=\"match in matches track by $index\" ng-class=\"{active: isActive($index) }\" ng-mouseenter=\"selectActive($index)\" ng-click=\"selectMatch($index)\" role=\"option\" id=\"{{match.id}}\">\n" +
     "        <div typeahead-match index=\"$index\" match=\"match\" query=\"query\" template-url=\"templateUrl\"></div>\n" +
     "    </li>\n" +
-    "</ul>");
+    "</ul>\n" +
+    "");
 }]);
+
+/**
+ * @license Angular UI Tree v2.1.5
+ * (c) 2010-2014. https://github.com/JimLiu/angular-ui-tree
+ * License: MIT
+ */
+(function () {
+  'use strict';
+
+  angular.module('ui.tree', [])
+    .constant('treeConfig', {
+      treeClass: 'angular-ui-tree',
+      emptyTreeClass: 'angular-ui-tree-empty',
+      hiddenClass: 'angular-ui-tree-hidden',
+      nodesClass: 'angular-ui-tree-nodes',
+      nodeClass: 'angular-ui-tree-node',
+      handleClass: 'angular-ui-tree-handle',
+      placeHolderClass: 'angular-ui-tree-placeholder',
+      dragClass: 'angular-ui-tree-drag',
+      dragThreshold: 3,
+      levelThreshold: 30
+    });
+
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+   /**
+    * @ngdoc service
+    * @name ui.tree.service:$helper
+    * @requires ng.$document
+    * @requires ng.$window
+    *
+    * @description
+    * angular-ui-tree.
+    */
+    .factory('$uiTreeHelper', ['$document', '$window',
+      function ($document, $window) {
+        return {
+
+          /**
+           * A hashtable used to storage data of nodes
+           * @type {Object}
+           */
+          nodesData: {
+          },
+
+          setNodeAttribute: function(scope, attrName, val) {
+            var data = this.nodesData[scope.$modelValue.$$hashKey];
+            if (!data) {
+              data = {};
+              this.nodesData[scope.$modelValue.$$hashKey] = data;
+            }
+            data[attrName] = val;
+          },
+
+          getNodeAttribute: function(scope, attrName) {
+            var data = this.nodesData[scope.$modelValue.$$hashKey];
+            if (data) {
+              return data[attrName];
+            }
+            return null;
+          },
+
+          /**
+           * @ngdoc method
+           * @methodOf ui.tree.service:$nodrag
+           * @param  {Object} targetElm angular element
+           * @return {Bool} check if the node can be dragged.
+           */
+          nodrag: function (targetElm) {
+            return (typeof targetElm.attr('data-nodrag')) != "undefined";
+          },
+
+          /**
+           * get the event object for touchs
+           * @param  {[type]} e [description]
+           * @return {[type]}   [description]
+           */
+          eventObj: function(e) {
+            var obj = e;
+            if (e.targetTouches !== undefined) {
+              obj = e.targetTouches.item(0);
+            } else if (e.originalEvent !== undefined && e.originalEvent.targetTouches !== undefined) {
+              obj = e.originalEvent.targetTouches.item(0);
+            }
+            return obj;
+          },
+
+          dragInfo: function(node) {
+            return {
+              source: node,
+              sourceInfo: {
+                nodeScope: node,
+                index: node.index(),
+                nodesScope: node.$parentNodesScope
+              },
+              index: node.index(),
+              siblings: node.siblings().slice(0),
+              parent: node.$parentNodesScope,
+
+              moveTo: function(parent, siblings, index) { // Move the node to a new position
+                this.parent = parent;
+                this.siblings = siblings.slice(0);
+                var i = this.siblings.indexOf(this.source); // If source node is in the target nodes
+                if (i > -1) {
+                  this.siblings.splice(i, 1);
+                  if (this.source.index() < index) {
+                    index--;
+                  }
+                }
+                this.siblings.splice(index, 0, this.source);
+                this.index = index;
+              },
+
+              parentNode: function() {
+                return this.parent.$nodeScope;
+              },
+
+              prev: function() {
+                if (this.index > 0) {
+                  return this.siblings[this.index - 1];
+                }
+                return null;
+              },
+
+              next: function() {
+                if (this.index < this.siblings.length - 1) {
+                  return this.siblings[this.index + 1];
+                }
+                return null;
+              },
+
+              isDirty: function() {
+                return this.source.$parentNodesScope != this.parent ||
+                        this.source.index() != this.index;
+              },
+
+              eventArgs: function(elements, pos) {
+                return {
+                  source: this.sourceInfo,
+                  dest: {
+                    index: this.index,
+                    nodesScope: this.parent
+                  },
+                  elements: elements,
+                  pos: pos
+                };
+              },
+
+              apply: function() {
+                var nodeData = this.source.$modelValue;
+                this.source.remove();
+                this.parent.insertNode(this.index, nodeData);
+              }
+            };
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#height
+          * @methodOf ui.tree.service:$helper
+          *
+          * @description
+          * Get the height of an element.
+          *
+          * @param {Object} element Angular element.
+          * @returns {String} Height
+          */
+          height: function (element) {
+            return element.prop('scrollHeight');
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#width
+          * @methodOf ui.tree.service:$helper
+          *
+          * @description
+          * Get the width of an element.
+          *
+          * @param {Object} element Angular element.
+          * @returns {String} Width
+          */
+          width: function (element) {
+            return element.prop('scrollWidth');
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#offset
+          * @methodOf ui.nestedSortable.service:$helper
+          *
+          * @description
+          * Get the offset values of an element.
+          *
+          * @param {Object} element Angular element.
+          * @returns {Object} Object with properties width, height, top and left
+          */
+          offset: function (element) {
+            var boundingClientRect = element[0].getBoundingClientRect();
+
+            return {
+                width: element.prop('offsetWidth'),
+                height: element.prop('offsetHeight'),
+                top: boundingClientRect.top + ($window.pageYOffset || $document[0].body.scrollTop || $document[0].documentElement.scrollTop),
+                left: boundingClientRect.left + ($window.pageXOffset || $document[0].body.scrollLeft  || $document[0].documentElement.scrollLeft)
+              };
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#positionStarted
+          * @methodOf ui.tree.service:$helper
+          *
+          * @description
+          * Get the start position of the target element according to the provided event properties.
+          *
+          * @param {Object} e Event
+          * @param {Object} target Target element
+          * @returns {Object} Object with properties offsetX, offsetY, startX, startY, nowX and dirX.
+          */
+          positionStarted: function (e, target) {
+            var pos = {};
+            pos.offsetX = e.pageX - this.offset(target).left;
+            pos.offsetY = e.pageY - this.offset(target).top;
+            pos.startX = pos.lastX = e.pageX;
+            pos.startY = pos.lastY = e.pageY;
+            pos.nowX = pos.nowY = pos.distX = pos.distY = pos.dirAx = 0;
+            pos.dirX = pos.dirY = pos.lastDirX = pos.lastDirY = pos.distAxX = pos.distAxY = 0;
+            return pos;
+          },
+
+          positionMoved: function (e, pos, firstMoving) {
+            // mouse position last events
+            pos.lastX = pos.nowX;
+            pos.lastY = pos.nowY;
+
+            // mouse position this events
+            pos.nowX  = e.pageX;
+            pos.nowY  = e.pageY;
+
+            // distance mouse moved between events
+            pos.distX = pos.nowX - pos.lastX;
+            pos.distY = pos.nowY - pos.lastY;
+
+            // direction mouse was moving
+            pos.lastDirX = pos.dirX;
+            pos.lastDirY = pos.dirY;
+
+            // direction mouse is now moving (on both axis)
+            pos.dirX = pos.distX === 0 ? 0 : pos.distX > 0 ? 1 : -1;
+            pos.dirY = pos.distY === 0 ? 0 : pos.distY > 0 ? 1 : -1;
+
+            // axis mouse is now moving on
+            var newAx   = Math.abs(pos.distX) > Math.abs(pos.distY) ? 1 : 0;
+
+            // do nothing on first move
+            if (firstMoving) {
+              pos.dirAx  = newAx;
+              pos.moving = true;
+              return;
+            }
+
+            // calc distance moved on this axis (and direction)
+            if (pos.dirAx !== newAx) {
+              pos.distAxX = 0;
+              pos.distAxY = 0;
+            } else {
+              pos.distAxX += Math.abs(pos.distX);
+              if (pos.dirX !== 0 && pos.dirX !== pos.lastDirX) {
+                pos.distAxX = 0;
+              }
+
+              pos.distAxY += Math.abs(pos.distY);
+              if (pos.dirY !== 0 && pos.dirY !== pos.lastDirY) {
+                pos.distAxY = 0;
+              }
+            }
+
+            pos.dirAx = newAx;
+          }
+        };
+      }
+    ]);
+
+})();
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeController', ['$scope', '$element', '$attrs', 'treeConfig',
+      function ($scope, $element, $attrs, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$nodesScope = null; // root nodes
+        $scope.$type = 'uiTree';
+        $scope.$emptyElm = null;
+        $scope.$callbacks = null;
+
+        $scope.dragEnabled = true;
+        $scope.emptyPlaceHolderEnabled = true;
+        $scope.maxDepth = 0;
+        $scope.dragDelay = 0;
+
+        // Check if it's a empty tree
+        $scope.isEmpty = function() {
+          return ($scope.$nodesScope && $scope.$nodesScope.$modelValue
+            && $scope.$nodesScope.$modelValue.length === 0);
+        };
+
+        // add placeholder to empty tree
+        $scope.place = function(placeElm) {
+          $scope.$nodesScope.$element.append(placeElm);
+          $scope.$emptyElm.remove();
+        };
+
+        $scope.resetEmptyElement = function() {
+          if ($scope.$nodesScope.$modelValue.length === 0 &&
+            $scope.emptyPlaceHolderEnabled) {
+            $element.append($scope.$emptyElm);
+          } else {
+            $scope.$emptyElm.remove();
+          }
+        };
+
+        var collapseOrExpand = function(scope, collapsed) {
+          var nodes = scope.childNodes();
+          for (var i = 0; i < nodes.length; i++) {
+            collapsed ? nodes[i].collapse() : nodes[i].expand();
+            var subScope = nodes[i].$childNodesScope;
+            if (subScope) {
+              collapseOrExpand(subScope, collapsed);
+            }
+          }
+        };
+
+        $scope.collapseAll = function() {
+          collapseOrExpand($scope.$nodesScope, true);
+        };
+
+        $scope.expandAll = function() {
+          collapseOrExpand($scope.$nodesScope, false);
+        };
+
+      }
+    ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeNodesController', ['$scope', '$element', 'treeConfig',
+      function ($scope, $element, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$modelValue = null;
+        $scope.$nodeScope = null; // the scope of node which the nodes belongs to
+        $scope.$treeScope = null;
+        $scope.$type = 'uiTreeNodes';
+        $scope.$nodesMap = {};
+
+        $scope.nodrop = false;
+        $scope.maxDepth = 0;
+
+        $scope.initSubNode = function(subNode) {
+          $scope.$nodesMap[subNode.$modelValue.$$hashKey] = subNode;
+        };
+
+        $scope.destroySubNode = function(subNode) {
+          $scope.$nodesMap[subNode.$modelValue.$$hashKey] = null;
+        };
+
+        $scope.accept = function(sourceNode, destIndex) {
+          return $scope.$treeScope.$callbacks.accept(sourceNode, $scope, destIndex);
+        };
+
+        $scope.beforeDrag = function(sourceNode) {
+          return $scope.$treeScope.$callbacks.beforeDrag(sourceNode);
+        };
+
+        $scope.isParent = function(node) {
+          return node.$parentNodesScope == $scope;
+        };
+
+        $scope.hasChild = function() {
+          return $scope.$modelValue.length > 0;
+        };
+
+        $scope.safeApply = function(fn) {
+          var phase = this.$root.$$phase;
+          if(phase == '$apply' || phase == '$digest') {
+            if(fn && (typeof(fn) === 'function')) {
+              fn();
+            }
+          } else {
+            this.$apply(fn);
+          }
+        };
+
+        $scope.removeNode = function(node) {
+          var index = $scope.$modelValue.indexOf(node.$modelValue);
+          if (index > -1) {
+            $scope.safeApply(function() {
+              $scope.$modelValue.splice(index, 1)[0];
+            });
+            return node;
+          }
+          return null;
+        };
+
+        $scope.insertNode = function(index, nodeData) {
+          $scope.safeApply(function() {
+            $scope.$modelValue.splice(index, 0, nodeData);
+          });
+        };
+
+        $scope.childNodes = function() {
+          var nodes = [];
+          if ($scope.$modelValue) {
+            for (var i = 0; i < $scope.$modelValue.length; i++) {
+              nodes.push($scope.$nodesMap[$scope.$modelValue[i].$$hashKey]);
+            }
+          }
+          return nodes;
+        };
+
+        $scope.depth = function() {
+          if ($scope.$nodeScope) {
+            return $scope.$nodeScope.depth();
+          }
+          return 0; // if it has no $nodeScope, it's root
+        };
+
+        // check if depth limit has reached
+        $scope.outOfDepth = function(sourceNode) {
+          var maxDepth = $scope.maxDepth || $scope.$treeScope.maxDepth;
+          if (maxDepth > 0) {
+            return $scope.depth() + sourceNode.maxSubDepth() + 1 > maxDepth;
+          }
+          return false;
+        };
+
+      }
+    ]);
+})();
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeNodeController', ['$scope', '$element', '$attrs', 'treeConfig',
+      function ($scope, $element, $attrs, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$modelValue = null; // Model value for node;
+        $scope.$parentNodeScope = null; // uiTreeNode Scope of parent node;
+        $scope.$childNodesScope = null; // uiTreeNodes Scope of child nodes.
+        $scope.$parentNodesScope = null; // uiTreeNodes Scope of parent nodes.
+        $scope.$treeScope = null; // uiTree scope
+        $scope.$handleScope = null; // it's handle scope
+        $scope.$type = 'uiTreeNode';
+        $scope.$$apply = false; //
+
+        $scope.collapsed = false;
+
+        $scope.init = function(controllersArr) {
+          var treeNodesCtrl = controllersArr[0];
+          $scope.$treeScope = controllersArr[1] ? controllersArr[1].scope : null;
+
+          // find the scope of it's parent node
+          $scope.$parentNodeScope = treeNodesCtrl.scope.$nodeScope;
+          // modelValue for current node
+          $scope.$modelValue = treeNodesCtrl.scope.$modelValue[$scope.$index];
+          $scope.$parentNodesScope = treeNodesCtrl.scope;
+          treeNodesCtrl.scope.initSubNode($scope); // init sub nodes
+
+          $element.on('$destroy', function() {
+            treeNodesCtrl.scope.destroySubNode($scope); // destroy sub nodes
+          });
+        };
+
+        $scope.index = function() {
+          return $scope.$parentNodesScope.$modelValue.indexOf($scope.$modelValue);
+        };
+
+        $scope.dragEnabled = function() {
+          return !($scope.$treeScope && !$scope.$treeScope.dragEnabled);
+        };
+
+        $scope.isSibling = function(targetNode) {
+          return $scope.$parentNodesScope == targetNode.$parentNodesScope;
+        };
+
+        $scope.isChild = function(targetNode) {
+          var nodes = $scope.childNodes();
+          return nodes && nodes.indexOf(targetNode) > -1;
+        };
+
+        $scope.prev = function() {
+          var index = $scope.index();
+          if (index > 0) {
+            return $scope.siblings()[index - 1];
+          }
+          return null;
+        };
+
+        $scope.siblings = function() {
+          return $scope.$parentNodesScope.childNodes();
+        };
+
+        $scope.childNodesCount = function() {
+          return $scope.childNodes() ? $scope.childNodes().length : 0;
+        };
+
+        $scope.hasChild = function() {
+          return $scope.childNodesCount() > 0;
+        };
+
+        $scope.childNodes = function() {
+          return $scope.$childNodesScope && $scope.$childNodesScope.$modelValue ?
+              $scope.$childNodesScope.childNodes() :
+              null;
+        };
+
+        $scope.accept = function(sourceNode, destIndex) {
+          return $scope.$childNodesScope &&
+                  $scope.$childNodesScope.$modelValue &&
+                  $scope.$childNodesScope.accept(sourceNode, destIndex);
+        };
+
+        $scope.removeNode = function(){
+          var node = $scope.remove();
+          $scope.$callbacks.removed(node);
+          return node;
+        };
+
+        $scope.remove = function() {
+          return $scope.$parentNodesScope.removeNode($scope);
+        };
+
+        $scope.toggle = function() {
+          $scope.collapsed = !$scope.collapsed;
+        };
+
+        $scope.collapse = function() {
+          $scope.collapsed = true;
+        };
+
+        $scope.expand = function() {
+          $scope.collapsed = false;
+        };
+
+        $scope.depth = function() {
+          var parentNode = $scope.$parentNodeScope;
+          if (parentNode) {
+            return parentNode.depth() + 1;
+          }
+          return 1;
+        };
+
+        var subDepth = 0;
+        var countSubDepth = function(scope) {
+          var count = 0;
+          var nodes = scope.childNodes();
+          for (var i = 0; i < nodes.length; i++) {
+            var childNodes = nodes[i].$childNodesScope;
+            if (childNodes) {
+              count = 1;
+              countSubDepth(childNodes);
+            }
+          }
+          subDepth += count;
+        };
+
+        $scope.maxSubDepth = function() {
+          subDepth = 0;
+          if ($scope.$childNodesScope) {
+            countSubDepth($scope.$childNodesScope);
+          }
+          return subDepth;
+        };
+
+      }
+    ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeHandleController', ['$scope', '$element', '$attrs', 'treeConfig',
+      function ($scope, $element, $attrs, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$nodeScope = null;
+        $scope.$type = 'uiTreeHandle';
+
+      }
+    ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+  .directive('uiTree', [ 'treeConfig', '$window',
+    function(treeConfig, $window) {
+      return {
+        restrict: 'A',
+        scope: true,
+        controller: 'TreeController',
+        link: function(scope, element, attrs) {
+          var callbacks = {
+            accept: null,
+            beforeDrag: null
+          };
+
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.treeClass) {
+            element.addClass(config.treeClass);
+          }
+
+          scope.$emptyElm = angular.element($window.document.createElement('div'));
+          if (config.emptyTreeClass) {
+            scope.$emptyElm.addClass(config.emptyTreeClass);
+          }
+
+          scope.$watch('$nodesScope.$modelValue.length', function() {
+            if (scope.$nodesScope.$modelValue) {
+              scope.resetEmptyElement();
+            }
+          }, true);
+
+          scope.$watch(attrs.dragEnabled, function(val) {
+            if((typeof val) == "boolean") {
+              scope.dragEnabled = val;
+            }
+          });
+
+          scope.$watch(attrs.emptyPlaceHolderEnabled, function(val) {
+            if((typeof val) == "boolean") {
+              scope.emptyPlaceHolderEnabled = val;
+            }
+          });
+
+          scope.$watch(attrs.maxDepth, function(val) {
+            if((typeof val) == "number") {
+              scope.maxDepth = val;
+            }
+          });
+
+          scope.$watch(attrs.dragDelay, function(val) {
+            if((typeof val) == "number") {
+              scope.dragDelay = val;
+            }
+          });
+
+          // check if the dest node can accept the dragging node
+          // by default, we check the 'data-nodrop' attribute in `ui-tree-nodes`
+          // and the 'max-depth' attribute in `ui-tree` or `ui-tree-nodes`.
+          // the method can be overrided
+          callbacks.accept = function(sourceNodeScope, destNodesScope, destIndex) {
+            if (destNodesScope.nodrop || destNodesScope.outOfDepth(sourceNodeScope)) {
+              return false;
+            }
+            return true;
+          };
+
+          callbacks.beforeDrag = function(sourceNodeScope) {
+            return true;
+          };
+
+          callbacks.removed = function(node){
+          
+          };
+
+          callbacks.dropped = function(event) {
+
+          };
+
+          //
+          callbacks.dragStart = function(event) {
+
+          };
+
+          callbacks.dragMove = function(event) {
+
+          };
+
+          callbacks.dragStop = function(event) {
+
+          };
+
+          callbacks.beforeDrop = function(event) {
+
+          };
+
+          scope.$watch(attrs.uiTree, function(newVal, oldVal){
+            angular.forEach(newVal, function(value, key){
+              if (callbacks[key]) {
+                if (typeof value === "function") {
+                  callbacks[key] = value;
+                }
+              }
+            });
+
+            scope.$callbacks = callbacks;
+          }, true);
+
+
+        }
+      };
+    }
+  ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+  .directive('uiTreeNodes', [ 'treeConfig', '$window',
+    function(treeConfig) {
+      return {
+        require: ['ngModel', '?^uiTreeNode', '^uiTree'],
+        restrict: 'A',
+        scope: true,
+        controller: 'TreeNodesController',
+        link: function(scope, element, attrs, controllersArr) {
+
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.nodesClass) {
+            element.addClass(config.nodesClass);
+          }
+
+          var ngModel = controllersArr[0];
+          var treeNodeCtrl = controllersArr[1];
+          var treeCtrl = controllersArr[2];
+          if (treeNodeCtrl) {
+            treeNodeCtrl.scope.$childNodesScope = scope;
+            scope.$nodeScope = treeNodeCtrl.scope;
+          }
+          else { // find the root nodes if there is no parent node and have a parent ui-tree
+            treeCtrl.scope.$nodesScope = scope;
+          }
+          scope.$treeScope = treeCtrl.scope;
+
+          if (ngModel) {
+            ngModel.$render = function() {
+              if (!ngModel.$modelValue || !angular.isArray(ngModel.$modelValue)) {
+                scope.$modelValue = [];
+              }
+              scope.$modelValue = ngModel.$modelValue;
+            };
+          }
+
+          scope.$watch(attrs.maxDepth, function(val) {
+            if((typeof val) == "number") {
+              scope.maxDepth = val;
+            }
+          });
+
+          attrs.$observe('nodrop', function(val) {
+            scope.nodrop = ((typeof val) != "undefined");
+          });
+
+          attrs.$observe('horizontal', function(val) {
+            scope.horizontal = ((typeof val) != "undefined");
+          });
+
+        }
+      };
+    }
+  ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .directive('uiTreeNode', ['treeConfig', '$uiTreeHelper', '$window', '$document','$timeout',
+      function (treeConfig, $uiTreeHelper, $window, $document, $timeout) {
+        return {
+          require: ['^uiTreeNodes', '^uiTree'],
+          restrict: 'A',
+          controller: 'TreeNodeController',
+          link: function(scope, element, attrs, controllersArr) {
+            var config = {};
+            angular.extend(config, treeConfig);
+            if (config.nodeClass) {
+              element.addClass(config.nodeClass);
+            }
+            scope.init(controllersArr);
+
+            scope.collapsed = !!$uiTreeHelper.getNodeAttribute(scope, 'collapsed');
+
+            scope.$watch(attrs.collapsed, function(val) {
+              if((typeof val) == "boolean") {
+                scope.collapsed = val;
+              }
+            });
+
+            scope.$watch('collapsed', function(val) {
+              $uiTreeHelper.setNodeAttribute(scope, 'collapsed', val);
+              attrs.$set('collapsed', val);
+            });
+
+            var hasTouch = 'ontouchstart' in window;
+            // todo startPos is unused
+            var startPos, firstMoving, dragInfo, pos;
+            var placeElm, hiddenPlaceElm, dragElm;
+            var treeScope = null;
+            var elements; // As a parameter for callbacks
+            var dragDelaying = true;
+            var dragStarted = false;
+            var dragTimer = null;
+            var body = document.body,
+                html = document.documentElement,
+                document_height,
+                document_width;
+
+            var dragStart = function(e) {
+              if (!hasTouch && (e.button == 2 || e.which == 3)) {
+                // disable right click
+                return;
+              }
+              if (e.uiTreeDragging || (e.originalEvent && e.originalEvent.uiTreeDragging)) { // event has already fired in other scope.
+                return;
+              }
+
+              // the element which is clicked.
+              var eventElm = angular.element(e.target);
+              var eventScope = eventElm.scope();
+              if (!eventScope || !eventScope.$type) {
+                return;
+              }
+              if (eventScope.$type != 'uiTreeNode'
+                && eventScope.$type != 'uiTreeHandle') { // Check if it is a node or a handle
+                return;
+              }
+              if (eventScope.$type == 'uiTreeNode'
+                && eventScope.$handleScope) { // If the node has a handle, then it should be clicked by the handle
+                return;
+              }
+
+              var eventElmTagName = eventElm.prop('tagName').toLowerCase();
+              if (eventElmTagName == 'input' ||
+                eventElmTagName == 'textarea' ||
+                eventElmTagName == 'button' ||
+                eventElmTagName == 'select') { // if it's a input or button, ignore it
+                return;
+              }
+
+              // check if it or it's parents has a 'data-nodrag' attribute
+              while (eventElm && eventElm[0] && eventElm[0] != element) {
+                if ($uiTreeHelper.nodrag(eventElm)) { // if the node mark as `nodrag`, DONOT drag it.
+                  return;
+                }
+                eventElm = eventElm.parent();
+              }
+
+              if (!scope.beforeDrag(scope)){
+                return;
+              }
+
+              e.uiTreeDragging = true; // stop event bubbling
+              if (e.originalEvent) {
+                e.originalEvent.uiTreeDragging = true;
+              }
+              e.preventDefault();
+              var eventObj = $uiTreeHelper.eventObj(e);
+
+              firstMoving = true;
+              dragInfo = $uiTreeHelper.dragInfo(scope);
+
+              var tagName = scope.$element.prop('tagName');
+              if (tagName.toLowerCase() === 'tr') {
+                placeElm = angular.element($window.document.createElement(tagName));
+                var tdElm = angular.element($window.document.createElement('td'))
+                              .addClass(config.placeHolderClass);
+                placeElm.append(tdElm);
+              } else {
+                placeElm = angular.element($window.document.createElement(tagName))
+                              .addClass(config.placeHolderClass);
+              }
+              hiddenPlaceElm = angular.element($window.document.createElement(tagName));
+              if (config.hiddenClass) {
+                hiddenPlaceElm.addClass(config.hiddenClass);
+              }
+              pos = $uiTreeHelper.positionStarted(eventObj, scope.$element);
+              placeElm.css('height', $uiTreeHelper.height(scope.$element) + 'px');
+              placeElm.css('width', $uiTreeHelper.width(scope.$element) + 'px');
+              dragElm = angular.element($window.document.createElement(scope.$parentNodesScope.$element.prop('tagName')))
+                        .addClass(scope.$parentNodesScope.$element.attr('class')).addClass(config.dragClass);
+              dragElm.css('width', $uiTreeHelper.width(scope.$element) + 'px');
+              dragElm.css('z-index', 9999);
+
+              // Prevents cursor to change rapidly in Opera 12.16 and IE when dragging an element
+              var hStyle = (scope.$element[0].querySelector('.angular-ui-tree-handle') || scope.$element[0]).currentStyle;
+              if (hStyle) {
+                document.body.setAttribute('ui-tree-cursor', $document.find('body').css('cursor') || '');
+                $document.find('body').css({'cursor': hStyle.cursor + '!important'});
+              }
+
+              scope.$element.after(placeElm);
+              scope.$element.after(hiddenPlaceElm);
+              dragElm.append(scope.$element);
+              $document.find('body').append(dragElm);
+              dragElm.css({
+                'left' : eventObj.pageX - pos.offsetX + 'px',
+                'top'  : eventObj.pageY - pos.offsetY + 'px'
+              });
+              elements = {
+                placeholder: placeElm,
+                dragging: dragElm
+              };
+
+              angular.element($document).bind('touchend', dragEndEvent);
+              angular.element($document).bind('touchcancel', dragEndEvent);
+              angular.element($document).bind('touchmove', dragMoveEvent);
+              angular.element($document).bind('mouseup', dragEndEvent);
+              angular.element($document).bind('mousemove', dragMoveEvent);
+              angular.element($document).bind('mouseleave', dragCancelEvent);
+
+              document_height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+              document_width = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+            };
+
+            var dragMove = function(e) {
+              if (!dragStarted) {
+                if (!dragDelaying) {
+                  dragStarted = true;
+                  scope.$apply(function() {
+                    scope.$callbacks.dragStart(dragInfo.eventArgs(elements, pos));
+                  });
+                }
+                return;
+              }
+
+              var eventObj = $uiTreeHelper.eventObj(e);
+              var prev, leftElmPos, topElmPos;
+
+              if (dragElm) {
+                e.preventDefault();
+
+                if ($window.getSelection) {
+                  $window.getSelection().removeAllRanges();
+                } else if ($window.document.selection) {
+                  $window.document.selection.empty();
+                }
+
+                leftElmPos = eventObj.pageX - pos.offsetX;
+                topElmPos = eventObj.pageY - pos.offsetY;
+
+                //dragElm can't leave the screen on the left
+                if(leftElmPos < 0){
+                  leftElmPos = 0;
+                }
+
+                //dragElm can't leave the screen on the top
+                if(topElmPos < 0){
+                  topElmPos = 0;
+                }
+
+                //dragElm can't leave the screen on the bottom
+                if ((topElmPos + 10) > document_height){
+                  topElmPos = document_height - 10;
+                }
+
+                //dragElm can't leave the screen on the right
+                if((leftElmPos + 10) > document_width) {
+                  leftElmPos = document_width - 10;
+                }
+
+                dragElm.css({
+                  'left': leftElmPos + 'px',
+                  'top': topElmPos + 'px'
+                });
+
+                var top_scroll = window.pageYOffset || $window.document.documentElement.scrollTop;
+                var bottom_scroll = top_scroll + (window.innerHeight || $window.document.clientHeight || $window.document.clientHeight);
+
+                // to scroll down if cursor y-position is greater than the bottom position the vertical scroll
+                if (bottom_scroll < eventObj.pageY && bottom_scroll <= document_height) {
+                  window.scrollBy(0, 10);
+                }
+
+                // to scroll top if cursor y-position is less than the top position the vertical scroll
+                if (top_scroll > eventObj.pageY) {
+                  window.scrollBy(0, -10);
+                }
+
+                $uiTreeHelper.positionMoved(e, pos, firstMoving);
+                if (firstMoving) {
+                  firstMoving = false;
+                  return;
+                }
+
+                // move horizontal
+                if (pos.dirAx && pos.distAxX >= config.levelThreshold) {
+                  pos.distAxX = 0;
+
+                  // increase horizontal level if previous sibling exists and is not collapsed
+                  if (pos.distX > 0) {
+                    prev = dragInfo.prev();
+                    if (prev && !prev.collapsed
+                      && prev.accept(scope, prev.childNodesCount())) {
+                      prev.$childNodesScope.$element.append(placeElm);
+                      dragInfo.moveTo(prev.$childNodesScope, prev.childNodes(), prev.childNodesCount());
+                    }
+                  }
+
+                  // decrease horizontal level
+                  if (pos.distX < 0) {
+                    // we can't decrease a level if an item preceeds the current one
+                    var next = dragInfo.next();
+                    if (!next) {
+                      var target = dragInfo.parentNode(); // As a sibling of it's parent node
+                      if (target
+                        && target.$parentNodesScope.accept(scope, target.index() + 1)) {
+                        target.$element.after(placeElm);
+                        dragInfo.moveTo(target.$parentNodesScope, target.siblings(), target.index() + 1);
+                      }
+                    }
+                  }
+                }
+
+                // check if add it as a child node first
+                // todo decrease is unused
+                var decrease = ($uiTreeHelper.offset(dragElm).left - $uiTreeHelper.offset(placeElm).left) >= config.threshold;
+                var targetX = eventObj.pageX - $window.document.body.scrollLeft;
+                var targetY = eventObj.pageY - (window.pageYOffset || $window.document.documentElement.scrollTop);
+
+                // Select the drag target. Because IE does not support CSS 'pointer-events: none', it will always
+                // pick the drag element itself as the target. To prevent this, we hide the drag element while
+                // selecting the target.
+                var displayElm;
+                if (angular.isFunction(dragElm.hide)) {
+                  dragElm.hide();
+                }else{
+                  displayElm = dragElm[0].style.display;
+                  dragElm[0].style.display = "none";
+                }
+
+                // when using elementFromPoint() inside an iframe, you have to call
+                // elementFromPoint() twice to make sure IE8 returns the correct value
+                $window.document.elementFromPoint(targetX, targetY);
+
+                var targetElm = angular.element($window.document.elementFromPoint(targetX, targetY));
+                if (angular.isFunction(dragElm.show)) {
+                  dragElm.show();
+                }else{
+                  dragElm[0].style.display = displayElm;
+                }
+
+                // move vertical
+                if (!pos.dirAx) {
+                  var targetBefore, targetNode;
+                  // check it's new position
+                  targetNode = targetElm.scope();
+                  var isEmpty = false;
+                  if (!targetNode) {
+                    return;
+                  }
+                  if (targetNode.$type == 'uiTree' && targetNode.dragEnabled) {
+                    isEmpty = targetNode.isEmpty(); // Check if it's empty tree
+                  }
+                  if (targetNode.$type == 'uiTreeHandle') {
+                    targetNode = targetNode.$nodeScope;
+                  }
+                  if (targetNode.$type != 'uiTreeNode'
+                    && !isEmpty) { // Check if it is a uiTreeNode or it's an empty tree
+                    return;
+                  }
+
+                  // if placeholder move from empty tree, reset it.
+                  if (treeScope && placeElm.parent()[0] != treeScope.$element[0]) {
+                    treeScope.resetEmptyElement();
+                    treeScope = null;
+                  }
+
+                  if (isEmpty) { // it's an empty tree
+                    treeScope = targetNode;
+                    if (targetNode.$nodesScope.accept(scope, 0)) {
+                      targetNode.place(placeElm);
+                      dragInfo.moveTo(targetNode.$nodesScope, targetNode.$nodesScope.childNodes(), 0);
+                    }
+                  } else if (targetNode.dragEnabled()){ // drag enabled
+                    targetElm = targetNode.$element; // Get the element of ui-tree-node
+                    var targetOffset = $uiTreeHelper.offset(targetElm);
+                    targetBefore = targetNode.horizontal ? eventObj.pageX < (targetOffset.left + $uiTreeHelper.width(targetElm) / 2)
+                                                         : eventObj.pageY < (targetOffset.top + $uiTreeHelper.height(targetElm) / 2);
+
+                    if (targetNode.$parentNodesScope.accept(scope, targetNode.index())) {
+                      if (targetBefore) {
+                        targetElm[0].parentNode.insertBefore(placeElm[0], targetElm[0]);
+                        dragInfo.moveTo(targetNode.$parentNodesScope, targetNode.siblings(), targetNode.index());
+                      } else {
+                        targetElm.after(placeElm);
+                        dragInfo.moveTo(targetNode.$parentNodesScope, targetNode.siblings(), targetNode.index() + 1);
+                      }
+                    }
+                    else if (!targetBefore && targetNode.accept(scope, targetNode.childNodesCount())) { // we have to check if it can add the dragging node as a child
+                      targetNode.$childNodesScope.$element.append(placeElm);
+                      dragInfo.moveTo(targetNode.$childNodesScope, targetNode.childNodes(), targetNode.childNodesCount());
+                    }
+                  }
+
+                }
+
+                scope.$apply(function() {
+                  scope.$callbacks.dragMove(dragInfo.eventArgs(elements, pos));
+                });
+              }
+            };
+
+            var dragEnd = function(e) {
+              e.preventDefault();
+
+              if (dragElm) {
+                scope.$treeScope.$apply(function() {
+                  scope.$callbacks.beforeDrop(dragInfo.eventArgs(elements, pos));
+                });
+                // roll back elements changed
+                hiddenPlaceElm.replaceWith(scope.$element);
+                placeElm.remove();
+
+                dragElm.remove();
+                dragElm = null;
+                if (scope.$$apply) {
+                  dragInfo.apply();
+                  scope.$treeScope.$apply(function() {
+                    scope.$callbacks.dropped(dragInfo.eventArgs(elements, pos));
+                  });
+                } else {
+                  bindDrag();
+                }
+                scope.$treeScope.$apply(function() {
+                  scope.$callbacks.dragStop(dragInfo.eventArgs(elements, pos));
+                });
+                scope.$$apply = false;
+                dragInfo = null;
+
+              }
+
+              // Restore cursor in Opera 12.16 and IE
+              var oldCur = document.body.getAttribute('ui-tree-cursor');
+              if (oldCur !== null) {
+                $document.find('body').css({'cursor': oldCur});
+                document.body.removeAttribute('ui-tree-cursor');
+              }
+
+              angular.element($document).unbind('touchend', dragEndEvent); // Mobile
+              angular.element($document).unbind('touchcancel', dragEndEvent); // Mobile
+              angular.element($document).unbind('touchmove', dragMoveEvent); // Mobile
+              angular.element($document).unbind('mouseup', dragEndEvent);
+              angular.element($document).unbind('mousemove', dragMoveEvent);
+              angular.element($window.document.body).unbind('mouseleave', dragCancelEvent);
+            };
+
+            var dragStartEvent = function(e) {
+              if (scope.dragEnabled()) {
+                dragStart(e);
+              }
+            };
+
+            var dragMoveEvent = function(e) {
+              dragMove(e);
+            };
+
+            var dragEndEvent = function(e) {
+              scope.$$apply = true;
+              dragEnd(e);
+            };
+
+            var dragCancelEvent = function(e) {
+              dragEnd(e);
+            };
+
+            var bindDrag = function() {
+              element.bind('touchstart mousedown', function (e) {
+                dragDelaying = true;
+                dragStarted = false;
+                dragStartEvent(e);
+                dragTimer = $timeout(function(){dragDelaying = false;}, scope.dragDelay);
+              });
+              element.bind('touchend touchcancel mouseup',function(){$timeout.cancel(dragTimer);});
+            };
+            bindDrag();
+
+            angular.element($window.document.body).bind("keydown", function(e) {
+              if (e.keyCode == 27) {
+                scope.$$apply = false;
+                dragEnd(e);
+              }
+            });
+          }
+        };
+      }
+    ]);
+
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+  .directive('uiTreeHandle', [ 'treeConfig', '$window',
+    function(treeConfig) {
+      return {
+        require: '^uiTreeNode',
+        restrict: 'A',
+        scope: true,
+        controller: 'TreeHandleController',
+        link: function(scope, element, attrs, treeNodeCtrl) {
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.handleClass) {
+            element.addClass(config.handleClass);
+          }
+          // connect with the tree node.
+          if (scope != treeNodeCtrl.scope) {
+            scope.$nodeScope = treeNodeCtrl.scope;
+            treeNodeCtrl.scope.$handleScope = scope;
+          }
+        }
+      };
+    }
+  ]);
+})();
 
 // Copyright 2009-2012 by contributors, MIT License
 // vim: ts=4 sts=4 sw=4 expandtab

@@ -5,7 +5,7 @@ describe('ramlEditorContextMenu', function() {
 
   var createScope = inject(function createScope($rootScope) {
     scope = $rootScope.$new();
-    scope.homeDirectory = { path: '/' };
+    scope.homeDirectory = { path: '/', children: [] };
     scope.registerContextMenu = function(cm) {
       contextMenu = cm;
     };
@@ -50,7 +50,9 @@ describe('ramlEditorContextMenu', function() {
       };
 
       file = {
-        name: 'filename.raml'
+        name: 'filename.raml',
+        path: '/filename.raml',
+        parentPath: function() { return '/'; }
       };
 
       scrollDisableStub = sinon.stub(scroll, 'disable');
@@ -86,40 +88,63 @@ describe('ramlEditorContextMenu', function() {
     });
 
     describe('removing a file', function() {
-      var openStub;
+      var confirmStub, removeItem, removeItemStub;
 
-      beforeEach(inject(function(ramlEditorRemoveFilePrompt) {
-        openStub = sinon.stub(ramlEditorRemoveFilePrompt, 'open');
-        var removeItem = contextMenuItemNamed('Delete');
-
-        removeItem.dispatchEvent(events.click());
+      beforeEach(inject(function($window, confirmModal, ramlRepository) {
+        removeItemStub = sandbox.stub(ramlRepository, 'remove');
+        confirmStub = sandbox.stub(confirmModal, 'open');
+        removeItem = contextMenuItemNamed('Delete');
       }));
 
-      it('delegates to the ramlRepository', function() {
-        openStub.should.have.been.calledWith(scope.homeDirectory, file);
+      it('opens the confirmModal with the name of the file to delete', function() {
+        confirmStub.returns(promise.stub());
+        removeItem.dispatchEvent(events.click());
+
+        confirmStub.should.have.been.calledWith('Are you sure you want to delete "' + file.name + '"?', 'Remove file');
+      });
+
+      describe('upon success', function () {
+        beforeEach(function () {
+          confirmStub.returns(promise.resolved());
+          removeItem.dispatchEvent(events.click());
+        });
+
+        it('removes the file in the ramlRepository', function() {
+          removeItemStub.should.have.been.calledWith(file);
+        });
+      });
+
+      describe('upon failure', function () {
+        beforeEach(function () {
+          confirmStub.returns(promise.rejected());
+          removeItem.dispatchEvent(events.click());
+        });
+
+        it('does not remove the file', function() {
+          removeItemStub.should.not.have.been.called;
+        });
       });
     });
 
     describe('renaming', function() {
-      var renameItem, renameFileStub, promptSpy, filenamePromptStub;
+      var renameItem, renameFileStub, filenamePromptStub;
 
       beforeEach(function() {
-        inject(function(ramlRepository, ramlEditorFilenamePrompt) {
-          renameFileStub = sandbox.stub(ramlRepository, 'renameFile');
-          filenamePromptStub = sandbox.stub(ramlEditorFilenamePrompt, 'open');
+        inject(function(ramlRepository, newNameModal) {
+          renameFileStub = sandbox.stub(ramlRepository, 'rename');
+          filenamePromptStub = sandbox.stub(newNameModal, 'open');
         });
-        promptSpy = sandbox.stub(window, 'prompt');
 
         renameItem = Array.prototype.slice.call(el.children().children()).filter(function(child) {
           return angular.element(child).text() === 'Rename';
         })[0];
       });
 
-      it('opens the filenamePrompt with the file\'s current name', function() {
+      it('opens the newNameModal with the file\'s current name', function() {
         filenamePromptStub.returns(promise.stub());
         renameItem.dispatchEvent(events.click());
 
-        filenamePromptStub.should.have.been.calledWith(scope.homeDirectory, 'filename.raml');
+        filenamePromptStub.should.have.been.calledWith('Enter a new name for this file:', 'filename.raml');
       });
 
       describe('upon success', function() {
