@@ -2135,11 +2135,10 @@
           open: function open(directory, suggestedFileName) {
             var deferred = $q.defer();
             suggestedFileName = suggestedFileName || generateFileName(directory.files);
-            var message = 'Choose a name:';
-            if (directory.files.length === 0) {
-              message = 'The file browser is empty. Please provide a name for the new file:';
-            }
-            var filename = $window.prompt(message, suggestedFileName);
+            var filename = $window.prompt([
+                'For a new RAML spec, be sure to name your file <something>.raml; ',
+                'For files to be !included, feel free to use an extension or not.'
+              ].join(''), suggestedFileName);
             if (directory.files.length === 0) {
               filename = filename || suggestedFileName;
             }

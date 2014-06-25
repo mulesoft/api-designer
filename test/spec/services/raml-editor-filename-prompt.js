@@ -30,8 +30,9 @@ describe('ramlEditorFilenamePrompt', function() {
   });
 
   describe('by default', function() {
-    var promptSpy;
-    var promptSpyReturns;
+    var promptSpy        = void(0);
+    var promptSpyReturns = void(0);
+    var promptMessage    = 'For a new RAML spec, be sure to name your file <something>.raml; For files to be !included, feel free to use an extension or not.';
 
     beforeEach(function() {
       promptSpyReturns = ['MyFile.raml', 'Untaken.raml'];
@@ -45,13 +46,13 @@ describe('ramlEditorFilenamePrompt', function() {
     it('prompts user for filename', function() {
       newFilePrompt.open(ramlRepository);
 
-      promptSpy.should.have.been.calledWith('Choose a name:');
+      promptSpy.should.have.been.calledWith(promptMessage);
     });
 
     it('allows the suggested name to be overridden', function() {
       newFilePrompt.open(ramlRepository, 'MyName.raml');
 
-      promptSpy.should.have.been.calledWith('Choose a name:', 'MyName.raml');
+      promptSpy.should.have.been.calledWith(promptMessage, 'MyName.raml');
     });
 
     describe('upon choosing a name', function() {
