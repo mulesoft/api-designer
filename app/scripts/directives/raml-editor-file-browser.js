@@ -8,8 +8,17 @@
         var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
 
+        fileBrowser.select = function select(entry) {
+          if(entry.type === 'file') {
+            fileBrowser.selectFile(entry);
+          }
+          else {
+            fileBrowser.selectDirectory(entry);
+          }
+        };
+
         fileBrowser.selectFile = function selectFile(file) {
-          if (fileBrowser.selectedFile === file) {
+          if (fileBrowser.selected === file) {
             return;
           }
 
@@ -21,6 +30,7 @@
 
           afterLoading
             .then(function (file) {
+              fileBrowser.selected = file;
               fileBrowser.selectedFile = file;
               $scope.$emit('event:raml-editor-file-selected', file);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
@@ -30,6 +40,15 @@
               });
             })
           ;
+        };
+
+        fileBrowser.selectDirectory = function selectDirectory(directory) {
+          if(fileBrowser.selected === directory) {
+            return;
+          }
+
+          fileBrowser.selected = directory;
+          $scope.$emit('event:raml-editor-directory-selected', directory);
         };
 
         fileBrowser.saveFile = function saveFile(file) {
@@ -55,7 +74,7 @@
           if (e.which === 83 && (e.metaKey || e.ctrlKey) && !(e.shiftKey || e.altKey)) {
             e.preventDefault();
             $scope.$apply(function () {
-              fileBrowser.saveFile(fileBrowser.selectedFile);
+              fileBrowser.saveFile(fileBrowser.selected);
             });
           }
         }
@@ -73,7 +92,7 @@
         });
 
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          if (file === fileBrowser.selectedFile && $scope.homeDirectory.files.length > 0) {
+          if (file === fileBrowser.selected && $scope.homeDirectory.files.length > 0) {
             fileBrowser.selectFile($scope.homeDirectory.files[0]);
           }
         });
