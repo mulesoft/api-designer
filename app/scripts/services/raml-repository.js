@@ -29,17 +29,12 @@
       }
 
       function RamlDirectory(path, meta, contents) {
-        // add trailing slash to path if it doesn't exist
-        if (path.slice(-1) !== '/') {
-          path = path + '/';
-        }
 
         contents = contents || [];
 
-        var strippedPath = path.substring(0, path.length - 1);
         this.type = 'directory';
         this.path = path;
-        this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
+        this.name = path.slice(path.lastIndexOf('/') + 1);
         this.meta = meta;
 
         var separated = { folder: [], file: [] };
@@ -58,12 +53,22 @@
         this.directories = separated.folder.map(function (directory) {
           return new RamlDirectory(directory.path, directory.meta, directory.children);
         });
+
+        this.children = this.directories.concat(this.files);
       }
+
+      RamlDirectory.prototype.createDirectory = function createDirectory(name) {
+        var directory = service.createDirectory(name);
+        this.directories.push(directory);
+        this.children.push(directory);
+        fileSystem.createFolder(directory.path);
+        return directory;
+      };
 
       RamlDirectory.prototype.createFile = function createFile(name) {
         var file = service.createFile(name);
         this.files.push(file);
-
+        this.children.push(file);
         return file;
       };
 
@@ -76,6 +81,7 @@
             var index = self.files.indexOf(file);
             if (index !== -1) {
               self.files.splice(index, 1);
+              self.children.splice(index,1);
             }
           })
         ;
@@ -96,6 +102,13 @@
         return fileSystem.exportFiles();
       };
 
+      service.createDirectory = function createDirectory(name) {
+        var path = defaultPath + name;
+        var directory = new RamlDirectory(path);
+
+        $rootScope.$broadcast('event:raml-editor-folder-created', directory);
+        return directory;
+      };
       service.getDirectory = function getDirectory(path) {
         path = path || defaultPath;
         return fileSystem.directory(path).then(function (folder) {
