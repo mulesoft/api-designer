@@ -271,7 +271,6 @@
        * Removes a file or directory.
        */
       service.remove = function (path) {
-        console.log('remove:' + path);
         var deferred = $q.defer();
 
         $timeout(function () {
