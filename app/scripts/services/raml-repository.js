@@ -61,12 +61,36 @@
         this.children = this.directories.concat(this.files);
       }
 
+      RamlDirectory.prototype.parentPath = function parentPath() {
+        var parent = this.path.slice(0, this.path.lastIndexOf('/'));
+        return parent.length === 0 ? '/' : parent;
+      };
+
       RamlDirectory.prototype.createDirectory = function createDirectory(name) {
         var directory = service.createDirectory(name, this.path);
         this.directories.push(directory);
         this.children.push(directory);
         fileSystem.createFolder(directory.path);
         return directory;
+      };
+
+      RamlDirectory.prototype.removeDirectory = function removeDirectory(directory) {
+        for (var i in directory.directories) {
+          directory.removeDirectory(directory.directories[i]);
+        }
+        for (var j in directory.files) {
+          directory.removeFile(directory.files[j]);
+        }
+
+        var index = this.directories.indexOf(directory);
+        if (index !== -1) {
+          this.directories.splice(index, 1);
+        }
+        index = this.children.indexOf(directory);
+        if (index !== -1) {
+          this.children.splice(index, 1);
+        }
+        service.removeDirectory(directory.path);
       };
 
       RamlDirectory.prototype.createFile = function createFile(name) {
@@ -85,7 +109,10 @@
             var index = self.files.indexOf(file);
             if (index !== -1) {
               self.files.splice(index, 1);
-              self.children.splice(index,1);
+            }
+            index = self.children.indexOf(file);
+            if (index !== -1) {
+              self.children.splice(index, 1);
             }
           })
         ;
@@ -132,6 +159,17 @@
             return result;
           }
         }
+
+        return void(0);
+      };
+      service.removeDirectory = function removeDirectory(directory) {
+        var promise = fileSystem.remove(directory);
+
+        return promise
+          .then(function (directory) {
+            $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
+          })
+        ;
       };
 
       service.saveFile = function saveFile(file) {

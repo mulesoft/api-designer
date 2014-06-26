@@ -109,7 +109,7 @@
         var has = false;
         localStorageHelper.forEach(function (entry) {
           if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              entry.path.indexOf(path) === 0) {
+              entry.path.indexOf(path + '/') === 0) {
             has = true;
           }
         });
@@ -271,6 +271,7 @@
        * Removes a file or directory.
        */
       service.remove = function (path) {
+        console.log('remove:' + path);
         var deferred = $q.defer();
 
         $timeout(function () {
