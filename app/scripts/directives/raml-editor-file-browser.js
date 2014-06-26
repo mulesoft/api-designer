@@ -144,7 +144,7 @@
           }
         }
 
-        ramlRepository.getDirectory()
+        ramlRepository.loadDirectory()
           .then(function (directory) {
             $scope.homeDirectory = directory;
             fileBrowser.rootFile = findRootFile(directory);
