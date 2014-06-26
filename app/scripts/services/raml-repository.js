@@ -70,7 +70,7 @@
       };
 
       RamlDirectory.prototype.createFile = function createFile(name) {
-        var file = service.createFile(name);
+        var file = service.createFile(name, this.path);
         this.files.push(file);
         this.children.push(file);
         return file;
@@ -201,8 +201,8 @@
         ;
       };
 
-      service.createFile = function createFile(name) {
-        var path = defaultPath + name;
+      service.createFile = function createFile(name, parent) {
+        var path = parent + (parent.slice(-1) === '/' ? '' : '/') + name;
         var file = new RamlFile(path);
 
         if (file.extension === 'raml') {

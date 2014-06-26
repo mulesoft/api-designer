@@ -70,7 +70,7 @@
         var entries = [];
         localStorageHelper.forEach(function (entry) {
           if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              entry.path.indexOf(path + entry.name) === 0) {
+              entry.path === path + entry.name) {
             addChildren(entry, findFiles);
             entries.push(entry);
           }
