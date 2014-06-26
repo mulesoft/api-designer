@@ -2,30 +2,34 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorContextMenu', function ($window, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorFilenamePrompt, scroll) {
-      function createActions(directory, file) {
-        return [
+    .directive('ramlEditorContextMenu', function ($window, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorRemoveDirectoryPrompt, ramlEditorFilenamePrompt, scroll) {
+      function createActions(parent, target) {
+        var actions = [
           {
             label: 'Save',
             execute: function() {
-              ramlRepository.saveFile(file);
+              ramlRepository.saveFile(target);
             }
           },
           {
             label: 'Delete',
             execute: function() {
-              ramlEditorRemoveFilePrompt.open(directory, file);
+              target.type === 'file' ?
+              ramlEditorRemoveFilePrompt.open(parent, target) :
+              ramlEditorRemoveDirectoryPrompt.open(parent, target);
             }
           },
           {
             label: 'Rename',
             execute: function() {
-              ramlEditorFilenamePrompt.open(directory, file.name).then(function(filename) {
-                ramlRepository.renameFile(file, filename);
+              ramlEditorFilenamePrompt.open(parent, target.name).then(function(filename) {
+                ramlRepository.renameFile(target, filename);
               });
             }
           }
         ];
+
+        return target.type === 'file' ? actions : actions.slice(1);
       }
 
       function outOfWindow(el) {
@@ -80,7 +84,9 @@
             open: function(event, file) {
               scroll.disable();
               this.file = file;
-              scope.actions = createActions(scope.homeDirectory, file);
+              var parent = ramlRepository.getDirectory(file.parentPath(), scope.homeDirectory);
+
+              scope.actions = createActions(parent, file);
 
               event.stopPropagation();
               positionMenu(element, event.target);
