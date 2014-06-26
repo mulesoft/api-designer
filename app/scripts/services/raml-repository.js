@@ -19,6 +19,11 @@
     this.root      = options.root;
   }
 
+  RamlFile.prototype.parentPath = function parentPath() {
+    var parent = this.path.slice(0, this.path.lastIndexOf('/'));
+    return parent.length === 0 ? '/' : parent;
+  };
+
   angular.module('fs', ['ngCookies', 'raml', 'utils'])
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
       var service     = {};
@@ -29,7 +34,6 @@
       }
 
       function RamlDirectory(path, meta, contents) {
-
         contents = contents || [];
 
         this.type = 'directory';
@@ -58,7 +62,7 @@
       }
 
       RamlDirectory.prototype.createDirectory = function createDirectory(name) {
-        var directory = service.createDirectory(name);
+        var directory = service.createDirectory(name, this.path);
         this.directories.push(directory);
         this.children.push(directory);
         fileSystem.createFolder(directory.path);
@@ -102,18 +106,32 @@
         return fileSystem.exportFiles();
       };
 
-      service.createDirectory = function createDirectory(name) {
-        var path = defaultPath + name;
+      service.createDirectory = function createDirectory(name, parent) {
+        parent = parent || defaultPath;
+        var path =  parent + (parent.slice(-1) === '/' ? '' : '/') + name;
         var directory = new RamlDirectory(path);
 
         $rootScope.$broadcast('event:raml-editor-folder-created', directory);
         return directory;
       };
-      service.getDirectory = function getDirectory(path) {
+      service.loadDirectory = function loadDirectory(path) {
         path = path || defaultPath;
         return fileSystem.directory(path).then(function (folder) {
           return new RamlDirectory(folder.path, folder.meta, folder.children);
         });
+      };
+      service.getDirectory = function getDirectory(path, root) {
+        if (root.path === path) {
+          return root;
+        }
+
+        var result = void(0);
+        for (var node in root.directories) {
+          result = service.getDirectory(path, root.directories[node]);
+          if (result) {
+            return result;
+          }
+        }
       };
 
       service.saveFile = function saveFile(file) {
