@@ -89,7 +89,7 @@
       }
 
       service.canExport = function canExport() {
-        return fileSystem.canExport();
+        return fileSystem.hasOwnProperty('exportFiles');
       };
 
       service.exportFiles = function exportFiles() {

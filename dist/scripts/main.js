@@ -1992,7 +1992,7 @@
         };
       }
       service.canExport = function canExport() {
-        return fileSystem.canExport();
+        return fileSystem.hasOwnProperty('exportFiles');
       };
       service.exportFiles = function exportFiles() {
         return fileSystem.exportFiles();
@@ -2420,12 +2420,6 @@
           deferred.resolve();
         }, delay);
         return deferred.promise;
-      };
-      /**
-       * This fileSystem does not support export
-       */
-      service.canExport = function canExport() {
-        return false;
       };
       /**
        * Ranames a file or directory
