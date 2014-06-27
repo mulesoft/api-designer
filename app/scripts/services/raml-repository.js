@@ -29,6 +29,8 @@
       var service     = {};
       var defaultPath = '/';
 
+      service.supportFolders = fileSystem.supportFolders || false;
+
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
       }

@@ -118,6 +118,10 @@
         return ramlRepository.canExport();
       };
 
+      $scope.canSupportFolders = function canSupportFolders() {
+        return ramlRepository.supportFolders;
+      };
+
       $scope.sourceUpdated = function sourceUpdated() {
         var source       = editor.getValue();
         var selectedFile = $scope.fileBrowser.selectedFile;

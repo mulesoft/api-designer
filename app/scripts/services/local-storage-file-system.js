@@ -90,6 +90,8 @@
       var service = {};
       var delay   = 500;
 
+      service.supportFolders = true;
+
       function validatePath(path) {
         if (path.indexOf('/') !== 0) {
           return {valid: false, reason: 'Path should start with "/"'};
