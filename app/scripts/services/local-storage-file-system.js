@@ -70,7 +70,7 @@
         var entries = [];
         localStorageHelper.forEach(function (entry) {
           if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              entry.path === path + entry.name) {
+              extractParentPath(entry.path) === path) {
             addChildren(entry, findFiles);
             entries.push(entry);
           }
@@ -90,7 +90,7 @@
       var service = {};
       var delay   = 500;
 
-      service.supportFolders = true;
+      service.supportsFolders = true;
 
       function validatePath(path) {
         if (path.indexOf('/') !== 0) {
@@ -100,7 +100,7 @@
       }
 
       function isValidParent(path) {
-        var parent = path.slice(0, path.lastIndexOf('/'));
+        var parent = extractParentPath(path);
         if(!localStorageHelper.has(parent) && parent !== '') {
           return false;
         }
@@ -127,10 +127,25 @@
 
         // When the path is ended in '/'
         if (path.lastIndexOf('/') === path.length - 1) {
-          path = path.slice(0, path.length - 1);
+          path = path.slice(0, -1);
         }
 
         return path.slice(path.lastIndexOf('/') + 1);
+      }
+
+      function extractParentPath(path) {
+        var pathInfo = validatePath(path);
+
+        if (!pathInfo.valid) {
+          throw 'Invalid Path!';
+        }
+
+        // When the path is ended in '/'
+        if (path.lastIndexOf('/') === path.length - 1) {
+          path = path.slice(0, -1);
+        }
+
+        return path.slice(0, path.lastIndexOf('/') + 1);
       }
 
       /**
@@ -225,7 +240,7 @@
           return deferred.promise;
         }
 
-        var parent = path.slice(0, path.lastIndexOf('/'));
+        var parent = extractParentPath(path);
         if(!localStorageHelper.has(parent)) {
           deferred.reject('Parent folder does not exists');
           return deferred.promise;

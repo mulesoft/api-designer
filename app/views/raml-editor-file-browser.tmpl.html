@@ -1,22 +1,22 @@
 <raml-editor-context-menu></raml-editor-context-menu>
 <script type="text/ng-template" id="filelist.html">
-  <div class="file-item" ng-class="{currentfile: fileBrowser.selected === node, dirty: node.dirty, geared: fileBrowser.contextMenuOpenedFor(node), directory: node.type != 'file'}">
-    <i class="fa icon" ng-if="node.type !== 'file'" ng-class="{'fa-plus-square-o': collapsed, 'fa-minus-square-o': !collapsed}" ng-click="toggle(this)"></i>&nbsp;
+  <div class="file-item" ng-class="{currentfile: fileBrowser.selectedTarget === node, dirty: node.dirty, geared: fileBrowser.contextMenuOpenedFor(node), directory: node.isDirectory}">
+    <i class="fa icon" ng-if="node.isDirectory" ng-class="{'fa-plus-square-o': collapsed, 'fa-minus-square-o': !collapsed}" ng-click="toggle(this)"></i>&nbsp;
     <span class="file-name" ng-click="fileBrowser.select(node)">
-      <i class="fa icon" ng-class="{'fa-file-text-o': node.type === 'file', 'fa-folder': node.type != 'file'}"></i>
+      <i class="fa icon" ng-class="{'fa-file-text-o': !node.isDirectory, 'fa-folder': (node.isDirectory && collapsed), 'fa-folder-open': (node.isDirectory && !collapsed)}"></i>
       &nbsp;{{node.name}}
     </span>
     <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)"></i>
   </div>
 
-  <ul ui-tree-nodes="" ng-if="node.type !== 'file'" ng-class="{hidden: collapsed}" ng-model="node.children">
-    <li ng-repeat="node in node.children" ui-tree-node ng-include="'filelist.html'" data-collapsed=true>
+  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">
+    <li ui-tree-node ng-repeat="node in node.children" ng-include="'filelist.html'" data-collapsed="true">
     </li>
   </ul>
 </script>
 
-<div class="file-list" ui-tree data-drag-enabled=false>
-  <ul ui-tree-nodes="" ng-model="homeDirectory.children" id="tree-root">
-    <li ng-repeat="node in homeDirectory.children" ui-tree-node ng-include="'filelist.html'" data-collapsed=true></li>
+<div ui-tree class="file-list" data-drag-enabled="false">
+  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
+    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'filelist.html'" data-collapsed="true"></li>
   </ul>
 </div>

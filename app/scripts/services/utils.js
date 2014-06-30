@@ -94,6 +94,18 @@
     .value('$confirm', function (message) {
       return window.confirm(message);
     })
+    .factory('generateName', function() {
+      return function generateName(names, defaultName, extension) {
+        extension = extension ? '.' + extension : '';
+        var currentMax = Math.max.apply(undefined, names.map(function (name) {
+          var re = new RegExp(defaultName + '(\\d+)');
+          var match = name.match(re);
+          return match ? match[1] : 0;
+        }).concat(0));
+
+        return defaultName + (currentMax + 1) + extension;
+      };
+    })
     .factory('scroll', function(){
       var keys = { 37:true, 38:true, 39:true, 40:true };
 
