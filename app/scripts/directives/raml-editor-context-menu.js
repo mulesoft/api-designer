@@ -2,7 +2,13 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorContextMenu', function ($window, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorRemoveDirectoryPrompt, ramlEditorFilenamePrompt, scroll) {
+    .directive('ramlEditorContextMenu', function (
+      $window,
+      ramlRepository,
+      ramlEditorInputPrompt,
+      ramlEditorConfirmPrompt,
+      scroll
+    ) {
       function createActions(parent, target) {
         var actions = [
           {
@@ -14,9 +20,19 @@
           {
             label: 'Delete',
             execute: function() {
-              target.type === 'file' ?
-              ramlEditorRemoveFilePrompt.open(parent, target) :
-              ramlEditorRemoveDirectoryPrompt.open(parent, target);
+              var action;
+              var message;
+              if(target.isDirectory) {
+                action = parent.removeDirectory;
+                message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
+              }
+              else {
+                action = parent.removeFile;
+                message = 'Are you sure you want to delete "' + target.name + '"?';
+              }
+              ramlEditorConfirmPrompt.open(message, function(){
+                action.apply(parent, [target]);
+              });
             }
           },
           {
@@ -29,7 +45,8 @@
           }
         ];
 
-        return target.type === 'file' ? actions : actions.slice(1);
+        // remove the 'Save' action if the target is a directory
+        return target.isDirectory ? actions.slice(1) : actions;
       }
 
       function outOfWindow(el) {
@@ -46,7 +63,6 @@
         link: function(scope, element) {
           function positionMenu(element, offsetTarget) {
             var rect = offsetTarget.getBoundingClientRect();
-
 
             var left = rect.left + 0.5 * rect.width,
                 top = rect.top + 0.5 * rect.height;
@@ -81,12 +97,12 @@
           }
 
           var contextMenuController = {
-            open: function(event, file) {
+            open: function(event, target) {
               scroll.disable();
-              this.file = file;
-              var parent = ramlRepository.getDirectory(file.parentPath(), scope.homeDirectory);
+              this.target = target;
+              var parent = ramlRepository.getDirectory(target.parentPath(), scope.homeDirectory);
 
-              scope.actions = createActions(parent, file);
+              scope.actions = createActions(parent, target);
 
               event.stopPropagation();
               positionMenu(element, event.target);

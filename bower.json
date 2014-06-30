@@ -12,6 +12,7 @@
     "angular-cookies": "~1.2.16",
     "angular-resource": "~1.2.16",
     "angular-sanitize": "~1.2.16",
+    "angular-ui-tree": "~2.1.4",
     "api-console": "mulesoft/api-console#bd15fe082ee0abf3a34fc2514e5cbadb1637c879",
     "es5-shim": "~2.0.8",
     "font-awesome": "~4.0.3",

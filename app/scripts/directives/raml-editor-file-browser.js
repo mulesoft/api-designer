@@ -2,23 +2,27 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorFileBrowser', function ($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService) {
+    .directive('ramlEditorFileBrowser', function (
+      $q,
+      $window,
+      $rootScope,
+      config,
+      eventService,
+      ramlRepository,
+      ramlEditorInputPrompt
+    ) {
       function Controller($scope) {
         var fileBrowser         = this;
         var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
 
-        fileBrowser.select = function select(entry) {
-          if(entry.type === 'file') {
-            fileBrowser.selectFile(entry);
-          }
-          else {
-            fileBrowser.selectDirectory(entry);
-          }
+        fileBrowser.select = function select(target) {
+          var action = target.isDirectory ? fileBrowser.selectDirectory : fileBrowser.selectFile;
+          action(target);
         };
 
         fileBrowser.selectFile = function selectFile(file) {
-          if (fileBrowser.selected === file) {
+          if (fileBrowser.selectedTarget === file) {
             return;
           }
 
@@ -30,7 +34,7 @@
 
           afterLoading
             .then(function (file) {
-              fileBrowser.selected = file;
+              fileBrowser.selectedTarget = file;
               fileBrowser.selectedFile = file;
               $scope.$emit('event:raml-editor-file-selected', file);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
@@ -43,11 +47,11 @@
         };
 
         fileBrowser.selectDirectory = function selectDirectory(directory) {
-          if(fileBrowser.selected === directory) {
+          if(fileBrowser.selectedTarget === directory) {
             return;
           }
 
-          fileBrowser.selected = directory;
+          fileBrowser.selectedTarget = directory;
           $scope.$emit('event:raml-editor-directory-selected', directory);
         };
 
@@ -62,19 +66,19 @@
           ;
         };
 
-        fileBrowser.showContextMenu = function showContextMenu(event, file) {
-          contextMenu.open(event, file);
+        fileBrowser.showContextMenu = function showContextMenu(event, target) {
+          contextMenu.open(event, target);
         };
 
-        fileBrowser.contextMenuOpenedFor = function contextMenuOpenedFor(file) {
-          return contextMenu && contextMenu.file === file;
+        fileBrowser.contextMenuOpenedFor = function contextMenuOpenedFor(target) {
+          return contextMenu && contextMenu.target === target;
         };
 
         function saveListener(e) {
           if (e.which === 83 && (e.metaKey || e.ctrlKey) && !(e.shiftKey || e.altKey)) {
             e.preventDefault();
             $scope.$apply(function () {
-              fileBrowser.saveFile(fileBrowser.selected);
+              fileBrowser.saveFile(fileBrowser.selectedFile);
             });
           }
         }
@@ -92,8 +96,8 @@
         });
 
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          if (file === fileBrowser.selected && $scope.homeDirectory.files.length > 0) {
-            fileBrowser.selectFile($scope.homeDirectory.files[0]);
+          if (file === fileBrowser.selectedTarget && $scope.homeDirectory.getFiles().length > 0) {
+            fileBrowser.selectFile($scope.homeDirectory.getFiles()[0]);
           }
         });
 
@@ -102,11 +106,10 @@
         });
 
         function promptWhenFileListIsEmpty() {
-          ramlEditorFilenamePrompt.open($scope.homeDirectory)
-            .then(function (filename) {
-              $scope.homeDirectory.createFile(filename);
-            })
-          ;
+          var defaultName = 'Untitled-1.raml';
+          var fileName = ramlEditorInputPrompt.open('File browser is empty, please input a name for the new file:', defaultName);
+          fileName = fileName.length > 0 ? fileName : defaultName;
+          $scope.homeDirectory.createFile(fileName);
         }
 
         /**
@@ -126,7 +129,7 @@
 
           while (pos < queue.length) {
             var directory = queue[pos];
-            var files     = directory.files;
+            var files     = directory.getFiles();
             var entity    = void(0);
 
             for (var i = 0; i < files.length; i++) {
@@ -149,13 +152,13 @@
             $scope.homeDirectory = directory;
             fileBrowser.rootFile = findRootFile(directory);
 
-            $scope.$watch('homeDirectory.files', function (files) {
+            $scope.$watch('homeDirectory.getFiles()', function (files) {
               if (!files.length) {
                 setTimeout(promptWhenFileListIsEmpty, 0);
               }
             }, true);
 
-            if (!directory.files.length) {
+            if (!directory.getFiles().length) {
               promptWhenFileListIsEmpty();
               return;
             }
@@ -165,9 +168,9 @@
             //   - root file
             //   - first file
             var currentFile = JSON.parse(config.get('currentFile', '{}'));
-            var fileToOpen  = directory.files.filter(function (file) {
+            var fileToOpen  = directory.getFiles().filter(function (file) {
               return file.path === currentFile.path;
-            })[0] || fileBrowser.rootFile || directory.files[0];
+            })[0] || fileBrowser.rootFile || directory.getFiles()[0];
 
             fileBrowser.selectFile(fileToOpen);
           })
