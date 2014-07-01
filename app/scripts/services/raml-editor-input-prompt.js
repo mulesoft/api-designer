@@ -4,20 +4,26 @@
   angular.module('ramlEditorApp')
     .factory('ramlEditorInputPrompt', function ($window) {
       var service = {
-        open: function open(message, placeholder, validations) {
+        open: function open(message, placeholder, validations, confirmAction, cancelAction) {
           validations = validations || [];
 
           var result = $window.prompt(message, placeholder);
-          result = result || '';
+          if (result === null) {
+            return cancelAction ? cancelAction() : null;
+          }
 
-          validations.forEach(function(v) {
-            if (!v.validate(result)) {
-              $window.alert(v.message);
+          for (var i = 0; i < validations.length; i++) {
+            if (!validations[i].validate(result)) {
+              $window.alert(validations[i].message);
               result = service.open(message, placeholder, validations);
-            }
-          });
 
-          return result;
+              if(result === null) {
+                return cancelAction ? cancelAction() : null;
+              }
+            }
+          }
+
+          return confirmAction ? confirmAction(result) : result;
         }
       };
 

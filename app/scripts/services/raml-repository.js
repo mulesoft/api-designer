@@ -227,7 +227,7 @@
       };
 
       service.renameFile = function renameFile(file, newName) {
-        var newPath = file.parentPath + newName;
+        var newPath = file.parentPath() + newName;
         var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
 
         function modifyFile() {
