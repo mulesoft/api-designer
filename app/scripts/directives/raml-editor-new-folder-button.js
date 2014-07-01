@@ -22,7 +22,7 @@
               }
             }]);
 
-            if(directoryName.length > 0) {
+            if (directoryName.length > 0) {
               directory.createDirectory(directoryName);
             }
           };

@@ -296,7 +296,7 @@
 
         // Warn before leaving the page
         $window.onbeforeunload = function () {
-          var anyUnsavedChanges = $scope.homeDirectory.files.some(function (file) {
+          var anyUnsavedChanges = $scope.homeDirectory.getFiles().some(function (file) {
             return file.dirty;
           });
 

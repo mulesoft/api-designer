@@ -22,7 +22,7 @@
               }
             }]);
 
-            if(filename.length > 0) {
+            if (filename.length > 0) {
               directory.createFile(filename);
             }
           };

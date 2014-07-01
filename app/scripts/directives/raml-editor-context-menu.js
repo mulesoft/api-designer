@@ -22,7 +22,8 @@
             execute: function() {
               var action;
               var message;
-              if(target.isDirectory) {
+
+              if (target.isDirectory) {
                 action = parent.removeDirectory;
                 message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
               }
@@ -38,9 +39,33 @@
           {
             label: 'Rename',
             execute: function() {
-              ramlEditorFilenamePrompt.open(parent, target.name).then(function(filename) {
-                ramlRepository.renameFile(target, filename);
-              });
+              var action;
+              var message;
+              var targetList;
+
+              if (target.isDirectory) {
+                action = ramlRepository.renameDirectory;
+                message = 'Input a new name for this folder:';
+                targetList = parent.getDirectories();
+              }
+              else {
+                action = ramlRepository.renameFile;
+                message = 'Input a new name for this file:';
+                targetList = parent.getFiles();
+              }
+
+              var newName = ramlEditorInputPrompt.open(message, target.name, [{
+                message: 'That name is already taken.',
+                validate: function(input) {
+                  return !targetList.some(function (t) {
+                    return t.name.toLowerCase() === input.toLowerCase();
+                  });
+                }
+              }]);
+
+              if(newName.length > 0 && newName !== target.name) {
+                action.apply(undefined, [target, newName]);
+              }
             }
           }
         ];

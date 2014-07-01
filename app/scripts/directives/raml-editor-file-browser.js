@@ -47,7 +47,7 @@
         };
 
         fileBrowser.selectDirectory = function selectDirectory(directory) {
-          if(fileBrowser.selectedTarget === directory) {
+          if (fileBrowser.selectedTarget === directory) {
             return;
           }
 
