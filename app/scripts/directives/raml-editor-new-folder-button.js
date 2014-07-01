@@ -13,18 +13,26 @@
               ramlRepository.getDirectory(scope.fileBrowser.selectedTarget.parentPath(), scope.homeDirectory);
             var message = 'Input a name for your new folder:';
             var defaultName = generateName(directory.getDirectories().map(function (d){return d.name;}), 'Folder');
-            var directoryName = ramlEditorInputPrompt.open(message,defaultName, [{
-              message: 'That folder name is already taken.',
-              validate: function(input) {
-                return !directory.getDirectories().some(function (d) {
-                  return d.name.toLowerCase() === input.toLowerCase();
-                });
-              }
-            }]);
 
-            if (directoryName.length > 0) {
-              directory.createDirectory(directoryName);
-            }
+            var validations = [
+              {
+                message: 'That folder name is already taken.',
+                validate: function(input) {
+                  return !directory.getDirectories().some(function (directory) {
+                    return directory.name.toLowerCase() === input.toLowerCase();
+                  });
+                }
+              } , {
+                message: 'Folder name cannot be empty.',
+                validate: function(input) {
+                  return input.length > 0;
+                }
+              }
+            ];
+
+            ramlEditorInputPrompt.open(message, defaultName, validations, function(input) {
+              directory.createDirectory.apply(directory, [input]);
+            });
           };
         }
       };

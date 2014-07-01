@@ -13,18 +13,26 @@
               ramlRepository.getDirectory(scope.fileBrowser.selectedTarget.parentPath(), scope.homeDirectory);
             var message = 'Input a name for your new file:';
             var defaultName = generateName(directory.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
-            var filename = ramlEditorInputPrompt.open(message,defaultName, [{
-              message: 'That file name is already taken.',
-              validate: function(input) {
-                return !directory.getFiles().some(function (file) {
-                  return file.name.toLowerCase() === input.toLowerCase();
-                });
-              }
-            }]);
 
-            if (filename.length > 0) {
-              directory.createFile(filename);
-            }
+            var validations = [
+              {
+                message: 'That file name is already taken.',
+                validate: function(input) {
+                  return !directory.getFiles().some(function (file) {
+                    return file.name.toLowerCase() === input.toLowerCase();
+                  });
+                }
+              } , {
+                message: 'File name cannot be empty.',
+                validate: function(input) {
+                  return input.length > 0;
+                }
+              }
+            ];
+
+            ramlEditorInputPrompt.open(message, defaultName, validations, function(input) {
+              directory.createFile.apply(directory, [input]);
+            });
           };
         }
       };

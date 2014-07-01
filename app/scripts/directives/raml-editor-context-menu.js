@@ -54,18 +54,25 @@
                 targetList = parent.getFiles();
               }
 
-              var newName = ramlEditorInputPrompt.open(message, target.name, [{
-                message: 'That name is already taken.',
-                validate: function(input) {
-                  return !targetList.some(function (t) {
-                    return t.name.toLowerCase() === input.toLowerCase();
-                  });
+              var validations = [
+                {
+                  message: 'That name is already taken.',
+                  validate: function(input) {
+                    return !targetList.some(function (t) {
+                      return t.name.toLowerCase() === input.toLowerCase();
+                    });
+                  }
+                }, {
+                  message: 'New name cannot be empty.',
+                  validate: function(input) {
+                    return input.length > 0;
+                  }
                 }
-              }]);
+              ];
 
-              if(newName.length > 0 && newName !== target.name) {
-                action.apply(undefined, [target, newName]);
-              }
+              ramlEditorInputPrompt.open(message, target.name, validations, function(name){
+                action.apply(undefined, [target, name]);
+              });
             }
           }
         ];
