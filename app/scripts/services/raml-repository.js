@@ -129,6 +129,21 @@
         };
       }
 
+      RamlDirectory.prototype.forEachChild = function forEachChild(action) {
+        // do a BFS search
+        var queue = this.children;
+        var current;
+        var pos = 0;
+        while(pos < queue.length) {
+          current = queue[pos];
+          action.apply(undefined, [current]);
+          if(current.isDirectory) {
+            queue = queue.concat(current.children);
+          }
+          pos++;
+        }
+      };
+
       service.canExport = function canExport() {
         return fileSystem.canExport();
       };
@@ -139,17 +154,17 @@
 
       service.createDirectory = function createDirectory(name, parent) {
         parent = parent || defaultPath;
-        var path =  parent + name;
+        var path = parent + name;
         var directory = new RamlDirectory(path);
 
-        $rootScope.$broadcast('event:raml-editor-folder-created', directory);
+        $rootScope.$broadcast('event:raml-editor-directory-created', directory);
         return directory;
       };
 
       service.loadDirectory = function loadDirectory(path) {
         path = path || defaultPath;
-        return fileSystem.directory(path).then(function (folder) {
-          return new RamlDirectory(folder.path, folder.meta, folder.children);
+        return fileSystem.directory(path).then(function (directory) {
+          return new RamlDirectory(directory.path, directory.meta, directory.children);
         });
       };
 
@@ -162,7 +177,7 @@
         var queue = root.getDirectories();
         var pos = 0;
         while(pos < queue.length) {
-          if(queue[pos].path === path) {
+          if (queue[pos].path === path) {
             return queue[pos];
           }
           else {
@@ -182,6 +197,24 @@
         ;
       };
 
+      service.renameDirectory = function renameDirectory(directory, newName) {
+        var newPath = directory.parentPath() + newName + '/';
+        var promise = fileSystem.rename(directory.path, newPath);
+
+        function modifyDirectory() {
+          directory.name = newName;
+          directory.path = newPath;
+
+          return directory;
+        }
+
+        directory.forEachChild(function(c) {
+          c.path = c.path.replace(directory.path, newPath);
+        });
+
+        return promise.then(modifyDirectory, handleErrorFor(directory));
+      };
+
       service.saveFile = function saveFile(file) {
         function modifyFile() {
           file.dirty     = false;
@@ -194,7 +227,7 @@
       };
 
       service.renameFile = function renameFile(file, newName) {
-        var newPath = file.path.replace(file.name, newName);
+        var newPath = file.parentPath + newName;
         var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
 
         function modifyFile() {

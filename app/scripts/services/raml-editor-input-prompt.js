@@ -11,9 +11,9 @@
           result = result || '';
 
           validations.forEach(function(v) {
-            if(!v.validate(result)) {
+            if (!v.validate(result)) {
               $window.alert(v.message);
-              result =  service.open(message, placeholder, validations);
+              result = service.open(message, placeholder, validations);
             }
           });
 
