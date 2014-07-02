@@ -31,7 +31,7 @@
                 action = parent.removeFile;
                 message = 'Are you sure you want to delete "' + target.name + '"?';
               }
-              ramlEditorConfirmPrompt.open(message, function(){
+              ramlEditorConfirmPrompt.open(message, function() {
                 action.apply(parent, [target]);
               });
             }
