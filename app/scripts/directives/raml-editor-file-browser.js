@@ -114,7 +114,14 @@
               return input.length > 0;
             }
           }];
-          ramlEditorInputPrompt.open(message, defaultName, validation, $scope.homeDirectory.createFile);
+          ramlEditorInputPrompt.open(message, defaultName, validation,
+            function(result) {
+              $scope.homeDirectory.createFile(result);
+            },
+            function() {
+              $scope.homeDirectory.createFile(defaultName);
+            }
+          );
         }
 
         /**
