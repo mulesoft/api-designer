@@ -6,13 +6,9 @@
       return {
         open: function open(message, confirmAction, cancelAction) {
           var confirmed = $window.confirm(message);
+          var action = confirmed ? confirmAction : cancelAction;
 
-          if (confirmed) {
-            confirmAction();
-          }
-          else {
-            cancelAction ? cancelAction() : void(0);
-          }
+          return action ? action() : confirmed;
         }
       };
     })
