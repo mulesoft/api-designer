@@ -114,7 +114,7 @@
               return input.length > 0;
             }
           }];
-          ramlEditorInputPrompt.open(message, defaultName, validation,
+          ramlEditorInputPrompt.open(message, defaultName, validation).then(
             function(result) {
               $scope.homeDirectory.createFile(result);
             },

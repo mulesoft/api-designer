@@ -2,28 +2,33 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .factory('ramlEditorInputPrompt', function ($window) {
+    .factory('ramlEditorInputPrompt', function ($window, $q) {
       var service = {
-        open: function open(message, placeholder, validations, confirmAction, cancelAction) {
+        open: function open(message, placeholder, validations) {
           validations = validations || [];
+
+          var deferred = $q.defer();
+          var validated = true;
 
           var result = $window.prompt(message, placeholder);
           if (result === null) {
-            return cancelAction ? cancelAction() : null;
+            deferred.reject();
+            return deferred.promise;
           }
 
           for (var i = 0; i < validations.length; i++) {
             if (!validations[i].validate(result)) {
               $window.alert(validations[i].message);
-              result = service.open(message, placeholder, validations);
-
-              if(result === null) {
-                return cancelAction ? cancelAction() : null;
-              }
+              validated = false;
+              return service.open(message, placeholder, validations);
             }
           }
 
-          return confirmAction ? confirmAction(result) : result;
+          if(validated) {
+            deferred.resolve(result);
+          }
+
+          return deferred.promise;
         }
       };
 

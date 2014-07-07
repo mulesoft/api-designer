@@ -11,7 +11,11 @@
             var directory = scope.fileBrowser.selectedTarget.isDirectory ?
               scope.fileBrowser.selectedTarget :
               ramlRepository.getDirectory(scope.fileBrowser.selectedTarget.parentPath(), scope.homeDirectory);
-            var message = 'Input a name for your new file:';
+
+            var message = [
+              'For a new RAML spec, be sure to name your file <something>.raml; ',
+              'For files to be !included, feel free to use an extension or not.'
+            ].join('');
             var defaultName = generateName(directory.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
 
             var validations = [
@@ -30,9 +34,10 @@
               }
             ];
 
-            ramlEditorInputPrompt.open(message, defaultName, validations, function(input) {
-              directory.createFile.apply(directory, [input]);
-            });
+            ramlEditorInputPrompt.open(message, defaultName, validations)
+              .then(function(name) {
+                directory.createFile.call(directory, name);
+              });
           };
         }
       };
