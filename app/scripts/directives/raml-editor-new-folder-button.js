@@ -30,9 +30,10 @@
               }
             ];
 
-            ramlEditorInputPrompt.open(message, defaultName, validations, function(input) {
-              directory.createDirectory.apply(directory, [input]);
-            });
+            ramlEditorInputPrompt.open(message, defaultName, validations)
+              .then(function(input) {
+                directory.createDirectory.call(directory, input);
+              });
           };
         }
       };
