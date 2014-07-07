@@ -14,9 +14,6 @@ html[role=api-designer] body {
   padding: 0;
   font-family: 'Open Sans', sans-serif;
 }
-html[role=api-designer] .hide-display {
-  display: none !important;
-}
 html[role=api-designer] div.container {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -38,6 +35,9 @@ div[role=raml-editor] {
   -webkit-flex-direction: column;
   -ms-flex-direction: column;
   flex-direction: column;
+}
+div[role=raml-editor] .hide-display {
+  display: none !important;
 }
 div[role=raml-editor] > div[role=notifications] {
   background-color: #caccd4;
