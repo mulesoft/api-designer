@@ -22,7 +22,8 @@
         };
 
         fileBrowser.selectFile = function selectFile(file) {
-          if (fileBrowser.selectedTarget === file) {
+          if (fileBrowser.selectedFile === file) {
+            fileBrowser.selectedTarget = file;
             return;
           }
 
@@ -96,7 +97,7 @@
         });
 
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          if (file === fileBrowser.selectedTarget && $scope.homeDirectory.getFiles().length > 0) {
+          if (file === fileBrowser.selectedFile && $scope.homeDirectory.getFiles().length > 0) {
             fileBrowser.selectFile($scope.homeDirectory.getFiles()[0]);
           }
         });
@@ -141,7 +142,7 @@
 
           while (pos < queue.length) {
             var directory = queue[pos];
-            var files     = directory.getFiles();
+            var files     = directory.children;
             var entity    = void(0);
 
             for (var i = 0; i < files.length; i++) {

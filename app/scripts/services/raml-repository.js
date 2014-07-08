@@ -4,6 +4,11 @@
   function RamlFile(path, contents, options) {
     options = options || {};
 
+    // remove the trailing slash to path if it exists
+    if (path.slice(-1) === '/' && path.length > 1) {
+      path = path.slice(0, -1);
+    }
+
     this.type = 'file';
     this.path = path;
     this.name = path.slice(path.lastIndexOf('/') + 1);
@@ -19,11 +24,6 @@
     this.root      = options.root;
   }
 
-  RamlFile.prototype.parentPath = function parentPath() {
-    var parent = this.path.slice(0, this.path.lastIndexOf('/') + 1);
-    return parent.length === 0 ? '/' : parent;
-  };
-
   angular.module('fs', ['ngCookies', 'raml', 'utils'])
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
       var service     = {};
@@ -36,18 +36,17 @@
       }
 
       function RamlDirectory(path, meta, contents) {
-        // add trailing slash to path if it doesn't exist
-        if (path.slice(-1) !== '/') {
-          path = path + '/';
+        // remove the trailing slash to path if it exists
+        if (path.slice(-1) === '/' && path.length > 1) {
+          path = path.slice(0, -1);
         }
 
         contents = contents || [];
 
-        var strippedPath = path.substring(0, path.length - 1);
         this.type = 'directory';
         this.isDirectory = true;
         this.path = path;
-        this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
+        this.name = path.slice(path.lastIndexOf('/') + 1);
         this.meta = meta;
 
         var separated = { folder: [], file: [] };
@@ -69,12 +68,6 @@
 
         this.children = directories.concat(files);
       }
-
-      RamlDirectory.prototype.parentPath = function parentPath() {
-        var slicedPath = this.path.slice(0, -1);
-        var parent = slicedPath.slice(0, slicedPath.lastIndexOf('/') + 1);
-        return parent.length === 0 ? '/' : parent;
-      };
 
       RamlDirectory.prototype.createDirectory = function createDirectory(name) {
         var directory = service.createDirectory(name, this.path);
@@ -129,8 +122,8 @@
         };
       }
 
-      RamlDirectory.prototype.forEachChild = function forEachChild(action) {
-        // do a BFS search
+      RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
+        // do a BFS
         var queue = this.children;
         var current;
         var pos = 0;
@@ -144,6 +137,11 @@
         }
       };
 
+      service.parentPath = function parentPath(target) {
+        var parent = target.path.slice(0, target.path.lastIndexOf('/'));
+        return parent + '/';
+      };
+
       service.canExport = function canExport() {
         return fileSystem.canExport();
       };
@@ -154,6 +152,9 @@
 
       service.createDirectory = function createDirectory(name, parent) {
         parent = parent || defaultPath;
+        if(parent !== '/') {
+          parent = parent + '/';
+        }
         var path = parent + name;
         var directory = new RamlDirectory(path);
 
@@ -169,6 +170,10 @@
       };
 
       service.getDirectory = function getDirectory(path, root) {
+        if(path.slice(-1) === '/' && path !== '/') {
+          path = path.slice(0, -1);
+        }
+
         if (root.path === path) {
           return root;
         }
@@ -193,12 +198,11 @@
         return fileSystem.remove(directory)
           .then(function (directory) {
             $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
-          })
-        ;
+          });
       };
 
       service.renameDirectory = function renameDirectory(directory, newName) {
-        var newPath = directory.parentPath() + newName + '/';
+        var newPath = service.parentPath(directory) + newName;
         var promise = fileSystem.rename(directory.path, newPath);
 
         function modifyDirectory() {
@@ -208,7 +212,7 @@
           return directory;
         }
 
-        directory.forEachChild(function(c) {
+        directory.forEachChildDo(function(c) {
           c.path = c.path.replace(directory.path, newPath);
         });
 
@@ -227,7 +231,7 @@
       };
 
       service.renameFile = function renameFile(file, newName) {
-        var newPath = file.parentPath() + newName;
+        var newPath = service.parentPath(file) + newName;
         var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
 
         function modifyFile() {
@@ -283,6 +287,8 @@
       };
 
       service.createFile = function createFile(name, parent) {
+        parent = parent || defaultPath;
+        parent = parent.slice(-1) === '/' ? parent : parent + '/';
         var path = parent + name;
         var file = new RamlFile(path);
 

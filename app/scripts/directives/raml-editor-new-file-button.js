@@ -10,7 +10,7 @@
           scope.newFile = function newFile() {
             var directory = scope.fileBrowser.selectedTarget.isDirectory ?
               scope.fileBrowser.selectedTarget :
-              ramlRepository.getDirectory(scope.fileBrowser.selectedTarget.parentPath(), scope.homeDirectory);
+              ramlRepository.getDirectory(ramlRepository.parentPath(scope.fileBrowser.selectedTarget), scope.homeDirectory);
 
             var message = [
               'For a new RAML spec, be sure to name your file <something>.raml; ',
@@ -22,7 +22,7 @@
               {
                 message: 'That file name is already taken.',
                 validate: function(input) {
-                  return !directory.getFiles().some(function (file) {
+                  return !directory.children.some(function (file) {
                     return file.name.toLowerCase() === input.toLowerCase();
                   });
                 }

@@ -1,7 +1,7 @@
 describe('ramlEditorNewFileButton', function() {
   'use strict';
 
-  var scope, el, sandbox, newFilePrompt;
+  var scope, el, sandbox, newFilePrompt, repository;
 
   function compileNewFileButton() {
     el = compileTemplate('<raml-editor-new-file-button></raml-editor-new-file-button>', scope);
@@ -14,11 +14,20 @@ describe('ramlEditorNewFileButton', function() {
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
-  beforeEach(inject(function($rootScope, ramlEditorFilenamePrompt) {
+  beforeEach(inject(function($rootScope, ramlEditorInputPrompt, ramlRepository) {
     sandbox = sinon.sandbox.create();
     scope = $rootScope.$new();
-    scope.homeDirectory = { path: '/' };
-    newFilePrompt = ramlEditorFilenamePrompt;
+    var mockfile = { path:'/file.raml', name: 'file.raml' };
+    scope.homeDirectory = {
+      path: '/',
+      children:[mockfile],
+      getFiles: function() { return this.children; }
+    };
+    scope.fileBrowser = {
+      selectedTarget: mockfile
+    };
+    newFilePrompt = ramlEditorInputPrompt;
+    repository = ramlRepository;
   }));
 
   afterEach(function() {
@@ -32,6 +41,8 @@ describe('ramlEditorNewFileButton', function() {
 
     beforeEach(function() {
       scope.homeDirectory.createFile = sandbox.spy();
+      repository.getDirectory = sinon.stub();
+      repository.getDirectory.returns(scope.homeDirectory);
       promptOpenSpy = sandbox.stub(newFilePrompt, 'open').returns(promise.resolved('MyFile.raml'));
 
       compileNewFileButton();

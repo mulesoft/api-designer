@@ -57,7 +57,7 @@ describe('RAML Editor Main Controller', function () {
   describe('leaving the page', function() {
     it('should ask user for confirmation if there are unsaved changes', function () {
       scope.homeDirectory = {
-        files: [
+        children: [
           { dirty: false },
           { dirty: true },
           { dirty: false }
@@ -70,7 +70,7 @@ describe('RAML Editor Main Controller', function () {
 
     it('should not ask user for confirmation if there are no unsaved changes', function () {
       scope.homeDirectory = {
-        files: [
+        children: [
           { dirty: false },
           { dirty: false },
           { dirty: false }
