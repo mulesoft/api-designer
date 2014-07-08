@@ -79,6 +79,28 @@ describe('Local Storage File System', function () {
 
         $timeout.flush();
       });
+
+      it('should allow files to have the same name as its parent', function () {
+        localStorageFileSystem.save('/folder/folder', content).then(
+          function () {
+            localStorageFileSystem.directory('/').then(function (folder) {
+              folder.should.not.be.null;
+              folder.children.should.have.length(3);
+            });
+
+            localStorageFileSystem.directory('/folder').then(function (folder) {
+              folder.should.not.be.null;
+              folder.children.should.have.length(4);
+              hasPath(folder.children, '/folder/folder').should.be.ok;
+            });
+          },
+          function (error) {
+            throw error;
+          });//success,error
+
+        $timeout.flush();
+        $timeout.flush();
+      });
     });
 
     describe('list', function () {
@@ -117,6 +139,29 @@ describe('Local Storage File System', function () {
             folder.should.not.be.null;
             folder.children.should.have.length(3);
             hasPath(folder.children, path).should.not.be.ok;
+          });
+        });
+
+        $timeout.flush();
+        $timeout.flush();
+      });
+
+      it('should remove correctly when the file has the same name as its parents', function () {
+        localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/folder', '{ "path": "/folder/folder", "name": "folder", "type": "file" }');
+
+        localStorageFileSystem.directory('/folder').then(function (folder) {
+          folder.should.not.be.null;
+          folder.children.should.have.length(4);
+          hasPath(folder.children, '/folder/folder').should.be.ok;
+        });
+
+        $timeout.flush();
+
+        localStorageFileSystem.remove('/folder/folder').then(function () {
+          localStorageFileSystem.directory('/folder').then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(3);
+            hasPath(folder.children, '/folder/folder').should.not.be.ok;
           });
         });
 

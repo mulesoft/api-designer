@@ -22,7 +22,7 @@ describe('RAML Repository', function () {
     sandbox.restore();
   });
 
-  describe('getDirectory', function () {
+  describe('loadDirectory', function () {
     it('should reflect the contents of a directory on success', function () {
       // Arrange
       var directoryDeferred = $q.defer();
@@ -41,17 +41,17 @@ describe('RAML Repository', function () {
       };
 
       // Act
-      ramlRepository.getDirectory('/').then(success);
+      ramlRepository.loadDirectory('/').then(success);
 
       directoryDeferred.resolve(files);
       $rootScope.$apply();
 
       // Assert
       var directory = success.firstCall.args[0];
-      directory.files[0].path.should.be.equal(files.children[0].path);
-      directory.files[0].name.should.be.equal(files.children[0].name);
-      directory.files[0].dirty.should.be.false;
-      directory.files[0].persisted.should.be.true;
+      directory.children[0].path.should.be.equal(files.children[0].path);
+      directory.children[0].name.should.be.equal(files.children[0].name);
+      directory.children[0].dirty.should.be.false;
+      directory.children[0].persisted.should.be.true;
     });
 
     it('should handle errors', function () {
@@ -62,7 +62,7 @@ describe('RAML Repository', function () {
       var errorData = {message: 'Error occurred'};
 
       // Act
-      ramlRepository.getDirectory('/').then(function () {}, error);
+      ramlRepository.loadDirectory('/').then(function () {}, error);
 
       directoryDeferred.reject(errorData);
       $rootScope.$apply();
@@ -93,13 +93,13 @@ describe('RAML Repository', function () {
 
       // Act
       sinon.stub(fileSystem, 'directory').returns($q.when(folder));
-      ramlRepository.getDirectory('/').then(success);
+      ramlRepository.loadDirectory('/').then(success);
       $rootScope.$apply();
 
       // Assert
       success.should.have.been.called;
-      success.firstCall.args[0].files.should.have.length(1);
-      success.firstCall.args[0].files[0].should.have.property('path', '/example.raml');
+      success.firstCall.args[0].children.should.have.length(1);
+      success.firstCall.args[0].children[0].should.have.property('path', '/example.raml');
     });
 
     it('should copy `root` property of files', function () {
@@ -120,13 +120,13 @@ describe('RAML Repository', function () {
 
       // Act
       sinon.stub(fileSystem, 'directory').returns($q.when(folder));
-      ramlRepository.getDirectory('/').then(success);
+      ramlRepository.loadDirectory('/').then(success);
       $rootScope.$apply();
 
       // Assert
       success.should.have.been.called;
-      success.firstCall.args[0].files.should.have.length(1);
-      success.firstCall.args[0].files[0].should.have.property('root').and.be.true;
+      success.firstCall.args[0].children.should.have.length(1);
+      success.firstCall.args[0].children[0].should.have.property('root').and.be.true;
     });
   });
 

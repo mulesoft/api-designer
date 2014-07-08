@@ -10,7 +10,7 @@
           scope.newFolder = function newFolder() {
             var directory = scope.fileBrowser.selectedTarget.isDirectory ?
               scope.fileBrowser.selectedTarget :
-              ramlRepository.getDirectory(scope.fileBrowser.selectedTarget.parentPath(), scope.homeDirectory);
+              ramlRepository.getDirectory(ramlRepository.parentPath(scope.fileBrowser.selectedTarget), scope.homeDirectory);
             var message = 'Input a name for your new folder:';
             var defaultName = generateName(directory.getDirectories().map(function (d){return d.name;}), 'Folder');
 
@@ -18,7 +18,7 @@
               {
                 message: 'That folder name is already taken.',
                 validate: function(input) {
-                  return !directory.getDirectories().some(function (directory) {
+                  return !directory.children.some(function (directory) {
                     return directory.name.toLowerCase() === input.toLowerCase();
                   });
                 }

@@ -41,24 +41,21 @@
             execute: function() {
               var action;
               var message;
-              var targetList;
 
               if (target.isDirectory) {
                 action = ramlRepository.renameDirectory;
                 message = 'Input a new name for this folder:';
-                targetList = parent.getDirectories();
               }
               else {
                 action = ramlRepository.renameFile;
                 message = 'Input a new name for this file:';
-                targetList = parent.getFiles();
               }
 
               var validations = [
                 {
                   message: 'That name is already taken.',
                   validate: function(input) {
-                    return !targetList.some(function (t) {
+                    return !target.children.some(function (t) {
                       return t.name.toLowerCase() === input.toLowerCase();
                     });
                   }
@@ -133,7 +130,7 @@
             open: function(event, target) {
               scroll.disable();
               this.target = target;
-              var parent = ramlRepository.getDirectory(target.parentPath(), scope.homeDirectory);
+              var parent = ramlRepository.getDirectory(ramlRepository.parentPath(target), scope.homeDirectory);
 
               scope.actions = createActions(parent, target);
 

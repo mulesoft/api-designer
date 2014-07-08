@@ -69,7 +69,7 @@
         var entries = [];
         localStorageHelper.forEach(function (entry) {
           if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              extractParentPath(entry.path) === path) {
+              extractParentPath(entry.path) + '/' === path) {
             addChildren(entry, findFiles);
             entries.push(entry);
           }
@@ -110,7 +110,7 @@
         var has = false;
         localStorageHelper.forEach(function (entry) {
           if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              entry.path.indexOf(path + '/') === 0) {
+              entry.path.indexOf(path) === 0) {
             has = true;
           }
         });
@@ -144,7 +144,7 @@
           path = path.slice(0, -1);
         }
 
-        return path.slice(0, path.lastIndexOf('/') + 1);
+        return path.slice(0, path.lastIndexOf('/'));
       }
 
       /**
@@ -164,7 +164,7 @@
           if (!localStorageHelper.has('/')) {
             localStorageHelper.set(path, {
                 path: '/',
-                name: '/',
+                name: '',
                 type: 'folder',
                 meta: {
                   'created': Math.round(new Date().getTime()/1000.0)

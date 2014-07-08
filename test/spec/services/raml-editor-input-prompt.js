@@ -3,8 +3,8 @@ describe('ramlEditorInputPrompt', function() {
 
   var sandbox, newInputPrompt, digest;
 
-  angular.module('fileBrowserTest', ['ramlEditorApp']);
-  beforeEach(module('fileBrowserTest'));
+  angular.module('PromptTest', ['ramlEditorApp']);
+  beforeEach(module('PromptTest'));
 
   beforeEach(inject(function($rootScope, ramlEditorInputPrompt) {
     sandbox = sinon.sandbox.create();
