@@ -296,8 +296,10 @@
 
         // Warn before leaving the page
         $window.onbeforeunload = function () {
-          var anyUnsavedChanges = $scope.homeDirectory.children.some(function (file) {
-            return file.dirty;
+          var anyUnsavedChanges = false;
+
+          $scope.homeDirectory.forEachChildDo(function (t) {
+            anyUnsavedChanges = anyUnsavedChanges || t.dirty;
           });
 
           if (anyUnsavedChanges) {
