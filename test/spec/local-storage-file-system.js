@@ -22,7 +22,7 @@ describe('Local Storage File System', function () {
     localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/subFolderA', '{ "path": "/folder/subFolderA", "name": "subFolderA", "type": "folder" }');
     localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/subFolderA/example.raml', '{ "path": "/folder/subFolderA/example.raml", "name": "example.raml", "type": "file"}');
     localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/subFolderB', '{ "path": "/folder/subFolderB", "name": "subFolderB", "type": "folder" }');
-
+    localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/subFolderB/subFolderB', '{ "path": "/folder/subFolderB/subFolderB", "name": "subFolderB", "type": "file" }');
   });
 
   describe('when empty', function () {
@@ -257,7 +257,7 @@ describe('Local Storage File System', function () {
 
       it('should support nested folders', function (done) {
         localStorageFileSystem.createFolder('/folder/newSubFolder').then(function () {
-          localStorageFileSystem.directory('/folder', true).then(function (folder) {
+          localStorageFileSystem.directory('/folder').then(function (folder) {
             folder.should.not.be.null;
             folder.children.length.should.equal(4);
             hasPath(folder.children, '/folder/newSubFolder').should.be.ok;
@@ -266,6 +266,27 @@ describe('Local Storage File System', function () {
           });
         });
 
+        $timeout.flush();
+        $timeout.flush();
+      });
+
+      it('should allow a nested folder to have the same name with its parent', function (done) {
+        localStorageFileSystem.createFolder('/folder/folder').then(function () {
+          localStorageFileSystem.directory('/').then(function (root) {
+            root.should.not.be.null;
+            root.children.length.should.equal(3);
+
+            localStorageFileSystem.directory('/folder').then(function (folder) {
+              folder.should.not.be.null;
+              folder.children.length.should.equal(4);
+              hasPath(folder.children, '/folder/folder').should.be.ok;
+
+              done();
+            });
+          });
+        });
+
+        $timeout.flush();
         $timeout.flush();
         $timeout.flush();
       });

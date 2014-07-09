@@ -452,7 +452,7 @@ describe('RAML Repository', function () {
     });
   });
 
-  describe.only('If folders are supported', function () {
+  describe('If folders are supported', function () {
     var rootDirectory;
 
     beforeEach(function () {
