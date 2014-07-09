@@ -61,7 +61,12 @@ describe('RAML Editor Main Controller', function () {
           { dirty: false },
           { dirty: true },
           { dirty: false }
-        ]
+        ],
+        forEachChildDo: function(action) {
+          for (var i = 0; i < this.children.length; i++) {
+            action.call(this.children[i], this.children[i]);
+          }
+        }
       };
       ctrl = $controller('ramlEditorMain', params);
 
@@ -74,7 +79,12 @@ describe('RAML Editor Main Controller', function () {
           { dirty: false },
           { dirty: false },
           { dirty: false }
-        ]
+        ],
+        forEachChildDo: function(action) {
+          for (var i = 0; i < this.children.length; i++) {
+            action.call(this.children[i], this.children[i]);
+          }
+        }
       };
       ctrl = $controller('ramlEditorMain', params);
 

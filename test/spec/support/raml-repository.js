@@ -16,6 +16,11 @@
           },
           getFiles: function () {
             return this.children.filter(function(t) { return !t.isDirectory; });
+          },
+          forEachChildDo: function(action) {
+            for (var i = 0; i < this.children.length; i++) {
+              action.call(this.children[i], this.children[i]);
+            }
           }
         };
       };
@@ -29,6 +34,11 @@
           },
           getFiles: function () {
             return this.children.filter(function(t) { return !t.isDirectory; });
+          },
+          forEachChildDo: function(action) {
+            for (var i = 0; i < this.children.length; i++) {
+              action.call(this.children[i], this.children[i]);
+            }
           }
         });
       };

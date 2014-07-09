@@ -111,6 +111,7 @@
             if (index !== -1) {
               self.children.splice(index, 1);
             }
+            $rootScope.$broadcast('event:raml-editor-file-removed', file);
           })
         ;
       };
@@ -123,13 +124,13 @@
       }
 
       RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
-        // do a BFS
+        // BFS
         var queue = this.children;
         var current;
         var pos = 0;
         while(pos < queue.length) {
           current = queue[pos];
-          action.apply(undefined, [current]);
+          action.apply(current, [current]);
           if(current.isDirectory) {
             queue = queue.concat(current.children);
           }
@@ -279,11 +280,7 @@
         }
 
         return promise
-          .then(modifyFile, handleErrorFor(file))
-          .then(function (file) {
-            $rootScope.$broadcast('event:raml-editor-file-removed', file);
-          })
-        ;
+          .then(modifyFile, handleErrorFor(file));
       };
 
       service.createFile = function createFile(name, parent) {

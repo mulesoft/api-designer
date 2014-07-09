@@ -187,13 +187,6 @@ describe('RAML Repository', function () {
       it('should not make call to file system', function () {
         fileSystem.remove.should.not.be.called;
       });
-
-      it('should still broadcast an event', function (done) {
-        $rootScope.$on('event:raml-editor-file-removed', function () {
-          done();
-        });
-        $rootScope.$apply();
-      });
     });
 
     it('should update file on success', function () {
