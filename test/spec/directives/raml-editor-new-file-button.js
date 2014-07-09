@@ -41,8 +41,7 @@ describe('ramlEditorNewFileButton', function() {
 
     beforeEach(function() {
       scope.homeDirectory.createFile = sandbox.spy();
-      repository.getDirectory = sinon.stub();
-      repository.getDirectory.returns(scope.homeDirectory);
+      sinon.stub(repository, 'getDirectory').returns(scope.homeDirectory);
       promptOpenSpy = sandbox.stub(newFilePrompt, 'open').returns(promise.resolved('MyFile.raml'));
 
       compileNewFileButton();

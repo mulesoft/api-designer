@@ -55,7 +55,7 @@
                 {
                   message: 'That name is already taken.',
                   validate: function(input) {
-                    return !target.children.some(function (t) {
+                    return !parent.children.some(function (t) {
                       return t.name.toLowerCase() === input.toLowerCase();
                     });
                   }

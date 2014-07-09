@@ -178,7 +178,7 @@
           return root;
         }
 
-        // do a BFS search
+        // BFS
         var queue = root.getDirectories();
         var pos = 0;
         while(pos < queue.length) {
