@@ -28,7 +28,7 @@
       };
     })
     .factory('getTime', function () {
-      return (Date.now || function() {
+      return (Date.now || function () {
         return new Date().getTime();
       });
     })
@@ -50,12 +50,12 @@
         var timeout = null;
         var previous = 0;
         options || (options = {});
-        var later = function() {
+        var later = function () {
           previous = options.leading === false ? 0 : getTime();
           timeout = null;
           result = func.apply(context, args);
         };
-        return function() {
+        return function () {
           var now = getTime();
           if (!previous && options.leading === false) {
             previous = now;
@@ -94,7 +94,17 @@
     .value('$confirm', function (message) {
       return window.confirm(message);
     })
-    .factory('generateName', function() {
+    .factory('generateName', function () {
+      // generateName(names, defaultName, extension)
+      // Takes a list of names under the current directory, uses defaultName as a pattern,
+      // and add enumeration to the end of the defaultName.
+      //
+      // For example:
+      // name        = ["Untitled-1.raml", "Untitled-2.raml", "test.raml"]
+      // defaultName = 'Untitled-'
+      // extension   = 'raml'
+      //
+      // will return 'Untitled-3.raml'
       return function generateName(names, defaultName, extension) {
         extension = extension ? '.' + extension : '';
         var currentMax = Math.max.apply(undefined, names.map(function (name) {
@@ -106,7 +116,7 @@
         return defaultName + (currentMax + 1) + extension;
       };
     })
-    .factory('scroll', function(){
+    .factory('scroll', function () {
       var keys = { 37:true, 38:true, 39:true, 40:true };
 
       function preventDefault(e) {
@@ -130,7 +140,7 @@
       }
 
       return {
-        enable: function(){
+        enable: function () {
           if (window.removeEventListener) {
             window.removeEventListener('DOMMouseScroll', wheel, false);
           }

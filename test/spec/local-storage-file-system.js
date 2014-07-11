@@ -81,20 +81,20 @@ describe('Local Storage File System', function () {
       });
 
       it('should allow files to have the same name as its parent', function () {
-        localStorageFileSystem.save('/folder/folder', content).then(
-          function () {
-            localStorageFileSystem.directory('/').then(function (folder) {
-              folder.should.not.be.null;
-              folder.children.should.have.length(3);
-            });
-
-            localStorageFileSystem.directory('/folder').then(function (folder) {
-              folder.should.not.be.null;
-              folder.children.should.have.length(4);
-              hasPath(folder.children, '/folder/folder').should.be.ok;
-            });
-          },
-          function (error) {
+        localStorageFileSystem.save('/folder/folder', content)
+          .then( function () {
+            return localStorageFileSystem.directory('/');
+          })
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(3);
+            return localStorageFileSystem.directory('/folder');
+          })
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(4);
+            hasPath(folder.children, '/folder/folder').should.be.ok;
+          }, function (error) {
             throw error;
           });//success,error
 
@@ -105,15 +105,15 @@ describe('Local Storage File System', function () {
 
     describe('list', function () {
       it('should list recently saved file among the entries', function () {
-        localStorageFileSystem.save(path, content).then(
-          function () {
-            localStorageFileSystem.directory(folder).then(function (folder) {
-              folder.should.not.be.null;
-              folder.children.should.have.length(4);
-              hasPath(folder.children, path).should.be.ok;
-            });
-          },
-          function (error) {
+        localStorageFileSystem.save(path, content)
+          .then( function () {
+            return localStorageFileSystem.directory(folder);
+          })
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(4);
+            hasPath(folder.children, path).should.be.ok;
+          }, function (error) {
             throw error;
           });
 
@@ -124,9 +124,10 @@ describe('Local Storage File System', function () {
 
     describe('load', function () {
       it('should return recently saved file', function () {
-        localStorageFileSystem.load(path).then(function (loadedContent) {
-          loadedContent.should.be.equal(content);
-        });
+        localStorageFileSystem.load(path)
+          .then(function (loadedContent) {
+            loadedContent.should.be.equal(content);
+          });
 
         $timeout.flush();
       });
@@ -134,13 +135,15 @@ describe('Local Storage File System', function () {
 
     describe('remove', function () {
       it('should remove recently saved file', function () {
-        localStorageFileSystem.remove(path).then(function () {
-          localStorageFileSystem.directory(folder).then(function (folder) {
+        localStorageFileSystem.remove(path)
+          .then(function () {
+            return localStorageFileSystem.directory(folder);
+          })
+          .then(function (folder) {
             folder.should.not.be.null;
             folder.children.should.have.length(3);
             hasPath(folder.children, path).should.not.be.ok;
           });
-        });
 
         $timeout.flush();
         $timeout.flush();
@@ -149,21 +152,24 @@ describe('Local Storage File System', function () {
       it('should remove correctly when the file has the same name as its parents', function () {
         localStorage.setItem(LOCAL_PERSISTENCE_KEY + './folder/folder', '{ "path": "/folder/folder", "name": "folder", "type": "file" }');
 
-        localStorageFileSystem.directory('/folder').then(function (folder) {
-          folder.should.not.be.null;
-          folder.children.should.have.length(4);
-          hasPath(folder.children, '/folder/folder').should.be.ok;
-        });
+        localStorageFileSystem.directory('/folder')
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(4);
+            hasPath(folder.children, '/folder/folder').should.be.ok;
+          });
 
         $timeout.flush();
 
-        localStorageFileSystem.remove('/folder/folder').then(function () {
-          localStorageFileSystem.directory('/folder').then(function (folder) {
+        localStorageFileSystem.remove('/folder/folder')
+          .then(function () {
+            return localStorageFileSystem.directory('/folder');
+          })
+          .then(function (folder) {
             folder.should.not.be.null;
             folder.children.should.have.length(3);
             hasPath(folder.children, '/folder/folder').should.not.be.ok;
           });
-        });
 
         $timeout.flush();
         $timeout.flush();
@@ -174,16 +180,19 @@ describe('Local Storage File System', function () {
       it('should allow renaming of recently saved files', function (){
         var destination = folder + 'renamed-at-' + Date.now();
 
-        localStorageFileSystem.save(path, content).then(function () {
-          localStorageFileSystem.rename(path, destination).then(function(){
-            localStorageFileSystem.directory(folder).then(function(folder){
-              folder.should.not.be.null;
-              folder.children.should.have.length(4);
-              hasPath(folder.children, destination).should.be.ok;
-              hasPath(folder.children, path).should.not.be.ok;
-            });
+        localStorageFileSystem.save(path, content)
+          .then(function () {
+            return localStorageFileSystem.rename(path, destination);
+          })
+          .then(function(){
+            return localStorageFileSystem.directory(folder);
+          })
+          .then(function(folder){
+            folder.should.not.be.null;
+            folder.children.should.have.length(4);
+            hasPath(folder.children, destination).should.be.ok;
+            hasPath(folder.children, path).should.not.be.ok;
           });
-        });
 
         $timeout.flush();
         $timeout.flush();
@@ -196,25 +205,27 @@ describe('Local Storage File System', function () {
 
     describe('list', function () {
       it('should list files and folders for root folder', function (done) {
-        localStorageFileSystem.directory('/').then(function (folder) {
-          folder.should.not.be.null;
-          folder.children.should.have.length(3);
+        localStorageFileSystem.directory('/')
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.should.have.length(3);
 
-          done();
-        });
+            done();
+          });
 
         $timeout.flush();
       });
 
       it('should list files and folders for sub folders', function (done) {
-        localStorageFileSystem.directory('/folder').then(function (folder) {
-          folder.should.not.be.null;
-          folder.children.length.should.equal(3);
-          hasPath(folder.children, '/folder/example.raml').should.be.ok;
-          hasPath(folder.children, '/folder/subFolderA').should.be.ok;
+        localStorageFileSystem.directory('/folder')
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.length.should.equal(3);
+            hasPath(folder.children, '/folder/example.raml').should.be.ok;
+            hasPath(folder.children, '/folder/subFolderA').should.be.ok;
 
-          done();
-        });
+            done();
+          });
 
         $timeout.flush();
       });
@@ -271,20 +282,23 @@ describe('Local Storage File System', function () {
       });
 
       it('should allow a nested folder to have the same name with its parent', function (done) {
-        localStorageFileSystem.createFolder('/folder/folder').then(function () {
-          localStorageFileSystem.directory('/').then(function (root) {
+        localStorageFileSystem.createFolder('/folder/folder')
+          .then(function () {
+            return localStorageFileSystem.directory('/');
+          })
+          .then(function (root) {
             root.should.not.be.null;
             root.children.length.should.equal(3);
 
-            localStorageFileSystem.directory('/folder').then(function (folder) {
-              folder.should.not.be.null;
-              folder.children.length.should.equal(4);
-              hasPath(folder.children, '/folder/folder').should.be.ok;
+            return localStorageFileSystem.directory('/folder');
+          })
+          .then(function (folder) {
+            folder.should.not.be.null;
+            folder.children.length.should.equal(4);
+            hasPath(folder.children, '/folder/folder').should.be.ok;
 
-              done();
-            });
+            done();
           });
-        });
 
         $timeout.flush();
         $timeout.flush();

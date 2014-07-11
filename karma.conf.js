@@ -49,7 +49,6 @@ module.exports = function(config) {
       'app/scripts/services/code-mirror.js',
       'app/scripts/services/code-mirror-errors.js',
       'app/scripts/services/event.js',
-      'app/scripts/services/raml-editor-confirm-prompt.js',
       'app/scripts/services/raml-editor-input-prompt.js',
       'app/scripts/services/raml-hint.js',
       'app/scripts/services/raml-snippets.js',
