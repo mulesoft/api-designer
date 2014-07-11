@@ -7,45 +7,33 @@
 
       service.children = [];
 
-      service.getDirectory = function () {
-        return {
-          children: this.children,
-          createFile: function() {},
-          getDirectories: function () {
-            return this.children.filter(function(t) { return t.isDirectory; });
-          },
-          getFiles: function () {
-            return this.children.filter(function(t) { return !t.isDirectory; });
-          },
-          forEachChildDo: function(action) {
-            for (var i = 0; i < this.children.length; i++) {
-              action.call(this.children[i], this.children[i]);
-            }
+      service.rootDirectory = {
+        path: '/',
+        children: service.children,
+        getDirectories: function () {
+          return this.children.filter(function(t) { return t.isDirectory; });
+        },
+        getFiles: function () {
+          return this.children.filter(function(t) { return !t.isDirectory; });
+        },
+        forEachChildDo: function(action) {
+          for (var i = 0; i < this.children.length; i++) {
+            action.call(this.children[i], this.children[i]);
           }
-        };
+        }
+      };
+
+      service.getDirectory = function () {
+        return service.rootDirectory;
       };
 
       service.loadDirectory = function () {
-        return $q.when({
-          children: this.children,
-          createFile: function() {},
-          getDirectories: function () {
-            return this.children.filter(function(t) { return t.isDirectory; });
-          },
-          getFiles: function () {
-            return this.children.filter(function(t) { return !t.isDirectory; });
-          },
-          forEachChildDo: function(action) {
-            for (var i = 0; i < this.children.length; i++) {
-              action.call(this.children[i], this.children[i]);
-            }
-          }
-        });
+        service.rootDirectory.children = service.children;
+        return $q.when(service.rootDirectory);
       };
 
-      service.parentPath = function parentPath(target) {
-        var parent = target.path.slice(0, target.path.lastIndexOf('/'));
-        return parent + '/';
+      service.getParent = function getParent() {
+        return service.rootDirectory;
       };
 
       service.loadFile = function (file) {
@@ -72,16 +60,17 @@
         return $q.when(file);
       };
 
-      service.createFile = function (name) {
+      service.createFile = function (parent, name) {
         return {
-          name: name
+          name: name,
+          path: parent.path + name
         };
       };
 
       service.removeFile = function (file) {
-        var index = this.files.indexOf(file);
+        var index = this.children.indexOf(file);
         if (index !== -1) {
-          this.files.splice(index, 1);
+          this.children.splice(index, 1);
         }
 
         return $q.when(file);

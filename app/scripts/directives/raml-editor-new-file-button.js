@@ -8,21 +8,21 @@
         template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link:     function (scope) {
           scope.newFile = function newFile() {
-            var directory = scope.fileBrowser.selectedTarget.isDirectory ?
+            var parent = scope.fileBrowser.selectedTarget.isDirectory ?
               scope.fileBrowser.selectedTarget :
-              ramlRepository.getDirectory(ramlRepository.parentPath(scope.fileBrowser.selectedTarget), scope.homeDirectory);
+              ramlRepository.getParent(scope.fileBrowser.selectedTarget);
 
             var message = [
               'For a new RAML spec, be sure to name your file <something>.raml; ',
               'For files to be !included, feel free to use an extension or not.'
             ].join('');
-            var defaultName = generateName(directory.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
+            var defaultName = generateName(parent.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
 
             var validations = [
               {
                 message: 'That file name is already taken.',
                 validate: function(input) {
-                  return !directory.children.some(function (file) {
+                  return !parent.children.some(function (file) {
                     return file.name.toLowerCase() === input.toLowerCase();
                   });
                 }
@@ -36,7 +36,7 @@
 
             ramlEditorInputPrompt.open(message, defaultName, validations)
               .then(function(name) {
-                directory.createFile.call(directory, name);
+                ramlRepository.createFile(parent, name);
               });
           };
         }
