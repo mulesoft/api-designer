@@ -127,10 +127,10 @@
           }];
           ramlEditorInputPrompt.open(message, defaultName, validation).then(
             function(result) {
-              $scope.homeDirectory.createFile(result);
+              ramlRepository.createFile($scope.homeDirectory, result);
             },
             function() {
-              $scope.homeDirectory.createFile(defaultName);
+              ramlRepository.createFile($scope.homeDirectory, defaultName);
             }
           );
         }

@@ -9,7 +9,7 @@
       ramlEditorConfirmPrompt,
       scroll
     ) {
-      function createActions(parent, target) {
+      function createActions(target) {
         var actions = [
           {
             label: 'Save',
@@ -24,15 +24,16 @@
               var message;
 
               if (target.isDirectory) {
-                action = parent.removeDirectory;
+                action = ramlRepository.removeDirectory;
                 message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
               }
               else {
-                action = parent.removeFile;
+                action = ramlRepository.removeFile;
                 message = 'Are you sure you want to delete "' + target.name + '"?';
               }
+
               ramlEditorConfirmPrompt.open(message).then(function() {
-                action.call(parent, target);
+                action.call(ramlRepository, target);
               });
             }
           },
@@ -41,6 +42,7 @@
             execute: function() {
               var action;
               var message;
+              var parent = ramlRepository.getParent(target);
 
               if (target.isDirectory) {
                 action = ramlRepository.renameDirectory;
@@ -69,7 +71,7 @@
 
               ramlEditorInputPrompt.open(message, target.name, validations)
                 .then(function(name){
-                  action.call(undefined, target, name);
+                  action.call(ramlRepository, target, name);
                 });
             }
           }
@@ -130,9 +132,8 @@
             open: function(event, target) {
               scroll.disable();
               this.target = target;
-              var parent = ramlRepository.getDirectory(ramlRepository.parentPath(target), scope.homeDirectory);
 
-              scope.actions = createActions(parent, target);
+              scope.actions = createActions(target);
 
               event.stopPropagation();
               positionMenu(element, event.target);

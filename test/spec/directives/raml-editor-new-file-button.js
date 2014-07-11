@@ -17,14 +17,10 @@ describe('ramlEditorNewFileButton', function() {
   beforeEach(inject(function($rootScope, ramlEditorInputPrompt, ramlRepository) {
     sandbox = sinon.sandbox.create();
     scope = $rootScope.$new();
-    var mockfile = { path:'/file.raml', name: 'file.raml' };
-    scope.homeDirectory = {
-      path: '/',
-      children:[mockfile],
-      getFiles: function() { return this.children; }
-    };
-    scope.fileBrowser = {
-      selectedTarget: mockfile
+    scope.homeDirectory = ramlRepository.getDirectory('/');
+    scope.fileBrowser = {};
+    scope.fileBrowser.selectedTarget = {
+      path: '/mockFile.raml'
     };
     newFilePrompt = ramlEditorInputPrompt;
     repository = ramlRepository;
@@ -40,8 +36,7 @@ describe('ramlEditorNewFileButton', function() {
     var promptOpenSpy;
 
     beforeEach(function() {
-      scope.homeDirectory.createFile = sandbox.spy();
-      sinon.stub(repository, 'getDirectory').returns(scope.homeDirectory);
+      repository.createFile = sandbox.spy();
       promptOpenSpy = sandbox.stub(newFilePrompt, 'open').returns(promise.resolved('MyFile.raml'));
 
       compileNewFileButton();
@@ -51,7 +46,7 @@ describe('ramlEditorNewFileButton', function() {
     it('delegates to the raml repository', function() {
       promptOpenSpy.should.have.been.called;
 
-      scope.homeDirectory.createFile.should.have.been.calledWith('MyFile.raml');
+      repository.createFile.should.have.been.calledWith(scope.homeDirectory, 'MyFile.raml');
     });
   });
 });
