@@ -90,9 +90,8 @@ describe('ramlEditorContextMenu', function() {
     describe('removing a file', function() {
       var openStub;
 
-      beforeEach(inject(function(ramlEditorConfirmPrompt) {
-        openStub = sinon.stub(ramlEditorConfirmPrompt, 'open');
-        openStub.returns(promise.stub());
+      beforeEach(inject(function($window) {
+        openStub = sinon.stub($window, 'confirm').returns(true);
         var removeItem = contextMenuItemNamed('Delete');
 
         removeItem.dispatchEvent(events.click());

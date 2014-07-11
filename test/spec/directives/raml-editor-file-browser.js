@@ -1,7 +1,7 @@
 describe('ramlEditorFileBrowser', function () {
   'use strict';
 
-  var scope, el, sandbox, ramlRepository, config, $timeout;
+  var scope, el, sandbox, ramlRepository, config;
 
   function createMockFile(name, options) {
     options = options || {};
@@ -43,7 +43,6 @@ describe('ramlEditorFileBrowser', function () {
     scope          = $rootScope.$new();
     ramlRepository = $injector.get('ramlRepository');
     config         = $injector.get('config');
-    $timeout       = $injector.get('$timeout');
   }));
 
   afterEach(function () {

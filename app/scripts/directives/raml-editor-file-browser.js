@@ -118,18 +118,18 @@
 
         function promptWhenFileListIsEmpty() {
           var defaultName = 'Untitled-1.raml';
-          var message = 'File browser is empty, please input a name for the new file:';
-          var validation = [{
+          var message     = 'File browser is empty, please input a name for the new file:';
+          var validation  = [{
             message: 'File name cannot be empty.',
             validate: function(input) {
               return input.length > 0;
             }
           }];
           ramlEditorInputPrompt.open(message, defaultName, validation).then(
-            function(result) {
+            function (result) {
               ramlRepository.createFile($scope.homeDirectory, result);
             },
-            function() {
+            function () {
               ramlRepository.createFile($scope.homeDirectory, defaultName);
             }
           );

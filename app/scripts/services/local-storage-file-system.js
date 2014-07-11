@@ -320,7 +320,7 @@
       service.rename = function (source, destination) {
         var deferred = $q.defer();
 
-        $timeout(function(){
+        $timeout(function () {
           var sourceEntry = localStorageHelper.get(source);
 
           if (!sourceEntry) {

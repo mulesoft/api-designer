@@ -6,20 +6,19 @@
       $window,
       ramlRepository,
       ramlEditorInputPrompt,
-      ramlEditorConfirmPrompt,
       scroll
     ) {
       function createActions(target) {
         var actions = [
           {
             label: 'Save',
-            execute: function() {
+            execute: function () {
               ramlRepository.saveFile(target);
             }
           },
           {
             label: 'Delete',
-            execute: function() {
+            execute: function () {
               var action;
               var message;
 
@@ -32,14 +31,12 @@
                 message = 'Are you sure you want to delete "' + target.name + '"?';
               }
 
-              ramlEditorConfirmPrompt.open(message).then(function() {
-                action.call(ramlRepository, target);
-              });
+              $window.confirm(message) ? action.call(ramlRepository, target) : void(0) ;
             }
           },
           {
             label: 'Rename',
-            execute: function() {
+            execute: function () {
               var action;
               var message;
               var parent = ramlRepository.getParent(target);
@@ -103,7 +100,7 @@
             menuContainer.css('left', left + 'px');
             menuContainer.css('top', top + 'px');
 
-            setTimeout(function() {
+            setTimeout(function () {
               if (outOfWindow(menuContainer[0])) {
                 menuContainer.css('top', top - menuContainer[0].offsetHeight + 'px');
               }
@@ -112,7 +109,7 @@
 
           function close() {
             scroll.enable();
-            scope.$apply(function() {
+            scope.$apply(function () {
               delete contextMenuController.file;
               scope.opened = false;
 

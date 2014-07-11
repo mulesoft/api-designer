@@ -101,19 +101,18 @@
 
       RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
         // BFS
-        var queue = this.children;
+        var queue = this.children.slice();
         var current;
-        var pos = 0;
-        while(pos < queue.length) {
-          current = queue[pos];
-          action.apply(current, [current]);
+        while(queue.length > 0) {
+          current = queue.shift();
           if(current.isDirectory) {
             queue = queue.concat(current.children);
           }
-          pos++;
+          action.apply(current, [current]);
         }
       };
 
+      // Returns the parent directory object of a file or a directory
       service.getParent = function getParent(target) {
         var path = target.path.slice(0, target.path.lastIndexOf('/'));
         if (path.length === 0) {
@@ -131,7 +130,7 @@
       };
 
       service.createDirectory = function createDirectory(parent, name) {
-        var path = generateName(parent, name);
+        var path      = generateName(parent, name);
         var directory = new RamlDirectory(path);
 
         parent.children.push(directory);
@@ -143,6 +142,7 @@
           });
       };
 
+      // Loads the directory from the fileSystem into memory
       service.loadDirectory = function loadDirectory(path) {
         path = path || defaultPath;
         return fileSystem.directory(path).then(function (directory) {
@@ -151,12 +151,14 @@
         });
       };
 
+      // Gets the directory object by path from the memory
       service.getDirectory = function getDirectory(path) {
         // remove the trailing '/' in path
         if(path.slice(-1) === '/' && path !== '/') {
           path = path.slice(0, -1);
         }
 
+        // If the directory entry is already in the cache, return it directly
         if (service.directoryCache.hasOwnProperty(path)) {
           return service.directoryCache[path];
         }
@@ -164,7 +166,7 @@
         // If the path we're looking for is not in directoryCache
         // we search for it in the tree using BFS
         var queue = service.directoryCache['/'].getDirectories();
-        var pos = 0;
+        var pos   = 0;
         while(pos < queue.length) {
           if (queue[pos].path === path) {
             service.directoryCache[path] = queue[pos];
@@ -181,11 +183,12 @@
 
       service.removeDirectory = function removeDirectory(directory) {
         // recursively remove all the child directory and files
-        directory.getDirectories().forEach(function(d) { service.removeDirectory(d); });
-        directory.getFiles().forEach(function(f) { service.removeFile(f); });
+        directory.getDirectories().forEach(function(dir) { service.removeDirectory(dir); });
+        directory.getFiles().forEach(function(file) { service.removeFile(file); });
 
+        // remove this directory object from parent's children list
         var parent = service.getParent(directory);
-        var index = parent.children.indexOf(directory);
+        var index  = parent.children.indexOf(directory);
         if (index !== -1) {
           parent.children.splice(index, 1);
         }
@@ -200,18 +203,20 @@
         var newPath = generateNewName(directory, newName);
         var promise = fileSystem.rename(directory.path, newPath);
 
-        function modifyDirectory() {
-          directory.name = newName;
-          directory.path = newPath;
-
-          return directory;
-        }
-
+        // renames the path of each child under the current directory
         directory.forEachChildDo(function(c) {
           c.path = c.path.replace(directory.path, newPath);
         });
 
-        return promise.then(modifyDirectory, handleErrorFor(directory));
+        return promise
+          .then(function () {
+            directory.name = newName;
+            directory.path = newPath;
+
+            return directory;
+          },
+          handleErrorFor(directory)
+          );
       };
 
       service.saveFile = function saveFile(file) {
@@ -222,7 +227,8 @@
           return file;
         }
 
-        return fileSystem.save(file.path, file.contents).then(modifyFile, handleErrorFor(file));
+        return fileSystem.save(file.path, file.contents)
+          .then(modifyFile, handleErrorFor(file));
       };
 
       service.renameFile = function renameFile(file, newName) {
@@ -277,7 +283,7 @@
         return promise
           .then(modifyFile, handleErrorFor(file))
           .then(function () {
-            // update the parent object to remove file
+            // remove the file object from the parent's children list
             var index = parent.children.indexOf(file);
             if (index !== -1) {
               parent.children.splice(index, 1);
