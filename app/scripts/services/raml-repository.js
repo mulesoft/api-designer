@@ -193,7 +193,7 @@
           parent.children.splice(index, 1);
         }
 
-        return fileSystem.remove(directory)
+        return fileSystem.remove(directory.path)
           .then(function (directory) {
             $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
           });
