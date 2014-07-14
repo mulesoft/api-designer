@@ -1,6 +1,6 @@
 <raml-editor-context-menu></raml-editor-context-menu>
 <script type="text/ng-template" id="filelist.html">
-  <div class="file-item" ng-class="{currentfile: fileBrowser.selectedTarget === node, dirty: node.dirty, geared: fileBrowser.contextMenuOpenedFor(node), directory: node.isDirectory}" ng-click="fileBrowser.select(node)">
+  <div class="file-item" ng-class="{currentfile: fileBrowser.currentTarget === node, dirty: node.dirty, geared: fileBrowser.contextMenuOpenedFor(node), directory: node.isDirectory}" ng-click="fileBrowser.select(node)">
     <i class="fa icon" ng-if="node.isDirectory" ng-class="{'fa-plus-square-o': collapsed, 'fa-minus-square-o': !collapsed}" ng-click="toggle(this)"></i>&nbsp;
     <span class="file-name">
       <i class="fa icon" ng-class="{'fa-file-text-o': !node.isDirectory, 'fa-folder': (node.isDirectory && collapsed), 'fa-folder-open': (node.isDirectory && !collapsed)}"></i>
