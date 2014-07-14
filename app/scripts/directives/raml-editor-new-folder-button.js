@@ -8,9 +8,8 @@
         template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
         link:     function (scope) {
           scope.newFolder = function newFolder() {
-            var parent = scope.fileBrowser.selectedTarget.isDirectory ?
-              scope.fileBrowser.selectedTarget :
-              ramlRepository.getParent(scope.fileBrowser.selectedTarget);
+            var currentTarget = scope.fileBrowser.currentTarget;
+            var parent = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
 
             var message = 'Input a name for your new folder:';
             var defaultName = generateName(parent.getDirectories().map(function (d){return d.name;}), 'Folder');

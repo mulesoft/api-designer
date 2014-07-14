@@ -8,9 +8,8 @@
         template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link:     function (scope) {
           scope.newFile = function newFile() {
-            var parent = scope.fileBrowser.selectedTarget.isDirectory ?
-              scope.fileBrowser.selectedTarget :
-              ramlRepository.getParent(scope.fileBrowser.selectedTarget);
+            var currentTarget = scope.fileBrowser.currentTarget;
+            var parent = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
 
             var message = [
               'For a new RAML spec, be sure to name your file <something>.raml; ',

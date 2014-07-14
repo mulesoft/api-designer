@@ -110,7 +110,7 @@
           function close() {
             scroll.enable();
             scope.$apply(function () {
-              delete contextMenuController.file;
+              delete contextMenuController.target;
               scope.opened = false;
 
               $window.removeEventListener('click', close);

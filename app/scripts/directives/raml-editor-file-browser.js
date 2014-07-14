@@ -23,7 +23,7 @@
 
         fileBrowser.selectFile = function selectFile(file) {
           if (fileBrowser.selectedFile === file) {
-            fileBrowser.selectedTarget = file;
+            fileBrowser.currentTarget = file;
             return;
           }
 
@@ -35,8 +35,7 @@
 
           afterLoading
             .then(function (file) {
-              fileBrowser.selectedTarget = file;
-              fileBrowser.selectedFile = file;
+              fileBrowser.selectedFile = fileBrowser.currentTarget = file;
               $scope.$emit('event:raml-editor-file-selected', file);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
                 if (newContents !== oldContents) {
@@ -48,11 +47,11 @@
         };
 
         fileBrowser.selectDirectory = function selectDirectory(directory) {
-          if (fileBrowser.selectedTarget === directory) {
+          if (fileBrowser.currentTarget === directory) {
             return;
           }
 
-          fileBrowser.selectedTarget = directory;
+          fileBrowser.currentTarget = directory;
           $scope.$emit('event:raml-editor-directory-selected', directory);
         };
 
@@ -104,11 +103,11 @@
             }
           });
 
-          if (file === fileBrowser.selectedFile && allFiles.length > 0) {
-            fileBrowser.selectFile(allFiles[0]);
-          }
-          else if (allFiles.length === 0) {
+          if (allFiles.length === 0) {
             setTimeout(promptWhenFileListIsEmpty, 0);
+          }
+          else if (file === fileBrowser.selectedFile) {
+            fileBrowser.selectFile(allFiles[0]);
           }
         });
 
@@ -175,7 +174,14 @@
             $scope.homeDirectory = directory;
             fileBrowser.rootFile = findRootFile(directory);
 
-            if (!directory.getFiles().length) {
+            var allFiles = [];
+            $scope.homeDirectory.forEachChildDo(function (child) {
+              if (!child.isDirectory) {
+                allFiles.push(child);
+              }
+            });
+
+            if (!allFiles.length) {
               promptWhenFileListIsEmpty();
               return;
             }
@@ -185,9 +191,9 @@
             //   - root file
             //   - first file
             var currentFile = JSON.parse(config.get('currentFile', '{}'));
-            var fileToOpen  = directory.getFiles().filter(function (file) {
+            var fileToOpen  = allFiles.filter(function (file) {
               return file.path === currentFile.path;
-            })[0] || fileBrowser.rootFile || directory.getFiles()[0];
+            })[0] || fileBrowser.rootFile || allFiles[0];
 
             fileBrowser.selectFile(fileToOpen);
           })

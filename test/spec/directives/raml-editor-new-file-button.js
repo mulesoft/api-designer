@@ -19,7 +19,7 @@ describe('ramlEditorNewFileButton', function() {
     scope = $rootScope.$new();
     scope.homeDirectory = ramlRepository.getDirectory('/');
     scope.fileBrowser = {};
-    scope.fileBrowser.selectedTarget = {
+    scope.fileBrowser.currentTarget = {
       path: '/mockFile.raml'
     };
     newFilePrompt = ramlEditorInputPrompt;
