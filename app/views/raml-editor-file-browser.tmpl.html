@@ -1,22 +1,21 @@
 <raml-editor-context-menu></raml-editor-context-menu>
-<script type="text/ng-template" id="filelist.html">
+<script type="text/ng-template" id="file-item.html">
   <div class="file-item" ng-class="{currentfile: fileBrowser.currentTarget === node, dirty: node.dirty, geared: fileBrowser.contextMenuOpenedFor(node), directory: node.isDirectory}" ng-click="fileBrowser.select(node)">
-    <i class="fa icon" ng-if="node.isDirectory" ng-class="{'fa-plus-square-o': collapsed, 'fa-minus-square-o': !collapsed}" ng-click="toggle(this)"></i>&nbsp;
     <span class="file-name">
-      <i class="fa icon" ng-class="{'fa-file-text-o': !node.isDirectory, 'fa-folder': (node.isDirectory && collapsed), 'fa-folder-open': (node.isDirectory && !collapsed)}"></i>
-      &nbsp;{{node.name}}
+      <i class="fa icon fa-caret-right" ng-if="node.isDirectory" ng-click="toggle(this)" ng-class="{'fa-rotate-90': !collapsed}"></i>
+      &nbsp;<span ng-click="toggle(this)">{{node.name}}</span>
     </span>
     <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)"></i>
   </div>
 
   <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">
-    <li ui-tree-node ng-repeat="node in node.children | orderBy:'name'" ng-include="'filelist.html'" data-collapsed="true">
+    <li ui-tree-node ng-repeat="node in node.children | orderBy:'name'" ng-include="'file-item.html'" data-collapsed="!node.hasChildren(fileBrowser.currentTarget)">
     </li>
   </ul>
 </script>
 
 <div ui-tree class="file-list" data-drag-enabled="false">
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
-    <li ui-tree-node ng-repeat="node in homeDirectory.children | orderBy:'name'" ng-include="'filelist.html'" data-collapsed="true"></li>
+    <li ui-tree-node ng-repeat="node in homeDirectory.children | orderBy:'name'" ng-include="'file-item.html'" data-collapsed="!node.hasChildren(fileBrowser.currentTarget)"></li>
   </ul>
 </div>

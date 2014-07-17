@@ -243,27 +243,27 @@ describe('RAML Repository', function () {
       });
     });
 
-    describe('getDirectory', function () {
+    describe('getByPath', function () {
       it('returns the subtree representing the directory identified by path', function () {
-        var folder = ramlRepository.getDirectory('/folder');
+        var folder = ramlRepository.getByPath('/folder');
 
         folder.children.length.should.equals(2);
         folder.getFiles().length.should.equals(1);
         folder.getDirectories().length.should.equals(1);
 
-        var empty = ramlRepository.getDirectory('/folder/subfolder', rootDirectory);
+        var empty = ramlRepository.getByPath('/folder/subfolder', rootDirectory);
         empty.children.length.should.equals(0);
         empty.getFiles().length.should.equals(0);
         empty.getDirectories().length.should.equals(0);
       });
 
       it('returns undefined if the path is not found in the tree', function () {
-        expect(ramlRepository.getDirectory('/notFound', rootDirectory)).to.be.undefined;
-        expect(ramlRepository.getDirectory('/folder/notFound', rootDirectory.getDirectories()[0])).to.be.undefined;
+        expect(ramlRepository.getByPath('/notFound', rootDirectory)).to.be.undefined;
+        expect(ramlRepository.getByPath('/folder/notFound', rootDirectory.getDirectories()[0])).to.be.undefined;
       });
     });
 
-    describe.only('removeDirectory', function () {
+    describe('removeDirectory', function () {
       var removeSpy, removeDeferred;
 
       beforeEach(function () {

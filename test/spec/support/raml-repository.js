@@ -23,7 +23,7 @@
         }
       };
 
-      service.getDirectory = function () {
+      service.getByPath = function () {
         return service.rootDirectory;
       };
 
