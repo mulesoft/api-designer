@@ -183,8 +183,10 @@
 
       service.removeDirectory = function removeDirectory(directory) {
         // recursively remove all the child directory and files
-        directory.getDirectories().forEach(function(dir) { service.removeDirectory(dir); });
-        directory.getFiles().forEach(function(file) { service.removeFile(file); });
+        // and collect all promises into an array
+        var promises = [];
+        directory.getDirectories().forEach(function(dir) { promises.push(service.removeDirectory(dir)); });
+        directory.getFiles().forEach(function(file) { promises.push(service.removeFile(file)); });
 
         // remove this directory object from parent's children list
         var parent = service.getParent(directory);
@@ -193,7 +195,11 @@
           parent.children.splice(index, 1);
         }
 
-        return fileSystem.remove(directory.path)
+        // make sure all children is removed from FS before we remove ourselves
+        return $q.all(promises)
+          .then(function () {
+            return fileSystem.remove(directory.path);
+          })
           .then(function (directory) {
             $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
           });
