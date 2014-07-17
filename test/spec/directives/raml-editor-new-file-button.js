@@ -17,7 +17,7 @@ describe('ramlEditorNewFileButton', function() {
   beforeEach(inject(function($rootScope, ramlEditorInputPrompt, ramlRepository) {
     sandbox = sinon.sandbox.create();
     scope = $rootScope.$new();
-    scope.homeDirectory = ramlRepository.getDirectory('/');
+    scope.homeDirectory = ramlRepository.getByPath('/');
     scope.fileBrowser = {};
     scope.fileBrowser.currentTarget = {
       path: '/mockFile.raml'

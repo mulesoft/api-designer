@@ -96,18 +96,11 @@
         });
 
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          var allFiles = [];
-          $scope.homeDirectory.forEachChildDo(function (child) {
-            if (!child.isDirectory) {
-              allFiles.push(child);
-            }
-          });
-
-          if (allFiles.length === 0) {
+          var files = $scope.homeDirectory.getFiles();
+          if (file === fileBrowser.selectedFile && files.length > 0) {
+            fileBrowser.selectFile(files[0]);
+          } else {
             setTimeout(promptWhenFileListIsEmpty, 0);
-          }
-          else if (file === fileBrowser.selectedFile) {
-            fileBrowser.selectFile(allFiles[0]);
           }
         });
 
@@ -117,7 +110,7 @@
 
         function promptWhenFileListIsEmpty() {
           var defaultName = 'Untitled-1.raml';
-          var message     = 'File browser is empty, please input a name for the new file:';
+          var message     = 'Root directory has no files, please input a name for the new file:';
           var validation  = [{
             message: 'File name cannot be empty.',
             validate: function(input) {
@@ -174,14 +167,7 @@
             $scope.homeDirectory = directory;
             fileBrowser.rootFile = findRootFile(directory);
 
-            var allFiles = [];
-            $scope.homeDirectory.forEachChildDo(function (child) {
-              if (!child.isDirectory) {
-                allFiles.push(child);
-              }
-            });
-
-            if (!allFiles.length) {
+            if (!directory.getFiles().length) {
               promptWhenFileListIsEmpty();
               return;
             }
@@ -191,9 +177,10 @@
             //   - root file
             //   - first file
             var currentFile = JSON.parse(config.get('currentFile', '{}'));
-            var fileToOpen  = allFiles.filter(function (file) {
-              return file.path === currentFile.path;
-            })[0] || fileBrowser.rootFile || allFiles[0];
+            var fileToOpen  = ramlRepository.getByPath(currentFile.path) || fileBrowser.rootFile || directory.getFiles()[0];
+
+            // set the currenTaget first, so UI gets rendered properly
+            fileBrowser.currentTarget = fileToOpen;
 
             fileBrowser.selectFile(fileToOpen);
           })

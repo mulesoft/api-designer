@@ -30,7 +30,7 @@
       var defaultPath = '/';
 
       service.supportsFolders = fileSystem.supportsFolders || false;
-      service.directoryCache = {};
+      service.pathToRamlObject = {};
 
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
@@ -112,13 +112,22 @@
         }
       };
 
+      RamlDirectory.prototype.hasChildren = function hasChildren(child) {
+        var childParentPath = child.path.slice(0, child.path.lastIndexOf('/'));
+        if (childParentPath.length === 0) {
+          childParentPath = '/';
+        }
+        return childParentPath.length >= this.path.length &&
+          this.path === childParentPath.slice(0, this.path.length);
+      };
+
       // Returns the parent directory object of a file or a directory
       service.getParent = function getParent(target) {
         var path = target.path.slice(0, target.path.lastIndexOf('/'));
         if (path.length === 0) {
           path = '/';
         }
-        return service.getDirectory(path);
+        return service.getByPath(path);
       };
 
       service.canExport = function canExport() {
@@ -146,39 +155,9 @@
       service.loadDirectory = function loadDirectory(path) {
         path = path || defaultPath;
         return fileSystem.directory(path).then(function (directory) {
-          service.directoryCache[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
-          return service.directoryCache[path];
+          service.pathToRamlObject[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
+          return service.pathToRamlObject[path];
         });
-      };
-
-      // Gets the directory object by path from the memory
-      service.getDirectory = function getDirectory(path) {
-        // remove the trailing '/' in path
-        if(path.slice(-1) === '/' && path !== '/') {
-          path = path.slice(0, -1);
-        }
-
-        // If the directory entry is already in the cache, return it directly
-        if (service.directoryCache.hasOwnProperty(path)) {
-          return service.directoryCache[path];
-        }
-
-        // If the path we're looking for is not in directoryCache
-        // we search for it in the tree using BFS
-        var queue = service.directoryCache['/'].getDirectories();
-        var pos   = 0;
-        while(pos < queue.length) {
-          if (queue[pos].path === path) {
-            service.directoryCache[path] = queue[pos];
-            return queue[pos];
-          }
-          else {
-            queue = queue.concat(queue[pos].getDirectories());
-            pos++;
-          }
-        }
-
-        return void(0);
       };
 
       service.removeDirectory = function removeDirectory(directory) {
@@ -310,6 +289,35 @@
 
         $rootScope.$broadcast('event:raml-editor-file-created', file);
         return file;
+      };
+
+      // Gets the ramlDirectory/ramlFile object by path from the memory
+      service.getByPath = function getByPath(path) {
+        // remove the trailing '/' in path
+        if(path.slice(-1) === '/' && path !== '/') {
+          path = path.slice(0, -1);
+        }
+
+        // If the entry is already in the cache, return it directly
+        if (service.pathToRamlObject.hasOwnProperty(path)) {
+          return service.pathToRamlObject[path];
+        }
+
+        // If the path we're looking for is not in 'pathToRamlObject'
+        // we search for it in the tree using BFS
+        var queue = service.pathToRamlObject['/'].children.slice();
+        var current;
+        while(queue.length) {
+          current = queue.shift();
+          if (current.path === path) {
+            service.pathToRamlObject[path] = current;
+            return current;
+          } else if (current.isDirectory) {
+            queue = queue.concat(current.children);
+          }
+        }
+
+        return void(0);
       };
 
       service.saveMeta = function saveMeta(file, meta) {

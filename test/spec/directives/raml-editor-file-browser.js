@@ -78,15 +78,20 @@ describe('ramlEditorFileBrowser', function () {
 
       it('selects the first file', function () {
         ramlRepository.children = [createMockFile('firstFile'), createMockFile('lastFile')];
+        sinon.stub(ramlRepository, 'getByPath').returns(undefined);
         compileFileBrowser();
         scope.fileBrowser.selectedFile.name.should.equal('firstFile');
       });
     });
 
     describe('with a previous file selected', function () {
+      var getByPathStub;
+      var fileToOpen;
+
       beforeEach(function () {
         ramlRepository.children = [createMockFile('lastFile'), createMockFile('firstFile')];
-        var fileToOpen = ramlRepository.children[0];
+        fileToOpen = ramlRepository.children[0];
+        getByPathStub = sinon.stub(ramlRepository, 'getByPath').returns(fileToOpen);
 
         config.set('currentFile', JSON.stringify({ name: fileToOpen.name, path: fileToOpen.path }));
         compileFileBrowser();
@@ -94,6 +99,7 @@ describe('ramlEditorFileBrowser', function () {
 
       it('selects the previously selected file', function () {
         scope.fileBrowser.selectedFile.name.should.equal('lastFile');
+        getByPathStub.should.have.been.calledWith(fileToOpen.path);
       });
     });
 
@@ -111,20 +117,25 @@ describe('ramlEditorFileBrowser', function () {
     });
 
     it('should prefer root file over first file as selected file', function () {
-      var rootFile = createMockFile('2.raml', {root: true});
+      var rootFile      = createMockFile('2.raml', {root: true});
       ramlRepository.children = [createMockFile('1.raml'), rootFile];
+
+      sinon.stub(ramlRepository, 'getByPath').returns(undefined);
+
       compileFileBrowser();
       scope.fileBrowser.should.have.property('selectedFile', rootFile);
     });
 
     it('should prefer previously selected file over root and first files as selected file', function () {
       ramlRepository.children = [createMockFile('1.raml'), createMockFile('2.raml'), createMockFile('3.raml', {root: true})];
-      var fileToOpen = ramlRepository.children[0];
+      var fileToOpen    = ramlRepository.children[0];
+      var getByPathStub = sinon.stub(ramlRepository, 'getByPath').returns(fileToOpen);
 
       config.set('currentFile', JSON.stringify({ name: fileToOpen.name, path: fileToOpen.path }));
       compileFileBrowser();
 
       scope.fileBrowser.should.have.property('selectedFile', fileToOpen);
+      getByPathStub.should.have.been.calledWith(fileToOpen.path);
     });
   });
 
@@ -187,6 +198,7 @@ describe('ramlEditorFileBrowser', function () {
 
     beforeEach(function () {
       ramlRepository.children = [createMockFile('file1'), createMockFile('file2')];
+      sinon.stub(ramlRepository, 'getByPath').returns(ramlRepository.children[0]);
       compileFileBrowser();
       iconToClick = el[0].querySelectorAll('.file-item .fa-cog')[1];
 
