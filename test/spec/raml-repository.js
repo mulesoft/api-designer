@@ -263,7 +263,7 @@ describe('RAML Repository', function () {
       });
     });
 
-    describe('removeDirectory', function () {
+    describe.only('removeDirectory', function () {
       var removeSpy, removeDeferred;
 
       beforeEach(function () {
@@ -281,6 +281,7 @@ describe('RAML Repository', function () {
       });
 
       it('should remove a folder and its children from file system', function () {
+        $rootScope.$apply();
         removeSpy.should.have.been.calledThrice;
       });
 
