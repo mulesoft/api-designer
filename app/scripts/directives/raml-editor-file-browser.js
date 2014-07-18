@@ -37,6 +37,7 @@
             .then(function (file) {
               fileBrowser.selectedFile = fileBrowser.currentTarget = file;
               $scope.$emit('event:raml-editor-file-selected', file);
+              $scope.expand();
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
                 if (newContents !== oldContents) {
                   file.dirty = true;
@@ -99,7 +100,7 @@
           var files = $scope.homeDirectory.getFiles();
           if (file === fileBrowser.selectedFile && files.length > 0) {
             fileBrowser.selectFile(files[0]);
-          } else {
+          } else if (files.length === 0) {
             setTimeout(promptWhenFileListIsEmpty, 0);
           }
         });
