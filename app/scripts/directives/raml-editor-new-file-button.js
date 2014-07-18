@@ -2,20 +2,31 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorNewFileButton', function ramlEditorNewFileButton(ramlEditorInputPrompt, ramlRepository, generateName) {
+    .directive('ramlEditorNewFileButton', function ramlEditorNewFileButton(
+      $injector,
+      ramlEditorInputPrompt,
+      ramlRepository,
+      generateName
+    ) {
       return {
         restrict: 'E',
         template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link:     function (scope) {
           scope.newFile = function newFile() {
             var currentTarget = scope.fileBrowser.currentTarget;
-            var parent = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
+            var parent        = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
+            var defaultName   = generateName(parent.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
+            var title         = 'Add a new file';
 
             var message = [
               'For a new RAML spec, be sure to name your file <something>.raml; ',
               'For files to be !included, feel free to use an extension or not.'
             ].join('');
-            var defaultName = generateName(parent.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
+
+            // check if the modal service exists
+            var inputMethod = $injector.has('newNameModal') ?
+              $injector.get('newNameModal') :
+              ramlEditorInputPrompt;
 
             var validations = [
               {
@@ -33,10 +44,11 @@
               }
             ];
 
-            ramlEditorInputPrompt.open(message, defaultName, validations)
+            inputMethod.open(message, defaultName, validations, title)
               .then(function(name) {
                 ramlRepository.createFile(parent, name);
-              });
+              })
+            ;
           };
         }
       };

@@ -4,6 +4,7 @@
   angular.module('ramlEditorApp')
     .directive('ramlEditorContextMenu', function (
       $window,
+      $injector,
       ramlRepository,
       ramlEditorInputPrompt,
       scroll
@@ -21,17 +22,28 @@
             execute: function () {
               var action;
               var message;
+              var title;
 
               if (target.isDirectory) {
                 action = ramlRepository.removeDirectory;
                 message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
+                title = 'Remove folder';
               }
               else {
                 action = ramlRepository.removeFile;
                 message = 'Are you sure you want to delete "' + target.name + '"?';
+                title = 'Remove file';
               }
 
-              $window.confirm(message) ? action.call(ramlRepository, target) : void(0) ;
+              if ($injector.has('confirmModal')) {
+                $injector.get('confirmModal')
+                  .open(message, title)
+                  .then(function (confirmed) {
+                    confirmed ? action.call(ramlRepository, target) : void(0);
+                  });
+              } else {
+                $window.confirm(message) ? action.call(ramlRepository, target) : void(0);
+              }
             }
           },
           {
@@ -40,6 +52,12 @@
               var action;
               var message;
               var parent = ramlRepository.getParent(target);
+              var title  = 'Rename a file';
+
+              // check if the modal service exists
+              var inputMethod = $injector.has('newNameModal') ?
+                $injector.get('newNameModal') :
+                ramlEditorInputPrompt;
 
               if (target.isDirectory) {
                 action = ramlRepository.renameDirectory;
@@ -66,7 +84,7 @@
                 }
               ];
 
-              ramlEditorInputPrompt.open(message, target.name, validations)
+              inputMethod.open(message, target.name, validations, title)
                 .then(function(name){
                   action.call(ramlRepository, target, name);
                 });

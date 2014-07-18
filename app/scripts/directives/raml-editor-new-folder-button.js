@@ -2,17 +2,27 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorNewFolderButton', function ramlEditorNewFolderButton(ramlEditorInputPrompt, ramlRepository, generateName) {
+    .directive('ramlEditorNewFolderButton', function ramlEditorNewFolderButton(
+      $injector,
+      ramlEditorInputPrompt,
+      ramlRepository,
+      generateName
+    ) {
       return {
         restrict: 'E',
         template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
         link:     function (scope) {
           scope.newFolder = function newFolder() {
             var currentTarget = scope.fileBrowser.currentTarget;
-            var parent = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
+            var parent        = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
+            var defaultName   = generateName(parent.getDirectories().map(function (d){return d.name;}), 'Folder');
+            var message       = 'Input a name for your new folder:';
+            var title         = 'Add a new folder';
 
-            var message = 'Input a name for your new folder:';
-            var defaultName = generateName(parent.getDirectories().map(function (d){return d.name;}), 'Folder');
+            // check if the modal service exists
+            var inputMethod = $injector.has('newNameModal') ?
+              $injector.get('newNameModal') :
+              ramlEditorInputPrompt;
 
             var validations = [
               {
@@ -30,7 +40,7 @@
               }
             ];
 
-            ramlEditorInputPrompt.open(message, defaultName, validations)
+            inputMethod.open(message, defaultName, validations, title)
               .then(function(name) {
                 ramlRepository.createDirectory(parent, name);
               });
