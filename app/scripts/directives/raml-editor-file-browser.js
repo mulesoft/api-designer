@@ -16,6 +16,10 @@
         var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
 
+        $scope.toggleCollapse = function toggleCollapse (node) {
+          node.collapsed = !node.collapsed;
+        };
+
         fileBrowser.select = function select(target) {
           var action = target.isDirectory ? fileBrowser.selectDirectory : fileBrowser.selectFile;
           action(target);
@@ -37,7 +41,7 @@
             .then(function (file) {
               fileBrowser.selectedFile = fileBrowser.currentTarget = file;
               $scope.$emit('event:raml-editor-file-selected', file);
-              $scope.expand();
+              expandAncestors(file);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
                 if (newContents !== oldContents) {
                   file.dirty = true;
@@ -53,8 +57,25 @@
           }
 
           fileBrowser.currentTarget = directory;
+          expandAncestors(directory);
           $scope.$emit('event:raml-editor-directory-selected', directory);
         };
+
+        /**
+         * This function is used for expanding all the ancestors of a target
+         * node in the file tree.
+         *
+         * @param target {RamlDirectory/RamlFile}
+         */
+        function expandAncestors(target) {
+          // stop at the root directory
+          if (target.path === '/') {
+            return;
+          }
+          var parent = ramlRepository.getParent(target);
+          parent.collapsed = false;
+          expandAncestors(parent);
+        }
 
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
@@ -94,6 +115,10 @@
 
         $scope.$on('event:raml-editor-file-created', function (event, file) {
           fileBrowser.selectFile(file);
+        });
+
+        $scope.$on('event:raml-editor-directory-created', function (event, dir) {
+          fileBrowser.selectDirectory(dir);
         });
 
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
@@ -179,9 +204,6 @@
             //   - first file
             var currentFile = JSON.parse(config.get('currentFile', '{}'));
             var fileToOpen  = ramlRepository.getByPath(currentFile.path) || fileBrowser.rootFile || directory.getFiles()[0];
-
-            // set the currenTaget first, so UI gets rendered properly
-            fileBrowser.currentTarget = fileToOpen;
 
             fileBrowser.selectFile(fileToOpen);
           })

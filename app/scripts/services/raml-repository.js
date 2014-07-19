@@ -66,10 +66,11 @@
         contents = contents || [];
 
         this.type = 'directory';
-        this.isDirectory = true;
         this.path = path;
         this.name = path.slice(path.lastIndexOf('/') + 1);
         this.meta = meta;
+        this.collapsed   = true;
+        this.isDirectory = true;
 
         var separated = { folder: [], file: [] };
         contents.forEach(function (entry) {
