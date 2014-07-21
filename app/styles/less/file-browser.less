@@ -89,13 +89,13 @@
         text-overflow: ellipsis;
       }
 
-      .fa {
+      .fa:not(.icon) {
         display: none;
         padding-left: 10px;
         font-size: 15px;
       }
 
-      &.geared .fa, &:hover .fa {
+      &.geared .fa:not(.icon), &:hover .fa:not(.icon) {
         display: block;
       }
 
@@ -103,6 +103,13 @@
         content: '* ';
       }
     }
+  }
+  .directory span {
+    color: #DDD;
+  }
+  .hidden {
+    display:none!important;
+    visibility:hidden!important;
   }
 }
 

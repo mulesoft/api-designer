@@ -7,14 +7,13 @@
     .factory('localStorageHelper', function (LOCAL_PERSISTENCE_KEY) {
       return {
         forEach: function(fn) {
-          var i, key;
-
-          for (i = 0; i < localStorage.length; i++) {
-            key = localStorage.key(i);
-            // A key is a local storage file system entry if it starts
-            //with LOCAL_PERSISTENCE_KEY + '.'
-            if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
-              fn(JSON.parse(localStorage.getItem(key)));
+          for (var key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+              // A key is a local storage file system entry if it starts
+              //with LOCAL_PERSISTENCE_KEY + '.'
+              if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
+                fn(JSON.parse(localStorage.getItem(key)));
+              }
             }
           }
         },
@@ -22,7 +21,7 @@
           var has = false;
           path = path || '/';
           this.forEach(function(entry) {
-            if(entry.path.toLowerCase() === path.toLowerCase()){
+            if (entry.path.toLowerCase() === path.toLowerCase()){
               has = true;
             }
           });
@@ -48,7 +47,7 @@
       }
 
       function addChildren(entry, fn) {
-        if(entry.type === FOLDER) {
+        if (entry.type === FOLDER) {
           entry.children = fn(entry.path);
         }
       }
@@ -63,14 +62,14 @@
         return entries.length > 0 ? entries[0] : null;
       }
       function findFiles(path) {
-        if(path.lastIndexOf('/') !== path.length - 1) {
+        if (path.lastIndexOf('/') !== path.length - 1) {
           path += '/';
         }
 
         var entries = [];
         localStorageHelper.forEach(function (entry) {
           if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              entry.path.indexOf(path + entry.name) === 0) {
+              extractParentPath(entry.path) + '/' === path) {
             addChildren(entry, findFiles);
             entries.push(entry);
           }
@@ -90,6 +89,8 @@
       var service = {};
       var delay   = 500;
 
+      service.supportsFolders = true;
+
       function validatePath(path) {
         if (path.indexOf('/') !== 0) {
           return {valid: false, reason: 'Path should start with "/"'};
@@ -98,8 +99,8 @@
       }
 
       function isValidParent(path) {
-        var parent = path.slice(0, path.lastIndexOf('/'));
-        if(!localStorageHelper.has(parent) && parent !== '') {
+        var parent = extractParentPath(path);
+        if (!localStorageHelper.has(parent) && parent !== '') {
           return false;
         }
         return true;
@@ -125,10 +126,25 @@
 
         // When the path is ended in '/'
         if (path.lastIndexOf('/') === path.length - 1) {
-          path = path.slice(0, path.length - 1);
+          path = path.slice(0, -1);
         }
 
         return path.slice(path.lastIndexOf('/') + 1);
+      }
+
+      function extractParentPath(path) {
+        var pathInfo = validatePath(path);
+
+        if (!pathInfo.valid) {
+          throw 'Invalid Path!';
+        }
+
+        // When the path is ended in '/'
+        if (path.lastIndexOf('/') === path.length - 1) {
+          path = path.slice(0, -1);
+        }
+
+        return path.slice(0, path.lastIndexOf('/'));
       }
 
       /**
@@ -145,10 +161,10 @@
             return deferred.promise;
           }
 
-          if(!localStorageHelper.has('/')) {
+          if (!localStorageHelper.has('/')) {
             localStorageHelper.set(path, {
                 path: '/',
-                name: '/',
+                name: '',
                 type: 'folder',
                 meta: {
                   'created': Math.round(new Date().getTime()/1000.0)
@@ -172,7 +188,7 @@
           var name = extractNameFromPath(path);
           var entry = localStorageHelper.get(path);
 
-          if(!isValidParent(path)){
+          if (!isValidParent(path)){
             deferred.reject('Parent folder does not exists');
             return deferred.promise;
           }
@@ -218,13 +234,13 @@
           return deferred.promise;
         }
 
-        if(localStorageHelper.has(path)) {
+        if (localStorageHelper.has(path)) {
           deferred.reject('Folder already exists');
           return deferred.promise;
         }
 
-        var parent = path.slice(0, path.lastIndexOf('/'));
-        if(!localStorageHelper.has(parent)) {
+        var parent = extractParentPath(path);
+        if (!localStorageHelper.has(parent)) {
           deferred.reject('Parent folder does not exists');
           return deferred.promise;
         }
@@ -256,7 +272,7 @@
         $timeout(function () {
 
           var entry = localStorageHelper.get(path);
-          if(entry && entry.type === 'file') {
+          if (entry && entry.type === 'file') {
             deferred.resolve(localStorageHelper.get(path).content);
           } else {
             deferred.reject(fileNotFoundMessage(path));
@@ -276,7 +292,7 @@
         $timeout(function () {
           var entry = localStorageHelper.get(path);
 
-          if(entry &&
+          if (entry &&
              entry.type === FOLDER &&
              hasChildrens(path)) {
             deferred.reject('folder not empty');
@@ -291,26 +307,34 @@
       };
 
       /**
-       * Ranames a file or directory
+       * This fileSystem does not support export
+       */
+      service.canExport = function canExport() {
+        return false;
+      };
+
+
+      /**
+       * Renames a file or directory
        */
       service.rename = function (source, destination) {
         var deferred = $q.defer();
 
-        $timeout(function(){
+        $timeout(function () {
           var sourceEntry = localStorageHelper.get(source);
 
-          if(!sourceEntry) {
+          if (!sourceEntry) {
             deferred.reject('Source file or folder does not exists.');
             return deferred.promise;
           }
 
           var destinationEntry = localStorageHelper.get(destination);
-          if(destinationEntry) {
+          if (destinationEntry) {
             deferred.reject('File or folder already exists.');
             return deferred.promise;
           }
 
-          if(!isValidParent(destination)) {
+          if (!isValidParent(destination)) {
             deferred.reject('Destination folder does not exist.');
             return deferred.promise;
           }
@@ -322,8 +346,8 @@
           localStorageHelper.remove(source);
           localStorageHelper.set(destination, sourceEntry);
 
-          if(sourceEntry.type === FOLDER) {
-            // if(!isValidPath(destination)) {
+          if (sourceEntry.type === FOLDER) {
+            // if (!isValidPath(destination)) {
             //   deferred.reject('Destination is not a valid folder');
             //   return deferred.promise;
             // }
@@ -331,7 +355,6 @@
             localStorageHelper.forEach(function (entry) {
               if (entry.path.toLowerCase() !== source.toLowerCase() &&
                   entry.path.indexOf(source) === 0) {
-
                 var newPath = destination + entry.path.substring(source.length);
                 localStorageHelper.remove(entry.path);
                 entry.path = newPath;

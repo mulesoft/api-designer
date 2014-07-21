@@ -118,6 +118,8 @@
         return ramlRepository.canExport();
       };
 
+      $scope.supportsFolders = ramlRepository.supportsFolders;
+
       $scope.sourceUpdated = function sourceUpdated() {
         var source       = editor.getValue();
         var selectedFile = $scope.fileBrowser.selectedFile;
@@ -294,8 +296,10 @@
 
         // Warn before leaving the page
         $window.onbeforeunload = function () {
-          var anyUnsavedChanges = $scope.homeDirectory.files.some(function (file) {
-            return file.dirty;
+          var anyUnsavedChanges = false;
+
+          $scope.homeDirectory.forEachChildDo(function (t) {
+            anyUnsavedChanges = anyUnsavedChanges || t.dirty;
           });
 
           if (anyUnsavedChanges) {

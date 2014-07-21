@@ -2,14 +2,32 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorFileBrowser', function ($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService) {
+    .directive('ramlEditorFileBrowser', function (
+      $q,
+      $window,
+      $rootScope,
+      config,
+      eventService,
+      ramlRepository,
+      ramlEditorInputPrompt
+    ) {
       function Controller($scope) {
         var fileBrowser         = this;
         var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
 
+        $scope.toggleCollapse = function toggleCollapse (node) {
+          node.collapsed = !node.collapsed;
+        };
+
+        fileBrowser.select = function select(target) {
+          var action = target.isDirectory ? fileBrowser.selectDirectory : fileBrowser.selectFile;
+          action(target);
+        };
+
         fileBrowser.selectFile = function selectFile(file) {
           if (fileBrowser.selectedFile === file) {
+            fileBrowser.currentTarget = file;
             return;
           }
 
@@ -21,8 +39,9 @@
 
           afterLoading
             .then(function (file) {
-              fileBrowser.selectedFile = file;
+              fileBrowser.selectedFile = fileBrowser.currentTarget = file;
               $scope.$emit('event:raml-editor-file-selected', file);
+              expandAncestors(file);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
                 if (newContents !== oldContents) {
                   file.dirty = true;
@@ -31,6 +50,32 @@
             })
           ;
         };
+
+        fileBrowser.selectDirectory = function selectDirectory(directory) {
+          if (fileBrowser.currentTarget === directory) {
+            return;
+          }
+
+          fileBrowser.currentTarget = directory;
+          expandAncestors(directory);
+          $scope.$emit('event:raml-editor-directory-selected', directory);
+        };
+
+        /**
+         * This function is used for expanding all the ancestors of a target
+         * node in the file tree.
+         *
+         * @param target {RamlDirectory/RamlFile}
+         */
+        function expandAncestors(target) {
+          // stop at the root directory
+          if (target.path === '/') {
+            return;
+          }
+          var parent = ramlRepository.getParent(target);
+          parent.collapsed = false;
+          expandAncestors(parent);
+        }
 
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
@@ -43,12 +88,12 @@
           ;
         };
 
-        fileBrowser.showContextMenu = function showContextMenu(event, file) {
-          contextMenu.open(event, file);
+        fileBrowser.showContextMenu = function showContextMenu(event, target) {
+          contextMenu.open(event, target);
         };
 
-        fileBrowser.contextMenuOpenedFor = function contextMenuOpenedFor(file) {
-          return contextMenu && contextMenu.file === file;
+        fileBrowser.contextMenuOpenedFor = function contextMenuOpenedFor(target) {
+          return contextMenu && contextMenu.target === target;
         };
 
         function saveListener(e) {
@@ -72,9 +117,16 @@
           fileBrowser.selectFile(file);
         });
 
+        $scope.$on('event:raml-editor-directory-created', function (event, dir) {
+          fileBrowser.selectDirectory(dir);
+        });
+
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          if (file === fileBrowser.selectedFile && $scope.homeDirectory.files.length > 0) {
-            fileBrowser.selectFile($scope.homeDirectory.files[0]);
+          var files = $scope.homeDirectory.getFiles();
+          if (file === fileBrowser.selectedFile && files.length > 0) {
+            fileBrowser.selectFile(files[0]);
+          } else if (files.length === 0) {
+            setTimeout(promptWhenFileListIsEmpty, 0);
           }
         });
 
@@ -83,11 +135,22 @@
         });
 
         function promptWhenFileListIsEmpty() {
-          ramlEditorFilenamePrompt.open($scope.homeDirectory)
-            .then(function (filename) {
-              $scope.homeDirectory.createFile(filename);
-            })
-          ;
+          var defaultName = 'Untitled-1.raml';
+          var message     = 'Root directory has no files, please input a name for the new file:';
+          var validation  = [{
+            message: 'File name cannot be empty.',
+            validate: function(input) {
+              return input.length > 0;
+            }
+          }];
+          ramlEditorInputPrompt.open(message, defaultName, validation).then(
+            function (result) {
+              ramlRepository.createFile($scope.homeDirectory, result);
+            },
+            function () {
+              ramlRepository.createFile($scope.homeDirectory, defaultName);
+            }
+          );
         }
 
         /**
@@ -107,7 +170,7 @@
 
           while (pos < queue.length) {
             var directory = queue[pos];
-            var files     = directory.files;
+            var files     = directory.children;
             var entity    = void(0);
 
             for (var i = 0; i < files.length; i++) {
@@ -125,18 +188,12 @@
           }
         }
 
-        ramlRepository.getDirectory()
+        ramlRepository.loadDirectory()
           .then(function (directory) {
             $scope.homeDirectory = directory;
             fileBrowser.rootFile = findRootFile(directory);
 
-            $scope.$watch('homeDirectory.files', function (files) {
-              if (!files.length) {
-                setTimeout(promptWhenFileListIsEmpty, 0);
-              }
-            }, true);
-
-            if (!directory.files.length) {
+            if (!directory.getFiles().length) {
               promptWhenFileListIsEmpty();
               return;
             }
@@ -146,9 +203,7 @@
             //   - root file
             //   - first file
             var currentFile = JSON.parse(config.get('currentFile', '{}'));
-            var fileToOpen  = directory.files.filter(function (file) {
-              return file.path === currentFile.path;
-            })[0] || fileBrowser.rootFile || directory.files[0];
+            var fileToOpen  = ramlRepository.getByPath(currentFile.path) || fileBrowser.rootFile || directory.getFiles()[0];
 
             fileBrowser.selectFile(fileToOpen);
           })

@@ -5,7 +5,7 @@ describe('ramlEditorContextMenu', function() {
 
   var createScope = inject(function createScope($rootScope) {
     scope = $rootScope.$new();
-    scope.homeDirectory = { path: '/' };
+    scope.homeDirectory = { path: '/', children: [] };
     scope.registerContextMenu = function(cm) {
       contextMenu = cm;
     };
@@ -50,7 +50,9 @@ describe('ramlEditorContextMenu', function() {
       };
 
       file = {
-        name: 'filename.raml'
+        name: 'filename.raml',
+        path: '/filename.raml',
+        parentPath: function() { return '/'; }
       };
 
       scrollDisableStub = sinon.stub(scroll, 'disable');
@@ -88,15 +90,15 @@ describe('ramlEditorContextMenu', function() {
     describe('removing a file', function() {
       var openStub;
 
-      beforeEach(inject(function(ramlEditorRemoveFilePrompt) {
-        openStub = sinon.stub(ramlEditorRemoveFilePrompt, 'open');
+      beforeEach(inject(function($window) {
+        openStub = sinon.stub($window, 'confirm').returns(true);
         var removeItem = contextMenuItemNamed('Delete');
 
         removeItem.dispatchEvent(events.click());
       }));
 
       it('delegates to the ramlRepository', function() {
-        openStub.should.have.been.calledWith(scope.homeDirectory, file);
+        openStub.should.have.been.calledWith('Are you sure you want to delete "' + file.name + '"?');
       });
     });
 
@@ -104,9 +106,9 @@ describe('ramlEditorContextMenu', function() {
       var renameItem, renameFileStub, promptSpy, filenamePromptStub;
 
       beforeEach(function() {
-        inject(function(ramlRepository, ramlEditorFilenamePrompt) {
+        inject(function(ramlRepository, ramlEditorInputPrompt) {
           renameFileStub = sandbox.stub(ramlRepository, 'renameFile');
-          filenamePromptStub = sandbox.stub(ramlEditorFilenamePrompt, 'open');
+          filenamePromptStub = sandbox.stub(ramlEditorInputPrompt, 'open');
         });
         promptSpy = sandbox.stub(window, 'prompt');
 
@@ -119,7 +121,7 @@ describe('ramlEditorContextMenu', function() {
         filenamePromptStub.returns(promise.stub());
         renameItem.dispatchEvent(events.click());
 
-        filenamePromptStub.should.have.been.calledWith(scope.homeDirectory, 'filename.raml');
+        filenamePromptStub.should.have.been.calledWith('Input a new name for this file:', 'filename.raml');
       });
 
       describe('upon success', function() {

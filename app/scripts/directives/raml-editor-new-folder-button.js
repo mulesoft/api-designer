@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorNewFileButton', function ramlEditorNewFileButton(
+    .directive('ramlEditorNewFolderButton', function ramlEditorNewFolderButton(
       $injector,
       ramlEditorInputPrompt,
       ramlRepository,
@@ -10,18 +10,14 @@
     ) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
+        template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
         link:     function (scope) {
-          scope.newFile = function newFile() {
+          scope.newFolder = function newFolder() {
             var currentTarget = scope.fileBrowser.currentTarget;
             var parent        = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
-            var defaultName   = generateName(parent.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
-            var title         = 'Add a new file';
-
-            var message = [
-              'For a new RAML spec, be sure to name your file <something>.raml; ',
-              'For files to be !included, feel free to use an extension or not.'
-            ].join('');
+            var defaultName   = generateName(parent.getDirectories().map(function (d){return d.name;}), 'Folder');
+            var message       = 'Input a name for your new folder:';
+            var title         = 'Add a new folder';
 
             // check if the modal service exists
             var inputMethod = $injector.has('newNameModal') ?
@@ -30,14 +26,14 @@
 
             var validations = [
               {
-                message: 'That file name is already taken.',
+                message: 'That folder name is already taken.',
                 validate: function(input) {
-                  return !parent.children.some(function (file) {
-                    return file.name.toLowerCase() === input.toLowerCase();
+                  return !parent.children.some(function (directory) {
+                    return directory.name.toLowerCase() === input.toLowerCase();
                   });
                 }
               } , {
-                message: 'File name cannot be empty.',
+                message: 'Folder name cannot be empty.',
                 validate: function(input) {
                   return input.length > 0;
                 }
@@ -46,9 +42,8 @@
 
             inputMethod.open(message, defaultName, validations, title)
               .then(function(name) {
-                ramlRepository.createFile(parent, name);
-              })
-            ;
+                ramlRepository.createDirectory(parent, name);
+              });
           };
         }
       };

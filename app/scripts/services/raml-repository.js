@@ -4,6 +4,11 @@
   function RamlFile(path, contents, options) {
     options = options || {};
 
+    // remove the trailing slash to path if it exists
+    if (path.slice(-1) === '/' && path.length > 1) {
+      path = path.slice(0, -1);
+    }
+
     this.type = 'file';
     this.path = path;
     this.name = path.slice(path.lastIndexOf('/') + 1);
@@ -24,62 +29,12 @@
       var service     = {};
       var defaultPath = '/';
 
+      service.supportsFolders = fileSystem.supportsFolders || false;
+      service.pathToRamlObject = {};
+
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
       }
-
-      function RamlDirectory(path, meta, contents) {
-        // add trailing slash to path if it doesn't exist
-        if (path.slice(-1) !== '/') {
-          path = path + '/';
-        }
-
-        contents = contents || [];
-
-        var strippedPath = path.substring(0, path.length - 1);
-        this.type = 'directory';
-        this.path = path;
-        this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
-        this.meta = meta;
-
-        var separated = { folder: [], file: [] };
-        contents.forEach(function (entry) {
-          separated[entry.type || 'file'].push(entry);
-        });
-
-        this.files = separated.file.filter(notMetaFile).map(function (file) {
-          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true, root: file.root} );
-        });
-
-        this.files.sort(function (file1, file2) {
-          return file1.name.localeCompare(file2.name);
-        });
-
-        this.directories = separated.folder.map(function (directory) {
-          return new RamlDirectory(directory.path, directory.meta, directory.children);
-        });
-      }
-
-      RamlDirectory.prototype.createFile = function createFile(name) {
-        var file = service.createFile(name);
-        this.files.push(file);
-
-        return file;
-      };
-
-      RamlDirectory.prototype.removeFile = function removeFile(file) {
-        var self = this;
-
-        return service
-          .removeFile(file)
-          .then(function () {
-            var index = self.files.indexOf(file);
-            if (index !== -1) {
-              self.files.splice(index, 1);
-            }
-          })
-        ;
-      };
 
       function handleErrorFor(file) {
         return function markFileWithError(error) {
@@ -87,6 +42,94 @@
           throw error;
         };
       }
+
+      function generateName(parent, name) {
+        if (parent.path === '/') {
+          return '/' + name;
+        }
+        else {
+          return parent.path + '/' + name;
+        }
+      }
+
+      function generateNewName(target, newName) {
+        var parentPath = target.path.slice(0, target.path.lastIndexOf('/'));
+        return parentPath + '/' + newName;
+      }
+
+      function RamlDirectory(path, meta, contents) {
+        // remove the trailing slash to path if it exists
+        if (path.slice(-1) === '/' && path.length > 1) {
+          path = path.slice(0, -1);
+        }
+
+        contents = contents || [];
+
+        this.type = 'directory';
+        this.path = path;
+        this.name = path.slice(path.lastIndexOf('/') + 1);
+        this.meta = meta;
+        this.collapsed   = true;
+        this.isDirectory = true;
+
+        var separated = { folder: [], file: [] };
+        contents.forEach(function (entry) {
+          separated[entry.type || 'file'].push(entry);
+        });
+
+        var files = separated.file.filter(notMetaFile).map(function (file) {
+          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true, root: file.root} );
+        });
+
+        files.sort(function (file1, file2) {
+          return file1.name.localeCompare(file2.name);
+        });
+
+        var directories = separated.folder.map(function (directory) {
+          return new RamlDirectory(directory.path, directory.meta, directory.children);
+        });
+
+        this.children = directories.concat(files);
+      }
+
+      RamlDirectory.prototype.getDirectories = function getDirectories() {
+        return this.children.filter(function(t) { return t.isDirectory; });
+      };
+
+      RamlDirectory.prototype.getFiles = function getFiles() {
+        return this.children.filter(function(t) { return !t.isDirectory; });
+      };
+
+      RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
+        // BFS
+        var queue = this.children.slice();
+        var current;
+        while(queue.length > 0) {
+          current = queue.shift();
+          if(current.isDirectory) {
+            queue = queue.concat(current.children);
+          }
+          action.apply(current, [current]);
+        }
+      };
+
+      RamlDirectory.prototype.hasChildren = function hasChildren(child) {
+        var childParentPath = child.path.slice(0, child.path.lastIndexOf('/'));
+        if (childParentPath.length === 0) {
+          childParentPath = '/';
+        }
+        return childParentPath.length >= this.path.length &&
+          this.path === childParentPath.slice(0, this.path.length);
+      };
+
+      // Returns the parent directory object of a file or a directory
+      service.getParent = function getParent(target) {
+        var path = target.path.slice(0, target.path.lastIndexOf('/'));
+        if (path.length === 0) {
+          path = '/';
+        }
+        return service.getByPath(path);
+      };
 
       service.canExport = function canExport() {
         return fileSystem.hasOwnProperty('exportFiles');
@@ -96,11 +139,70 @@
         return fileSystem.exportFiles();
       };
 
-      service.getDirectory = function getDirectory(path) {
+      service.createDirectory = function createDirectory(parent, name) {
+        var path      = generateName(parent, name);
+        var directory = new RamlDirectory(path);
+
+        parent.children.push(directory);
+
+        return fileSystem.createFolder(directory.path)
+          .then(function () {
+            $rootScope.$broadcast('event:raml-editor-directory-created', directory);
+            return directory;
+          });
+      };
+
+      // Loads the directory from the fileSystem into memory
+      service.loadDirectory = function loadDirectory(path) {
         path = path || defaultPath;
-        return fileSystem.directory(path).then(function (folder) {
-          return new RamlDirectory(folder.path, folder.meta, folder.children);
+        return fileSystem.directory(path).then(function (directory) {
+          service.pathToRamlObject[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
+          return service.pathToRamlObject[path];
         });
+      };
+
+      service.removeDirectory = function removeDirectory(directory) {
+        // recursively remove all the child directory and files
+        // and collect all promises into an array
+        var promises = [];
+        directory.getDirectories().forEach(function(dir) { promises.push(service.removeDirectory(dir)); });
+        directory.getFiles().forEach(function(file) { promises.push(service.removeFile(file)); });
+
+        // remove this directory object from parent's children list
+        var parent = service.getParent(directory);
+        var index  = parent.children.indexOf(directory);
+        if (index !== -1) {
+          parent.children.splice(index, 1);
+        }
+
+        // make sure all children is removed from FS before we remove ourselves
+        return $q.all(promises)
+          .then(function () {
+            return fileSystem.remove(directory.path);
+          })
+          .then(function (directory) {
+            $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
+          });
+      };
+
+      service.renameDirectory = function renameDirectory(directory, newName) {
+        var newPath = generateNewName(directory, newName);
+        var promise = fileSystem.rename(directory.path, newPath);
+
+        // renames the path of each child under the current directory
+        directory.forEachChildDo(function(c) {
+          c.path = c.path.replace(directory.path, newPath);
+        });
+
+        return promise
+          .then(function () {
+            directory.name = newName;
+            directory.path = newPath;
+
+            return directory;
+          },
+          handleErrorFor(directory)
+          );
       };
 
       service.saveFile = function saveFile(file) {
@@ -111,11 +213,12 @@
           return file;
         }
 
-        return fileSystem.save(file.path, file.contents).then(modifyFile, handleErrorFor(file));
+        return fileSystem.save(file.path, file.contents)
+          .then(modifyFile, handleErrorFor(file));
       };
 
       service.renameFile = function renameFile(file, newName) {
-        var newPath = file.path.replace(file.name, newName);
+        var newPath = generateNewName(file, newName);
         var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
 
         function modifyFile() {
@@ -146,6 +249,7 @@
 
       service.removeFile = function removeFile(file) {
         var promise;
+        var parent = service.getParent(file);
 
         function modifyFile() {
           file.dirty     = false;
@@ -164,22 +268,57 @@
 
         return promise
           .then(modifyFile, handleErrorFor(file))
-          .then(function (file) {
+          .then(function () {
+            // remove the file object from the parent's children list
+            var index = parent.children.indexOf(file);
+            if (index !== -1) {
+              parent.children.splice(index, 1);
+            }
             $rootScope.$broadcast('event:raml-editor-file-removed', file);
-          })
-        ;
+          });
       };
 
-      service.createFile = function createFile(name) {
-        var path = defaultPath + name;
+      service.createFile = function createFile(parent, name) {
+        var path = generateName(parent, name);
         var file = new RamlFile(path);
 
         if (file.extension === 'raml') {
           file.contents = ramlSnippets.getEmptyRaml();
         }
 
+        parent.children.push(file);
+
         $rootScope.$broadcast('event:raml-editor-file-created', file);
         return file;
+      };
+
+      // Gets the ramlDirectory/ramlFile object by path from the memory
+      service.getByPath = function getByPath(path) {
+        // remove the trailing '/' in path
+        if(path.slice(-1) === '/' && path !== '/') {
+          path = path.slice(0, -1);
+        }
+
+        // If the entry is already in the cache, return it directly
+        if (service.pathToRamlObject.hasOwnProperty(path)) {
+          return service.pathToRamlObject[path];
+        }
+
+        // If the path we're looking for is not in 'pathToRamlObject'
+        // we search for it in the tree using BFS
+        var queue = service.pathToRamlObject['/'].children.slice();
+        var current;
+        while(queue.length) {
+          current = queue.shift();
+          if (current.path === path) {
+            service.pathToRamlObject[path] = current;
+            return current;
+          } else if (current.isDirectory) {
+            queue = queue.concat(current.children);
+          }
+        }
+
+        return void(0);
       };
 
       service.saveMeta = function saveMeta(file, meta) {

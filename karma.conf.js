@@ -32,6 +32,7 @@ module.exports = function(config) {
       'bower_components/angular-resource/angular-resource.js',
       'bower_components/angular-sanitize/angular-sanitize.js',
       'bower_components/angular-bootstrap/ui-bootstrap-tpls.js',
+      'bower_components/angular-ui-tree/dist/angular-ui-tree.js',
       'bower_components/es5-shim/es5-shim.js',
       'bower_components/showdown/src/showdown.js',
 
@@ -48,8 +49,7 @@ module.exports = function(config) {
       'app/scripts/services/code-mirror.js',
       'app/scripts/services/code-mirror-errors.js',
       'app/scripts/services/event.js',
-      'app/scripts/services/raml-editor-filename-prompt.js',
-      'app/scripts/services/raml-editor-remove-file-prompt.js',
+      'app/scripts/services/raml-editor-input-prompt.js',
       'app/scripts/services/raml-hint.js',
       'app/scripts/services/raml-snippets.js',
       'app/scripts/services/raml-highlight.js',

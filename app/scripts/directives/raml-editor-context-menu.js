@@ -2,30 +2,98 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorContextMenu', function ($window, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorFilenamePrompt, scroll) {
-      function createActions(directory, file) {
-        return [
+    .directive('ramlEditorContextMenu', function (
+      $window,
+      $injector,
+      ramlRepository,
+      ramlEditorInputPrompt,
+      scroll
+    ) {
+      function createActions(target) {
+        var actions = [
           {
             label: 'Save',
-            execute: function() {
-              ramlRepository.saveFile(file);
+            execute: function () {
+              ramlRepository.saveFile(target);
             }
           },
           {
             label: 'Delete',
-            execute: function() {
-              ramlEditorRemoveFilePrompt.open(directory, file);
+            execute: function () {
+              var action;
+              var message;
+              var title;
+
+              if (target.isDirectory) {
+                action = ramlRepository.removeDirectory;
+                message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
+                title = 'Remove folder';
+              }
+              else {
+                action = ramlRepository.removeFile;
+                message = 'Are you sure you want to delete "' + target.name + '"?';
+                title = 'Remove file';
+              }
+
+              if ($injector.has('confirmModal')) {
+                $injector.get('confirmModal')
+                  .open(message, title)
+                  .then(function (confirmed) {
+                    confirmed ? action.call(ramlRepository, target) : void(0);
+                  });
+              } else {
+                $window.confirm(message) ? action.call(ramlRepository, target) : void(0);
+              }
             }
           },
           {
             label: 'Rename',
-            execute: function() {
-              ramlEditorFilenamePrompt.open(directory, file.name).then(function(filename) {
-                ramlRepository.renameFile(file, filename);
-              });
+            execute: function () {
+              var action;
+              var message;
+              var parent = ramlRepository.getParent(target);
+              var title  = 'Rename a file';
+
+              // check if the modal service exists
+              var inputMethod = $injector.has('newNameModal') ?
+                $injector.get('newNameModal') :
+                ramlEditorInputPrompt;
+
+              if (target.isDirectory) {
+                action = ramlRepository.renameDirectory;
+                message = 'Input a new name for this folder:';
+              }
+              else {
+                action = ramlRepository.renameFile;
+                message = 'Input a new name for this file:';
+              }
+
+              var validations = [
+                {
+                  message: 'That name is already taken.',
+                  validate: function(input) {
+                    return !parent.children.some(function (t) {
+                      return t.name.toLowerCase() === input.toLowerCase();
+                    });
+                  }
+                }, {
+                  message: 'New name cannot be empty.',
+                  validate: function(input) {
+                    return input.length > 0;
+                  }
+                }
+              ];
+
+              inputMethod.open(message, target.name, validations, title)
+                .then(function(name){
+                  action.call(ramlRepository, target, name);
+                });
             }
           }
         ];
+
+        // remove the 'Save' action if the target is a directory
+        return target.isDirectory ? actions.slice(1) : actions;
       }
 
       function outOfWindow(el) {
@@ -43,7 +111,6 @@
           function positionMenu(element, offsetTarget) {
             var rect = offsetTarget.getBoundingClientRect();
 
-
             var left = rect.left + 0.5 * rect.width,
                 top = rect.top + 0.5 * rect.height;
 
@@ -51,7 +118,7 @@
             menuContainer.css('left', left + 'px');
             menuContainer.css('top', top + 'px');
 
-            setTimeout(function() {
+            setTimeout(function () {
               if (outOfWindow(menuContainer[0])) {
                 menuContainer.css('top', top - menuContainer[0].offsetHeight + 'px');
               }
@@ -60,8 +127,8 @@
 
           function close() {
             scroll.enable();
-            scope.$apply(function() {
-              delete contextMenuController.file;
+            scope.$apply(function () {
+              delete contextMenuController.target;
               scope.opened = false;
 
               $window.removeEventListener('click', close);
@@ -77,10 +144,11 @@
           }
 
           var contextMenuController = {
-            open: function(event, file) {
+            open: function(event, target) {
               scroll.disable();
-              this.file = file;
-              scope.actions = createActions(scope.homeDirectory, file);
+              this.target = target;
+
+              scope.actions = createActions(target);
 
               event.stopPropagation();
               positionMenu(element, event.target);
