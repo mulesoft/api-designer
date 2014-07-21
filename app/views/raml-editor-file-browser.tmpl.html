@@ -5,7 +5,7 @@
       <i class="fa icon fa-caret-right" ng-if="node.isDirectory" ng-click="toggleCollapse(node)" ng-class="{'fa-rotate-90': !node.collapsed}"></i>
       &nbsp;<span ng-click="toggleCollapse(node)">{{node.name}}</span>
     </span>
-    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)"></i>
+    <i class="fa fa-cog" ng-hide="ramlEditorReadOnly" ng-click="fileBrowser.showContextMenu($event, node)"></i>
   </div>
 
   <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: node.collapsed}" ng-model="node.children">
