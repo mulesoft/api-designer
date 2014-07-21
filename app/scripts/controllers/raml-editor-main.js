@@ -3,7 +3,7 @@
 
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
-    .value('ramlEditorReadOnly', false)
+    .value('editorConfig', {ramlEditorReadOnly: false})
     .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
       function readLocFile(path) {
         return ramlRepository.loadFile({path: path}).then(
@@ -49,7 +49,7 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, ramlEditorReadOnly
+      codeMirrorErrors, config, $prompt, $confirm, $modal, editorConfig
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -261,7 +261,7 @@
         return extractCurrentFileLabel(currentFile);
       };
 
-      $scope.ramlEditorReadOnly = ramlEditorReadOnly;
+      $scope.ramlEditorReadOnly = editorConfig.ramlEditorReadOnly;
 
       eventService.on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme(($scope.theme === 'dark') ? 'light' : 'dark');

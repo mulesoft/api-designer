@@ -4,7 +4,7 @@
   angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     .factory('codeMirror', function (
       ramlHint, codeMirrorHighLight, eventService, generateSpaces, generateTabs,
-      getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue, ramlEditorReadOnly
+      getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue, editorConfig
     ) {
       var editor  = null;
       var service = {
@@ -182,7 +182,7 @@
           keyMap: 'tabSpace',
           foldGutter: foldGutterConfig,
           gutters: ['CodeMirror-lint-markers', 'CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-          readOnly: ramlEditorReadOnly
+          readOnly: editorConfig.ramlEditorReadOnly
         };
 
         if (extraOptions) {
