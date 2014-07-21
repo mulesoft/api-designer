@@ -799,52 +799,46 @@ div.CodeMirror {
   border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 /* CodeMirror Overrides (Light) */
-body.light .CodeMirror-code .CodeMirror-hint-ghost {
+[role="raml-editor"].light .CodeMirror-code .CodeMirror-hint-ghost {
   color: #bbbbbb;
 }
-body.light .CodeMirror-hints {
+[role="raml-editor"].light .CodeMirror-hints {
   background-color: white;
 }
-body.light .CodeMirror-hint {
+[role="raml-editor"].light .CodeMirror-hint {
   background-color: white;
 }
-body.light div.cm-s-solarized.cm-s-dark {
+[role="raml-editor"].light div.cm-s-solarized.cm-s-dark {
   text-shadow: #fefefe 0 1px;
   background-color: white;
 }
-body.light .cm-s-solarized.CodeMirror {
+[role="raml-editor"].light .cm-s-solarized.CodeMirror {
   box-shadow: none;
 }
-body.light div[role=tab-box],
-body.light div[role=tab].active div[role=tab-box] {
+[role="raml-editor"].light div[role=tab-box],
+[role="raml-editor"].light div[role=tab].active div[role=tab-box] {
   background-color: white;
   border: 1px solid #555;
 }
-body.light div[role=tab].active {
+[role="raml-editor"].light div[role=tab].active {
   text-shadow: #eee 0 1px;
 }
-body.light div[role=code] {
+[role="raml-editor"].light div[role=code] {
   border-top: 1px solid #555;
 }
-body.light .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+[role="raml-editor"].light .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
   background-color: #f1f1f1;
   border-right: 1px solid #999;
 }
-body.light .cm-s-solarized.cm-s-dark .CodeMirror-linenumber {
+[role="raml-editor"].light .cm-s-solarized.cm-s-dark .CodeMirror-linenumber {
   text-shadow: #fefefe 0 1px;
 }
-body.light .cm-s-solarized.cm-s-dark .CodeMirror-selected {
+[role="raml-editor"].light .cm-s-solarized.cm-s-dark .CodeMirror-selected {
   background-color: #ddd;
 }
-body.light .cm-s-solarized .cm-indent::before,
-body.light .cm-s-solarized .cm-indent-incomplete::before {
+[role="raml-editor"].light .cm-s-solarized .cm-indent::before,
+[role="raml-editor"].light .cm-s-solarized .cm-indent-incomplete::before {
   border-right-color: rgba(0, 0, 0, 0.15);
-}
-
-/* https://github.com/FortAwesome/Font-Awesome/issues/216 */
-[class^="icon-"],
-[class*=" icon-"] {
-  line-height: 1;
 }
 
 .modal-open {
