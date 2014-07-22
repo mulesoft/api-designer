@@ -213,6 +213,9 @@
           return file;
         }
 
+        // get the most up-to-date value before saving
+        file.contents = $rootScope.editor.getValue();
+
         return fileSystem.save(file.path, file.contents)
           .then(modifyFile, handleErrorFor(file));
       };

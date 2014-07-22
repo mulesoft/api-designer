@@ -9,13 +9,13 @@
   </div>
 
   <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: node.collapsed}" ng-model="node.children">
-    <li ui-tree-node ng-repeat="node in node.children | orderBy:'name'" ng-include="'file-item.html'">
+    <li ui-tree-node ng-repeat="node in node.children | orderBy:['isDirectory', 'name']" ng-include="'file-item.html'">
     </li>
   </ul>
 </script>
 
 <div ui-tree class="file-list" data-drag-enabled="false">
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
-    <li ui-tree-node ng-repeat="node in homeDirectory.children | orderBy:'name'" ng-include="'file-item.html'"></li>
+    <li ui-tree-node ng-repeat="node in homeDirectory.children | orderBy:['isDirectory', 'name']" ng-include="'file-item.html'"></li>
   </ul>
 </div>
