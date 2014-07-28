@@ -48,7 +48,7 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal
+      codeMirrorErrors, config, $prompt, $confirm, $modal, options
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -141,6 +141,10 @@
       $scope.clearErrorMarks = function clearErrorMarks() {
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
+      };
+
+      $scope.isReadOnly = function isReadOnly() {
+        return !!options.readOnly;
       };
 
       eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
@@ -268,6 +272,10 @@
         $scope.shelf           = {};
         $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', 'false'));
         $scope.editor          = editor = codeMirror.initEditor();
+
+        $scope.$watch('isReadOnly()', function (readOnly) {
+          editor.setOption('readOnly', readOnly ? 'nocursor' : false);
+        });
 
         editor.on('fold', function (cm, start, end) {
           if (start.line <= lineOfCurrentError && lineOfCurrentError <= end.line) {

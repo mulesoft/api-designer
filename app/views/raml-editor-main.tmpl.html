@@ -13,13 +13,13 @@
   </header>
 
   <ul class="menubar">
-    <li class="menu-item menu-item-ll">
+    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">
       <raml-editor-new-file-button></raml-editor-new-file-button>
     </li>
-    <li class="menu-item menu-item-ll">
+    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">
       <raml-editor-save-file-button></raml-editor-save-file-button>
     </li>
-    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">
+    <li ng-show="!isReadOnly() && canExportFiles()" class="menu-item menu-item-ll">
       <raml-editor-export-files-button></raml-editor-export-files-button>
     </li>
     <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>
@@ -47,7 +47,7 @@
     <div role="editor" ng-class="{error: currentError}">
       <div id="code" role="code"></div>
 
-      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
+      <div role="shelf" ng-show="!isReadOnly() && getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
         <div role="shelf-tab" ng-click="toggleShelf()">
           <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? 'fa-caret-up' : 'fa-caret-down'"></i>
         </div>
