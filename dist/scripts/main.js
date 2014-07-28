@@ -190,6 +190,11 @@
   });
   ;
 }());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').value('options', {});
+  ;
+}());
 /**
  * The lightweight-dom module provides a DOM-like API over raml documents. For
  * performance reasons, this DOM is lazy; navigation from one node to
@@ -2649,7 +2654,8 @@
     '$prompt',
     '$confirm',
     '$modal',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal) {
+    'options',
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, options) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -2721,6 +2727,9 @@
       $scope.clearErrorMarks = function clearErrorMarks() {
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
+      };
+      $scope.isReadOnly = function isReadOnly() {
+        return !!options.readOnly;
       };
       eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
         $scope.clearErrorMarks();
@@ -2813,6 +2822,9 @@
         $scope.shelf = {};
         $scope.shelf.collapsed = JSON.parse(config.get('shelf.collapsed', 'false'));
         $scope.editor = editor = codeMirror.initEditor();
+        $scope.$watch('isReadOnly()', function (readOnly) {
+          editor.setOption('readOnly', readOnly ? 'nocursor' : false);
+        });
         editor.on('fold', function (cm, start, end) {
           if (start.line <= lineOfCurrentError && lineOfCurrentError <= end.line) {
             codeMirrorErrors.displayAnnotations([{
@@ -3443,7 +3455,8 @@
     'ramlRepository',
     'config',
     'eventService',
-    function ($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService) {
+    'options',
+    function ($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService, options) {
       function Controller($scope) {
         var fileBrowser = this;
         var unwatchSelectedFile = angular.noop;
@@ -3510,6 +3523,9 @@
           $window.removeEventListener('keydown', saveListener);
         });
         function promptWhenFileListIsEmpty() {
+          if (options.readOnly) {
+            return;
+          }
           ramlEditorFilenamePrompt.open($scope.homeDirectory).then(function (filename) {
             $scope.homeDirectory.createFile(filename);
           });
@@ -3649,8 +3665,8 @@ angular.module('ramlEditorApp').run([
     'use strict';
     $templateCache.put('views/help.html', '<div class="modal-header">\n' + '    <h3><i class="fa fa-question-circle"></i> Help</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '<ul class="file-list">\n' + '  <li class="file-item"\n' + '      ng-repeat="file in homeDirectory.files | orderBy:\'name\'"\n' + '      ng-click="fileBrowser.selectFile(file)"\n' + '      ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty, geared: fileBrowser.contextMenuOpenedFor(file)}">\n' + '    <span class="file-name">{{file.name}}</span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, file)"></i>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">\n' + '    {{message}}\n' + '    <i class="fa fa-check" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '<ul class="file-list">\n' + '  <li class="file-item"\n' + '      ng-repeat="file in homeDirectory.files | orderBy:\'name\'"\n' + '      ng-click="fileBrowser.selectFile(file)"\n' + '      ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty, geared: fileBrowser.contextMenuOpenedFor(file)}">\n' + '    <span class="file-name">{{file.name}}</span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, file)" ng-hide="isReadOnly()"></i>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">\n' + '    {{message}}\n' + '    <i class="fa fa-check" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li ng-show="!isReadOnly() && canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="!isReadOnly() && getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);
