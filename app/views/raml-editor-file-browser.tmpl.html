@@ -5,6 +5,6 @@
       ng-click="fileBrowser.selectFile(file)"
       ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty, geared: fileBrowser.contextMenuOpenedFor(file)}">
     <span class="file-name">{{file.name}}</span>
-    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, file)"></i>
+    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, file)" ng-hide="isReadOnly()"></i>
   </li>
 </ul>

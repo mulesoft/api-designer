@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorFileBrowser', function ($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService) {
+    .directive('ramlEditorFileBrowser', function ($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService, options) {
       function Controller($scope) {
         var fileBrowser         = this;
         var unwatchSelectedFile = angular.noop;
@@ -83,6 +83,10 @@
         });
 
         function promptWhenFileListIsEmpty() {
+          if (options.readOnly) {
+            return;
+          }
+
           ramlEditorFilenamePrompt.open($scope.homeDirectory)
             .then(function (filename) {
               $scope.homeDirectory.createFile(filename);

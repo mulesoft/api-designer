@@ -50,6 +50,7 @@ describe('RAML Editor Main Controller', function () {
       codeMirror: codeMirror,
       codeMirrorErrors: codeMirrorErrors,
       eventService: eventService,
+      options: {},
       $confirm: $confirm,
     };
   });
