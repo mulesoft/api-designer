@@ -19,5 +19,18 @@
     <script src="scripts/vendor.js"></script>
 
     <script src="scripts/main.js"></script>
+
+    <script>
+    angular.module('raml')
+      .run(function (config) {
+        config.set('fsFactory', 'memoryFileSystem');
+      })
+      .run(function (fileSystem, options) {
+        options.readOnly = true;
+
+        fileSystem.save('/api.raml', 'more text');
+        fileSystem.save('/test.raml', 'some text');
+      });
+    </script>
   </body>
 </html>

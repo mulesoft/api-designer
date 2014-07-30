@@ -2187,6 +2187,153 @@
 }());
 (function () {
   'use strict';
+  /**
+   * Get the current created timestamp.
+   *
+   * @return {Boolean}
+   */
+  var now = function () {
+    return Math.round(Date.now() / 1000);
+  };
+  angular.module('fs').value('FS_MEMORY', {
+    name: '',
+    type: 'folder',
+    meta: { created: now() },
+    children: {}
+  }).factory('memoryFileSystem', [
+    '$q',
+    'FS_MEMORY',
+    function ($q, FS_MEMORY) {
+      var factory = {};
+      /**
+       * Assert that the path is valid.
+       *
+       * @param {String} path
+       */
+      var wrap = function (fn) {
+        return function (path) {
+          if (path[0] !== '/') {
+            return $q.reject(new Error('Path must start with "/"'));
+          }
+          return fn.apply(this, arguments);
+        };
+      };
+      /**
+       * Sanitize and return all the path parts of a string.
+       *
+       * @param  {String} path
+       * @return {Array}
+       */
+      var getPathParts = function (path) {
+        path = path.toLowerCase().replace(/\/+/g, '/').replace(/^\/|\/$/g, '');
+        return path ? path.split('/') : [];
+      };
+      /**
+       * Get the directory by following a path.
+       *
+       * @param  {String} path
+       * @return {Object}
+       */
+      var getDirectory = function (path) {
+        var directory = FS_MEMORY;
+        var parts = Array.isArray(path) ? path : getPathParts(path);
+        parts.every(function (part) {
+          return directory.type === 'folder' && (directory = directory.children[part]);
+        });
+        return directory && directory.type === 'folder' ? directory : null;
+      };
+      /**
+       * Retrieve a directory in the expected format.
+       *
+       * @param  {String} path
+       * @return {$q}
+       */
+      factory.directory = wrap(function (path) {
+        var deferred = $q.defer();
+        var parts = getPathParts(path);
+        var directory = getDirectory(parts);
+        // TODO: Work out the format it expects here.
+        if (directory) {
+          var output = function sanitize(obj, parts) {
+              var output = {
+                  path: [
+                    '',
+                    parts
+                  ].join('/'),
+                  type: obj.type,
+                  meta: obj.meta,
+                  name: obj.name,
+                  children: []
+                };
+              if (obj.type === 'folder') {
+                Object.keys(obj.children).map(function (name) {
+                  output.children.push(sanitize(obj.children[name], parts.concat(name)));
+                });
+              }
+              return output;
+            }(directory, parts);
+          deferred.resolve(output);
+        } else {
+          deferred.reject('No directory exists at "' + path + '"');
+        }
+        return deferred.promise;
+      });
+      /**
+       * Save a file into the file system.
+       *
+       * @param  {String} path
+       * @param  {String} content
+       * @return {$q}
+       */
+      factory.save = wrap(function (path, content) {
+        var deferred = $q.defer();
+        var directory = getDirectory(path.replace(/\/[^\/]*$/, ''));
+        var filename = path.replace(/^.*\//, '').toLowerCase();
+        if (directory) {
+          directory.children[filename] = {
+            type: 'file',
+            name: filename,
+            content: content,
+            meta: { created: now() }
+          };
+          deferred.resolve(content);
+        } else {
+          deferred.reject('Folder does not exist');
+        }
+        return deferred.promise;
+      });
+      /**
+       * Load a single file from the specified path.
+       *
+       * @param  {String} path
+       * @return {$q}
+       */
+      factory.load = wrap(function (path) {
+        var deferred = $q.defer();
+        var parts = getPathParts(path);
+        var filename = parts.pop();
+        var directory = getDirectory(parts);
+        var file = directory && directory.children[filename];
+        if (file && file.type === 'file') {
+          deferred.resolve(file.content);
+        } else {
+          deferred.reject(new Error('File does not exist at "' + path + '"'));
+        }
+        return deferred.promise;
+      });
+      // TODO: Implement if ever needed IRL.
+      factory.createFolder = function () {
+      };
+      factory.remove = function () {
+      };
+      factory.rename = function () {
+      };
+      return factory;
+    }
+  ]);
+}());
+(function () {
+  'use strict';
   angular.module('fs').constant('LOCAL_PERSISTENCE_KEY', 'localStorageFilePersistence').constant('FOLDER', 'folder').factory('localStorageHelper', [
     'LOCAL_PERSISTENCE_KEY',
     function (LOCAL_PERSISTENCE_KEY) {
@@ -3666,7 +3813,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/help.html', '<div class="modal-header">\n' + '    <h3><i class="fa fa-question-circle"></i> Help</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '<ul class="file-list">\n' + '  <li class="file-item"\n' + '      ng-repeat="file in homeDirectory.files | orderBy:\'name\'"\n' + '      ng-click="fileBrowser.selectFile(file)"\n' + '      ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty, geared: fileBrowser.contextMenuOpenedFor(file)}">\n' + '    <span class="file-name">{{file.name}}</span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, file)" ng-hide="isReadOnly()"></i>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">\n' + '    {{message}}\n' + '    <i class="fa fa-check" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li ng-show="!isReadOnly() && canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="!isReadOnly() && getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">\n' + '    {{message}}\n' + '    <i class="fa fa-check" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll" ng-hide="isReadOnly()">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li ng-show="!isReadOnly() && canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="!isReadOnly() && getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="!isReadOnly() && getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

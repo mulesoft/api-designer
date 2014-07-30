@@ -79,6 +79,7 @@
     <script src="scripts/services/file-system.js"></script>
     <script src="scripts/services/raml-editor-filename-prompt.js"></script>
     <script src="scripts/services/raml-editor-remove-file-prompt.js"></script>
+    <script src="scripts/services/memory-file-system.js"></script>
     <script src="scripts/services/local-storage-file-system.js"></script>
     <script src="scripts/services/mocking-service-client.js"></script>
     <script src="scripts/services/mocking-service.js"></script>
@@ -95,5 +96,18 @@
     <script src="scripts/directives/raml-editor-new-file-button.js"></script>
     <script src="scripts/directives/raml-editor-export-files-button.js"></script>
     <!-- endbuild -->
+
+    <script>
+    angular.module('raml')
+      .run(function (config) {
+        config.set('fsFactory', 'memoryFileSystem');
+      })
+      .run(function (fileSystem, options) {
+        options.readOnly = true;
+
+        fileSystem.save('/api.raml', 'more text');
+        fileSystem.save('/test.raml', 'some text');
+      });
+    </script>
   </body>
 </html>
