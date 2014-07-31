@@ -16,7 +16,7 @@
         var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
 
-        $scope.toggleCollapse = function toggleCollapse (node) {
+        $scope.toggleFolderCollapse = function toggleFolderCollapse(node) {
           node.collapsed = !node.collapsed;
         };
 
@@ -26,7 +26,8 @@
         };
 
         fileBrowser.selectFile = function selectFile(file) {
-          if (fileBrowser.selectedFile === file) {
+          // If we select a file that is already active, just modify 'currentTarget', no load needed
+          if (fileBrowser.selectedFile && fileBrowser.selectedFile.path === file.path) {
             fileBrowser.currentTarget = file;
             return;
           }

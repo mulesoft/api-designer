@@ -28,9 +28,9 @@
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
       var service     = {};
       var defaultPath = '/';
+      var pathToRamlObject = {};
 
       service.supportsFolders = fileSystem.supportsFolders || false;
-      service.pathToRamlObject = {};
 
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
@@ -155,9 +155,12 @@
       // Loads the directory from the fileSystem into memory
       service.loadDirectory = function loadDirectory(path) {
         path = path || defaultPath;
+        // clean up the pathToRamlObject mapping
+        pathToRamlObject = {};
+
         return fileSystem.directory(path).then(function (directory) {
-          service.pathToRamlObject[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
-          return service.pathToRamlObject[path];
+          pathToRamlObject[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
+          return pathToRamlObject[path];
         });
       };
 
@@ -300,18 +303,18 @@
         }
 
         // If the entry is already in the cache, return it directly
-        if (service.pathToRamlObject.hasOwnProperty(path)) {
-          return service.pathToRamlObject[path];
+        if (pathToRamlObject.hasOwnProperty(path)) {
+          return pathToRamlObject[path];
         }
 
         // If the path we're looking for is not in 'pathToRamlObject'
         // we search for it in the tree using BFS
-        var queue = service.pathToRamlObject['/'].children.slice();
+        var queue = pathToRamlObject['/'].children.slice();
         var current;
         while(queue.length) {
           current = queue.shift();
           if (current.path === path) {
-            service.pathToRamlObject[path] = current;
+            pathToRamlObject[path] = current;
             return current;
           } else if (current.isDirectory) {
             queue = queue.concat(current.children);
