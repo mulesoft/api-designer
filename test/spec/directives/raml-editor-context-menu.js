@@ -107,7 +107,7 @@ describe('ramlEditorContextMenu', function() {
 
       beforeEach(function() {
         inject(function(ramlRepository, ramlEditorInputPrompt) {
-          renameFileStub = sandbox.stub(ramlRepository, 'renameFile');
+          renameFileStub = sandbox.stub(ramlRepository, 'rename');
           filenamePromptStub = sandbox.stub(ramlEditorInputPrompt, 'open');
         });
         promptSpy = sandbox.stub(window, 'prompt');

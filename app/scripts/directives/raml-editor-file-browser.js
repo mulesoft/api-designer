@@ -21,24 +21,8 @@
         };
 
         $scope.fileTreeOptions = {
-          // Check if the current dragging node can be dropped in a specific destination
-          accept: function(sourceNodeScope, destNodesScope) {
-            // get the ramlFile/ramlDirectory represented by the dragging node
-            var targetToMove = sourceNodeScope.$modelValue;
-
-            // get the destination file list
-            // value of '$nodeScope' at the root directory is null, so we'll have to check and work around that
-            var destFileList = destNodesScope.$nodeScope ?
-              destNodesScope.$nodeScope.$modelValue.children :
-              destNodesScope.$modelValue;
-
-            // check duplicate names in the destination directory
-            return destFileList.filter(function (entry){
-              return entry.name === targetToMove.name;
-            }).length === 0;
-          },
           // actually update the information on the file system
-          dropped: function(event) {
+          beforeDrop: function(event) {
             // get the file to move
             var targetToMove = event.source.nodeScope.$modelValue;
             // get the directory to move into
@@ -46,8 +30,41 @@
               event.dest.nodesScope.$nodeScope.$modelValue :
               $scope.homeDirectory;
 
+            // check if we are moving the target into a different directory
             if (ramlRepository.getParent(targetToMove).path !== destDirectory.path) {
-              ramlRepository.move(targetToMove, destDirectory);
+              // check if there's no filename conflict in the destination directory
+              if (destDirectory.children.filter(function (child) { return child.name === targetToMove.name; }).length === 0) {
+                // do the actual moving
+                ramlRepository.move(targetToMove, destDirectory);
+              } else {
+                // can't move target into destination directory, set flag to move the tree node back
+                $scope.cancelDrop = true;
+                $scope.dragTarget = {
+                  object: targetToMove,
+                  index: event.source.index
+                };
+              }
+            }
+          },
+          dropped: function(event) {
+            if ($scope.cancelDrop) {
+              var target = $scope.dragTarget.object;
+              var index  = $scope.dragTarget.index;
+
+              // get the directory to move into
+              var destDirectory = event.dest.nodesScope.$nodeScope ?
+                event.dest.nodesScope.$nodeScope.$modelValue :
+                $scope.homeDirectory;
+
+              // remove this directory object from parent's children list
+              destDirectory.children.splice(destDirectory.children.indexOf(target), 1);
+
+              // add it back to the original parent
+              var parent = ramlRepository.getParent(target);
+              parent.children.splice(index, 0, target);
+
+              $scope.cancelDrop = false;
+              $scope.dragTarget = null;
             }
           }
         };

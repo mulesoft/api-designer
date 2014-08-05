@@ -93,6 +93,10 @@
           return new RamlDirectory(directory.path, directory.meta, directory.children);
         });
 
+        directories.sort(function (dir1, dir2) {
+          return dir1.name.localeCompare(dir2.name);
+        });
+
         this.children = directories.concat(files);
       }
 
@@ -329,11 +333,11 @@
       };
 
       service.rename = function rename(target, newName) {
-        target.isDirectory ? service.renameDirectory(target, newName) : service.renameFile(target, newName);
+        return target.isDirectory ? service.renameDirectory(target, newName) : service.renameFile(target, newName);
       };
 
       service.remove = function remove(target) {
-        target.isDirectory ? service.removeDirectory(target) : service.removeFile(target);
+        return target.isDirectory ? service.removeDirectory(target) : service.removeFile(target);
       };
 
       // move a file or directory to a specific destination

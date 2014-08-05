@@ -311,24 +311,6 @@ describe('ramlEditorFileBrowser', function () {
       el.text().should.contain('file2');
     });
 
-    describe('sorting', function () {
-      beforeEach(function () {
-        ramlRepository.children = [
-          createMockFile('xFile'),
-          createMockFile('yFile'),
-          createMockFile('aFile'),
-          createMockFile('bFile'),
-          createMockFile('zFile')
-        ];
-        compileFileBrowser();
-      });
-
-      it('lists alphabetically', function () {
-        var match = el.text().match(/(\wFile)/mg);
-        match.should.deep.equal(['aFile', 'bFile', 'xFile', 'yFile', 'zFile']);
-      });
-    });
-
     describe('dirty tracking', function () {
       it('indicates unsaved files', function () {
         ramlRepository.children = [ createMockFile('dirty', { dirty : true }) ];

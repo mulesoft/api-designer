@@ -1,7 +1,7 @@
 <raml-editor-context-menu></raml-editor-context-menu>
 <script type="text/ng-template" id="file-item.html">
   <div class="file-item" ng-class="{currentfile: fileBrowser.currentTarget.path === node.path, dirty: node.dirty, geared: fileBrowser.contextMenuOpenedFor(node), directory: node.isDirectory}" ng-click="fileBrowser.select(node)" ui-tree-handle>
-    <span class="file-name" data-nodrag>
+    <span class="file-name">
       <i class="fa icon fa-caret-right" ng-if="node.isDirectory" ng-click="toggleFolderCollapse(node)" ng-class="{'fa-rotate-90': !node.collapsed}"></i>
       &nbsp;<span ng-click="toggleFolderCollapse(node)">{{node.name}}</span>
     </span>
@@ -14,7 +14,7 @@
   </ul>
 </script>
 
-<div ui-tree="fileTreeOptions" class="file-list" data-drag-delay="500">
+<div ui-tree="fileTreeOptions" class="file-list" data-drag-delay="600">
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
     <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'"></li>
   </ul>

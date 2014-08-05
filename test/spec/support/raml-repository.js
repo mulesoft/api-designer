@@ -32,7 +32,7 @@
         return $q.when(service.rootDirectory);
       };
 
-      service.getParent = function getParent() {
+      service.getParent = function () {
         return service.rootDirectory;
       };
 
@@ -42,14 +42,14 @@
         return $q.when(file);
       };
 
-      service.renameFile = function (file, newName) {
+      service.rename = function (file, newName) {
         file.name = newName || file.name;
         file.path = file.path.replace(file.name, newName);
 
         return $q.when(file);
       };
 
-      service.moveFile = function (file, newName, newPath) {
+      service.move = function (file, newName, newPath) {
         file.name = newName || file.name;
         file.path = newPath || file.path;
 
@@ -67,7 +67,7 @@
         };
       };
 
-      service.removeFile = function (file) {
+      service.remove = function (file) {
         var index = this.children.indexOf(file);
         if (index !== -1) {
           this.children.splice(index, 1);
