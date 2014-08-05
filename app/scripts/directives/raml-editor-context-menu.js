@@ -20,17 +20,14 @@
           {
             label: 'Delete',
             execute: function () {
-              var action;
               var message;
               var title;
 
               if (target.isDirectory) {
-                action = ramlRepository.removeDirectory;
                 message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
                 title = 'Remove folder';
               }
               else {
-                action = ramlRepository.removeFile;
                 message = 'Are you sure you want to delete "' + target.name + '"?';
                 title = 'Remove file';
               }
@@ -39,17 +36,16 @@
                 $injector.get('confirmModal')
                   .open(message, title)
                   .then(function (confirmed) {
-                    confirmed ? action.call(ramlRepository, target) : void(0);
+                    confirmed ? ramlRepository.remove(target) : void(0);
                   });
               } else {
-                $window.confirm(message) ? action.call(ramlRepository, target) : void(0);
+                $window.confirm(message) ? ramlRepository.remove(target) : void(0);
               }
             }
           },
           {
             label: 'Rename',
             execute: function () {
-              var action;
               var message;
               var parent = ramlRepository.getParent(target);
               var title  = 'Rename a file';
@@ -60,11 +56,9 @@
                 ramlEditorInputPrompt;
 
               if (target.isDirectory) {
-                action = ramlRepository.renameDirectory;
                 message = 'Input a new name for this folder:';
               }
               else {
-                action = ramlRepository.renameFile;
                 message = 'Input a new name for this file:';
               }
 
@@ -86,7 +80,7 @@
 
               inputMethod.open(message, target.name, validations, title)
                 .then(function(name){
-                  action.call(ramlRepository, target, name);
+                  ramlRepository.rename(target, name);
                 });
             }
           }

@@ -43,7 +43,9 @@
         };
       }
 
-      function generateName(parent, name) {
+      // this function takes a parent(ramlDirectory) and a name(String) as input
+      // and returns the full path(String)
+      function generatePath(parent, name) {
         if (parent.path === '/') {
           return '/' + name;
         }
@@ -52,6 +54,8 @@
         }
       }
 
+      // this function takes a target(ramlFile/ramlDirectory) and a name(String) as input
+      // and returns the new path(String) after renaming the target
       function generateNewName(target, newName) {
         var parentPath = target.path.slice(0, target.path.lastIndexOf('/'));
         return parentPath + '/' + newName;
@@ -140,7 +144,7 @@
       };
 
       service.createDirectory = function createDirectory(parent, name) {
-        var path      = generateName(parent, name);
+        var path      = generatePath(parent, name);
         var directory = new RamlDirectory(path);
 
         parent.children.push(directory);
@@ -282,7 +286,7 @@
       };
 
       service.createFile = function createFile(parent, name) {
-        var path = generateName(parent, name);
+        var path = generatePath(parent, name);
         var file = new RamlFile(path);
 
         if (file.extension === 'raml') {
@@ -322,6 +326,44 @@
         }
 
         return void(0);
+      };
+
+      service.rename = function rename(target, newName) {
+        target.isDirectory ? service.renameDirectory(target, newName) : service.renameFile(target, newName);
+      };
+
+      service.remove = function remove(target) {
+        target.isDirectory ? service.removeDirectory(target) : service.removeFile(target);
+      };
+
+      // move a file or directory to a specific destination
+      // destination must be a ramlDirectory
+      service.move = function move(target, destination) {
+        if (!destination.isDirectory) {
+          return;
+        }
+
+        var newPath = generatePath(destination, target.name);
+        var promise;
+
+        if (target.isDirectory) {
+          promise = fileSystem.rename(target.path, newPath);
+
+          // renames the path of each child under the current directory
+          target.forEachChildDo(function(c) {
+            c.path = c.path.replace(target.path, newPath);
+          });
+        } else {
+          promise = target.persisted ? fileSystem.rename(target.path, newPath) : $q.when(target);
+        }
+
+        return promise
+            .then(function () {
+              target.path = newPath;
+              return target;
+            },
+            handleErrorFor(target)
+            );
       };
 
       service.saveMeta = function saveMeta(file, meta) {

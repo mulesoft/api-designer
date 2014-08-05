@@ -107,10 +107,32 @@
   .directory span {
     color: #DDD;
   }
-  .hidden {
-    display:none!important;
-    visibility:hidden!important;
+}
+
+.hidden {
+  display: none!important;
+  visibility: hidden!important;
+}
+
+/* angular ui tree overrides */
+.angular-ui-tree-handle {
+  font-weight: normal;
+}
+
+.angular-ui-tree-drag {
+  color: white;
+  font-size: 12px;
+  div {
+    padding: 5px 10px;
   }
+  .fa-cog {
+    display: none!important;
+  }
+}
+
+.angular-ui-tree-placeholder {
+  background-color: #808395;
+  margin: 2px 0;
 }
 
 /* Light theme */

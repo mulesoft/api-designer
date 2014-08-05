@@ -16,8 +16,40 @@
         var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
 
-        $scope.toggleFolderCollapse = function toggleFolderCollapse(node) {
+        $scope.toggleFolderCollapse = function(node) {
           node.collapsed = !node.collapsed;
+        };
+
+        $scope.fileTreeOptions = {
+          // Check if the current dragging node can be dropped in a specific destination
+          accept: function(sourceNodeScope, destNodesScope) {
+            // get the ramlFile/ramlDirectory represented by the dragging node
+            var targetToMove = sourceNodeScope.$modelValue;
+
+            // get the destination file list
+            // value of '$nodeScope' at the root directory is null, so we'll have to check and work around that
+            var destFileList = destNodesScope.$nodeScope ?
+              destNodesScope.$nodeScope.$modelValue.children :
+              destNodesScope.$modelValue;
+
+            // check duplicate names in the destination directory
+            return destFileList.filter(function (entry){
+              return entry.name === targetToMove.name;
+            }).length === 0;
+          },
+          // actually update the information on the file system
+          dropped: function(event) {
+            // get the file to move
+            var targetToMove = event.source.nodeScope.$modelValue;
+            // get the directory to move into
+            var destDirectory = event.dest.nodesScope.$nodeScope ?
+              event.dest.nodesScope.$nodeScope.$modelValue :
+              $scope.homeDirectory;
+
+            if (ramlRepository.getParent(targetToMove).path !== destDirectory.path) {
+              ramlRepository.move(targetToMove, destDirectory);
+            }
+          }
         };
 
         fileBrowser.select = function select(target) {
