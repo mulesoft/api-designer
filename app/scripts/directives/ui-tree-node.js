@@ -21,6 +21,8 @@
             var dragDelaying = true;
             var dragStarted = false;
             var dragTimer = null;
+            var expandTimer = null;
+            var expandDelay = 1000;  // ms
             var body = document.body,
                 html = document.documentElement,
                 documentHeight,
@@ -271,6 +273,17 @@
                   }
                   if (targetNode.$type !== 'uiTreeNode' && !isEmpty) { // Check if it is a uiTreeNode or it's an empty tree
                     return;
+                  }
+
+                  if (scope.nodeToExpand !== targetNode) {  // Check if the node we're dragging onto is collapsed
+                    $timeout.cancel(expandTimer);
+                    if (targetNode.collapsed) {
+                      expandTimer = $timeout(function(){
+                        targetNode.collapsed = false;
+                      }, expandDelay);
+                      scope.nodeToExpand = targetNode;
+                      return;
+                    }
                   }
 
                   // if placeholder move from empty tree, reset it.
