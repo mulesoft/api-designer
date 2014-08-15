@@ -126,7 +126,11 @@
         selectedFile.contents = source;
         $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
-        eventService.broadcast('event:raml-source-updated', source);
+        debounce(function emitSourceUpdated() {
+          if (selectedFile.dirty) {
+            eventService.broadcast('event:raml-source-updated', source);
+          }
+        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
       };
 
       $scope.loadRaml = function loadRaml(definition, location) {
@@ -288,9 +292,9 @@
           }]);
         });
 
-        editor.on('change', debounce(function onChange() {
+        editor.on('change', function onChange() {
           $scope.sourceUpdated();
-        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL)));
+        });
 
         // Warn before leaving the page
         $window.onbeforeunload = function () {
