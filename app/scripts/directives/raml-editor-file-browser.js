@@ -20,54 +20,73 @@
           node.collapsed = !node.collapsed;
         };
 
-        $scope.fileTreeOptions = {
-          // actually update the information on the file system
-          beforeDrop: function(event) {
-            // get the file to move
-            var targetToMove = event.source.nodeScope.$modelValue;
-            // get the directory to move into
-            var destDirectory = event.dest.nodesScope.$nodeScope ?
-              event.dest.nodesScope.$nodeScope.$modelValue :
-              $scope.homeDirectory;
+        $scope.fileTreeOptions = (function () {
+          var duplicateName = false;
 
-            // check if we are moving the target into a different directory
-            if (ramlRepository.getParent(targetToMove).path !== destDirectory.path) {
-              // check if there's no filename conflict in the destination directory
-              if (destDirectory.children.filter(function (child) { return child.name === targetToMove.name; }).length === 0) {
-                // do the actual moving
-                ramlRepository.move(targetToMove, destDirectory);
-              } else {
-                // can't move target into destination directory, set flag to move the tree node back
-                $scope.cancelDrop = true;
-                $scope.dragTarget = {
-                  object: targetToMove,
-                  index: event.source.index
-                };
+          return {
+            /**
+              * This callback is used to check if the current dragging node
+              * can be dropped in the ui-tree-nodes.
+              *
+              * @returns {boolean} Accept the drop or not
+              */
+            accept: function(sourceNodeScope, destNodesScope, destIndex) {
+              var accept;
+              var source = sourceNodeScope.$modelValue;
+              var dest = destIndex < 0 ? $scope.homeDirectory : destNodesScope.$modelValue[destIndex];
+
+              // if the destination is a file, select its parent directory as destination
+              if (!dest.isDirectory) {
+                dest = destNodesScope.$nodeScope ? destNodesScope.$nodeScope.$modelValue : $scope.homeDirectory;
               }
-            }
-          },
-          dropped: function(event) {
-            if ($scope.cancelDrop) {
-              var target = $scope.dragTarget.object;
-              var index  = $scope.dragTarget.index;
 
-              // get the directory to move into
-              var destDirectory = event.dest.nodesScope.$nodeScope ?
+              // Check if the destination is a child of the source
+              var destIsChild = ramlRepository.getParent(source).path === dest.path ||
+                dest.path.slice(0, source.path.length) === source.path;
+
+              duplicateName = dest.children.filter(function (c) { return c.name === source.name; }).length > 0;
+
+              accept = !duplicateName && !destIsChild;
+              if (accept) {
+                fileBrowser.cursorState = 'ok';
+              } else {
+                fileBrowser.cursorState = 'no';
+              }
+              return accept;
+            },
+            /**
+              * This callback is called when a node is dropped on to the tree
+              */
+            dropped: function(event) {
+              var parent;
+              var source = event.source.nodeScope.$modelValue;
+              var dest = event.dest.nodesScope.$nodeScope ?
                 event.dest.nodesScope.$nodeScope.$modelValue :
                 $scope.homeDirectory;
 
-              // remove this directory object from parent's children list
-              destDirectory.children.splice(destDirectory.children.indexOf(target), 1);
+              // do the actual moving
+              ramlRepository.move(source, dest)
+                .then(function () {
+                  parent = ramlRepository.getParent(source);
+                });
+            },
+            /**
+              * This callback is called when the drag ends or gets canceled
+              */
+            dragStop: function() {
+              // when drag is stopped or canceled, reset the cursor
+              fileBrowser.cursorState = '';
 
-              // add it back to the original parent
-              var parent = ramlRepository.getParent(target);
-              parent.children.splice(index, 0, target);
-
-              $scope.cancelDrop = false;
-              $scope.dragTarget = null;
+              if (duplicateName) {
+                $rootScope.$broadcast('event:notification', {
+                  message: 'Failed: duplicate file name found in the destination folder.',
+                  expires: true,
+                  level: 'error'
+                });
+              }
             }
-          }
-        };
+          };
+        })();
 
         fileBrowser.select = function select(target) {
           var action = target.isDirectory ? fileBrowser.selectDirectory : fileBrowser.selectFile;
@@ -76,7 +95,7 @@
 
         fileBrowser.selectFile = function selectFile(file) {
           // If we select a file that is already active, just modify 'currentTarget', no load needed
-          if (fileBrowser.selectedFile && fileBrowser.selectedFile.path === file.path) {
+          if (fileBrowser.selectedFile && fileBrowser.selectedFile.$$hashKey === file.$$hashKey) {
             fileBrowser.currentTarget = file;
             return;
           }
@@ -91,7 +110,6 @@
             .then(function (file) {
               fileBrowser.selectedFile = fileBrowser.currentTarget = file;
               $scope.$emit('event:raml-editor-file-selected', file);
-              expandAncestors(file);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
                 if (newContents !== oldContents) {
                   file.dirty = true;
@@ -107,7 +125,6 @@
           }
 
           fileBrowser.currentTarget = directory;
-          expandAncestors(directory);
           $scope.$emit('event:raml-editor-directory-selected', directory);
         };
 
@@ -118,8 +135,8 @@
          * @param target {RamlDirectory/RamlFile}
          */
         function expandAncestors(target) {
-          // stop at the root directory
-          if (target.path === '/') {
+          // stop at the top-level directory
+          if (target.path.lastIndexOf('/') === 0) {
             return;
           }
           var parent = ramlRepository.getParent(target);
@@ -171,8 +188,26 @@
           fileBrowser.selectDirectory(dir);
         });
 
+        $scope.$on('event:raml-editor-file-selected', function (event, file) {
+          expandAncestors(file);
+        });
+
+        $scope.$on('event:raml-editor-directory-selected', function (event, dir) {
+          expandAncestors(dir);
+        });
+
+        $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
+          var parent = ramlRepository.getParent(target);
+          parent.sortChildren();
+        });
+
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          var files = $scope.homeDirectory.getFiles();
+          var files = [];
+          $scope.homeDirectory.forEachChildDo(function (child) {
+            if (!child.isDirectory) {
+              files.push(child);
+            }
+          });
           if (file === fileBrowser.selectedFile && files.length > 0) {
             fileBrowser.selectFile(files[0]);
           } else if (files.length === 0) {
@@ -186,7 +221,7 @@
 
         function promptWhenFileListIsEmpty() {
           var defaultName = 'Untitled-1.raml';
-          var message     = 'Root directory has no files, please input a name for the new file:';
+          var message     = 'File system has no files, please input a name for the new file:';
           var validation  = [{
             message: 'File name cannot be empty.',
             validate: function(input) {
@@ -243,7 +278,14 @@
             $scope.homeDirectory = directory;
             fileBrowser.rootFile = findRootFile(directory);
 
-            if (!directory.getFiles().length) {
+            var files = [];
+            $scope.homeDirectory.forEachChildDo(function (child) {
+              if (!child.isDirectory) {
+                files.push(child);
+              }
+            });
+
+            if (!files.length) {
               promptWhenFileListIsEmpty();
               return;
             }
@@ -253,7 +295,7 @@
             //   - root file
             //   - first file
             var currentFile = JSON.parse(config.get('currentFile', '{}'));
-            var fileToOpen  = ramlRepository.getByPath(currentFile.path) || fileBrowser.rootFile || directory.getFiles()[0];
+            var fileToOpen  = ramlRepository.getByPath(currentFile.path) || fileBrowser.rootFile || files[0];
 
             fileBrowser.selectFile(fileToOpen);
           })

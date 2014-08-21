@@ -59,9 +59,13 @@
     line-height: 15px;
 
     background-color: rgb(20,21,25);
-    color: #777;
+    color: #888;
 
     flex: 1;
+
+    .drag-elm div {
+      color: #333;
+    }
 
     .file-item {
       padding: 5px 10px;
@@ -72,14 +76,40 @@
 
       align-items: center;
 
-      &:not(.currentfile):hover {
-        color: #ccc;
-        background-color: #808395;
+      &.dummy {
+        padding: 0;
+        background: none !important;
+        &.top {
+          height: 6px;
+          min-height: 6px;
+        }
+        &.bottom {
+          height: 80px;
+        }
+      }
+
+      &:not(.currentfile):hover{
+        color: #ddd;
       }
 
       &.currentfile {
         color: #ddd;
         background-color: @cello_blue;
+      }
+
+      &.dragover {
+        color: #ddd;
+        background-color: #222;
+
+        &.directory {
+          background-color: darken(@cello_blue, 10%);
+        }
+        &.top {
+          border-bottom: 1px #888 dotted;
+        }
+        &.bottom {
+          border-top: 1px #888 dotted;
+        }
       }
 
       .file-name {
@@ -102,10 +132,16 @@
       &.dirty .file-name:before {
         content: '* ';
       }
+
+      &.no-drop {
+        cursor: no-drop !important;
+      }
+
+      &.copy {
+        cursor: copy !important;
+      }
+
     }
-  }
-  .directory span {
-    color: #DDD;
   }
 }
 
@@ -128,11 +164,6 @@
   .fa-cog {
     display: none!important;
   }
-}
-
-.angular-ui-tree-placeholder {
-  background-color: #808395;
-  margin: 2px 0;
 }
 
 /* Light theme */

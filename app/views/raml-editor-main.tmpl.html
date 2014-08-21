@@ -1,7 +1,7 @@
 <div role="raml-editor" class="{{theme}}">
-  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">
+  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === 'error'}">
     {{message}}
-    <i class="fa fa-check" ng-click="hideNotifications()"></i>
+    <i class="fa" ng-class="{'fa-check': level === 'info', 'fa-warning': level === 'error'}" ng-click="hideNotifications()"></i>
   </div>
 
   <header>

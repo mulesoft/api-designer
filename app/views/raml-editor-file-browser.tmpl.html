@@ -1,11 +1,18 @@
 <raml-editor-context-menu></raml-editor-context-menu>
 <script type="text/ng-template" id="file-item.html">
-  <div class="file-item" ng-class="{currentfile: fileBrowser.currentTarget.path === node.path, dirty: node.dirty, geared: fileBrowser.contextMenuOpenedFor(node), directory: node.isDirectory}" ng-click="fileBrowser.select(node)" ui-tree-handle>
-    <span class="file-name">
-      <i class="fa icon fa-caret-right" ng-if="node.isDirectory" ng-click="toggleFolderCollapse(node)" ng-class="{'fa-rotate-90': !collapsed}"></i>
-      &nbsp;<span ng-click="toggle(this)">{{node.name}}</span>
+  <div ui-tree-handle class="file-item" ng-click="fileBrowser.select(node)"
+    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
+      dirty: node.dirty,
+      geared: fileBrowser.contextMenuOpenedFor(node),
+      directory: node.isDirectory,
+      'no-drop': fileBrowser.cursorState === 'no',
+      copy: fileBrowser.cursorState === 'ok'}">
+    <span class="file-name" ng-click="toggleFolderCollapse(node)">
+      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>
+      <i class="fa icon fa-fw" ng-class="{'fa-folder-o': node.isDirectory, 'fa-file-text-o': !node.isDirectory}"></i>
+      &nbsp;{{node.name}}
     </span>
-    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" data-nodrag></i>
+    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>
   </div>
 
   <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">
@@ -14,8 +21,10 @@
   </ul>
 </script>
 
-<div ui-tree="fileTreeOptions" class="file-list" data-drag-delay="600">
+<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false">
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
+    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>
     <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'" data-collapsed="node.collapsed"></li>
+    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>
   </ul>
 </div>

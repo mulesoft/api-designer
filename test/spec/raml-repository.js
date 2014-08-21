@@ -221,8 +221,8 @@ describe('RAML Repository', function () {
         folder.children.length.should.equals(3);
         folder.getFiles().length.should.equals(1);
         folder.getDirectories().length.should.equals(2);
-        folder.getDirectories()[1].name.should.equals('folder');
-        folder.getDirectories()[1].path.should.equals('/folder/folder');
+        folder.getDirectories()[0].name.should.equals('folder');
+        folder.getDirectories()[0].path.should.equals('/folder/folder');
       });
 
       it('should broadcast an event on success', function (done) {
@@ -339,7 +339,7 @@ describe('RAML Repository', function () {
 
         folder.children.length.should.equals(3);
         folder.getFiles().length.should.equals(2);
-        folder.getFiles()[1].path.should.equals('/folder/another.raml');
+        folder.getFiles()[0].path.should.equals('/folder/another.raml');
         folder.getDirectories().length.should.equals(1);
       });
 
