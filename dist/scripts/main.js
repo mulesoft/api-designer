@@ -5,6 +5,7 @@
     'ngSanitize',
     'ui.bootstrap.modal',
     'ui.bootstrap.tpls',
+    'ui.tree',
     'ramlConsoleApp',
     'codeMirror',
     'fs',
@@ -126,6 +127,26 @@
     return window.prompt(message, value);
   }).value('$confirm', function (message) {
     return window.confirm(message);
+  }).factory('generateName', function () {
+    // generateName(names, defaultName, extension)
+    // Takes a list of names under the current directory, uses defaultName as a pattern,
+    // and add enumeration to the end of the defaultName.
+    //
+    // For example:
+    // name        = ["Untitled-1.raml", "Untitled-2.raml", "test.raml"]
+    // defaultName = 'Untitled-'
+    // extension   = 'raml'
+    //
+    // will return 'Untitled-3.raml'
+    return function generateName(names, defaultName, extension) {
+      extension = extension ? '.' + extension : '';
+      var currentMax = Math.max.apply(undefined, names.map(function (name) {
+          var re = new RegExp(defaultName + '(\\d+)');
+          var match = name.match(re);
+          return match ? match[1] : 0;
+        }).concat(0));
+      return defaultName + (currentMax + 1) + extension;
+    };
   }).factory('scroll', function () {
     var keys = {
         37: true,
@@ -1911,9 +1932,14 @@
   'use strict';
   function RamlFile(path, contents, options) {
     options = options || {};
+    // remove the trailing slash to path if it exists
+    if (path.slice(-1) === '/' && path.length > 1) {
+      path = path.slice(0, -1);
+    }
     this.type = 'file';
     this.path = path;
     this.name = path.slice(path.lastIndexOf('/') + 1);
+    this.isDirectory = false;
     // extract extension
     if (this.name.lastIndexOf('.') > 0) {
       this.extension = this.name.slice(this.name.lastIndexOf('.') + 1);
@@ -1935,20 +1961,72 @@
     function ($q, $rootScope, ramlSnippets, fileSystem) {
       var service = {};
       var defaultPath = '/';
+      var pathToRamlObject = {};
+      service.supportsFolders = fileSystem.supportsFolders || false;
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
       }
+      function handleErrorFor(file) {
+        return function markFileWithError(error) {
+          file.error = error;
+          throw error;
+        };
+      }
+      /**
+        * Function used to compare two ramlFile/ramlDirectory.
+        * Sorting policy:
+        * - Directories comes before files
+        * - Sort file/directories alphabetically
+        *
+        * @returns {Integer} If the returned value is less than 0, sort a to a lower index than b, vice versa
+        */
+      function sortingFunction(a, b) {
+        if (a.isDirectory === b.isDirectory) {
+          return a.name.localeCompare(b.name);
+        } else {
+          return a.isDirectory ? -1 : 1;
+        }
+      }
+      // Find the index to insert a object into a sorted array.
+      function findInsertIndex(source, dest) {
+        var low = 0, high = dest.children.length - 1, mid;
+        while (high >= low) {
+          mid = Math.floor((low + high) / 2);
+          if (sortingFunction(dest.children[mid], source) > 0) {
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+        return low;
+      }
+      // this function takes a parent(ramlDirectory) and a name(String) as input
+      // and returns the full path(String)
+      function generatePath(parent, name) {
+        if (parent.path === '/') {
+          return '/' + name;
+        } else {
+          return parent.path + '/' + name;
+        }
+      }
+      // this function takes a target(ramlFile/ramlDirectory) and a name(String) as input
+      // and returns the new path(String) after renaming the target
+      function generateNewName(target, newName) {
+        var parentPath = target.path.slice(0, target.path.lastIndexOf('/'));
+        return parentPath + '/' + newName;
+      }
       function RamlDirectory(path, meta, contents) {
-        // add trailing slash to path if it doesn't exist
-        if (path.slice(-1) !== '/') {
-          path = path + '/';
+        // remove the trailing slash to path if it exists
+        if (path.slice(-1) === '/' && path.length > 1) {
+          path = path.slice(0, -1);
         }
         contents = contents || [];
-        var strippedPath = path.substring(0, path.length - 1);
         this.type = 'directory';
         this.path = path;
-        this.name = strippedPath.slice(strippedPath.lastIndexOf('/') + 1);
+        this.name = path.slice(path.lastIndexOf('/') + 1);
         this.meta = meta;
+        this.collapsed = true;
+        this.isDirectory = true;
         var separated = {
             folder: [],
             file: []
@@ -1956,52 +2034,125 @@
         contents.forEach(function (entry) {
           separated[entry.type || 'file'].push(entry);
         });
-        this.files = separated.file.filter(notMetaFile).map(function (file) {
-          return new RamlFile(file.path, file.contents, {
-            dirty: false,
-            persisted: true,
-            root: file.root
+        var files = separated.file.filter(notMetaFile).map(function (file) {
+            return new RamlFile(file.path, file.contents, {
+              dirty: false,
+              persisted: true,
+              root: file.root
+            });
           });
-        });
-        this.files.sort(function (file1, file2) {
-          return file1.name.localeCompare(file2.name);
-        });
-        this.directories = separated.folder.map(function (directory) {
-          return new RamlDirectory(directory.path, directory.meta, directory.children);
-        });
+        var directories = separated.folder.map(function (directory) {
+            return new RamlDirectory(directory.path, directory.meta, directory.children);
+          });
+        this.children = directories.concat(files).sort(sortingFunction);
       }
-      RamlDirectory.prototype.createFile = function createFile(name) {
-        var file = service.createFile(name);
-        this.files.push(file);
-        return file;
+      RamlDirectory.prototype.getDirectories = function getDirectories() {
+        return this.children.filter(function (t) {
+          return t.isDirectory;
+        });
       };
-      RamlDirectory.prototype.removeFile = function removeFile(file) {
-        var self = this;
-        return service.removeFile(file).then(function () {
-          var index = self.files.indexOf(file);
-          if (index !== -1) {
-            self.files.splice(index, 1);
+      RamlDirectory.prototype.getFiles = function getFiles() {
+        return this.children.filter(function (t) {
+          return !t.isDirectory;
+        });
+      };
+      RamlDirectory.prototype.forEachChildDo = function forEachChildDo(action) {
+        // BFS
+        var queue = this.children.slice();
+        var current;
+        while (queue.length > 0) {
+          current = queue.shift();
+          if (current.isDirectory) {
+            queue = queue.concat(current.children);
           }
-        });
-        ;
+          action.apply(current, [current]);
+        }
       };
-      function handleErrorFor(file) {
-        return function markFileWithError(error) {
-          file.error = error;
-          throw error;
-        };
-      }
+      RamlDirectory.prototype.hasChildren = function hasChildren(child) {
+        var childParentPath = child.path.slice(0, child.path.lastIndexOf('/'));
+        if (childParentPath.length === 0) {
+          childParentPath = '/';
+        }
+        return childParentPath.length >= this.path.length && this.path === childParentPath.slice(0, this.path.length);
+      };
+      RamlDirectory.prototype.sortChildren = function sortChildren() {
+        this.children.sort(sortingFunction);
+      };
+      // Expose the sorting function, read-only
+      service.sortingFunction = function () {
+        return sortingFunction;
+      }();
+      // Returns the parent directory object of a file or a directory
+      service.getParent = function getParent(target) {
+        var path = target.path.slice(0, target.path.lastIndexOf('/'));
+        if (path.length === 0) {
+          path = '/';
+        }
+        return service.getByPath(path);
+      };
       service.canExport = function canExport() {
         return fileSystem.hasOwnProperty('exportFiles');
       };
       service.exportFiles = function exportFiles() {
         return fileSystem.exportFiles();
       };
-      service.getDirectory = function getDirectory(path) {
-        path = path || defaultPath;
-        return fileSystem.directory(path).then(function (folder) {
-          return new RamlDirectory(folder.path, folder.meta, folder.children);
+      service.createDirectory = function createDirectory(parent, name) {
+        var path = generatePath(parent, name);
+        var directory = new RamlDirectory(path);
+        var index = findInsertIndex(directory, parent);
+        // insert into the right position
+        parent.children.splice(index, 0, directory);
+        return fileSystem.createFolder(directory.path).then(function () {
+          $rootScope.$broadcast('event:raml-editor-directory-created', directory);
+          return directory;
         });
+      };
+      // Loads the directory from the fileSystem into memory
+      service.loadDirectory = function loadDirectory(path) {
+        path = path || defaultPath;
+        // clean up the pathToRamlObject mapping
+        pathToRamlObject = {};
+        return fileSystem.directory(path).then(function (directory) {
+          pathToRamlObject[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
+          return pathToRamlObject[path];
+        });
+      };
+      service.removeDirectory = function removeDirectory(directory) {
+        // recursively remove all the child directory and files
+        // and collect all promises into an array
+        var promises = [];
+        directory.getDirectories().forEach(function (dir) {
+          promises.push(service.removeDirectory(dir));
+        });
+        directory.getFiles().forEach(function (file) {
+          promises.push(service.removeFile(file));
+        });
+        // remove this directory object from parent's children list
+        var parent = service.getParent(directory);
+        var index = parent.children.indexOf(directory);
+        if (index !== -1) {
+          parent.children.splice(index, 1);
+        }
+        // make sure all children is removed from FS before we remove ourselves
+        return $q.all(promises).then(function () {
+          return fileSystem.remove(directory.path);
+        }).then(function (directory) {
+          $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
+        });
+      };
+      service.renameDirectory = function renameDirectory(directory, newName) {
+        var newPath = generateNewName(directory, newName);
+        var promise = fileSystem.rename(directory.path, newPath);
+        // renames the path of each child under the current directory
+        directory.forEachChildDo(function (c) {
+          c.path = c.path.replace(directory.path, newPath);
+        });
+        return promise.then(function () {
+          directory.name = newName;
+          directory.path = newPath;
+          $rootScope.$broadcast('event:raml-editor-filetree-modified', directory);
+          return directory;
+        }, handleErrorFor(directory));
       };
       service.saveFile = function saveFile(file) {
         function modifyFile() {
@@ -2012,11 +2163,12 @@
         return fileSystem.save(file.path, file.contents).then(modifyFile, handleErrorFor(file));
       };
       service.renameFile = function renameFile(file, newName) {
-        var newPath = file.path.replace(file.name, newName);
+        var newPath = generateNewName(file, newName);
         var promise = file.persisted ? fileSystem.rename(file.path, newPath) : $q.when(file);
         function modifyFile() {
           file.name = newName;
           file.path = newPath;
+          $rootScope.$broadcast('event:raml-editor-filetree-modified', file);
           return file;
         }
         return promise.then(modifyFile, handleErrorFor(file));
@@ -2034,6 +2186,7 @@
       };
       service.removeFile = function removeFile(file) {
         var promise;
+        var parent = service.getParent(file);
         function modifyFile() {
           file.dirty = false;
           file.persisted = false;
@@ -2046,19 +2199,79 @@
         } else {
           promise = $q.when(file);
         }
-        return promise.then(modifyFile, handleErrorFor(file)).then(function (file) {
+        return promise.then(modifyFile, handleErrorFor(file)).then(function () {
+          // remove the file object from the parent's children list
+          var index = parent.children.indexOf(file);
+          if (index !== -1) {
+            parent.children.splice(index, 1);
+          }
           $rootScope.$broadcast('event:raml-editor-file-removed', file);
         });
-        ;
       };
-      service.createFile = function createFile(name) {
-        var path = defaultPath + name;
+      service.createFile = function createFile(parent, name) {
+        var path = generatePath(parent, name);
         var file = new RamlFile(path);
+        var index = findInsertIndex(file, parent);
+        // insert into the right position
+        parent.children.splice(index, 0, file);
         if (file.extension === 'raml') {
           file.contents = ramlSnippets.getEmptyRaml();
         }
         $rootScope.$broadcast('event:raml-editor-file-created', file);
         return file;
+      };
+      // Gets the ramlDirectory/ramlFile object by path from the memory
+      service.getByPath = function getByPath(path) {
+        // remove the trailing '/' in path
+        if (path.slice(-1) === '/' && path !== '/') {
+          path = path.slice(0, -1);
+        }
+        // If the entry is already in the cache, return it directly
+        if (pathToRamlObject.hasOwnProperty(path)) {
+          return pathToRamlObject[path];
+        }
+        // If the path we're looking for is not in 'pathToRamlObject'
+        // we search for it in the tree using BFS
+        var queue = pathToRamlObject['/'].children.slice();
+        var current;
+        while (queue.length) {
+          current = queue.shift();
+          if (current.path === path) {
+            pathToRamlObject[path] = current;
+            return current;
+          } else if (current.isDirectory) {
+            queue = queue.concat(current.children);
+          }
+        }
+        return void 0;
+      };
+      service.rename = function rename(target, newName) {
+        return target.isDirectory ? service.renameDirectory(target, newName) : service.renameFile(target, newName);
+      };
+      service.remove = function remove(target) {
+        return target.isDirectory ? service.removeDirectory(target) : service.removeFile(target);
+      };
+      // move a file or directory to a specific destination
+      // destination must be a ramlDirectory
+      service.move = function move(target, destination) {
+        if (!destination.isDirectory) {
+          return;
+        }
+        var newPath = generatePath(destination, target.name);
+        var promise;
+        if (target.isDirectory) {
+          promise = fileSystem.rename(target.path, newPath);
+          // renames the path of each child under the current directory
+          target.forEachChildDo(function (c) {
+            c.path = c.path.replace(target.path, newPath);
+          });
+        } else {
+          promise = target.persisted ? fileSystem.rename(target.path, newPath) : $q.when(target);
+        }
+        return promise.then(function () {
+          target.path = newPath;
+          return target;
+        }, handleErrorFor(target));
       };
       service.saveMeta = function saveMeta(file, meta) {
         var metaFile = new RamlFile(file.path + '.meta', JSON.stringify(meta));
@@ -2120,40 +2333,29 @@
 }());
 (function () {
   'use strict';
-  function generateFileName(files) {
-    var currentMax = Math.max.apply(undefined, files.map(function (file) {
-        var match = file.name.match(/Untitled-(\d+)\.raml/);
-        return match ? match[1] : 0;
-      }).concat(0));
-    return 'Untitled-' + (currentMax + 1) + '.raml';
-  }
-  angular.module('ramlEditorApp').factory('ramlEditorFilenamePrompt', [
+  angular.module('ramlEditorApp').factory('ramlEditorInputPrompt', [
     '$window',
     '$q',
     function ($window, $q) {
       var service = {
-          open: function open(directory, suggestedFileName) {
+          open: function open(message, placeholder, validations) {
+            validations = validations || [];
             var deferred = $q.defer();
-            suggestedFileName = suggestedFileName || generateFileName(directory.files);
-            var filename = $window.prompt([
-                'For a new RAML spec, be sure to name your file <something>.raml; ',
-                'For files to be !included, feel free to use an extension or not.'
-              ].join(''), suggestedFileName);
-            if (directory.files.length === 0) {
-              filename = filename || suggestedFileName;
-            }
-            if (filename) {
-              var filenameAlreadyTaken = directory.files.some(function (file) {
-                  return file.name.toLowerCase() === filename.toLowerCase();
-                });
-              if (filenameAlreadyTaken) {
-                $window.alert('That filename is already taken.');
-                return service.open(directory, suggestedFileName);
-              } else {
-                deferred.resolve(filename);
-              }
-            } else {
+            var validated = true;
+            var result = $window.prompt(message, placeholder);
+            if (result === null) {
               deferred.reject();
+              return deferred.promise;
+            }
+            for (var i = 0; i < validations.length; i++) {
+              if (!validations[i].validate(result)) {
+                $window.alert(validations[i].message);
+                validated = false;
+                return service.open(message, placeholder, validations);
+              }
+            }
+            if (validated) {
+              deferred.resolve(result);
             }
             return deferred.promise;
           }
@@ -2165,35 +2367,18 @@
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('ramlEditorRemoveFilePrompt', [
-    '$window',
-    function ($window) {
-      return {
-        open: function open(directory, file) {
-          var confirmed = $window.confirm('Are you sure you want to delete "' + file.name + '"?');
-          if (confirmed) {
-            directory.removeFile(file);
-          }
-        }
-      };
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
   angular.module('fs').constant('LOCAL_PERSISTENCE_KEY', 'localStorageFilePersistence').constant('FOLDER', 'folder').factory('localStorageHelper', [
     'LOCAL_PERSISTENCE_KEY',
     function (LOCAL_PERSISTENCE_KEY) {
       return {
         forEach: function (fn) {
-          var i, key;
-          for (i = 0; i < localStorage.length; i++) {
-            key = localStorage.key(i);
-            // A key is a local storage file system entry if it starts
-            //with LOCAL_PERSISTENCE_KEY + '.'
-            if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
-              fn(JSON.parse(localStorage.getItem(key)));
+          for (var key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+              // A key is a local storage file system entry if it starts
+              //with LOCAL_PERSISTENCE_KEY + '.'
+              if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
+                fn(JSON.parse(localStorage.getItem(key)));
+              }
             }
           }
         },
@@ -2248,7 +2433,7 @@
         }
         var entries = [];
         localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() !== path.toLowerCase() && entry.path.indexOf(path + entry.name) === 0) {
+          if (entry.path.toLowerCase() !== path.toLowerCase() && extractParentPath(entry.path) + '/' === path) {
             addChildren(entry, findFiles);
             entries.push(entry);
           }
@@ -2266,6 +2451,7 @@
        */
       var service = {};
       var delay = 500;
+      service.supportsFolders = true;
       function validatePath(path) {
         if (path.indexOf('/') !== 0) {
           return {
@@ -2276,7 +2462,7 @@
         return { valid: true };
       }
       function isValidParent(path) {
-        var parent = path.slice(0, path.lastIndexOf('/'));
+        var parent = extractParentPath(path);
         if (!localStorageHelper.has(parent) && parent !== '') {
           return false;
         }
@@ -2298,9 +2484,20 @@
         }
         // When the path is ended in '/'
         if (path.lastIndexOf('/') === path.length - 1) {
-          path = path.slice(0, path.length - 1);
+          path = path.slice(0, -1);
         }
         return path.slice(path.lastIndexOf('/') + 1);
+      }
+      function extractParentPath(path) {
+        var pathInfo = validatePath(path);
+        if (!pathInfo.valid) {
+          throw 'Invalid Path!';
+        }
+        // When the path is ended in '/'
+        if (path.lastIndexOf('/') === path.length - 1) {
+          path = path.slice(0, -1);
+        }
+        return path.slice(0, path.lastIndexOf('/'));
       }
       /**
        * List files found in a given path.
@@ -2316,7 +2513,7 @@
           if (!localStorageHelper.has('/')) {
             localStorageHelper.set(path, {
               path: '/',
-              name: '/',
+              name: '',
               type: 'folder',
               meta: { 'created': Math.round(new Date().getTime() / 1000) }
             });
@@ -2374,7 +2571,7 @@
           deferred.reject('Folder already exists');
           return deferred.promise;
         }
-        var parent = path.slice(0, path.lastIndexOf('/'));
+        var parent = extractParentPath(path);
         if (!localStorageHelper.has(parent)) {
           deferred.reject('Parent folder does not exists');
           return deferred.promise;
@@ -2422,7 +2619,7 @@
         return deferred.promise;
       };
       /**
-       * Ranames a file or directory
+       * Renames a file or directory
        */
       service.rename = function (source, destination) {
         var deferred = $q.defer();
@@ -2447,7 +2644,7 @@
           localStorageHelper.remove(source);
           localStorageHelper.set(destination, sourceEntry);
           if (sourceEntry.type === FOLDER) {
-            // if(!isValidPath(destination)) {
+            // if (!isValidPath(destination)) {
             //   deferred.reject('Destination is not a valid folder');
             //   return deferred.promise;
             // }
@@ -2702,6 +2899,7 @@
       $scope.canExportFiles = function canExportFiles() {
         return ramlRepository.canExport();
       };
+      $scope.supportsFolders = ramlRepository.supportsFolders;
       $scope.sourceUpdated = function sourceUpdated() {
         var source = editor.getValue();
         var selectedFile = $scope.fileBrowser.selectedFile;
@@ -2834,9 +3032,10 @@
         }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL)));
         // Warn before leaving the page
         $window.onbeforeunload = function () {
-          var anyUnsavedChanges = $scope.homeDirectory.files.some(function (file) {
-              return file.dirty;
-            });
+          var anyUnsavedChanges = false;
+          $scope.homeDirectory.forEachChildDo(function (t) {
+            anyUnsavedChanges = anyUnsavedChanges || t.dirty;
+          });
           if (anyUnsavedChanges) {
             return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
           }
@@ -2992,6 +3191,8 @@
           args = notifications.splice(0, 1)[0];
           $scope.message = args.message;
           $scope.expires = args.expires;
+          $scope.level = args.level || 'info';
+          // info, error
           $scope.shouldDisplayNotifications = true;
           if (args.expires) {
             $timeout(function () {
@@ -3349,34 +3550,77 @@
   'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorContextMenu', [
     '$window',
+    '$injector',
     'ramlRepository',
-    'ramlEditorRemoveFilePrompt',
-    'ramlEditorFilenamePrompt',
+    'ramlEditorInputPrompt',
     'scroll',
-    function ($window, ramlRepository, ramlEditorRemoveFilePrompt, ramlEditorFilenamePrompt, scroll) {
-      function createActions(directory, file) {
-        return [
-          {
-            label: 'Save',
-            execute: function () {
-              ramlRepository.saveFile(file);
+    function ($window, $injector, ramlRepository, ramlEditorInputPrompt, scroll) {
+      function createActions(target) {
+        var actions = [
+            {
+              label: 'Save',
+              execute: function () {
+                ramlRepository.saveFile(target);
+              }
+            },
+            {
+              label: 'Delete',
+              execute: function () {
+                var message;
+                var title;
+                if (target.isDirectory) {
+                  message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
+                  title = 'Remove folder';
+                } else {
+                  message = 'Are you sure you want to delete "' + target.name + '"?';
+                  title = 'Remove file';
+                }
+                if ($injector.has('confirmModal')) {
+                  $injector.get('confirmModal').open(message, title).then(function (confirmed) {
+                    confirmed ? ramlRepository.remove(target) : void 0;
+                  });
+                } else {
+                  $window.confirm(message) ? ramlRepository.remove(target) : void 0;
+                }
+              }
+            },
+            {
+              label: 'Rename',
+              execute: function () {
+                var message;
+                var parent = ramlRepository.getParent(target);
+                var title = 'Rename a file';
+                // check if the modal service exists
+                var inputMethod = $injector.has('newNameModal') ? $injector.get('newNameModal') : ramlEditorInputPrompt;
+                if (target.isDirectory) {
+                  message = 'Input a new name for this folder:';
+                } else {
+                  message = 'Input a new name for this file:';
+                }
+                var validations = [
+                    {
+                      message: 'That name is already taken.',
+                      validate: function (input) {
+                        return !parent.children.some(function (t) {
+                          return t.name.toLowerCase() === input.toLowerCase();
+                        });
+                      }
+                    },
+                    {
+                      message: 'New name cannot be empty.',
+                      validate: function (input) {
+                        return input.length > 0;
+                      }
+                    }
+                  ];
+                inputMethod.open(message, target.name, validations, title).then(function (name) {
+                  ramlRepository.rename(target, name);
+                });
+              }
             }
-          },
-          {
-            label: 'Delete',
-            execute: function () {
-              ramlEditorRemoveFilePrompt.open(directory, file);
-            }
-          },
-          {
-            label: 'Rename',
-            execute: function () {
-              ramlEditorFilenamePrompt.open(directory, file.name).then(function (filename) {
-                ramlRepository.renameFile(file, filename);
-              });
-            }
-          }
-        ];
+          ];
+        // remove the 'Save' action if the target is a directory
+        return target.isDirectory ? actions.slice(1) : actions;
       }
       function outOfWindow(el) {
         var rect = el.getBoundingClientRect();
@@ -3401,7 +3645,7 @@
           function close() {
             scroll.enable();
             scope.$apply(function () {
-              delete contextMenuController.file;
+              delete contextMenuController.target;
               scope.opened = false;
               $window.removeEventListener('click', close);
               $window.removeEventListener('keydown', closeOnEscape);
@@ -3414,10 +3658,10 @@
             }
           }
           var contextMenuController = {
-              open: function (event, file) {
+              open: function (event, target) {
                 scroll.disable();
-                this.file = file;
-                scope.actions = createActions(scope.homeDirectory, file);
+                this.target = target;
+                scope.actions = createActions(target);
                 event.stopPropagation();
                 positionMenu(element, event.target);
                 $window.addEventListener('click', close);
@@ -3436,20 +3680,75 @@
 (function () {
   'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorFileBrowser', [
-    '$rootScope',
     '$q',
     '$window',
-    'ramlEditorFilenamePrompt',
-    'ramlRepository',
+    '$rootScope',
     'config',
     'eventService',
-    function ($rootScope, $q, $window, ramlEditorFilenamePrompt, ramlRepository, config, eventService) {
+    'ramlRepository',
+    'ramlEditorInputPrompt',
+    function ($q, $window, $rootScope, config, eventService, ramlRepository, ramlEditorInputPrompt) {
       function Controller($scope) {
         var fileBrowser = this;
         var unwatchSelectedFile = angular.noop;
         var contextMenu = void 0;
+        $scope.toggleFolderCollapse = function (node) {
+          node.collapsed = !node.collapsed;
+        };
+        $scope.fileTreeOptions = function () {
+          var duplicateName = false;
+          return {
+            accept: function (sourceNodeScope, destNodesScope, destIndex) {
+              var accept;
+              var source = sourceNodeScope.$modelValue;
+              var dest = destIndex < 0 ? $scope.homeDirectory : destNodesScope.$modelValue[destIndex];
+              // if the destination is a file, select its parent directory as destination
+              if (!dest.isDirectory) {
+                dest = destNodesScope.$nodeScope ? destNodesScope.$nodeScope.$modelValue : $scope.homeDirectory;
+              }
+              // Check if the destination is a child of the source
+              var destIsChild = ramlRepository.getParent(source).path === dest.path || dest.path.slice(0, source.path.length) === source.path;
+              duplicateName = dest.children.filter(function (c) {
+                return c.name === source.name;
+              }).length > 0;
+              accept = !duplicateName && !destIsChild;
+              if (accept) {
+                fileBrowser.cursorState = 'ok';
+              } else {
+                fileBrowser.cursorState = 'no';
+              }
+              return accept;
+            },
+            dropped: function (event) {
+              var parent;
+              var source = event.source.nodeScope.$modelValue;
+              var dest = event.dest.nodesScope.$nodeScope ? event.dest.nodesScope.$nodeScope.$modelValue : $scope.homeDirectory;
+              // do the actual moving
+              ramlRepository.move(source, dest).then(function () {
+                parent = ramlRepository.getParent(source);
+              });
+            },
+            dragStop: function () {
+              // when drag is stopped or canceled, reset the cursor
+              fileBrowser.cursorState = '';
+              if (duplicateName) {
+                $rootScope.$broadcast('event:notification', {
+                  message: 'Failed: duplicate file name found in the destination folder.',
+                  expires: true,
+                  level: 'error'
+                });
+              }
+            }
+          };
+        }();
+        fileBrowser.select = function select(target) {
+          var action = target.isDirectory ? fileBrowser.selectDirectory : fileBrowser.selectFile;
+          action(target);
+        };
         fileBrowser.selectFile = function selectFile(file) {
-          if (fileBrowser.selectedFile === file) {
+          // If we select a file that is already active, just modify 'currentTarget', no load needed
+          if (fileBrowser.selectedFile && fileBrowser.selectedFile.$$hashKey === file.$$hashKey) {
+            fileBrowser.currentTarget = file;
             return;
           }
           config.set('currentFile', JSON.stringify({
@@ -3460,7 +3759,7 @@
           var isLoaded = file.loaded || !file.persisted;
           var afterLoading = isLoaded ? $q.when(file) : ramlRepository.loadFile(file);
           afterLoading.then(function (file) {
-            fileBrowser.selectedFile = file;
+            fileBrowser.selectedFile = fileBrowser.currentTarget = file;
             $scope.$emit('event:raml-editor-file-selected', file);
             unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
               if (newContents !== oldContents) {
@@ -3470,6 +3769,28 @@
           });
           ;
         };
+        fileBrowser.selectDirectory = function selectDirectory(directory) {
+          if (fileBrowser.currentTarget === directory) {
+            return;
+          }
+          fileBrowser.currentTarget = directory;
+          $scope.$emit('event:raml-editor-directory-selected', directory);
+        };
+        /**
+         * This function is used for expanding all the ancestors of a target
+         * node in the file tree.
+         *
+         * @param target {RamlDirectory/RamlFile}
+         */
+        function expandAncestors(target) {
+          // stop at the top-level directory
+          if (target.path.lastIndexOf('/') === 0) {
+            return;
+          }
+          var parent = ramlRepository.getParent(target);
+          parent.collapsed = false;
+          expandAncestors(parent);
+        }
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file).then(function () {
             eventService.broadcast('event:notification', {
@@ -3479,11 +3800,11 @@
           });
           ;
         };
-        fileBrowser.showContextMenu = function showContextMenu(event, file) {
-          contextMenu.open(event, file);
+        fileBrowser.showContextMenu = function showContextMenu(event, target) {
+          contextMenu.open(event, target);
         };
-        fileBrowser.contextMenuOpenedFor = function contextMenuOpenedFor(file) {
-          return contextMenu && contextMenu.file === file;
+        fileBrowser.contextMenuOpenedFor = function contextMenuOpenedFor(target) {
+          return contextMenu && contextMenu.target === target;
         };
         function saveListener(e) {
           if (e.which === 83 && (e.metaKey || e.ctrlKey) && !(e.shiftKey || e.altKey)) {
@@ -3501,19 +3822,49 @@
         $scope.$on('event:raml-editor-file-created', function (event, file) {
           fileBrowser.selectFile(file);
         });
+        $scope.$on('event:raml-editor-directory-created', function (event, dir) {
+          fileBrowser.selectDirectory(dir);
+        });
+        $scope.$on('event:raml-editor-file-selected', function (event, file) {
+          expandAncestors(file);
+        });
+        $scope.$on('event:raml-editor-directory-selected', function (event, dir) {
+          expandAncestors(dir);
+        });
+        $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
+          var parent = ramlRepository.getParent(target);
+          parent.sortChildren();
+        });
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          if (file === fileBrowser.selectedFile && $scope.homeDirectory.files.length > 0) {
-            fileBrowser.selectFile($scope.homeDirectory.files[0]);
+          var files = [];
+          $scope.homeDirectory.forEachChildDo(function (child) {
+            if (!child.isDirectory) {
+              files.push(child);
+            }
+          });
+          if (file === fileBrowser.selectedFile && files.length > 0) {
+            fileBrowser.selectFile(files[0]);
+          } else if (files.length === 0) {
+            setTimeout(promptWhenFileListIsEmpty, 0);
           }
         });
         $scope.$on('$destroy', function () {
           $window.removeEventListener('keydown', saveListener);
         });
         function promptWhenFileListIsEmpty() {
-          ramlEditorFilenamePrompt.open($scope.homeDirectory).then(function (filename) {
-            $scope.homeDirectory.createFile(filename);
+          var defaultName = 'Untitled-1.raml';
+          var message = 'File system has no files, please input a name for the new file:';
+          var validation = [{
+                message: 'File name cannot be empty.',
+                validate: function (input) {
+                  return input.length > 0;
+                }
+              }];
+          ramlEditorInputPrompt.open(message, defaultName, validation).then(function (result) {
+            ramlRepository.createFile($scope.homeDirectory, result);
+          }, function () {
+            ramlRepository.createFile($scope.homeDirectory, defaultName);
           });
-          ;
         }
         /**
          * Finds a root file which should have `root` property set to `true`
@@ -3531,7 +3882,7 @@
           var pos = 0;
           while (pos < queue.length) {
             var directory = queue[pos];
-            var files = directory.files;
+            var files = directory.children;
             var entity = void 0;
             for (var i = 0; i < files.length; i++) {
               entity = files[i];
@@ -3545,15 +3896,16 @@
             pos += 1;
           }
         }
-        ramlRepository.getDirectory().then(function (directory) {
+        ramlRepository.loadDirectory().then(function (directory) {
           $scope.homeDirectory = directory;
           fileBrowser.rootFile = findRootFile(directory);
-          $scope.$watch('homeDirectory.files', function (files) {
-            if (!files.length) {
-              setTimeout(promptWhenFileListIsEmpty, 0);
+          var files = [];
+          $scope.homeDirectory.forEachChildDo(function (child) {
+            if (!child.isDirectory) {
+              files.push(child);
             }
-          }, true);
-          if (!directory.files.length) {
+          });
+          if (!files.length) {
             promptWhenFileListIsEmpty();
             return;
           }
@@ -3562,9 +3914,7 @@
           //   - root file
           //   - first file
           var currentFile = JSON.parse(config.get('currentFile', '{}'));
-          var fileToOpen = directory.files.filter(function (file) {
-              return file.path === currentFile.path;
-            })[0] || fileBrowser.rootFile || directory.files[0];
+          var fileToOpen = ramlRepository.getByPath(currentFile.path) || fileBrowser.rootFile || files[0];
           fileBrowser.selectFile(fileToOpen);
         });
         ;
@@ -3605,18 +3955,97 @@
 }());
 (function () {
   'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorNewFolderButton', [
+    '$injector',
+    'ramlEditorInputPrompt',
+    'ramlRepository',
+    'generateName',
+    function ramlEditorNewFolderButton($injector, ramlEditorInputPrompt, ramlRepository, generateName) {
+      return {
+        restrict: 'E',
+        template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
+        link: function (scope) {
+          scope.newFolder = function newFolder() {
+            var currentTarget = scope.fileBrowser.currentTarget;
+            var parent = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
+            var defaultName = generateName(parent.getDirectories().map(function (d) {
+                return d.name;
+              }), 'Folder');
+            var message = 'Input a name for your new folder:';
+            var title = 'Add a new folder';
+            // check if the modal service exists
+            var inputMethod = $injector.has('newNameModal') ? $injector.get('newNameModal') : ramlEditorInputPrompt;
+            var validations = [
+                {
+                  message: 'That folder name is already taken.',
+                  validate: function (input) {
+                    return !parent.children.some(function (directory) {
+                      return directory.name.toLowerCase() === input.toLowerCase();
+                    });
+                  }
+                },
+                {
+                  message: 'Folder name cannot be empty.',
+                  validate: function (input) {
+                    return input.length > 0;
+                  }
+                }
+              ];
+            inputMethod.open(message, defaultName, validations, title).then(function (name) {
+              ramlRepository.createDirectory(parent, name);
+            });
+          };
+        }
+      };
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorNewFileButton', [
-    'ramlEditorFilenamePrompt',
-    function ramlEditorNewFileButton(ramlEditorFilenamePrompt) {
+    '$injector',
+    'ramlEditorInputPrompt',
+    'ramlRepository',
+    'generateName',
+    function ramlEditorNewFileButton($injector, ramlEditorInputPrompt, ramlRepository, generateName) {
       return {
         restrict: 'E',
         template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link: function (scope) {
           scope.newFile = function newFile() {
-            var homeDirectory = scope.homeDirectory;
-            ramlEditorFilenamePrompt.open(homeDirectory).then(function (filename) {
-              homeDirectory.createFile(filename);
+            var currentTarget = scope.fileBrowser.currentTarget;
+            var parent = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
+            var defaultName = generateName(parent.getFiles().map(function (f) {
+                return f.name;
+              }), 'Untitled-', 'raml');
+            var title = 'Add a new file';
+            var message = [
+                'For a new RAML spec, be sure to name your file <something>.raml; ',
+                'For files to be !included, feel free to use an extension or not.'
+              ].join('');
+            // check if the modal service exists
+            var inputMethod = $injector.has('newNameModal') ? $injector.get('newNameModal') : ramlEditorInputPrompt;
+            var validations = [
+                {
+                  message: 'That file name is already taken.',
+                  validate: function (input) {
+                    return !parent.children.some(function (file) {
+                      return file.name.toLowerCase() === input.toLowerCase();
+                    });
+                  }
+                },
+                {
+                  message: 'File name cannot be empty.',
+                  validate: function (input) {
+                    return input.length > 0;
+                  }
+                }
+              ];
+            inputMethod.open(message, defaultName, validations, title).then(function (name) {
+              ramlRepository.createFile(parent, name);
             });
+            ;
           };
         }
       };
@@ -3643,14 +4072,418 @@
   ]);
   ;
 }());
+/**
+ * This file overwrites the ui-tree-node directive from the angular-ui-tree
+ * module to modify the behaviour of tree drag-and-drop to better suit the use case
+ * of file trees
+ */
+(function () {
+  'use strict';
+  angular.module('ui.tree').directive('uiTreeNode', [
+    'treeConfig',
+    '$uiTreeHelper',
+    '$window',
+    '$document',
+    '$timeout',
+    'ramlRepository',
+    function (treeConfig, $uiTreeHelper, $window, $document, $timeout, ramlRepository) {
+      return {
+        require: ['?uiTreeNode'],
+        link: function (scope, element) {
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.nodeClass) {
+            element.addClass(config.nodeClass);
+          }
+          var elements;
+          // As a parameter for callbacks
+          var firstMoving, dragInfo, pos, dropAccpeted;
+          var dragElm, hiddenPlaceElm;
+          var hasTouch = 'ontouchstart' in window;
+          var dragDelaying = true;
+          var dragStarted = false;
+          var dragTimer = null;
+          var expandTimer = null;
+          var expandDelay = 1000;
+          // ms
+          var body = document.body, html = document.documentElement, documentHeight, documentWidth;
+          var dragStart = function (e) {
+            if (!hasTouch && (e.button === 2 || e.which === 3)) {
+              // disable right click
+              return;
+            }
+            if (e.uiTreeDragging || e.originalEvent && e.originalEvent.uiTreeDragging) {
+              // event has already fired in other scope.
+              return;
+            }
+            var eventElm = angular.element(e.target);
+            // the element which is clicked
+            var eventScope = eventElm.scope();
+            if (!eventScope || !eventScope.$type) {
+              return;
+            }
+            if (eventScope.$type !== 'uiTreeNode' && eventScope.$type !== 'uiTreeHandle') {
+              // Check if it is a node or a handle
+              return;
+            }
+            if (eventScope.$type === 'uiTreeNode' && eventScope.$handleScope) {
+              // If the node has a handle, then it should be clicked by the handle
+              return;
+            }
+            var eventElmTagName = eventElm.prop('tagName').toLowerCase();
+            if (eventElmTagName === 'input' || eventElmTagName === 'textarea' || eventElmTagName === 'button' || eventElmTagName === 'select') {
+              // if it's a input or button, ignore it
+              return;
+            }
+            // check if it or it's parents has a 'data-nodrag' attribute
+            while (eventElm && eventElm[0] && eventElm[0] !== element) {
+              if ($uiTreeHelper.nodrag(eventElm)) {
+                // if the node mark as `nodrag`, DONOT drag it.
+                return;
+              }
+              eventElm = eventElm.parent();
+            }
+            if (!scope.beforeDrag(scope)) {
+              return;
+            }
+            e.uiTreeDragging = true;
+            // stop event bubbling
+            if (e.originalEvent) {
+              e.originalEvent.uiTreeDragging = true;
+            }
+            e.preventDefault();
+            var eventObj = $uiTreeHelper.eventObj(e);
+            firstMoving = true;
+            dragInfo = $uiTreeHelper.dragInfo(scope);
+            var tagName = scope.$element.prop('tagName');
+            hiddenPlaceElm = angular.element($window.document.createElement(tagName));
+            if (config.hiddenClass) {
+              hiddenPlaceElm.addClass(config.hiddenClass);
+            }
+            pos = $uiTreeHelper.positionStarted(eventObj, scope.$element);
+            dragElm = angular.element($window.document.createElement(scope.$parentNodesScope.$element.prop('tagName'))).addClass(scope.$parentNodesScope.$element.attr('class')).addClass(config.dragClass);
+            dragElm.css('z-index', 9999);
+            scope.$element.after(hiddenPlaceElm);
+            dragElm.append(scope.$element.clone().html(scope.$element.children()[0].innerHTML));
+            $document.find('body').append(dragElm);
+            dragElm.css({
+              'left': eventObj.pageX - pos.offsetX + 'px',
+              'top': eventObj.pageY - pos.offsetY + 'px'
+            });
+            elements = { dragging: dragElm };
+            scope.$element.addClass('drag-elm');
+            // get the node that is being dragged collasp it
+            var dragNode = angular.element(dragElm[0].lastChild).scope();
+            dragNode.collapsed = true;
+            angular.element($document).bind('touchend', dragEndEvent);
+            angular.element($document).bind('touchcancel', dragEndEvent);
+            angular.element($document).bind('touchmove', dragMoveEvent);
+            angular.element($document).bind('mouseup', dragEndEvent);
+            angular.element($document).bind('mousemove', dragMoveEvent);
+            angular.element($document).bind('mouseleave', dragCancelEvent);
+            documentHeight = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+            documentWidth = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+            scope.$treeScope.isDragging = true;
+          };
+          var dragMove = function (e) {
+            if (!dragStarted) {
+              if (!dragDelaying) {
+                dragStarted = true;
+                scope.$apply(function () {
+                  scope.$callbacks.dragStart(dragInfo.eventArgs(elements, pos));
+                });
+              }
+              return;
+            }
+            var eventObj = $uiTreeHelper.eventObj(e);
+            var leftElmPos, topElmPos;
+            if (dragElm) {
+              e.preventDefault();
+              if ($window.getSelection) {
+                $window.getSelection().removeAllRanges();
+              } else if ($window.document.selection) {
+                $window.document.selection.empty();
+              }
+              leftElmPos = eventObj.pageX - pos.offsetX;
+              topElmPos = eventObj.pageY - pos.offsetY;
+              //dragElm can't leave the screen on the left
+              if (leftElmPos < 0) {
+                leftElmPos = 0;
+              }
+              //dragElm can't leave the screen on the top
+              if (topElmPos < 0) {
+                topElmPos = 0;
+              }
+              //dragElm can't leave the screen on the bottom
+              if (topElmPos + 10 > documentHeight) {
+                topElmPos = documentHeight - 10;
+              }
+              //dragElm can't leave the screen on the right
+              if (leftElmPos + 10 > documentWidth) {
+                leftElmPos = documentWidth - 10;
+              }
+              dragElm.css({
+                'left': leftElmPos + 'px',
+                'top': topElmPos + 'px'
+              });
+              var topScroll = window.pageYOffset || $window.document.documentElement.scrollTop;
+              var bottomScroll = topScroll + (window.innerHeight || $window.document.clientHeight || $window.document.clientHeight);
+              // to scroll down if cursor y-position is greater than the bottom position the vertical scroll
+              if (bottomScroll < eventObj.pageY && bottomScroll <= documentHeight) {
+                window.scrollBy(0, 10);
+              }
+              // to scroll top if cursor y-position is less than the top position the vertical scroll
+              if (topScroll > eventObj.pageY) {
+                window.scrollBy(0, -10);
+              }
+              $uiTreeHelper.positionMoved(e, pos, firstMoving);
+              if (firstMoving) {
+                firstMoving = false;
+                return;
+              }
+              // check if add it as a child node first
+              var targetX = eventObj.pageX - $window.document.body.scrollLeft;
+              var targetY = eventObj.pageY - (window.pageYOffset || $window.document.documentElement.scrollTop);
+              // Select the drag target. Because IE does not support CSS 'pointer-events: none', it will always
+              // pick the drag element itself as the target. To prevent this, we hide the drag element while
+              // selecting the target.
+              var displayElm;
+              if (angular.isFunction(dragElm.hide)) {
+                dragElm.hide();
+              } else {
+                displayElm = dragElm[0].style.display;
+                dragElm[0].style.display = 'none';
+              }
+              // when using elementFromPoint() inside an iframe, you have to call
+              // elementFromPoint() twice to make sure IE8 returns the correct value
+              $window.document.elementFromPoint(targetX, targetY);
+              var targetElm = angular.element($window.document.elementFromPoint(targetX, targetY));
+              if (angular.isFunction(dragElm.show)) {
+                dragElm.show();
+              } else {
+                dragElm[0].style.display = displayElm;
+              }
+              var targetNode = targetElm.scope();
+              if (!pos.dirAx && targetNode !== scope.prevHoverNode) {
+                var isEmpty = false;
+                scope.prevHoverNode = targetNode;
+                if (!targetNode) {
+                  return;
+                }
+                if (targetNode.$type === 'uiTree' && targetNode.dragEnabled) {
+                  isEmpty = targetNode.isEmpty();  // Check if it's empty tree
+                }
+                if (targetNode.$type === 'uiTreeHandle') {
+                  targetNode = targetNode.$nodeScope;
+                }
+                if (targetNode.$type === 'uiTreeDummyNode') {
+                  // Check if it is dropped at the tree root
+                  dropAccpeted = targetNode.$parentNodesScope.accept(scope, -1);
+                  if (dropAccpeted) {
+                    dragInfo.moveTo(targetNode.$parentNodesScope, targetNode.$parentNodesScope.childNodes(), findInsertIndex(scope.$modelValue, targetNode.$parentNodesScope.$modelValue));
+                  }
+                  $('.dragover').removeClass('dragover');
+                  targetElm.addClass('dragover');
+                  if (expandTimer) {
+                    $timeout.cancel(expandTimer);
+                    expandTimer = null;
+                  }
+                  return;
+                }
+                if (targetNode.$type !== 'uiTreeNode' && !isEmpty) {
+                  // Check if it is a uiTreeNode or it's an empty tree
+                  return;
+                }
+                $timeout.cancel(expandTimer);
+                $('.dragover').removeClass('dragover');
+                if (targetNode.$childNodesScope) {
+                  // It's a folder
+                  angular.element(targetNode.$element.children()[0]).addClass('dragover');
+                  // Expand the folder automatically if it was originally collapsed
+                  if (targetNode.collapsed) {
+                    expandTimer = $timeout(function () {
+                      targetNode.collapsed = false;
+                      scope.nodeToExpand = null;
+                    }, expandDelay);
+                  }
+                  scope.nodeToExpand = targetNode;
+                } else if (targetNode.$parentNodeScope) {
+                  // It's a file, we modify its parent
+                  targetElm.addClass('dragover');
+                  angular.element(targetNode.$parentNodeScope.$element.children()[0]).addClass('dragover');
+                  scope.nodeToExpand = targetNode.$parentNodeScope;
+                } else {
+                  // file at root
+                  targetElm.addClass('dragover');
+                }
+                if (isEmpty) {
+                  // it's an empty tree
+                  if (targetNode.$nodesScope.accept(scope, 0)) {
+                    dragInfo.moveTo(targetNode.$nodesScope, targetNode.$nodesScope.childNodes(), 0);
+                  }
+                } else if (targetNode.dragEnabled()) {
+                  // drag enabled
+                  targetElm = targetNode.$element;
+                  // Get the element of ui-tree-node
+                  dropAccpeted = targetNode.$parentNodesScope.accept(scope, targetNode.index());
+                  if (dropAccpeted) {
+                    if (targetNode.$childNodesScope) {
+                      dragInfo.moveTo(targetNode.$childNodesScope, targetNode.childNodes(), findInsertIndex(scope.$modelValue, targetNode.$childNodesScope.$modelValue));
+                    } else {
+                      dragInfo.moveTo(targetNode.$parentNodesScope, targetNode.$parentNodesScope.childNodes(), findInsertIndex(scope.$modelValue, targetNode.$parentNodesScope.$modelValue));
+                    }
+                  }
+                }
+              }
+              scope.$apply(function () {
+                scope.$callbacks.dragMove(dragInfo.eventArgs(elements, pos));
+              });
+            }
+          };
+          var dragEnd = function (e) {
+            e.preventDefault();
+            if (dragElm) {
+              scope.$treeScope.$apply(function () {
+                scope.$callbacks.beforeDrop(dragInfo.eventArgs(elements, pos));
+              });
+              // roll back elements changed
+              hiddenPlaceElm.replaceWith(scope.$element);
+              dragElm.remove();
+              dragElm = null;
+              if (scope.$$apply) {
+                dragInfo.apply();
+                scope.$treeScope.$apply(function () {
+                  scope.$callbacks.dropped(dragInfo.eventArgs(elements, pos));
+                });
+              } else {
+                bindDrag();
+              }
+              scope.$treeScope.$apply(function () {
+                scope.$callbacks.dragStop(dragInfo.eventArgs(elements, pos));
+              });
+              scope.$$apply = false;
+              dragInfo = null;
+            }
+            angular.element($document).unbind('touchend', dragEndEvent);
+            // Mobile
+            angular.element($document).unbind('touchcancel', dragEndEvent);
+            // Mobile
+            angular.element($document).unbind('touchmove', dragMoveEvent);
+            // Mobile
+            angular.element($document).unbind('mouseup', dragEndEvent);
+            angular.element($document).unbind('mousemove', dragMoveEvent);
+            angular.element($window.document.body).unbind('mouseleave', dragCancelEvent);
+            $('.dragover').removeClass('dragover');
+            scope.$element.removeClass('drag-elm');
+            scope.$treeScope.isDragging = false;
+            scope.prevHoverNode = null;
+          };
+          // find the index to insert a element into a sorted array
+          var findInsertIndex = function (source, dest) {
+            var low = 0, high = dest.length - 1, mid;
+            while (high >= low) {
+              mid = Math.floor((low + high) / 2);
+              if (ramlRepository.sortingFunction.call(null, dest[mid], source) > 0) {
+                high = mid - 1;
+              } else {
+                low = mid + 1;
+              }
+            }
+            return low;
+          };
+          var dragStartEvent = function (e) {
+            if (scope.dragEnabled()) {
+              dragStart(e);
+            }
+          };
+          var dragMoveEvent = function (e) {
+            dragMove(e);
+          };
+          var dragEndEvent = function (e) {
+            scope.$$apply = dropAccpeted;
+            dragEnd(e);
+          };
+          var dragCancelEvent = function (e) {
+            dragEnd(e);
+          };
+          var bindDrag = function () {
+            $timeout(function () {
+              element.unbind();
+              element.bind('touchstart mousedown', function (e) {
+                dragDelaying = true;
+                dragStarted = false;
+                dragTimer = $timeout(function () {
+                  dragDelaying = false;
+                  dragStartEvent(e);
+                }, scope.dragDelay);
+              });
+              element.bind('touchend touchcancel mouseup', function () {
+                $timeout.cancel(dragTimer);
+              });
+            });
+          };
+          bindDrag();
+          angular.element($window.document.body).bind('keydown', function (e) {
+            if (e.keyCode === 27) {
+              scope.$$apply = false;
+              dragEnd(e);
+            }
+          });
+        }
+      };
+    }
+  ]).directive('uiTreeDummyNode', [
+    'treeConfig',
+    function (treeConfig) {
+      return {
+        require: [
+          '^uiTreeNodes',
+          '^uiTree'
+        ],
+        template: '<div class="file-item dummy" ng-class="{\'no-drop\': fileBrowser.cursorState === \'no\', copy: fileBrowser.cursorState === \'ok\'}"></div>',
+        restrict: 'E',
+        replace: true,
+        controller: function ($scope, $element) {
+          this.scope = $scope;
+          $scope.$element = $element;
+          $scope.$parentNodeScope = null;
+          // uiTreeNode Scope of parent node;
+          $scope.$childNodesScope = null;
+          // uiTreeNodes Scope of child nodes.
+          $scope.$parentNodesScope = null;
+          // uiTreeNodes Scope of parent nodes.
+          $scope.$treeScope = null;
+          // uiTree scope
+          $scope.$$apply = false;
+          $scope.$type = 'uiTreeDummyNode';
+          $scope.init = function (controllersArr) {
+            var treeNodesCtrl = controllersArr[0];
+            $scope.$treeScope = controllersArr[1] ? controllersArr[1].scope : null;
+            // find the scope of it's parent node
+            $scope.$parentNodeScope = treeNodesCtrl.scope.$nodeScope;
+            $scope.$parentNodesScope = treeNodesCtrl.scope;
+          };
+        },
+        link: function (scope, element, attr, controllersArr) {
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.nodeClass) {
+            element.addClass(config.nodeClass);
+          }
+          scope.init(controllersArr);
+        }
+      };
+    }
+  ]);
+}());
 angular.module('ramlEditorApp').run([
   '$templateCache',
   function ($templateCache) {
     'use strict';
     $templateCache.put('views/help.html', '<div class="modal-header">\n' + '    <h3><i class="fa fa-question-circle"></i> Help</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '<ul class="file-list">\n' + '  <li class="file-item"\n' + '      ng-repeat="file in homeDirectory.files | orderBy:\'name\'"\n' + '      ng-click="fileBrowser.selectFile(file)"\n' + '      ng-class="{currentfile: fileBrowser.selectedFile === file, dirty: file.dirty, geared: fileBrowser.contextMenuOpenedFor(file)}">\n' + '    <span class="file-name">{{file.name}}</span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, file)"></i>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications}">\n' + '    {{message}}\n' + '    <i class="fa fa-check" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

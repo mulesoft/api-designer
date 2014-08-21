@@ -7902,7 +7902,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
   CodeMirror.defineMIME("text/html", {name: "xml", htmlMode: true});
 
 /**
- * @license AngularJS v1.2.20
+ * @license AngularJS v1.2.21
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -7971,7 +7971,7 @@ function minErr(module) {
       return match;
     });
 
-    message = message + '\nhttp://errors.angularjs.org/1.2.20/' +
+    message = message + '\nhttp://errors.angularjs.org/1.2.21/' +
       (module ? module + '/' : '') + code;
     for (i = 2; i < arguments.length; i++) {
       message = message + (i == 2 ? '?' : '&') + 'p' + (i-2) + '=' +
@@ -7983,89 +7983,88 @@ function minErr(module) {
 }
 
 /* We need to tell jshint what variables are being exported */
-/* global
-    -angular,
-    -msie,
-    -jqLite,
-    -jQuery,
-    -slice,
-    -push,
-    -toString,
-    -ngMinErr,
-    -angularModule,
-    -nodeName_,
-    -uid,
-    -VALIDITY_STATE_PROPERTY,
+/* global angular: true,
+    msie: true,
+    jqLite: true,
+    jQuery: true,
+    slice: true,
+    push: true,
+    toString: true,
+    ngMinErr: true,
+    angularModule: true,
+    nodeName_: true,
+    uid: true,
+    VALIDITY_STATE_PROPERTY: true,
 
-    -lowercase,
-    -uppercase,
-    -manualLowercase,
-    -manualUppercase,
-    -nodeName_,
-    -isArrayLike,
-    -forEach,
-    -sortedKeys,
-    -forEachSorted,
-    -reverseParams,
-    -nextUid,
-    -setHashKey,
-    -extend,
-    -int,
-    -inherit,
-    -noop,
-    -identity,
-    -valueFn,
-    -isUndefined,
-    -isDefined,
-    -isObject,
-    -isString,
-    -isNumber,
-    -isDate,
-    -isArray,
-    -isFunction,
-    -isRegExp,
-    -isWindow,
-    -isScope,
-    -isFile,
-    -isBlob,
-    -isBoolean,
-    -trim,
-    -isElement,
-    -makeMap,
-    -map,
-    -size,
-    -includes,
-    -indexOf,
-    -arrayRemove,
-    -isLeafNode,
-    -copy,
-    -shallowCopy,
-    -equals,
-    -csp,
-    -concat,
-    -sliceArgs,
-    -bind,
-    -toJsonReplacer,
-    -toJson,
-    -fromJson,
-    -toBoolean,
-    -startingTag,
-    -tryDecodeURIComponent,
-    -parseKeyValue,
-    -toKeyValue,
-    -encodeUriSegment,
-    -encodeUriQuery,
-    -angularInit,
-    -bootstrap,
-    -snake_case,
-    -bindJQuery,
-    -assertArg,
-    -assertArgFn,
-    -assertNotHasOwnProperty,
-    -getter,
-    -getBlockElements,
-    -hasOwnProperty,
-
+    lowercase: true,
+    uppercase: true,
+    manualLowercase: true,
+    manualUppercase: true,
+    nodeName_: true,
+    isArrayLike: true,
+    forEach: true,
+    sortedKeys: true,
+    forEachSorted: true,
+    reverseParams: true,
+    nextUid: true,
+    setHashKey: true,
+    extend: true,
+    int: true,
+    inherit: true,
+    noop: true,
+    identity: true,
+    valueFn: true,
+    isUndefined: true,
+    isDefined: true,
+    isObject: true,
+    isString: true,
+    isNumber: true,
+    isDate: true,
+    isArray: true,
+    isFunction: true,
+    isRegExp: true,
+    isWindow: true,
+    isScope: true,
+    isFile: true,
+    isBlob: true,
+    isBoolean: true,
+    isPromiseLike: true,
+    trim: true,
+    isElement: true,
+    makeMap: true,
+    map: true,
+    size: true,
+    includes: true,
+    indexOf: true,
+    arrayRemove: true,
+    isLeafNode: true,
+    copy: true,
+    shallowCopy: true,
+    equals: true,
+    csp: true,
+    concat: true,
+    sliceArgs: true,
+    bind: true,
+    toJsonReplacer: true,
+    toJson: true,
+    fromJson: true,
+    toBoolean: true,
+    startingTag: true,
+    tryDecodeURIComponent: true,
+    parseKeyValue: true,
+    toKeyValue: true,
+    encodeUriSegment: true,
+    encodeUriQuery: true,
+    angularInit: true,
+    bootstrap: true,
+    snake_case: true,
+    bindJQuery: true,
+    assertArg: true,
+    assertArgFn: true,
+    assertNotHasOwnProperty: true,
+    getter: true,
+    getBlockElements: true,
+    hasOwnProperty: true,
 */
 
 ////////////////////////////////////
@@ -8224,11 +8223,12 @@ function forEach(obj, iterator, context) {
           iterator.call(context, obj[key], key);
         }
       }
-    } else if (obj.forEach && obj.forEach !== forEach) {
-      obj.forEach(iterator, context);
-    } else if (isArrayLike(obj)) {
-      for (key = 0; key < obj.length; key++)
+    } else if (isArray(obj) || isArrayLike(obj)) {
+      for (key = 0; key < obj.length; key++) {
         iterator.call(context, obj[key], key);
+      }
+    } else if (obj.forEach && obj.forEach !== forEach) {
+        obj.forEach(iterator, context);
     } else {
       for (key in obj) {
         if (obj.hasOwnProperty(key)) {
@@ -8565,6 +8565,11 @@ function isBoolean(value) {
 }
 
 
+function isPromiseLike(obj) {
+  return obj && isFunction(obj.then);
+}
+
+
 var trim = (function() {
   // native trim is way faster: http://jsperf.com/angular-trim-test
   // but IE doesn't have it... :-(
@@ -8729,7 +8734,7 @@ function isLeafNode (node) {
  </div>
 
  <script>
-  angular.module('copyExample')
+  angular.module('copyExample', [])
     .controller('ExampleController', ['$scope', function($scope) {
       $scope.master= {};
 
@@ -8763,7 +8768,8 @@ function copy(source, destination, stackSource, stackDest) {
       } else if (isDate(source)) {
         destination = new Date(source.getTime());
       } else if (isRegExp(source)) {
-        destination = new RegExp(source.source);
+        destination = new RegExp(source.source, source.toString().match(/[^\/]*$/)[0]);
+        destination.lastIndex = source.lastIndex;
       } else if (isObject(source)) {
         destination = copy(source, {}, stackSource, stackDest);
       }
@@ -8907,12 +8913,25 @@ function equals(o1, o2) {
   return false;
 }
 
+var csp = function() {
+  if (isDefined(csp.isActive_)) return csp.isActive_;
 
-function csp() {
-  return (document.securityPolicy && document.securityPolicy.isActive) ||
-      (document.querySelector &&
-      !!(document.querySelector('[ng-csp]') || document.querySelector('[data-ng-csp]')));
-}
+  var active = !!(document.querySelector('[ng-csp]') ||
+                  document.querySelector('[data-ng-csp]'));
+
+  if (!active) {
+    try {
+      /* jshint -W031, -W054 */
+      new Function('');
+      /* jshint +W031, +W054 */
+    } catch (e) {
+      active = true;
+    }
+  }
+
+  return (csp.isActive_ = active);
+};
+
 
 
 function concat(array1, array2, index) {
@@ -9084,7 +9103,7 @@ function parseKeyValue(/**string*/keyValue) {
   var obj = {}, key_value, key;
   forEach((keyValue || "").split('&'), function(keyValue) {
     if ( keyValue ) {
-      key_value = keyValue.split('=');
+      key_value = keyValue.replace(/\+/g,'%20').split('=');
       key = tryDecodeURIComponent(key_value[0]);
       if ( isDefined(key) ) {
         var val = isDefined(key_value[1]) ? tryDecodeURIComponent(key_value[1]) : true;
@@ -9769,12 +9788,11 @@ function setupModuleLoader(window) {
 
 }
 
-/* global
-    angularModule: true,
-    version: true,
+/* global angularModule: true,
+  version: true,
 
-    $LocaleProvider,
-    $CompileProvider,
+  $LocaleProvider,
+  $CompileProvider,
 
     htmlAnchorDirective,
     inputDirective,
@@ -9862,11 +9880,11 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.20',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.21',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
-  dot: 20,
-  codeName: 'accidental-beautification'
+  dot: 21,
+  codeName: 'wizard-props'
 };
 
 
@@ -9990,12 +10008,10 @@ function publishExternalAPI(angular){
   ]);
 }
 
-/* global
-
-  -JQLitePrototype,
-  -addEventListenerFn,
-  -removeEventListenerFn,
-  -BOOLEAN_ATTR
+/* global JQLitePrototype: true,
+  addEventListenerFn: true,
+  removeEventListenerFn: true,
+  BOOLEAN_ATTR: true
 */
 
 //////////////////////////////////
@@ -10409,25 +10425,22 @@ function jqLiteController(element, name) {
 }
 
 function jqLiteInheritedData(element, name, value) {
-  element = jqLite(element);
-
   // if element is the document object work with the html element instead
   // this makes $(document).scope() possible
-  if(element[0].nodeType == 9) {
-    element = element.find('html');
+  if(element.nodeType == 9) {
+    element = element.documentElement;
   }
   var names = isArray(name) ? name : [name];
 
-  while (element.length) {
-    var node = element[0];
+  while (element) {
     for (var i = 0, ii = names.length; i < ii; i++) {
-      if ((value = element.data(names[i])) !== undefined) return value;
+      if ((value = jqLite.data(element, names[i])) !== undefined) return value;
     }
 
     // If dealing with a document fragment node with a host element, and no parent, use the host
     // element as the parent. This enables directives within a Shadow DOM or polyfilled Shadow DOM
     // to lookup parent controllers.
-    element = jqLite(node.parentNode || (node.nodeType === 11 && node.host));
+    element = element.parentNode || (element.nodeType === 11 && element.host);
   }
 }
 
@@ -10504,16 +10517,23 @@ function getBooleanAttrName(element, name) {
 
 forEach({
   data: jqLiteData,
+  removeData: jqLiteRemoveData
+}, function(fn, name) {
+  JQLite[name] = fn;
+});
+
+forEach({
+  data: jqLiteData,
   inheritedData: jqLiteInheritedData,
 
   scope: function(element) {
     // Can't use jqLiteData here directly so we stay compatible with jQuery!
-    return jqLite(element).data('$scope') || jqLiteInheritedData(element.parentNode || element, ['$isolateScope', '$scope']);
+    return jqLite.data(element, '$scope') || jqLiteInheritedData(element.parentNode || element, ['$isolateScope', '$scope']);
   },
 
   isolateScope: function(element) {
     // Can't use jqLiteData here directly so we stay compatible with jQuery!
-    return jqLite(element).data('$isolateScope') || jqLite(element).data('$isolateScopeNoTemplate');
+    return jqLite.data(element, '$isolateScope') || jqLite.data(element, '$isolateScopeNoTemplate');
   },
 
   controller: jqLiteController,
@@ -10941,7 +10961,9 @@ forEach({
   clone: jqLiteClone,
 
   triggerHandler: function(element, eventName, eventData) {
-    var eventFns = (jqLiteExpandoStore(element, 'events') || {})[eventName];
+    // Copy event handlers in case event handlers array is modified during execution.
+    var eventFns = (jqLiteExpandoStore(element, 'events') || {})[eventName],
+        eventFnsCopy = shallowCopy(eventFns || []);
 
     eventData = eventData || [];
 
@@ -10950,7 +10972,7 @@ forEach({
       stopPropagation: noop
     }];
 
-    forEach(eventFns, function(fn) {
+    forEach(eventFnsCopy, function(fn) {
       fn.apply(element, event.concat(eventData));
     });
   }
@@ -13196,14 +13218,16 @@ function $TemplateCacheProvider() {
  *
  *
  * #### `template`
- * replace the current element with the contents of the HTML. The replacement process
- * migrates all of the attributes / classes from the old element to the new one. See the
- * {@link guide/directive#creating-custom-directives_creating-directives_template-expanding-directive
- * Directives Guide} for an example.
+ * HTML markup that may:
+ * * Replace the contents of the directive's element (defualt).
+ * * Replace the directive's element itself (if `replace` is true - DEPRECATED).
+ * * Wrap the contents of the directive's element (if `transclude` is true).
  *
- * You can specify `template` as a string representing the template or as a function which takes
- * two arguments `tElement` and `tAttrs` (described in the `compile` function api below) and
- * returns a string value representing the template.
+ * Value may be:
+ *
+ * * A string. For example `<div red-on-hover>{{delete_str}}</div>`.
+ * * A function which takes two arguments `tElement` and `tAttrs` (described in the `compile`
+ *   function api below) and returns a string value.
  *
  *
  * #### `templateUrl`
@@ -13218,11 +13242,14 @@ function $TemplateCacheProvider() {
  *
  *
  * #### `replace` ([*DEPRECATED*!], will be removed in next major release)
- * specify where the template should be inserted. Defaults to `false`.
+ * specify what the template should replace. Defaults to `false`.
  *
- * * `true` - the template will replace the current element.
- * * `false` - the template will replace the contents of the current element.
+ * * `true` - the template will replace the directive's element.
+ * * `false` - the template will replace the contents of the directive's element.
  *
+ * The replacement process migrates all of the attributes / classes from the old element to the new
+ * one. See the {@link guide/directive#creating-custom-directives_creating-directives_template-expanding-directive
+ * Directives Guide} for an example.
  *
  * #### `transclude`
  * compile the content of the element and make it available to the directive.
@@ -13236,6 +13263,11 @@ function $TemplateCacheProvider() {
  * * `true` - transclude the content of the directive.
  * * `'element'` - transclude the whole element including any directives defined at lower priority.
  *
+ * <div class="alert alert-warning">
+ * **Note:** When testing an element transclude directive you must not place the directive at the root of the
+ * DOM fragment that is being compiled. See {@link guide/unit-testing#testing-transclusion-directives
+ * Testing Transclusion Directives}.
+ * </div>
  *
  * #### `compile`
  *
@@ -13881,7 +13913,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
             : null;
 
         if (nodeLinkFn && nodeLinkFn.scope) {
-          safeAddClass(jqLite(nodeList[i]), 'ng-scope');
+          safeAddClass(attrs.$$element, 'ng-scope');
         }
 
         childLinkFn = (nodeLinkFn && nodeLinkFn.terminal ||
@@ -13903,7 +13935,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       return linkFnFound ? compositeLinkFn : null;
 
       function compositeLinkFn(scope, nodeList, $rootElement, parentBoundTranscludeFn) {
-        var nodeLinkFn, childLinkFn, node, $node, childScope, i, ii, n, childBoundTranscludeFn;
+        var nodeLinkFn, childLinkFn, node, childScope, i, ii, n, childBoundTranscludeFn;
 
         // copy nodeList so that linking doesn't break due to live list updates.
         var nodeListLength = nodeList.length,
@@ -13916,12 +13948,11 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           node = stableNodeList[n];
           nodeLinkFn = linkFns[i++];
           childLinkFn = linkFns[i++];
-          $node = jqLite(node);
 
           if (nodeLinkFn) {
             if (nodeLinkFn.scope) {
               childScope = scope.$new();
-              $node.data('$scope', childScope);
+              jqLite.data(node, '$scope', childScope);
             } else {
               childScope = scope;
             }
@@ -14213,12 +14244,12 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           if (directiveValue == 'element') {
             hasElementTranscludeDirective = true;
             terminalPriority = directive.priority;
-            $template = groupScan(compileNode, attrStart, attrEnd);
+            $template = $compileNode;
             $compileNode = templateAttrs.$$element =
                 jqLite(document.createComment(' ' + directiveName + ': ' +
                                               templateAttrs[directiveName] + ' '));
             compileNode = $compileNode[0];
-            replaceWith(jqCollection, jqLite(sliceArgs($template)), compileNode);
+            replaceWith(jqCollection, sliceArgs($template), compileNode);
 
             childTranscludeFn = compile($template, transcludeFn, terminalPriority,
                                         replaceDirective && replaceDirective.name, {
@@ -14395,29 +14426,26 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
       function nodeLinkFn(childLinkFn, scope, linkNode, $rootElement, boundTranscludeFn) {
         var attrs, $element, i, ii, linkFn, controller, isolateScope, elementControllers = {}, transcludeFn;
 
-        if (compileNode === linkNode) {
-          attrs = templateAttrs;
-        } else {
-          attrs = shallowCopy(templateAttrs, new Attributes(jqLite(linkNode), templateAttrs.$attr));
-        }
+        attrs = (compileNode === linkNode)
+          ? templateAttrs
+          : shallowCopy(templateAttrs, new Attributes(jqLite(linkNode), templateAttrs.$attr));
         $element = attrs.$$element;
 
         if (newIsolateScopeDirective) {
           var LOCAL_REGEXP = /^\s*([@=&])(\??)\s*(\w*)\s*$/;
-          var $linkNode = jqLite(linkNode);
 
           isolateScope = scope.$new(true);
 
           if (templateDirective && (templateDirective === newIsolateScopeDirective ||
               templateDirective === newIsolateScopeDirective.$$originalDirective)) {
-            $linkNode.data('$isolateScope', isolateScope) ;
+            $element.data('$isolateScope', isolateScope);
           } else {
-            $linkNode.data('$isolateScopeNoTemplate', isolateScope);
+            $element.data('$isolateScopeNoTemplate', isolateScope);
           }
 
 
 
-          safeAddClass($linkNode, 'ng-isolate-scope');
+          safeAddClass($element, 'ng-isolate-scope');
 
           forEach(newIsolateScopeDirective.scope, function(definition, scopeName) {
             var match = definition.match(LOCAL_REGEXP) || [],
@@ -15221,11 +15249,7 @@ function parseHeaders(headers) {
     val = trim(line.substr(i + 1));
 
     if (key) {
-      if (parsed[key]) {
-        parsed[key] += ', ' + val;
-      } else {
-        parsed[key] = val;
-      }
+      parsed[key] = parsed[key] ? parsed[key] + ', ' + val : val;
     }
   });
 
@@ -16062,7 +16086,7 @@ function $HttpProvider() {
      * Shortcut method to perform `JSONP` request.
      *
      * @param {string} url Relative or absolute URL specifying the destination of the request.
-     *                     Should contain `JSON_CALLBACK` string.
+     *                     The name of the callback should be the string `JSON_CALLBACK`.
      * @param {Object=} config Optional configuration object
      * @returns {HttpPromise} Future object
      */
@@ -16162,7 +16186,7 @@ function $HttpProvider() {
       if (cache) {
         cachedResp = cache.get(url);
         if (isDefined(cachedResp)) {
-          if (cachedResp.then) {
+          if (isPromiseLike(cachedResp)) {
             // cached request has already been sent, but there is no response yet
             cachedResp.then(removePendingReq, removePendingReq);
             return cachedResp;
@@ -16244,27 +16268,29 @@ function $HttpProvider() {
 
 
     function buildUrl(url, params) {
-          if (!params) return url;
-          var parts = [];
-          forEachSorted(params, function(value, key) {
-            if (value === null || isUndefined(value)) return;
-            if (!isArray(value)) value = [value];
+      if (!params) return url;
+      var parts = [];
+      forEachSorted(params, function(value, key) {
+        if (value === null || isUndefined(value)) return;
+        if (!isArray(value)) value = [value];
 
-            forEach(value, function(v) {
-              if (isObject(v)) {
-                v = toJson(v);
-              }
-              parts.push(encodeUriQuery(key) + '=' +
-                         encodeUriQuery(v));
-            });
-          });
-          if(parts.length > 0) {
-            url += ((url.indexOf('?') == -1) ? '?' : '&') + parts.join('&');
+        forEach(value, function(v) {
+          if (isObject(v)) {
+            if (isDate(v)){
+              v = v.toISOString();
+            } else if (isObject(v)) {
+              v = toJson(v);
+            }
           }
-          return url;
-        }
-
-
+          parts.push(encodeUriQuery(key) + '=' +
+                     encodeUriQuery(v));
+        });
+      });
+      if(parts.length > 0) {
+        url += ((url.indexOf('?') == -1) ? '?' : '&') + parts.join('&');
+      }
+      return url;
+    }
   }];
 }
 
@@ -16400,7 +16426,7 @@ function createHttpBackend($browser, createXhr, $browserDefer, callbacks, rawDoc
 
     if (timeout > 0) {
       var timeoutId = $browserDefer(timeoutRequest, timeout);
-    } else if (timeout && timeout.then) {
+    } else if (isPromiseLike(timeout)) {
       timeout.then(timeoutRequest);
     }
 
@@ -16813,7 +16839,7 @@ function $IntervalProvider() {
       *           // Make sure that the interval nis destroyed too
       *           $scope.stopFight();
       *         });
-      *       })
+      *       }])
       *       // Register the 'myCurrentTime' directive factory method.
       *       // We inject $interval and dateFilter service since the factory method is DI.
       *       .directive('myCurrentTime', ['$interval', 'dateFilter',
@@ -16842,7 +16868,7 @@ function $IntervalProvider() {
       *               $interval.cancel(stopTime);
       *             });
       *           }
-      *         });
+      *         }]);
       *   </script>
       *
       *   <div>
@@ -18271,11 +18297,7 @@ Lexer.prototype = {
           string += String.fromCharCode(parseInt(hex, 16));
         } else {
           var rep = ESCAPE[ch];
-          if (rep) {
-            string += rep;
-          } else {
-            string += ch;
-          }
+          string = string + (rep || ch);
         }
         escape = false;
       } else if (ch === '\\') {
@@ -19454,7 +19476,7 @@ function qFactory(nextTick, exceptionHandler) {
             } catch(e) {
               return makePromise(e, false);
             }
-            if (callbackOutput && isFunction(callbackOutput.then)) {
+            if (isPromiseLike(callbackOutput)) {
               return callbackOutput.then(function() {
                 return makePromise(value, isResolved);
               }, function(error) {
@@ -19479,7 +19501,7 @@ function qFactory(nextTick, exceptionHandler) {
 
 
   var ref = function(value) {
-    if (value && isFunction(value.then)) return value;
+    if (isPromiseLike(value)) return value;
     return {
       then: function(callback) {
         var result = defer();
@@ -20146,7 +20168,7 @@ function $RootScopeProvider(){
 
         function $watchCollectionWatch() {
           newValue = objGetter(self);
-          var newLength, key;
+          var newLength, key, bothNaN;
 
           if (!isObject(newValue)) { // if primitive
             if (oldValue !== newValue) {
@@ -20170,7 +20192,7 @@ function $RootScopeProvider(){
             }
             // copy the items to oldValue and look for changes.
             for (var i = 0; i < newLength; i++) {
-              var bothNaN = (oldValue[i] !== oldValue[i]) &&
+              bothNaN = (oldValue[i] !== oldValue[i]) &&
                   (newValue[i] !== newValue[i]);
               if (!bothNaN && (oldValue[i] !== newValue[i])) {
                 changeDetected++;
@@ -20190,7 +20212,9 @@ function $RootScopeProvider(){
               if (newValue.hasOwnProperty(key)) {
                 newLength++;
                 if (oldValue.hasOwnProperty(key)) {
-                  if (oldValue[key] !== newValue[key]) {
+                  bothNaN = (oldValue[key] !== oldValue[key]) &&
+                      (newValue[key] !== newValue[key]);
+                  if (!bothNaN && (oldValue[key] !== newValue[key])) {
                     changeDetected++;
                     oldValue[key] = newValue[key];
                   }
@@ -22303,6 +22327,17 @@ function $WindowProvider(){
   this.$get = valueFn(window);
 }
 
+/* global currencyFilter: true,
+ dateFilter: true,
+ filterFilter: true,
+ jsonFilter: true,
+ limitToFilter: true,
+ lowercaseFilter: true,
+ numberFilter: true,
+ orderByFilter: true,
+ uppercaseFilter: true,
+ */
+
 /**
  * @ngdoc provider
  * @name $filterProvider
@@ -23064,11 +23099,7 @@ function dateFilter($locale) {
     format = format || 'mediumDate';
     format = $locale.DATETIME_FORMATS[format] || format;
     if (isString(date)) {
-      if (NUMBER_STRING.test(date)) {
-        date = int(date);
-      } else {
-        date = jsonStringToDate(date);
-      }
+      date = NUMBER_STRING.test(date) ? int(date) : jsonStringToDate(date);
     }
 
     if (isNumber(date)) {
@@ -23343,7 +23374,7 @@ function limitToFilter(){
  * @example
   <example module="orderByExample">
     <file name="index.html">
-      <div ng-controller="Ctrl">
+      <div ng-controller="ExampleController">
         <table class="friend">
           <tr>
             <th><a href="" ng-click="reverse=false;order('name', false)">Name</a>
@@ -23424,6 +23455,10 @@ function orderByFilter($parse){
       var t1 = typeof v1;
       var t2 = typeof v2;
       if (t1 == t2) {
+        if (isDate(v1) && isDate(v2)) {
+          v1 = v1.valueOf();
+          v2 = v2.valueOf();
+        }
         if (t1 == "string") {
            v1 = v1.toLowerCase();
            v2 = v2.toLowerCase();
@@ -24317,12 +24352,10 @@ var formDirectiveFactory = function(isNgForm) {
 var formDirective = formDirectiveFactory();
 var ngFormDirective = formDirectiveFactory(true);
 
-/* global
-
-    -VALID_CLASS,
-    -INVALID_CLASS,
-    -PRISTINE_CLASS,
-    -DIRTY_CLASS
+/* global VALID_CLASS: true,
+    INVALID_CLASS: true,
+    PRISTINE_CLASS: true,
+    DIRTY_CLASS: true
 */
 
 var URL_REGEXP = /^(ftp|http|https):\/\/(\w+:{0,1}\w*@)?(\S+)(:[0-9]+)?(\/|\/([\w#!:.?+=&%@!\-\/]))?$/;
@@ -25967,7 +26000,7 @@ var ngValueDirective = function() {
  * Typically, you don't use `ngBind` directly, but instead you use the double curly markup like
  * `{{ expression }}` which is similar but less verbose.
  *
- * It is preferable to use `ngBind` instead of `{{ expression }}` when a template is momentarily
+ * It is preferable to use `ngBind` instead of `{{ expression }}` if a template is momentarily
  * displayed by the browser in its raw state before Angular compiles it. Since `ngBind` is an
  * element attribute, it makes the bindings invisible to the user while the page is loading.
  *
@@ -26131,15 +26164,24 @@ var ngBindTemplateDirective = ['$interpolate', function($interpolate) {
    </example>
  */
 var ngBindHtmlDirective = ['$sce', '$parse', function($sce, $parse) {
-  return function(scope, element, attr) {
-    element.addClass('ng-binding').data('$binding', attr.ngBindHtml);
+  return {
+    compile: function (tElement) {
+      tElement.addClass('ng-binding');
 
-    var parsed = $parse(attr.ngBindHtml);
-    function getStringValue() { return (parsed(scope) || '').toString(); }
+      return function (scope, element, attr) {
+        element.data('$binding', attr.ngBindHtml);
 
-    scope.$watch(getStringValue, function ngBindHtmlWatchAction(value) {
-      element.html($sce.getTrustedHtml(parsed(scope)) || '');
-    });
+        var parsed = $parse(attr.ngBindHtml);
+
+        function getStringValue() {
+          return (parsed(scope) || '').toString();
+        }
+
+        scope.$watch(getStringValue, function ngBindHtmlWatchAction(value) {
+          element.html($sce.getTrustedHtml(parsed(scope)) || '');
+        });
+      };
+    }
   };
 }];
 
@@ -26802,8 +26844,10 @@ var ngControllerDirective = [function() {
  * This is necessary when developing things like Google Chrome Extensions.
  *
  * CSP forbids apps to use `eval` or `Function(string)` generated functions (among other things).
- * For us to be compatible, we just need to implement the "getterFn" in $parse without violating
- * any of these restrictions.
+ * For Angular to be CSP compatible there are only two things that we need to do differently:
+ *
+ * - don't use `Function` constructor to generate optimized value getters
+ * - don't inject custom stylesheet into the document
  *
  * AngularJS uses `Function(string)` generated functions as a speed optimization. Applying the `ngCsp`
  * directive will cause Angular to use CSP compatibility mode. When this mode is on AngularJS will
@@ -26814,7 +26858,18 @@ var ngControllerDirective = [function() {
  * includes some CSS rules (e.g. {@link ng.directive:ngCloak ngCloak}).
  * To make those directives work in CSP mode, include the `angular-csp.css` manually.
  *
- * In order to use this feature put the `ngCsp` directive on the root element of the application.
+ * Angular tries to autodetect if CSP is active and automatically turn on the CSP-safe mode. This
+ * autodetection however triggers a CSP error to be logged in the console:
+ *
+ * ```
+ * Refused to evaluate a string as JavaScript because 'unsafe-eval' is not an allowed source of
+ * script in the following Content Security Policy directive: "default-src 'self'". Note that
+ * 'script-src' was not explicitly set, so 'default-src' is used as a fallback.
+ * ```
+ *
+ * This error is harmless but annoying. To prevent the error from showing up, put the `ngCsp`
+ * directive on the root element of the application or on the `angular.js` script tag, whichever
+ * appears first in the html document.
  *
  * *Note: This directive is only available in the `ng-csp` and `data-ng-csp` attribute form.*
  *
@@ -26829,9 +26884,9 @@ var ngControllerDirective = [function() {
    ```
  */
 
-// ngCsp is not implemented as a proper directive any more, because we need it be processed while we bootstrap
-// the system (before $parse is instantiated), for this reason we just have a csp() fn that looks for ng-csp attribute
-// anywhere in the current doc
+// ngCsp is not implemented as a proper directive any more, because we need it be processed while we
+// bootstrap the system (before $parse is instantiated), for this reason we just have
+// the csp.isActive() fn that looks for ng-csp attribute anywhere in the current doc
 
 /**
  * @ngdoc directive
@@ -29602,6 +29657,12 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
                 // lastElement.prop('selected') provided by jQuery has side-effects
                 if (existingOption.selected !== option.selected) {
                   lastElement.prop('selected', (existingOption.selected = option.selected));
+                  if (msie) {
+                    // See #7692
+                    // The selected item wouldn't visually update on IE without this.
+                    // Tested on Win7: IE9, IE10 and IE11. Future IEs should be tested as well
+                    lastElement.prop('selected', existingOption.selected);
+                  }
                 }
               } else {
                 // grow elements
@@ -29724,7 +29785,7 @@ var styleDirective = valueFn({
 
 !window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}.ng-animate-block-transitions{transition:0s all!important;-webkit-transition:0s all!important;}.ng-hide-add-active,.ng-hide-remove{display:block!important;}</style>');
 /**
- * @license AngularJS v1.2.20
+ * @license AngularJS v1.2.21
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -29931,7 +29992,7 @@ angular.module('ngCookies', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.20
+ * @license AngularJS v1.2.21
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30046,8 +30107,8 @@ function shallowClearAndCopy(src, dst) {
  *
  *   - **`action`** – {string} – The name of action. This name becomes the name of the method on
  *     your resource object.
- *   - **`method`** – {string} – HTTP request method. Valid methods are: `GET`, `POST`, `PUT`,
- *     `DELETE`, and `JSONP`.
+ *   - **`method`** – {string} – Case insensitive HTTP method (e.g. `GET`, `POST`, `PUT`,
+ *     `DELETE`, `JSONP`, etc).
  *   - **`params`** – {Object=} – Optional set of pre-bound parameters for this action. If any of
  *     the parameter value is a function, it will be executed every time when a param value needs to
  *     be obtained for a request (unless the param was overridden).
@@ -30227,20 +30288,20 @@ function shallowClearAndCopy(src, dst) {
  * # Creating a custom 'PUT' request
  * In this example we create a custom method on our resource to make a PUT request
  * ```js
- *		var app = angular.module('app', ['ngResource', 'ngRoute']);
+ *    var app = angular.module('app', ['ngResource', 'ngRoute']);
  *
- *		// Some APIs expect a PUT request in the format URL/object/ID
- *		// Here we are creating an 'update' method
- *		app.factory('Notes', ['$resource', function($resource) {
+ *    // Some APIs expect a PUT request in the format URL/object/ID
+ *    // Here we are creating an 'update' method
+ *    app.factory('Notes', ['$resource', function($resource) {
  *    return $resource('/notes/:id', null,
  *        {
  *            'update': { method:'PUT' }
  *        });
- *		}]);
+ *    }]);
  *
- *		// In our controller we get the ID from the URL using ngRoute and $routeParams
- *		// We pass in $routeParams and our Notes factory along with $scope
- *		app.controller('NotesCtrl', ['$scope', '$routeParams', 'Notes',
+ *    // In our controller we get the ID from the URL using ngRoute and $routeParams
+ *    // We pass in $routeParams and our Notes factory along with $scope
+ *    app.controller('NotesCtrl', ['$scope', '$routeParams', 'Notes',
                                       function($scope, $routeParams, Notes) {
  *    // First get a note object from the factory
  *    var note = Notes.get({ id:$routeParams.id });
@@ -30250,7 +30311,7 @@ function shallowClearAndCopy(src, dst) {
  *    Notes.update({ id:$id }, note);
  *
  *    // This will PUT /notes/ID with the note object in the request payload
- *		}]);
+ *    }]);
  * ```
  */
 angular.module('ngResource', ['ng']).
@@ -30551,7 +30612,7 @@ angular.module('ngResource', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.20
+ * @license AngularJS v1.2.21
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30711,11 +30772,11 @@ function sanitizeText(chars) {
 
 // Regular Expressions for parsing tags and attributes
 var START_TAG_REGEXP =
-       /^<\s*([\w:-]+)((?:\s+[\w:-]+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)\s*>/,
-  END_TAG_REGEXP = /^<\s*\/\s*([\w:-]+)[^>]*>/,
+       /^<((?:[a-zA-Z])[\w:-]*)((?:\s+[\w:-]+(?:\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s]+))?)*)\s*(\/?)\s*(>?)/,
+  END_TAG_REGEXP = /^<\/\s*([\w:-]+)[^>]*>/,
   ATTR_REGEXP = /([\w:-]+)(?:\s*=\s*(?:(?:"((?:[^"])*)")|(?:'((?:[^'])*)')|([^>\s]+)))?/g,
   BEGIN_TAG_REGEXP = /^</,
-  BEGING_END_TAGE_REGEXP = /^<\s*\//,
+  BEGING_END_TAGE_REGEXP = /^<\//,
   COMMENT_REGEXP = /<!--(.*?)-->/g,
   DOCTYPE_REGEXP = /<!DOCTYPE([^>]*?)>/i,
   CDATA_REGEXP = /<!\[CDATA\[(.*?)]]>/g,
@@ -30789,10 +30850,11 @@ function makeMap(str) {
  * @param {object} handler
  */
 function htmlParser( html, handler ) {
-  var index, chars, match, stack = [], last = html;
+  var index, chars, match, stack = [], last = html, text;
   stack.last = function() { return stack[ stack.length - 1 ]; };
 
   while ( html ) {
+    text = '';
     chars = true;
 
     // Make sure we're not in a script or style element
@@ -30831,16 +30893,23 @@ function htmlParser( html, handler ) {
         match = html.match( START_TAG_REGEXP );
 
         if ( match ) {
-          html = html.substring( match[0].length );
-          match[0].replace( START_TAG_REGEXP, parseStartTag );
+          // We only have a valid start-tag if there is a '>'.
+          if ( match[4] ) {
+            html = html.substring( match[0].length );
+            match[0].replace( START_TAG_REGEXP, parseStartTag );
+          }
           chars = false;
+        } else {
+          // no ending tag found --- this piece should be encoded as an entity.
+          text += '<';
+          html = html.substring(1);
         }
       }
 
       if ( chars ) {
         index = html.indexOf("<");
 
-        var text = index < 0 ? html : html.substring( 0, index );
+        text += index < 0 ? html : html.substring( 0, index );
         html = index < 0 ? "" : html.substring( index );
 
         if (handler.chars) handler.chars( decodeEntities(text) );
@@ -35300,9 +35369,1255 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
     "</ul>");
 }]);
 
+/**
+ * @license Angular UI Tree v2.1.5
+ * (c) 2010-2014. https://github.com/JimLiu/angular-ui-tree
+ * License: MIT
+ */
+(function () {
+  'use strict';
+
+  angular.module('ui.tree', [])
+    .constant('treeConfig', {
+      treeClass: 'angular-ui-tree',
+      emptyTreeClass: 'angular-ui-tree-empty',
+      hiddenClass: 'angular-ui-tree-hidden',
+      nodesClass: 'angular-ui-tree-nodes',
+      nodeClass: 'angular-ui-tree-node',
+      handleClass: 'angular-ui-tree-handle',
+      placeHolderClass: 'angular-ui-tree-placeholder',
+      dragClass: 'angular-ui-tree-drag',
+      dragThreshold: 3,
+      levelThreshold: 30
+    });
+
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+   /**
+    * @ngdoc service
+    * @name ui.tree.service:$helper
+    * @requires ng.$document
+    * @requires ng.$window
+    *
+    * @description
+    * angular-ui-tree.
+    */
+    .factory('$uiTreeHelper', ['$document', '$window',
+      function ($document, $window) {
+        return {
+
+          /**
+           * A hashtable used to storage data of nodes
+           * @type {Object}
+           */
+          nodesData: {
+          },
+
+          setNodeAttribute: function(scope, attrName, val) {
+            var data = this.nodesData[scope.$modelValue.$$hashKey];
+            if (!data) {
+              data = {};
+              this.nodesData[scope.$modelValue.$$hashKey] = data;
+            }
+            data[attrName] = val;
+          },
+
+          getNodeAttribute: function(scope, attrName) {
+            var data = this.nodesData[scope.$modelValue.$$hashKey];
+            if (data) {
+              return data[attrName];
+            }
+            return null;
+          },
+
+          /**
+           * @ngdoc method
+           * @methodOf ui.tree.service:$nodrag
+           * @param  {Object} targetElm angular element
+           * @return {Bool} check if the node can be dragged.
+           */
+          nodrag: function (targetElm) {
+            return (typeof targetElm.attr('data-nodrag')) != "undefined";
+          },
+
+          /**
+           * get the event object for touchs
+           * @param  {[type]} e [description]
+           * @return {[type]}   [description]
+           */
+          eventObj: function(e) {
+            var obj = e;
+            if (e.targetTouches !== undefined) {
+              obj = e.targetTouches.item(0);
+            } else if (e.originalEvent !== undefined && e.originalEvent.targetTouches !== undefined) {
+              obj = e.originalEvent.targetTouches.item(0);
+            }
+            return obj;
+          },
+
+          dragInfo: function(node) {
+            return {
+              source: node,
+              sourceInfo: {
+                nodeScope: node,
+                index: node.index(),
+                nodesScope: node.$parentNodesScope
+              },
+              index: node.index(),
+              siblings: node.siblings().slice(0),
+              parent: node.$parentNodesScope,
+
+              moveTo: function(parent, siblings, index) { // Move the node to a new position
+                this.parent = parent;
+                this.siblings = siblings.slice(0);
+                var i = this.siblings.indexOf(this.source); // If source node is in the target nodes
+                if (i > -1) {
+                  this.siblings.splice(i, 1);
+                  if (this.source.index() < index) {
+                    index--;
+                  }
+                }
+                this.siblings.splice(index, 0, this.source);
+                this.index = index;
+              },
+
+              parentNode: function() {
+                return this.parent.$nodeScope;
+              },
+
+              prev: function() {
+                if (this.index > 0) {
+                  return this.siblings[this.index - 1];
+                }
+                return null;
+              },
+
+              next: function() {
+                if (this.index < this.siblings.length - 1) {
+                  return this.siblings[this.index + 1];
+                }
+                return null;
+              },
+
+              isDirty: function() {
+                return this.source.$parentNodesScope != this.parent ||
+                        this.source.index() != this.index;
+              },
+
+              eventArgs: function(elements, pos) {
+                return {
+                  source: this.sourceInfo,
+                  dest: {
+                    index: this.index,
+                    nodesScope: this.parent
+                  },
+                  elements: elements,
+                  pos: pos
+                };
+              },
+
+              apply: function() {
+                var nodeData = this.source.$modelValue;
+                this.source.remove();
+                this.parent.insertNode(this.index, nodeData);
+              }
+            };
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#height
+          * @methodOf ui.tree.service:$helper
+          *
+          * @description
+          * Get the height of an element.
+          *
+          * @param {Object} element Angular element.
+          * @returns {String} Height
+          */
+          height: function (element) {
+            return element.prop('scrollHeight');
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#width
+          * @methodOf ui.tree.service:$helper
+          *
+          * @description
+          * Get the width of an element.
+          *
+          * @param {Object} element Angular element.
+          * @returns {String} Width
+          */
+          width: function (element) {
+            return element.prop('scrollWidth');
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#offset
+          * @methodOf ui.nestedSortable.service:$helper
+          *
+          * @description
+          * Get the offset values of an element.
+          *
+          * @param {Object} element Angular element.
+          * @returns {Object} Object with properties width, height, top and left
+          */
+          offset: function (element) {
+            var boundingClientRect = element[0].getBoundingClientRect();
+
+            return {
+                width: element.prop('offsetWidth'),
+                height: element.prop('offsetHeight'),
+                top: boundingClientRect.top + ($window.pageYOffset || $document[0].body.scrollTop || $document[0].documentElement.scrollTop),
+                left: boundingClientRect.left + ($window.pageXOffset || $document[0].body.scrollLeft  || $document[0].documentElement.scrollLeft)
+              };
+          },
+
+          /**
+          * @ngdoc method
+          * @name hippo.theme#positionStarted
+          * @methodOf ui.tree.service:$helper
+          *
+          * @description
+          * Get the start position of the target element according to the provided event properties.
+          *
+          * @param {Object} e Event
+          * @param {Object} target Target element
+          * @returns {Object} Object with properties offsetX, offsetY, startX, startY, nowX and dirX.
+          */
+          positionStarted: function (e, target) {
+            var pos = {};
+            pos.offsetX = e.pageX - this.offset(target).left;
+            pos.offsetY = e.pageY - this.offset(target).top;
+            pos.startX = pos.lastX = e.pageX;
+            pos.startY = pos.lastY = e.pageY;
+            pos.nowX = pos.nowY = pos.distX = pos.distY = pos.dirAx = 0;
+            pos.dirX = pos.dirY = pos.lastDirX = pos.lastDirY = pos.distAxX = pos.distAxY = 0;
+            return pos;
+          },
+
+          positionMoved: function (e, pos, firstMoving) {
+            // mouse position last events
+            pos.lastX = pos.nowX;
+            pos.lastY = pos.nowY;
+
+            // mouse position this events
+            pos.nowX  = e.pageX;
+            pos.nowY  = e.pageY;
+
+            // distance mouse moved between events
+            pos.distX = pos.nowX - pos.lastX;
+            pos.distY = pos.nowY - pos.lastY;
+
+            // direction mouse was moving
+            pos.lastDirX = pos.dirX;
+            pos.lastDirY = pos.dirY;
+
+            // direction mouse is now moving (on both axis)
+            pos.dirX = pos.distX === 0 ? 0 : pos.distX > 0 ? 1 : -1;
+            pos.dirY = pos.distY === 0 ? 0 : pos.distY > 0 ? 1 : -1;
+
+            // axis mouse is now moving on
+            var newAx   = Math.abs(pos.distX) > Math.abs(pos.distY) ? 1 : 0;
+
+            // do nothing on first move
+            if (firstMoving) {
+              pos.dirAx  = newAx;
+              pos.moving = true;
+              return;
+            }
+
+            // calc distance moved on this axis (and direction)
+            if (pos.dirAx !== newAx) {
+              pos.distAxX = 0;
+              pos.distAxY = 0;
+            } else {
+              pos.distAxX += Math.abs(pos.distX);
+              if (pos.dirX !== 0 && pos.dirX !== pos.lastDirX) {
+                pos.distAxX = 0;
+              }
+
+              pos.distAxY += Math.abs(pos.distY);
+              if (pos.dirY !== 0 && pos.dirY !== pos.lastDirY) {
+                pos.distAxY = 0;
+              }
+            }
+
+            pos.dirAx = newAx;
+          }
+        };
+      }
+    ]);
+
+})();
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeController', ['$scope', '$element', '$attrs', 'treeConfig',
+      function ($scope, $element, $attrs, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$nodesScope = null; // root nodes
+        $scope.$type = 'uiTree';
+        $scope.$emptyElm = null;
+        $scope.$callbacks = null;
+
+        $scope.dragEnabled = true;
+        $scope.emptyPlaceHolderEnabled = true;
+        $scope.maxDepth = 0;
+        $scope.dragDelay = 0;
+
+        // Check if it's a empty tree
+        $scope.isEmpty = function() {
+          return ($scope.$nodesScope && $scope.$nodesScope.$modelValue
+            && $scope.$nodesScope.$modelValue.length === 0);
+        };
+
+        // add placeholder to empty tree
+        $scope.place = function(placeElm) {
+          $scope.$nodesScope.$element.append(placeElm);
+          $scope.$emptyElm.remove();
+        };
+
+        $scope.resetEmptyElement = function() {
+          if ($scope.$nodesScope.$modelValue.length === 0 &&
+            $scope.emptyPlaceHolderEnabled) {
+            $element.append($scope.$emptyElm);
+          } else {
+            $scope.$emptyElm.remove();
+          }
+        };
+
+        var collapseOrExpand = function(scope, collapsed) {
+          var nodes = scope.childNodes();
+          for (var i = 0; i < nodes.length; i++) {
+            collapsed ? nodes[i].collapse() : nodes[i].expand();
+            var subScope = nodes[i].$childNodesScope;
+            if (subScope) {
+              collapseOrExpand(subScope, collapsed);
+            }
+          }
+        };
+
+        $scope.collapseAll = function() {
+          collapseOrExpand($scope.$nodesScope, true);
+        };
+
+        $scope.expandAll = function() {
+          collapseOrExpand($scope.$nodesScope, false);
+        };
+
+      }
+    ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeNodesController', ['$scope', '$element', 'treeConfig',
+      function ($scope, $element, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$modelValue = null;
+        $scope.$nodeScope = null; // the scope of node which the nodes belongs to
+        $scope.$treeScope = null;
+        $scope.$type = 'uiTreeNodes';
+        $scope.$nodesMap = {};
+
+        $scope.nodrop = false;
+        $scope.maxDepth = 0;
+
+        $scope.initSubNode = function(subNode) {
+          $scope.$nodesMap[subNode.$modelValue.$$hashKey] = subNode;
+        };
+
+        $scope.destroySubNode = function(subNode) {
+          $scope.$nodesMap[subNode.$modelValue.$$hashKey] = null;
+        };
+
+        $scope.accept = function(sourceNode, destIndex) {
+          return $scope.$treeScope.$callbacks.accept(sourceNode, $scope, destIndex);
+        };
+
+        $scope.beforeDrag = function(sourceNode) {
+          return $scope.$treeScope.$callbacks.beforeDrag(sourceNode);
+        };
+
+        $scope.isParent = function(node) {
+          return node.$parentNodesScope == $scope;
+        };
+
+        $scope.hasChild = function() {
+          return $scope.$modelValue.length > 0;
+        };
+
+        $scope.safeApply = function(fn) {
+          var phase = this.$root.$$phase;
+          if(phase == '$apply' || phase == '$digest') {
+            if(fn && (typeof(fn) === 'function')) {
+              fn();
+            }
+          } else {
+            this.$apply(fn);
+          }
+        };
+
+        $scope.removeNode = function(node) {
+          var index = $scope.$modelValue.indexOf(node.$modelValue);
+          if (index > -1) {
+            $scope.safeApply(function() {
+              $scope.$modelValue.splice(index, 1)[0];
+            });
+            return node;
+          }
+          return null;
+        };
+
+        $scope.insertNode = function(index, nodeData) {
+          $scope.safeApply(function() {
+            $scope.$modelValue.splice(index, 0, nodeData);
+          });
+        };
+
+        $scope.childNodes = function() {
+          var nodes = [];
+          if ($scope.$modelValue) {
+            for (var i = 0; i < $scope.$modelValue.length; i++) {
+              nodes.push($scope.$nodesMap[$scope.$modelValue[i].$$hashKey]);
+            }
+          }
+          return nodes;
+        };
+
+        $scope.depth = function() {
+          if ($scope.$nodeScope) {
+            return $scope.$nodeScope.depth();
+          }
+          return 0; // if it has no $nodeScope, it's root
+        };
+
+        // check if depth limit has reached
+        $scope.outOfDepth = function(sourceNode) {
+          var maxDepth = $scope.maxDepth || $scope.$treeScope.maxDepth;
+          if (maxDepth > 0) {
+            return $scope.depth() + sourceNode.maxSubDepth() + 1 > maxDepth;
+          }
+          return false;
+        };
+
+      }
+    ]);
+})();
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeNodeController', ['$scope', '$element', '$attrs', 'treeConfig',
+      function ($scope, $element, $attrs, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$modelValue = null; // Model value for node;
+        $scope.$parentNodeScope = null; // uiTreeNode Scope of parent node;
+        $scope.$childNodesScope = null; // uiTreeNodes Scope of child nodes.
+        $scope.$parentNodesScope = null; // uiTreeNodes Scope of parent nodes.
+        $scope.$treeScope = null; // uiTree scope
+        $scope.$handleScope = null; // it's handle scope
+        $scope.$type = 'uiTreeNode';
+        $scope.$$apply = false; //
+
+        $scope.collapsed = false;
+
+        $scope.init = function(controllersArr) {
+          var treeNodesCtrl = controllersArr[0];
+          $scope.$treeScope = controllersArr[1] ? controllersArr[1].scope : null;
+
+          // find the scope of it's parent node
+          $scope.$parentNodeScope = treeNodesCtrl.scope.$nodeScope;
+          // modelValue for current node
+          $scope.$modelValue = treeNodesCtrl.scope.$modelValue[$scope.$index];
+          $scope.$parentNodesScope = treeNodesCtrl.scope;
+          treeNodesCtrl.scope.initSubNode($scope); // init sub nodes
+
+          $element.on('$destroy', function() {
+            treeNodesCtrl.scope.destroySubNode($scope); // destroy sub nodes
+          });
+        };
+
+        $scope.index = function() {
+          return $scope.$parentNodesScope.$modelValue.indexOf($scope.$modelValue);
+        };
+
+        $scope.dragEnabled = function() {
+          return !($scope.$treeScope && !$scope.$treeScope.dragEnabled);
+        };
+
+        $scope.isSibling = function(targetNode) {
+          return $scope.$parentNodesScope == targetNode.$parentNodesScope;
+        };
+
+        $scope.isChild = function(targetNode) {
+          var nodes = $scope.childNodes();
+          return nodes && nodes.indexOf(targetNode) > -1;
+        };
+
+        $scope.prev = function() {
+          var index = $scope.index();
+          if (index > 0) {
+            return $scope.siblings()[index - 1];
+          }
+          return null;
+        };
+
+        $scope.siblings = function() {
+          return $scope.$parentNodesScope.childNodes();
+        };
+
+        $scope.childNodesCount = function() {
+          return $scope.childNodes() ? $scope.childNodes().length : 0;
+        };
+
+        $scope.hasChild = function() {
+          return $scope.childNodesCount() > 0;
+        };
+
+        $scope.childNodes = function() {
+          return $scope.$childNodesScope && $scope.$childNodesScope.$modelValue ?
+              $scope.$childNodesScope.childNodes() :
+              null;
+        };
+
+        $scope.accept = function(sourceNode, destIndex) {
+          return $scope.$childNodesScope &&
+                  $scope.$childNodesScope.$modelValue &&
+                  $scope.$childNodesScope.accept(sourceNode, destIndex);
+        };
+
+        $scope.removeNode = function(){
+          var node = $scope.remove();
+          $scope.$callbacks.removed(node);
+          return node;
+        };
+
+        $scope.remove = function() {
+          return $scope.$parentNodesScope.removeNode($scope);
+        };
+
+        $scope.toggle = function() {
+          $scope.collapsed = !$scope.collapsed;
+        };
+
+        $scope.collapse = function() {
+          $scope.collapsed = true;
+        };
+
+        $scope.expand = function() {
+          $scope.collapsed = false;
+        };
+
+        $scope.depth = function() {
+          var parentNode = $scope.$parentNodeScope;
+          if (parentNode) {
+            return parentNode.depth() + 1;
+          }
+          return 1;
+        };
+
+        var subDepth = 0;
+        var countSubDepth = function(scope) {
+          var count = 0;
+          var nodes = scope.childNodes();
+          for (var i = 0; i < nodes.length; i++) {
+            var childNodes = nodes[i].$childNodesScope;
+            if (childNodes) {
+              count = 1;
+              countSubDepth(childNodes);
+            }
+          }
+          subDepth += count;
+        };
+
+        $scope.maxSubDepth = function() {
+          subDepth = 0;
+          if ($scope.$childNodesScope) {
+            countSubDepth($scope.$childNodesScope);
+          }
+          return subDepth;
+        };
+
+      }
+    ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .controller('TreeHandleController', ['$scope', '$element', '$attrs', 'treeConfig',
+      function ($scope, $element, $attrs, treeConfig) {
+        this.scope = $scope;
+
+        $scope.$element = $element;
+        $scope.$nodeScope = null;
+        $scope.$type = 'uiTreeHandle';
+
+      }
+    ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+  .directive('uiTree', [ 'treeConfig', '$window',
+    function(treeConfig, $window) {
+      return {
+        restrict: 'A',
+        scope: true,
+        controller: 'TreeController',
+        link: function(scope, element, attrs) {
+          var callbacks = {
+            accept: null,
+            beforeDrag: null
+          };
+
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.treeClass) {
+            element.addClass(config.treeClass);
+          }
+
+          scope.$emptyElm = angular.element($window.document.createElement('div'));
+          if (config.emptyTreeClass) {
+            scope.$emptyElm.addClass(config.emptyTreeClass);
+          }
+
+          scope.$watch('$nodesScope.$modelValue.length', function() {
+            if (scope.$nodesScope.$modelValue) {
+              scope.resetEmptyElement();
+            }
+          }, true);
+
+          scope.$watch(attrs.dragEnabled, function(val) {
+            if((typeof val) == "boolean") {
+              scope.dragEnabled = val;
+            }
+          });
+
+          scope.$watch(attrs.emptyPlaceHolderEnabled, function(val) {
+            if((typeof val) == "boolean") {
+              scope.emptyPlaceHolderEnabled = val;
+            }
+          });
+
+          scope.$watch(attrs.maxDepth, function(val) {
+            if((typeof val) == "number") {
+              scope.maxDepth = val;
+            }
+          });
+
+          scope.$watch(attrs.dragDelay, function(val) {
+            if((typeof val) == "number") {
+              scope.dragDelay = val;
+            }
+          });
+
+          // check if the dest node can accept the dragging node
+          // by default, we check the 'data-nodrop' attribute in `ui-tree-nodes`
+          // and the 'max-depth' attribute in `ui-tree` or `ui-tree-nodes`.
+          // the method can be overrided
+          callbacks.accept = function(sourceNodeScope, destNodesScope, destIndex) {
+            if (destNodesScope.nodrop || destNodesScope.outOfDepth(sourceNodeScope)) {
+              return false;
+            }
+            return true;
+          };
+
+          callbacks.beforeDrag = function(sourceNodeScope) {
+            return true;
+          };
+
+          callbacks.removed = function(node){
+
+          };
+
+          callbacks.dropped = function(event) {
+
+          };
+
+          //
+          callbacks.dragStart = function(event) {
+
+          };
+
+          callbacks.dragMove = function(event) {
+
+          };
+
+          callbacks.dragStop = function(event) {
+
+          };
+
+          callbacks.beforeDrop = function(event) {
+
+          };
+
+          scope.$watch(attrs.uiTree, function(newVal, oldVal){
+            angular.forEach(newVal, function(value, key){
+              if (callbacks[key]) {
+                if (typeof value === "function") {
+                  callbacks[key] = value;
+                }
+              }
+            });
+
+            scope.$callbacks = callbacks;
+          }, true);
+
+
+        }
+      };
+    }
+  ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+  .directive('uiTreeNodes', [ 'treeConfig', '$window',
+    function(treeConfig) {
+      return {
+        require: ['ngModel', '?^uiTreeNode', '^uiTree'],
+        restrict: 'A',
+        scope: true,
+        controller: 'TreeNodesController',
+        link: function(scope, element, attrs, controllersArr) {
+
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.nodesClass) {
+            element.addClass(config.nodesClass);
+          }
+
+          var ngModel = controllersArr[0];
+          var treeNodeCtrl = controllersArr[1];
+          var treeCtrl = controllersArr[2];
+          if (treeNodeCtrl) {
+            treeNodeCtrl.scope.$childNodesScope = scope;
+            scope.$nodeScope = treeNodeCtrl.scope;
+          }
+          else { // find the root nodes if there is no parent node and have a parent ui-tree
+            treeCtrl.scope.$nodesScope = scope;
+          }
+          scope.$treeScope = treeCtrl.scope;
+
+          if (ngModel) {
+            ngModel.$render = function() {
+              if (!ngModel.$modelValue || !angular.isArray(ngModel.$modelValue)) {
+                scope.$modelValue = [];
+              }
+              scope.$modelValue = ngModel.$modelValue;
+            };
+          }
+
+          scope.$watch(attrs.maxDepth, function(val) {
+            if((typeof val) == "number") {
+              scope.maxDepth = val;
+            }
+          });
+
+          attrs.$observe('nodrop', function(val) {
+            scope.nodrop = ((typeof val) != "undefined");
+          });
+
+          attrs.$observe('horizontal', function(val) {
+            scope.horizontal = ((typeof val) != "undefined");
+          });
+
+        }
+      };
+    }
+  ]);
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+
+    .directive('uiTreeNode', ['treeConfig', '$uiTreeHelper', '$window', '$document','$timeout',
+      function (treeConfig, $uiTreeHelper, $window, $document, $timeout) {
+        return {
+          require: ['^uiTreeNodes', '^uiTree'],
+          restrict: 'A',
+          controller: 'TreeNodeController',
+          link: function(scope, element, attrs, controllersArr) {
+            var config = {};
+            angular.extend(config, treeConfig);
+            if (config.nodeClass) {
+              element.addClass(config.nodeClass);
+            }
+            scope.init(controllersArr);
+
+            scope.collapsed = !!$uiTreeHelper.getNodeAttribute(scope, 'collapsed');
+
+            scope.$watch(attrs.collapsed, function(val) {
+              if((typeof val) == "boolean") {
+                scope.collapsed = val;
+              }
+            });
+
+            scope.$watch('collapsed', function(val) {
+              $uiTreeHelper.setNodeAttribute(scope, 'collapsed', val);
+              attrs.$set('collapsed', val);
+            });
+
+            var hasTouch = 'ontouchstart' in window;
+            // todo startPos is unused
+            var startPos, firstMoving, dragInfo, pos;
+            var placeElm, hiddenPlaceElm, dragElm;
+            var treeScope = null;
+            var elements; // As a parameter for callbacks
+            var dragDelaying = true;
+            var dragStarted = false;
+            var dragTimer = null;
+            var body = document.body,
+                html = document.documentElement,
+                document_height,
+                document_width;
+
+            var dragStart = function(e) {
+              if (!hasTouch && (e.button == 2 || e.which == 3)) {
+                // disable right click
+                return;
+              }
+              if (e.uiTreeDragging || (e.originalEvent && e.originalEvent.uiTreeDragging)) { // event has already fired in other scope.
+                return;
+              }
+
+              // the element which is clicked.
+              var eventElm = angular.element(e.target);
+              var eventScope = eventElm.scope();
+              if (!eventScope || !eventScope.$type) {
+                return;
+              }
+              if (eventScope.$type != 'uiTreeNode'
+                && eventScope.$type != 'uiTreeHandle') { // Check if it is a node or a handle
+                return;
+              }
+              if (eventScope.$type == 'uiTreeNode'
+                && eventScope.$handleScope) { // If the node has a handle, then it should be clicked by the handle
+                return;
+              }
+
+              var eventElmTagName = eventElm.prop('tagName').toLowerCase();
+              if (eventElmTagName == 'input' ||
+                eventElmTagName == 'textarea' ||
+                eventElmTagName == 'button' ||
+                eventElmTagName == 'select') { // if it's a input or button, ignore it
+                return;
+              }
+
+              // check if it or it's parents has a 'data-nodrag' attribute
+              while (eventElm && eventElm[0] && eventElm[0] != element) {
+                if ($uiTreeHelper.nodrag(eventElm)) { // if the node mark as `nodrag`, DONOT drag it.
+                  return;
+                }
+                eventElm = eventElm.parent();
+              }
+
+              if (!scope.beforeDrag(scope)){
+                return;
+              }
+
+              e.uiTreeDragging = true; // stop event bubbling
+              if (e.originalEvent) {
+                e.originalEvent.uiTreeDragging = true;
+              }
+              e.preventDefault();
+              var eventObj = $uiTreeHelper.eventObj(e);
+
+              firstMoving = true;
+              dragInfo = $uiTreeHelper.dragInfo(scope);
+
+              var tagName = scope.$element.prop('tagName');
+              if (tagName.toLowerCase() === 'tr') {
+                placeElm = angular.element($window.document.createElement(tagName));
+                var tdElm = angular.element($window.document.createElement('td'))
+                              .addClass(config.placeHolderClass);
+                placeElm.append(tdElm);
+              } else {
+                placeElm = angular.element($window.document.createElement(tagName))
+                              .addClass(config.placeHolderClass);
+              }
+              hiddenPlaceElm = angular.element($window.document.createElement(tagName));
+              if (config.hiddenClass) {
+                hiddenPlaceElm.addClass(config.hiddenClass);
+              }
+              pos = $uiTreeHelper.positionStarted(eventObj, scope.$element);
+              placeElm.css('height', $uiTreeHelper.height(scope.$element) + 'px');
+              placeElm.css('width', $uiTreeHelper.width(scope.$element) + 'px');
+              dragElm = angular.element($window.document.createElement(scope.$parentNodesScope.$element.prop('tagName')))
+                        .addClass(scope.$parentNodesScope.$element.attr('class')).addClass(config.dragClass);
+              dragElm.css('width', $uiTreeHelper.width(scope.$element) + 'px');
+              dragElm.css('z-index', 9999);
+
+              // Prevents cursor to change rapidly in Opera 12.16 and IE when dragging an element
+              var hStyle = (scope.$element[0].querySelector('.angular-ui-tree-handle') || scope.$element[0]).currentStyle;
+              if (hStyle) {
+                document.body.setAttribute('ui-tree-cursor', $document.find('body').css('cursor') || '');
+                $document.find('body').css({'cursor': hStyle.cursor + '!important'});
+              }
+
+              scope.$element.after(placeElm);
+              scope.$element.after(hiddenPlaceElm);
+              dragElm.append(scope.$element);
+              $document.find('body').append(dragElm);
+              dragElm.css({
+                'left' : eventObj.pageX - pos.offsetX + 'px',
+                'top'  : eventObj.pageY - pos.offsetY + 'px'
+              });
+              elements = {
+                placeholder: placeElm,
+                dragging: dragElm
+              };
+
+              angular.element($document).bind('touchend', dragEndEvent);
+              angular.element($document).bind('touchcancel', dragEndEvent);
+              angular.element($document).bind('touchmove', dragMoveEvent);
+              angular.element($document).bind('mouseup', dragEndEvent);
+              angular.element($document).bind('mousemove', dragMoveEvent);
+              angular.element($document).bind('mouseleave', dragCancelEvent);
+
+              document_height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+              document_width = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+            };
+
+            var dragMove = function(e) {
+              if (!dragStarted) {
+                if (!dragDelaying) {
+                  dragStarted = true;
+                  scope.$apply(function() {
+                    scope.$callbacks.dragStart(dragInfo.eventArgs(elements, pos));
+                  });
+                }
+                return;
+              }
+
+              var eventObj = $uiTreeHelper.eventObj(e);
+              var prev, leftElmPos, topElmPos;
+
+              if (dragElm) {
+                e.preventDefault();
+
+                if ($window.getSelection) {
+                  $window.getSelection().removeAllRanges();
+                } else if ($window.document.selection) {
+                  $window.document.selection.empty();
+                }
+
+                leftElmPos = eventObj.pageX - pos.offsetX;
+                topElmPos = eventObj.pageY - pos.offsetY;
+
+                //dragElm can't leave the screen on the left
+                if(leftElmPos < 0){
+                  leftElmPos = 0;
+                }
+
+                //dragElm can't leave the screen on the top
+                if(topElmPos < 0){
+                  topElmPos = 0;
+                }
+
+                //dragElm can't leave the screen on the bottom
+                if ((topElmPos + 10) > document_height){
+                  topElmPos = document_height - 10;
+                }
+
+                //dragElm can't leave the screen on the right
+                if((leftElmPos + 10) > document_width) {
+                  leftElmPos = document_width - 10;
+                }
+
+                dragElm.css({
+                  'left': leftElmPos + 'px',
+                  'top': topElmPos + 'px'
+                });
+
+                var top_scroll = window.pageYOffset || $window.document.documentElement.scrollTop;
+                var bottom_scroll = top_scroll + (window.innerHeight || $window.document.clientHeight || $window.document.clientHeight);
+
+                // to scroll down if cursor y-position is greater than the bottom position the vertical scroll
+                if (bottom_scroll < eventObj.pageY && bottom_scroll <= document_height) {
+                  window.scrollBy(0, 10);
+                }
+
+                // to scroll top if cursor y-position is less than the top position the vertical scroll
+                if (top_scroll > eventObj.pageY) {
+                  window.scrollBy(0, -10);
+                }
+
+                $uiTreeHelper.positionMoved(e, pos, firstMoving);
+                if (firstMoving) {
+                  firstMoving = false;
+                  return;
+                }
+
+                // move horizontal
+                if (pos.dirAx && pos.distAxX >= config.levelThreshold) {
+                  pos.distAxX = 0;
+
+                  // increase horizontal level if previous sibling exists and is not collapsed
+                  if (pos.distX > 0) {
+                    prev = dragInfo.prev();
+                    if (prev && !prev.collapsed
+                      && prev.accept(scope, prev.childNodesCount())) {
+                      prev.$childNodesScope.$element.append(placeElm);
+                      dragInfo.moveTo(prev.$childNodesScope, prev.childNodes(), prev.childNodesCount());
+                    }
+                  }
+
+                  // decrease horizontal level
+                  if (pos.distX < 0) {
+                    // we can't decrease a level if an item preceeds the current one
+                    var next = dragInfo.next();
+                    if (!next) {
+                      var target = dragInfo.parentNode(); // As a sibling of it's parent node
+                      if (target
+                        && target.$parentNodesScope.accept(scope, target.index() + 1)) {
+                        target.$element.after(placeElm);
+                        dragInfo.moveTo(target.$parentNodesScope, target.siblings(), target.index() + 1);
+                      }
+                    }
+                  }
+                }
+
+                // check if add it as a child node first
+                // todo decrease is unused
+                var decrease = ($uiTreeHelper.offset(dragElm).left - $uiTreeHelper.offset(placeElm).left) >= config.threshold;
+                var targetX = eventObj.pageX - $window.document.body.scrollLeft;
+                var targetY = eventObj.pageY - (window.pageYOffset || $window.document.documentElement.scrollTop);
+
+                // Select the drag target. Because IE does not support CSS 'pointer-events: none', it will always
+                // pick the drag element itself as the target. To prevent this, we hide the drag element while
+                // selecting the target.
+                var displayElm;
+                if (angular.isFunction(dragElm.hide)) {
+                  dragElm.hide();
+                }else{
+                  displayElm = dragElm[0].style.display;
+                  dragElm[0].style.display = "none";
+                }
+
+                // when using elementFromPoint() inside an iframe, you have to call
+                // elementFromPoint() twice to make sure IE8 returns the correct value
+                $window.document.elementFromPoint(targetX, targetY);
+
+                var targetElm = angular.element($window.document.elementFromPoint(targetX, targetY));
+                if (angular.isFunction(dragElm.show)) {
+                  dragElm.show();
+                }else{
+                  dragElm[0].style.display = displayElm;
+                }
+
+                // move vertical
+                if (!pos.dirAx) {
+                  var targetBefore, targetNode;
+                  // check it's new position
+                  targetNode = targetElm.scope();
+                  var isEmpty = false;
+                  if (!targetNode) {
+                    return;
+                  }
+                  if (targetNode.$type == 'uiTree' && targetNode.dragEnabled) {
+                    isEmpty = targetNode.isEmpty(); // Check if it's empty tree
+                  }
+                  if (targetNode.$type == 'uiTreeHandle') {
+                    targetNode = targetNode.$nodeScope;
+                  }
+                  if (targetNode.$type != 'uiTreeNode'
+                    && !isEmpty) { // Check if it is a uiTreeNode or it's an empty tree
+                    return;
+                  }
+
+                  // if placeholder move from empty tree, reset it.
+                  if (treeScope && placeElm.parent()[0] != treeScope.$element[0]) {
+                    treeScope.resetEmptyElement();
+                    treeScope = null;
+                  }
+
+                  if (isEmpty) { // it's an empty tree
+                    treeScope = targetNode;
+                    if (targetNode.$nodesScope.accept(scope, 0)) {
+                      targetNode.place(placeElm);
+                      dragInfo.moveTo(targetNode.$nodesScope, targetNode.$nodesScope.childNodes(), 0);
+                    }
+                  } else if (targetNode.dragEnabled()){ // drag enabled
+                    targetElm = targetNode.$element; // Get the element of ui-tree-node
+                    var targetOffset = $uiTreeHelper.offset(targetElm);
+                    targetBefore = targetNode.horizontal ? eventObj.pageX < (targetOffset.left + $uiTreeHelper.width(targetElm) / 2)
+                                                         : eventObj.pageY < (targetOffset.top + $uiTreeHelper.height(targetElm) / 2);
+
+                    if (targetNode.$parentNodesScope.accept(scope, targetNode.index())) {
+                      if (targetBefore) {
+                        targetElm[0].parentNode.insertBefore(placeElm[0], targetElm[0]);
+                        dragInfo.moveTo(targetNode.$parentNodesScope, targetNode.siblings(), targetNode.index());
+                      } else {
+                        targetElm.after(placeElm);
+                        dragInfo.moveTo(targetNode.$parentNodesScope, targetNode.siblings(), targetNode.index() + 1);
+                      }
+                    }
+                    else if (!targetBefore && targetNode.accept(scope, targetNode.childNodesCount())) { // we have to check if it can add the dragging node as a child
+                      targetNode.$childNodesScope.$element.append(placeElm);
+                      dragInfo.moveTo(targetNode.$childNodesScope, targetNode.childNodes(), targetNode.childNodesCount());
+                    }
+                  }
+
+                }
+
+                scope.$apply(function() {
+                  scope.$callbacks.dragMove(dragInfo.eventArgs(elements, pos));
+                });
+              }
+            };
+
+            var dragEnd = function(e) {
+              e.preventDefault();
+
+              if (dragElm) {
+                scope.$treeScope.$apply(function() {
+                  scope.$callbacks.beforeDrop(dragInfo.eventArgs(elements, pos));
+                });
+                // roll back elements changed
+                hiddenPlaceElm.replaceWith(scope.$element);
+                placeElm.remove();
+
+                dragElm.remove();
+                dragElm = null;
+                if (scope.$$apply) {
+                  dragInfo.apply();
+                  scope.$treeScope.$apply(function() {
+                    scope.$callbacks.dropped(dragInfo.eventArgs(elements, pos));
+                  });
+                } else {
+                  bindDrag();
+                }
+                scope.$treeScope.$apply(function() {
+                  scope.$callbacks.dragStop(dragInfo.eventArgs(elements, pos));
+                });
+                scope.$$apply = false;
+                dragInfo = null;
+
+              }
+
+              // Restore cursor in Opera 12.16 and IE
+              var oldCur = document.body.getAttribute('ui-tree-cursor');
+              if (oldCur !== null) {
+                $document.find('body').css({'cursor': oldCur});
+                document.body.removeAttribute('ui-tree-cursor');
+              }
+
+              angular.element($document).unbind('touchend', dragEndEvent); // Mobile
+              angular.element($document).unbind('touchcancel', dragEndEvent); // Mobile
+              angular.element($document).unbind('touchmove', dragMoveEvent); // Mobile
+              angular.element($document).unbind('mouseup', dragEndEvent);
+              angular.element($document).unbind('mousemove', dragMoveEvent);
+              angular.element($window.document.body).unbind('mouseleave', dragCancelEvent);
+            };
+
+            var dragStartEvent = function(e) {
+              if (scope.dragEnabled()) {
+                dragStart(e);
+              }
+            };
+
+            var dragMoveEvent = function(e) {
+              dragMove(e);
+            };
+
+            var dragEndEvent = function(e) {
+              scope.$$apply = true;
+              dragEnd(e);
+            };
+
+            var dragCancelEvent = function(e) {
+              dragEnd(e);
+            };
+
+            var bindDrag = function() {
+              element.bind('touchstart mousedown', function (e) {
+                dragDelaying = true;
+                dragStarted = false;
+                dragStartEvent(e);
+                dragTimer = $timeout(function(){dragDelaying = false;}, scope.dragDelay);
+              });
+              element.bind('touchend touchcancel mouseup',function(){$timeout.cancel(dragTimer);});
+            };
+            bindDrag();
+
+            angular.element($window.document.body).bind("keydown", function(e) {
+              if (e.keyCode == 27) {
+                scope.$$apply = false;
+                dragEnd(e);
+              }
+            });
+          }
+        };
+      }
+    ]);
+
+})();
+
+(function () {
+  'use strict';
+
+  angular.module('ui.tree')
+  .directive('uiTreeHandle', [ 'treeConfig', '$window',
+    function(treeConfig) {
+      return {
+        require: '^uiTreeNode',
+        restrict: 'A',
+        scope: true,
+        controller: 'TreeHandleController',
+        link: function(scope, element, attrs, treeNodeCtrl) {
+          var config = {};
+          angular.extend(config, treeConfig);
+          if (config.handleClass) {
+            element.addClass(config.handleClass);
+          }
+          // connect with the tree node.
+          if (scope != treeNodeCtrl.scope) {
+            scope.$nodeScope = treeNodeCtrl.scope;
+            treeNodeCtrl.scope.$handleScope = scope;
+          }
+        }
+      };
+    }
+  ]);
+})();
+
 // Copyright 2009-2012 by contributors, MIT License
 // vim: ts=4 sts=4 sw=4 expandtab
 
+//Add semicolon to prevent IIFE from being passed as argument to concated code.
+;
 // Module systems magic dance
 (function (definition) {
     // RequireJS
@@ -35325,6 +36640,20 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
  * ES5 Spec: http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf
  * Required reading: http://javascriptweblog.wordpress.com/2011/12/05/extending-javascript-natives/
  */
+
+// ES-5 15.1.2.2
+if (parseInt('08') !== 8) {
+    parseInt = (function (origParseInt) {
+        var hexRegex = /^0[xX]/;
+        return function parseIntES5(str, radix) {
+            str = String(str).trim();
+            if (!+radix) {
+                radix = hexRegex.test(str) ? 16 : 10;
+            }
+            return origParseInt(str, radix);
+        };
+    }(parseInt));
+}
 
 //
 // Function
@@ -35357,7 +36686,7 @@ if (!Function.prototype.bind) {
         //   15.3.4.5.2.
         // 14. Set the [[HasInstance]] internal property of F as described in
         //   15.3.4.5.3.
-        var bound = function () {
+        var binder = function () {
 
             if (this instanceof bound) {
                 // 15.3.4.5.2 [[Construct]]
@@ -35413,21 +36742,36 @@ if (!Function.prototype.bind) {
             }
 
         };
-        if(target.prototype) {
-            Empty.prototype = target.prototype;
-            bound.prototype = new Empty();
-            // Clean up dangling references.
-            Empty.prototype = null;
-        }
-        // XXX bound.length is never writable, so don't even try
-        //
+
         // 15. If the [[Class]] internal property of Target is "Function", then
         //     a. Let L be the length property of Target minus the length of A.
         //     b. Set the length own property of F to either 0 or L, whichever is
         //       larger.
         // 16. Else set the length own property of F to 0.
+
+        var boundLength = Math.max(0, target.length - args.length);
+
         // 17. Set the attributes of the length own property of F to the values
         //   specified in 15.3.5.1.
+        var boundArgs = [];
+        for (var i = 0; i < boundLength; i++) {
+            boundArgs.push("$" + i);
+        }
+
+        // XXX Build a dynamic function with desired amount of arguments is the only 
+        // way to set the length property of a function. 
+        // In environments where Content Security Policies enabled (Chrome extensions, 
+        // for ex.) all use of eval or Function costructor throws an exception. 
+        // However in all of these environments Function.prototype.bind exists 
+        // and so this code will never be executed.
+        var bound = Function("binder", "return function(" + boundArgs.join(",") + "){return binder.apply(this,arguments)}")(binder);
+
+        if (target.prototype) {
+            Empty.prototype = target.prototype;
+            bound.prototype = new Empty();
+            // Clean up dangling references.
+            Empty.prototype = null;
+        }
 
         // TODO
         // 18. Set the [[Extensible]] internal property of F to true.
@@ -35491,8 +36835,10 @@ if ((supportsAccessors = owns(prototypeOfObject, "__defineGetter__"))) {
 // IE < 9 bug: [1,2].splice(0).join("") == "" but should be "12"
 if ([1,2].splice(0).length != 2) {
     var array_splice = Array.prototype.splice;
+    var array_push = Array.prototype.push;
+    var array_unshift = Array.prototype.unshift;
 
-    if(function() { // test IE < 9 to splice bug - see issue #138
+    if (function() { // test IE < 9 to splice bug - see issue #138
         function makeArray(l) {
             var a = [];
             while (l--) {
@@ -35511,7 +36857,7 @@ if ([1,2].splice(0).length != 2) {
         lengthBefore = array.length; //20
         array.splice(5, 0, "XXX"); // add one element
 
-        if(lengthBefore + 1 == array.length) {
+        if (lengthBefore + 1 == array.length) {
             return true;// has right splice implementation without bugs
         }
         // else {
@@ -35536,26 +36882,26 @@ if ([1,2].splice(0).length != 2) {
                 , addElementsCount = args.length
             ;
 
-            if(!arguments.length) {
+            if (!arguments.length) {
                 return [];
             }
 
-            if(start === void 0) { // default
+            if (start === void 0) { // default
                 start = 0;
             }
-            if(deleteCount === void 0) { // default
+            if (deleteCount === void 0) { // default
                 deleteCount = this.length - start;
             }
 
-            if(addElementsCount > 0) {
-                if(deleteCount <= 0) {
-                    if(start == this.length) { // tiny optimisation #1
-                        this.push.apply(this, args);
+            if (addElementsCount > 0) {
+                if (deleteCount <= 0) {
+                    if (start == this.length) { // tiny optimisation #1
+                        array_push.apply(this, args);
                         return [];
                     }
 
-                    if(start == 0) { // tiny optimisation #2
-                        this.unshift.apply(this, args);
+                    if (start == 0) { // tiny optimisation #2
+                        array_unshift.apply(this, args);
                         return [];
                     }
                 }
@@ -35621,8 +36967,15 @@ if (!Array.isArray) {
 // and failure of `0 in boxedString` (Rhino)
 var boxedString = Object("a"),
     splitString = boxedString[0] != "a" || !(0 in boxedString);
+// Check node 0.6.21 bug where third parameter is not boxed
+var boxedForEach = true;
+if (Array.prototype.forEach) {
+    Array.prototype.forEach.call("foo", function(item, i, obj) {
+        if (typeof obj !== 'object') boxedForEach = false;
+    });
+}
 
-if (!Array.prototype.forEach) {
+if (!Array.prototype.forEach || !boxedForEach) {
     Array.prototype.forEach = function forEach(fun /*, thisp*/) {
         var object = toObject(this),
             self = splitString && _toString(this) == "[object String]" ?
@@ -35997,7 +37350,7 @@ if (
         year = this.getUTCFullYear();
 
         month = this.getUTCMonth();
-        // see https://github.com/kriskowal/es5-shim/issues/111
+        // see https://github.com/es-shims/es5-shim/issues/111
         year += Math.floor(month / 12);
         month = (month % 12 + 12) % 12;
 
@@ -36155,6 +37508,10 @@ if (!Date.parse || "Date.parse is buggy") {
             );
         }
 
+        function toUTC(t) {
+            return Number(new NativeDate(1970, 0, 1, 0, 0, 0, t));
+        }
+
         // Copy any custom methods a 3rd party library may have added
         for (var key in NativeDate) {
             Date[key] = NativeDate[key];
@@ -36183,8 +37540,7 @@ if (!Date.parse || "Date.parse is buggy") {
                     // When time zone is missed, local offset should be used
                     // (ES 5.1 bug)
                     // see https://bugs.ecmascript.org/show_bug.cgi?id=112
-                    offset = !match[4] || match[8] ?
-                        0 : Number(new NativeDate(1970, 0)),
+                    isLocalTime = Boolean(match[4] && !match[8]),
                     signOffset = match[9] === "-" ? 1 : -1,
                     hourOffset = Number(match[10] || 0),
                     minuteOffset = Number(match[11] || 0),
@@ -36211,7 +37567,10 @@ if (!Date.parse || "Date.parse is buggy") {
                     result = (
                         (result + minute + minuteOffset * signOffset) * 60 +
                         second
-                    ) * 1000 + millisecond + offset;
+                    ) * 1000 + millisecond;
+                    if (isLocalTime) {
+                        result = toUTC(result);
+                    }
                     if (-8.64e15 <= result && result <= 8.64e15) {
                         return result;
                     }
@@ -36397,26 +37756,124 @@ if (!Number.prototype.toFixed || (0.00008).toFixed(3) !== '0.000' || (0.9).toFix
 
 // ES5 15.5.4.14
 // http://es5.github.com/#x15.5.4.14
+
+// [bugfix, IE lt 9, firefox 4, Konqueror, Opera, obscure browsers]
+// Many browsers do not split properly with regular expressions or they
+// do not perform the split correctly under obscure conditions.
+// See http://blog.stevenlevithan.com/archives/cross-browser-split
+// I've tested in many browsers and this seems to cover the deviant ones:
+//    'ab'.split(/(?:ab)*/) should be ["", ""], not [""]
+//    '.'.split(/(.?)(.?)/) should be ["", ".", "", ""], not ["", ""]
+//    'tesst'.split(/(s)*/) should be ["t", undefined, "e", "s", "t"], not
+//       [undefined, "t", undefined, "e", ...]
+//    ''.split(/.?/) should be [], not [""]
+//    '.'.split(/()()/) should be ["."], not ["", "", "."]
+
+var string_split = String.prototype.split;
+if (
+    'ab'.split(/(?:ab)*/).length !== 2 ||
+    '.'.split(/(.?)(.?)/).length !== 4 ||
+    'tesst'.split(/(s)*/)[1] === "t" ||
+    ''.split(/.?/).length ||
+    '.'.split(/()()/).length > 1
+) {
+    (function () {
+        var compliantExecNpcg = /()??/.exec("")[1] === void 0; // NPCG: nonparticipating capturing group
+
+        String.prototype.split = function (separator, limit) {
+            var string = this;
+            if (separator === void 0 && limit === 0)
+                return [];
+
+            // If `separator` is not a regex, use native split
+            if (Object.prototype.toString.call(separator) !== "[object RegExp]") {
+                return string_split.apply(this, arguments);
+            }
+
+            var output = [],
+                flags = (separator.ignoreCase ? "i" : "") +
+                        (separator.multiline  ? "m" : "") +
+                        (separator.extended   ? "x" : "") + // Proposed for ES6
+                        (separator.sticky     ? "y" : ""), // Firefox 3+
+                lastLastIndex = 0,
+                // Make `global` and avoid `lastIndex` issues by working with a copy
+                separator = new RegExp(separator.source, flags + "g"),
+                separator2, match, lastIndex, lastLength;
+            string += ""; // Type-convert
+            if (!compliantExecNpcg) {
+                // Doesn't need flags gy, but they don't hurt
+                separator2 = new RegExp("^" + separator.source + "$(?!\\s)", flags);
+            }
+            /* Values for `limit`, per the spec:
+             * If undefined: 4294967295 // Math.pow(2, 32) - 1
+             * If 0, Infinity, or NaN: 0
+             * If positive number: limit = Math.floor(limit); if (limit > 4294967295) limit -= 4294967296;
+             * If negative number: 4294967296 - Math.floor(Math.abs(limit))
+             * If other: Type-convert, then use the above rules
+             */
+            limit = limit === void 0 ?
+                -1 >>> 0 : // Math.pow(2, 32) - 1
+                limit >>> 0; // ToUint32(limit)
+            while (match = separator.exec(string)) {
+                // `separator.lastIndex` is not reliable cross-browser
+                lastIndex = match.index + match[0].length;
+                if (lastIndex > lastLastIndex) {
+                    output.push(string.slice(lastLastIndex, match.index));
+                    // Fix browsers whose `exec` methods don't consistently return `undefined` for
+                    // nonparticipating capturing groups
+                    if (!compliantExecNpcg && match.length > 1) {
+                        match[0].replace(separator2, function () {
+                            for (var i = 1; i < arguments.length - 2; i++) {
+                                if (arguments[i] === void 0) {
+                                    match[i] = void 0;
+                                }
+                            }
+                        });
+                    }
+                    if (match.length > 1 && match.index < string.length) {
+                        Array.prototype.push.apply(output, match.slice(1));
+                    }
+                    lastLength = match[0].length;
+                    lastLastIndex = lastIndex;
+                    if (output.length >= limit) {
+                        break;
+                    }
+                }
+                if (separator.lastIndex === match.index) {
+                    separator.lastIndex++; // Avoid an infinite loop
+                }
+            }
+            if (lastLastIndex === string.length) {
+                if (lastLength || !separator.test("")) {
+                    output.push("");
+                }
+            } else {
+                output.push(string.slice(lastLastIndex));
+            }
+            return output.length > limit ? output.slice(0, limit) : output;
+        };
+    }());
+
 // [bugfix, chrome]
 // If separator is undefined, then the result array contains just one String,
 // which is the this value (converted to a String). If limit is not undefined,
 // then the output array is truncated so that it contains no more than limit
 // elements.
 // "0".split(undefined, 0) -> []
-if("0".split(void 0, 0).length) {
-    var string_split = String.prototype.split;
+} else if ("0".split(void 0, 0).length) {
     String.prototype.split = function(separator, limit) {
-        if(separator === void 0 && limit === 0)return [];
+        if (separator === void 0 && limit === 0) return [];
         return string_split.apply(this, arguments);
     }
 }
+
 
 // ECMA-262, 3rd B.2.3
 // Note an ECMAScript standart, although ECMAScript 3rd Edition has a
 // non-normative section suggesting uniform semantics and it should be
 // normalized across all browsers
 // [bugfix, IE lt 9] IE < 9 substr() with negative value not working in IE
-if("".substr && "0b".substr(-1) !== "b") {
+if ("".substr && "0b".substr(-1) !== "b") {
     var string_substr = String.prototype.substr;
     /**
      *  Get the substring of a string
@@ -36445,7 +37902,7 @@ if (!String.prototype.trim || ws.trim()) {
     var trimBeginRegexp = new RegExp("^" + ws + ws + "*"),
         trimEndRegexp = new RegExp(ws + ws + "*$");
     String.prototype.trim = function trim() {
-        if (this === undefined || this === null) {
+        if (this === void 0 || this === null) {
             throw new TypeError("can't convert "+this+" to object");
         }
         return String(this)

@@ -70,6 +70,10 @@ div[role=raml-editor] > div[role=notifications] > i {
 div[role=raml-editor] > div[role=notifications] > i:hover {
   color: white;
 }
+div[role=raml-editor] > div[role=notifications].error {
+  color: #c7254e;
+  background-color: #f9f2f4;
+}
 div[role=raml-editor] > div[role=notifications].hidden {
   opacity: 0;
   top: -26px;
@@ -667,11 +671,14 @@ div .noselect {
   list-style: none;
   line-height: 15px;
   background-color: #141519;
-  color: #777;
+  color: #888;
   -webkit-box-flex: 1;
   -webkit-flex: 1;
   -ms-flex: 1;
   flex: 1;
+}
+[role=browser] .file-list .drag-elm div {
+  color: #333;
 }
 [role=browser] .file-list .file-item {
   padding: 5px 10px;
@@ -686,13 +693,36 @@ div .noselect {
   -ms-flex-align: center;
   align-items: center;
 }
+[role=browser] .file-list .file-item.dummy {
+  padding: 0;
+  background: none !important;
+}
+[role=browser] .file-list .file-item.dummy.top {
+  height: 6px;
+  min-height: 6px;
+}
+[role=browser] .file-list .file-item.dummy.bottom {
+  height: 80px;
+}
 [role=browser] .file-list .file-item:not(.currentfile):hover {
-  color: #ccc;
-  background-color: #808395;
+  color: #ddd;
 }
 [role=browser] .file-list .file-item.currentfile {
   color: #ddd;
   background-color: #1e4f6a;
+}
+[role=browser] .file-list .file-item.dragover {
+  color: #ddd;
+  background-color: #222;
+}
+[role=browser] .file-list .file-item.dragover.directory {
+  background-color: #133142;
+}
+[role=browser] .file-list .file-item.dragover.top {
+  border-bottom: 1px #888 dotted;
+}
+[role=browser] .file-list .file-item.dragover.bottom {
+  border-top: 1px #888 dotted;
 }
 [role=browser] .file-list .file-item .file-name {
   -webkit-box-flex: 1;
@@ -702,17 +732,41 @@ div .noselect {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-[role=browser] .file-list .file-item .fa {
+[role=browser] .file-list .file-item .fa:not(.icon) {
   display: none;
   padding-left: 10px;
   font-size: 15px;
 }
-[role=browser] .file-list .file-item.geared .fa,
-[role=browser] .file-list .file-item:hover .fa {
+[role=browser] .file-list .file-item.geared .fa:not(.icon),
+[role=browser] .file-list .file-item:hover .fa:not(.icon) {
   display: block;
 }
 [role=browser] .file-list .file-item.dirty .file-name:before {
   content: '* ';
+}
+[role=browser] .file-list .file-item.no-drop {
+  cursor: no-drop !important;
+}
+[role=browser] .file-list .file-item.copy {
+  cursor: copy !important;
+}
+.hidden {
+  display: none!important;
+  visibility: hidden!important;
+}
+/* angular ui tree overrides */
+.angular-ui-tree-handle {
+  font-weight: normal;
+}
+.angular-ui-tree-drag {
+  color: white;
+  font-size: 12px;
+}
+.angular-ui-tree-drag div {
+  padding: 5px 10px;
+}
+.angular-ui-tree-drag .fa-cog {
+  display: none!important;
 }
 /* Light theme */
 div[role=raml-editor].light [role=browser] {
