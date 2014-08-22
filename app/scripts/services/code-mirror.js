@@ -216,6 +216,13 @@
         // for testing automation purposes
         editor = window.editor = cm;
 
+        // prevent the default code mirror event if clicking on a cm-link tag
+        editor.on('mousedown', function(cm, e) {
+          if (e.target.tagName.toLowerCase() === 'cm-link') {
+            e.preventDefault();
+          }
+        });
+
         return cm;
       };
 

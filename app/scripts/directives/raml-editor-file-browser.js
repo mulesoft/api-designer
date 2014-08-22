@@ -93,6 +93,11 @@
           action(target);
         };
 
+        fileBrowser.selectWithPath = function selectWithPath(path) {
+          var target = ramlRepository.getByPath(path);
+          return target ? fileBrowser.select(target) : void(0);
+        };
+
         fileBrowser.selectFile = function selectFile(file) {
           // If we select a file that is already active, just modify 'currentTarget', no load needed
           if (fileBrowser.selectedFile && fileBrowser.selectedFile.$$hashKey === file.$$hashKey) {

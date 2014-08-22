@@ -48,7 +48,7 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal
+      codeMirrorErrors, config, $prompt, $confirm, $modal, $compile
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -87,6 +87,11 @@
         }
 
         return 'Error on line ' + (actualLine + 1) + ': ' + message;
+      }
+
+      function compileLinkDirectives () {
+        var links = document.getElementsByClassName('cm-include-link');
+        $compile(links)($scope);
       }
 
       $window.setTheme = function setTheme(theme) {
@@ -292,6 +297,7 @@
 
         editor.on('change', debounce(function onChange() {
           $scope.sourceUpdated();
+          compileLinkDirectives();
         }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL)));
 
         // Warn before leaving the page

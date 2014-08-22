@@ -22,7 +22,33 @@
           }
         };
 
+        mode.includeHighlightOverlay = {
+          token: function(stream, state) {
+            if (state.foundInclude) {
+              stream.skipToEnd();
+              // reset the state
+              state.foundInclude = false;
+              return 'include-link';
+            }
+
+            if (stream.match('!include')) {
+              // skip all the white spaces
+              while(stream.eatSpace()) {}
+              state.foundInclude = true;
+              return null;
+            }
+
+            // search forward for the '!include token'
+            while (stream.next() && !stream.match('!include', false)) {}
+            return null;
+          },
+          startState: function startState() {
+            return { foundInclude: false };
+          }
+        };
+
         mode.yaml     = CodeMirror.overlayMode(CodeMirror.getMode(config, 'yaml'), mode.indentationOverlay);
+        mode.yaml     = CodeMirror.overlayMode(mode.yaml, mode.includeHighlightOverlay);
         mode.xml      = CodeMirror.overlayMode(CodeMirror.getMode(config, 'xml'), mode.indentationOverlay);
         mode.json     = CodeMirror.overlayMode(CodeMirror.getMode(config, { name: 'javascript', json: true }), mode.indentationOverlay);
         mode.markdown = CodeMirror.overlayMode(CodeMirror.getMode(config, 'gfm'), mode.indentationOverlay);
@@ -126,6 +152,39 @@
       };
 
       return mode;
+    })
+    .directive('cmIncludeLink', function($compile, $rootScope, ramlRepository){
+      /**
+       * 'childPath' is the relative path for a file from within 'parent'
+       * Returns an absolute path
+       */
+      function makeAbsolutePath (childPath, parent) {
+        // join paths directly if parent path ends with '/', else join using '/'
+        return [parent.path, childPath].join(parent.path.slice(-1) === '/' ? '' : '/');
+      }
+
+      function isRelativePath (path) {
+        return path.charAt(0) !== '/';
+      }
+
+      return {
+        restrict: 'C',
+        link: function(scope, element) {
+          var path = element[0].innerText;
+
+          if (isRelativePath(path)) {
+            path = makeAbsolutePath(path, ramlRepository.getParent($rootScope.fileBrowser.selectedFile));
+          }
+
+          scope.openFile = function (path) {
+            $rootScope.fileBrowser.selectWithPath(path);
+          };
+
+          // replace the original content with a clickable link
+          var template = '<cm-link ng-click="openFile(\'' + path + '\')">' + element[0].innerText + '</cm-link>';
+          element.html('').append($compile(template)(scope));
+        }
+      };
     })
   ;
 })();
