@@ -20,10 +20,10 @@
             scope.init(controllersArr);
 
             scope.collapsed = !!$uiTreeHelper.getNodeAttribute(scope, 'collapsed');
-            attrs.$observe('collapsed', function(val) {
-              var collapsed = scope.$eval(val);
-              if((typeof collapsed) === 'boolean') {
-                scope.collapsed = collapsed;
+
+            scope.$watch(attrs.collapsed, function(val) {
+              if((typeof val) === 'boolean') {
+                scope.collapsed = val;
               }
             });
 
@@ -31,6 +31,7 @@
               $uiTreeHelper.setNodeAttribute(scope, 'collapsed', val);
               attrs.$set('collapsed', val);
             });
+
             var elements;  // As a parameter for callbacks
             var firstMoving, dragInfo, pos, dropAccpeted;
             var dragElm, hiddenPlaceElm;
@@ -54,7 +55,8 @@
                 return;
               }
 
-              var eventElm   = angular.element(e.target); // the element which is clicked
+              // the element which is clicked
+              var eventElm   = angular.element(e.target);
               var eventScope = eventElm.scope();
               if (!eventScope || !eventScope.$type) {
                 return;
@@ -82,6 +84,10 @@
                   return;
                 }
                 eventElm = eventElm.parent();
+              }
+
+              if (!scope.beforeDrag(scope)){
+                return;
               }
 
               e.uiTreeDragging = true; // stop event bubbling

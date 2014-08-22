@@ -35418,7 +35418,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 }]);
 
 /**
- * @license Angular UI Tree v2.1.4
+ * @license Angular UI Tree v2.1.5
  * (c) 2010-2014. https://github.com/JimLiu/angular-ui-tree
  * License: MIT
  */
@@ -35775,8 +35775,8 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
   angular.module('ui.tree')
 
-    .controller('TreeNodesController', ['$scope', '$element', '$timeout', 'treeConfig',
-      function ($scope, $element, $timeout, treeConfig) {
+    .controller('TreeNodesController', ['$scope', '$element', 'treeConfig',
+      function ($scope, $element, treeConfig) {
         this.scope = $scope;
 
         $scope.$element = $element;
@@ -35790,9 +35790,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
         $scope.maxDepth = 0;
 
         $scope.initSubNode = function(subNode) {
-          $timeout(function() {
-            $scope.$nodesMap[subNode.$modelValue.$$hashKey] = subNode;
-          });
+          $scope.$nodesMap[subNode.$modelValue.$$hashKey] = subNode;
         };
 
         $scope.destroySubNode = function(subNode) {
@@ -35801,6 +35799,10 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
         $scope.accept = function(sourceNode, destIndex) {
           return $scope.$treeScope.$callbacks.accept(sourceNode, $scope, destIndex);
+        };
+
+        $scope.beforeDrag = function(sourceNode) {
+          return $scope.$treeScope.$callbacks.beforeDrag(sourceNode);
         };
 
         $scope.isParent = function(node) {
@@ -35954,6 +35956,12 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
                   $scope.$childNodesScope.accept(sourceNode, destIndex);
         };
 
+        $scope.removeNode = function(){
+          var node = $scope.remove();
+          $scope.$callbacks.removed(node);
+          return node;
+        };
+
         $scope.remove = function() {
           return $scope.$parentNodesScope.removeNode($scope);
         };
@@ -36033,7 +36041,8 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
         controller: 'TreeController',
         link: function(scope, element, attrs) {
           var callbacks = {
-            accept: null
+            accept: null,
+            beforeDrag: null
           };
 
           var config = {};
@@ -36053,31 +36062,27 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             }
           }, true);
 
-          attrs.$observe('dragEnabled', function(val) {
-            var de = scope.$eval(val);
-            if((typeof de) == "boolean") {
-              scope.dragEnabled = de;
+          scope.$watch(attrs.dragEnabled, function(val) {
+            if((typeof val) == "boolean") {
+              scope.dragEnabled = val;
             }
           });
 
-          attrs.$observe('emptyPlaceHolderEnabled', function(val) {
-            var ep = scope.$eval(val);
-            if((typeof ep) == "boolean") {
-              scope.emptyPlaceHolderEnabled = ep;
+          scope.$watch(attrs.emptyPlaceHolderEnabled, function(val) {
+            if((typeof val) == "boolean") {
+              scope.emptyPlaceHolderEnabled = val;
             }
           });
 
-          attrs.$observe('maxDepth', function(val) {
-            var md = scope.$eval(val);
-            if((typeof md) == "number") {
-              scope.maxDepth = md;
+          scope.$watch(attrs.maxDepth, function(val) {
+            if((typeof val) == "number") {
+              scope.maxDepth = val;
             }
           });
 
-          attrs.$observe('dragDelay', function(val) {
-            var dd = scope.$eval(val);
-            if((typeof dd) == "number") {
-              scope.dragDelay = dd;
+          scope.$watch(attrs.dragDelay, function(val) {
+            if((typeof val) == "number") {
+              scope.dragDelay = val;
             }
           });
 
@@ -36090,6 +36095,14 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
               return false;
             }
             return true;
+          };
+
+          callbacks.beforeDrag = function(sourceNodeScope) {
+            return true;
+          };
+
+          callbacks.removed = function(node){
+          
           };
 
           callbacks.dropped = function(event) {
@@ -36172,10 +36185,9 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             };
           }
 
-          attrs.$observe('maxDepth', function(val) {
-            var md = scope.$eval(val);
-            if((typeof md) == "number") {
-              scope.maxDepth = md;
+          scope.$watch(attrs.maxDepth, function(val) {
+            if((typeof val) == "number") {
+              scope.maxDepth = val;
             }
           });
 
@@ -36213,10 +36225,10 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             scope.init(controllersArr);
 
             scope.collapsed = !!$uiTreeHelper.getNodeAttribute(scope, 'collapsed');
-            attrs.$observe('collapsed', function(val) {
-              var collapsed = scope.$eval(val);
-              if((typeof collapsed) == "boolean") {
-                scope.collapsed = collapsed;
+
+            scope.$watch(attrs.collapsed, function(val) {
+              if((typeof val) == "boolean") {
+                scope.collapsed = val;
               }
             });
 
@@ -36231,6 +36243,8 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             var placeElm, hiddenPlaceElm, dragElm;
             var treeScope = null;
             var elements; // As a parameter for callbacks
+            var dragDelaying = true;
+            var dragStarted = false;
             var dragTimer = null;
             var body = document.body,
                 html = document.documentElement,
@@ -36263,7 +36277,9 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
               var eventElmTagName = eventElm.prop('tagName').toLowerCase();
               if (eventElmTagName == 'input' ||
-                eventElmTagName == 'button') { // if it's a input or button, ignore it
+                eventElmTagName == 'textarea' ||
+                eventElmTagName == 'button' ||
+                eventElmTagName == 'select') { // if it's a input or button, ignore it
                 return;
               }
 
@@ -36273,6 +36289,10 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
                   return;
                 }
                 eventElm = eventElm.parent();
+              }
+
+              if (!scope.beforeDrag(scope)){
+                return;
               }
 
               e.uiTreeDragging = true; // stop event bubbling
@@ -36326,9 +36346,6 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
                 placeholder: placeElm,
                 dragging: dragElm
               };
-              scope.$apply(function() {
-                scope.$callbacks.dragStart(dragInfo.eventArgs(elements, pos));
-              });
 
               angular.element($document).bind('touchend', dragEndEvent);
               angular.element($document).bind('touchcancel', dragEndEvent);
@@ -36336,17 +36353,33 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
               angular.element($document).bind('mouseup', dragEndEvent);
               angular.element($document).bind('mousemove', dragMoveEvent);
               angular.element($document).bind('mouseleave', dragCancelEvent);
+
               document_height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
               document_width = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
             };
 
             var dragMove = function(e) {
+              if (!dragStarted) {
+                if (!dragDelaying) {
+                  dragStarted = true;
+                  scope.$apply(function() {
+                    scope.$callbacks.dragStart(dragInfo.eventArgs(elements, pos));
+                  });
+                }
+                return;
+              }
+
               var eventObj = $uiTreeHelper.eventObj(e);
               var prev, leftElmPos, topElmPos;
 
               if (dragElm) {
                 e.preventDefault();
-                $window.getSelection().removeAllRanges();
+
+                if ($window.getSelection) {
+                  $window.getSelection().removeAllRanges();
+                } else if ($window.document.selection) {
+                  $window.document.selection.empty();
+                }
 
                 leftElmPos = eventObj.pageX - pos.offsetX;
                 topElmPos = eventObj.pageY - pos.offsetY;
@@ -36578,9 +36611,12 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
             var bindDrag = function() {
               element.bind('touchstart mousedown', function (e) {
-                dragTimer = $timeout(function(){dragStartEvent(e);}, scope.dragDelay);
+                dragDelaying = true;
+                dragStarted = false;
+                dragStartEvent(e);
+                dragTimer = $timeout(function(){dragDelaying = false;}, scope.dragDelay);
               });
-              element.bind('touchend touchmove touchcancel mousemove mouseup',function(){$timeout.cancel(dragTimer);});
+              element.bind('touchend touchcancel mouseup',function(){$timeout.cancel(dragTimer);});
             };
             bindDrag();
 
