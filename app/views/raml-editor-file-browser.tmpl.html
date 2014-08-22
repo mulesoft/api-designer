@@ -7,7 +7,7 @@
       directory: node.isDirectory,
       'no-drop': fileBrowser.cursorState === 'no',
       copy: fileBrowser.cursorState === 'ok'}">
-    <span class="file-name" ng-click="toggleFolderCollapse(node)">
+    <span class="file-name" ng-click="toggleFolderCollapse(this.$nodeScope)">
       <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>
       <i class="fa icon fa-fw" ng-class="{'fa-folder-o': node.isDirectory, 'fa-file-text-o': !node.isDirectory}"></i>
       &nbsp;{{node.name}}

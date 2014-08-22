@@ -7902,7 +7902,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
   CodeMirror.defineMIME("text/html", {name: "xml", htmlMode: true});
 
 /**
- * @license AngularJS v1.2.21
+ * @license AngularJS v1.2.22
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -7971,7 +7971,7 @@ function minErr(module) {
       return match;
     });
 
-    message = message + '\nhttp://errors.angularjs.org/1.2.21/' +
+    message = message + '\nhttp://errors.angularjs.org/1.2.22/' +
       (module ? module + '/' : '') + code;
     for (i = 2; i < arguments.length; i++) {
       message = message + (i == 2 ? '?' : '&') + 'p' + (i-2) + '=' +
@@ -9880,11 +9880,11 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.21',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.22',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
-  dot: 21,
-  codeName: 'wizard-props'
+  dot: 22,
+  codeName: 'finicky-pleasure'
 };
 
 
@@ -9897,11 +9897,11 @@ function publishExternalAPI(angular){
     'element': jqLite,
     'forEach': forEach,
     'injector': createInjector,
-    'noop':noop,
-    'bind':bind,
+    'noop': noop,
+    'bind': bind,
     'toJson': toJson,
     'fromJson': fromJson,
-    'identity':identity,
+    'identity': identity,
     'isUndefined': isUndefined,
     'isDefined': isDefined,
     'isString': isString,
@@ -10960,21 +10960,37 @@ forEach({
 
   clone: jqLiteClone,
 
-  triggerHandler: function(element, eventName, eventData) {
-    // Copy event handlers in case event handlers array is modified during execution.
-    var eventFns = (jqLiteExpandoStore(element, 'events') || {})[eventName],
-        eventFnsCopy = shallowCopy(eventFns || []);
+  triggerHandler: function(element, event, extraParameters) {
 
-    eventData = eventData || [];
+    var dummyEvent, eventFnsCopy, handlerArgs;
+    var eventName = event.type || event;
+    var eventFns = (jqLiteExpandoStore(element, 'events') || {})[eventName];
 
-    var event = [{
-      preventDefault: noop,
-      stopPropagation: noop
-    }];
+    if (eventFns) {
 
-    forEach(eventFnsCopy, function(fn) {
-      fn.apply(element, event.concat(eventData));
-    });
+      // Create a dummy event to pass to the handlers
+      dummyEvent = {
+        preventDefault: function() { this.defaultPrevented = true; },
+        isDefaultPrevented: function() { return this.defaultPrevented === true; },
+        stopPropagation: noop,
+        type: eventName,
+        target: element
+      };
+
+      // If a custom event was provided then extend our dummy event with it
+      if (event.type) {
+        dummyEvent = extend(dummyEvent, event);
+      }
+
+      // Copy event handlers in case event handlers array is modified during execution.
+      eventFnsCopy = shallowCopy(eventFns);
+      handlerArgs = extraParameters ? [dummyEvent].concat(extraParameters) : [dummyEvent];
+
+      forEach(eventFnsCopy, function(fn) {
+        fn.apply(element, handlerArgs);
+      });
+
+    }
   }
 }, function(fn, name){
   /**
@@ -13219,7 +13235,7 @@ function $TemplateCacheProvider() {
  *
  * #### `template`
  * HTML markup that may:
- * * Replace the contents of the directive's element (defualt).
+ * * Replace the contents of the directive's element (default).
  * * Replace the directive's element itself (if `replace` is true - DEPRECATED).
  * * Wrap the contents of the directive's element (if `transclude` is true).
  *
@@ -14479,7 +14495,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
                 if (parentGet.literal) {
                   compare = equals;
                 } else {
-                  compare = function(a,b) { return a === b; };
+                  compare = function(a,b) { return a === b || (a !== a && b !== b); };
                 }
                 parentSet = parentGet.assign || function() {
                   // reset the change, or we will throw this exception on every $digest
@@ -15507,6 +15523,7 @@ function $HttpProvider() {
      * - {@link ng.$http#put $http.put}
      * - {@link ng.$http#delete $http.delete}
      * - {@link ng.$http#jsonp $http.jsonp}
+     * - {@link ng.$http#patch $http.patch}
      *
      *
      * # Setting HTTP Headers
@@ -15808,7 +15825,7 @@ function $HttpProvider() {
      *    - **timeout** – `{number|Promise}` – timeout in milliseconds, or {@link ng.$q promise}
      *      that should abort the request when resolved.
      *    - **withCredentials** - `{boolean}` - whether to set the `withCredentials` flag on the
-     *      XHR object. See [requests with credentials]https://developer.mozilla.org/en/http_access_control#section_5
+     *      XHR object. See [requests with credentials](https://developer.mozilla.org/docs/Web/HTTP/Access_control_CORS#Requests_with_credentials)
      *      for more information.
      *    - **responseType** - `{string}` - see
      *      [requestType](https://developer.mozilla.org/en-US/docs/DOM/XMLHttpRequest#responseType).
@@ -16177,7 +16194,8 @@ function $HttpProvider() {
       promise.then(removePendingReq, removePendingReq);
 
 
-      if ((config.cache || defaults.cache) && config.cache !== false && config.method == 'GET') {
+      if ((config.cache || defaults.cache) && config.cache !== false &&
+          (config.method === 'GET' || config.method === 'JSONP')) {
         cache = isObject(config.cache) ? config.cache
               : isObject(defaults.cache) ? defaults.cache
               : defaultCache;
@@ -17649,6 +17667,8 @@ function $LocationProvider(){
     $location = new LocationMode(appBase, '#' + hashPrefix);
     $location.$$parse($location.$$rewrite(initialUrl));
 
+    var IGNORE_URI_REGEXP = /^\s*(javascript|mailto):/i;
+
     $rootElement.on('click', function(event) {
       // TODO(vojta): rewrite link when opening in new tab/window (in legacy browser)
       // currently we open nice url link and redirect then
@@ -17670,6 +17690,9 @@ function $LocationProvider(){
         // an animation.
         absHref = urlResolve(absHref.animVal).href;
       }
+
+      // Ignore when url is started with javascript: or mailto:
+      if (IGNORE_URI_REGEXP.test(absHref)) return;
 
       // Make relative links work in HTML5 mode for legacy browsers (or at least IE8 & 9)
       // The href should be a regular url e.g. /link/somewhere or link/somewhere or ../somewhere or
@@ -18542,9 +18565,9 @@ Parser.prototype = {
     var middle;
     var token;
     if ((token = this.expect('?'))) {
-      middle = this.ternary();
+      middle = this.assignment();
       if ((token = this.expect(':'))) {
-        return this.ternaryFn(left, middle, this.ternary());
+        return this.ternaryFn(left, middle, this.assignment());
       } else {
         this.throwError('expected :', token);
       }
@@ -18632,7 +18655,9 @@ Parser.prototype = {
       return getter(self || object(scope, locals));
     }, {
       assign: function(scope, value, locals) {
-        return setter(object(scope, locals), field, value, parser.text, parser.options);
+        var o = object(scope, locals);
+        if (!o) object.assign(scope, o = {});
+        return setter(o, field, value, parser.text, parser.options);
       }
     });
   },
@@ -18662,10 +18687,11 @@ Parser.prototype = {
       return v;
     }, {
       assign: function(self, value, locals) {
-        var key = indexFn(self, locals);
+        var key = ensureSafeMemberName(indexFn(self, locals), parser.text);
         // prevent overwriting of Function.constructor which would break ensureSafeObject check
-        var safe = ensureSafeObject(obj(self, locals), parser.text);
-        return safe[key] = value;
+        var o = ensureSafeObject(obj(self, locals), parser.text);
+        if (!o) obj.assign(self, o = {});
+        return o[key] = value;
       }
     });
   },
@@ -23031,7 +23057,7 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
  *   (e.g. `"h 'o''clock'"`).
  *
  * @param {(Date|number|string)} date Date to format either as Date object, milliseconds (string or
- *    number) or various ISO 8601 datetime string formats (e.g. yyyy-MM-ddTHH:mm:ss.SSSZ and its
+ *    number) or various ISO 8601 datetime string formats (e.g. yyyy-MM-ddTHH:mm:ss.sssZ and its
  *    shorter versions like yyyy-MM-ddTHH:mmZ, yyyy-MM-dd or yyyyMMddTHHmmssZ). If no timezone is
  *    specified in the string input, the time is considered to be in the local timezone.
  * @param {string=} format Formatting rules (see Description). If not specified,
@@ -27195,6 +27221,13 @@ forEach(
  * server and reloading the current page), but only if the form does not contain `action`,
  * `data-action`, or `x-action` attributes.
  *
+ * <div class="alert alert-warning">
+ * **Warning:** Be careful not to cause "double-submission" by using both the `ngClick` and
+ * `ngSubmit` handlers together. See the
+ * {@link form#submitting-a-form-and-preventing-the-default-action `form` directive documentation}
+ * for a detailed discussion of when `ngSubmit` may be triggered.
+ * </div>
+ *
  * @element form
  * @priority 0
  * @param {expression} ngSubmit {@link guide/expression Expression} to eval.
@@ -29512,21 +29545,37 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
                   value = valueFn(scope, locals);
                 }
               }
-              // Update the null option's selected property here so $render cleans it up correctly
-              if (optionGroupsCache[0].length > 1) {
-                if (optionGroupsCache[0][1].id !== key) {
-                  optionGroupsCache[0][1].selected = false;
-                }
-              }
             }
             ctrl.$setViewValue(value);
+            render();
           });
         });
 
         ctrl.$render = render;
 
-        // TODO(vojta): can't we optimize this ?
-        scope.$watch(render);
+        scope.$watchCollection(valuesFn, render);
+        if ( multiple ) {
+          scope.$watchCollection(function() { return ctrl.$modelValue; }, render);
+        }
+
+        function getSelectedSet() {
+          var selectedSet = false;
+          if (multiple) {
+            var modelValue = ctrl.$modelValue;
+            if (trackFn && isArray(modelValue)) {
+              selectedSet = new HashMap([]);
+              var locals = {};
+              for (var trackIndex = 0; trackIndex < modelValue.length; trackIndex++) {
+                locals[valueName] = modelValue[trackIndex];
+                selectedSet.put(trackFn(scope, locals), modelValue[trackIndex]);
+              }
+            } else {
+              selectedSet = new HashMap(modelValue);
+            }
+          }
+          return selectedSet;
+        }
+
 
         function render() {
               // Temporary location for the option groups before we render them
@@ -29544,22 +29593,11 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
               groupIndex, index,
               locals = {},
               selected,
-              selectedSet = false, // nothing is selected yet
+              selectedSet = getSelectedSet(),
               lastElement,
               element,
               label;
 
-          if (multiple) {
-            if (trackFn && isArray(modelValue)) {
-              selectedSet = new HashMap([]);
-              for (var trackIndex = 0; trackIndex < modelValue.length; trackIndex++) {
-                locals[valueName] = modelValue[trackIndex];
-                selectedSet.put(trackFn(scope, locals), modelValue[trackIndex]);
-              }
-            } else {
-              selectedSet = new HashMap(modelValue);
-            }
-          }
 
           // We now build up the list of options we need (we merge later)
           for (index = 0; length = keys.length, index < length; index++) {
@@ -29655,7 +29693,7 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
                   lastElement.val(existingOption.id = option.id);
                 }
                 // lastElement.prop('selected') provided by jQuery has side-effects
-                if (existingOption.selected !== option.selected) {
+                if (lastElement[0].selected !== option.selected) {
                   lastElement.prop('selected', (existingOption.selected = option.selected));
                   if (msie) {
                     // See #7692
@@ -29678,6 +29716,7 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
                   (element = optionTemplate.clone())
                       .val(option.id)
                       .prop('selected', option.selected)
+                      .attr('selected', option.selected)
                       .text(option.label);
                 }
 
@@ -29785,7 +29824,7 @@ var styleDirective = valueFn({
 
 !window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}.ng-animate-block-transitions{transition:0s all!important;-webkit-transition:0s all!important;}.ng-hide-add-active,.ng-hide-remove{display:block!important;}</style>');
 /**
- * @license AngularJS v1.2.21
+ * @license AngularJS v1.2.22
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -29992,7 +30031,7 @@ angular.module('ngCookies', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.21
+ * @license AngularJS v1.2.22
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30092,8 +30131,10 @@ function shallowClearAndCopy(src, dst) {
  *   Given a template `/path/:verb` and parameter `{verb:'greet', salutation:'Hello'}` results in
  *   URL `/path/greet?salutation=Hello`.
  *
- *   If the parameter value is prefixed with `@` then the value of that parameter will be taken
- *   from the corresponding key on the data object (useful for non-GET operations).
+ *   If the parameter value is prefixed with `@` then the value for that parameter will be extracted
+ *   from the corresponding property on the `data` object (provided when calling an action method).  For
+ *   example, if the `defaultParam` object is `{someParam: '@someProp'}` then the value of `someParam`
+ *   will be `data.someProp`.
  *
  * @param {Object.<Object>=} actions Hash with declaration of custom action that should extend
  *   the default set of resource actions. The declaration should be created in the format of {@link
@@ -30612,7 +30653,7 @@ angular.module('ngResource', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.21
+ * @license AngularJS v1.2.22
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30850,6 +30891,13 @@ function makeMap(str) {
  * @param {object} handler
  */
 function htmlParser( html, handler ) {
+  if (typeof html !== 'string') {
+    if (html === null || typeof html === 'undefined') {
+      html = '';
+    } else {
+      html = '' + html;
+    }
+  }
   var index, chars, match, stack = [], last = html, text;
   stack.last = function() { return stack[ stack.length - 1 ]; };
 
@@ -35370,7 +35418,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 }]);
 
 /**
- * @license Angular UI Tree v2.1.5
+ * @license Angular UI Tree v2.1.4
  * (c) 2010-2014. https://github.com/JimLiu/angular-ui-tree
  * License: MIT
  */
@@ -35727,8 +35775,8 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
   angular.module('ui.tree')
 
-    .controller('TreeNodesController', ['$scope', '$element', 'treeConfig',
-      function ($scope, $element, treeConfig) {
+    .controller('TreeNodesController', ['$scope', '$element', '$timeout', 'treeConfig',
+      function ($scope, $element, $timeout, treeConfig) {
         this.scope = $scope;
 
         $scope.$element = $element;
@@ -35742,7 +35790,9 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
         $scope.maxDepth = 0;
 
         $scope.initSubNode = function(subNode) {
-          $scope.$nodesMap[subNode.$modelValue.$$hashKey] = subNode;
+          $timeout(function() {
+            $scope.$nodesMap[subNode.$modelValue.$$hashKey] = subNode;
+          });
         };
 
         $scope.destroySubNode = function(subNode) {
@@ -35751,10 +35801,6 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
         $scope.accept = function(sourceNode, destIndex) {
           return $scope.$treeScope.$callbacks.accept(sourceNode, $scope, destIndex);
-        };
-
-        $scope.beforeDrag = function(sourceNode) {
-          return $scope.$treeScope.$callbacks.beforeDrag(sourceNode);
         };
 
         $scope.isParent = function(node) {
@@ -35908,12 +35954,6 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
                   $scope.$childNodesScope.accept(sourceNode, destIndex);
         };
 
-        $scope.removeNode = function(){
-          var node = $scope.remove();
-          $scope.$callbacks.removed(node);
-          return node;
-        };
-
         $scope.remove = function() {
           return $scope.$parentNodesScope.removeNode($scope);
         };
@@ -35993,8 +36033,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
         controller: 'TreeController',
         link: function(scope, element, attrs) {
           var callbacks = {
-            accept: null,
-            beforeDrag: null
+            accept: null
           };
 
           var config = {};
@@ -36014,27 +36053,31 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             }
           }, true);
 
-          scope.$watch(attrs.dragEnabled, function(val) {
-            if((typeof val) == "boolean") {
-              scope.dragEnabled = val;
+          attrs.$observe('dragEnabled', function(val) {
+            var de = scope.$eval(val);
+            if((typeof de) == "boolean") {
+              scope.dragEnabled = de;
             }
           });
 
-          scope.$watch(attrs.emptyPlaceHolderEnabled, function(val) {
-            if((typeof val) == "boolean") {
-              scope.emptyPlaceHolderEnabled = val;
+          attrs.$observe('emptyPlaceHolderEnabled', function(val) {
+            var ep = scope.$eval(val);
+            if((typeof ep) == "boolean") {
+              scope.emptyPlaceHolderEnabled = ep;
             }
           });
 
-          scope.$watch(attrs.maxDepth, function(val) {
-            if((typeof val) == "number") {
-              scope.maxDepth = val;
+          attrs.$observe('maxDepth', function(val) {
+            var md = scope.$eval(val);
+            if((typeof md) == "number") {
+              scope.maxDepth = md;
             }
           });
 
-          scope.$watch(attrs.dragDelay, function(val) {
-            if((typeof val) == "number") {
-              scope.dragDelay = val;
+          attrs.$observe('dragDelay', function(val) {
+            var dd = scope.$eval(val);
+            if((typeof dd) == "number") {
+              scope.dragDelay = dd;
             }
           });
 
@@ -36047,14 +36090,6 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
               return false;
             }
             return true;
-          };
-
-          callbacks.beforeDrag = function(sourceNodeScope) {
-            return true;
-          };
-
-          callbacks.removed = function(node){
-
           };
 
           callbacks.dropped = function(event) {
@@ -36137,9 +36172,10 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             };
           }
 
-          scope.$watch(attrs.maxDepth, function(val) {
-            if((typeof val) == "number") {
-              scope.maxDepth = val;
+          attrs.$observe('maxDepth', function(val) {
+            var md = scope.$eval(val);
+            if((typeof md) == "number") {
+              scope.maxDepth = md;
             }
           });
 
@@ -36177,10 +36213,10 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             scope.init(controllersArr);
 
             scope.collapsed = !!$uiTreeHelper.getNodeAttribute(scope, 'collapsed');
-
-            scope.$watch(attrs.collapsed, function(val) {
-              if((typeof val) == "boolean") {
-                scope.collapsed = val;
+            attrs.$observe('collapsed', function(val) {
+              var collapsed = scope.$eval(val);
+              if((typeof collapsed) == "boolean") {
+                scope.collapsed = collapsed;
               }
             });
 
@@ -36195,8 +36231,6 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
             var placeElm, hiddenPlaceElm, dragElm;
             var treeScope = null;
             var elements; // As a parameter for callbacks
-            var dragDelaying = true;
-            var dragStarted = false;
             var dragTimer = null;
             var body = document.body,
                 html = document.documentElement,
@@ -36229,9 +36263,7 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
               var eventElmTagName = eventElm.prop('tagName').toLowerCase();
               if (eventElmTagName == 'input' ||
-                eventElmTagName == 'textarea' ||
-                eventElmTagName == 'button' ||
-                eventElmTagName == 'select') { // if it's a input or button, ignore it
+                eventElmTagName == 'button') { // if it's a input or button, ignore it
                 return;
               }
 
@@ -36241,10 +36273,6 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
                   return;
                 }
                 eventElm = eventElm.parent();
-              }
-
-              if (!scope.beforeDrag(scope)){
-                return;
               }
 
               e.uiTreeDragging = true; // stop event bubbling
@@ -36298,6 +36326,9 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
                 placeholder: placeElm,
                 dragging: dragElm
               };
+              scope.$apply(function() {
+                scope.$callbacks.dragStart(dragInfo.eventArgs(elements, pos));
+              });
 
               angular.element($document).bind('touchend', dragEndEvent);
               angular.element($document).bind('touchcancel', dragEndEvent);
@@ -36305,33 +36336,17 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
               angular.element($document).bind('mouseup', dragEndEvent);
               angular.element($document).bind('mousemove', dragMoveEvent);
               angular.element($document).bind('mouseleave', dragCancelEvent);
-
               document_height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
               document_width = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
             };
 
             var dragMove = function(e) {
-              if (!dragStarted) {
-                if (!dragDelaying) {
-                  dragStarted = true;
-                  scope.$apply(function() {
-                    scope.$callbacks.dragStart(dragInfo.eventArgs(elements, pos));
-                  });
-                }
-                return;
-              }
-
               var eventObj = $uiTreeHelper.eventObj(e);
               var prev, leftElmPos, topElmPos;
 
               if (dragElm) {
                 e.preventDefault();
-
-                if ($window.getSelection) {
-                  $window.getSelection().removeAllRanges();
-                } else if ($window.document.selection) {
-                  $window.document.selection.empty();
-                }
+                $window.getSelection().removeAllRanges();
 
                 leftElmPos = eventObj.pageX - pos.offsetX;
                 topElmPos = eventObj.pageY - pos.offsetY;
@@ -36563,12 +36578,9 @@ angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCac
 
             var bindDrag = function() {
               element.bind('touchstart mousedown', function (e) {
-                dragDelaying = true;
-                dragStarted = false;
-                dragStartEvent(e);
-                dragTimer = $timeout(function(){dragDelaying = false;}, scope.dragDelay);
+                dragTimer = $timeout(function(){dragStartEvent(e);}, scope.dragDelay);
               });
-              element.bind('touchend touchcancel mouseup',function(){$timeout.cancel(dragTimer);});
+              element.bind('touchend touchmove touchcancel mousemove mouseup',function(){$timeout.cancel(dragTimer);});
             };
             bindDrag();
 

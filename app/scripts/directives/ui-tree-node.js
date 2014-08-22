@@ -10,14 +10,27 @@
     .directive('uiTreeNode', ['treeConfig', '$uiTreeHelper', '$window', '$document','$timeout', 'ramlRepository',
       function (treeConfig, $uiTreeHelper, $window, $document, $timeout, ramlRepository) {
         return {
-          require: ['?uiTreeNode'],
-          link: function(scope, element) {
+          require: ['^uiTreeNodes', '^uiTree', '?uiTreeNode'],
+          link: function(scope, element, attrs, controllersArr) {
             var config = {};
             angular.extend(config, treeConfig);
             if (config.nodeClass) {
               element.addClass(config.nodeClass);
             }
+            scope.init(controllersArr);
 
+            scope.collapsed = !!$uiTreeHelper.getNodeAttribute(scope, 'collapsed');
+            attrs.$observe('collapsed', function(val) {
+              var collapsed = scope.$eval(val);
+              if((typeof collapsed) === 'boolean') {
+                scope.collapsed = collapsed;
+              }
+            });
+
+            scope.$watch('collapsed', function(val) {
+              $uiTreeHelper.setNodeAttribute(scope, 'collapsed', val);
+              attrs.$set('collapsed', val);
+            });
             var elements;  // As a parameter for callbacks
             var firstMoving, dragInfo, pos, dropAccpeted;
             var dragElm, hiddenPlaceElm;
@@ -69,10 +82,6 @@
                   return;
                 }
                 eventElm = eventElm.parent();
-              }
-
-              if (!scope.beforeDrag(scope)){
-                return;
               }
 
               e.uiTreeDragging = true; // stop event bubbling
