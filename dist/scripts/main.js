@@ -2707,9 +2707,7 @@
         selectedFile.contents = source;
         $scope.fileParsable = $scope.getIsFileParsable(selectedFile);
         debounce(function emitSourceUpdated() {
-          if (selectedFile.dirty) {
-            eventService.broadcast('event:raml-source-updated', source);
-          }
+          eventService.broadcast('event:raml-source-updated', source);
         }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
       };
       $scope.loadRaml = function loadRaml(definition, location) {
