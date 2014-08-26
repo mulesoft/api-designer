@@ -33,15 +33,12 @@
       });
     })
     .factory('debounce', function debounceFactory($timeout) {
+      var timeout;
       return function debounce(fn, delay, invokeApply) {
-        var timeout;
-        return function debounceWrapper() {
-          if (timeout) {
-            $timeout.cancel(timeout);
-          }
-
-          timeout = $timeout(fn, delay, invokeApply);
-        };
+        if (timeout) {
+          $timeout.cancel(timeout);
+        }
+        timeout = $timeout(fn, delay, invokeApply);
       };
     })
     .factory('throttle', function (getTime, $timeout) {
