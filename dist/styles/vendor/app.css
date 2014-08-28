@@ -4439,6 +4439,11 @@ raml-console article#raml-console #raml-console-api-title,
   line-height: 1em;
   margin: 20px;
 }
+raml-console article#raml-console #raml-console-proxy-nav,
+#raml-console-loader #raml-console-proxy-nav {
+  float: right;
+  margin: 20px;
+}
 raml-console article#raml-console #raml-console-main-nav,
 #raml-console-loader #raml-console-main-nav {
   float: right;

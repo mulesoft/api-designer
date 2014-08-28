@@ -290,7 +290,8 @@ RAML.Inspector = (function() {
     },
 
     createBaseUri: function(rootRAML) {
-      var baseUri = rootRAML.baseUri.toString();
+      var baseUri = rootRAML.baseUri.toString().replace(/\/+$/, '');
+
       return new RAML.Client.ParameterizedString(baseUri, rootRAML.baseUriParameters, { parameterValues: {version: rootRAML.version} });
     },
 
@@ -383,14 +384,6 @@ RAML.Inspector = (function() {
     this.requestTokenCredentials = RAML.Client.AuthStrategies.Oauth1.requestTokenCredentials(scheme.settings, signerFactory);
   };
 
-  Oauth1.proxyRequest = function(url) {
-    if (RAML.Settings.proxy) {
-      url = RAML.Settings.proxy + url;
-    }
-
-    return url;
-  };
-
   Oauth1.parseUrlEncodedData = function(data) {
     var result = {};
 
@@ -436,8 +429,7 @@ RAML.Inspector = (function() {
 
   RAML.Client.AuthStrategies.Oauth1.requestTemporaryCredentials = function(settings, signerFactory) {
     return function requestTemporaryCredentials() {
-      var url = RAML.Client.AuthStrategies.Oauth1.proxyRequest(settings.requestTokenUri);
-      var request = RAML.Client.Request.create(url, 'post');
+      var request = RAML.Client.Request.create(settings.requestTokenUri, 'post');
 
       signerFactory().sign(request);
 
@@ -460,8 +452,7 @@ RAML.Inspector = (function() {
 
   RAML.Client.AuthStrategies.Oauth1.requestTokenCredentials = function(settings, signerFactory) {
     return function requestTokenCredentials(temporaryCredentials) {
-      var url = RAML.Client.AuthStrategies.Oauth1.proxyRequest(settings.tokenCredentialsUri);
-      var request = RAML.Client.Request.create(url, 'post');
+      var request = RAML.Client.Request.create(settings.tokenCredentialsUri, 'post');
 
       signerFactory(temporaryCredentials).sign(request);
 
@@ -542,13 +533,6 @@ RAML.Inspector = (function() {
       rfc3986Encode = RAML.Client.AuthStrategies.Oauth1.Signer.rfc3986Encode,
       setRequestHeader = RAML.Client.AuthStrategies.Oauth1.Signer.setRequestHeader;
 
-  function uriWithoutProxy(url) {
-    if (RAML.Settings.proxy) {
-      url = url.replace(RAML.Settings.proxy, '');
-    }
-    return url;
-  }
-
   function generateSignature(params, request, key) {
     params.oauth_signature_method = 'HMAC-SHA1';
     params.oauth_timestamp = Math.floor(Date.now() / 1000);
@@ -572,7 +556,7 @@ RAML.Inspector = (function() {
 
     encodeURI: function(uri) {
       var parser = document.createElement('a');
-      parser.href = uriWithoutProxy(uri);
+      parser.href = uri;
 
       var hostname = '';
       if (parser.protocol === 'https:' && parser.port === 443 || parser.protocol === 'http:' && parser.port === 80) {
@@ -786,14 +770,6 @@ RAML.Inspector = (function() {
   /* jshint camelcase: false */
   'use strict';
 
-  function proxyRequest(url) {
-    if (RAML.Settings.proxy) {
-      url = RAML.Settings.proxy + url;
-    }
-
-    return url;
-  }
-
   function accessTokenFromObject(data) {
     return data.access_token;
   }
@@ -812,16 +788,13 @@ RAML.Inspector = (function() {
 
   RAML.Client.AuthStrategies.Oauth2.requestAccessToken = function(settings, credentialsManager) {
     return function(code) {
-      var url = proxyRequest(settings.accessTokenUri);
+      var request = RAML.Client.Request.create(settings.accessTokenUri, 'post');
 
-      var requestOptions = {
-        url: url,
-        type: 'post',
-        data: credentialsManager.accessTokenParameters(code)
-      };
+      request.data(credentialsManager.accessTokenParameters(code));
 
-      return $.ajax(requestOptions).then(function(data) {
+      return $.ajax(request.toOptions()).then(function(data) {
         var extract = accessTokenFromString;
+
         if (typeof data === 'object') {
           extract = accessTokenFromObject;
         }
@@ -1021,8 +994,9 @@ RAML.Inspector = (function() {
     };
 
     this.toOptions = function() {
-      var o = RAML.Utils.clone(options);
+      var o = RAML.Utils.copy(options);
       o.traditional = true;
+
       if (rawData) {
         if (isMultipartRequest) {
           var data = new FormData();
@@ -1044,9 +1018,14 @@ RAML.Inspector = (function() {
           o.data = rawData;
         }
       }
+
       if (!RAML.Utils.isEmpty(queryParams)) {
         var separator = (options.url.match('\\?') ? '&' : '?');
         o.url = options.url + separator + $.param(queryParams, true);
+      }
+
+      if (RAML.Services.Config.config.proxy && RAML.Settings.proxy) {
+        o.url = RAML.Settings.proxy + o.url;
       }
 
       return o;
@@ -1055,10 +1034,7 @@ RAML.Inspector = (function() {
 
   RAML.Client.Request = {
     create: function(url, method) {
-      var request = {};
-      RequestDsl.call(request, { url: url, type: method, contentType: false });
-
-      return request;
+      return new RequestDsl({ url: url, type: method, contentType: false });
     }
   };
 })();
@@ -1364,6 +1340,8 @@ RAML.Inspector = (function() {
     }
 
     this.keychain = {};
+    this.config   = RAML.Services.Config.config;
+    this.settings = RAML.Settings;
   };
 
   controller.prototype.gotoView = function(view) {
@@ -1597,9 +1575,6 @@ RAML.Inspector = (function() {
       return;
     }
 
-    if (RAML.Settings.proxy) {
-      url = RAML.Settings.proxy + url;
-    }
     var request = RAML.Client.Request.create(url, this.httpMethod);
 
     if (!RAML.Utils.isEmpty(this.context.queryParameters.data())) {
@@ -3094,6 +3069,93 @@ RAML.Filters = {};
   RAML.Services = {};
 })();
 
+(function () {
+  'use strict';
+
+  /**
+   * Store configuration in local storage under the current key.
+   *
+   * @type {String}
+   */
+  var STORAGE_KEY = 'raml-console-config';
+
+  /**
+   * This is extremely hacky but done because the entire app avoids using
+   * the dependency injection in angular.
+   *
+   * @type {Object}
+   */
+  var config = {
+    proxy: true
+  };
+
+  /**
+   * Create a persistent configuration instance that works with angular.
+   */
+  RAML.Services.Config = function ($rootScope, $window) {
+    /**
+     * Update the config object when local storage changes.
+     *
+     * @param {Object} e
+     */
+    function handleStorage(e) {
+      if (e.key !== STORAGE_KEY) {
+        return;
+      }
+
+      // Update the config with the updated storage value.
+      try {
+        $scope.$apply(function () {
+          angular.copy(JSON.parse(e.newValue), config);
+        });
+      } catch (e) {}
+    }
+
+    /**
+     * Attempt to get the value out of local storage.
+     *
+     * @return {Object}
+     */
+    function getStorage() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY));
+      } catch (e) {}
+    }
+
+    /**
+     * Attempt to set the value in local storage.
+     *
+     * @param {Object} value
+     */
+    function setStorage(value) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+        return true;
+      } catch (e) {}
+
+      return false;
+    }
+
+    var $scope = $rootScope.$new();
+    $scope.config = angular.extend(config, getStorage());
+
+    // When the config options change, save into local storage.
+    $scope.$watchCollection('config', setStorage, true);
+
+    // Listen for local storage changes to persist across frames.
+    if ($window.addEventListener) {
+      $window.addEventListener('storage', handleStorage, false);
+    } else {
+      $window.attachEvent('onstorage', handleStorage);
+    }
+
+    return config;
+  };
+
+  // Alias the config for access outside angular.
+  RAML.Services.Config.config = config;
+})();
+
 (function() {
   'use strict';
 
@@ -3192,12 +3254,11 @@ RAML.Filters = {};
   RAML.Settings = RAML.Settings || {};
 
   var location = window.location;
+  var uri      = location.protocol + '//' + location.host + location.pathname.replace(/\/$/, '');
 
-  var uri = location.protocol + '//' + location.host + location.pathname + 'authentication/oauth2.html';
-  RAML.Settings.oauth2RedirectUri = RAML.Settings.oauth2RedirectUri || uri;
-  RAML.Settings.oauth1RedirectUri = RAML.Settings.oauth1RedirectUri || uri.replace(/oauth2\.html$/, 'oauth1.html');
-
-  // RAML.Settings.proxy = RAML.Settings.proxy || '/proxy/';
+  RAML.Settings.proxy = RAML.Settings.proxy || false;
+  RAML.Settings.oauth2RedirectUri = RAML.Settings.oauth2RedirectUri || uri + '/authentication/oauth2.html';
+  RAML.Settings.oauth1RedirectUri = RAML.Settings.oauth1RedirectUri || uri + '/authentication/oauth2.html';
 })();
 
 (function() {
@@ -3285,6 +3346,7 @@ RAML.Filters = {};
 
   module.controller('TryItController', RAML.Controllers.tryIt);
 
+  module.service('ConfigService', RAML.Services.Config);
   module.service('DataStore', RAML.Services.DataStore);
   module.service('ramlParserWrapper', RAML.Services.RAMLParserWrapper);
 
@@ -3594,6 +3656,15 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "  </div>\n" +
     "\n" +
     "  <header id=\"raml-console-api-title\">{{api.title}}</header>\n" +
+    "\n" +
+    "  <nav id=\"raml-console-proxy-nav\" ng-if=\"ramlConsole.settings.proxy\">\n" +
+    "    <span ng-switch=\"ramlConsole.config.proxy\">\n" +
+    "      <span ng-switch-when=\"true\">Proxy Enabled</span>\n" +
+    "      <span ng-switch-default>Proxy Disabled</span>\n" +
+    "    </span>\n" +
+    "\n" +
+    "    <input type=\"checkbox\" ng-model=\"ramlConsole.config.proxy\">\n" +
+    "  </nav>\n" +
     "\n" +
     "  <nav id=\"raml-console-main-nav\" ng-if='ramlConsole.showRootDocumentation()' ng-switch='ramlConsole.view'>\n" +
     "    <a class=\"btn\" ng-switch-when='rootDocumentation' role=\"view-api-reference\" ng-click='ramlConsole.gotoView(\"apiReference\")'>&larr; API Reference</a>\n" +

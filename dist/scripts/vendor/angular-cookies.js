@@ -1,5 +1,5 @@
 /**
- * @license AngularJS v1.2.23
+ * @license AngularJS v1.2.18
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -39,13 +39,12 @@ angular.module('ngCookies', ['ng']).
    * @example
    *
    * ```js
-   * angular.module('cookiesExample', ['ngCookies'])
-   *   .controller('ExampleController', ['$cookies', function($cookies) {
-   *     // Retrieving a cookie
-   *     var favoriteCookie = $cookies.myFavorite;
-   *     // Setting a cookie
-   *     $cookies.myFavorite = 'oatmeal';
-   *   }]);
+   * function ExampleController($cookies) {
+   *   // Retrieving a cookie
+   *   var favoriteCookie = $cookies.myFavorite;
+   *   // Setting a cookie
+   *   $cookies.myFavorite = 'oatmeal';
+   * }
    * ```
    */
    factory('$cookies', ['$rootScope', '$browser', function ($rootScope, $browser) {
@@ -143,15 +142,14 @@ angular.module('ngCookies', ['ng']).
    * @example
    *
    * ```js
-   * angular.module('cookieStoreExample', ['ngCookies'])
-   *   .controller('ExampleController', ['$cookieStore', function($cookieStore) {
-   *     // Put cookie
-   *     $cookieStore.put('myFavorite','oatmeal');
-   *     // Get cookie
-   *     var favoriteCookie = $cookieStore.get('myFavorite');
-   *     // Removing a cookie
-   *     $cookieStore.remove('myFavorite');
-   *   }]);
+   * function ExampleController($cookies) {
+   *   // Put cookie
+   *   $cookieStore.put('myFavorite','oatmeal');
+   *   // Get cookie
+   *   var favoriteCookie = $cookieStore.get('myFavorite');
+   *   // Removing a cookie
+   *   $cookieStore.remove('myFavorite');
+   * }
    * ```
    */
    factory('$cookieStore', ['$cookies', function($cookies) {
