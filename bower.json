@@ -12,7 +12,7 @@
     "angular-cookies": "~1.2.16",
     "angular-resource": "~1.2.16",
     "angular-sanitize": "~1.2.16",
-    "api-console": "mulesoft/api-console#023a3b966f84416a1229789c205b14ab1c90869a",
+    "api-console": "mulesoft/api-console#6391fbc17df3088fb4d05d79aae858456fc3086e",
     "es5-shim": "~2.0.8",
     "font-awesome": "~4.0.3",
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",

@@ -3658,12 +3658,8 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "  <header id=\"raml-console-api-title\">{{api.title}}</header>\n" +
     "\n" +
     "  <nav id=\"raml-console-proxy-nav\" ng-if=\"ramlConsole.settings.proxy\">\n" +
-    "    <span ng-switch=\"ramlConsole.config.proxy\">\n" +
-    "      <span ng-switch-when=\"true\">Proxy Enabled</span>\n" +
-    "      <span ng-switch-default>Proxy Disabled</span>\n" +
-    "    </span>\n" +
-    "\n" +
-    "    <input type=\"checkbox\" ng-model=\"ramlConsole.config.proxy\">\n" +
+    "    <span>API is behind a firewall</span>\n" +
+    "    <input type=\"checkbox\" ng-model=\"!ramlConsole.config.proxy\">\n" +
     "  </nav>\n" +
     "\n" +
     "  <nav id=\"raml-console-main-nav\" ng-if='ramlConsole.showRootDocumentation()' ng-switch='ramlConsole.view'>\n" +
