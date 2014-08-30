@@ -3658,7 +3658,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "  <header id=\"raml-console-api-title\">{{api.title}}</header>\n" +
     "\n" +
     "  <nav id=\"raml-console-proxy-nav\" ng-if=\"ramlConsole.settings.proxy\">\n" +
-    "    <span>API is behind a firewall</span>\n" +
+    "    <span>API is behind a firewall <a href=\"http://www.mulesoft.org/documentation/display/current/Accessing+Your+API+Behind+a+Firewall\" target=\"_blank\">(?)</a></span>\n" +
     "    <input type=\"checkbox\" ng-model=\"!ramlConsole.config.proxy\">\n" +
     "  </nav>\n" +
     "\n" +
