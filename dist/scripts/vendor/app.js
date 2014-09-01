@@ -1024,7 +1024,7 @@ RAML.Inspector = (function() {
         o.url = options.url + separator + $.param(queryParams, true);
       }
 
-      if (RAML.Services.Config.config.proxy && RAML.Settings.proxy) {
+      if (!RAML.Services.Config.config.disableProxy && RAML.Settings.proxy) {
         o.url = RAML.Settings.proxy + o.url;
       }
 
@@ -3086,7 +3086,7 @@ RAML.Filters = {};
    * @type {Object}
    */
   var config = {
-    proxy: true
+    disableProxy: false
   };
 
   /**
@@ -3659,7 +3659,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "  <nav id=\"raml-console-proxy-nav\" ng-if=\"ramlConsole.settings.proxy\">\n" +
     "    <span>API is behind a firewall <a href=\"http://www.mulesoft.org/documentation/display/current/Accessing+Your+API+Behind+a+Firewall\" target=\"_blank\">(?)</a></span>\n" +
-    "    <input type=\"checkbox\" ng-model=\"!ramlConsole.config.proxy\">\n" +
+    "    <input type=\"checkbox\" ng-model=\"ramlConsole.config.disableProxy\">\n" +
     "  </nav>\n" +
     "\n" +
     "  <nav id=\"raml-console-main-nav\" ng-if='ramlConsole.showRootDocumentation()' ng-switch='ramlConsole.view'>\n" +
