@@ -51,6 +51,7 @@
       codeMirrorErrors, config, $prompt, $confirm, $modal
     ) {
       var editor, lineOfCurrentError, currentFile;
+      var cursorInfo = {};
 
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -95,7 +96,11 @@
         safeApply($scope);
       };
 
-      $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
+      $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file, previousFile) {
+        if (previousFile) {
+          cursorInfo[previousFile.name] = editor.getCursor();
+        }
+
         codeMirror.configureEditor(editor, file.extension);
 
         currentFile = file;
@@ -104,6 +109,14 @@
         eventService.broadcast('event:raml-parsed', {});
 
         editor.setValue(file.contents);
+
+        // Scroll to last cursor position in the file
+        if (cursorInfo[file.name]) {
+          editor.setCursor(cursorInfo[file.name]);
+        }
+
+        editor.focus();
+
         $scope.fileParsable = $scope.getIsFileParsable(file);
       });
 
