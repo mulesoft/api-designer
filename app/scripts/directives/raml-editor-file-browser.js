@@ -9,7 +9,9 @@
         var contextMenu         = void(0);
 
         fileBrowser.selectFile = function selectFile(file) {
-          if (fileBrowser.selectedFile === file) {
+          var previousFile = fileBrowser.selectedFile;
+
+          if (previousFile === file) {
             return;
           }
 
@@ -22,7 +24,7 @@
           afterLoading
             .then(function (file) {
               fileBrowser.selectedFile = file;
-              $scope.$emit('event:raml-editor-file-selected', file);
+              $scope.$emit('event:raml-editor-file-selected', file, previousFile);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
                 if (newContents !== oldContents) {
                   file.dirty = true;
