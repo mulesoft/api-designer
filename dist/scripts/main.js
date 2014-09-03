@@ -2651,6 +2651,7 @@
     '$modal',
     function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal) {
       var editor, lineOfCurrentError, currentFile;
+      var cursorInfo = {};
       function extractCurrentFileLabel(file) {
         var label = '';
         if (file) {
@@ -2685,12 +2686,20 @@
         $scope.theme = $rootScope.theme = theme;
         safeApply($scope);
       };
-      $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
+      $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file, previousFile) {
+        if (previousFile) {
+          cursorInfo[previousFile.name] = editor.getCursor();
+        }
         codeMirror.configureEditor(editor, file.extension);
         currentFile = file;
         // Empty console so that we remove content from previous open RAML file
         eventService.broadcast('event:raml-parsed', {});
         editor.setValue(file.contents);
+        // Scroll to last cursor position in the file
+        if (cursorInfo[file.name]) {
+          editor.setCursor(cursorInfo[file.name]);
+        }
+        editor.focus();
         $scope.fileParsable = $scope.getIsFileParsable(file);
       });
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
@@ -3453,7 +3462,8 @@
         var unwatchSelectedFile = angular.noop;
         var contextMenu = void 0;
         fileBrowser.selectFile = function selectFile(file) {
-          if (fileBrowser.selectedFile === file) {
+          var previousFile = fileBrowser.selectedFile;
+          if (previousFile === file) {
             return;
           }
           config.set('currentFile', JSON.stringify({
@@ -3465,7 +3475,7 @@
           var afterLoading = isLoaded ? $q.when(file) : ramlRepository.loadFile(file);
           afterLoading.then(function (file) {
             fileBrowser.selectedFile = file;
-            $scope.$emit('event:raml-editor-file-selected', file);
+            $scope.$emit('event:raml-editor-file-selected', file, previousFile);
             unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
               if (newContents !== oldContents) {
                 file.dirty = true;
