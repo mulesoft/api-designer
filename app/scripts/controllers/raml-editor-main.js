@@ -11,8 +11,15 @@ angular.module('ramlEditorApp')
       );
     }
 
+    function addSugarParam() {
+           var currentdate = $.now();
+           return (currentdate - (currentdate % (1000 * 10)));
+    }
+
+
+
     function readExtFile(path) {
-      return $http.get(path).then(
+      return $http.get(path.concat("?",addSugarParam())).then(
         // success
         function success(response) {
           return response.data;
