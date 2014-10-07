@@ -228,6 +228,10 @@
 // .modal-dialog    - positioning shell for the actual modal
 // .modal-content   - actual modal w/ bg and corners and shit
 
+* {
+  box-sizing: border-box;
+}
+
 // Kill the scroll on the body
 .modal-open {
   overflow: hidden;
@@ -315,6 +319,50 @@
 .modal-body {
   position: relative;
   padding: @modal-inner-padding;
+
+  p {
+    margin: 0 0 10px;
+  }
+}
+
+// Forms and contents
+label {
+  font-weight: bold;
+  margin: 0;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.required-field-label::after {
+  content: ' *';
+  color: #ff6666;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: 30px;
+  padding: 4px 12px;
+  font-size: 14px;
+  line-height: 1.42857143;
+  color: @text-color;
+  background-color: #ffffff;
+  background-image: none;
+  border: 1px solid rgba(81, 92, 107, 0.2);
+  border-radius: 4px;
+  box-shadow: none;
+  text-overflow: ellipsis;
+  transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+}
+
+.has-error .help-block,
+.has-error .control-label {
+  color: @brand-danger;
+}
+
+.has-error .form-control {
+  border-color: @brand-danger;
+  box-shadow: none;
 }
 
 // Footer (for actions)
@@ -338,6 +386,45 @@
   .btn-block + .btn-block {
     margin-left: 0;
   }
+}
+
+// Buttons
+.btn {
+  display: inline-block;
+  font-weight: normal;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  background-image: none;
+  border: none;
+  white-space: nowrap;
+  padding: 5px 12px;
+  font-size: 14px;
+  line-height: 1.42857143;
+  border-radius: 4px;
+  user-select: none;
+}
+
+.btn-default {
+  &:hover {
+    background-color: darken(@gray-lighter, 10%);
+  }
+  color: @text-color;
+  background-color: @gray-lighter;
+  border: none;
+  min-width: 70px;
+  box-shadow: inset 0 -1px 1px -1px darken(@gray-lighter, 60%);
+}
+
+.btn-primary {
+  &:hover {
+    background-color: darken(@brand-primary, 10%);
+  }
+  color: #ffffff;
+  background-color: @brand-primary;
+  border: none;
+  min-width: 70px;
+  box-shadow: inset 0 -1px 1px -1px darken(@brand-primary, 60%)
 }
 
 // Scale up the modal

@@ -15,6 +15,7 @@
 
           $scope.message = args.message;
           $scope.expires = args.expires;
+          $scope.level   = args.level || 'info';  // info, error
 
           $scope.shouldDisplayNotifications = true;
 
