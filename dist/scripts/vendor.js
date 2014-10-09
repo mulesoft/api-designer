@@ -7902,7 +7902,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
   CodeMirror.defineMIME("text/html", {name: "xml", htmlMode: true});
 
 /**
- * @license AngularJS v1.2.26
+ * @license AngularJS v1.2.23
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -7971,7 +7971,7 @@ function minErr(module) {
       return match;
     });
 
-    message = message + '\nhttp://errors.angularjs.org/1.2.26/' +
+    message = message + '\nhttp://errors.angularjs.org/1.2.23/' +
       (module ? module + '/' : '') + code;
     for (i = 2; i < arguments.length; i++) {
       message = message + (i == 2 ? '?' : '&') + 'p' + (i-2) + '=' +
@@ -8320,7 +8320,7 @@ function setHashKey(obj, h) {
  * @kind function
  *
  * @description
- * Extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
+ * Extends the destination object `dst` by copying all of the properties from the `src` object(s)
  * to `dst`. You can specify multiple `src` objects.
  *
  * @param {Object} dst Destination object.
@@ -9890,11 +9890,11 @@ function setupModuleLoader(window) {
  * - `codeName` – `{string}` – Code name of the release, such as "jiggling-armfat".
  */
 var version = {
-  full: '1.2.26',    // all of these placeholder strings will be replaced by grunt's
+  full: '1.2.23',    // all of these placeholder strings will be replaced by grunt's
   major: 1,    // package task
   minor: 2,
-  dot: 26,
-  codeName: 'zucchini-expansion'
+  dot: 23,
+  codeName: 'superficial-malady'
 };
 
 
@@ -12485,13 +12485,6 @@ function Browser(window, document, $log, $sniffer) {
     return callback;
   };
 
-  /**
-   * Checks whether the url has changed outside of Angular.
-   * Needs to be exported to be able to check for changes that have been done in sync,
-   * as hashchange/popstate events fire in async.
-   */
-  self.$$checkUrlChange = fireUrlChange;
-
   //////////////////////////////////////////////////////////////
   // Misc API
   //////////////////////////////////////////////////////////////
@@ -13432,7 +13425,7 @@ function $TemplateCacheProvider() {
  * }
  * ```
  *
- * ## Example
+ * Below is an example using `$compileProvider`.
  *
  * <div class="alert alert-warning">
  * **Note**: Typically directives are registered with `module.directive`. The example below is
@@ -15940,13 +15933,12 @@ function $HttpProvider() {
     expect(data.getText()).toMatch(/Hello, \$http!/);
   });
 
-// Commented out due to flakes. See https://github.com/angular/angular.js/issues/9185
-// it('should make a JSONP request to angularjs.org', function() {
-//   sampleJsonpBtn.click();
-//   fetchBtn.click();
-//   expect(status.getText()).toMatch('200');
-//   expect(data.getText()).toMatch(/Super Hero!/);
-// });
+  it('should make a JSONP request to angularjs.org', function() {
+    sampleJsonpBtn.click();
+    fetchBtn.click();
+    expect(status.getText()).toMatch('200');
+    expect(data.getText()).toMatch(/Super Hero!/);
+  });
 
   it('should make JSONP request to invalid URL and invoke the error handler',
       function() {
@@ -16318,7 +16310,7 @@ function $HttpProvider() {
           if (isObject(v)) {
             if (isDate(v)){
               v = v.toISOString();
-            } else {
+            } else if (isObject(v)) {
               v = toJson(v);
             }
           }
@@ -16768,7 +16760,7 @@ function $InterpolateProvider() {
      * @description
      * Symbol to denote the start of expression in the interpolated string. Defaults to `{{`.
      *
-     * Use {@link ng.$interpolateProvider#startSymbol `$interpolateProvider.startSymbol`} to change
+     * Use {@link ng.$interpolateProvider#startSymbol $interpolateProvider#startSymbol} to change
      * the symbol.
      *
      * @returns {string} start symbol.
@@ -16784,7 +16776,7 @@ function $InterpolateProvider() {
      * @description
      * Symbol to denote the end of expression in the interpolated string. Defaults to `}}`.
      *
-     * Use {@link ng.$interpolateProvider#endSymbol `$interpolateProvider.endSymbol`} to change
+     * Use {@link ng.$interpolateProvider#endSymbol $interpolateProvider#endSymbol} to change
      * the symbol.
      *
      * @returns {string} end symbol.
@@ -17374,16 +17366,17 @@ LocationHashbangInHtml5Url.prototype =
    * Change path, search and hash, when called with parameter and return `$location`.
    *
    * @param {string=} url New url without base prefix (e.g. `/path?a=b#hash`)
+   * @param {string=} replace The path that will be changed
    * @return {string} url
    */
-  url: function(url) {
+  url: function(url, replace) {
     if (isUndefined(url))
       return this.$$url;
 
     var match = PATH_MATCH.exec(url);
     if (match[1]) this.path(decodeURIComponent(match[1]));
     if (match[2] || match[1]) this.search(match[3] || '');
-    this.hash(match[5] || '');
+    this.hash(match[5] || '', replace);
 
     return this;
   },
@@ -17441,11 +17434,10 @@ LocationHashbangInHtml5Url.prototype =
    * Note: Path should always begin with forward slash (/), this method will add the forward slash
    * if it is missing.
    *
-   * @param {(string|number)=} path New path
+   * @param {string=} path New path
    * @return {string} path
    */
   path: locationGetterSetter('$$path', function(path) {
-    path = path ? path.toString() : '';
     return path.charAt(0) == '/' ? path : '/' + path;
   }),
 
@@ -17481,7 +17473,7 @@ LocationHashbangInHtml5Url.prototype =
    * If the argument is a hash object containing an array of values, these values will be encoded
    * as duplicate search parameters in the url.
    *
-   * @param {(string|Number|Array<string>|boolean)=} paramValue If `search` is a string or number, then `paramValue`
+   * @param {(string|Array<string>|boolean)=} paramValue If `search` is a string, then `paramValue`
    * will override only a single search property.
    *
    * If `paramValue` is an array, it will override the property of the `search` component of
@@ -17500,8 +17492,7 @@ LocationHashbangInHtml5Url.prototype =
       case 0:
         return this.$$search;
       case 1:
-        if (isString(search) || isNumber(search)) {
-          search = search.toString();
+        if (isString(search)) {
           this.$$search = parseKeyValue(search);
         } else if (isObject(search)) {
           // remove object undefined or null properties
@@ -17538,12 +17529,10 @@ LocationHashbangInHtml5Url.prototype =
    *
    * Change hash fragment when called with parameter and return `$location`.
    *
-   * @param {(string|number)=} hash New hash fragment
+   * @param {string=} hash New hash fragment
    * @return {string} hash
    */
-  hash: locationGetterSetter('$$hash', function(hash) {
-    return hash ? hash.toString() : '';
-  }),
+  hash: locationGetterSetter('$$hash', identity),
 
   /**
    * @ngdoc method
@@ -18738,7 +18727,7 @@ Parser.prototype = {
       var context = contextGetter ? contextGetter(scope, locals) : scope;
 
       for (var i = 0; i < argsFn.length; i++) {
-        args.push(ensureSafeObject(argsFn[i](scope, locals), parser.text));
+        args.push(argsFn[i](scope, locals));
       }
       var fnPtr = fn(scope, locals, context) || noop;
 
@@ -18826,15 +18815,13 @@ Parser.prototype = {
 //////////////////////////////////////////////////
 
 function setter(obj, path, setValue, fullExp, options) {
-  ensureSafeObject(obj, fullExp);
-
   //needed?
   options = options || {};
 
   var element = path.split('.'), key;
   for (var i = 0; element.length > 1; i++) {
     key = ensureSafeMemberName(element.shift(), fullExp);
-    var propertyObj = ensureSafeObject(obj[key], fullExp);
+    var propertyObj = obj[key];
     if (!propertyObj) {
       propertyObj = {};
       obj[key] = propertyObj;
@@ -18854,6 +18841,7 @@ function setter(obj, path, setValue, fullExp, options) {
     }
   }
   key = ensureSafeMemberName(element.shift(), fullExp);
+  ensureSafeObject(obj, fullExp);
   ensureSafeObject(obj[key], fullExp);
   obj[key] = setValue;
   return setValue;
@@ -19917,26 +19905,10 @@ function $RootScopeProvider(){
     /**
      * @ngdoc property
      * @name $rootScope.Scope#$id
-     *
-     * @description
-     * Unique scope ID (monotonically increasing) useful for debugging.
+     * @returns {number} Unique scope ID (monotonically increasing alphanumeric sequence) useful for
+     *   debugging.
      */
 
-     /**
-      * @ngdoc property
-      * @name $rootScope.Scope#$parent
-      *
-      * @description
-      * Reference to the parent scope.
-      */
-
-      /**
-       * @ngdoc property
-       * @name $rootScope.Scope#$root
-       *
-       * @description
-       * Reference to the root scope.
-       */
 
     Scope.prototype = {
       constructor: Scope,
@@ -19948,8 +19920,9 @@ function $RootScopeProvider(){
        * @description
        * Creates a new child {@link ng.$rootScope.Scope scope}.
        *
-       * The parent scope will propagate the {@link ng.$rootScope.Scope#$digest $digest()} event.
-       * The scope can be removed from the scope hierarchy using {@link ng.$rootScope.Scope#$destroy $destroy()}.
+       * The parent scope will propagate the {@link ng.$rootScope.Scope#$digest $digest()} and
+       * {@link ng.$rootScope.Scope#$digest $digest()} events. The scope can be removed from the
+       * scope hierarchy using {@link ng.$rootScope.Scope#$destroy $destroy()}.
        *
        * {@link ng.$rootScope.Scope#$destroy $destroy()} must be called on a scope when it is
        * desired for the scope and its child scopes to be permanently detached from the parent and
@@ -20402,8 +20375,6 @@ function $RootScopeProvider(){
             logIdx, logMsg, asyncTask;
 
         beginPhase('$digest');
-        // Check for changes to browser url that happened in sync before the call to $digest
-        $browser.$$checkUrlChange();
 
         lastDirtyWatch = null;
 
@@ -22457,6 +22428,16 @@ function $WindowProvider(){
  * For more information about how angular filters work, and how to create your own filters, see
  * {@link guide/filter Filters} in the Angular Developer Guide.
  */
+/**
+ * @ngdoc method
+ * @name $filterProvider#register
+ * @description
+ * Register filter factory function.
+ *
+ * @param {String} name Name of the filter.
+ * @param {Function} fn The filter factory function which is injectable.
+ */
+
 
 /**
  * @ngdoc service
@@ -22495,7 +22476,7 @@ function $FilterProvider($provide) {
 
   /**
    * @ngdoc method
-   * @name $filterProvider#register
+   * @name $controllerProvider#register
    * @param {string|Object} name Name of the filter function, or an object map of filters where
    *    the keys are the filter names and the values are the filter factories.
    * @returns {Object} Registered filter instance, or if a map of filters was provided then a map
@@ -22568,9 +22549,7 @@ function $FilterProvider($provide) {
  *     which have property `name` containing "M" and property `phone` containing "1". A special
  *     property name `$` can be used (as in `{$:"text"}`) to accept a match against any
  *     property of the object. That's equivalent to the simple substring match with a `string`
- *     as described above. The predicate can be negated by prefixing the string with `!`.
- *     For Example `{name: "!M"}` predicate will return an array of items which have property `name`
- *     not containing "M".
+ *     as described above.
  *
  *   - `function(value)`: A predicate function can be used to write arbitrary filters. The function is
  *     called for each element of `array`. The final result is an array of those elements that
@@ -22919,10 +22898,6 @@ function formatNumber(number, pattern, groupSep, decimalSep, fractionSize) {
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/round
     number = +(Math.round(+(number.toString() + 'e' + fractionSize)).toString() + 'e' + -fractionSize);
 
-    if (number === 0) {
-      isNegative = false;
-    }
-
     var fraction = ('' + number).split(DECIMAL_SEP);
     var whole = fraction[0];
     fraction = fraction[1] || '';
@@ -23092,8 +23067,8 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
  *   * `'mediumTime'`: equivalent to `'h:mm:ss a'` for en_US locale (e.g. 12:05:08 pm)
  *   * `'shortTime'`: equivalent to `'h:mm a'` for en_US locale (e.g. 12:05 pm)
  *
- *   `format` string can contain literal values. These need to be escaped by surrounding with single quotes (e.g.
- *   `"h 'in the morning'"`). In order to output a single quote, escape it - i.e., two single quotes in a sequence
+ *   `format` string can contain literal values. These need to be quoted with single quotes (e.g.
+ *   `"h 'in the morning'"`). In order to output single quote, use two single quotes in a sequence
  *   (e.g. `"h 'o''clock'"`).
  *
  * @param {(Date|number|string)} date Date to format either as Date object, milliseconds (string or
@@ -23113,8 +23088,6 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
           <span>{{1288323623006 | date:'yyyy-MM-dd HH:mm:ss Z'}}</span><br>
        <span ng-non-bindable>{{1288323623006 | date:'MM/dd/yyyy @ h:mma'}}</span>:
           <span>{{'1288323623006' | date:'MM/dd/yyyy @ h:mma'}}</span><br>
-       <span ng-non-bindable>{{1288323623006 | date:"MM/dd/yyyy 'at' h:mma"}}</span>:
-          <span>{{'1288323623006' | date:"MM/dd/yyyy 'at' h:mma"}}</span><br>
      </file>
      <file name="protractor.js" type="protractor">
        it('should format date', function() {
@@ -23124,8 +23097,6 @@ var DATE_FORMATS_SPLIT = /((?:[^yMdHhmsaZE']+)|(?:'(?:[^']|'')*')|(?:E+|y+|M+|d+
             toMatch(/2010\-10\-2\d \d{2}:\d{2}:\d{2} (\-|\+)?\d{4}/);
          expect(element(by.binding("'1288323623006' | date:'MM/dd/yyyy @ h:mma'")).getText()).
             toMatch(/10\/2\d\/2010 @ \d{1,2}:\d{2}(AM|PM)/);
-         expect(element(by.binding("'1288323623006' | date:\"MM/dd/yyyy 'at' h:mma\"")).getText()).
-            toMatch(/10\/2\d\/2010 at \d{1,2}:\d{2}(AM|PM)/);
        });
      </file>
    </example>
@@ -23289,9 +23260,9 @@ var uppercaseFilter = valueFn(uppercase);
            }]);
        </script>
        <div ng-controller="ExampleController">
-         Limit {{numbers}} to: <input type="number" step="1" ng-model="numLimit">
+         Limit {{numbers}} to: <input type="integer" ng-model="numLimit">
          <p>Output numbers: {{ numbers | limitTo:numLimit }}</p>
-         Limit {{letters}} to: <input type="number" step="1" ng-model="letterLimit">
+         Limit {{letters}} to: <input type="integer" ng-model="letterLimit">
          <p>Output letters: {{ letters | limitTo:letterLimit }}</p>
        </div>
      </file>
@@ -23308,15 +23279,14 @@ var uppercaseFilter = valueFn(uppercase);
          expect(limitedLetters.getText()).toEqual('Output letters: abc');
        });
 
-       // There is a bug in safari and protractor that doesn't like the minus key
-       // it('should update the output when -3 is entered', function() {
-       //   numLimitInput.clear();
-       //   numLimitInput.sendKeys('-3');
-       //   letterLimitInput.clear();
-       //   letterLimitInput.sendKeys('-3');
-       //   expect(limitedNumbers.getText()).toEqual('Output numbers: [7,8,9]');
-       //   expect(limitedLetters.getText()).toEqual('Output letters: ghi');
-       // });
+       it('should update the output when -3 is entered', function() {
+         numLimitInput.clear();
+         numLimitInput.sendKeys('-3');
+         letterLimitInput.clear();
+         letterLimitInput.sendKeys('-3');
+         expect(limitedNumbers.getText()).toEqual('Output numbers: [7,8,9]');
+         expect(limitedLetters.getText()).toEqual('Output letters: ghi');
+       });
 
        it('should not exceed the maximum size of input array', function() {
          numLimitInput.clear();
@@ -23488,7 +23458,7 @@ function limitToFilter(){
 orderByFilter.$inject = ['$parse'];
 function orderByFilter($parse){
   return function(array, sortPredicate, reverseOrder) {
-    if (!(isArrayLike(array))) return array;
+    if (!isArray(array)) return array;
     if (!sortPredicate) return array;
     sortPredicate = isArray(sortPredicate) ? sortPredicate: [sortPredicate];
     sortPredicate = map(sortPredicate, function(predicate){
@@ -24075,9 +24045,8 @@ function FormController(element, attrs, $scope, $animate) {
   // convenience method for easy toggling of classes
   function toggleValidCss(isValid, validationErrorKey) {
     validationErrorKey = validationErrorKey ? '-' + snake_case(validationErrorKey, '-') : '';
-    $animate.setClass(element,
-      (isValid ? VALID_CLASS : INVALID_CLASS) + validationErrorKey,
-      (isValid ? INVALID_CLASS : VALID_CLASS) + validationErrorKey);
+    $animate.removeClass(element, (isValid ? INVALID_CLASS : VALID_CLASS) + validationErrorKey);
+    $animate.addClass(element, (isValid ? VALID_CLASS : INVALID_CLASS) + validationErrorKey);
   }
 
   /**
@@ -24292,6 +24261,8 @@ function FormController(element, attrs, $scope, $animate) {
  * hitting enter in any of the input fields will trigger the click handler on the *first* button or
  * input[type=submit] (`ngClick`) *and* a submit handler on the enclosing form (`ngSubmit`)
  *
+ * @param {string=} name Name of the form. If specified, the form controller will be published into
+ *                       related scope, under this name.
  *
  * ## Animation Hooks
  *
@@ -24369,8 +24340,6 @@ function FormController(element, attrs, $scope, $animate) {
       </file>
     </example>
  *
- * @param {string=} name Name of the form. If specified, the form controller will be published into
- *                       related scope, under this name.
  */
 var formDirectiveFactory = function(isNgForm) {
   return ['$timeout', function($timeout) {
@@ -24954,7 +24923,7 @@ function textInputType(scope, element, attr, ctrl, $sniffer, $browser) {
     // a row.
     var revalidate = validity && ctrl.$$hasNativeValidators;
     if (ctrl.$viewValue !== value || (value === '' && revalidate)) {
-      if (scope.$root.$$phase) {
+      if (scope.$$phase) {
         ctrl.$setViewValue(value);
       } else {
         scope.$apply(function() {
@@ -26718,7 +26687,6 @@ var ngCloakDirective = ngDirective({
  *
  * @element ANY
  * @scope
- * @priority 500
  * @param {expression} ngController Name of a globally accessible constructor function or an
  *     {@link guide/expression expression} that on the current scope evaluates to a
  *     constructor function. The controller instance can be published into a scope property
@@ -26997,9 +26965,7 @@ var ngControllerDirective = [function() {
       <button ng-click="count = count + 1" ng-init="count=0">
         Increment
       </button>
-      <span>
-        count: {{count}}
-      <span>
+      count: {{count}}
      </file>
      <file name="protractor.js" type="protractor">
        it('should check ng-click', function() {
@@ -27017,32 +26983,19 @@ var ngControllerDirective = [function() {
  * Events that are handled via these handler are always configured not to propagate further.
  */
 var ngEventDirectives = {};
-
-// For events that might fire synchronously during DOM manipulation
-// we need to execute their event handlers asynchronously using $evalAsync,
-// so that they are not executed in an inconsistent state.
-var forceAsyncEvents = {
-  'blur': true,
-  'focus': true
-};
 forEach(
   'click dblclick mousedown mouseup mouseover mouseout mousemove mouseenter mouseleave keydown keyup keypress submit focus blur copy cut paste'.split(' '),
-  function(eventName) {
-    var directiveName = directiveNormalize('ng-' + eventName);
-    ngEventDirectives[directiveName] = ['$parse', '$rootScope', function($parse, $rootScope) {
+  function(name) {
+    var directiveName = directiveNormalize('ng-' + name);
+    ngEventDirectives[directiveName] = ['$parse', function($parse) {
       return {
         compile: function($element, attr) {
           var fn = $parse(attr[directiveName]);
           return function ngEventHandler(scope, element) {
-            element.on(eventName, function(event) {
-              var callback = function() {
+            element.on(lowercase(name), function(event) {
+              scope.$apply(function() {
                 fn(scope, {$event:event});
-              };
-              if (forceAsyncEvents[eventName] && $rootScope.$$phase) {
-                scope.$evalAsync(callback);
-              } else {
-                scope.$apply(callback);
-              }
+              });
             });
           };
         }
@@ -27359,10 +27312,6 @@ forEach(
  * @description
  * Specify custom behavior on focus event.
  *
- * Note: As the `focus` event is executed synchronously when calling `input.focus()`
- * AngularJS executes the expression using `scope.$evalAsync` if the event is fired
- * during an `$apply` to ensure a consistent state.
- *
  * @element window, input, select, textarea, a
  * @priority 0
  * @param {expression} ngFocus {@link guide/expression Expression} to evaluate upon
@@ -27378,14 +27327,6 @@ forEach(
  *
  * @description
  * Specify custom behavior on blur event.
- *
- * A [blur event](https://developer.mozilla.org/en-US/docs/Web/Events/blur) fires when
- * an element has lost focus.
- *
- * Note: As the `blur` event is executed synchronously also during DOM manipulations
- * (e.g. removing a focussed input),
- * AngularJS executes the expression using `scope.$evalAsync` if the event is fired
- * during an `$apply` to ensure a consistent state.
  *
  * @element window, input, select, textarea, a
  * @priority 0
@@ -28467,9 +28408,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
                if (block && block.scope) lastBlockMap[block.id] = block;
              });
              // This is a duplicate and we need to throw an error
-             throw ngRepeatMinErr('dupes',
-                  "Duplicates in a repeater are not allowed. Use 'track by' expression to specify unique keys. Repeater: {0}, Duplicate key: {1}, Duplicate value: {2}",
-                  expression, trackById, toJson(value));
+             throw ngRepeatMinErr('dupes', "Duplicates in a repeater are not allowed. Use 'track by' expression to specify unique keys. Repeater: {0}, Duplicate key: {1}",
+                                                                                                                                                    expression,       trackById);
            } else {
              // new never before seen block
              nextBlockOrder[index] = { id: trackById };
@@ -28560,8 +28500,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * @description
  * The `ngShow` directive shows or hides the given HTML element based on the expression
- * provided to the `ngShow` attribute. The element is shown or hidden by removing or adding
- * the `.ng-hide` CSS class onto the element. The `.ng-hide` CSS class is predefined
+ * provided to the ngShow attribute. The element is shown or hidden by removing or adding
+ * the `ng-hide` CSS class onto the element. The `.ng-hide` CSS class is predefined
  * in AngularJS and sets the display style to none (using an !important flag).
  * For CSP mode please add `angular-csp.css` to your html file (see {@link ng.directive:ngCsp ngCsp}).
  *
@@ -28573,8 +28513,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  * <div ng-show="myValue" class="ng-hide"></div>
  * ```
  *
- * When the `ngShow` expression evaluates to false then the `.ng-hide` CSS class is added to the class attribute
- * on the element causing it to become hidden. When true, the `.ng-hide` CSS class is removed
+ * When the ngShow expression evaluates to false then the ng-hide CSS class is added to the class attribute
+ * on the element causing it to become hidden. When true, the ng-hide CSS class is removed
  * from the element causing the element not to appear hidden.
  *
  * <div class="alert alert-warning">
@@ -28584,7 +28524,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * ## Why is !important used?
  *
- * You may be wondering why !important is used for the `.ng-hide` CSS class. This is because the `.ng-hide` selector
+ * You may be wondering why !important is used for the .ng-hide CSS class. This is because the `.ng-hide` selector
  * can be easily overridden by heavier selectors. For example, something as simple
  * as changing the display style on a HTML list item would make hidden elements appear visible.
  * This also becomes a bigger issue when dealing with CSS frameworks.
@@ -28593,7 +28533,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  * specificity (when !important isn't used with any conflicting styles). If a developer chooses to override the
  * styling to change how to hide an element then it is just a matter of using !important in their own CSS code.
  *
- * ### Overriding `.ng-hide`
+ * ### Overriding .ng-hide
  *
  * By default, the `.ng-hide` class will style the element with `display:none!important`. If you wish to change
  * the hide behavior with ngShow/ngHide then this can be achieved by restating the styles for the `.ng-hide`
@@ -28611,7 +28551,7 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  *
  * By default you don't need to override in CSS anything and the animations will work around the display style.
  *
- * ## A note about animations with `ngShow`
+ * ## A note about animations with ngShow
  *
  * Animations in ngShow/ngHide work with the show and hide events that are triggered when the directive expression
  * is true and false. This system works like the animation system present with ngClass except that
@@ -28636,8 +28576,8 @@ var ngRepeatDirective = ['$parse', '$animate', function($parse, $animate) {
  * property to block during animation states--ngAnimate will handle the style toggling automatically for you.
  *
  * @animations
- * addClass: `.ng-hide` - happens after the `ngShow` expression evaluates to a truthy value and the just before contents are set to visible
- * removeClass: `.ng-hide` - happens after the `ngShow` expression evaluates to a non truthy value and just before the contents are set to hidden
+ * addClass: .ng-hide - happens after the ngShow expression evaluates to a truthy value and the just before contents are set to visible
+ * removeClass: .ng-hide - happens after the ngShow expression evaluates to a non truthy value and just before the contents are set to hidden
  *
  * @element ANY
  * @param {expression} ngShow If the {@link guide/expression expression} is truthy
@@ -28717,7 +28657,7 @@ var ngShowDirective = ['$animate', function($animate) {
  *
  * @description
  * The `ngHide` directive shows or hides the given HTML element based on the expression
- * provided to the `ngHide` attribute. The element is shown or hidden by removing or adding
+ * provided to the ngHide attribute. The element is shown or hidden by removing or adding
  * the `ng-hide` CSS class onto the element. The `.ng-hide` CSS class is predefined
  * in AngularJS and sets the display style to none (using an !important flag).
  * For CSP mode please add `angular-csp.css` to your html file (see {@link ng.directive:ngCsp ngCsp}).
@@ -28730,8 +28670,8 @@ var ngShowDirective = ['$animate', function($animate) {
  * <div ng-hide="myValue"></div>
  * ```
  *
- * When the `.ngHide` expression evaluates to true then the `.ng-hide` CSS class is added to the class attribute
- * on the element causing it to become hidden. When false, the `.ng-hide` CSS class is removed
+ * When the ngHide expression evaluates to true then the .ng-hide CSS class is added to the class attribute
+ * on the element causing it to become hidden. When false, the ng-hide CSS class is removed
  * from the element causing the element not to appear hidden.
  *
  * <div class="alert alert-warning">
@@ -28741,7 +28681,7 @@ var ngShowDirective = ['$animate', function($animate) {
  *
  * ## Why is !important used?
  *
- * You may be wondering why !important is used for the `.ng-hide` CSS class. This is because the `.ng-hide` selector
+ * You may be wondering why !important is used for the .ng-hide CSS class. This is because the `.ng-hide` selector
  * can be easily overridden by heavier selectors. For example, something as simple
  * as changing the display style on a HTML list item would make hidden elements appear visible.
  * This also becomes a bigger issue when dealing with CSS frameworks.
@@ -28750,7 +28690,7 @@ var ngShowDirective = ['$animate', function($animate) {
  * specificity (when !important isn't used with any conflicting styles). If a developer chooses to override the
  * styling to change how to hide an element then it is just a matter of using !important in their own CSS code.
  *
- * ### Overriding `.ng-hide`
+ * ### Overriding .ng-hide
  *
  * By default, the `.ng-hide` class will style the element with `display:none!important`. If you wish to change
  * the hide behavior with ngShow/ngHide then this can be achieved by restating the styles for the `.ng-hide`
@@ -28768,7 +28708,7 @@ var ngShowDirective = ['$animate', function($animate) {
  *
  * By default you don't need to override in CSS anything and the animations will work around the display style.
  *
- * ## A note about animations with `ngHide`
+ * ## A note about animations with ngHide
  *
  * Animations in ngShow/ngHide work with the show and hide events that are triggered when the directive expression
  * is true and false. This system works like the animation system present with ngClass, except that the `.ng-hide`
@@ -28792,8 +28732,8 @@ var ngShowDirective = ['$animate', function($animate) {
  * property to block during animation states--ngAnimate will handle the style toggling automatically for you.
  *
  * @animations
- * removeClass: `.ng-hide` - happens after the `ngHide` expression evaluates to a truthy value and just before the contents are set to hidden
- * addClass: `.ng-hide` - happens after the `ngHide` expression evaluates to a non truthy value and just before the contents are set to visible
+ * removeClass: .ng-hide - happens after the ngHide expression evaluates to a truthy value and just before the contents are set to hidden
+ * addClass: .ng-hide - happens after the ngHide expression evaluates to a non truthy value and just before the contents are set to visible
  *
  * @element ANY
  * @param {expression} ngHide If the {@link guide/expression expression} is truthy then
@@ -29646,19 +29586,6 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
         ctrl.$render = render;
 
         scope.$watchCollection(valuesFn, render);
-        scope.$watchCollection(function () {
-          var locals = {},
-              values = valuesFn(scope);
-          if (values) {
-            var toDisplay = new Array(values.length);
-            for (var i = 0, ii = values.length; i < ii; i++) {
-              locals[valueName] = values[i];
-              toDisplay[i] = displayFn(scope, locals);
-            }
-            return toDisplay;
-          }
-        }, render);
-
         if ( multiple ) {
           scope.$watchCollection(function() { return ctrl.$modelValue; }, render);
         }
@@ -29831,7 +29758,6 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
                     id: option.id,
                     selected: option.selected
                 });
-                selectCtrl.addOption(option.label, element);
                 if (lastElement) {
                   lastElement.after(element);
                 } else {
@@ -29843,9 +29769,7 @@ var selectDirective = ['$compile', '$parse', function($compile,   $parse) {
             // remove any excessive OPTIONs in a group
             index++; // increment since the existingOptions[0] is parent element not OPTION
             while(existingOptions.length > index) {
-              option = existingOptions.pop();
-              selectCtrl.removeOption(option.label);
-              option.element.remove();
+              existingOptions.pop().element.remove();
             }
           }
           // remove any excessive OPTGROUPs from select
@@ -29932,7 +29856,7 @@ var styleDirective = valueFn({
 
 !window.angular.$$csp() && window.angular.element(document).find('head').prepend('<style type="text/css">@charset "UTF-8";[ng\\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}ng\\:form{display:block;}.ng-animate-block-transitions{transition:0s all!important;-webkit-transition:0s all!important;}.ng-hide-add-active,.ng-hide-remove{display:block!important;}</style>');
 /**
- * @license AngularJS v1.2.26
+ * @license AngularJS v1.2.23
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30139,7 +30063,7 @@ angular.module('ngCookies', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.26
+ * @license AngularJS v1.2.23
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -30269,16 +30193,10 @@ function shallowClearAndCopy(src, dst) {
  *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
  *     transform function or an array of such functions. The transform function takes the http
  *     request body and headers and returns its transformed (typically serialized) version.
- *     By default, transformRequest will contain one function that checks if the request data is
- *     an object and serializes to using `angular.toJson`. To prevent this behavior, set
- *     `transformRequest` to an empty array: `transformRequest: []`
  *   - **`transformResponse`** –
  *     `{function(data, headersGetter)|Array.<function(data, headersGetter)>}` –
  *     transform function or an array of such functions. The transform function takes the http
  *     response body and headers and returns its transformed (typically deserialized) version.
- *     By default, transformResponse will contain one function that checks if the response looks like
- *     a JSON string and deserializes it using `angular.fromJson`. To prevent this behavior, set
- *     `transformResponse` to an empty array: `transformResponse: []`
  *   - **`cache`** – `{boolean|Cache}` – If true, a default $http cache will be used to cache the
  *     GET request, otherwise if a cache instance built with
  *     {@link ng.$cacheFactory $cacheFactory}, this cache will be used for
@@ -30767,7 +30685,7 @@ angular.module('ngResource', ['ng']).
 })(window, window.angular);
 
 /**
- * @license AngularJS v1.2.26
+ * @license AngularJS v1.2.23
  * (c) 2010-2014 Google, Inc. http://angularjs.org
  * License: MIT
  */
@@ -31418,7 +31336,7 @@ angular.module('ngSanitize').filter('linky', ['$sanitize', function($sanitize) {
  * angular-ui-bootstrap
  * http://angular-ui.github.io/bootstrap/
 
- * Version: 0.11.2 - 2014-09-26
+ * Version: 0.11.0 - 2014-05-01
  * License: MIT
  */
 angular.module("ui.bootstrap", ["ui.bootstrap.tpls", "ui.bootstrap.transition","ui.bootstrap.collapse","ui.bootstrap.accordion","ui.bootstrap.alert","ui.bootstrap.bindHtml","ui.bootstrap.buttons","ui.bootstrap.carousel","ui.bootstrap.dateparser","ui.bootstrap.position","ui.bootstrap.datepicker","ui.bootstrap.dropdown","ui.bootstrap.modal","ui.bootstrap.pagination","ui.bootstrap.tooltip","ui.bootstrap.popover","ui.bootstrap.progressbar","ui.bootstrap.rating","ui.bootstrap.tabs","ui.bootstrap.timepicker","ui.bootstrap.typeahead"]);
@@ -32163,7 +32081,7 @@ angular.module('ui.bootstrap.dateparser', [])
     }
   };
 
-  function createParser(format) {
+  this.createParser = function(format) {
     var map = [], regex = format.split('');
 
     angular.forEach(formatCodeToRegex, function(data, code) {
@@ -32188,17 +32106,17 @@ angular.module('ui.bootstrap.dateparser', [])
       regex: new RegExp('^' + regex.join('') + '$'),
       map: orderByFilter(map, 'index')
     };
-  }
+  };
 
   this.parse = function(input, format) {
-    if ( !angular.isString(input) || !format ) {
+    if ( !angular.isString(input) ) {
       return input;
     }
 
     format = $locale.DATETIME_FORMATS[format] || format;
 
     if ( !this.parsers[format] ) {
-      this.parsers[format] = createParser(format);
+      this.parsers[format] = this.createParser(format);
     }
 
     var parser = this.parsers[format],
@@ -32424,7 +32342,7 @@ angular.module('ui.bootstrap.datepicker', ['ui.bootstrap.dateparser', 'ui.bootst
     self[key] = angular.isDefined($attrs[key]) ? (index < 8 ? $interpolate($attrs[key])($scope.$parent) : $scope.$parent.$eval($attrs[key])) : datepickerConfig[key];
   });
 
-  // Watchable date attributes
+  // Watchable attributes
   angular.forEach(['minDate', 'maxDate'], function( key ) {
     if ( $attrs[key] ) {
       $scope.$parent.$watch($parse($attrs[key]), function(value) {
@@ -32871,24 +32789,12 @@ function ($compile, $parse, $document, $position, dateFilter, dateParser, datepi
         });
       }
 
-      scope.watchData = {};
-      angular.forEach(['minDate', 'maxDate', 'datepickerMode'], function( key ) {
+      angular.forEach(['minDate', 'maxDate'], function( key ) {
         if ( attrs[key] ) {
-          var getAttribute = $parse(attrs[key]);
-          scope.$parent.$watch(getAttribute, function(value){
-            scope.watchData[key] = value;
+          scope.$parent.$watch($parse(attrs[key]), function(value){
+            scope[key] = value;
           });
-          datepickerEl.attr(cameltoDash(key), 'watchData.' + key);
-
-          // Propagate changes from datepicker to outside
-          if ( key === 'datepickerMode' ) {
-            var setAttribute = getAttribute.assign;
-            scope.$watch('watchData.' + key, function(value, oldvalue) {
-              if ( value !== oldvalue ) {
-                setAttribute(scope.$parent, value);
-              }
-            });
-          }
+          datepickerEl.attr(cameltoDash(key), key);
         }
       });
       if (attrs.dateDisabled) {
@@ -32999,9 +32905,6 @@ function ($compile, $parse, $document, $position, dateFilter, dateParser, datepi
       };
 
       var $popup = $compile(popupEl)(scope);
-      // Prevent jQuery cache memory leak (template is now redundant after linking)
-      popupEl.remove();
-
       if ( appendToBody ) {
         $document.find('body').append($popup);
       } else {
@@ -33063,8 +32966,7 @@ angular.module('ui.bootstrap.dropdown', [])
   };
 
   var closeDropdown = function( evt ) {
-    var toggleElement = openScope.getToggleElement();
-    if ( evt && toggleElement && toggleElement[0].contains(evt.target) ) {
+    if (evt && evt.isDefaultPrevented()) {
         return;
     }
 
@@ -33109,10 +33011,6 @@ angular.module('ui.bootstrap.dropdown', [])
   // Allow other directives to watch status
   this.isOpen = function() {
     return scope.isOpen;
-  };
-
-  scope.getToggleElement = function() {
-    return self.toggleElement;
   };
 
   scope.focusToggleElement = function() {
@@ -33256,8 +33154,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
       restrict: 'EA',
       replace: true,
       templateUrl: 'template/modal/backdrop.html',
-      link: function (scope, element, attrs) {
-        scope.backdropClass = attrs.backdropClass || '';
+      link: function (scope) {
 
         scope.animate = false;
 
@@ -33288,18 +33185,8 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
         $timeout(function () {
           // trigger CSS transitions
           scope.animate = true;
-
-          /**
-           * Auto-focusing of a freshly-opened modal element causes any child elements
-           * with the autofocus attribute to loose focus. This is an issue on touch
-           * based devices which will show and then hide the onscreen keyboard.
-           * Attempts to refocus the autofocus element via JavaScript will not reopen
-           * the onscreen keyboard. Fixed by updated the focusing logic to only autofocus
-           * the modal element if the modal does not contain an autofocus element.
-           */
-          if (!element[0].querySelectorAll('[autofocus]').length) {
-            element[0].focus();
-          }
+          // focus a freshly-opened modal
+          element[0].focus();
         });
 
         scope.close = function (evt) {
@@ -33313,17 +33200,6 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
       }
     };
   }])
-
-  .directive('modalTransclude', function () {
-    return {
-      link: function($scope, $element, $attrs, controller, $transclude) {
-        $transclude($scope.$parent, function(clone) {
-          $element.empty();
-          $element.append(clone);
-        });
-      }
-    };
-  })
 
   .factory('$modalStack', ['$transition', '$timeout', '$document', '$compile', '$rootScope', '$$stackedMap',
     function ($transition, $timeout, $document, $compile, $rootScope, $$stackedMap) {
@@ -33396,7 +33272,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
           });
         } else {
           // Ensure this call is async
-          $timeout(afterAnimating);
+          $timeout(afterAnimating, 0);
         }
 
         function afterAnimating() {
@@ -33441,9 +33317,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
         if (currBackdropIndex >= 0 && !backdropDomEl) {
           backdropScope = $rootScope.$new(true);
           backdropScope.index = currBackdropIndex;
-          var angularBackgroundDomEl = angular.element('<div modal-backdrop></div>');
-          angularBackgroundDomEl.attr('backdrop-class', modal.backdropClass);
-          backdropDomEl = $compile(angularBackgroundDomEl)(backdropScope);
+          backdropDomEl = $compile('<div modal-backdrop></div>')(backdropScope);
           body.append(backdropDomEl);
         }
 
@@ -33463,17 +33337,17 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
       };
 
       $modalStack.close = function (modalInstance, result) {
-        var modalWindow = openedWindows.get(modalInstance);
+        var modalWindow = openedWindows.get(modalInstance).value;
         if (modalWindow) {
-          modalWindow.value.deferred.resolve(result);
+          modalWindow.deferred.resolve(result);
           removeModalWindow(modalInstance);
         }
       };
 
       $modalStack.dismiss = function (modalInstance, reason) {
-        var modalWindow = openedWindows.get(modalInstance);
+        var modalWindow = openedWindows.get(modalInstance).value;
         if (modalWindow) {
-          modalWindow.value.deferred.reject(reason);
+          modalWindow.deferred.reject(reason);
           removeModalWindow(modalInstance);
         }
       };
@@ -33507,15 +33381,14 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
 
           function getTemplatePromise(options) {
             return options.template ? $q.when(options.template) :
-              $http.get(angular.isFunction(options.templateUrl) ? (options.templateUrl)() : options.templateUrl,
-                {cache: $templateCache}).then(function (result) {
-                  return result.data;
+              $http.get(options.templateUrl, {cache: $templateCache}).then(function (result) {
+                return result.data;
               });
           }
 
           function getResolvePromises(resolves) {
             var promisesArr = [];
-            angular.forEach(resolves, function (value) {
+            angular.forEach(resolves, function (value, key) {
               if (angular.isFunction(value) || angular.isArray(value)) {
                 promisesArr.push($q.when($injector.invoke(value)));
               }
@@ -33571,9 +33444,6 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
                 });
 
                 ctrlInstance = $controller(modalOptions.controller, ctrlLocals);
-                if (modalOptions.controllerAs) {
-                  modalScope[modalOptions.controllerAs] = ctrlInstance;
-                }
               }
 
               $modalStack.open(modalInstance, {
@@ -33582,7 +33452,6 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.transition'])
                 content: tplAndVars[0],
                 backdrop: modalOptions.backdrop,
                 keyboard: modalOptions.keyboard,
-                backdropClass: modalOptions.backdropClass,
                 windowClass: modalOptions.windowClass,
                 windowTemplateUrl: modalOptions.windowTemplateUrl,
                 size: modalOptions.size
@@ -34893,7 +34762,7 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
   .factory('typeaheadParser', ['$parse', function ($parse) {
 
   //                      00000111000000000000022200000000000000003333333333333330000000000044000
-  var TYPEAHEAD_REGEXP = /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+([\s\S]+?)$/;
+  var TYPEAHEAD_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/;
 
   return {
     parse:function (input) {
@@ -35059,18 +34928,6 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
       //Declare the timeout promise var outside the function scope so that stacked calls can be cancelled later 
       var timeoutPromise;
 
-      var scheduleSearchWithTimeout = function(inputValue) {
-        timeoutPromise = $timeout(function () {
-          getMatchesAsync(inputValue);
-        }, waitTime);
-      };
-
-      var cancelPreviousTimeout = function() {
-        if (timeoutPromise) {
-          $timeout.cancel(timeoutPromise);
-        }
-      };
-
       //plug into $parsers pipeline to open a typeahead on view changes initiated from DOM
       //$parsers kick-in on all the changes coming from the view as well as manually triggered by $setViewValue
       modelCtrl.$parsers.unshift(function (inputValue) {
@@ -35079,14 +34936,17 @@ angular.module('ui.bootstrap.typeahead', ['ui.bootstrap.position', 'ui.bootstrap
 
         if (inputValue && inputValue.length >= minSearch) {
           if (waitTime > 0) {
-            cancelPreviousTimeout();
-            scheduleSearchWithTimeout(inputValue);
+            if (timeoutPromise) {
+              $timeout.cancel(timeoutPromise);//cancel previous timeout
+            }
+            timeoutPromise = $timeout(function () {
+              getMatchesAsync(inputValue);
+            }, waitTime);
           } else {
             getMatchesAsync(inputValue);
           }
         } else {
           isLoadingSetter(originalScope, false);
-          cancelPreviousTimeout();
           resetMatches();
         }
 
@@ -35294,7 +35154,7 @@ angular.module("template/accordion/accordion.html", []).run(["$templateCache", f
 
 angular.module("template/alert/alert.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/alert/alert.html",
-    "<div class=\"alert\" ng-class=\"['alert-' + (type || 'warning'), closeable ? 'alert-dismissable' : null]\" role=\"alert\">\n" +
+    "<div class=\"alert\" ng-class=\"{'alert-{{type || 'warning'}}': true, 'alert-dismissable': closeable}\" role=\"alert\">\n" +
     "    <button ng-show=\"closeable\" type=\"button\" class=\"close\" ng-click=\"close()\">\n" +
     "        <span aria-hidden=\"true\">&times;</span>\n" +
     "        <span class=\"sr-only\">Close</span>\n" +
@@ -35423,7 +35283,7 @@ angular.module("template/datepicker/year.html", []).run(["$templateCache", funct
 
 angular.module("template/modal/backdrop.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/modal/backdrop.html",
-    "<div class=\"modal-backdrop fade {{ backdropClass }}\"\n" +
+    "<div class=\"modal-backdrop fade\"\n" +
     "     ng-class=\"{in: animate}\"\n" +
     "     ng-style=\"{'z-index': 1040 + (index && 1 || 0) + index*10}\"\n" +
     "></div>\n" +
@@ -35433,7 +35293,7 @@ angular.module("template/modal/backdrop.html", []).run(["$templateCache", functi
 angular.module("template/modal/window.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/modal/window.html",
     "<div tabindex=\"-1\" role=\"dialog\" class=\"modal fade\" ng-class=\"{in: animate}\" ng-style=\"{'z-index': 1050 + index*10, display: 'block'}\" ng-click=\"close($event)\">\n" +
-    "    <div class=\"modal-dialog\" ng-class=\"{'modal-sm': size == 'sm', 'modal-lg': size == 'lg'}\"><div class=\"modal-content\" modal-transclude></div></div>\n" +
+    "    <div class=\"modal-dialog\" ng-class=\"{'modal-sm': size == 'sm', 'modal-lg': size == 'lg'}\"><div class=\"modal-content\" ng-transclude></div></div>\n" +
     "</div>");
 }]);
 
@@ -35521,8 +35381,16 @@ angular.module("template/tabs/tab.html", []).run(["$templateCache", function($te
     "");
 }]);
 
+angular.module("template/tabs/tabset-titles.html", []).run(["$templateCache", function($templateCache) {
+  $templateCache.put("template/tabs/tabset-titles.html",
+    "<ul class=\"nav {{type && 'nav-' + type}}\" ng-class=\"{'nav-stacked': vertical}\">\n" +
+    "</ul>\n" +
+    "");
+}]);
+
 angular.module("template/tabs/tabset.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/tabs/tabset.html",
+    "\n" +
     "<div>\n" +
     "  <ul class=\"nav nav-{{type || 'tabs'}}\" ng-class=\"{'nav-stacked': vertical, 'nav-justified': justified}\" ng-transclude></ul>\n" +
     "  <div class=\"tab-content\">\n" +
@@ -35574,12 +35442,11 @@ angular.module("template/typeahead/typeahead-match.html", []).run(["$templateCac
 
 angular.module("template/typeahead/typeahead-popup.html", []).run(["$templateCache", function($templateCache) {
   $templateCache.put("template/typeahead/typeahead-popup.html",
-    "<ul class=\"dropdown-menu\" ng-show=\"isOpen()\" ng-style=\"{top: position.top+'px', left: position.left+'px'}\" style=\"display: block;\" role=\"listbox\" aria-hidden=\"{{!isOpen()}}\">\n" +
+    "<ul class=\"dropdown-menu\" ng-if=\"isOpen()\" ng-style=\"{top: position.top+'px', left: position.left+'px'}\" style=\"display: block;\" role=\"listbox\" aria-hidden=\"{{!isOpen()}}\">\n" +
     "    <li ng-repeat=\"match in matches track by $index\" ng-class=\"{active: isActive($index) }\" ng-mouseenter=\"selectActive($index)\" ng-click=\"selectMatch($index)\" role=\"option\" id=\"{{match.id}}\">\n" +
     "        <div typeahead-match index=\"$index\" match=\"match\" query=\"query\" template-url=\"templateUrl\"></div>\n" +
     "    </li>\n" +
-    "</ul>\n" +
-    "");
+    "</ul>");
 }]);
 
 /**
@@ -70335,3 +70202,2164 @@ this.suggestRAML = function(path) {
 },{}]},{},[1])
 (1)
 });;
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.ramlObjectToRaml=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var is = require('../utils/is');
+
+/**
+ * Sanitize documentation for RAML.
+ *
+ * @param  {Array} documentation
+ * @return {Array}
+ */
+module.exports = function (documentation) {
+  return documentation.filter(function (document) {
+    return is.string(document.title) && is.string(document.content);
+  }).map(function (document) {
+    return {
+      title:   document.title,
+      content: document.content
+    };
+  });
+};
+
+},{"../utils/is":12}],2:[function(require,module,exports){
+var extend                  = require('xtend/mutable');
+var is                      = require('../utils/is');
+var sanitizeSchemas         = require('./schemas');
+var sanitizeParameters      = require('./parameters');
+var sanitizeDocumentation   = require('./documentation');
+var sanitizeSecuritySchemes = require('./security-schemes');
+var sanitizeResources       = require('./resources');
+var sanitizeResourceTypes   = require('./resource-types');
+var sanitizeTraits          = require('./traits');
+
+/**
+ * Transform a RAML object into a YAML compatible structure.
+ *
+ * @param  {Object} input
+ * @return {Object}
+ */
+module.exports = function (input) {
+  var output = {};
+
+  if (is.string(input.title)) {
+    output.title = input.title;
+  }
+
+  if (is.string(input.version) || is.number(input.version)) {
+    output.version = input.version;
+  }
+
+  if (is.string(input.mediaType)) {
+    output.mediaType = input.mediaType;
+  }
+
+  if (is.string(input.baseUri)) {
+    output.baseUri = input.baseUri;
+  }
+
+  if (is.object(input.baseUriParameters)) {
+    output.baseUriParameters = sanitizeParameters(input.baseUriParameters);
+  }
+
+  if (is.array(input.documentation)) {
+    output.documentation = sanitizeDocumentation(input.documentation);
+  }
+
+  if (is.array(input.securitySchemes)) {
+    output.securitySchemes = sanitizeSecuritySchemes(input.securitySchemes);
+  }
+
+  if (is.array(input.schemas)) {
+    output.schemas = sanitizeSchemas(input.schemas);
+  }
+
+  if (is.array(input.resourceTypes)) {
+    output.resourceTypes = sanitizeResourceTypes(input.resourceTypes);
+  }
+
+  if (is.array(input.traits)) {
+    output.traits = sanitizeTraits(input.traits);
+  }
+
+  if (is.array(input.resources)) {
+    extend(output, sanitizeResources(input.resources));
+  }
+
+  return output;
+};
+
+},{"../utils/is":12,"./documentation":1,"./parameters":3,"./resource-types":4,"./resources":5,"./schemas":7,"./security-schemes":8,"./traits":10,"xtend/mutable":18}],3:[function(require,module,exports){
+var extend = require('xtend/mutable');
+var is     = require('../utils/is');
+
+/**
+ * Map of valid types.
+ *
+ * @type {Object}
+ */
+var TYPES = {
+  string:  true,
+  number:  true,
+  integer: true,
+  date:    true,
+  boolean: true,
+  file:    true
+};
+
+/**
+ * Sanitize a single parameter representation.
+ *
+ * @param  {Object} param
+ * @param  {String} key
+ * @return {Object}
+ */
+var sanitizeParameter = function (param, key) {
+  var obj = {};
+
+  // Avoid unneccessary display names.
+  if (is.string(param.displayName) && key !== param.displayName) {
+    obj.displayName = param.displayName;
+  }
+
+  if (is.string(param.type) && TYPES.hasOwnProperty(param.type)) {
+    obj.type = param.type;
+  }
+
+  if (is.string(param.description)) {
+    obj.description = param.description;
+  }
+
+  if (is.array(param.enum)) {
+    obj.enum = param.enum;
+  }
+
+  if (is.string(param.pattern)) {
+    obj.pattern = param.pattern;
+  }
+
+  if (is.number(param.minLength)) {
+    obj.minLength = param.minLength;
+  }
+
+  if (is.number(param.maxLength)) {
+    obj.maxLength = param.maxLength;
+  }
+
+  if (is.number(param.minimum)) {
+    obj.minimum = param.minimum;
+  }
+
+  if (is.number(param.maximum)) {
+    obj.maximum = param.maximum;
+  }
+
+  if (param.example != null && is.primitive(param.example)) {
+    obj.example = param.example;
+  }
+
+  if (param.default != null && is.primitive(param.default)) {
+    obj.default = param.default;
+  }
+
+  if (is.boolean(param.repeat)) {
+    obj.repeat = param.repeat;
+  }
+
+  if (is.boolean(param.required)) {
+    obj.required = param.required;
+  }
+
+  return obj;
+};
+
+/**
+ * Sanitize parameters and ensure the object structure is correct.
+ *
+ * @param  {Object} params
+ * @return {Object}
+ */
+module.exports = function (params) {
+  var obj = {};
+
+  Object.keys(params).forEach(function (key) {
+    var param = params[key];
+
+    if (is.array(param)) {
+      return obj[key] = param.map(sanitizeParameter);
+    }
+
+    obj[key] = sanitizeParameter(param, key);
+  });
+
+  return obj;
+};
+
+},{"../utils/is":12,"xtend/mutable":18}],4:[function(require,module,exports){
+var is            = require('../utils/is');
+var sanitizeTrait = require('./trait');
+
+/**
+ * Escape characters used inside a method name for the regexp.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+var escape = function (str) {
+  return str.replace(/([\-])/g, '\\$1');
+};
+
+/**
+ * Check if the key is potentially a method name.
+ *
+ * @type {RegExp}
+ */
+var METHOD_KEY_REGEXP = /^(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\??$/i;
+
+/**
+ * Sanitize resource types suitable for RAML.
+ *
+ * @param  {Array} resourceTypes
+ * @return {Array}
+ */
+module.exports = function (resourceTypes) {
+  var array = [];
+
+  resourceTypes.forEach(function (resourceTypeMap) {
+    Object.keys(resourceTypeMap).forEach(function (type) {
+      var obj          = {};
+      var child        = obj[type] = {};
+      var resourceType = resourceTypeMap[type];
+
+      Object.keys(resourceType).forEach(function (key) {
+        var value = resourceType[key];
+        var keys  = ['type', 'usage', 'description'];
+
+        if (METHOD_KEY_REGEXP.test(key)) {
+          child[key] = value == null ? value : sanitizeTrait(value);
+        }
+
+        // Allow usage and description strings alongside methods.
+        if (~keys.indexOf(key) && is.string(value)) {
+          child[key] = value;
+        }
+      });
+
+      array.push(obj);
+    });
+  });
+
+  return array;
+};
+
+},{"../utils/is":12,"./trait":9}],5:[function(require,module,exports){
+var extend             = require('xtend/mutable');
+var is                 = require('../utils/is');
+var sanitizeTrait      = require('./trait');
+var sanitizeParameters = require('./parameters');
+
+/**
+ * Sanitize a method into RAML structure for stringification.
+ *
+ * @param  {Object} method
+ * @return {Object}
+ */
+var sanitizeMethods = function (methods) {
+  var obj = {};
+
+  methods.forEach(function (method) {
+    var child = obj[method.method.toLowerCase()] = {};
+
+    if (is.array(method.is)) {
+      child.is = method.is;
+    }
+
+    extend(child, sanitizeTrait(method));
+  });
+
+  return obj;
+};
+
+/**
+ * Sanitize the resources array to the correct RAML structure.
+ *
+ * @param  {Array}  resources
+ * @return {Object}
+ */
+module.exports = function sanitizeResources (resources) {
+  var obj = {};
+
+  resources.forEach(function (resource) {
+    if (!resource.relativeUri) {
+      return;
+    }
+
+    var child = obj[resource.relativeUri] = {};
+
+    if (is.string(resource.type) || is.object(resource.type)) {
+      child.type = resource.type;
+    }
+
+    if (is.array(resource.methods)) {
+      extend(child, sanitizeMethods(resource.methods));
+    }
+
+    if (is.array(resource.resources)) {
+      extend(child, sanitizeResources(resource.resources));
+    }
+  });
+
+  return obj;
+};
+
+},{"../utils/is":12,"./parameters":3,"./trait":9,"xtend/mutable":18}],6:[function(require,module,exports){
+/**
+ * Sanitize the responses object.
+ *
+ * @param  {Object} responses
+ * @return {Object}
+ */
+module.exports = function (responses) {
+  var obj = {};
+
+  Object.keys(responses).forEach(function (code) {
+    if (!/^\d{3}$/.test(code)) {
+      return;
+    }
+
+    obj[code] = responses[code];
+  });
+
+  return obj;
+};
+
+},{}],7:[function(require,module,exports){
+var is = require('../utils/is');
+
+/**
+ * Map the schemas array of objects into a standard array.
+ *
+ * @param  {Array} schemas
+ * @return {Array}
+ */
+module.exports = function (schemas) {
+  var array = [];
+
+  // Iterate over the schema array and object and make it one schema per index.
+  schemas.forEach(function (schemaMap) {
+    Object.keys(schemaMap).forEach(function (key) {
+      if (!is.string(schemaMap[key])) {
+        return;
+      }
+
+      var obj = {};
+
+      obj[key] = schemaMap[key];
+
+      array.push(obj);
+    });
+  });
+
+  return array;
+};
+
+},{"../utils/is":12}],8:[function(require,module,exports){
+var is            = require('../utils/is');
+var sanitizeTrait = require('./trait');
+
+/**
+ * Map of valid authentication types.
+ *
+ * @type {Object}
+ */
+var AUTH_TYPES = {
+  'Basic Authentication':  true,
+  'Digest Authentication': true,
+  'OAuth 1.0':             true,
+  'OAuth 2.0':             true
+};
+
+/**
+ * Sanitize security schemes.
+ *
+ * @param  {Array} securitySchemes
+ * @return {Array}
+ */
+module.exports = function (securitySchemes) {
+  var array = [];
+
+  securitySchemes.forEach(function (schemeMap) {
+    Object.keys(schemeMap).forEach(function (key) {
+      var scheme = schemeMap[key];
+
+      if (!AUTH_TYPES[scheme.type] && !/^x-/i.test(scheme.type)) {
+        return;
+      }
+
+      var obj  = {};
+      var data = obj[key] = { type: scheme.type };
+
+      if (is.string(scheme.description)) {
+        data.description = scheme.description;
+      }
+
+      if (is.object(scheme.describedBy)) {
+        data.describedBy = sanitizeTrait(scheme.describedBy);
+      }
+
+      if (is.object(scheme.settings)) {
+        data.settings = scheme.settings;
+      }
+
+      array.push(obj);
+    });
+  });
+
+  return array;
+};
+
+},{"../utils/is":12,"./trait":9}],9:[function(require,module,exports){
+var is                 = require('../utils/is');
+var sanitizeResponses  = require('./responses');
+var sanitizeParameters = require('./parameters');
+
+/**
+ * Sanitize a trait-like object.
+ *
+ * @param  {Object} trait
+ * @return {Object}
+ */
+module.exports = function (trait) {
+  var obj = {};
+
+  if (is.string(trait.usage)) {
+    obj.usage = trait.usage;
+  }
+
+  if (is.string(trait.description)) {
+    obj.description = trait.description;
+  }
+
+  if (is.object(trait.headers)) {
+    obj.headers = sanitizeParameters(trait.headers);
+  }
+
+  if (is.object(trait.queryParameters)) {
+    obj.queryParameters = sanitizeParameters(trait.queryParameters);
+  }
+
+  if (is.object(trait.body)) {
+    obj.body = trait.body;
+  }
+
+  if (is.object(trait.responses)) {
+    obj.responses = sanitizeResponses(trait.responses);
+  }
+
+  return obj;
+};
+
+},{"../utils/is":12,"./parameters":3,"./responses":6}],10:[function(require,module,exports){
+var sanitizeTrait = require('./trait');
+
+/**
+ * Sanitize traits into an array of keyed maps.
+ *
+ * @param  {Array} traits
+ * @return {Array}
+ */
+module.exports = function (traits) {
+  var array = [];
+
+  traits.forEach(function (traitMap) {
+    Object.keys(traitMap).forEach(function (key) {
+      var obj = {};
+
+      obj[key] = sanitizeTrait(traitMap[key]);
+
+      array.push(obj);
+    });
+  });
+
+  return array;
+};
+
+},{"./trait":9}],11:[function(require,module,exports){
+var extend   = require('xtend/mutable');
+var indent   = require('indent-string');
+var repeat   = require('repeat-string');
+var length   = require('string-length');
+var is       = require('./utils/is');
+var toString = Function.prototype.call.bind(Object.prototype.toString);
+
+/**
+ * Map of characters to escape character sequences.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L39-L55
+ *
+ * @type {Object}
+ */
+var ESCAPE_SEQUENCES = {};
+
+ESCAPE_SEQUENCES[0x00]   = '\\0';
+ESCAPE_SEQUENCES[0x07]   = '\\a';
+ESCAPE_SEQUENCES[0x08]   = '\\b';
+ESCAPE_SEQUENCES[0x09]   = '\\t';
+ESCAPE_SEQUENCES[0x0A]   = '\\n';
+ESCAPE_SEQUENCES[0x0B]   = '\\v';
+ESCAPE_SEQUENCES[0x0C]   = '\\f';
+ESCAPE_SEQUENCES[0x0D]   = '\\r';
+ESCAPE_SEQUENCES[0x1B]   = '\\e';
+ESCAPE_SEQUENCES[0x22]   = '\\"';
+ESCAPE_SEQUENCES[0x5C]   = '\\\\';
+ESCAPE_SEQUENCES[0x85]   = '\\N';
+ESCAPE_SEQUENCES[0xA0]   = '\\_';
+ESCAPE_SEQUENCES[0x2028] = '\\L';
+ESCAPE_SEQUENCES[0x2029] = '\\P';
+
+/**
+ * Quickly check wheter a character code needs to be quoted within a string.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L14-L36
+ *
+ * @type {Object}
+ */
+var QUOTED_CHARACTERS = {};
+
+QUOTED_CHARACTERS[0x09] = true; /* Tab */
+QUOTED_CHARACTERS[0x0A] = true; /* LF */
+QUOTED_CHARACTERS[0x0D] = true; /* CR */
+QUOTED_CHARACTERS[0x21] = true; /* ! */
+QUOTED_CHARACTERS[0x22] = true; /* " */
+QUOTED_CHARACTERS[0x23] = true; /* # */
+QUOTED_CHARACTERS[0x25] = true; /* % */
+QUOTED_CHARACTERS[0x26] = true; /* & */
+QUOTED_CHARACTERS[0x27] = true; /* ' */
+QUOTED_CHARACTERS[0x2A] = true; /* * */
+// QUOTED_CHARACTERS[0x2C] = true; /* , */
+// QUOTED_CHARACTERS[0x3A] = true; /* : */
+QUOTED_CHARACTERS[0x3E] = true; /* > */
+QUOTED_CHARACTERS[0x40] = true; /* @ */
+QUOTED_CHARACTERS[0x5B] = true; /* [ */
+QUOTED_CHARACTERS[0x5D] = true; /* ] */
+QUOTED_CHARACTERS[0x60] = true; /* ` */
+QUOTED_CHARACTERS[0x7B] = true; /* { */
+QUOTED_CHARACTERS[0x7C] = true; /* | */
+QUOTED_CHARACTERS[0x7D] = true; /* } */
+
+/**
+ * Check if numbers match the YAML number pattern.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/6030fa6c389aaf14545222f7fa27e86359ca3a3b/lib/js-yaml/type/float.js#L6-L11
+ *
+ * @type {RegExp}
+ */
+var NUMBER_REGEXP = new RegExp(
+  '^(?:[-+]?(?:[0-9][0-9_]*)' +
+  '|[-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+][0-9]+)?' +
+  '|\\.[0-9_]+(?:[eE][-+][0-9]+)?' +
+  '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' +
+  '|[-+]?\\.(?:inf|Inf|INF)' +
+  '|\\.(?:nan|NaN|NAN))$'
+);
+
+/**
+ * Encode a character code in hex form.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L95-L114
+ *
+ * @param  {Number} charCode
+ * @return {String}
+ */
+var encodeHex = function (charCode) {
+  var string = charCode.toString(16).toUpperCase();
+  var handle;
+  var length;
+
+  if (charCode <= 0xFF) {
+    handle = 'x';
+    length = 2;
+  } else if (charCode <= 0xFFFF) {
+    handle = 'u';
+    length = 4;
+  } else if (charCode <= 0xFFFFFFFF) {
+    handle = 'U';
+    length = 8;
+  } else {
+    throw new Error(
+      'Character code within a string may not be greater than 0xFFFFFFFF'
+    );
+  }
+
+  return '\\' + handle + repeat('0', length - string.length) + string;
+};
+
+/**
+ * Return whether a character code needs to be escaped.
+ *
+ * @param  {Number}  charCode
+ * @return {Boolean}
+ */
+var requiresEscape = function (charCode) {
+  return ESCAPE_SEQUENCES[charCode] ||
+    !((0x00020 <= charCode && charCode <= 0x00007E) ||
+      (0x00085 === charCode)                        ||
+      (0x000A0 <= charCode && charCode <= 0x00D7FF) ||
+      (0x0E000 <= charCode && charCode <= 0x00FFFD) ||
+      (0x10000 <= charCode && charCode <= 0x10FFFF));
+};
+
+/**
+ * Check whether a string requires quotes in RAML.
+ *
+ * @param  {String}  str
+ * @return {Boolean}
+ */
+var requiresQuotes = function (str) {
+  // Empty strings require quotes.
+  if (length(str) === 0) {
+    return true;
+  }
+
+  // Check whether it's surrounded by spaces or starts with `-` or `?`.
+  if (/^[ \-?]| $/.test(str) || NUMBER_REGEXP.test(str)) {
+    return true;
+  }
+
+  for (var i = 0; i < str.length; i++) {
+    var charCode = str.charCodeAt(i);
+
+    if (requiresEscape(charCode)) {
+      return true;
+    }
+
+    if (QUOTED_CHARACTERS[charCode]) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
+ * Escape a string to be wrapped in quotes.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+var escapeString = function (str) {
+  return str.split('').map(function (character) {
+    var charCode = character.charCodeAt(0);
+
+    if (requiresEscape(charCode)) {
+      return ESCAPE_SEQUENCES[charCode] || escapeHex(charCode);
+    }
+
+    return character;
+  }).join('');
+};
+
+/**
+ * Wrap a string in quotes and escape.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+var wrapString = function (str) {
+  return '"' + escapeString(str) + '"';
+};
+
+/**
+ * Stringify a string into RAML.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+var stringifyString = function (str) {
+  if (requiresQuotes(str)) {
+    return wrapString(str);
+  }
+
+  return str;
+};
+
+/**
+ * Check whether an inline RAML array can be rendered with the max length.
+ *
+ * @param  {Array}   array
+ * @param  {Number}  length
+ * @param  {Object}  opts
+ * @return {Boolean}
+ */
+var arrayWithinLength = function (array, maxLength, opts) {
+  // Empty arrays must always be true.
+  if (!array.length) {
+    return true;
+  }
+
+  // Surrounding brackets and every comma separator - "[ ... ]".
+  var total = 4 + (array.length - 1) * 2;
+
+  return array.every(function (value) {
+    if (!is.primitive(value)) {
+      return false;
+    }
+
+    total += length(stringify(value, 0, opts));
+
+    return total < maxLength;
+  });
+};
+
+/**
+ * Stringify an array using the inline RAML format.
+ *
+ * @param  {Array}  array
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringifyArrayInline = function (array, level, opts) {
+  if (!array.length) {
+    return '[]';
+  }
+
+  return '[ ' + array.map(function (value) {
+    if (is.string(value) && value.indexOf(':') > -1) {
+      return wrapString(value);
+    }
+
+    return stringify(value, level, opts);
+  }).join(', ') + ' ]';
+};
+
+/**
+ * Check whether a string fits within the designated width.
+ *
+ * @param  {String}  str
+ * @param  {Number}  maxLength
+ * @param  {Object}  opts
+ * @return {Boolean}
+ */
+var stringWithinLength = function (str, maxLength, opts) {
+  if (/\r?\n/.test(str)) {
+    return false;
+  }
+
+  return length(stringifyString(str)) < maxLength;
+};
+
+/**
+ * Stringify a string into RAML with support for multiple lines.
+ *
+ * @param  {String} str
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringifyStringMultiLine = function (str, level, opts) {
+  return indent(str, opts.indent, level);
+};
+
+/**
+ * Generalized property stringification.
+ *
+ * @param  {String} prefix
+ * @param  {*}      value
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringifyProperty = function (prefix, value, level, opts) {
+  var maxLength = opts.maxLength - length(prefix) - 1;
+
+  // Empty values can stay empty in RAML.
+  if (value == null) {
+    return prefix;
+  }
+
+  // Check whether the array can fit using inline representation.
+  if (is.array(value) && arrayWithinLength(value, maxLength, opts)) {
+    return prefix + ' ' + stringifyArrayInline(value, level + 1, opts);
+  }
+
+  // Check whether strings should be on a single line.
+  if (is.string(value) && !stringWithinLength(value, maxLength, opts)) {
+    return prefix + ' |\n' + stringifyStringMultiLine(value, level + 1, opts);
+  }
+
+  // Inline object representation when empty.
+  if (is.object(value) && !Object.keys(value).length) {
+    return prefix + ' {}';
+  }
+
+  // All other primitives will fit inline.
+  if (is.primitive(value)) {
+    return prefix + ' ' + stringify(value, level + 1, opts);
+  }
+
+  return prefix + '\n' + stringify(value, level + 1, opts);
+};
+
+/**
+ * Stringify an object property for RAML.
+ *
+ * @param  {String} key
+ * @param  {*}      value
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringifyObjectProperty = function (key, value, level, opts) {
+  var prefix = repeat(opts.indent, level) + key + ':';
+
+  return stringifyProperty(prefix, value, level, opts);
+};
+
+/**
+ * Stringify an object for RAML.
+ *
+ * @param  {Object} obj
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringifyObject = function (obj, level, opts) {
+  var keys = Object.keys(obj);
+
+  return keys.map(function (key) {
+    return stringifyObjectProperty(key, obj[key], level, opts);
+  }).join('\n');
+};
+
+/**
+ * Stringify an array property for RAML.
+ *
+ * @param  {*}      value
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringifyArrayProperty = function (value, level, opts) {
+  var prefix = repeat(opts.indent, level) + '-';
+
+  // Represent objects inline with the array token. E.g. "- schema: test".
+  if (is.object(value)) {
+    return prefix + ' ' + stringify(value, level + 1, opts).replace(/^ +/, '');
+  }
+
+  if (is.string(value) && value.indexOf(':') > -1) {
+    return prefix + ' ' + wrapString(value);
+  }
+
+  return stringifyProperty(prefix, value, level, opts);
+};
+
+/**
+ * Stringify an array for RAML.
+ *
+ * @param  {Array}  array
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringifyArray = function (array, level, opts) {
+  return array.map(function (value) {
+    return stringifyArrayProperty(value, level, opts);
+  }).join('\n');
+};
+
+/**
+ * Map of types to stringify.
+ *
+ * @type {Object}
+ */
+var TYPES = {
+  '[object String]':  stringifyString,
+  '[object Object]':  stringifyObject,
+  '[object Array]':   stringifyArray,
+  '[object Number]':  String,
+  '[object Boolean]': String
+};
+
+/**
+ * Stringify any JavaScript type.
+ *
+ * @param  {*}      input
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+var stringify = function (input, level, opts) {
+  var type = toString(input);
+
+  if (!TYPES[type]) {
+    return '';
+  }
+
+  return TYPES[type](input, level, opts);
+};
+
+/**
+ * Stringify JavaScript to a YAML (RAML) string.
+ *
+ * @param  {*}      input
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+module.exports = function (input, opts) {
+  return stringify(input, 0, extend({
+    indent:    '  ',
+    maxLength: 80
+  }, opts));
+};
+
+},{"./utils/is":12,"indent-string":13,"repeat-string":14,"string-length":15,"xtend/mutable":18}],12:[function(require,module,exports){
+var is        = exports;
+var _toString = Object.prototype.toString;
+
+[
+  'String',
+  'Number',
+  'Boolean',
+  'RegExp',
+  'Object',
+  'Array',
+  'Function',
+  'Null',
+  'Undefined'
+].forEach(function (instance) {
+  var name = instance.charAt(0).toLowerCase() + instance.substr(1);
+  var type = '[object ' + instance + ']';
+
+  is[name] = function (value) {
+    return _toString.call(value) === type;
+  };
+});
+
+/**
+ * Map of primitive types.
+ *
+ * @type {Object}
+ */
+var PRIMITIVES = {
+  '[object Number]':    true,
+  '[object String]':    true,
+  '[object Boolean]':   true,
+  '[object Null]':      true,
+  '[object Undefined]': true
+};
+
+/**
+ * Check whether a value is a primitive JavaScript type.
+ *
+ * @param  {*}       value
+ * @return {Boolean}
+ */
+is.primitive = function (value) {
+  return !!PRIMITIVES[_toString.call(value)];
+}
+
+},{}],13:[function(require,module,exports){
+'use strict';
+var repeatString = require('repeat-string');
+
+module.exports = function (str, indent, count) {
+	if (typeof str !== 'string' || typeof indent !== 'string') {
+		throw new TypeError('`string` and `indent` should be strings');
+	}
+
+	if (count != null && typeof count !== 'number') {
+		throw new TypeError('`count` should be a number');
+	}
+
+	indent = count > 1 ? repeatString(indent, count) : indent;
+
+	return str.replace(/^(?!\s*$)/mg, indent);
+};
+
+},{"repeat-string":14}],14:[function(require,module,exports){
+module.exports = function(str, count) {
+  if (count < 1) {
+    return '';
+  }
+
+  var result = '';
+  while (count > 0) {
+    if (count & 1) {
+      result += str;
+    }
+    count >>= 1;
+    str += str;
+  }
+  return result;
+}
+
+},{}],15:[function(require,module,exports){
+'use strict';
+var stripAnsi = require('strip-ansi');
+var reAstral = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+
+module.exports = function (str) {
+	return stripAnsi(str).replace(reAstral, ' ').length;
+};
+
+},{"strip-ansi":16}],16:[function(require,module,exports){
+'use strict';
+var ansiRegex = require('ansi-regex')();
+
+module.exports = function (str) {
+	return typeof str === 'string' ? str.replace(ansiRegex, '') : str;
+};
+
+},{"ansi-regex":17}],17:[function(require,module,exports){
+'use strict';
+module.exports = function () {
+	return /(?:(?:\u001b\[)|\u009b)(?:(?:[0-9]{1,3})?(?:(?:;[0-9]{0,3})*)?[A-M|f-m])|\u001b[A-M]/g;
+};
+
+},{}],18:[function(require,module,exports){
+module.exports = extend
+
+function extend(target) {
+    for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}],19:[function(require,module,exports){
+var sanitize  = require('./lib/sanitize');
+var stringify = require('./lib/stringify');
+
+/**
+ * Transform a RAML object into a RAML string.
+ *
+ * @param  {Object} obj
+ * @return {String}
+ */
+module.exports = function (obj) {
+  return '#%RAML 0.8\n' + stringify(sanitize(obj));
+};
+
+},{"./lib/sanitize":2,"./lib/stringify":11}]},{},[19])(19)
+});
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.swaggerToRamlObject=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var extend = require('extend');
+
+/**
+ * Map of valid param types to raml types.
+ *
+ * @type {Object}
+ */
+var PARAM_TYPE_MAP = {
+  string:  { type: 'string' },
+  number:  { type: 'number' },
+  integer: { type: 'integer' },
+  boolean: { type: 'boolean' },
+  File:    { type: 'file' },
+  array:   { repeat: true }
+};
+
+/**
+ * Map of valid param types to json schema types.
+ *
+ * @type {Object}
+ */
+var JSON_TYPE_MAP = {
+  string:  { type: 'string' },
+  number:  { type: 'number' },
+  integer: { type: 'integer' },
+  boolean: { type: 'boolean' },
+  array:   { type: 'array' },
+  object:  { type: 'object' }
+};
+
+/**
+ * Map of valid formats to their properties.
+ *
+ * @type {Object}
+ */
+var PARAM_FORMAT_MAP = {
+  int32: {
+    type: 'integer',
+    minimum: -2147483648,
+    maximum: 2147483647
+  },
+  int64: {
+    type: 'integer',
+    minimum: -9223372036854775808,
+    maximum: 9223372036854775807
+  },
+  date: {
+    type: 'date'
+  },
+  'date-time': {
+    type: 'date'
+  }
+};
+
+/**
+ * Url-encoded form content type.
+ *
+ * @type {String}
+ */
+var URL_ENCODED_MIME = 'application/x-www-form-urlencoded';
+
+/**
+ * Content type for multipart form uploads.
+ *
+ * @type {String}
+ */
+var MULTI_PART_MIME = 'multipart/form-data';
+
+/**
+ * Location of the spec on api declarations.
+ *
+ * @type {String}
+ */
+var API_SPEC_URI = 'https://github.com/wordnik/swagger-spec' +
+  '/blob/master/versions/1.2.md#52-api-declaration';
+
+/**
+ * Expose the converter function.
+ */
+module.exports = convertApiDeclaration;
+
+/**
+ * Convert an api declaration into RAML.
+ *
+ * @param  {Object} declaration
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+function convertApiDeclaration (declaration, ramlObject) {
+  ramlObject = ramlObject || {};
+
+  // Verify the api declaration is valid.
+  if (!declaration.basePath || !declaration.apis) {
+    throw new Error('Must be a valid api declaration: ' + API_SPEC_URI);
+  }
+
+  // Check if the api version is still the same.
+  if (ramlObject.version && declaration.apiVersion !== ramlObject.version) {
+    throw new Error(
+      'The api version has changed: ' +
+      ramlObject.version + ' -> ' + declaration.apiVersion
+    );
+  } else if (!ramlObject.version) {
+    ramlObject.version = declaration.apiVersion;
+  }
+
+  addBasePath(declaration.basePath, ramlObject);
+  convertApis(declaration, ramlObject);
+
+  return ramlObject;
+}
+
+/**
+ * Set the base path from the api declaration on the raml object.
+ *
+ * @param  {String} basePath
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+function addBasePath (basePath, ramlObject) {
+  // If a base uri has not been set yet, set it here.
+  if (!ramlObject.baseUri) {
+    ramlObject.baseUri = basePath;
+
+    return ramlObject;
+  }
+
+  // If the base path changes for some reason, throw an error. In the future,
+  // we may want to refactor the resource tree with new prefixes.
+  if (ramlObject.baseUri !== basePath) {
+    throw new Error(
+      'The base uri has changed: ' + ramlObject.baseUri + ' -> ' + basePath
+    );
+  }
+
+  return ramlObject;
+}
+
+/**
+ * Convert an array of apis into a raml resource.
+ *
+ * @param  {Object} declaration
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+function convertApis (declaration, ramlObject) {
+  var relativeUri   = declaration.resourcePath;
+  var ramlResources = ramlObject.resources = ramlObject.resources || [];
+  var ramlResource  = findResource(ramlResources, relativeUri);
+
+  declaration.apis.forEach(function (api) {
+    var path = api.path;
+    var resource;
+
+    // I assume this will always occur based on the Swagger specs I've seen.
+    if (path.substr(0, relativeUri.length) === relativeUri) {
+      path = path.substr(relativeUri.length);
+
+      // If no raml resource exists, create it.
+      if (!ramlResource) {
+        ramlResource = { relativeUri: relativeUri };
+
+        ramlResources.push(ramlResource);
+      }
+
+      ramlResource.resources = ramlResource.resources || [];
+      ramlResource.resources.push(resource = { relativeUri: path });
+    } else {
+      ramlResources.push(resource = {
+        relativeUri: path
+      });
+    }
+
+    // Alias the api description onto the new raml resource.
+    if (api.description) {
+      resource.description = api.description;
+    }
+
+    return convertOperations(api.operations, declaration, resource);
+  });
+
+  return ramlResource;
+}
+
+/**
+ * Find a resource by uri in an array of resources.
+ *
+ * @param  {Array}  resources
+ * @param  {String} uri
+ * @return {Object}
+ */
+function findResource (resources, uri) {
+  var matchingResource;
+
+  resources.some(function (resource) {
+    if (resource.relativeUri === uri) {
+      return (matchingResource = resource);
+    }
+  });
+
+  return matchingResource;
+}
+
+/**
+ * Convert an array of swagger operations for a raml resource.
+ *
+ * @param  {Object} operations
+ * @param  {Object} declaration
+ * @param  {Object} ramlResource
+ * @return {Object}
+ */
+function convertOperations (operations, declaration, ramlResource) {
+  ramlResource.methods = ramlResource.methods || [];
+
+  operations.forEach(function (operation) {
+    if (!operation.method) {
+      throw new Error('Expected the operation to have a method defined');
+    }
+
+    // Initialise the method object. This assumes the same method name has not
+    // already been used.
+    var method = {
+      method:      operation.method,
+      displayName: operation.nickname,
+      description: operation.notes || operation.summary || ''
+    };
+
+    if (operation.deprecated === 'true' || operation.deprecated === true) {
+      if (method.description) {
+        method.description += '\n\n';
+      }
+
+      method.description += 'This method has been deprecated.';
+    }
+
+    convertParameters(operation, declaration, method, ramlResource);
+    convertResponseMessages(operation, declaration, method);
+
+    ramlResource.methods.push(method);
+  });
+
+  return ramlResource;
+}
+
+/**
+ * Convert response messages into the raml object.
+ *
+ * @param  {Object} operation
+ * @param  {Object} declaration
+ * @param  {Object} method
+ * @return {Object}
+ */
+function convertResponseMessages (operation, declaration, method) {
+  if (!operation.responseMessages || !operation.responseMessages.length) {
+    return method;
+  }
+
+  // Initialise the responses object.
+  var responses = method.responses = method.responses || {};
+  var produces  = operation.produces || declaration.produces || [];
+
+  // Alias all response messages.
+  operation.responseMessages.forEach(function (response) {
+    responses[response.code] = { description: response.message };
+
+    // Adds the produces mime types to the reponses object.
+    if (produces.length) {
+      responses[response.code].body = {};
+
+      produces.forEach(function (mime) {
+        responses[response.code].body[mime] = null;
+      });
+    }
+  });
+
+  return method;
+}
+
+/**
+ * Convert swagger operation parameters for a raml method.
+ *
+ * @param  {Array}  operation
+ * @param  {Object} declaration
+ * @param  {Object} ramlMethod
+ * @param  {Object} ramlResource
+ * @return {Object}
+ */
+function convertParameters (operation, declaration, ramlMethod, ramlResource) {
+  var consumes   = operation.consumes || declaration.consumes || [];
+  var parameters = groupParameters(operation.parameters);
+
+  // Path parameters are more applicable to the resource than the method.
+  if (parameters.path) {
+    ramlResource.uriParameters = convertParametersToRaml(
+      parameters.path, declaration
+    );
+  }
+
+  // Add query parameters to the current method.
+  if (parameters.query) {
+    ramlMethod.queryParameters = convertParametersToRaml(
+      parameters.query, declaration
+    );
+  }
+
+  // Add headers to the current method.
+  if (parameters.header) {
+    ramlMethod.headers = convertParametersToRaml(
+      parameters.header, declaration
+    );
+  }
+
+  // Convert the body parameters before attempting the form.
+  if (parameters.body) {
+    convertBodyParameters(parameters.body, consumes, declaration, ramlMethod);
+  }
+
+  // Convert the form parameter into something that works better
+  if (parameters.form) {
+    convertFormParameters(parameters.form, consumes, declaration, ramlMethod);
+  }
+
+  return ramlMethod;
+}
+
+/**
+ * Map of conversion mime types to functions.
+ *
+ * @type {Object}
+ */
+var CONVERT_PARAMS_TO_SCHEMA = {
+  'application/xml':  null, // convertParameterToXmlSchema
+  'application/json': convertParameterToJsonSchema
+};
+
+/**
+ * Convert body parameters inline into raml schemas.
+ *
+ * @param  {Array}  params
+ * @param  {Array}  consumes
+ * @param  {Object} declaration
+ * @param  {Object} ramlMethod
+ * @return {Object}
+ */
+function convertBodyParameters (params, consumes, declaration, ramlMethod) {
+  ramlMethod.body = ramlMethod.body || {};
+
+  // Iterate over the consumes object and convert known types.
+  params.forEach(function (param) {
+    if (param.name !== 'body') {
+      throw new Error('Invalid parameter name for body: ' + param.name);
+    }
+
+    consumes.forEach(function (mime) {
+      if (CONVERT_PARAMS_TO_SCHEMA[mime]) {
+        return ramlMethod.body[mime] = {
+          schema: CONVERT_PARAMS_TO_SCHEMA[mime](param, declaration)
+        };
+      }
+
+      ramlMethod.body[mime] = null;
+    });
+  });
+
+  return ramlMethod;
+}
+
+/**
+ * Convert form parameters inline and mutate the raml method.
+ *
+ * @param  {Array}  params
+ * @param  {Array}  consumes
+ * @param  {Object} declaration
+ * @param  {Object} ramlMethod
+ * @return {Object}
+ */
+function convertFormParameters (params, consumes, declaration, ramlMethod) {
+  var multiPart  = consumes.indexOf(MULTI_PART_MIME) > -1;
+  var urlEncoded = consumes.indexOf(URL_ENCODED_MIME) > -1;
+  var ramlParams = convertParametersToRaml(params, declaration);
+
+  // Enforce multipart if the parameters contain a file type.
+  if (!multiPart) {
+    multiPart = params.some(function (param) {
+      return param.type === 'File';
+    });
+  }
+
+  // Initialise the body to an object, if it hasn't already been.
+  ramlMethod.body = ramlMethod.body || {};
+
+  // Alias the object based on the consumes type.
+  if (multiPart && urlEncoded) {
+    ramlMethod.body[MULTI_PART_MIME] = { formParameters: ramlParams };
+    ramlMethod.body[URL_ENCODED_MIME] = { formParameters: ramlParams };
+  } else if (multiPart) {
+    ramlMethod.body[MULTI_PART_MIME] = { formParameters: ramlParams };
+  } else {
+    ramlMethod.body[URL_ENCODED_MIME] = { formParameters: ramlParams };
+  }
+
+  return ramlMethod;
+}
+
+/**
+ * Group parameters by types.
+ *
+ * @param  {Array}  parameters
+ * @return {Object}
+ */
+function groupParameters (parameters) {
+  var groups = {};
+
+  Object.keys(parameters).forEach(function (key) {
+    var parameter = parameters[key];
+    var type      = parameter.paramType;
+    var group     = groups[type] = groups[type] || [];
+
+    group.push(parameter);
+  });
+
+  return groups;
+}
+
+/**
+ * Convert an array of swagger parameters to the resource path.
+ *
+ * @param  {Array}  params
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+function convertParametersToRaml (params, declaration) {
+  var ramlParams = {};
+
+  params.forEach(function (param) {
+    ramlParams[param.name] = convertParameter(param, declaration);
+  });
+
+  return ramlParams;
+}
+
+/**
+ * Convert a single parameter to raml style.
+ *
+ * @param  {Object} param
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+function convertParameter (param, declaration) {
+  var ramlParameter = {};
+
+  // Extend the parameter information based on the type.
+  if (param.type && PARAM_TYPE_MAP[param.type]) {
+    extend(ramlParameter, PARAM_TYPE_MAP[param.type]);
+  } else {
+    // TODO: Handle params with `.type` or `.$ref` models.
+  }
+
+  // Extend the parameter with defaults set by the format.
+  if (PARAM_FORMAT_MAP[param.format]) {
+    extend(ramlParameter, PARAM_FORMAT_MAP[param.format]);
+  }
+
+  if (typeof param.description === 'string') {
+    ramlParameter.description = param.description;
+  }
+
+  if (typeof param.required === 'boolean') {
+    ramlParameter.required = param.required;
+  }
+
+  if (param.defaultValue) {
+    ramlParameter.default = param.defaultValue;
+  }
+
+  if (Array.isArray(param.enum)) {
+    ramlParameter.enum = param.enum;
+  }
+
+  if (typeof param.minimum === 'number') {
+    ramlParameter.minimum = param.minimum;
+  }
+
+  if (typeof param.maximum === 'number') {
+    ramlParameter.maximum = param.maximum;
+  }
+
+  return ramlParameter;
+}
+
+/**
+ * Convert a model to a JSON schema object.
+ *
+ * @param  {String} name
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+function convertModelToJson (name, declaration) {
+  var schema = {};
+  var model  = declaration.models[name];
+
+  // Find potential parent models.
+  Object.keys(declaration.models).some(function (key) {
+    var model = declaration.models[key];
+
+    if (!model || !model.subTypes || !model.subTypes.indexOf(name)) {
+      return false;
+    }
+
+    // Find and compile the parent schema.
+    var parentSchema = convertParameterToJson(key, declaration);
+
+    extend(schema, parentSchema);
+    schema.properties = extend({}, parentSchema.properties);
+
+    return true;
+  });
+
+  // Compile child properties into expected objects.
+  Object.keys(model.properties || {}).forEach(function (key) {
+    var property   = model.properties[key];
+    var properties = schema.properties = schema.properties || {};
+
+    properties[key] = convertParameterToJson(property, declaration);
+  });
+
+  return schema;
+}
+
+/**
+ * Convert a parameter into JSON schema object.
+ *
+ * @param  {Object} param
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+function convertParameterToJson (param, declaration) {
+  var schema = {};
+
+  if (param.type && JSON_TYPE_MAP[param.type]) {
+    extend(schema, JSON_TYPE_MAP[param.type]);
+  } else {
+    // Extend the current schema with model meta data.
+    extend(schema, convertModelToJson(param.$ref || param.type, declaration));
+  }
+
+  // Iterate over the allowed JSON schema properties in Swagger and set.
+  [
+    'description',
+    'defaultValue',
+    'enum',
+    'minimum',
+    'maximum',
+    'items',
+    'required',
+    'uniqueItems'
+  ].forEach(function (key) {
+    if (param[key] == null) {
+      return;
+    }
+
+    // Handle sub-items different and convert the types.
+    if (key === 'items') {
+      return schema[key] = convertParameterToJson(param[key], declaration);
+    }
+
+    schema[key] = param[key];
+  });
+
+  return schema;
+}
+
+/**
+ * Convert a parameter to JSON.
+ *
+ * @param  {Object} param
+ * @param  {Object} declaration
+ * @return {String}
+ */
+function convertParameterToJsonSchema (param, declaration) {
+  var schema = extend({
+    $schema: 'http://json-schema.org/draft-04/schema#'
+  }, convertParameterToJson(param, declaration));
+
+  return JSON.stringify(schema, null, 2);
+}
+
+},{"extend":5}],2:[function(require,module,exports){
+/**
+ * Expose the parse module.
+ */
+module.exports = parse;
+
+/**
+ * Parse the content based on the file name.
+ *
+ * @param  {String} content
+ * @return {Object}
+ */
+function parse (content) {
+  return JSON.parse(content);
+}
+
+},{}],3:[function(require,module,exports){
+/**
+ * Map swagger documentation keys into title-cased strings.
+ *
+ * @type {Object}
+ */
+var DOCUMENTATION_NAME_MAP = {
+  description:       'Description',
+  termsOfServiceUrl: 'Terms of Service URL',
+  contact:           'Contact',
+  license:           'License',
+  licenseUrl:        'License URL'
+};
+
+/**
+ * Map of Swagger OAuth 2.0 grant types to the RAML equivalents.
+ *
+ * @type {Object}
+ */
+var GRANT_TYPE_MAP = {
+  implicit:           'token',
+  authorization_code: 'code'
+};
+
+/**
+ * Map of ways to pass API keys in Swagger to RAML properties.
+ * @type {Object}
+ */
+var API_KEY_PASS_AS_MAP = {
+  header: 'headers',
+  query:  'queryParameters'
+};
+
+/**
+ * Location of the swagger spec on resource listings.
+ *
+ * @type {String}
+ */
+var RESOURCE_SPEC_URI = 'https://github.com/wordnik/swagger-spec' +
+  '/blob/master/versions/1.2.md#51-resource-listing';
+
+/**
+ * Expose the converter.
+ */
+module.exports = convertResourceListing;
+
+/**
+ * Convert a resource listing into a base raml object.
+ *
+ * @param  {Object} resource
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+function convertResourceListing (resource, ramlObject) {
+  if (!resource.apis) {
+    throw new Error('Must be a valid resource listing: ' + RESOURCE_SPEC_URI);
+  }
+
+  ramlObject = ramlObject || {};
+
+  if (resource.apiVersion) {
+    ramlObject.version = resource.apiVersion;
+  }
+
+  convertInfo(resource.info, ramlObject);
+  convertAuthorizations(resource.authorizations, ramlObject);
+
+  return ramlObject;
+}
+
+/**
+ * Attach information from the swagger spec to the raml object.
+ *
+ * @param  {Object} info
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+function convertInfo (info, ramlObject) {
+  if (!info) {
+    return ramlObject;
+  }
+
+  var documentation = Object.keys(DOCUMENTATION_NAME_MAP)
+    .filter(function (key) {
+      return info[key];
+    })
+    .map(function (key) {
+      return {
+        title:   DOCUMENTATION_NAME_MAP[key],
+        content: info[key]
+      };
+    });
+
+  if (info.title) {
+    ramlObject.title = info.title;
+  }
+
+  if (documentation.length) {
+    ramlObject.documentation = documentation;
+  }
+
+  return ramlObject;
+}
+
+/**
+ * Convert swagger authorizations into raml object format.
+ *
+ * @param  {Object} authorizations
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+function convertAuthorizations (authorizations, ramlObject) {
+  if (!authorizations) {
+    return ramlObject;
+  }
+
+  ramlObject.securitySchemes = Object.keys(authorizations)
+    .map(function (key) {
+      var data = {};
+
+      data[key] = convertAuthorization(authorizations[key]);
+
+      return data;
+    });
+
+  return ramlObject;
+}
+
+/**
+ * Convert a single swagger authorization object into something compatible
+ * with raml.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+function convertAuthorization (authorization) {
+  if (authorization.type === 'oauth2') {
+    return convertOAuth2(authorization);
+  }
+
+  if (authorization.type === 'apiKey') {
+    return convertApiKey(authorization);
+  }
+
+  if (authorization.type === 'basicAuth') {
+    return convertBasicAuth(authorization);
+  }
+}
+
+/**
+ * Convert the OAuth 2.0 authorization from swagger into raml object.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+function convertOAuth2 (authorization) {
+  var ramlAuth = {
+    type: 'OAuth 2.0',
+    settings: {
+      authorizationGrants: []
+    }
+  };
+
+  var implicit     = authorization.grantTypes.implicit;
+  var authCode     = authorization.grantTypes.authorization_code;
+  var description  = [];
+  var authSettings = ramlAuth.settings;
+
+  // Map scopes to the RAML object.
+  if (authorization.scopes && authorization.scopes.length) {
+    var scopeDescriptions = [];
+
+    authSettings.scopes = authorization.scopes.map(function (scope) {
+      var name = scope.scope;
+
+      if (scope.description) {
+        scopeDescriptions.push('* ' + name + ' - ' + scope.description);
+      }
+
+      return name;
+    });
+
+    // Push the scope descriptions onto the primary description.
+    if (scopeDescriptions.length) {
+      description.push('Available scopes: ');
+      description.push(scopeDescriptions.join('\n'));
+    }
+  }
+
+  // Map grant types into the raml object.
+  Object.keys(authorization.grantTypes).forEach(function (grantType) {
+    authSettings.authorizationGrants.push(GRANT_TYPE_MAP[grantType]);
+  });
+
+  if (implicit) {
+    if (implicit.loginEndpoint && implicit.loginEndpoint.url) {
+      authSettings.authorizationUri = implicit.loginEndpoint.url;
+    }
+
+    // Add a manual description if the token name is non-standard.
+    if (implicit.tokenName && implicit.tokenName !== 'access_token') {
+      description.push(
+        'The token grant uses "' + implicit.tokenName + '" as the token name.'
+      );
+    }
+  }
+
+  if (authCode) {
+    var tokenEndpoint        = authCode.tokenEndpoint;
+    var tokenRequestEndpoint = authCode.tokenRequestEndpoint;
+    var clientIdName         = tokenRequestEndpoint.clientIdName;
+    var clientSecretName     = tokenRequestEndpoint.clientSecretName;
+    var tokenName            = tokenEndpoint.tokenName;
+
+    authSettings.accessTokenUri   = tokenEndpoint.url;
+    authSettings.authorizationUri = tokenRequestEndpoint.url;
+
+    if (clientIdName && clientIdName !== 'client_id') {
+      description.push(
+        'The code grant uses "' + clientIdName + '" as the parameter for ' +
+        'passing the client id.'
+      );
+    }
+
+    if (clientSecretName && clientSecretName !== 'client_secret') {
+      description.push(
+        'The code grant uses "' + clientSecretName + '" as the parameter ' +
+        'for passing the client secret.'
+      );
+    }
+
+    if (tokenName && tokenName !== 'access_code') {
+      description.push(
+        'The code grant uses "' + tokenName + '" as the parameter for ' +
+        'passing the authorization token.'
+      );
+    }
+  }
+
+  // Add the description to the object if options are available.
+  if (description.length) {
+    ramlAuth.description = description.join('\n\n');
+  }
+
+  return ramlAuth;
+}
+
+/**
+ * Convert the API key definition in Swagger to a RAML object.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+function convertApiKey (authorization) {
+  var ramlAuth = {
+    type: 'x-api-key',
+    describedBy: {}
+  };
+
+  var describedBy = API_KEY_PASS_AS_MAP[authorization.passAs];
+
+  // If the described by property is valid,
+  if (describedBy) {
+    var description = ramlAuth.describedBy[describedBy] = {};
+
+    // Set the correct parameter on the `describedBy` object.
+    description[authorization.keyname] = {
+      type:        'string',
+      description: 'Used to send a valid API key for authentication.'
+    };
+  }
+
+  return ramlAuth;
+}
+
+/**
+ * Convert the basic auth definition in Swagger to a RAML object.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+function convertBasicAuth (authorization) {
+  return {
+    type: 'Basic Authentication'
+  };
+}
+
+},{}],4:[function(require,module,exports){
+/**
+ * Export the resource listing check.
+ */
+module.exports = isResourceListing;
+
+/**
+ * Check whether an object is a resource listing.
+ *
+ * @param  {Object}  resource
+ * @return {Boolean}
+ */
+function isResourceListing (resource) {
+  return !resource.basePath;
+}
+
+},{}],5:[function(require,module,exports){
+var hasOwn = Object.prototype.hasOwnProperty;
+var toString = Object.prototype.toString;
+var undefined;
+
+var isPlainObject = function isPlainObject(obj) {
+	"use strict";
+	if (!obj || toString.call(obj) !== '[object Object]' || obj.nodeType || obj.setInterval) {
+		return false;
+	}
+
+	var has_own_constructor = hasOwn.call(obj, 'constructor');
+	var has_is_property_of_method = obj.constructor && obj.constructor.prototype && hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
+	// Not own constructor property must be Object
+	if (obj.constructor && !has_own_constructor && !has_is_property_of_method) {
+		return false;
+	}
+
+	// Own properties are enumerated firstly, so to speed up,
+	// if last one is own, then all properties are own.
+	var key;
+	for (key in obj) {}
+
+	return key === undefined || hasOwn.call(obj, key);
+};
+
+module.exports = function extend() {
+	"use strict";
+	var options, name, src, copy, copyIsArray, clone,
+		target = arguments[0],
+		i = 1,
+		length = arguments.length,
+		deep = false;
+
+	// Handle a deep copy situation
+	if (typeof target === "boolean") {
+		deep = target;
+		target = arguments[1] || {};
+		// skip the boolean and the target
+		i = 2;
+	} else if (typeof target !== "object" && typeof target !== "function" || target == undefined) {
+			target = {};
+	}
+
+	for (; i < length; ++i) {
+		// Only deal with non-null/undefined values
+		if ((options = arguments[i]) != null) {
+			// Extend the base object
+			for (name in options) {
+				src = target[name];
+				copy = options[name];
+
+				// Prevent never-ending loop
+				if (target === copy) {
+					continue;
+				}
+
+				// Recurse if we're merging plain objects or arrays
+				if (deep && copy && (isPlainObject(copy) || (copyIsArray = Array.isArray(copy)))) {
+					if (copyIsArray) {
+						copyIsArray = false;
+						clone = src && Array.isArray(src) ? src : [];
+					} else {
+						clone = src && isPlainObject(src) ? src : {};
+					}
+
+					// Never move original objects, clone them
+					target[name] = extend(deep, clone, copy);
+
+				// Don't bring in undefined values
+				} else if (copy !== undefined) {
+					target[name] = copy;
+				}
+			}
+		}
+	}
+
+	// Return the modified object
+	return target;
+};
+
+
+},{}],6:[function(require,module,exports){
+var parse                  = require('./lib/parse');
+var isResourceListing      = require('./lib/utils/is-resource-listing');
+var convertApiDeclaration  = require('./lib/api-declaration');
+var convertResourceListing = require('./lib/resource-listing');
+
+/**
+ * Expose the swagger to raml object converter module.
+ */
+module.exports = swaggerToRamlObject;
+
+/**
+ * Convert swagger to a raml object by loading the file.
+ *
+ * @param {String}   filename
+ * @param {Function} filereader
+ * @param {Function} done
+ */
+function swaggerToRamlObject (filename, filereader, done) {
+  var read = wrapFileReader(filereader);
+
+  return read(filename, wrapContents(function (result) {
+    if (!isResourceListing(result)) {
+      return done(null, convertApiDeclaration(result));
+    }
+
+    // Parse the initial resource listing to start reading more resources.
+    var ramlObject = convertResourceListing(result);
+    var resources  = result.apis.map(function (api) {
+      return filename + api.path;
+    });
+
+    return async(resources, read, wrapContents(function (results) {
+      // Iterate over the resulting contents and convert into a single object.
+      results.forEach(function (result) {
+        convertApiDeclaration(result, ramlObject);
+      });
+
+      return done(null, ramlObject);
+    }, done));
+  }, done));
+}
+
+/**
+ * Run a function on an array of items asynchonrously.
+ *
+ * @param {Array}    items
+ * @param {Function} fn
+ * @param {Function} done
+ */
+function async (items, fn, done) {
+  var count   = 0;
+  var length  = items.length;
+  var results = [];
+  var errored = false;
+
+  items.forEach(function (item, index) {
+    // Call the async function with the item and callback.
+    fn(item, function (err, result) {
+      if (errored) {
+        return;
+      }
+
+      if (err) {
+        return done(err);
+      }
+
+      count++
+      results[index] = result;
+
+      if (count === length) {
+        return done(null, results);
+      }
+    });
+  });
+}
+
+/**
+ * Wrap the file reader functionality with parsing.
+ *
+ * @param  {Function} fn
+ * @return {Function}
+ */
+function wrapFileReader (fn) {
+  return function (filename, done) {
+    return fn(filename, function (err, result) {
+      if (err) {
+        return done(err);
+      }
+
+      try {
+        return done(null, parse(result));
+      } catch (e) {
+        return done(e);
+      }
+    });
+  }
+}
+
+/**
+ * Wrap the response from a file reader with parse ability.
+ *
+ * @param  {Function} resolve
+ * @param  {Function} reject
+ * @return {Function}
+ */
+function wrapContents (resolve, reject) {
+  return function (err, result) {
+    if (err) {
+      return reject(err);
+    }
+
+    try {
+      return resolve(result);
+    } catch (e) {
+      return reject(e);
+    }
+  };
+}
+
+},{"./lib/api-declaration":1,"./lib/parse":2,"./lib/resource-listing":3,"./lib/utils/is-resource-listing":4}]},{},[6])(6)
+});

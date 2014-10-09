@@ -909,12 +909,6 @@ div.CodeMirror {
   border-right-color: rgba(0, 0, 0, 0.15);
 }
 
-/* https://github.com/FortAwesome/Font-Awesome/issues/216 */
-[class^="icon-"],
-[class*=" icon-"] {
-  line-height: 1;
-}
-
 * {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -1101,6 +1095,9 @@ label {
   .modal-lg {
     width: 900px;
   }
+}
+.text-danger {
+  color: #d9534f;
 }
 
 div[role=raml-editor] .menubar {

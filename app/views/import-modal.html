@@ -1,0 +1,31 @@
+<div class="modal-header">
+  <h3>Import File</h3>
+</div>
+
+<div class="modal-body">
+  <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">
+    <i class="fa fa-spin fa-spinner"></i>
+  </div>
+
+  <form name="form" novalidate class="form-group" ng-class="{'has-error': form.$submitted && form.url.$invalid}" ng-submit="importSwagger(form)" style="margin-bottom: 1em;">
+    <label for="url" class="control-label">From Swagger:</label>
+
+    <div>
+      <div style="float: right;">
+        <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>
+      </div>
+
+      <div style="margin-right: 80px;">
+        <input id="url" name="url" type="text" ng-model="swagger.url" class="form-control" placeholder="http://petstore.swagger.wordnik.com/api/api-docs" required>
+      </div>
+    </div>
+
+    <p class="help-block" ng-show="form.$submitted && form.url.$error.required">Please provide a URL.</p>
+  </form>
+
+  <p class="text-danger">WARNING: This will override your currently open file.</p>
+</div>
+
+<div class="modal-footer">
+  <button type="button" class="btn btn-primary" ng-click="$dismiss()">Done</button>
+</div>

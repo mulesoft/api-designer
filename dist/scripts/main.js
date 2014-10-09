@@ -2750,6 +2750,53 @@
 }());
 (function () {
   'use strict';
+  angular.module('ramlEditorApp').service('importModal', [
+    '$modal',
+    function importModal($modal) {
+      var self = this;
+      self.open = function open() {
+        return $modal.open({
+          templateUrl: 'views/import-modal.html',
+          controller: 'ImportController'
+        }).result;
+        ;
+      };
+      return self;
+    }
+  ]).controller('ImportController', [
+    '$scope',
+    '$modalInstance',
+    'swaggerToRAML',
+    '$rootScope',
+    'codeMirror',
+    function ConfirmController($scope, $modalInstance, swaggerToRAML, $rootScope, codeMirror) {
+      $scope.swagger = {};
+      $scope.importing = false;
+      $scope.importSwagger = function (form) {
+        form.$submitted = true;
+        if (form.$invalid || $scope.importing) {
+          return;
+        }
+        $scope.importing = true;
+        // Attempt to import from a Swagger definition.
+        return swaggerToRAML.convert($scope.swagger.url).then(function (raml) {
+          codeMirror.getEditor().setValue(raml);
+          return $modalInstance.close(true);
+        }).catch(function () {
+          $rootScope.$broadcast('event:notification', {
+            message: 'Failed to load and parse Swagger: ' + $scope.swagger.url,
+            expires: true,
+            level: 'error'
+          });
+        }).finally(function () {
+          $scope.importing = false;
+        });
+      };
+    }
+  ]);
+}());
+(function () {
+  'use strict';
   angular.module('ramlEditorApp').service('confirmModal', [
     '$modal',
     function confirmModal($modal) {
@@ -2850,6 +2897,39 @@
     }
   ]);
   ;
+}());
+/* global swaggerToRamlObject, ramlObjectToRaml */
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').service('swaggerToRAML', [
+    '$window',
+    '$q',
+    '$http',
+    function swaggerToRAML($window, $q, $http) {
+      var self = this;
+      var proxy = $window.RAML.Settings.proxy || '';
+      function reader(filename, done) {
+        return $http.get(filename, { transformResponse: false }).then(function (response) {
+          return done(null, response.data);
+        }, done);
+      }
+      self.convert = function convert(url) {
+        var deferred = $q.defer();
+        swaggerToRamlObject(proxy + url, reader, function (err, result) {
+          if (err) {
+            return deferred.reject(err);
+          }
+          try {
+            return deferred.resolve(ramlObjectToRaml(result));
+          } catch (e) {
+            return deferred.reject(e);
+          }
+        });
+        return deferred.promise;
+      };
+      return self;
+    }
+  ]);
 }());
 (function () {
   'use strict';
@@ -4106,6 +4186,25 @@
   ]);
   ;
 }());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorImportButton', [
+    '$injector',
+    'importModal',
+    function ramlEditorImportButton($injector, importModal) {
+      return {
+        restrict: 'E',
+        template: '<span role="new-button" ng-click="importFile()"><i class="fa fa-cloud-download"></i> Import</span>',
+        link: function (scope) {
+          scope.importFile = function importFile() {
+            return importModal.open();
+          };
+        }
+      };
+    }
+  ]);
+  ;
+}());
 /**
  * This file overwrites the ui-tree-node directive from the angular-ui-tree
  * module to modify the behaviour of tree drag-and-drop to better suit the use case
@@ -4539,10 +4638,11 @@ angular.module('ramlEditorApp').run([
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{data.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{data.message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="button" class="btn btn-primary" ng-click="$close()">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/help.html', '<div class="modal-header">\n' + '    <h3><i class="fa fa-question-circle"></i> Help</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
+    $templateCache.put('views/import-modal.html', '<div class="modal-header">\n' + '  <h3>Import File</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '  <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '    <i class="fa fa-spin fa-spinner"></i>\n' + '  </div>\n' + '\n' + '  <form name="form" novalidate class="form-group" ng-class="{\'has-error\': form.$submitted && form.url.$invalid}" ng-submit="importSwagger(form)" style="margin-bottom: 1em;">\n' + '    <label for="url" class="control-label">From Swagger:</label>\n' + '\n' + '    <div>\n' + '      <div style="float: right;">\n' + '        <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>\n' + '      </div>\n' + '\n' + '      <div style="margin-right: 80px;">\n' + '        <input id="url" name="url" type="text" ng-model="swagger.url" class="form-control" placeholder="http://petstore.swagger.wordnik.com/api/api-docs" required>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <p class="help-block" ng-show="form.$submitted && form.url.$error.required">Please provide a URL.</p>\n' + '  </form>\n' + '\n' + '  <p class="text-danger">WARNING: This will override your currently open file.</p>\n' + '</div>\n' + '\n' + '<div class="modal-footer">\n' + '  <button type="button" class="btn btn-primary" ng-click="$dismiss()">Done</button>\n' + '</div>\n');
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ui-validate="\'isValid($value)\'"\n' + '             ng-maxlength="64" ap-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validator">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}">\n' + '    <span class="file-name" ng-Dblclick="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title"><span class="beta">BETA</span>Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <i class="help fa fa-question-circle"></i>\n' + '      <span>&nbsp;Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <raml-console with-root-documentation></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

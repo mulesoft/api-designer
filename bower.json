@@ -18,7 +18,9 @@
     "font-awesome": "~4.0.3",
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",
     "raml-js-parser": "raml-org/raml-js-parser#3d7f702b618a99afcc56f85deb4693921af8bbe5",
-    "showdown": "~0.3.1"
+    "showdown": "~0.3.1",
+    "raml-object-to-raml": "mulesoft/raml-object-to-raml#7baa1b0475e4cfd1be336ebee9f4e29101de2aed",
+    "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#fad6344c5541bbaae76fc6e27bbac8156b1b5f91"
   },
   "devDependencies": {
     "angular-mocks": "~1.2.16",
