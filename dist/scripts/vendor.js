@@ -71754,6 +71754,11 @@ function convertModelToJson (name, declaration) {
   var schema = {};
   var model  = declaration.models[name];
 
+  // Unfortunately, it is possible that the model has not been documented.
+  if (!model) {
+    return;
+  }
+
   // Find potential parent models.
   Object.keys(declaration.models).some(function (key) {
     var model = declaration.models[key];
@@ -71794,7 +71799,7 @@ function convertParameterToJson (param, declaration) {
 
   if (param.type && JSON_TYPE_MAP[param.type]) {
     extend(schema, JSON_TYPE_MAP[param.type]);
-  } else {
+  } else if (param.$ref || param.type) {
     // Extend the current schema with model meta data.
     extend(schema, convertModelToJson(param.$ref || param.type, declaration));
   }
