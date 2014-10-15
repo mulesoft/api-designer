@@ -24,11 +24,61 @@
       $modalInstance,
       swaggerToRAML,
       $rootScope,
-      codeMirror
+      codeMirror,
+      $q,
+      ramlRepository
     ) {
-      $scope.swagger = {};
+      $scope.files     = {};
+      $scope.swagger   = {};
       $scope.importing = false;
 
+      // Check whether file import is supported.
+      $scope.files.supported = !!(
+        window.File && window.FileReader && window.FileList && window.Blob
+      );
+
+      /**
+       * Import files from the local filesystem.
+       *
+       * @param {Object} form
+       */
+      $scope.importFiles = function (form) {
+        form.$submitted = true;
+
+        if (form.$invalid || $scope.importing) {
+          return;
+        }
+
+        var files = Array.prototype.map.call($scope.files.files, readFileAsText);
+
+        $q.all(files)
+          .then(function (files) {
+            files.forEach(function (contents, index) {
+              var name = $scope.files.files[index].name;
+              var file = ramlRepository.createFile($scope.homeDirectory, name);
+
+              file.contents = contents;
+            });
+
+            return $modalInstance.close(true);
+          })
+          .catch(function (err) {
+            $rootScope.$broadcast('event:notification', {
+              message: err.message,
+              expires: true,
+              level: 'error'
+            });
+          })
+          .finally(function () {
+            $scope.importing = false;
+          });
+      };
+
+      /**
+       * Import a RAML file from a Swagger specification.
+       *
+       * @param {Object} form
+       */
       $scope.importSwagger = function (form) {
         form.$submitted = true;
 
@@ -56,5 +106,28 @@
             $scope.importing = false;
           });
       };
+
+      /**
+       * Read a file object as a text file.
+       *
+       * @param  {File}    file
+       * @return {Promise}
+       */
+      function readFileAsText (file) {
+        var deferred = $q.defer();
+        var reader   = new FileReader();
+
+        reader.onload = function () {
+          return deferred.resolve(reader.result);
+        };
+
+        reader.onerror = function () {
+          return deferred.reject(reader.error);
+        };
+
+        reader.readAsText(file);
+
+        return deferred.promise;
+      }
     });
 })();

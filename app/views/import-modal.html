@@ -7,7 +7,7 @@
     <i class="fa fa-spin fa-spinner"></i>
   </div>
 
-  <form name="form" novalidate class="form-group" ng-class="{'has-error': form.$submitted && form.url.$invalid}" ng-submit="importSwagger(form)" style="margin-bottom: 1em;">
+  <form name="swaggerImport" novalidate class="form-group" ng-class="{'has-error': swaggerImport.$submitted && swaggerImport.url.$invalid}" ng-submit="importSwagger(swaggerImport)">
     <label for="url" class="control-label">From Swagger:</label>
 
     <div>
@@ -20,10 +20,30 @@
       </div>
     </div>
 
-    <p class="help-block" ng-show="form.$submitted && form.url.$error.required">Please provide a URL.</p>
+    <p class="help-block" ng-show="swaggerImport.$submitted && swaggerImport.url.$error.required">Please provide a URL.</p>
+
+    <p class="text-danger">WARNING: This will override your currently open file.</p>
   </form>
 
-  <p class="text-danger">WARNING: This will override your currently open file.</p>
+  <hr>
+
+  <form name="fileImport" novalidate class="form-group" ng-class="{'has-error': fileImport.$submitted && fileImport.files.$invalid}" ng-submit="importFiles(fileImport)" ng-if="files.supported">
+    <label for="files" class="control-label">From Files:</label>
+
+    <div>
+      <div style="float: right;">
+        <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>
+      </div>
+
+      <div style="margin-right: 80px;">
+        <input id="files" name="files" type="file" class="form-control" ng-model="files.files" multiple required>
+      </div>
+    </div>
+
+    <p class="help-block" ng-show="fileImport.$submitted && fileImport.files.$error.required">Please select a file to import.</p>
+
+    <p class="text-danger">WARNING: This will override files with the same name.</p>
+  </form>
 </div>
 
 <div class="modal-footer">
