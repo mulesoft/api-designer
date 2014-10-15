@@ -1,6 +1,6 @@
 <raml-editor-context-menu></raml-editor-context-menu>
 <script type="text/ng-template" id="file-item.html">
-  <div ui-tree-handle class="file-item" ng-click="fileBrowser.select(node)"
+  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"
     ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
       dirty: node.dirty,
       geared: fileBrowser.contextMenuOpenedFor(node),

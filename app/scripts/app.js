@@ -22,7 +22,8 @@
     'stringFilters',
     'utils',
     'lightweightDOM',
-    'splitter'
+    'splitter',
+    'rightClick'
   ])
     .run(function ($window) {
       // Adding proxy settings for api console
