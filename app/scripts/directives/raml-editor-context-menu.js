@@ -83,12 +83,11 @@
         restrict:    'E',
         templateUrl: 'views/raml-editor-context-menu.tmpl.html',
         link:         function link(scope, element) {
-          function positionMenu(element, offsetTarget) {
-            var rect = offsetTarget.getBoundingClientRect();
-            var top  = rect.top + 0.5 * rect.height;
-            var left = rect.left + 0.5 * rect.width;
-
+          function positionMenu(element, event) {
+            var top           = event.y;
+            var left          = event.x;
             var menuContainer = angular.element(element[0].children[0]);
+
             menuContainer.css('top', top + 'px');
             menuContainer.css('left', left + 'px');
 
@@ -125,7 +124,7 @@
               scope.actions = createActions(target);
 
               event.stopPropagation();
-              positionMenu(element, event.target);
+              positionMenu(element, event);
               $window.addEventListener('click', close);
               $window.addEventListener('keydown', closeOnEscape);
 
