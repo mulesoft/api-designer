@@ -32,7 +32,7 @@
 
             newNameModal.open(message, defaultName, validations, title)
               .then(function(name) {
-                ramlRepository.createDirectory(parent, name);
+                ramlRepository.generateDirectory(parent, name);
               });
           };
         }

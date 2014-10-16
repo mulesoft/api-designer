@@ -4,6 +4,7 @@
   angular.module('ramlEditorApp')
     .directive('ramlEditorNewFileButton', function ramlEditorNewFileButton(
       $injector,
+      $rootScope,
       ramlRepository,
       generateName,
       newNameModal
@@ -26,7 +27,7 @@
             var validations = [
               {
                 message: 'That file name is already taken.',
-                validate: function(input) {
+                validate: function (input) {
                   return !parent.children.some(function (file) {
                     return file.name.toLowerCase() === input.toLowerCase();
                   });
@@ -34,11 +35,17 @@
               }
             ];
 
-            newNameModal.open(message, defaultName, validations, title)
-              .then(function(name) {
-                ramlRepository.createFile(parent, name);
+            return newNameModal.open(message, defaultName, validations, title)
+              .then(function (name) {
+                return ramlRepository.generateFile(parent, name);
               })
-            ;
+              .catch(function (err) {
+                return $rootScope.$broadcast('event:notification', {
+                  message: err.message,
+                  expires: true,
+                  level: 'error'
+                });
+              });
           };
         }
       };

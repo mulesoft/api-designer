@@ -66,7 +66,7 @@
               // do the actual moving
               ramlRepository.move(source, dest)
                 .then(function () {
-                  fileBrowser.select(source);
+                  return fileBrowser.select(source);
                 });
             },
             /**
@@ -143,7 +143,7 @@
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
             .then(function () {
-              eventService.broadcast('event:notification', {
+              return eventService.broadcast('event:notification', {
                 message: 'File saved.',
                 expires: true
               });
@@ -228,14 +228,15 @@
           var validation  = [];
           var title       = 'Add a new file';
 
-          newNameModal.open(message, defaultName, validation, title).then(
-            function (result) {
-              ramlRepository.createFile($scope.homeDirectory, result);
-            },
-            function () {
-              ramlRepository.createFile($scope.homeDirectory, defaultName);
-            }
-          );
+          newNameModal.open(message, defaultName, validation, title)
+            .then(
+              function (result) {
+                return ramlRepository.generateFile($scope.homeDirectory, result);
+              },
+              function () {
+                return ramlRepository.generateFile($scope.homeDirectory, defaultName);
+              }
+            );
         }
 
         /**

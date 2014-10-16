@@ -1,3 +1,4 @@
+/* global JSZip */
 (function () {
   'use strict';
 
@@ -49,18 +50,26 @@
           return;
         }
 
+        $scope.importing = true;
+
         var files = Array.prototype.map.call($scope.files.files, readFileAsText);
 
         $q.all(files)
           .then(function (files) {
-            files.forEach(function (contents, index) {
+            var createFiles = files.map(function (contents, index) {
               var name = $scope.files.files[index].name;
-              var file = ramlRepository.createFile($scope.homeDirectory, name);
 
-              file.contents = contents;
+              if (isZip(name)) {
+                return importZip(contents);
+              }
+
+              return createFile(name, contents);
             });
 
-            return $modalInstance.close(true);
+            return $q.all(createFiles)
+              .then(function () {
+                return $modalInstance.close(true);
+              });
           })
           .catch(function (err) {
             $rootScope.$broadcast('event:notification', {
@@ -108,6 +117,75 @@
       };
 
       /**
+       * Check whether a file is a zip.
+       *
+       * @param  {String}  name
+       * @return {Boolean}
+       */
+      function isZip (name) {
+        return (/\.zip$/i).test(name);
+      }
+
+      /**
+       * Import a ZIP file into the current file system.
+       *
+       * @param {String} contents
+       */
+      function importZip (contents) {
+        var zip     = new JSZip(contents);
+        var promise = $q.when(true);
+
+        Object.keys(zip.files).filter(canImport).forEach(function (name) {
+          promise = promise.then(function () {
+            // Directories are also stored under the files object.
+            if (/\/$/.test(name)) {
+              return createDirectory(name);
+            }
+
+            return createFile(name, zip.files[name].asText());
+          });
+        });
+
+        return promise;
+      }
+
+      /**
+       * Check whether a certain file should be imported.
+       *
+       * @param  {String}  name
+       * @return {Boolean}
+       */
+      function canImport (name) {
+        return !/(?:^|[\/\\])\.|(?:^|[\/\\])__MACOSX(?:[\/\\]|$)/.test(name);
+      }
+
+      /**
+       * Create a file in the filesystem.
+       *
+       * @param  {String}  name
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      function createFile (name, contents) {
+        return ramlRepository.createFile($scope.homeDirectory, name)
+          .then(function (file) {
+            file.contents = contents;
+
+            return file;
+          });
+      }
+
+      /**
+       * Create a directory in the file system.
+       *
+       * @param  {String}  name
+       * @return {Promise}
+       */
+      function createDirectory (name) {
+        return ramlRepository.createDirectory($scope.homeDirectory, name);
+      }
+
+      /**
        * Read a file object as a text file.
        *
        * @param  {File}    file
@@ -125,7 +203,11 @@
           return deferred.reject(reader.error);
         };
 
-        reader.readAsText(file);
+        if (isZip(file.name)) {
+          reader.readAsBinaryString(file);
+        } else {
+          reader.readAsText(file);
+        }
 
         return deferred.promise;
       }

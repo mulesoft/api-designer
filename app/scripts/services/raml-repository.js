@@ -60,7 +60,6 @@
         }
       }
 
-      // Find the index to insert a object into a sorted array.
       function findInsertIndex(source, dest) {
         var low = 0, high = dest.children.length - 1, mid;
         while (high >= low) {
@@ -74,15 +73,68 @@
         return low;
       }
 
+      function insertFileSystem(parent, child) {
+        // This assumes the paths are correct.
+        var before = parent.path === '/' ? [''] : parent.path.split('/');
+        var parts  = child.path.split('/').slice(0, -1);
+
+        // Directly insert the child element into the parent.
+        if (parts.length === before.length) {
+          parent.children.splice(findInsertIndex(child, parent), 0, child);
+
+          return $q.when(child);
+        }
+
+        // Generate the correct path to the output file.
+        var promise = $q.when(parent);
+
+        parts.slice(before.length).forEach(function (part, index) {
+          promise = promise.then(function () {
+            var path   = parts.slice(0, index + before.length + 1).join('/');
+            var exists = service.getByPath(path);
+
+            // If the current path already exists.
+            if (exists) {
+              if (!exists.isDirectory) {
+                return $q.reject(
+                  new Error('Can not create directory, file already exists: ' + path)
+                );
+              }
+
+              parent = exists;
+
+              return;
+            }
+
+            var directory = new RamlDirectory(path);
+            var insertAt  = findInsertIndex(directory, parent);
+
+            parent.children.splice(insertAt, 0, directory);
+
+            // Update the parent directory.
+            parent = directory;
+          });
+        });
+
+        return promise.then(function () {
+          if (service.getByPath(child.path)) {
+            return $q.reject(new Error('Path already exists: ' + child.path));
+          }
+
+          parent.children.splice(findInsertIndex(child, parent), 0, child);
+
+          return child;
+        });
+      }
+
       // this function takes a parent(ramlDirectory) and a name(String) as input
       // and returns the full path(String)
       function generatePath(parent, name) {
         if (parent.path === '/') {
           return '/' + name;
         }
-        else {
-          return parent.path + '/' + name;
-        }
+
+        return parent.path + '/' + name;
       }
 
       // this function takes a target(ramlFile/ramlDirectory) and a name(String) as input
@@ -135,39 +187,33 @@
         // BFS
         var queue = this.children.slice();
         var current;
-        while(queue.length > 0) {
+
+        while (queue.length > 0) {
           current = queue.shift();
-          if(current.isDirectory) {
+
+          if (current.isDirectory) {
             queue = queue.concat(current.children);
           }
-          action.apply(current, [current]);
-        }
-      };
 
-      RamlDirectory.prototype.hasChildren = function hasChildren(child) {
-        var childParentPath = child.path.slice(0, child.path.lastIndexOf('/'));
-        if (childParentPath.length === 0) {
-          childParentPath = '/';
+          action.call(current, current);
         }
-        return childParentPath.length >= this.path.length &&
-          this.path === childParentPath.slice(0, this.path.length);
       };
 
       RamlDirectory.prototype.sortChildren = function sortChildren() {
         this.children.sort(sortingFunction);
       };
 
-      // Expose the sorting function, read-only
-      service.sortingFunction = (function () {
-        return sortingFunction;
-      }());
+      // Expose the sorting function
+      service.sortingFunction = sortingFunction;
 
       // Returns the parent directory object of a file or a directory
       service.getParent = function getParent(target) {
         var path = target.path.slice(0, target.path.lastIndexOf('/'));
+
         if (path.length === 0) {
           path = '/';
         }
+
         return service.getByPath(path);
       };
 
@@ -182,14 +228,24 @@
       service.createDirectory = function createDirectory(parent, name) {
         var path      = generatePath(parent, name);
         var directory = new RamlDirectory(path);
-        var index     = findInsertIndex(directory, parent);
+        var exists    = service.getByPath(path);
 
-        // insert into the right position
-        parent.children.splice(index, 0, directory);
+        // If the file already exists, return it.
+        if (exists) {
+          return $q.when(exists);
+        }
 
-        return fileSystem.createFolder(directory.path)
-          .then(function () {
+        return insertFileSystem(parent, directory)
+          .then(function (directory) {
+            return fileSystem.createFolder(directory.path);
+          });
+      };
+
+      service.generateDirectory = function createDirectory(parent, name) {
+        return service.createDirectory(parent, name)
+          .then(function (directory) {
             $rootScope.$broadcast('event:raml-editor-directory-created', directory);
+
             return directory;
           });
       };
@@ -240,13 +296,14 @@
         });
 
         return promise
-          .then(function () {
-            directory.name = newName;
-            directory.path = newPath;
-            $rootScope.$broadcast('event:raml-editor-filetree-modified', directory);
-            return directory;
-          },
-          handleErrorFor(directory)
+          .then(
+            function () {
+              directory.name = newName;
+              directory.path = newPath;
+              $rootScope.$broadcast('event:raml-editor-filetree-modified', directory);
+              return directory;
+            },
+            handleErrorFor(directory)
           );
       };
 
@@ -323,20 +380,24 @@
           });
       };
 
-      service.createFile = function createFile(parent, name) {
+      service.createFile = function createFile (parent, name) {
         var path  = generatePath(parent, name);
         var file  = new RamlFile(path);
-        var index = findInsertIndex(file, parent);
 
-        // insert into the right position
-        parent.children.splice(index, 0, file);
+        return insertFileSystem(parent, file);
+      };
 
-        if (file.extension === 'raml') {
-          file.contents = ramlSnippets.getEmptyRaml();
-        }
+      service.generateFile = function generateFile(parent, name) {
+        return service.createFile(parent, name)
+          .then(function (file) {
+            if (file.extension === 'raml') {
+              file.contents = ramlSnippets.getEmptyRaml();
+            }
 
-        $rootScope.$broadcast('event:raml-editor-file-created', file);
-        return file;
+            $rootScope.$broadcast('event:raml-editor-file-created', file);
+
+            return file;
+          });
       };
 
       // Gets the ramlDirectory/ramlFile object by path from the memory

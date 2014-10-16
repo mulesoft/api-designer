@@ -20,7 +20,8 @@
     "raml-js-parser": "raml-org/raml-js-parser#3d7f702b618a99afcc56f85deb4693921af8bbe5",
     "showdown": "~0.3.1",
     "raml-object-to-raml": "mulesoft/raml-object-to-raml#7baa1b0475e4cfd1be336ebee9f4e29101de2aed",
-    "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#b395867f30394e2c5da9f2e36b08adc6838493c4"
+    "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#b395867f30394e2c5da9f2e36b08adc6838493c4",
+    "jszip": "~2.0.0"
   },
   "devDependencies": {
     "angular-mocks": "~1.2.16",

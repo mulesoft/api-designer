@@ -189,7 +189,7 @@
           var entry = localStorageHelper.get(path);
 
           if (!isValidParent(path)){
-            deferred.reject('Parent folder does not exists');
+            deferred.reject(new Error('Parent folder does not exists: ' + path));
             return deferred.promise;
           }
 
@@ -235,13 +235,13 @@
         }
 
         if (localStorageHelper.has(path)) {
-          deferred.reject('Folder already exists');
+          deferred.reject(new Error('Folder already exists: ' + path));
           return deferred.promise;
         }
 
         var parent = extractParentPath(path);
         if (!localStorageHelper.has(parent)) {
-          deferred.reject('Parent folder does not exists');
+          deferred.reject(new Error('Parent folder does not exists: ' + path));
           return deferred.promise;
         }
 
