@@ -88,8 +88,11 @@
         })();
 
         fileBrowser.select = function select(target) {
-          var action = target.isDirectory ? fileBrowser.selectDirectory : fileBrowser.selectFile;
-          action(target);
+          if (target.isDirectory) {
+            return fileBrowser.selectDirectory(target);
+          }
+
+          return fileBrowser.selectFile(target);
         };
 
         fileBrowser.selectFile = function selectFile(file) {
@@ -118,11 +121,6 @@
         };
 
         fileBrowser.selectDirectory = function selectDirectory(directory) {
-          if (fileBrowser.currentTarget === directory) {
-            return;
-          }
-
-          fileBrowser.currentTarget = directory;
           $scope.$emit('event:raml-editor-directory-selected', directory);
         };
 
