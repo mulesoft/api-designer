@@ -130,6 +130,10 @@
       // this function takes a parent(ramlDirectory) and a name(String) as input
       // and returns the full path(String)
       function generatePath(parent, name) {
+        if (name[0] === '/') {
+          return name;
+        }
+
         if (parent.path === '/') {
           return '/' + name;
         }

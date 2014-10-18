@@ -9,7 +9,8 @@
       config,
       eventService,
       ramlRepository,
-      newNameModal
+      newNameModal,
+      importService
     ) {
       function Controller($scope) {
         var fileBrowser         = this;
@@ -132,9 +133,10 @@
          */
         function expandAncestors(target) {
           // stop at the top-level directory
-          if (target.path.lastIndexOf('/') === 0) {
+          if (target.path === '/') {
             return;
           }
+
           var parent = ramlRepository.getParent(target);
           parent.collapsed = false;
           expandAncestors(parent);
@@ -149,6 +151,13 @@
               });
             })
           ;
+        };
+
+        fileBrowser.dropFile = function dropFile (directory, e) {
+          return importService.importFiles(directory, e.dataTransfer.files)
+            .then(function () {
+              directory.collapsed = false;
+            });
         };
 
         fileBrowser.showContextMenu = function showContextMenu(event, target) {
