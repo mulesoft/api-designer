@@ -1,3 +1,4 @@
+/* global JSZip */
 (function () {
   'use strict';
 
@@ -175,7 +176,7 @@
        */
       function isZip (file) {
         // Can't check `file.type` as it's empty when read from a `FileEntry`.
-        return /\.zip$/i.test(file.name);
+        return (/\.zip$/i).test(file.name);
       }
 
       /**

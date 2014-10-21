@@ -1,4 +1,3 @@
-/* global JSZip */
 (function () {
   'use strict';
 

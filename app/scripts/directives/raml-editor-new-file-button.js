@@ -14,9 +14,8 @@
         template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link:     function (scope) {
           scope.newFile = function newFile() {
-            var currentTarget = scope.fileBrowser.currentTarget;
-            var parent        = $rootScope.homeDirectory;
-            var defaultName   = generateName(parent.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
+            var root          = $rootScope.homeDirectory;
+            var defaultName   = generateName(root.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
             var title         = 'Add a new file';
 
             var message = [
@@ -28,7 +27,7 @@
               {
                 message: 'That file name is already taken.',
                 validate: function (input) {
-                  var path = ramlRepository.join(parent.path, input);
+                  var path = ramlRepository.join(root.path, input);
 
                   return !ramlRepository.getByPath(path);
                 }
@@ -39,7 +38,7 @@
               .then(function (name) {
                 // Need to catch errors from `generateFile`, otherwise
                 // `newNameModel.open` will error random modal close strings.
-                return ramlRepository.generateFile(parent, name)
+                return ramlRepository.generateFile(root, name)
                   .catch(function (err) {
                     return $rootScope.$broadcast('event:notification', {
                       message: err.message,

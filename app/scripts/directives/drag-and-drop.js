@@ -7,7 +7,7 @@
         var fn      = $parse(attrs.ngDragEnter);
         var entered = 0;
 
-        element.on('dragleave', function (e) {
+        element.on('dragleave', function () {
           entered--;
         });
 
