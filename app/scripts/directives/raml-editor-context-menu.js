@@ -51,9 +51,9 @@
                 {
                   message:  'This name is already taken.',
                   validate: function validate(input) {
-                    return !parent.children.some(function (t) {
-                      return t.name.toLowerCase() === input.toLowerCase();
-                    });
+                    var path = ramlRepository.join(parent.path, input);
+
+                    return !ramlRepository.getByPath(path);
                   }
                 }
               ];

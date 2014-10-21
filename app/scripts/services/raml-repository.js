@@ -124,24 +124,11 @@
         });
       }
 
-      // this function takes a parent(ramlDirectory) and a name(String) as input
-      // and returns the full path(String)
-      function generatePath(parent, name) {
-        if (name.charAt(0) === '/') {
-          return name;
-        }
-
-        if (parent.path === '/') {
-          return '/' + name;
-        }
-
-        return parent.path + '/' + name;
-      }
-
       // this function takes a target(ramlFile/ramlDirectory) and a name(String) as input
       // and returns the new path(String) after renaming the target
       function generateNewName(target, newName) {
         var parentPath = target.path.slice(0, target.path.lastIndexOf('/'));
+
         return parentPath + '/' + newName;
       }
 
@@ -227,7 +214,7 @@
       };
 
       service.createDirectory = function createDirectory(parent, name) {
-        var path      = generatePath(parent, name);
+        var path      = service.join(parent.path, name);
         var directory = new RamlDirectory(path);
         var exists    = service.getByPath(path);
 
@@ -385,7 +372,7 @@
       };
 
       service.createFile = function createFile (parent, name) {
-        var path  = generatePath(parent, name);
+        var path  = service.join(parent.path, name);
         var file  = new RamlFile(path);
 
         return insertFileSystem(parent, file);
@@ -448,7 +435,7 @@
           return;
         }
 
-        var newPath = generatePath(destination, target.name);
+        var newPath = service.join(destination.path, target.name);
         var promise;
 
         if (target.isDirectory) {
@@ -491,6 +478,20 @@
             return {};
           }
         );
+      };
+
+      service.join = function () {
+        return Array.prototype.reduce.call(arguments, function (path, segment) {
+          if (segment == null) {
+            return path;
+          }
+
+          if (segment.charAt(0) === '/') {
+            return segment;
+          }
+
+          return path.replace(/\/$/, '') + '/' + segment;
+        }, '/');
       };
 
       return service;

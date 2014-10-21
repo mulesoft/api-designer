@@ -15,7 +15,7 @@
         link:     function (scope) {
           scope.newFile = function newFile() {
             var currentTarget = scope.fileBrowser.currentTarget;
-            var parent        = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
+            var parent        = $rootScope.homeDirectory;
             var defaultName   = generateName(parent.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
             var title         = 'Add a new file';
 
@@ -28,23 +28,25 @@
               {
                 message: 'That file name is already taken.',
                 validate: function (input) {
-                  return !parent.children.some(function (file) {
-                    return file.name.toLowerCase() === input.toLowerCase();
-                  });
+                  var path = ramlRepository.join(parent.path, input);
+
+                  return !ramlRepository.getByPath(path);
                 }
               }
             ];
 
             return newNameModal.open(message, defaultName, validations, title)
               .then(function (name) {
-                return ramlRepository.generateFile(parent, name);
-              })
-              .catch(function (err) {
-                return $rootScope.$broadcast('event:notification', {
-                  message: err.message,
-                  expires: true,
-                  level: 'error'
-                });
+                // Need to catch errors from `generateFile`, otherwise
+                // `newNameModel.open` will error random modal close strings.
+                return ramlRepository.generateFile(parent, name)
+                  .catch(function (err) {
+                    return $rootScope.$broadcast('event:notification', {
+                      message: err.message,
+                      expires: true,
+                      level: 'error'
+                    });
+                  });
               });
           };
         }

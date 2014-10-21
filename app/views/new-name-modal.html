@@ -13,13 +13,13 @@
       <!-- input -->
       <input id="name" name="name" type="text"
              ng-model="input.newName" class="form-control"
-             ui-validate="'isValid($value)'"
+             ng-validate="isValid($value)"
              ng-maxlength="64" ng-auto-focus="true" required>
 
       <!-- error -->
       <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>
       <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>
-      <p class="help-block" ng-show="form.$submitted && form.name.$error.validator">{{validationErrorMessage}}</p>
+      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>
     </div>
   </div>
 

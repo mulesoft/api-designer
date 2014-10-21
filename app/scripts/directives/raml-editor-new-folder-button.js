@@ -23,9 +23,9 @@
               {
                 message: 'That folder name is already taken.',
                 validate: function(input) {
-                  return !parent.children.some(function (directory) {
-                    return directory.name.toLowerCase() === input.toLowerCase();
-                  });
+                  var path = ramlRepository.join(parent.path, input);
+
+                  return !ramlRepository.getByPath(path);
                 }
               }
             ];
