@@ -14,7 +14,7 @@
       <input id="name" name="name" type="text"
              ng-model="input.newName" class="form-control"
              ui-validate="'isValid($value)'"
-             ng-maxlength="64" ap-focus="true" required>
+             ng-maxlength="64" ng-auto-focus="true" required>
 
       <!-- error -->
       <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>

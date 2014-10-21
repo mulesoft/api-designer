@@ -23,6 +23,7 @@
     'utils',
     'lightweightDOM',
     'splitter',
+    'autoFocus',
     'rightClick',
     'dragAndDrop'
   ])
