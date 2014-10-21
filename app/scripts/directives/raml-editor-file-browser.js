@@ -154,9 +154,16 @@
         };
 
         fileBrowser.dropFile = function dropFile (directory, e) {
-          return importService.importFiles(directory, e.dataTransfer.files)
+          return importService.importFromEvent(directory, e)
             .then(function () {
               directory.collapsed = false;
+            })
+            .catch(function (err) {
+              $rootScope.$broadcast('event:notification', {
+                message: err.message,
+                expires: true,
+                level: 'error'
+              });
             });
         };
 

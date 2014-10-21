@@ -75,17 +75,8 @@
 
       function insertFileSystem(parent, child) {
         // This assumes the paths are correct.
-        var before = parent.path === '/' ? [''] : parent.path.split('/');
-        var parts  = child.path.split('/').slice(0, -1);
-
-        // Directly insert the child element into the parent.
-        if (parts.length === before.length) {
-          parent.children.splice(findInsertIndex(child, parent), 0, child);
-
-          return $q.when(child);
-        }
-
-        // Generate the correct path to the output file.
+        var before  = parent.path === '/' ? [''] : parent.path.split('/');
+        var parts   = child.path.split('/').slice(0, -1);
         var promise = $q.when(parent);
 
         parts.slice(before.length).forEach(function (part, index) {
@@ -117,7 +108,13 @@
         });
 
         return promise.then(function () {
-          if (service.getByPath(child.path)) {
+          var exists = service.getByPath(child.path);
+
+          if (exists) {
+            if (exists.isDirectory && child.isDirectory) {
+              return exists;
+            }
+
             return $q.reject(new Error('Path already exists: ' + child.path));
           }
 
@@ -130,7 +127,7 @@
       // this function takes a parent(ramlDirectory) and a name(String) as input
       // and returns the full path(String)
       function generatePath(parent, name) {
-        if (name[0] === '/') {
+        if (name.charAt(0) === '/') {
           return name;
         }
 
@@ -240,8 +237,11 @@
         }
 
         return insertFileSystem(parent, directory)
-          .then(function (directory) {
+          .then(function () {
             return fileSystem.createFolder(directory.path);
+          })
+          .then(function () {
+            return directory;
           });
       };
 

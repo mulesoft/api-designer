@@ -53,7 +53,7 @@
 
         $scope.importing = true;
 
-        return importService.mergeFiles($scope.homeDirectory, $scope.files.files)
+        return importService.mergeFileList($scope.homeDirectory, $scope.files.files)
           .then(function () {
             return $modalInstance.close(true);
           })

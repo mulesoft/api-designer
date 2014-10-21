@@ -16,13 +16,14 @@
        * @return {Promise}
        */
       self.mergeFile = function (directory, file) {
+        // Import every other file as normal.
+        if (!isZip(file)) {
+          return self.importFile(directory, file);
+        }
+
         return readFileAsText(file)
           .then(function (contents) {
-            if (isZip(file.name)) {
-              return mergeZip(directory, contents);
-            }
-
-            return createFile(directory, file.name, contents);
+            return mergeZip(directory, contents);
           });
       };
 
@@ -33,12 +34,57 @@
        * @param  {FileList} files
        * @return {Promise}
        */
-      self.mergeFiles = function (directory, files) {
+      self.mergeFileList = function (directory, files) {
         var imports = Array.prototype.map.call(files, function (file) {
           return self.mergeFile(directory, file);
         });
 
         return $q.all(imports);
+      };
+
+      /**
+       * Import a single entry into the file system.
+       *
+       * @param  {Object}                     directory
+       * @param  {(DirectoryEntry|FileEntry)} entry
+       * @return {Promise}
+       */
+      self.importEntry = function (directory, entry) {
+        var deferred = $q.defer();
+
+        if (entry.isFile) {
+          entry.file(function (file) {
+            return importFileToPath(directory, entry.fullPath, file)
+              .then(deferred.resolve, deferred.reject);
+          }, deferred.reject);
+        } else {
+          var reader = entry.createReader();
+
+          reader.readEntries(function (entries) {
+            var imports = entries.map(function (entry) {
+              return self.importEntry(directory, entry);
+            });
+
+            return $q.all(imports).then(deferred.resolve, deferred.reject);
+          });
+        }
+
+        return deferred.promise;
+      };
+
+      /**
+       * Import a single item into the file system.
+       *
+       * @param  {Object}           directory
+       * @param  {DataTransferItem} item
+       * @return {Promise}
+       */
+      self.importItem = function (directory, item) {
+        if (item.webkitGetAsEntry) {
+          return self.importEntry(directory, item.webkitGetAsEntry());
+        }
+
+        return self.importFile(directory, item.getAsFile());
       };
 
       /**
@@ -49,14 +95,38 @@
        * @return {Promise}
        */
       self.importFile = function (directory, file) {
-        return readFileAsText(file)
-          .then(function (contents) {
-            if (isZip(file.name)) {
-              return importZip(directory, contents);
-            }
+        return importFileToPath(directory, file.name, file);
+      };
 
-            return createFile(directory, file.name, contents);
-          });
+      /**
+       * Import using an event object.
+       *
+       * @param  {Object}  directory
+       * @param  {Object}  e
+       * @return {Promise}
+       */
+      self.importFromEvent = function (directory, e) {
+        // Handle items differently since Chrome has support for folders.
+        if (e.dataTransfer.items) {
+          return self.importItemList(directory, e.dataTransfer.items);
+        }
+
+        return self.importFileList(directory, e.dataTransfer.files);
+      };
+
+      /**
+       * Import an array of items into the file system.
+       *
+       * @param  {Object}               directory
+       * @param  {DataTransferItemList} items
+       * @return {Promise}
+       */
+      self.importItemList = function (directory, items) {
+        var imports = Array.prototype.map.call(items, function (item) {
+          return self.importItem(directory, item);
+        });
+
+        return $q.all(imports);
       };
 
       /**
@@ -66,7 +136,7 @@
        * @param  {FileList} files
        * @return {Promise}
        */
-      self.importFiles = function (directory, files) {
+      self.importFileList = function (directory, files) {
         var imports = Array.prototype.map.call(files, function (file) {
           return self.importFile(directory, file);
         });
@@ -75,13 +145,37 @@
       };
 
       /**
+       * Import a single file at specific path.
+       *
+       * @param  {String}  path
+       * @param  {File}    file
+       * @return {Promise}
+       */
+      function importFileToPath (directory, path, file) {
+        return readFileAsText(file)
+          .then(function (contents) {
+            if (isZip(file)) {
+              var dirname = path.replace(/[\\\/][^\\\/]*$/, '');
+
+              return ramlRepository.createDirectory(directory, dirname)
+                .then(function (directory) {
+                  return importZip(directory, contents);
+                });
+            }
+
+            return createFile(directory, path, contents);
+          });
+      }
+
+      /**
        * Check whether a file is a zip.
        *
-       * @param  {String}  name
+       * @param  {File}    file
        * @return {Boolean}
        */
-      function isZip (name) {
-        return (/\.zip$/i).test(name);
+      function isZip (file) {
+        // Can't check `file.type` as it's empty when read from a `FileEntry`.
+        return /\.zip$/i.test(file.name);
       }
 
       /**
@@ -166,6 +260,10 @@
         // Sort the file names in order of length to get the common prefix.
         var prefix = Object.keys(prefixedFiles)
           .map(function (name) {
+            if (!/[\\\/]/.test(name)) {
+              return [];
+            }
+
             return name.replace(/[\\\/][^\\\/]*$/, '').split(/[\\\/]/);
           })
           .reduce(function (prefix, name) {
@@ -186,10 +284,10 @@
 
         // Iterate over the original files and create a new object.
         Object.keys(prefixedFiles).forEach(function (name) {
-          var newName = name.substr(prefix.length + 1);
+          var newName = name.substr(prefix.length);
 
           // If no text is left, it must have been the root directory.
-          if (newName) {
+          if (newName !== '/') {
             files[newName] = prefixedFiles[name];
           }
         });
@@ -251,11 +349,7 @@
           return deferred.reject(reader.error);
         };
 
-        if (isZip(file.name)) {
-          reader.readAsBinaryString(file);
-        } else {
-          reader.readAsText(file);
-        }
+        reader.readAsBinaryString(file);
 
         return deferred.promise;
       }
