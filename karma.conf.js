@@ -16,15 +16,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'app/vendor/scripts/codemirror.js',
-      'app/vendor/scripts/foldcode.js',
-      'app/vendor/scripts/foldgutter.js',
-      'app/vendor/scripts/gfm.js',
-      'app/vendor/scripts/javascript.js',
-      'app/vendor/scripts/markdown.js',
-      'app/vendor/scripts/overlay.js',
-      'app/vendor/scripts/show-hint.js',
-      'app/vendor/scripts/xml.js',
+      'app/vendor/scripts/**/*.js',
 
       'bower_components/angular/angular.js',
       'bower_components/angular-cookies/angular-cookies.js',
@@ -35,7 +27,6 @@ module.exports = function(config) {
       'bower_components/angular-ui-tree/dist/angular-ui-tree.js',
       'bower_components/es5-shim/es5-shim.js',
       'bower_components/showdown/src/showdown.js',
-
       'bower_components/raml-js-parser/dist/raml-parser.js',
       'bower_components/api-console/dist/scripts/app.js',
       'bower_components/raml-grammar/dist/suggest.js',
@@ -66,6 +57,7 @@ module.exports = function(config) {
       'app/scripts/controllers/notifications.js',
       'app/scripts/controllers/mocking-service-controller.js',
       'app/scripts/directives/splitter.js',
+      'app/scripts/directives/right-click.js',
       'app/scripts/directives/raml-editor-file-browser.js',
       'app/scripts/directives/raml-editor-new-file-button.js',
       'app/scripts/directives/raml-editor-save-file-button.js',
