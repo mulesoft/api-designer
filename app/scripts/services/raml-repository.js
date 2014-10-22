@@ -27,9 +27,9 @@
 
   angular.module('fs', ['ngCookies', 'raml', 'utils'])
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
-      var service     = {};
-      var defaultPath = '/';
-      var pathToRamlObject = {};
+      var service   = {};
+      var BASE_PATH = '/';
+      var rootFile;
 
       service.supportsFolders = fileSystem.supportsFolders || false;
 
@@ -242,15 +242,13 @@
       };
 
       // Loads the directory from the fileSystem into memory
-      service.loadDirectory = function loadDirectory(path) {
-        path = path || defaultPath;
-        // clean up the pathToRamlObject mapping
-        pathToRamlObject = {};
+      service.loadDirectory = function loadDirectory() {
+        return fileSystem.directory(BASE_PATH)
+          .then(function (directory) {
+            rootFile = new RamlDirectory(directory.path, directory.meta, directory.children);
 
-        return fileSystem.directory(path).then(function (directory) {
-          pathToRamlObject[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
-          return pathToRamlObject[path];
-        });
+            return rootFile;
+          });
       };
 
       service.removeDirectory = function removeDirectory(directory) {
@@ -393,31 +391,26 @@
 
       // Gets the ramlDirectory/ramlFile object by path from the memory
       service.getByPath = function getByPath(path) {
-        // remove the trailing '/' in path
-        if(path.slice(-1) === '/' && path !== '/') {
-          path = path.slice(0, -1);
+        if (path === '/') {
+          return rootFile;
         }
 
-        // If the entry is already in the cache, return it directly
-        if (pathToRamlObject.hasOwnProperty(path)) {
-          return pathToRamlObject[path];
-        }
+        path = path.replace(/\/$/, '');
 
-        // If the path we're looking for is not in 'pathToRamlObject'
-        // we search for it in the tree using BFS
-        var queue = pathToRamlObject['/'].children.slice();
+        var queue = rootFile.children.slice();
         var current;
-        while(queue.length) {
+
+        while (queue.length) {
           current = queue.shift();
+
           if (current.path === path) {
-            pathToRamlObject[path] = current;
             return current;
-          } else if (current.isDirectory) {
+          }
+
+          if (current.isDirectory) {
             queue = queue.concat(current.children);
           }
         }
-
-        return void(0);
       };
 
       service.rename = function rename(target, newName) {

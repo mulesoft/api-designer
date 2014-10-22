@@ -5,7 +5,8 @@
   angular.module('ramlEditorApp')
     .service('importService', function importServiceFactory (
       $q,
-      ramlRepository
+      ramlRepository,
+      importServiceConflictModal
     ) {
       var self = this;
 
@@ -37,10 +38,12 @@
        */
       self.mergeFileList = function (directory, files) {
         var imports = Array.prototype.map.call(files, function (file) {
-          return self.mergeFile(directory, file);
+          return function () {
+            return self.mergeFile(directory, file);
+          };
         });
 
-        return $q.all(imports);
+        return promiseChain(imports);
       };
 
       /**
@@ -62,11 +65,16 @@
           var reader = entry.createReader();
 
           reader.readEntries(function (entries) {
-            var imports = entries.map(function (entry) {
-              return self.importEntry(directory, entry);
+            var imports = entries.filter(function (entry) {
+              return canImport(entry.name);
+            }).map(function (entry) {
+              return function () {
+                return self.importEntry(directory, entry);
+              };
             });
 
-            return $q.all(imports).then(deferred.resolve, deferred.reject);
+            return promiseChain(imports)
+              .then(deferred.resolve, deferred.reject);
           });
         }
 
@@ -124,10 +132,12 @@
        */
       self.importItemList = function (directory, items) {
         var imports = Array.prototype.map.call(items, function (item) {
-          return self.importItem(directory, item);
+          return function () {
+            return self.importItem(directory, item);
+          };
         });
 
-        return $q.all(imports);
+        return promiseChain(imports);
       };
 
       /**
@@ -139,10 +149,12 @@
        */
       self.importFileList = function (directory, files) {
         var imports = Array.prototype.map.call(files, function (file) {
-          return self.importFile(directory, file);
+          return function () {
+            return self.importFile(directory, file);
+          };
         });
 
-        return $q.all(imports);
+        return promiseChain(imports);
       };
 
       /**
@@ -303,23 +315,110 @@
        * @return {Boolean}
        */
       function canImport (name) {
-        return !/[\/\\]\./.test(name);
+        return !/(?:^|[\/\\])\./.test(name);
+      }
+
+      /**
+       * Check whether the path already exists.
+       *
+       * @param  {String}  path
+       * @return {Boolean}
+       */
+      function pathExists (path) {
+        return !!ramlRepository.getByPath(path);
+      }
+
+      /**
+       * Check whether a file exists and make a decision based on that.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @return {Promise}
+       */
+      function checkExistence (directory, name) {
+        var path = ramlRepository.join(directory.path, name);
+
+        if (!pathExists(path)) {
+          return $q.when(null);
+        }
+
+        return importServiceConflictModal.open(path);
       }
 
       /**
        * Create a file in the filesystem.
        *
+       * @param  {Object}  directory
        * @param  {String}  name
        * @param  {String}  contents
        * @return {Promise}
        */
       function createFile (directory, name, contents) {
+        return checkExistence(directory, name)
+          .then(function (option) {
+            if (option === importServiceConflictModal.SKIP_FILE) {
+              return;
+            }
+
+            if (option === importServiceConflictModal.KEEP_FILE) {
+              var altname = altFilename(directory, name);
+
+              return createFileFromContents(directory, altname, contents);
+            }
+
+            if (option === importServiceConflictModal.REPLACE_FILE) {
+              var path = ramlRepository.join(directory.path, name);
+              var file = ramlRepository.getByPath(path);
+
+              return ramlRepository.removeFile(file)
+                .then(function () {
+                  return createFileFromContents(directory, name, contents);
+                });
+            }
+
+            return createFileFromContents(directory, name, contents);
+          });
+
+      }
+
+      /**
+       * Create a file in the filesystem without checking prior existence.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      function createFileFromContents (directory, name, contents) {
         return ramlRepository.createFile(directory, name)
           .then(function (file) {
             file.contents = contents;
 
             return file;
           });
+      }
+
+      /**
+       * Generate an alternative file name for storage.
+       *
+       * @param  {Object} directory
+       * @param  {String} name
+       * @return {String}
+       */
+      function altFilename (directory, name) {
+        var path;
+        var index     = 0;
+        var extIndex  = name.lastIndexOf('.');
+        var basename  = extIndex > -1 ? name.substr(0, extIndex) : name;
+        var extension = extIndex > -1 ? name.substr(extIndex) : '';
+
+        do {
+          var filename = basename + '-' + (++index) + extension;
+
+          path = ramlRepository.join(directory.path, filename);
+        } while (pathExists(path));
+
+        return path;
       }
 
       /**
@@ -353,6 +452,18 @@
         reader.readAsBinaryString(file);
 
         return deferred.promise;
+      }
+
+      /**
+       * Chain promises one after another.
+       *
+       * @param  {Array}   promises
+       * @return {Promise}
+       */
+      function promiseChain (promises) {
+        return promises.reduce(function (promise, chain) {
+          return promise.then(chain);
+        }, $q.when());
       }
     });
 })();

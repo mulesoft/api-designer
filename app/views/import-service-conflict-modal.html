@@ -1,0 +1,15 @@
+<form name="form" novalidate>
+  <div class="modal-header">
+    <h3>Path already exists</h3>
+  </div>
+
+  <div class="modal-body">
+    The path (<strong>{{path}}</strong>) already exists.
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>
+    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>
+    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>
+  </div>
+</form>
