@@ -79,6 +79,7 @@
         var parts   = child.path.split('/').slice(0, -1);
         var promise = $q.when(parent);
 
+
         parts.slice(before.length).forEach(function (part, index) {
           promise = promise.then(function () {
             var path   = parts.slice(0, index + before.length + 1).join('/');

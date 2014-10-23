@@ -14,7 +14,7 @@
         template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link:     function (scope) {
           scope.newFile = function newFile() {
-            var root          = $rootScope.homeDirectory;
+            var root          = scope.homeDirectory;
             var defaultName   = generateName(root.getFiles().map(function (f){return f.name;}), 'Untitled-', 'raml');
             var title         = 'Add a new file';
 

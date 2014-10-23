@@ -187,7 +187,7 @@ describe('RAML Repository', function () {
       rootDirectory = success.firstCall.args[0];
     });
 
-    describe('createDirectory', function () {
+    describe('generateDirectory', function () {
       var createDirDeferred, createFolderSpy;
 
       beforeEach(function () {
@@ -196,7 +196,7 @@ describe('RAML Repository', function () {
       });
 
       it('should be able to create a ramlDirectory object under root directory', function () {
-        ramlRepository.createDirectory(rootDirectory, 'newFolder');
+        ramlRepository.generateDirectory(rootDirectory, 'newFolder');
 
         createDirDeferred.resolve();
         $rootScope.$apply();
@@ -210,7 +210,7 @@ describe('RAML Repository', function () {
 
       it('should be able to create a ramlDirectory object under another directory', function () {
         var folder = rootDirectory.getDirectories()[0];
-        ramlRepository.createDirectory(folder, 'folder');
+        ramlRepository.generateDirectory(folder, 'folder');
 
         createDirDeferred.resolve();
         $rootScope.$apply();
@@ -226,7 +226,7 @@ describe('RAML Repository', function () {
       });
 
       it('should broadcast an event on success', function (done) {
-        ramlRepository.createDirectory(rootDirectory, 'newFolder');
+        ramlRepository.generateDirectory(rootDirectory, 'newFolder');
         createDirDeferred.resolve();
         $rootScope.$on('event:raml-editor-directory-created', function () {
           done();
@@ -235,7 +235,7 @@ describe('RAML Repository', function () {
       });
 
       it('should create an entry in the file system', function () {
-        ramlRepository.createDirectory(rootDirectory, 'newFolder');
+        ramlRepository.generateDirectory(rootDirectory, 'newFolder');
         createDirDeferred.resolve();
         $rootScope.$apply();
 
@@ -329,8 +329,10 @@ describe('RAML Repository', function () {
       it('should give the correct tree structure', function () {
         var folder = rootDirectory.getDirectories()[0];
 
-        ramlRepository.createFile(rootDirectory, 'new.raml');
-        ramlRepository.createFile(folder, 'another.raml');
+        ramlRepository.generateFile(rootDirectory, 'new.raml');
+        ramlRepository.generateFile(folder, 'another.raml');
+
+        $rootScope.$apply();
 
         rootDirectory.children.length.should.equals(3);
         rootDirectory.getFiles().length.should.equals(2);
@@ -342,7 +344,6 @@ describe('RAML Repository', function () {
         folder.getFiles()[0].path.should.equals('/folder/another.raml');
         folder.getDirectories().length.should.equals(1);
       });
-
     });
 
     describe('renaming a file in a folder', function () {
@@ -625,10 +626,15 @@ describe('RAML Repository', function () {
     });
   });
 
-  describe('createFile', function () {
-    var broadcastSpy, file, snippet;
+  describe('generateFile', function () {
+    var broadcastSpy, file, snippet, $rootScope, ramlSnippets;
 
-    beforeEach(inject(function($rootScope, ramlSnippets) {
+    beforeEach(inject(function ($injector) {
+      $rootScope   = $injector.get('$rootScope');
+      ramlSnippets = $injector.get('ramlSnippets');
+    }));
+
+    beforeEach(function() {
       snippet = 'This is an empty RAML file content';
       sinon.stub(ramlSnippets, 'getEmptyRaml').returns(snippet);
 
@@ -651,8 +657,13 @@ describe('RAML Repository', function () {
       // Assert
       var directory = success.firstCall.args[0];
 
-      file = ramlRepository.createFile(directory, 'untitled.raml');
-    }));
+      ramlRepository.generateFile(directory, 'untitled.raml')
+        .then(function (createdFile) {
+          file = createdFile;
+        });
+
+      $rootScope.$apply();
+    });
 
     it('should return a new file with snippet content', function () {
       // Assert
@@ -749,12 +760,26 @@ describe('RAML Repository', function () {
       directory = success.firstCall.args[0];
     }));
 
-    it('should have a proper extension value extracted from name', function () {
-      ramlRepository.createFile(directory, 'api.raml').should.have.property('extension', 'raml');
+    it('should have a proper extension value extracted from name', function (done) {
+      ramlRepository.generateFile(directory, 'api.raml')
+        .then(function (file) {
+          file.should.have.property('extension', 'raml');
+
+          return done();
+        });
+
+      $rootScope.$apply();
     });
 
-    it('should not extract an extension from name started with a dot', function () {
-      ramlRepository.createFile(directory, '.raml').should.not.have.property('extension');
+    it('should not extract an extension from name started with a dot', function (done) {
+      ramlRepository.generateFile(directory, '.raml')
+        .then(function (file) {
+          file.should.not.have.property('extension');
+
+          return done();
+        });
+
+      $rootScope.$apply();
     });
   });
 });

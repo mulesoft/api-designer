@@ -45,6 +45,11 @@ describe('RAML Editor Main Controller', function () {
       clearAnnotations: function clearAnnotations() {}
     };
 
+    scope.homeDirectory = {
+      children: [],
+      forEachChildDo: function() {}
+    };
+
     params = {
       $scope: scope,
       codeMirror: codeMirror,
