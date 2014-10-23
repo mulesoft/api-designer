@@ -59,6 +59,8 @@
         element.on('drop', function (e) {
           scope.$apply(function () {
             e.preventDefault();
+            e.stopPropagation();
+
             fn(scope, { $event: e });
           });
         });

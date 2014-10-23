@@ -58,7 +58,9 @@
 
         if (entry.isFile) {
           entry.file(function (file) {
-            return importFileToPath(directory, entry.fullPath, file)
+            var path = directory.path + entry.fullPath;
+
+            return importFileToPath(directory, path, file)
               .then(deferred.resolve, deferred.reject);
           }, deferred.reject);
         } else {
@@ -160,6 +162,7 @@
       /**
        * Import a single file at specific path.
        *
+       * @param  {Object}  directory
        * @param  {String}  path
        * @param  {File}    file
        * @return {Promise}

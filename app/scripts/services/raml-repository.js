@@ -79,10 +79,9 @@
         var parts   = child.path.split('/').slice(0, -1);
         var promise = $q.when(parent);
 
-
-        parts.slice(before.length).forEach(function (part, index) {
-          promise = promise.then(function () {
-            var path   = parts.slice(0, index + before.length + 1).join('/');
+        parts.slice(before.length).forEach(function (part) {
+          promise = promise.then(function (parent) {
+            var path   = service.join(parent.path, part);
             var exists = service.getByPath(path);
 
             // If the current path already exists.
@@ -93,22 +92,14 @@
                 );
               }
 
-              parent = exists;
-
-              return;
+              return exists;
             }
 
-            var directory = new RamlDirectory(path);
-            var insertAt  = findInsertIndex(directory, parent);
-
-            parent.children.splice(insertAt, 0, directory);
-
-            // Update the parent directory.
-            parent = directory;
+            return service.createDirectory(parent, part);
           });
         });
 
-        return promise.then(function () {
+        return promise.then(function (parent) {
           var exists = service.getByPath(child.path);
 
           if (exists) {
@@ -363,9 +354,11 @@
           .then(function () {
             // remove the file object from the parent's children list
             var index = parent.children.indexOf(file);
+
             if (index !== -1) {
               parent.children.splice(index, 1);
             }
+
             $rootScope.$broadcast('event:raml-editor-file-removed', file);
           });
       };
