@@ -53,6 +53,8 @@ module.exports = function(config) {
       'app/scripts/services/raml-highlight-config.js',
       'app/scripts/services/raml-repository.js',
       'app/scripts/services/file-system.js',
+      'app/scripts/services/new-file-service.js',
+      'app/scripts/services/new-folder-service.js',
       'app/scripts/services/local-storage-file-system.js',
       'app/scripts/services/mocking-service-client.js',
       'app/scripts/services/mocking-service.js',
