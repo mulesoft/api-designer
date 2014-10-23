@@ -23,10 +23,8 @@
       $scope,
       $modalInstance,
       swaggerToRAML,
-      $rootScope,
-      codeMirror,
       $q,
-      ramlRepository,
+      $rootScope,
       importService
     ) {
       $scope.files     = {};
@@ -82,11 +80,14 @@
 
         $scope.importing = true;
 
+        var filename = extractFileName($scope.swagger.url, 'raml');
+
         // Attempt to import from a Swagger definition.
         return swaggerToRAML.convert($scope.swagger.url)
-          .then(function (raml) {
-            codeMirror.getEditor().setValue(raml);
-
+          .then(function (contents) {
+            return importService.createFile($scope.homeDirectory, filename, contents);
+          })
+          .then(function (file) {
             return $modalInstance.close(true);
           })
           .catch(function () {
@@ -100,5 +101,27 @@
             $scope.importing = false;
           });
       };
+
+      /**
+       * Extract a useable filename from a path.
+       *
+       * @param  {String} path
+       * @param  {String} [ext]
+       * @return {String}
+       */
+      function extractFileName (path, ext) {
+        var name  = path.replace(/\/*$/, '');
+        var index = name.lastIndexOf('/');
+
+        if (index > -1) {
+          name = name.substr(index);
+        }
+
+        if (ext) {
+          name = name.replace(/\.[^\.]*$/, '') + '.' + ext;
+        }
+
+        return name;
+      }
     });
 })();

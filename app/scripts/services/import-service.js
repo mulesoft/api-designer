@@ -160,6 +160,41 @@
       };
 
       /**
+       * Create a file in the filesystem.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      self.createFile = function (directory, name, contents) {
+        return checkExistence(directory, name)
+          .then(function (option) {
+            if (option === importServiceConflictModal.SKIP_FILE) {
+              return;
+            }
+
+            if (option === importServiceConflictModal.KEEP_FILE) {
+              var altname = altFilename(directory, name);
+
+              return createFileFromContents(directory, altname, contents);
+            }
+
+            if (option === importServiceConflictModal.REPLACE_FILE) {
+              var path = ramlRepository.join(directory.path, name);
+              var file = ramlRepository.getByPath(path);
+
+              return ramlRepository.removeFile(file)
+                .then(function () {
+                  return createFileFromContents(directory, name, contents);
+                });
+            }
+
+            return createFileFromContents(directory, name, contents);
+          });
+      };
+
+      /**
        * Import a single file at specific path.
        *
        * @param  {Object}  directory
@@ -179,7 +214,7 @@
                 });
             }
 
-            return createFile(directory, path, contents);
+            return self.createFile(directory, path, contents);
           });
       }
 
@@ -239,7 +274,7 @@
               return createDirectory(directory, name);
             }
 
-            return createFile(directory, name, files[name].asText());
+            return self.createFile(directory, name, files[name].asText());
           });
         });
 
@@ -346,42 +381,6 @@
         }
 
         return importServiceConflictModal.open(path);
-      }
-
-      /**
-       * Create a file in the filesystem.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  name
-       * @param  {String}  contents
-       * @return {Promise}
-       */
-      function createFile (directory, name, contents) {
-        return checkExistence(directory, name)
-          .then(function (option) {
-            if (option === importServiceConflictModal.SKIP_FILE) {
-              return;
-            }
-
-            if (option === importServiceConflictModal.KEEP_FILE) {
-              var altname = altFilename(directory, name);
-
-              return createFileFromContents(directory, altname, contents);
-            }
-
-            if (option === importServiceConflictModal.REPLACE_FILE) {
-              var path = ramlRepository.join(directory.path, name);
-              var file = ramlRepository.getByPath(path);
-
-              return ramlRepository.removeFile(file)
-                .then(function () {
-                  return createFileFromContents(directory, name, contents);
-                });
-            }
-
-            return createFileFromContents(directory, name, contents);
-          });
-
       }
 
       /**
