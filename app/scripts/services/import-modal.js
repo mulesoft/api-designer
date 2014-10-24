@@ -87,7 +87,7 @@
           .then(function (contents) {
             return importService.createFile($scope.homeDirectory, filename, contents);
           })
-          .then(function (file) {
+          .then(function () {
             return $modalInstance.close(true);
           })
           .catch(function () {

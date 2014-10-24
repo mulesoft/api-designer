@@ -2006,26 +2006,21 @@
         var before = parent.path === '/' ? [''] : parent.path.split('/');
         var parts = child.path.split('/').slice(0, -1);
         var promise = $q.when(parent);
-        parts.slice(before.length).forEach(function (part, index) {
-          promise = promise.then(function () {
-            var path = parts.slice(0, index + before.length + 1).join('/');
+        parts.slice(before.length).forEach(function (part) {
+          promise = promise.then(function (parent) {
+            var path = service.join(parent.path, part);
             var exists = service.getByPath(path);
             // If the current path already exists.
             if (exists) {
               if (!exists.isDirectory) {
                 return $q.reject(new Error('Can not create directory, file already exists: ' + path));
               }
-              parent = exists;
-              return;
+              return exists;
             }
-            var directory = new RamlDirectory(path);
-            var insertAt = findInsertIndex(directory, parent);
-            parent.children.splice(insertAt, 0, directory);
-            // Update the parent directory.
-            parent = directory;
+            return service.createDirectory(parent, part);
           });
         });
-        return promise.then(function () {
+        return promise.then(function (parent) {
           var exists = service.getByPath(child.path);
           if (exists) {
             if (exists.isDirectory && child.isDirectory) {
@@ -2358,6 +2353,72 @@
         config.set('fsFactory', fsFactory = 'localStorageFileSystem');
       }
       return $injector.get(fsFactory);
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').service('newFileService', [
+    'ramlRepository',
+    'newNameModal',
+    '$rootScope',
+    function newFolderService(ramlRepository, newNameModal, $rootScope) {
+      var self = this;
+      self.prompt = function prompt(target) {
+        var parent = target.isDirectory ? target : ramlRepository.getParent(target);
+        var title = 'Add a new file';
+        var message = [
+            'For a new RAML spec, be sure to name your file <something>.raml; ',
+            'For files to be !included, feel free to use an extension or not.'
+          ].join('');
+        var validations = [{
+              message: 'That file name is already taken.',
+              validate: function (input) {
+                var path = ramlRepository.join(parent.path, input);
+                return !ramlRepository.getByPath(path);
+              }
+            }];
+        return newNameModal.open(message, '', validations, title).then(function (name) {
+          // Need to catch errors from `generateFile`, otherwise
+          // `newNameModel.open` will error random modal close strings.
+          return ramlRepository.generateFile(parent, name).catch(function (err) {
+            return $rootScope.$broadcast('event:notification', {
+              message: err.message,
+              expires: true,
+              level: 'error'
+            });
+          });
+        });
+      };
+      return self;
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').service('newFolderService', [
+    'ramlRepository',
+    'newNameModal',
+    function newFolderService(ramlRepository, newNameModal) {
+      var self = this;
+      self.prompt = function prompt(target) {
+        var parent = target.isDirectory ? target : ramlRepository.getParent(target);
+        var message = 'Input a name for your new folder:';
+        var title = 'Add a new folder';
+        var validations = [{
+              message: 'That folder name is already taken.',
+              validate: function (input) {
+                var path = ramlRepository.join(parent.path, input);
+                return !ramlRepository.getByPath(path);
+              }
+            }];
+        return newNameModal.open(message, '', validations, title).then(function (name) {
+          return ramlRepository.generateDirectory(parent, name);
+        });
+      };
+      return self;
     }
   ]);
   ;
@@ -2800,12 +2861,10 @@
     '$scope',
     '$modalInstance',
     'swaggerToRAML',
-    '$rootScope',
-    'codeMirror',
     '$q',
-    'ramlRepository',
+    '$rootScope',
     'importService',
-    function ConfirmController($scope, $modalInstance, swaggerToRAML, $rootScope, codeMirror, $q, ramlRepository, importService) {
+    function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $rootScope, importService) {
       $scope.files = {};
       $scope.swagger = {};
       $scope.importing = false;
@@ -2845,9 +2904,11 @@
           return;
         }
         $scope.importing = true;
+        var filename = extractFileName($scope.swagger.url, 'raml');
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.convert($scope.swagger.url).then(function (raml) {
-          codeMirror.getEditor().setValue(raml);
+        return swaggerToRAML.convert($scope.swagger.url).then(function (contents) {
+          return importService.createFile($scope.homeDirectory, filename, contents);
+        }).then(function () {
           return $modalInstance.close(true);
         }).catch(function () {
           $rootScope.$broadcast('event:notification', {
@@ -2859,6 +2920,24 @@
           $scope.importing = false;
         });
       };
+      /**
+       * Extract a useable filename from a path.
+       *
+       * @param  {String} path
+       * @param  {String} [ext]
+       * @return {String}
+       */
+      function extractFileName(path, ext) {
+        var name = path.replace(/\/*$/, '');
+        var index = name.lastIndexOf('/');
+        if (index > -1) {
+          name = name.substr(index);
+        }
+        if (ext) {
+          name = name.replace(/\.[^\.]*$/, '') + '.' + ext;
+        }
+        return name;
+      }
     }
   ]);
 }());
@@ -3048,7 +3127,8 @@
         var deferred = $q.defer();
         if (entry.isFile) {
           entry.file(function (file) {
-            return importFileToPath(directory, entry.fullPath, file).then(deferred.resolve, deferred.reject);
+            var path = directory.path + entry.fullPath;
+            return importFileToPath(directory, path, file).then(deferred.resolve, deferred.reject);
           }, deferred.reject);
         } else {
           var reader = entry.createReader();
@@ -3133,8 +3213,36 @@
         return promiseChain(imports);
       };
       /**
+       * Create a file in the filesystem.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      self.createFile = function (directory, name, contents) {
+        return checkExistence(directory, name).then(function (option) {
+          if (option === importServiceConflictModal.SKIP_FILE) {
+            return;
+          }
+          if (option === importServiceConflictModal.KEEP_FILE) {
+            var altname = altFilename(directory, name);
+            return createFileFromContents(directory, altname, contents);
+          }
+          if (option === importServiceConflictModal.REPLACE_FILE) {
+            var path = ramlRepository.join(directory.path, name);
+            var file = ramlRepository.getByPath(path);
+            return ramlRepository.removeFile(file).then(function () {
+              return createFileFromContents(directory, name, contents);
+            });
+          }
+          return createFileFromContents(directory, name, contents);
+        });
+      };
+      /**
        * Import a single file at specific path.
        *
+       * @param  {Object}  directory
        * @param  {String}  path
        * @param  {File}    file
        * @return {Promise}
@@ -3147,7 +3255,7 @@
               return importZip(directory, contents);
             });
           }
-          return createFile(directory, path, contents);
+          return self.createFile(directory, path, contents);
         });
       }
       /**
@@ -3199,7 +3307,7 @@
             if (/\/$/.test(name)) {
               return createDirectory(directory, name);
             }
-            return createFile(directory, name, files[name].asText());
+            return self.createFile(directory, name, files[name].asText());
           });
         });
         return promise;
@@ -3285,33 +3393,6 @@
           return $q.when(null);
         }
         return importServiceConflictModal.open(path);
-      }
-      /**
-       * Create a file in the filesystem.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  name
-       * @param  {String}  contents
-       * @return {Promise}
-       */
-      function createFile(directory, name, contents) {
-        return checkExistence(directory, name).then(function (option) {
-          if (option === importServiceConflictModal.SKIP_FILE) {
-            return;
-          }
-          if (option === importServiceConflictModal.KEEP_FILE) {
-            var altname = altFilename(directory, name);
-            return createFileFromContents(directory, altname, contents);
-          }
-          if (option === importServiceConflictModal.REPLACE_FILE) {
-            var path = ramlRepository.join(directory.path, name);
-            var file = ramlRepository.getByPath(path);
-            return ramlRepository.removeFile(file).then(function () {
-              return createFileFromContents(directory, name, contents);
-            });
-          }
-          return createFileFromContents(directory, name, contents);
-        });
       }
       /**
        * Create a file in the filesystem without checking prior existence.
@@ -4305,6 +4386,7 @@
         element.on('drop', function (e) {
           scope.$apply(function () {
             e.preventDefault();
+            e.stopPropagation();
             fn(scope, { $event: e });
           });
         });
@@ -4320,56 +4402,79 @@
     'confirmModal',
     'newNameModal',
     'ramlRepository',
+    'newFileService',
+    'newFolderService',
     'scroll',
-    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, scroll) {
+    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, newFileService, newFolderService, scroll) {
       function createActions(target) {
-        var actions = [
-            {
-              label: 'Save',
-              execute: function execute() {
-                ramlRepository.saveFile(target);
-              }
-            },
-            {
-              label: 'Delete',
-              execute: function execute() {
-                var message;
-                var title;
-                if (target.isDirectory) {
-                  message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
-                  title = 'Remove folder';
-                } else {
-                  message = 'Are you sure you want to delete "' + target.name + '"?';
-                  title = 'Remove file';
-                }
-                confirmModal.open(message, title).then(function () {
-                  ramlRepository.remove(target);
-                });
-                ;
-              }
-            },
-            {
-              label: 'Rename',
-              execute: function execute() {
-                var parent = ramlRepository.getParent(target);
-                var message = target.isDirectory ? 'Enter a new name for this folder:' : 'Enter a new name for this file:';
-                var title = target.isDirectory ? 'Rename a folder' : 'Rename a file';
-                var validations = [{
-                      message: 'This name is already taken.',
-                      validate: function validate(input) {
-                        var path = ramlRepository.join(parent.path, input);
-                        return !ramlRepository.getByPath(path);
-                      }
-                    }];
-                newNameModal.open(message, target.name, validations, title).then(function (name) {
-                  ramlRepository.rename(target, name);
-                });
-                ;
-              }
+        var saveAction = {
+            label: 'Save',
+            execute: function execute() {
+              return ramlRepository.saveFile(target);
             }
+          };
+        var newFileAction = {
+            label: 'New File',
+            execute: function execute() {
+              return newFileService.prompt(target);
+            }
+          };
+        var newFolderAction = {
+            label: 'New Folder',
+            execute: function execute() {
+              return newFolderService.prompt(target);
+            }
+          };
+        var renameAction = {
+            label: 'Rename',
+            execute: function execute() {
+              var parent = ramlRepository.getParent(target);
+              var message = target.isDirectory ? 'Enter a new name for this folder:' : 'Enter a new name for this file:';
+              var title = target.isDirectory ? 'Rename a folder' : 'Rename a file';
+              var validations = [{
+                    message: 'This name is already taken.',
+                    validate: function validate(input) {
+                      var path = ramlRepository.join(parent.path, input);
+                      return !ramlRepository.getByPath(path);
+                    }
+                  }];
+              return newNameModal.open(message, target.name, validations, title).then(function (name) {
+                ramlRepository.rename(target, name);
+              });
+              ;
+            }
+          };
+        var deleteAction = {
+            label: 'Delete',
+            execute: function execute() {
+              var message;
+              var title;
+              if (target.isDirectory) {
+                message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
+                title = 'Remove folder';
+              } else {
+                message = 'Are you sure you want to delete "' + target.name + '"?';
+                title = 'Remove file';
+              }
+              return confirmModal.open(message, title).then(function () {
+                ramlRepository.remove(target);
+              });
+              ;
+            }
+          };
+        if (target.isDirectory) {
+          return [
+            newFileAction,
+            newFolderAction,
+            renameAction,
+            deleteAction
           ];
-        // remove the 'Save' action if the target is a directory
-        return target.isDirectory ? actions.slice(1) : actions;
+        }
+        return [
+          saveAction,
+          renameAction,
+          deleteAction
+        ];
       }
       function outOfWindow(el) {
         var rect = el.getBoundingClientRect();
@@ -4715,33 +4820,14 @@
 (function () {
   'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorNewFolderButton', [
-    '$injector',
-    'ramlRepository',
-    'generateName',
-    'newNameModal',
-    function ramlEditorNewFolderButton($injector, ramlRepository, generateName, newNameModal) {
+    'newFolderService',
+    function ramlEditorNewFolderButton(newFolderService) {
       return {
         restrict: 'E',
         template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
         link: function (scope) {
           scope.newFolder = function newFolder() {
-            var currentTarget = scope.fileBrowser.currentTarget;
-            var parent = currentTarget.isDirectory ? currentTarget : ramlRepository.getParent(currentTarget);
-            var defaultName = generateName(parent.getDirectories().map(function (d) {
-                return d.name;
-              }), 'Folder');
-            var message = 'Input a name for your new folder:';
-            var title = 'Add a new folder';
-            var validations = [{
-                  message: 'That folder name is already taken.',
-                  validate: function (input) {
-                    var path = ramlRepository.join(parent.path, input);
-                    return !ramlRepository.getByPath(path);
-                  }
-                }];
-            newNameModal.open(message, defaultName, validations, title).then(function (name) {
-              ramlRepository.generateDirectory(parent, name);
-            });
+            return newFolderService.prompt(scope.homeDirectory);
           };
         }
       };
@@ -4752,44 +4838,14 @@
 (function () {
   'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorNewFileButton', [
-    '$injector',
-    '$rootScope',
-    'ramlRepository',
-    'generateName',
-    'newNameModal',
-    function ramlEditorNewFileButton($injector, $rootScope, ramlRepository, generateName, newNameModal) {
+    'newFileService',
+    function ramlEditorNewFileButton(newFileService) {
       return {
         restrict: 'E',
         template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link: function (scope) {
           scope.newFile = function newFile() {
-            var root = scope.homeDirectory;
-            var defaultName = generateName(root.getFiles().map(function (f) {
-                return f.name;
-              }), 'Untitled-', 'raml');
-            var title = 'Add a new file';
-            var message = [
-                'For a new RAML spec, be sure to name your file <something>.raml; ',
-                'For files to be !included, feel free to use an extension or not.'
-              ].join('');
-            var validations = [{
-                  message: 'That file name is already taken.',
-                  validate: function (input) {
-                    var path = ramlRepository.join(root.path, input);
-                    return !ramlRepository.getByPath(path);
-                  }
-                }];
-            return newNameModal.open(message, defaultName, validations, title).then(function (name) {
-              // Need to catch errors from `generateFile`, otherwise
-              // `newNameModel.open` will error random modal close strings.
-              return ramlRepository.generateFile(root, name).catch(function (err) {
-                return $rootScope.$broadcast('event:notification', {
-                  message: err.message,
-                  expires: true,
-                  level: 'error'
-                });
-              });
-            });
+            return newFileService.prompt(scope.homeDirectory);
           };
         }
       };

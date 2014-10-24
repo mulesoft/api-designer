@@ -4,7 +4,8 @@
   angular.module('ramlEditorApp')
     .service('newFileService', function newFolderService(
       ramlRepository,
-      newNameModal
+      newNameModal,
+      $rootScope
     ) {
       var self = this;
 
