@@ -241,6 +241,17 @@ describe('RAML Repository', function () {
 
         createFolderSpy.should.have.been.calledWith('/newFolder');
       });
+
+      it('should create nested directories', function () {
+        ramlRepository.generateDirectory(rootDirectory, 'a/b/c');
+        createDirDeferred.resolve();
+        $rootScope.$apply();
+
+        createFolderSpy.should.have.been.calledThrice;
+        createFolderSpy.should.have.been.calledWith('/a');
+        createFolderSpy.should.have.been.calledWith('/a/b');
+        createFolderSpy.should.have.been.calledWith('/a/b/c');
+      });
     });
 
     describe('getByPath', function () {
@@ -326,6 +337,13 @@ describe('RAML Repository', function () {
     });
 
     describe('creating a new file in a folder', function () {
+      var createDirDeferred, createFolderSpy;
+
+      beforeEach(function () {
+        createDirDeferred = $q.defer();
+        createFolderSpy = sinon.stub(fileSystem, 'createFolder').returns(createDirDeferred.promise);
+      });
+
       it('should give the correct tree structure', function () {
         var folder = rootDirectory.getDirectories()[0];
 
@@ -343,6 +361,40 @@ describe('RAML Repository', function () {
         folder.getFiles().length.should.equals(2);
         folder.getFiles()[0].path.should.equals('/folder/another.raml');
         folder.getDirectories().length.should.equals(1);
+      });
+
+      it('should create a nested file in the tree structure', function () {
+        var folder = rootDirectory.getDirectories()[0];
+
+        ramlRepository.generateFile(folder, 'a/b/c/test.raml');
+
+        createDirDeferred.resolve();
+        $rootScope.$apply();
+
+        createFolderSpy.should.have.been.calledThrice;
+        createFolderSpy.should.have.been.calledWith(folder.path + '/a');
+        createFolderSpy.should.have.been.calledWith(folder.path + '/a/b');
+        createFolderSpy.should.have.been.calledWith(folder.path + '/a/b/c');
+
+        var aDir = ramlRepository.getByPath(folder.path + '/a');
+        var bDir = aDir.children[0];
+        var cDir = bDir.children[0];
+        var file = cDir.children[0];
+
+        aDir.name.should.equal('a');
+        aDir.type.should.equal('directory');
+        aDir.children.length.should.equal(1);
+
+        bDir.name.should.equal('b');
+        bDir.type.should.equal('directory');
+        bDir.children.length.should.equal(1);
+
+        cDir.name.should.equal('c');
+        cDir.type.should.equal('directory');
+        cDir.children.length.should.equal(1);
+
+        file.name.should.equal('test.raml');
+        file.type.should.equal('file');
       });
     });
 
