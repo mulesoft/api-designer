@@ -4797,16 +4797,56 @@
   angular.module('ramlEditorApp').directive('ramlEditorSaveFileButton', [
     '$rootScope',
     'ramlRepository',
-    function ramlEditorSaveFileButton($rootScope, ramlRepository) {
+    '$window',
+    '$timeout',
+    '$q',
+    function ramlEditorSaveFileButton($rootScope, ramlRepository, $window, $timeout, $q) {
       return {
         restrict: 'E',
-        template: '<span role="save-button" ng-click="saveFile()"><i class="fa fa-save"></i>&nbsp;Save</span>',
+        template: [
+          '<span role="save-button" ng-click="saveFile()"><i class="fa fa-save"></i>&nbsp;Save</span>',
+          '<span class="menu-item-toggle" ng-click="openContextMenu($event)">',
+          '  <i class="fa fa-caret-down"></i>',
+          '</span>',
+          '<ul role="context-menu" class="menu-item-context" ng-show="contextMenuOpen">',
+          '  <li role="context-menu-item" ng-click="saveAllFiles()">Save All</li>',
+          '</ul>'
+        ].join('\n'),
         link: function (scope) {
+          scope.contextMenuOpen = false;
+          scope.openContextMenu = function () {
+            $timeout(function () {
+              $window.addEventListener('click', function self() {
+                scope.$apply(function () {
+                  scope.contextMenuOpen = false;
+                });
+                $window.removeEventListener('click', self);
+              });
+            });
+            scope.contextMenuOpen = true;
+          };
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
-            ramlRepository.saveFile(file).then(function success() {
+            return ramlRepository.saveFile(file).then(function success() {
               $rootScope.$broadcast('event:notification', {
                 message: 'File saved.',
+                expires: true
+              });
+            });
+          };
+          scope.saveAllFiles = function saveAllFiles() {
+            var promises = [];
+            scope.homeDirectory.forEachChildDo(function (file) {
+              if (file.isDirectory) {
+                return;
+              }
+              if (file.dirty) {
+                return promises.push(ramlRepository.saveFile(file));
+              }
+            });
+            return $q.all(promises).then(function success() {
+              $rootScope.$broadcast('event:notification', {
+                message: 'All files saved.',
                 expires: true
               });
             });
@@ -5324,7 +5364,7 @@ angular.module('ramlEditorApp').run([
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{data.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{data.message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="button" class="btn btn-primary" ng-click="$close()" ng-auto-focus="true">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/help.html', '<div class="modal-header">\n' + '    <h3><i class="fa fa-question-circle"></i> Help</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
-    $templateCache.put('views/import-modal.html', '<div class="modal-header">\n' + '  <h3>Import File</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '  <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '    <i class="fa fa-spin fa-spinner"></i>\n' + '  </div>\n' + '\n' + '  <form name="swaggerImport" novalidate class="form-group" ng-class="{\'has-error\': swaggerImport.$submitted && swaggerImport.url.$invalid}" ng-submit="importSwagger(swaggerImport)">\n' + '    <label for="url" class="control-label">From a Swagger Spec:</label>\n' + '\n' + '    <div>\n' + '      <div style="float: right;">\n' + '        <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>\n' + '      </div>\n' + '\n' + '      <div style="margin-right: 80px;">\n' + '        <input id="url" name="url" type="text" ng-model="swagger.url" class="form-control" placeholder="http://petstore.swagger.wordnik.com/api/api-docs" required>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <p class="help-block" ng-show="swaggerImport.$submitted && swaggerImport.url.$error.required">Please provide a URL.</p>\n' + '\n' + '    <p class="text-danger">WARNING: This will override the currently open file.</p>\n' + '  </form>\n' + '\n' + '  <hr>\n' + '\n' + '  <form name="fileImport" novalidate class="form-group" ng-class="{\'has-error\': fileImport.$submitted && fileImport.files.$invalid}" ng-submit="importFiles(fileImport)" ng-if="files.supported">\n' + '    <label for="files" class="control-label">From a ZIP File:</label>\n' + '\n' + '    <div>\n' + '      <div style="float: right;">\n' + '        <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>\n' + '      </div>\n' + '\n' + '      <div style="margin-right: 80px;">\n' + '        <input id="files" name="files" type="file" class="form-control" ng-model="files.files" multiple required>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <p class="help-block" ng-show="fileImport.$submitted && fileImport.files.$error.required">Please select a file to import.</p>\n' + '\n' + '    <p class="text-danger">WARNING: This imports into the root directory.</p>\n' + '  </form>\n' + '</div>\n' + '\n' + '<div class="modal-footer">\n' + '  <button type="button" class="btn btn-primary" ng-click="$dismiss()">Done</button>\n' + '</div>\n');
+    $templateCache.put('views/import-modal.html', '<div class="modal-header">\n' + '  <h3>Import File</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '  <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '    <i class="fa fa-spin fa-spinner"></i>\n' + '  </div>\n' + '\n' + '  <form name="swaggerImport" novalidate class="form-group" ng-class="{\'has-error\': swaggerImport.$submitted && swaggerImport.url.$invalid}" ng-submit="importSwagger(swaggerImport)">\n' + '    <label for="url" class="control-label">From a Swagger Spec:</label>\n' + '\n' + '    <div style="margin-bottom: 10px;">\n' + '      <div style="float: right;">\n' + '        <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>\n' + '      </div>\n' + '\n' + '      <div style="margin-right: 80px;">\n' + '        <input id="url" name="url" type="text" ng-model="swagger.url" class="form-control" required>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <p class="help-block" ng-show="swaggerImport.$submitted && swaggerImport.url.$error.required">Please provide a URL.</p>\n' + '\n' + '    <p>Use the full URL to a valid Swagger specification. For example: <br><strong>http://petstore.swagger.wordnik.com/api/api-docs</strong></p>\n' + '  </form>\n' + '\n' + '  <hr>\n' + '\n' + '  <form name="fileImport" novalidate class="form-group" ng-class="{\'has-error\': fileImport.$submitted && fileImport.files.$invalid}" ng-submit="importFiles(fileImport)" ng-if="files.supported">\n' + '    <label for="files" class="control-label">From a ZIP File:</label>\n' + '\n' + '    <div>\n' + '      <div style="float: right;">\n' + '        <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>\n' + '      </div>\n' + '\n' + '      <div style="margin-right: 80px;">\n' + '        <input id="files" name="files" type="file" class="form-control" ng-model="files.files" multiple required>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <p class="help-block" ng-show="fileImport.$submitted && fileImport.files.$error.required">Please select a file to import.</p>\n' + '  </form>\n' + '</div>\n' + '\n' + '<div class="modal-footer">\n' + '  <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '</div>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
