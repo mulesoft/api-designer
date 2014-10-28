@@ -10,19 +10,19 @@
   <form name="swaggerImport" novalidate class="form-group" ng-class="{'has-error': swaggerImport.$submitted && swaggerImport.url.$invalid}" ng-submit="importSwagger(swaggerImport)">
     <label for="url" class="control-label">From a Swagger Spec:</label>
 
-    <div>
+    <div style="margin-bottom: 10px;">
       <div style="float: right;">
         <button type="submit" class="btn btn-primary" style="margin: 0;">Import</button>
       </div>
 
       <div style="margin-right: 80px;">
-        <input id="url" name="url" type="text" ng-model="swagger.url" class="form-control" placeholder="http://petstore.swagger.wordnik.com/api/api-docs" required>
+        <input id="url" name="url" type="text" ng-model="swagger.url" class="form-control" required>
       </div>
     </div>
 
     <p class="help-block" ng-show="swaggerImport.$submitted && swaggerImport.url.$error.required">Please provide a URL.</p>
 
-    <p class="text-danger">WARNING: This will override the currently open file.</p>
+    <p>Use the full URL to a valid Swagger specification. For example: <br><strong>http://petstore.swagger.wordnik.com/api/api-docs</strong></p>
   </form>
 
   <hr>
@@ -41,11 +41,9 @@
     </div>
 
     <p class="help-block" ng-show="fileImport.$submitted && fileImport.files.$error.required">Please select a file to import.</p>
-
-    <p class="text-danger">WARNING: This imports into the root directory.</p>
   </form>
 </div>
 
 <div class="modal-footer">
-  <button type="button" class="btn btn-primary" ng-click="$dismiss()">Done</button>
+  <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>
 </div>
