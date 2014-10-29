@@ -27,30 +27,57 @@
       $rootScope,
       importService
     ) {
-      $scope.files     = {};
-      $scope.swagger   = {};
       $scope.importing = false;
 
+      $scope.options = [
+        { name: 'Swagger spec', type: 'swagger' },
+        { name: '.zip file', type: 'file' }
+      ];
+
+      $scope.mode = $scope.options[0];
+
       // Check whether file import is supported.
-      $scope.files.supported = !!(
+      $scope.fileSupported = !!(
         window.File && window.FileReader && window.FileList && window.Blob
       );
 
       /**
-       * Import files from the local filesystem.
+       * Import using either import modes.
        *
        * @param {Object} form
        */
-      $scope.importFiles = function (form) {
-        form.$submitted = true;
+      $scope.import = function (form) {
+        form.$submitted      = true;
+        $scope.submittedMode = $scope.mode;
 
         if (form.$invalid || $scope.importing) {
           return;
         }
 
+        if ($scope.mode.type === 'swagger') {
+          return importSwagger($scope.mode);
+        }
+
+        return importFile($scope.mode);
+      };
+
+      /**
+       * Import files from the local filesystem.
+       *
+       * @param {Object} mode
+       */
+      function importFile (mode) {
+        if (!$scope.fileSupported) {
+          return $rootScope.$broadcast('event:notification', {
+            message: 'File upload not supported. Try upgrading your browser.',
+            expires: true,
+            level: 'error'
+          });
+        }
+
         $scope.importing = true;
 
-        return importService.mergeFileList($scope.homeDirectory, $scope.files.files)
+        return importService.mergeFileList($scope.homeDirectory, mode.value)
           .then(function () {
             return $modalInstance.close(true);
           })
@@ -64,35 +91,29 @@
           .finally(function () {
             $scope.importing = false;
           });
-      };
+      }
 
       /**
        * Import a RAML file from a Swagger specification.
-       *
-       * @param {Object} form
        */
-      $scope.importSwagger = function (form) {
-        form.$submitted = true;
-
-        if (form.$invalid || $scope.importing) {
-          return;
-        }
-
+      function importSwagger (mode) {
         $scope.importing = true;
 
-        var filename = extractFileName($scope.swagger.url, 'raml');
-
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.convert($scope.swagger.url)
+        return swaggerToRAML.convert(mode.value)
           .then(function (contents) {
-            return importService.createFile($scope.homeDirectory, filename, contents);
+            var filename = extractFileName(mode.value, 'raml');
+
+            return importService.createFile(
+              $scope.homeDirectory, filename, contents
+            );
           })
           .then(function () {
             return $modalInstance.close(true);
           })
           .catch(function () {
             $rootScope.$broadcast('event:notification', {
-              message: 'Failed to load and parse Swagger: ' + $scope.swagger.url,
+              message: 'Failed to load and parse Swagger: ' + mode.value,
               expires: true,
               level: 'error'
             });
@@ -100,7 +121,7 @@
           .finally(function () {
             $scope.importing = false;
           });
-      };
+      }
 
       /**
        * Extract a useable filename from a path.
