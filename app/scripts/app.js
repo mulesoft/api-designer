@@ -23,7 +23,10 @@
     'utils',
     'lightweightDOM',
     'splitter',
-    'rightClick'
+    'validate',
+    'autoFocus',
+    'rightClick',
+    'dragAndDrop'
   ])
     .run(function ($window) {
       // Adding proxy settings for api console

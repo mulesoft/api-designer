@@ -27,9 +27,9 @@
 
   angular.module('fs', ['ngCookies', 'raml', 'utils'])
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
-      var service     = {};
-      var defaultPath = '/';
-      var pathToRamlObject = {};
+      var service   = {};
+      var BASE_PATH = '/';
+      var rootFile;
 
       service.supportsFolders = fileSystem.supportsFolders || false;
 
@@ -60,7 +60,6 @@
         }
       }
 
-      // Find the index to insert a object into a sorted array.
       function findInsertIndex(source, dest) {
         var low = 0, high = dest.children.length - 1, mid;
         while (high >= low) {
@@ -74,21 +73,54 @@
         return low;
       }
 
-      // this function takes a parent(ramlDirectory) and a name(String) as input
-      // and returns the full path(String)
-      function generatePath(parent, name) {
-        if (parent.path === '/') {
-          return '/' + name;
-        }
-        else {
-          return parent.path + '/' + name;
-        }
+      function insertFileSystem(parent, child) {
+        // This assumes the paths are correct.
+        var before  = parent.path === '/' ? [''] : parent.path.split('/');
+        var parts   = child.path.split('/').slice(0, -1);
+        var promise = $q.when(parent);
+
+        parts.slice(before.length).forEach(function (part) {
+          promise = promise.then(function (parent) {
+            var path   = service.join(parent.path, part);
+            var exists = service.getByPath(path);
+
+            // If the current path already exists.
+            if (exists) {
+              if (!exists.isDirectory) {
+                return $q.reject(
+                  new Error('Can not create directory, file already exists: ' + path)
+                );
+              }
+
+              return exists;
+            }
+
+            return service.createDirectory(parent, part);
+          });
+        });
+
+        return promise.then(function (parent) {
+          var exists = service.getByPath(child.path);
+
+          if (exists) {
+            if (exists.isDirectory && child.isDirectory) {
+              return exists;
+            }
+
+            return $q.reject(new Error('Path already exists: ' + child.path));
+          }
+
+          parent.children.splice(findInsertIndex(child, parent), 0, child);
+
+          return child;
+        });
       }
 
       // this function takes a target(ramlFile/ramlDirectory) and a name(String) as input
       // and returns the new path(String) after renaming the target
       function generateNewName(target, newName) {
         var parentPath = target.path.slice(0, target.path.lastIndexOf('/'));
+
         return parentPath + '/' + newName;
       }
 
@@ -135,39 +167,33 @@
         // BFS
         var queue = this.children.slice();
         var current;
-        while(queue.length > 0) {
+
+        while (queue.length > 0) {
           current = queue.shift();
-          if(current.isDirectory) {
+
+          if (current.isDirectory) {
             queue = queue.concat(current.children);
           }
-          action.apply(current, [current]);
-        }
-      };
 
-      RamlDirectory.prototype.hasChildren = function hasChildren(child) {
-        var childParentPath = child.path.slice(0, child.path.lastIndexOf('/'));
-        if (childParentPath.length === 0) {
-          childParentPath = '/';
+          action.call(current, current);
         }
-        return childParentPath.length >= this.path.length &&
-          this.path === childParentPath.slice(0, this.path.length);
       };
 
       RamlDirectory.prototype.sortChildren = function sortChildren() {
         this.children.sort(sortingFunction);
       };
 
-      // Expose the sorting function, read-only
-      service.sortingFunction = (function () {
-        return sortingFunction;
-      }());
+      // Expose the sorting function
+      service.sortingFunction = sortingFunction;
 
       // Returns the parent directory object of a file or a directory
       service.getParent = function getParent(target) {
         var path = target.path.slice(0, target.path.lastIndexOf('/'));
+
         if (path.length === 0) {
           path = '/';
         }
+
         return service.getByPath(path);
       };
 
@@ -180,30 +206,41 @@
       };
 
       service.createDirectory = function createDirectory(parent, name) {
-        var path      = generatePath(parent, name);
+        var path      = service.join(parent.path, name);
         var directory = new RamlDirectory(path);
-        var index     = findInsertIndex(directory, parent);
+        var exists    = service.getByPath(path);
 
-        // insert into the right position
-        parent.children.splice(index, 0, directory);
+        // If the file already exists, return it.
+        if (exists) {
+          return $q.when(exists);
+        }
 
-        return fileSystem.createFolder(directory.path)
+        return insertFileSystem(parent, directory)
           .then(function () {
+            return fileSystem.createFolder(directory.path);
+          })
+          .then(function () {
+            return directory;
+          });
+      };
+
+      service.generateDirectory = function createDirectory(parent, name) {
+        return service.createDirectory(parent, name)
+          .then(function (directory) {
             $rootScope.$broadcast('event:raml-editor-directory-created', directory);
+
             return directory;
           });
       };
 
       // Loads the directory from the fileSystem into memory
-      service.loadDirectory = function loadDirectory(path) {
-        path = path || defaultPath;
-        // clean up the pathToRamlObject mapping
-        pathToRamlObject = {};
+      service.loadDirectory = function loadDirectory() {
+        return fileSystem.directory(BASE_PATH)
+          .then(function (directory) {
+            rootFile = new RamlDirectory(directory.path, directory.meta, directory.children);
 
-        return fileSystem.directory(path).then(function (directory) {
-          pathToRamlObject[path] = new RamlDirectory(directory.path, directory.meta, directory.children);
-          return pathToRamlObject[path];
-        });
+            return rootFile;
+          });
       };
 
       service.removeDirectory = function removeDirectory(directory) {
@@ -240,13 +277,14 @@
         });
 
         return promise
-          .then(function () {
-            directory.name = newName;
-            directory.path = newPath;
-            $rootScope.$broadcast('event:raml-editor-filetree-modified', directory);
-            return directory;
-          },
-          handleErrorFor(directory)
+          .then(
+            function () {
+              directory.name = newName;
+              directory.path = newPath;
+              $rootScope.$broadcast('event:raml-editor-filetree-modified', directory);
+              return directory;
+            },
+            handleErrorFor(directory)
           );
       };
 
@@ -316,56 +354,57 @@
           .then(function () {
             // remove the file object from the parent's children list
             var index = parent.children.indexOf(file);
+
             if (index !== -1) {
               parent.children.splice(index, 1);
             }
+
             $rootScope.$broadcast('event:raml-editor-file-removed', file);
           });
       };
 
-      service.createFile = function createFile(parent, name) {
-        var path  = generatePath(parent, name);
+      service.createFile = function createFile (parent, name) {
+        var path  = service.join(parent.path, name);
         var file  = new RamlFile(path);
-        var index = findInsertIndex(file, parent);
 
-        // insert into the right position
-        parent.children.splice(index, 0, file);
+        return insertFileSystem(parent, file);
+      };
 
-        if (file.extension === 'raml') {
-          file.contents = ramlSnippets.getEmptyRaml();
-        }
+      service.generateFile = function generateFile(parent, name) {
+        return service.createFile(parent, name)
+          .then(function (file) {
+            if (file.extension === 'raml') {
+              file.contents = ramlSnippets.getEmptyRaml();
+            }
 
-        $rootScope.$broadcast('event:raml-editor-file-created', file);
-        return file;
+            $rootScope.$broadcast('event:raml-editor-file-created', file);
+
+            return file;
+          });
       };
 
       // Gets the ramlDirectory/ramlFile object by path from the memory
       service.getByPath = function getByPath(path) {
-        // remove the trailing '/' in path
-        if(path.slice(-1) === '/' && path !== '/') {
-          path = path.slice(0, -1);
+        if (path === '/') {
+          return rootFile;
         }
 
-        // If the entry is already in the cache, return it directly
-        if (pathToRamlObject.hasOwnProperty(path)) {
-          return pathToRamlObject[path];
-        }
+        path = path.replace(/\/$/, '');
 
-        // If the path we're looking for is not in 'pathToRamlObject'
-        // we search for it in the tree using BFS
-        var queue = pathToRamlObject['/'].children.slice();
+        var queue = rootFile.children.slice();
         var current;
-        while(queue.length) {
+
+        while (queue.length) {
           current = queue.shift();
+
           if (current.path === path) {
-            pathToRamlObject[path] = current;
             return current;
-          } else if (current.isDirectory) {
+          }
+
+          if (current.isDirectory) {
             queue = queue.concat(current.children);
           }
         }
-
-        return void(0);
       };
 
       service.rename = function rename(target, newName) {
@@ -383,7 +422,7 @@
           return;
         }
 
-        var newPath = generatePath(destination, target.name);
+        var newPath = service.join(destination.path, target.name);
         var promise;
 
         if (target.isDirectory) {
@@ -426,6 +465,20 @@
             return {};
           }
         );
+      };
+
+      service.join = function () {
+        return Array.prototype.reduce.call(arguments, function (path, segment) {
+          if (segment == null) {
+            return path;
+          }
+
+          if (segment.charAt(0) === '/') {
+            return segment;
+          }
+
+          return path.replace(/\/$/, '') + '/' + segment;
+        }, '/');
       };
 
       return service;

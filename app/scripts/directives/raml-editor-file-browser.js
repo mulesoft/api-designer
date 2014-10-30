@@ -9,7 +9,8 @@
       config,
       eventService,
       ramlRepository,
-      newNameModal
+      newNameModal,
+      importService
     ) {
       function Controller($scope) {
         var fileBrowser         = this;
@@ -66,7 +67,7 @@
               // do the actual moving
               ramlRepository.move(source, dest)
                 .then(function () {
-                  fileBrowser.select(source);
+                  return fileBrowser.select(source);
                 });
             },
             /**
@@ -132,9 +133,10 @@
          */
         function expandAncestors(target) {
           // stop at the top-level directory
-          if (target.path.lastIndexOf('/') === 0) {
+          if (target.path === '/') {
             return;
           }
+
           var parent = ramlRepository.getParent(target);
           parent.collapsed = false;
           expandAncestors(parent);
@@ -143,12 +145,26 @@
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
             .then(function () {
-              eventService.broadcast('event:notification', {
+              return eventService.broadcast('event:notification', {
                 message: 'File saved.',
                 expires: true
               });
             })
           ;
+        };
+
+        fileBrowser.dropFile = function dropFile (directory, e) {
+          return importService.importFromEvent(directory, e)
+            .then(function () {
+              directory.collapsed = false;
+            })
+            .catch(function (err) {
+              $rootScope.$broadcast('event:notification', {
+                message: err.message,
+                expires: true,
+                level: 'error'
+              });
+            });
         };
 
         fileBrowser.showContextMenu = function showContextMenu(event, target) {
@@ -228,14 +244,15 @@
           var validation  = [];
           var title       = 'Add a new file';
 
-          newNameModal.open(message, defaultName, validation, title).then(
-            function (result) {
-              ramlRepository.createFile($scope.homeDirectory, result);
-            },
-            function () {
-              ramlRepository.createFile($scope.homeDirectory, defaultName);
-            }
-          );
+          newNameModal.open(message, defaultName, validation, title)
+            .then(
+              function (result) {
+                return ramlRepository.generateFile($scope.homeDirectory, result);
+              },
+              function () {
+                return ramlRepository.generateFile($scope.homeDirectory, defaultName);
+              }
+            );
         }
 
         /**

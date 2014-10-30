@@ -639,31 +639,6 @@ div .noselect {
 [role=browser] button:hover {
   background-color: #2d8bca;
 }
-[role=browser] [role="context-menu"] {
-  position: fixed;
-  z-index: 5;
-  list-style: none;
-  margin: 0;
-  border: 1px solid #AAA;
-  background-color: #EEE;
-  color: #666;
-  padding: 3px 0;
-  min-width: 145px;
-  font-size: 13px;
-  border-radius: 2px;
-  box-shadow: 3px 3px 10px 0 rgba(0, 0, 0, 0.25);
-  opacity: 0.95;
-}
-[role=browser] [role="context-menu"] li {
-  padding: 2px 5px;
-}
-[role=browser] [role="context-menu"] li:hover {
-  background: #1e4f6a;
-  color: #DDD;
-}
-[role=browser] [role="context-menu-item"] {
-  cursor: pointer;
-}
 [role=browser] .file-list {
   margin: 0;
   padding: 0;
@@ -802,6 +777,31 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
 .drag-light {
   color: #444;
 }
+[role="context-menu"] {
+  position: fixed;
+  z-index: 5;
+  list-style: none;
+  margin: 0;
+  border: 1px solid #AAA;
+  background-color: #EEE;
+  color: #666;
+  padding: 3px 0;
+  min-width: 145px;
+  font-size: 13px;
+  border-radius: 2px;
+  box-shadow: 3px 3px 10px 0 rgba(0, 0, 0, 0.25);
+  opacity: 0.95;
+}
+[role="context-menu"] li {
+  padding: 2px 5px;
+}
+[role="context-menu"] li:hover {
+  background: #1e4f6a;
+  color: #DDD;
+}
+[role="context-menu-item"] {
+  cursor: pointer;
+}
 
 /* CodeMirror Overrides */
 div.CodeMirror {
@@ -907,12 +907,6 @@ div.CodeMirror {
 [role="raml-editor"].light .cm-s-solarized .cm-indent::before,
 [role="raml-editor"].light .cm-s-solarized .cm-indent-incomplete::before {
   border-right-color: rgba(0, 0, 0, 0.15);
-}
-
-/* https://github.com/FortAwesome/Font-Awesome/issues/216 */
-[class^="icon-"],
-[class*=" icon-"] {
-  line-height: 1;
 }
 
 * {
@@ -1102,6 +1096,9 @@ label {
     width: 900px;
   }
 }
+.text-danger {
+  color: #d9534f;
+}
 
 div[role=raml-editor] .menubar {
   margin: 0;
@@ -1127,16 +1124,27 @@ div[role=raml-editor] .menubar {
   border: 1px solid #2c2c2e;
   border-width: 1px 0;
 }
-div[role=raml-editor] .menubar li {
+div[role=raml-editor] .menubar > li {
   margin: 0;
-  padding: 5px 10px;
   display: block;
   background-color: #404040;
 }
-div[role=raml-editor] .menubar li span {
+div[role=raml-editor] .menubar > li span {
+  float: left;
+  padding: 5px 10px;
   text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
+div[role=raml-editor] .menubar .menu-item-toggle {
+  padding-left: 5px;
+}
+div[role=raml-editor] .menubar .menu-item-context {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  margin-left: -15px;
+}
 div[role=raml-editor] .menubar .menu-item {
+  position: relative;
   box-shadow: inset 1px 1px 1px #4c4c5E;
 }
 div[role=raml-editor] .menubar .menu-item:hover {

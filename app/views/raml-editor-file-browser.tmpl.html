@@ -1,4 +1,5 @@
 <raml-editor-context-menu></raml-editor-context-menu>
+
 <script type="text/ng-template" id="file-item.html">
   <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"
     ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
@@ -6,7 +7,8 @@
       geared: fileBrowser.contextMenuOpenedFor(node),
       directory: node.isDirectory,
       'no-drop': fileBrowser.cursorState === 'no',
-      copy: fileBrowser.cursorState === 'ok'}">
+      copy: fileBrowser.cursorState === 'ok'}"
+    ng-drop="node.isDirectory && fileBrowser.dropFile(node, $event)">
     <span class="file-name" ng-click="toggleFolderCollapse(node)">
       <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>
       <i class="fa icon fa-fw" ng-class="{'fa-folder-o': node.isDirectory, 'fa-file-text-o': !node.isDirectory}"></i>
@@ -21,10 +23,12 @@
   </ul>
 </script>
 
-<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false">
+<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile(homeDirectory, $event)">
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
     <ui-tree-dummy-node class="top"></ui-tree-dummy-node>
-    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'" data-collapsed="node.collapsed"></li>
+    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'" data-collapsed="node.collapsed"
+     ng-drag-enter="node.collapsed = false"
+     ng-drag-leave="node.collapsed = true"></li>
     <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>
   </ul>
 </div>

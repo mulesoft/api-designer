@@ -1,0 +1,36 @@
+<form name="form" novalidate ng-submit="import(form)">
+  <div class="modal-header">
+    <h3>Import file</h3>
+  </div>
+
+  <div class="modal-body" ng-class="{'has-error': submittedMode === mode && form.$invalid}">
+    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">
+      <i class="fa fa-spin fa-spinner"></i>
+    </div>
+
+    <div class="form-group" style="margin-bottom: 10px;">
+      <div style="float: left; width: 130px;">
+        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>
+      </div>
+
+      <div style="margin-left: 145px;">
+        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-if="mode.type === 'swagger'" placeholder="http://example.swagger.wordnik.com/api/api-docs">
+
+        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" multiple required ng-if="mode.type === 'file'">
+      </div>
+    </div>
+
+    <div ng-if="submittedMode.type === 'swagger'">
+      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>
+    </div>
+
+    <div ng-if="submittedMode.type === 'file'">
+      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>
+    </div>
+  </div>
+
+  <div class="modal-footer" style="margin-top: 0;">
+    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>
+    <button type="submit" class="btn btn-primary">Import</button>
+  </div>
+</form>

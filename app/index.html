@@ -61,6 +61,12 @@
     <script src="bower_components/api-console/dist/scripts/vendor/vkbeautify.js"></script>
     <script src="bower_components/api-console/dist/scripts/app.js"></script>
     <script src="bower_components/raml-grammar/dist/suggest.js"></script>
+    <script src="bower_components/raml-object-to-raml/dist/raml-object-to-raml.js"></script>
+    <script src="bower_components/swagger-to-raml-object/dist/swagger-to-raml-object.js"></script>
+    <script src="bower_components/jszip/jszip.js"></script>
+    <script src="bower_components/jszip/jszip-load.js"></script>
+    <script src="bower_components/jszip/jszip-deflate.js"></script>
+    <script src="bower_components/jszip/jszip-inflate.js"></script>
     <!-- endbuild -->
 
     <!-- build:js({.,.tmp,app}) scripts/main.js -->
@@ -79,25 +85,35 @@
     <script src="scripts/services/raml-highlight-config.js"></script>
     <script src="scripts/services/raml-repository.js"></script>
     <script src="scripts/services/file-system.js"></script>
+    <script src="scripts/services/new-file-service.js"></script>
+    <script src="scripts/services/new-folder-service.js"></script>
     <script src="scripts/services/local-storage-file-system.js"></script>
     <script src="scripts/services/mocking-service-client.js"></script>
     <script src="scripts/services/mocking-service.js"></script>
+    <script src="scripts/services/import-modal.js"></script>
     <script src="scripts/services/confirm-modal.js"></script>
     <script src="scripts/services/new-name-modal.js"></script>
+    <script src="scripts/services/swagger-to-raml.js"></script>
+    <script src="scripts/services/import-service.js"></script>
+    <script src="scripts/services/import-service-conflict-modal.js"></script>
     <script src="scripts/filters/string-filters.js"></script>
     <script src="scripts/controllers/raml-editor-main.js"></script>
     <script src="scripts/controllers/raml-editor-shelf.js"></script>
     <script src="scripts/controllers/notifications.js"></script>
     <script src="scripts/controllers/mocking-service-controller.js"></script>
     <script src="scripts/directives/splitter.js"></script>
+    <script src="scripts/directives/validate.js"></script>
+    <script src="scripts/directives/auto-focus.js"></script>
     <script src="scripts/directives/right-click.js"></script>
     <script src="scripts/directives/raml-editor.js"></script>
+    <script src="scripts/directives/drag-and-drop.js"></script>
     <script src="scripts/directives/raml-editor-context-menu.js"></script>
     <script src="scripts/directives/raml-editor-file-browser.js"></script>
     <script src="scripts/directives/raml-editor-save-file-button.js"></script>
     <script src="scripts/directives/raml-editor-new-folder-button.js"></script>
     <script src="scripts/directives/raml-editor-new-file-button.js"></script>
     <script src="scripts/directives/raml-editor-export-files-button.js"></script>
+    <script src="scripts/directives/raml-editor-import-button.js"></script>
     <script src="scripts/directives/ui-tree-node.js"></script>
     <!-- endbuild -->
   </body>

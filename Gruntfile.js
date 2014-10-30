@@ -4,7 +4,6 @@ var LIVERELOAD_PORT = 35730;
 var lrSnippet       = require('connect-livereload')({port: LIVERELOAD_PORT});
 
 function proxy() {
-  var url     = require('url');
   var request = require('request');
 
   return function proxyMiddleware(req, res, next) {
@@ -15,7 +14,8 @@ function proxy() {
     }
 
     var proxy = request({
-      uri: url.parse(req.url.slice(1), true)
+      uri: req.url.substr(1),
+      rejectUnauthorized: false
     });
 
     // Proxy the error message back to the client.
