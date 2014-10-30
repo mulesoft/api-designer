@@ -71386,7 +71386,8 @@ module.exports = function (obj) {
 },{"./lib/sanitize":2,"./lib/stringify":11}]},{},[19])(19)
 });
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.swaggerToRamlObject=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var extend = require('extend');
+var extend     = require('extend');
+var getVersion = require('./utils/version');
 
 /**
  * Map of valid param types to raml types.
@@ -71475,12 +71476,18 @@ module.exports = convertApiDeclaration;
  * @return {Object}
  */
 function convertApiDeclaration (declaration, ramlObject) {
-  ramlObject = ramlObject || {};
+  var version = getVersion(declaration);
+
+  if (version >= 2) {
+    throw new Error('Swagger ' + version.toFixed(1) + ' is not supported');
+  }
 
   // Verify the api declaration is valid.
   if (!declaration.basePath || !declaration.apis) {
     throw new Error('Must be a valid api declaration: ' + API_SPEC_URI);
   }
+
+  ramlObject = ramlObject || {};
 
   // Check if the api version is still the same.
   if (ramlObject.version && declaration.apiVersion !== ramlObject.version) {
@@ -71978,7 +71985,7 @@ function convertParameterToJsonSchema (param, declaration) {
   return JSON.stringify(schema, null, 2);
 }
 
-},{"extend":5}],2:[function(require,module,exports){
+},{"./utils/version":6,"extend":7}],2:[function(require,module,exports){
 /**
  * Expose the parse module.
  */
@@ -71995,6 +72002,8 @@ function parse (content) {
 }
 
 },{}],3:[function(require,module,exports){
+var getVersion = require('./utils/version');
+
 /**
  * Map swagger documentation keys into title-cased strings.
  *
@@ -72048,6 +72057,12 @@ module.exports = convertResourceListing;
  * @return {Object}
  */
 function convertResourceListing (resource, ramlObject) {
+  var version = getVersion(resource);
+
+  if (version >= 2) {
+    throw new Error('Swagger ' + version.toFixed(1) + ' is not supported');
+  }
+
   if (!resource.apis) {
     throw new Error('Must be a valid resource listing: ' + RESOURCE_SPEC_URI);
   }
@@ -72281,7 +72296,7 @@ function convertBasicAuth (authorization) {
   };
 }
 
-},{}],4:[function(require,module,exports){
+},{"./utils/version":6}],4:[function(require,module,exports){
 /**
  * Export the resource listing check.
  */
@@ -72298,6 +72313,67 @@ function isResourceListing (resource) {
 }
 
 },{}],5:[function(require,module,exports){
+/**
+ * Export the resolve function.
+ */
+module.exports = resolve;
+
+/**
+ * Resolve a series of path segments.
+ *
+ * @return {String}
+ */
+function resolve () {
+  return Array.prototype.reduce.call(arguments, function (path, part) {
+    if (hasProtocol(part)) {
+      return part;
+    }
+
+    if (isAbsolute(part)) {
+      return path + part;
+    }
+
+    return path + '/' + part;
+  });
+}
+
+/**
+ * Check if the path begins with a protocol.
+ *
+ * @param  {String}  path
+ * @return {Boolean}
+ */
+function hasProtocol (path) {
+  return /^\w+:\//.test(path);
+}
+
+/**
+ * Check if a path is absolute.
+ *
+ * @param  {String}  path
+ * @return {Boolean}
+ */
+function isAbsolute (path) {
+  return /^\//.test(path);
+}
+
+},{}],6:[function(require,module,exports){
+/**
+ * Export version function.
+ */
+module.exports = version;
+
+/**
+ * Retrieve the Swagger version from a specification.
+ *
+ * @param  {Object} declaration
+ * @return {Number}
+ */
+function version (declaration) {
+  return parseFloat(declaration.swaggerVersion || declaration.swagger);
+}
+
+},{}],7:[function(require,module,exports){
 var hasOwn = Object.prototype.hasOwnProperty;
 var toString = Object.prototype.toString;
 var undefined;
@@ -72379,8 +72455,9 @@ module.exports = function extend() {
 };
 
 
-},{}],6:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 var parse                  = require('./lib/parse');
+var resolve                = require('./lib/utils/resolve');
 var isResourceListing      = require('./lib/utils/is-resource-listing');
 var convertApiDeclaration  = require('./lib/api-declaration');
 var convertResourceListing = require('./lib/resource-listing');
@@ -72408,7 +72485,7 @@ function swaggerToRamlObject (filename, filereader, done) {
     // Parse the initial resource listing to start reading more resources.
     var ramlObject = convertResourceListing(result);
     var resources  = result.apis.map(function (api) {
-      return filename + api.path;
+      return resolve(filename, api.path);
     });
 
     return async(resources, read, wrapContents(function (results) {
@@ -72499,7 +72576,7 @@ function wrapContents (resolve, reject) {
   };
 }
 
-},{"./lib/api-declaration":1,"./lib/parse":2,"./lib/resource-listing":3,"./lib/utils/is-resource-listing":4}]},{},[6])(6)
+},{"./lib/api-declaration":1,"./lib/parse":2,"./lib/resource-listing":3,"./lib/utils/is-resource-listing":4,"./lib/utils/resolve":5}]},{},[8])(8)
 });
 /**
 
