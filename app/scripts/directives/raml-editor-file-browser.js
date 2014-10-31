@@ -153,8 +153,8 @@
           ;
         };
 
-        fileBrowser.dropFile = function dropFile (directory, e) {
-          return importService.importFromEvent(directory, e)
+        fileBrowser.dropFile = function dropFile (event, directory) {
+          return importService.importFromEvent(directory, event)
             .then(function () {
               directory.collapsed = false;
             })
