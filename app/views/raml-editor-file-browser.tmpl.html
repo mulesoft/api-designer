@@ -23,7 +23,7 @@
   </ul>
 </script>
 
-<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)">
+<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
     <ui-tree-dummy-node class="top"></ui-tree-dummy-node>
     <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'" data-collapsed="node.collapsed"
