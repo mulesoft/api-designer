@@ -1,7 +1,9 @@
 (function () {
   'use strict';
 
-  function FileSystem() { }
+  function FileSystem($http) {
+    this.$http = $http;
+  }
 
   FileSystem.prototype = {
     /**
@@ -85,8 +87,11 @@
      *
      * If the method is applied to a fullpath of type file an Entry with that data is fulfilled in the promise.
      */
-    directory: function (fullpath) {
-      throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
+    directory: function () {
+      // throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
+      return this.$http.get('http://0.0.0.0:3000/api/FileSystems/directory?path=%2F').then(function(response) {
+        return response.data;
+      });
     },
 
     /**
@@ -111,7 +116,10 @@
      * Returns a promise that contains the content of the file found at fullpath. Fails if the fullpath does not exist or is a folder.
      */
     load: function (fullpath) {
-      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
+      // throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
+      return this.$http.get('http://0.0.0.0:3000/api/FileSystems/load?path=' + fullpath).then(function(response) {
+        return response.data.content;
+      });
     },
 
     /**
@@ -135,7 +143,7 @@
   };
 
   angular.module('fs')
-    .factory('fileSystem', function ($injector, config) {
+    .factory('fileSystem', function ($injector, config, $http) {
       var fsFactory    = config.get('fsFactory');
       var hasFsFactory = fsFactory && $injector.has(fsFactory);
 
@@ -143,7 +151,8 @@
         config.set('fsFactory', (fsFactory = 'localStorageFileSystem'));
       }
 
-      return $injector.get(fsFactory);
+      //return $injector.get(fsFactory,$http);
+      return new FileSystem($http);
     })
   ;
 })();

@@ -1,0 +1,543 @@
+#%RAML 0.8
+---
+title: Jukebox API
+baseUri: http://jukebox.api.com
+version: v1
+
+schemas:
+ - song: |
+    {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-03/schema",
+      "id": "http://jsonschema.net",
+      "required": true,
+      "properties": {
+        "songId": {
+          "type": "string",
+          "required": true,
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "songTitle": {
+          "type": "string",
+          "required": true
+        },
+        "albumId": {
+          "type": "string",
+          "required": true,
+          "minLength": 36,
+          "maxLength": 36
+        }
+      }
+    }
+
+ - artist: |
+    {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-03/schema",
+      "id": "http://jsonschema.net",
+      "required":false,
+      "properties": {
+        "artistName": {
+          "type": "string",
+          "required":true
+        },
+        "description": {
+          "type": "string",
+          "required": false
+        },
+        "imageURL": {
+          "type": "string",
+          "required": false
+        }
+      }
+    }
+
+ - album: |
+    {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-03/schema",
+      "id": "http://jsonschema.net",
+      "required":false,
+      "properties": {
+        "albumId": {
+          "type": "string",
+          "required":true,
+          "minLength": 36,
+          "maxLength": 36
+        },
+        "albumName": {
+          "type": "string",
+          "required": true
+        },
+        "year": {
+          "type": "string",
+          "required": false
+        },
+        "iamgeURL": {
+          "type": "string",
+          "required": false
+        },
+        "genreCode": {
+          "type": "string",
+          "required": true
+        },
+        "artistId": {
+          "type": "string",
+          "required":true,
+          "minLength": 36,
+          "maxLength": 36
+        }
+      }
+    }
+
+
+/songs:
+  description: Collection of available songs in Jukebox
+  get:
+    description: Get a list of songs based on the song title.
+    queryParameters:
+      songTitle:
+        description: "The title of the song to search (it is case insensitive and doesn't need to match the whole title)"
+        required: true
+        minLength: 3
+        type: string
+        example: "Get L"
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+                [
+                  {
+                    "songId": "550e8400-e29b-41d4-a716-446655440000",
+                    "songTitle": "Get Lucky"
+                  },
+                  {
+                    "songId": "550e8400-e29b-41d4-a716-446655440111",
+                    "songTitle": "Loose yourself to dance"
+                  },
+                  {
+                    "songId": "550e8400-e29b-41d4-a716-446655440222",
+                    "songTitle": "Gio sorgio by Moroder"
+                  }
+                ]
+  /{songId}:
+    description: Song entity
+    get:
+      description: Get the song with `songId = {songId}`
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "songId": "550e8400-e29b-41d4-a716-446655440000",
+                  "songTitle": "Get Lucky",
+                  "duration": "6:07",
+                  "artist": {
+                    "artistId": "110e8300-e32b-41d4-a716-664400445500",
+                    "artistName": "Daft Punk",
+                    "imageURL": "http://travelhymns.com/wp-content/uploads/2013/06/random-access-memories1.jpg"
+                  },
+                  "album": {
+                    "albumId": "183100e3-0e2b-4404-a716-66104d440550",
+                    "albumName": "Random Access Memories",
+                    "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/a7/Random_Access_Memories.jpg"
+                  }
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {"message": "Song not found"}
+    /file-content:
+      description: The file to be reproduced by the client
+      get:
+        description: Get the file content
+        responses:
+          200:
+            body:
+              binary/octet-stream:
+                example:
+                  !include heybulldog.mp3
+      post:
+        description: |
+           Enters the file content for an existing song entity.
+
+           Use the "binary/octet-stream" content type to specify the content from any consumer (excepting web-browsers).
+           Use the "multipart-form/data" content type to upload a file which content will become the file-content
+        queryParameters:
+          access_token:
+            description: "The access token provided by the authentication application"
+            example: AABBCCDD
+            required: true
+            type: string
+        body:
+          binary/octet-stream:
+          multipart/form-data:
+            formParameters:
+              file:
+                description: The file to be uploaded
+                required: true
+                type: file
+  post:
+    description: |
+      Add a new song to Jukebox.
+
+      The song needs to be created for the `/songs/{songId}/file-content` to exist.
+      You can use this second resource to get and post the file to reproduce.
+    queryParameters:
+      access_token:
+        description: "The access token provided by the authentication application"
+        example: AABBCCDD
+        required: true
+        type: string
+    body:
+      application/json:
+          schema: song
+          example: |
+            {
+              "songId": "550e8400-e29b-41d4-a716-446655440000",
+              "songTitle": "Get Lucky",
+              "albumId": "183100e3-0e2b-4404-a716-66104d440550"
+            }
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              { "message": "The song has been properly entered" }
+/artists:
+  description: Collection of artists loaded in Jukebox
+  get:
+    description: Get the artists list
+    queryParameters:
+      countryCode:
+        description: "The code of the country used to filter the artists list"
+        example: "FRA"
+        type: string
+        maxLength: 3
+        minLength: 3
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+                [
+                  {
+                    "artistId": "110e8300-e32b-41d4-a716-664400445500",
+                    "artistName": "Daft Punk",
+                    "description": "French electronic music duo consisting of musicians Guy-Manuel de Homem-Christo and Thomas Bangalter",
+                    "imageURL": "http://travelhymns.com/wp-content/uploads/2013/06/random-access-memories1.jpg",
+                    "nationality": {
+                      "countryCode": "FRA",
+                      "countryName": "France"
+                    }
+                  },
+                  {
+                    "artistId": "110e8300-e32b-41d4-a716-229932554400",
+                    "artistName": "Pink Floyd",
+                    "description": "English rock band that achieved international acclaim with their progressive and psychedelic music.",
+                    "imageURL": "http://www.billboard.com/files/styles/promo_650/public/stylus/1251869-pink-floyd-reunions-617-409.jpg",
+                    "nationality": {
+                      "countryCode": "ENG",
+                      "countryName": "England"
+                    }
+                  },
+                  {
+                    "artistId": "11032be3-41d4-4455-a716-664400a71600",
+                    "artistName": "Radiohead",
+                    "description": " English rock band from Abingdon, Oxfordshire, formed in 1985",
+                    "imageURL": "http://www.wired.com/images_blogs/photos/uncategorized/2007/10/01/radiohead.jpg",
+                    "nationality": {
+                      "countryCode": "ENG",
+                      "countryName": "England"
+                    }
+                  }
+                ]
+
+  /{artistId}:
+    description: Artist entity
+    get:
+      description: Get the Artist with `artistId = {artistId}`
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "artistId": "110e8300-e32b-41d4-a716-664400445500",
+                  "artistName": "Daft Punk",
+                  "description": "French electronic music duo consisting of musicians Guy-Manuel de Homem-Christo and Thomas Bangalter",
+                  "imageURL": "http://travelhymns.com/wp-content/uploads/2013/06/random-access-memories1.jpg",
+                  "nationality": {
+                    "countryCode": "FRA",
+                    "countryName": "France"
+                  },
+                  "albums": [
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440550",
+                      "albumName": "Random Access Memories",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/a7/Random_Access_Memories.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440551",
+                      "albumName": "TRON: Legacy R3CONF1GUR3D",
+                      "imageURL": "http://ecx.images-amazon.com/images/I/51Tvo-iArBL.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440552",
+                      "albumName": "TRON: Legacy",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/3/39/Tron_Legacy_Soundtrack.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440553",
+                      "albumName": "Alive",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/4/49/Daft_Punk_Alive_2007.JPG"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440554",
+                      "albumName": "Musique Vol. 1",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/ab/Musique_Vol._1_1993%E2%80%932005.png"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440555",
+                      "albumName": "Human After All",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/0/0d/Humanafterall.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440556",
+                      "albumName": "Daft Club",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/f/fc/Daftclub.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440557",
+                      "albumName": "Discovery",
+                      "imageURL": "http://ecx.images-amazon.com/images/I/71bsHTr6idL._SL1500_.jpg"
+                    }
+                  ]
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {"message": "Artist not found"}
+    /albums:
+      description: Collection of albulms belonging to the artist
+      get:
+        description: Get a specific artist's albums list
+        responses:
+          200:
+            body:
+              application/json:
+                example: |
+                  [
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440550",
+                      "albumName": "Random Access Memories",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/a7/Random_Access_Memories.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440551",
+                      "albumName": "TRON: Legacy R3CONF1GUR3D",
+                      "imageURL": "http://ecx.images-amazon.com/images/I/51Tvo-iArBL.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440552",
+                      "albumName": "TRON: Legacy",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/3/39/Tron_Legacy_Soundtrack.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440553",
+                      "albumName": "Alive",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/4/49/Daft_Punk_Alive_2007.JPG"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440554",
+                      "albumName": "Musique Vol. 1",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/ab/Musique_Vol._1_1993%E2%80%932005.png"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440555",
+                      "albumName": "Human After All",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/0/0d/Humanafterall.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440556",
+                      "albumName": "Daft Club",
+                      "imageURL": "http://upload.wikimedia.org/wikipedia/en/f/fc/Daftclub.jpg"
+                    },
+                    {
+                      "albumId": "183100e3-0e2b-4404-a716-66104d440557",
+                      "albumName": "Discovery",
+                      "imageURL": "http://ecx.images-amazon.com/images/I/71bsHTr6idL._SL1500_.jpg"
+                    }
+                  ]
+  post:
+    description: Add a new Artist to Jukebox
+    queryParameters:
+      access_token:
+        description: "The access token provided by the authentication application"
+        example: AABBCCDD
+        required: true
+        type: string
+    body:
+      application/json:
+        example: |
+          {
+            "artistName": "Daft Punk",
+            "description": "French electronic music duo consisting of musicians Guy-Manuel de Homem-Christo and Thomas Bangalter",
+            "imageURL": "http://travelhymns.com/wp-content/uploads/2013/06/random-access-memories1.jpg"
+          }
+        schema: artist
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              { "message": "The artist has been added." }
+/albums:
+  description: Collection of albums existing in Jukebox
+  get:
+    description: Get the list of albums
+    queryParameters:
+      countryCode:
+        description: "The code of the genre used to filter the albums list"
+        example: "ELE"
+        type: string
+        maxLength: 3
+        minLength: 3
+        required: false
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              [
+                {
+                  "albumId": "183100e3-0e2b-4404-a716-66104d440550",
+                  "albumName": "Random Access Memories",
+                  "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/a7/Random_Access_Memories.jpg",
+                  "artistId": "110e8300-e32b-41d4-a716-664400445500",
+                  "genre": {
+                    "countryCode": "ELE",
+                    "countryName": "Electronict"
+                  }
+                },
+                {
+                  "albumId": "183100e3-0e2b-4404-3123-66111d4de520",
+                  "albumName": "OK Computer",
+                  "imageURL": "http://www.greenplastic.com/dev/wp-content/uploads/2010/12/ok-computer.jpg",
+                  "artistId": "11032be3-41d4-4455-a716-664400a71600",
+                  "genre": {
+                    "countryCode": "ALT",
+                    "countryName": "Alternative Rock"
+                  }
+                },
+                {
+                  "albumId": "183100e3-cccc-4404-1111-63204d64coda",
+                  "albumName": "The Dark Side of the Moon",
+                  "imageURL": "http://upload.wikimedia.org/wikipedia/en/3/3b/Dark_Side_of_the_Moon.png",
+                  "artistId": "110e8300-e32b-41d4-a716-229932554400",
+                  "genre": {
+                    "countryCode": "PRO",
+                    "countryName": "Progressive Rock"
+                  }
+                }
+              ]
+
+  /{albumId}:
+    description: Album Entity
+    get:
+      description: Get the Album where `albumId = {albumId}`
+      responses:
+        200:
+          body:
+            application/json:
+              example: |
+                {
+                  "albumId": "183100e3-0e2b-4404-a716-66104d440550",
+                  "albumName": "Random Access Memories",
+                  "year": "2013",
+                  "genre": "Electric Funk",
+                  "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/a7/Random_Access_Memories.jpg",
+                  "genre": {
+                    "countryCode": "ELE",
+                    "countryName": "Electronict"
+                  },
+                  "songs": [
+                    {
+                      "songId": "550e8400-e29b-41d4-a716-446655440000",
+                      "songTitle": "Get Lucky"
+                    },
+                    {
+                      "songId": "550e8400-e29b-41d4-a716-446655440111",
+                      "songTitle": "Loose yourself to dance"
+                    },
+                    {
+                      "songId": "550e8400-e29b-41d4-a716-446655440222",
+                      "songTitle": "Gio sorgio by Moroder"
+                    }
+                  ],
+                  "artist": {
+                    "artistId": "110e8300-e32b-41d4-a716-664400445500",
+                    "artistName": "Daft Punk",
+                    "imageURL": "http://travelhymns.com/wp-content/uploads/2013/06/random-access-memories1.jpg"
+                  }
+                }
+        404:
+          body:
+            application/json:
+              example: |
+                {"message": "Album not found"}
+    /songs:
+      description: Collection of songs belonging to a specific album
+      get:
+        description: Get the list of songs for the album with `albumId = {albumId}`
+        responses:
+          200:
+            body:
+              application/json:
+                example: |
+                  [
+                    {
+                      "songId": "550e8400-e29b-41d4-a716-446655440000",
+                      "songTitle": "Get Lucky"
+                    },
+                    {
+                      "songId": "550e8400-e29b-41d4-a716-446655440111",
+                      "songTitle": "Loose yourself to dance"
+                    },
+                    {
+                      "songId": "550e8400-e29b-41d4-a716-446655440222",
+                      "songTitle": "Gio sorgio by Moroder"
+                    }
+                  ]
+  post:
+    description: Add a new Album to Jukebox
+    queryParameters:
+      access_token:
+        description: "The access token provided by the authentication application"
+        example: AABBCCDD
+        required: true
+        type: string
+    body:
+      application/json:
+        example: |
+          {
+                  "albumId": "183100e3-0e2b-4404-a716-66104d440550",
+                  "albumName": "Random Access Memories",
+                  "year": "2013",
+                  "imageURL": "http://upload.wikimedia.org/wikipedia/en/a/a7/Random_Access_Memories.jpg",
+                  "genreCode": "ELE",
+                  "artistId": "110e8300-e32b-41d4-a716-664400445500"
+          }
+        schema: album
+    responses:
+      200:
+        body:
+          application/json:
+            example: |
+              { "message": "The artist has been added." }
