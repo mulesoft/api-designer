@@ -5,7 +5,7 @@
 [![DevDependency Status](https://david-dm.org/mulesoft/api-designer/dev-status.png)](https://david-dm.org/mulesoft/api-designer#info=devDependencies)
 
 This is a standalone/embeddable editor for [RAML](http://raml.org) (Restful Api Modeling language) written in JavaScript.
-It's a fork with a file system persistence. 
+It's a fork with a file system persistence.
 
 ## Build and Run
 
@@ -31,13 +31,14 @@ Install webdriver required to run `localScenario` task
 node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
 ```
 
+Run the application locally
+```
+grunt server
+```
+
 Run the rest server for filesystem persistence
 ```
 slc run raml-rest/ #you can use --detach for detached mode
-
-Run the application (client) locally
-```
-grunt server
 ```
 
 Run the test suite
@@ -50,17 +51,7 @@ Build the application
 grunt
 ```
 
-Configuration
-```
-./raml-rest/config.json 
 
-{
-    "baseDir": "../raml" #folder that contains RAML files
-}
-
-```
-
-```
 ## Contributor's Agreement
 To contribute source code to this repository, please read our [contributor's agreement](http://www.mulesoft.org/legal/contributor-agreement.html), and then execute it by running this notebook and following the instructions: https://api-notebook.anypoint.mulesoft.com/notebooks/#380297ed0e474010ff43 
 
