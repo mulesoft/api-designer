@@ -25,9 +25,11 @@
       swaggerToRAML,
       $q,
       $rootScope,
-      importService
+      importService,
+      ramlRepository
     ) {
       $scope.importing = false;
+      $scope.rootDirectory = ramlRepository.getByPath('/');
 
       $scope.options = [
         { name: 'Swagger spec', type: 'swagger' },
@@ -77,7 +79,7 @@
 
         $scope.importing = true;
 
-        return importService.mergeFileList($scope.homeDirectory, mode.value)
+        return importService.mergeFileList($scope.rootDirectory, mode.value)
           .then(function () {
             return $modalInstance.close(true);
           })
@@ -105,7 +107,7 @@
             var filename = extractFileName(mode.value, 'raml');
 
             return importService.createFile(
-              $scope.homeDirectory, filename, contents
+              $scope.rootDirectory, filename, contents
             );
           })
           .then(function () {

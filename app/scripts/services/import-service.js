@@ -58,7 +58,7 @@
 
         if (entry.isFile) {
           entry.file(function (file) {
-            var path = directory.path + entry.fullPath;
+            var path = ramlRepository.join(directory.path, entry.fullPath);
 
             return importFileToPath(directory, path, file)
               .then(deferred.resolve, deferred.reject);

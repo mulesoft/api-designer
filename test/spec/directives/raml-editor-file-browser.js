@@ -268,8 +268,11 @@ describe('ramlEditorFileBrowser', function () {
         scope.$digest();
       }));
 
-      it('selects the first file from the fileList', function () {
-        scope.fileBrowser.selectedFile.name.should.equal('some.raml');
+      it('selects the first file from the fileList', function (done) {
+        setTimeout(function () {
+          scope.fileBrowser.selectedFile.name.should.equal('some.raml');
+          done();
+        });
       });
     });
   });
