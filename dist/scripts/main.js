@@ -2868,8 +2868,10 @@
     '$q',
     '$rootScope',
     'importService',
-    function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $rootScope, importService) {
+    'ramlRepository',
+    function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $rootScope, importService, ramlRepository) {
       $scope.importing = false;
+      $scope.rootDirectory = ramlRepository.getByPath('/');
       $scope.options = [
         {
           name: 'Swagger spec',
@@ -2913,7 +2915,7 @@
           });
         }
         $scope.importing = true;
-        return importService.mergeFileList($scope.homeDirectory, mode.value).then(function () {
+        return importService.mergeFileList($scope.rootDirectory, mode.value).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
           $rootScope.$broadcast('event:notification', {
@@ -2933,7 +2935,7 @@
         // Attempt to import from a Swagger definition.
         return swaggerToRAML.convert(mode.value).then(function (contents) {
           var filename = extractFileName(mode.value, 'raml');
-          return importService.createFile($scope.homeDirectory, filename, contents);
+          return importService.createFile($scope.rootDirectory, filename, contents);
         }).then(function () {
           return $modalInstance.close(true);
         }).catch(function () {
@@ -3153,7 +3155,7 @@
         var deferred = $q.defer();
         if (entry.isFile) {
           entry.file(function (file) {
-            var path = directory.path + entry.fullPath;
+            var path = ramlRepository.join(directory.path, entry.fullPath);
             return importFileToPath(directory, path, file).then(deferred.resolve, deferred.reject);
           }, deferred.reject);
         } else {
@@ -4563,12 +4565,13 @@
     '$q',
     '$window',
     '$rootScope',
+    '$timeout',
     'config',
     'eventService',
     'ramlRepository',
     'newNameModal',
     'importService',
-    function ($q, $window, $rootScope, config, eventService, ramlRepository, newNameModal, importService) {
+    function ($q, $window, $rootScope, $timeout, config, eventService, ramlRepository, newNameModal, importService) {
       function Controller($scope) {
         var fileBrowser = this;
         var unwatchSelectedFile = angular.noop;
@@ -4721,17 +4724,14 @@
           parent.sortChildren();
         });
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          var files = [];
-          $scope.homeDirectory.forEachChildDo(function (child) {
-            if (!child.isDirectory) {
-              files.push(child);
+          $timeout(function () {
+            var files = $scope.homeDirectory.getFiles();
+            if (files.length === 0) {
+              promptWhenFileListIsEmpty();
+            } else if (file === fileBrowser.selectedFile) {
+              fileBrowser.selectFile(files[0]);
             }
           });
-          if (file === fileBrowser.selectedFile && files.length > 0) {
-            fileBrowser.selectFile(files[0]);
-          } else if (files.length === 0) {
-            setTimeout(promptWhenFileListIsEmpty, 0);
-          }
         });
         $scope.$on('$destroy', function () {
           $window.removeEventListener('keydown', saveListener);

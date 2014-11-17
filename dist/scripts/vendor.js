@@ -66983,6 +66983,7 @@ RAML.Inspector = (function() {
       if (name.toLowerCase() === CONTENT_TYPE) {
         if (value === FORM_DATA) {
           isMultipartRequest = true;
+          options.contentType = false;
           return;
         } else {
           isMultipartRequest = false;
@@ -66996,7 +66997,6 @@ RAML.Inspector = (function() {
     this.headers = function(headers) {
       options.headers = {};
       isMultipartRequest = false;
-      options.contentType = false;
 
       for (var name in headers) {
         this.header(name, headers[name]);
@@ -67044,7 +67044,7 @@ RAML.Inspector = (function() {
 
   RAML.Client.Request = {
     create: function(url, method) {
-      return new RequestDsl({ url: url, type: method, contentType: false });
+      return new RequestDsl({ url: url, type: method });
     }
   };
 })();
