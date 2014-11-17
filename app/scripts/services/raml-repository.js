@@ -385,6 +385,11 @@
 
       // Gets the ramlDirectory/ramlFile object by path from the memory
       service.getByPath = function getByPath(path) {
+        // Nothing to do if no path
+        if (!path) {
+          return;
+        }
+
         if (path === '/') {
           return rootFile;
         }
