@@ -5,11 +5,10 @@
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
       function readLocFile(path) {
-        return ramlRepository.loadFile({path: path}).then(
-          function success(file) {
-            return file.contents;
-          }
-        );
+        var file = ramlRepository.getByPath(path);
+
+        return file ? $q.when(file.contents) :
+          $q.reject('File with path "' + path + '" does not exist');
       }
 
       function readExtFile(path) {
