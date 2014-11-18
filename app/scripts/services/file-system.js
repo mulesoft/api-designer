@@ -87,7 +87,7 @@
      *
      * If the method is applied to a fullpath of type file an Entry with that data is fulfilled in the promise.
      */
-    directory: function (fullpath) {
+    directory: function () {
       // throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
       return this.$http.get('http://0.0.0.0:3000/api/FileSystems/directory?path=%2F').then(function(response) {
         return response.data;
