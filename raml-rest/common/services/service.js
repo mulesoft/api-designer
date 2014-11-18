@@ -65,9 +65,10 @@ function loadChildren(path, entry) {
 }
 
 function excludeEntry(name, isDirectory) {
-	if ( !isDirectory && !endsWith(name.toLowerCase(),'.raml') ) {
-		return true;
-	} else if ( startsWith(name,'.') ) {
+	// if ( !isDirectory && !endsWith(name.toLowerCase(),'.raml') ) {
+	// 	return true;
+	// } else 
+	if ( startsWith(name,'.') ) {
 		return true;
 	}
 	return false;
@@ -90,12 +91,52 @@ exports.directory = function(path) {
 	});
 };
 
+exports.createFolder = function(path) {
+	var deferred = Q.defer();
+
+	fs.mkdir(BASE_DIR + '/' + path, function(err) {
+		if ( err) {
+			return deferred.reject(err);
+		} else {
+			return deferred.resolve();
+		}
+	})
+
+	return deferred.promise;
+}
+
+exports.save = function(path, content) {
+	var deferred = Q.defer();
+
+	fs.writeFile(BASE_DIR + '/' + path, content,'utf-8', function(err) {
+		if ( !err ) {
+			deferred.resolve();	
+		} else {
+			deferred.reject(err);
+		}
+	});
+	return deferred.promise;
+};
+
 exports.load = function(path) {
 	var deferred = Q.defer();
 
 	fs.readFile(BASE_DIR + '/' + path,'utf-8', function(err, data) {
 		if ( !err ) {
 			deferred.resolve(data);	
+		} else {
+			deferred.reject(err);
+		}
+	});
+	return deferred.promise;
+}
+
+exports.loadMeta = function(path) {
+	var deferred = Q.defer();
+
+	fs.lstat(BASE_DIR + '/' + path, function(err, stats) {
+		if ( !err ) {
+			deferred.resolve(stats);	
 		} else {
 			deferred.reject(err);
 		}

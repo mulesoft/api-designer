@@ -87,7 +87,7 @@
      *
      * If the method is applied to a fullpath of type file an Entry with that data is fulfilled in the promise.
      */
-    directory: function () {
+    directory: function (fullpath) {
       // throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
       return this.$http.get('http://0.0.0.0:3000/api/FileSystems/directory?path=%2F').then(function(response) {
         return response.data;
@@ -100,7 +100,10 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     save: function (fullpath, content) {
-      throw 'Not implemented: FileSystem save invoked with [fullpath=' + fullpath + '] and [content=' + content + ']';
+      //throw 'Not implemented: FileSystem save invoked with [fullpath=' + fullpath + '] and [content=' + content + ']';
+      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/save',{path: fullpath, content: content}).then(function(response) {
+        return response;
+      });
     },
 
     /**
@@ -109,7 +112,9 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     createFolder: function (fullpath) {
-      throw 'Not implemented: FileSystem createFolder invoked with [fullpath=' + fullpath + ']';
+      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/createFolder',{path: fullpath}).then(function(response) {
+        return response;
+      });
     },
 
     /**

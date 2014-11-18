@@ -12,7 +12,8 @@
     "loopback-boot": "^2.2.0",
     "loopback-datasource-juggler": "^2.7.0",
     "serve-favicon": "^2.0.1",
-    "q": "^1.0.1"
+    "q": "^1.0.1",
+    "rimraf": "^2.2.8"
   },
   "optionalDependencies": {
     "loopback-explorer": "^1.1.0"
