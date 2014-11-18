@@ -193,7 +193,7 @@
           contextMenu = cm;
         };
 
-        $scope.$on('event:raml-editor-file-created', function (event, file) {
+        $scope.$on('event:raml-editor-file-generated', function (event, file) {
           fileBrowser.selectFile(file);
         });
 
