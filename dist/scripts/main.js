@@ -3260,9 +3260,8 @@
           if (option === importServiceConflictModal.REPLACE_FILE) {
             var path = ramlRepository.join(directory.path, name);
             var file = ramlRepository.getByPath(path);
-            return ramlRepository.removeFile(file).then(function () {
-              return createFileFromContents(directory, name, contents);
-            });
+            file.contents = contents;
+            return;
           }
           return createFileFromContents(directory, name, contents);
         });
@@ -3645,6 +3644,11 @@
         eventService.broadcast('event:raml-parsed', {});
         editor.setValue(file.contents);
         $scope.fileParsable = $scope.getIsFileParsable(file);
+      });
+      $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
+        if (contents && contents !== editor.getValue()) {
+          editor.setValue(contents);
+        }
       });
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
         if (currentFile === file) {
