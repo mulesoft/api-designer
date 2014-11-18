@@ -31,18 +31,7 @@
       }
 
       this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
-        var deferredSrc = /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
-        var deferredDst = new $q.defer();
-
-        deferredSrc.then(
-          // success
-          deferredDst.resolve.bind(deferredDst),
-
-          // failure
-          deferredDst. reject.bind(deferredDst)
-        );
-
-        return deferredDst.promise;
+        return (/^https?:\/\//).test(file) ? readExtFile(file) : readLocFile(file);
       });
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
