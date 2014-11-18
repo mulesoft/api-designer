@@ -184,10 +184,9 @@
               var path = ramlRepository.join(directory.path, name);
               var file = ramlRepository.getByPath(path);
 
-              return ramlRepository.removeFile(file)
-                .then(function () {
-                  return createFileFromContents(directory, name, contents);
-                });
+              file.contents = contents;
+
+              return;
             }
 
             return createFileFromContents(directory, name, contents);
