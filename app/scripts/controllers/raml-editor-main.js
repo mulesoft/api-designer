@@ -4,11 +4,22 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
+      function loadFile (path) {
+        return ramlRepository.loadFile({path: path}).then(
+          function success(file) {
+            return file.contents;
+          }
+        );
+      }
+
       function readLocFile(path) {
         var file = ramlRepository.getByPath(path);
 
-        return file ? $q.when(file.contents) :
-          $q.reject('File with path "' + path + '" does not exist');
+        if (file) {
+          return file.loaded ? $q.when(file.contents) : loadFile(path);
+        }
+
+        return $q.reject('File with path "' + path + '" does not exist');
       }
 
       function readExtFile(path) {
