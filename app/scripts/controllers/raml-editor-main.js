@@ -107,6 +107,12 @@
         $scope.fileParsable = $scope.getIsFileParsable(file);
       });
 
+      $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
+        if (contents && contents !== editor.getValue()) {
+          editor.setValue(contents);
+        }
+      });
+
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
         if (currentFile === file) {
           currentFile = undefined;
