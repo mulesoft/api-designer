@@ -101,6 +101,16 @@
         }
       });
 
+      function updateFile () {
+        debounce(function emitSourceUpdated() {
+          eventService.broadcast('event:file-updated');
+        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
+      }
+
+      $scope.$on('event:raml-editor-file-created', updateFile);
+
+      $scope.$on('event:raml-editor-file-removed', updateFile);
+
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
         if (currentFile === file) {
           currentFile = undefined;
@@ -122,9 +132,7 @@
         selectedFile.contents = source;
         $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
-        debounce(function emitSourceUpdated() {
-          eventService.broadcast('event:raml-source-updated', source);
-        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
+        updateFile();
       };
 
       $scope.loadRaml = function loadRaml(definition, location) {
@@ -141,16 +149,18 @@
         $scope.hasErrors = false;
       };
 
-      eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
+      eventService.on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
 
-        if (!$scope.fileParsable || source.trim() === '') {
+        var file = $scope.fileBrowser.selectedFile;
+
+        if (!file || !$scope.fileParsable || file.contents.trim() === '') {
           $scope.currentError = undefined;
           lineOfCurrentError = undefined;
           return;
         }
 
-        $scope.loadRaml(source, (($scope.fileBrowser || {}).selectedFile || {}).path).then(
+        $scope.loadRaml(file.contents, file.path).then(
           // success
           safeApplyWrapper($scope, function success(value) {
             // hack: we have to make a full copy of an object because console modifies
