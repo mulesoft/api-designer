@@ -2231,14 +2231,17 @@
       service.createFile = function createFile(parent, name) {
         var path = service.join(parent.path, name);
         var file = new RamlFile(path);
-        return insertFileSystem(parent, file);
+        return insertFileSystem(parent, file).then(function () {
+          $rootScope.$broadcast('event:raml-editor-file-created', file);
+          return file;
+        });
       };
       service.generateFile = function generateFile(parent, name) {
         return service.createFile(parent, name).then(function (file) {
           if (file.extension === 'raml') {
             file.contents = ramlSnippets.getEmptyRaml();
           }
-          $rootScope.$broadcast('event:raml-editor-file-created', file);
+          $rootScope.$broadcast('event:raml-editor-file-generated', file);
           return file;
         });
       };
@@ -3561,10 +3564,17 @@
     'ramlRepository',
     'safeApplyWrapper',
     function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
-      function readLocFile(path) {
+      function loadFile(path) {
         return ramlRepository.loadFile({ path: path }).then(function success(file) {
           return file.contents;
         });
+      }
+      function readLocFile(path) {
+        var file = ramlRepository.getByPath(path);
+        if (file) {
+          return file.loaded ? $q.when(file.contents) : loadFile(path);
+        }
+        return $q.reject('File with path "' + path + '" does not exist');
       }
       function readExtFile(path) {
         return $http.get(path, { transformResponse: null }).then(function success(response) {
@@ -3578,10 +3588,7 @@
         });
       }
       this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
-        var deferredSrc = /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
-        var deferredDst = new $q.defer();
-        deferredSrc.then(deferredDst.resolve.bind(deferredDst), deferredDst.reject.bind(deferredDst));
-        return deferredDst.promise;
+        return /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
       });
     }
   ]).controller('ramlEditorMain', [
@@ -3654,6 +3661,13 @@
           editor.setValue(contents);
         }
       });
+      function updateFile() {
+        debounce(function emitSourceUpdated() {
+          eventService.broadcast('event:file-updated');
+        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
+      }
+      $scope.$on('event:raml-editor-file-created', updateFile);
+      $scope.$on('event:raml-editor-file-removed', updateFile);
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
         if (currentFile === file) {
           currentFile = undefined;
@@ -3670,9 +3684,7 @@
         $scope.clearErrorMarks();
         selectedFile.contents = source;
         $scope.fileParsable = $scope.getIsFileParsable(selectedFile);
-        debounce(function emitSourceUpdated() {
-          eventService.broadcast('event:raml-source-updated', source);
-        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
+        updateFile();
       };
       $scope.loadRaml = function loadRaml(definition, location) {
         return ramlParser.load(definition, location, {
@@ -3686,14 +3698,15 @@
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
       };
-      eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
+      eventService.on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
-        if (!$scope.fileParsable || source.trim() === '') {
+        var file = $scope.fileBrowser.selectedFile;
+        if (!file || !$scope.fileParsable || file.contents.trim() === '') {
           $scope.currentError = undefined;
           lineOfCurrentError = undefined;
           return;
         }
-        $scope.loadRaml(source, (($scope.fileBrowser || {}).selectedFile || {}).path).then(safeApplyWrapper($scope, function success(value) {
+        $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function success(value) {
           // hack: we have to make a full copy of an object because console modifies
           // it later and makes it unusable for mocking service
           $scope.fileBrowser.selectedFile.raml = angular.copy(value);
@@ -4719,7 +4732,7 @@
         $scope.registerContextMenu = function registerContextMenu(cm) {
           contextMenu = cm;
         };
-        $scope.$on('event:raml-editor-file-created', function (event, file) {
+        $scope.$on('event:raml-editor-file-generated', function (event, file) {
           fileBrowser.selectFile(file);
         });
         $scope.$on('event:raml-editor-directory-created', function (event, dir) {
