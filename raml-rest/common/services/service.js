@@ -65,13 +65,19 @@ function loadChildren(path, entry) {
 }
 
 function excludeEntry(name, isDirectory) {
-	// if ( !isDirectory && !endsWith(name.toLowerCase(),'.raml') ) {
-	// 	return true;
-	// } else 
-	if ( startsWith(name,'.') ) {
+	if ( !isDirectory && excludeByExtension(name) ) {
+		return true;
+	} else if ( startsWith(name,'.') ) {
 		return true;
 	}
 	return false;
+}
+
+function excludeByExtension(name) {
+	name = name.toLowerCase();
+	var ext = name.substr(name.lastIndexOf('.')+1);
+	var valid = ['raml','json','xml'];
+	return valid.indexOf(ext) == -1;
 }
 
 /**
@@ -90,6 +96,34 @@ exports.directory = function(path) {
 			};
 	});
 };
+
+exports.remove = function(path) {
+	var deferred = Q.defer();
+
+	fs.unlink(BASE_DIR + '/' + path, function(err) {
+		if ( err) {
+			return deferred.reject(err);
+		} else {
+			return deferred.resolve();
+		}
+	})
+
+	return deferred.promise;
+}
+
+exports.rename = function(oldName, newName) {
+	var deferred = Q.defer();
+
+	fs.rename(BASE_DIR + '/' + oldName, BASE_DIR + '/' + newName, function(err) {
+		if ( err) {
+			return deferred.reject(err);
+		} else {
+			return deferred.resolve();
+		}
+	})
+
+	return deferred.promise;
+}
 
 exports.createFolder = function(path) {
 	var deferred = Q.defer();

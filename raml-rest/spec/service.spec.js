@@ -68,8 +68,8 @@ describe('service.js', function() {
 				expect(files[0].name).toBe('test2.raml');
 				expect(files[0].path).toBe('/folder1/test2.raml');
 				expect(files[0].type).toBe('file');
-				expect(files[1].name).toBe('test3.raml');
-				expect(files[1].path).toBe('/folder1/test3.raml');
+				expect(files[1].name).toBe('test3.json');
+				expect(files[1].path).toBe('/folder1/test3.json');
 				expect(files[1].type).toBe('file');
 				done();
 			}).catch(function(e) {
@@ -78,17 +78,17 @@ describe('service.js', function() {
 			});
 		});
 
-		// it('Should excluide not RAML files', function(done) {
-		// 	service.baseDir(process.cwd() + '/spec/resources/base/folder1');
-		// 	service.directory('').then(function(directory) {
-		// 		var files = directory.children;
-		// 		expect(files.length).toBe(2);
-		// 		done();
-		// 	}).catch(function(e) {
-		// 		console.log(e);
-		// 		done();
-		// 	});
-		// });
+		it('Should excluide not RAML, JSON and XML files', function(done) {
+			service.baseDir(process.cwd() + '/spec/resources/base/folder1');
+			service.directory('').then(function(directory) {
+				var files = directory.children;
+				expect(files.length).toBe(2);
+				done();
+			}).catch(function(e) {
+				console.log(e);
+				done();
+			});
+		});
 
 		it('Should excluide hidden folders', function(done) {
 			service.baseDir(process.cwd() + '/spec/resources/base/folder1');
@@ -144,7 +144,7 @@ describe('service.js', function() {
 		});
 	});
 
-	describe('service.save and service.createFolder operations', function() {
+	describe('service.save', function() {
 		it('Should persist content of a file', function(done) {
 			service.baseDir(process.cwd() + '/spec/resources/tmp');
 
@@ -160,6 +160,9 @@ describe('service.js', function() {
 
 
 		});
+	});
+
+	describe('service.createFolder', function() {
 
 		it('Should create a folder', function(done) {
 			service.baseDir(process.cwd() + '/spec/resources/tmp');
@@ -168,8 +171,40 @@ describe('service.js', function() {
 				cb(null);
 			});
 
-			service.createFolder('toRemove').then(function() {
-				expect(fs.mkdir).toHaveBeenCalledWith(process.cwd() + '/spec/resources/tmp/toRemove',jasmine.any(Function));
+			service.createFolder('newFolder').then(function() {
+				expect(fs.mkdir).toHaveBeenCalledWith(process.cwd() + '/spec/resources/tmp/newFolder',jasmine.any(Function));
+				done();
+			});
+		});
+	});
+
+	describe('service.remove', function() {
+
+		it('Should remove a file', function(done) {
+			service.baseDir(process.cwd() + '/spec/resources/tmp');
+
+			spyOn(fs,'unlink').andCallFake(function(path, cb) {
+				cb(null);
+			});
+
+			service.remove('toRemove').then(function() {
+				expect(fs.unlink).toHaveBeenCalledWith(process.cwd() + '/spec/resources/tmp/toRemove',jasmine.any(Function));
+				done();
+			});
+		});
+	});
+
+	describe('service.rename', function() {
+
+		it('Should rename a file', function(done) {
+			service.baseDir(process.cwd() + '/spec/resources/tmp');
+
+			spyOn(fs,'rename').andCallFake(function(oldName, newName, cb) {
+				cb(null);
+			});
+
+			service.rename('toRename','newName').then(function() {
+				expect(fs.rename).toHaveBeenCalledWith(process.cwd() + '/spec/resources/tmp/toRename', process.cwd() + '/spec/resources/tmp/newName',jasmine.any(Function));
 				done();
 			});
 		});

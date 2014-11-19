@@ -6,6 +6,39 @@ service.baseDir(config.baseDir);
 
 module.exports = function(FileSystem) {
 
+	FileSystem.rename = function(oldName, newName, cb) {
+		service.rename(oldName, newName).then(function() {
+			cb(null, {});
+		}).catch(function(err) {
+			cb(err);
+		});
+	};
+
+	FileSystem.remoteMethod(
+		'rename', {
+			accepts: [{arg: 'oldName', type: 'string'},{arg: 'newName', type: 'string'}],
+			returns: {root: true},
+			http: {verb: 'post'}
+		}
+	);	
+
+	FileSystem.delete = function(path, cb) {
+		service.remove(path).then(function() {
+			cb(null, {});
+		}).catch(function(err) {
+			console.log("ERROR", err);
+			cb(err);
+		});
+	};
+
+	FileSystem.remoteMethod(
+		'delete', {
+			accepts: {arg: 'path', type: 'string'},
+			returns: {root: true},
+			http: {verb: 'delete'}
+		}
+	);
+
 	FileSystem.createFolder = function(path, cb) {
 		service.createFolder(path).then(function() {
 			cb(null, {});

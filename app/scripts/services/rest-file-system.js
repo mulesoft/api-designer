@@ -1,7 +1,9 @@
 (function () {
   'use strict';
 
-  function FileSystem() { }
+  function FileSystem($http) {
+    this.$http = $http;
+  }
 
   FileSystem.prototype = {
     /**
@@ -85,8 +87,11 @@
      *
      * If the method is applied to a fullpath of type file an Entry with that data is fulfilled in the promise.
      */
-    directory: function (fullpath) {
-      throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
+    directory: function () {
+      // throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
+      return this.$http.get('http://0.0.0.0:3000/api/FileSystems/directory?path=%2F').then(function(response) {
+        return response.data;
+      });
     },
 
     /**
@@ -95,7 +100,10 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     save: function (fullpath, content) {
-      throw 'Not implemented: FileSystem save invoked with [fullpath=' + fullpath + '] and [content=' + content + ']';
+      //throw 'Not implemented: FileSystem save invoked with [fullpath=' + fullpath + '] and [content=' + content + ']';
+      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/save',{path: fullpath, content: content}).then(function(response) {
+        return response;
+      });
     },
 
     /**
@@ -104,14 +112,19 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     createFolder: function (fullpath) {
-      throw 'Not implemented: FileSystem createFolder invoked with [fullpath=' + fullpath + ']';
+      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/createFolder',{path: fullpath}).then(function(response) {
+        return response;
+      });
     },
 
     /**
      * Returns a promise that contains the content of the file found at fullpath. Fails if the fullpath does not exist or is a folder.
      */
     load: function (fullpath) {
-      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
+      // throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
+      return this.$http.get('http://0.0.0.0:3000/api/FileSystems/load?path=' + fullpath).then(function(response) {
+        return response.data.content;
+      });
     },
 
     /**
@@ -120,7 +133,9 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     remove: function (fullpath) {
-      throw 'Not implemented: FileSystem remove invoked with [fullpath=' + fullpath + ']';
+      return this.$http.delete('http://0.0.0.0:3000/api/FileSystems/delete?path=' + fullpath).then(function(response) {
+        return response;
+      });
     },
 
     /**
@@ -130,21 +145,15 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     rename: function (source, destination) {
-      throw 'Not implemented: FileSystem rename invoked with [source=' + source + '] and [destination=' + destination + ']';
+      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/rename',{oldName: source, newName: destination}).then(function(response) {
+        return response;
+      });
     }
   };
 
   angular.module('fs')
-    .factory('fileSystem', function ($injector, config, restFileSystem) {
-      var fsFactory    = config.get('fsFactory');
-      var hasFsFactory = fsFactory && $injector.has(fsFactory);
-
-      if (!hasFsFactory) {
-        config.set('fsFactory', (fsFactory = 'localStorageFileSystem'));
-      }
-
-      // return restFileSystem;
-      return $injector.get(fsFactory);
+    .factory('restFileSystem', function ($injector, config, $http) {
+      return new FileSystem($http);
     })
   ;
 })();

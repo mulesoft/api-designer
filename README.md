@@ -11,6 +11,7 @@ It's a fork with a file system persistence.
 
 Install global tools
 ```
+npm install -g strongloop
 npm install -g grunt-cli
 npm install -g bower
 npm install -g karma # Optional for running the test suite
