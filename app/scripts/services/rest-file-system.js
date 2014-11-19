@@ -154,6 +154,8 @@
   angular.module('fs')
     .factory('restFileSystem', function ($injector, config, $http) {
       return new FileSystem($http);
-    })
-  ;
+    }).run(function(config) {
+      // config.set('fsFactory', 'restFileSystem');
+      config.remove('fsFactory');
+    });
 })();

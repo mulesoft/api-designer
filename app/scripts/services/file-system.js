@@ -135,7 +135,7 @@
   };
 
   angular.module('fs')
-    .factory('fileSystem', function ($injector, config, restFileSystem) {
+    .factory('fileSystem', function ($injector, config) {
       var fsFactory    = config.get('fsFactory');
       var hasFsFactory = fsFactory && $injector.has(fsFactory);
 
@@ -143,7 +143,6 @@
         config.set('fsFactory', (fsFactory = 'localStorageFileSystem'));
       }
 
-      // return restFileSystem;
       return $injector.get(fsFactory);
     })
   ;
