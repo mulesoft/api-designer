@@ -89,7 +89,7 @@
      */
     directory: function () {
       // throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
-      return this.$http.get('http://0.0.0.0:3000/api/FileSystems/directory?path=%2F').then(function(response) {
+      return this.$http.get('http://localhost:3000/api/FileSystems/directory?path=%2F').then(function(response) {
         return response.data;
       });
     },
@@ -101,7 +101,7 @@
      */
     save: function (fullpath, content) {
       //throw 'Not implemented: FileSystem save invoked with [fullpath=' + fullpath + '] and [content=' + content + ']';
-      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/save',{path: fullpath, content: content}).then(function(response) {
+      return this.$http.post('http://localhost:3000/api/FileSystems/save',{path: fullpath, content: content}).then(function(response) {
         return response;
       });
     },
@@ -112,7 +112,7 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     createFolder: function (fullpath) {
-      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/createFolder',{path: fullpath}).then(function(response) {
+      return this.$http.post('http://localhost:3000/api/FileSystems/createFolder',{path: fullpath}).then(function(response) {
         return response;
       });
     },
@@ -122,7 +122,7 @@
      */
     load: function (fullpath) {
       // throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
-      return this.$http.get('http://0.0.0.0:3000/api/FileSystems/load?path=' + fullpath).then(function(response) {
+      return this.$http.get('http://localhost:3000/api/FileSystems/load?path=' + fullpath).then(function(response) {
         return response.data.content;
       });
     },
@@ -133,7 +133,7 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     remove: function (fullpath) {
-      return this.$http.delete('http://0.0.0.0:3000/api/FileSystems/delete?path=' + fullpath).then(function(response) {
+      return this.$http.delete('http://localhost:3000/api/FileSystems/delete?path=' + fullpath).then(function(response) {
         return response;
       });
     },
@@ -145,7 +145,7 @@
      * Returns a promise that fulfills on success or rejects on fail.
      */
     rename: function (source, destination) {
-      return this.$http.post('http://0.0.0.0:3000/api/FileSystems/rename',{oldName: source, newName: destination}).then(function(response) {
+      return this.$http.post('http://localhost:3000/api/FileSystems/rename',{oldName: source, newName: destination}).then(function(response) {
         return response;
       });
     }
@@ -155,7 +155,7 @@
     .factory('restFileSystem', function ($injector, config, $http) {
       return new FileSystem($http);
     }).run(function(config) {
-      // config.set('fsFactory', 'restFileSystem');
-      config.remove('fsFactory');
+      config.set('fsFactory', 'restFileSystem');
+      // config.remove('fsFactory');
     });
 })();
