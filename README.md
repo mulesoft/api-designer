@@ -39,12 +39,24 @@ slc run raml-rest/ #you can use --detach for detached mode
 
 Changing angular service for filesystem persistence.
 ```
-#open 'file-system.js' and return restFileSystem in factory('fileSystem')
+#open '/app/scripts/services/rest-file-system.js' and change configuration.
+#original for default storage (browser local storage)
 angular.module('fs')
-    .factory('fileSystem', function ($injector, config, restFileSystem) {
-      return restFileSystem;
-    })
-  ;
+    .factory('restFileSystem', function ($injector, config, $http) {
+      return new FileSystem($http);
+    }).run(function(config) {
+      // config.set('fsFactory', 'restFileSystem');
+      config.remove('fsFactory');
+    });
+#for filesystem persitence by rest service
+angular.module('fs')
+    .factory('restFileSystem', function ($injector, config, $http) {
+      return new FileSystem($http);
+    }).run(function(config) {
+      config.set('fsFactory', 'restFileSystem');
+      // config.remove('fsFactory');
+    });
+
 ```
 
 Run the application locally
