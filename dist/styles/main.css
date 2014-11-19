@@ -1177,13 +1177,8 @@ div[role=raml-editor] .menubar .file-absolute-path {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-div[role=raml-editor] .menubar .menu-item-mocking-service .beta {
-  background-color: #859900;
-  border-radius: 10px;
-  padding: 0px 5px;
-  color: #fff;
-  font-size: xx-small;
-  margin-right: 10px;
+div[role=raml-editor] .menubar .menu-item-mocking-service {
+  padding: 5px 10px;
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .title {
   float: left;
