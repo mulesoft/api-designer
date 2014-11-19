@@ -11,7 +11,7 @@ It's a fork with a file system persistence.
 
 Install global tools
 ```
-npm install -g strongloop
+npm install -g strongloop #Only for filesystem persistence
 npm install -g grunt-cli
 npm install -g bower
 npm install -g karma # Optional for running the test suite
@@ -32,14 +32,24 @@ Install webdriver required to run `localScenario` task
 node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
 ```
 
-Run the application locally
-```
-grunt server
-```
-
 Run the rest server for filesystem persistence
 ```
 slc run raml-rest/ #you can use --detach for detached mode
+```
+
+Changing angular service for filesystem persistence.
+```
+#open 'file-system.js' and return restFileSystem in factory('fileSystem')
+angular.module('fs')
+    .factory('fileSystem', function ($injector, config, restFileSystem) {
+      return restFileSystem;
+    })
+  ;
+```
+
+Run the application locally
+```
+grunt server
 ```
 
 Run the test suite
