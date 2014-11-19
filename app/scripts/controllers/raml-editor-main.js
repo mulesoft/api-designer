@@ -4,12 +4,22 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
-      function readLocFile(path) {
+      function loadFile (path) {
         return ramlRepository.loadFile({path: path}).then(
           function success(file) {
             return file.contents;
           }
         );
+      }
+
+      function readLocFile(path) {
+        var file = ramlRepository.getByPath(path);
+
+        if (file) {
+          return file.loaded ? $q.when(file.contents) : loadFile(path);
+        }
+
+        return $q.reject('File with path "' + path + '" does not exist');
       }
 
       function readExtFile(path) {
@@ -32,18 +42,7 @@
       }
 
       this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
-        var deferredSrc = /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
-        var deferredDst = new $q.defer();
-
-        deferredSrc.then(
-          // success
-          deferredDst.resolve.bind(deferredDst),
-
-          // failure
-          deferredDst. reject.bind(deferredDst)
-        );
-
-        return deferredDst.promise;
+        return (/^https?:\/\//).test(file) ? readExtFile(file) : readLocFile(file);
       });
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
@@ -113,6 +112,16 @@
         }
       });
 
+      function updateFile () {
+        debounce(function emitSourceUpdated() {
+          eventService.broadcast('event:file-updated');
+        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
+      }
+
+      $scope.$on('event:raml-editor-file-created', updateFile);
+
+      $scope.$on('event:raml-editor-file-removed', updateFile);
+
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
         if (currentFile === file) {
           currentFile = undefined;
@@ -134,9 +143,7 @@
         selectedFile.contents = source;
         $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
-        debounce(function emitSourceUpdated() {
-          eventService.broadcast('event:raml-source-updated', source);
-        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
+        updateFile();
       };
 
       $scope.loadRaml = function loadRaml(definition, location) {
@@ -153,16 +160,18 @@
         $scope.hasErrors = false;
       };
 
-      eventService.on('event:raml-source-updated', function onRamlSourceUpdated(event, source) {
+      eventService.on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
 
-        if (!$scope.fileParsable || source.trim() === '') {
+        var file = $scope.fileBrowser.selectedFile;
+
+        if (!file || !$scope.fileParsable || file.contents.trim() === '') {
           $scope.currentError = undefined;
           lineOfCurrentError = undefined;
           return;
         }
 
-        $scope.loadRaml(source, (($scope.fileBrowser || {}).selectedFile || {}).path).then(
+        $scope.loadRaml(file.contents, file.path).then(
           // success
           safeApplyWrapper($scope, function success(value) {
             // hack: we have to make a full copy of an object because console modifies
