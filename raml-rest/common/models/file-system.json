@@ -1,0 +1,27 @@
+{
+  "name": "FileSystem",
+  "base": "Model",
+  "properties": {
+    "path": {
+      "type": "string",
+      "required": true
+    },
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "type": {
+      "type": "string"
+    },
+    "meta": {
+      "type": "object"
+    },
+    "content": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [],
+  "methods": []
+}

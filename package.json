@@ -36,5 +36,8 @@
   },
   "scripts": {
     "test": "grunt test localScenario"
+  },
+  "dependencies": {
+    "express": "^4.10.1"
   }
 }

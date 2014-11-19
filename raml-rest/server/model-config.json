@@ -1,0 +1,11 @@
+{
+  "_meta": {
+    "sources": [
+      "../common/models"
+    ]
+  },
+  "FileSystem": {
+    "dataSource": "db",
+    "public": true
+  }
+}
