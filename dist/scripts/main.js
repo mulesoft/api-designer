@@ -3792,13 +3792,17 @@
         editor.on('change', function onChange() {
           $scope.sourceUpdated();
         });
+        $window.alreadyNotifiedExit = false;
+        $window.editorFilesystemIsDirty = function editorFilesystemIsDirty() {
+          var dirtyFile = false;
+          $scope.homeDirectory.forEachChildDo(function (t) {
+            dirtyFile = t.dirty || dirtyFile;
+          });
+          return dirtyFile;
+        };
         // Warn before leaving the page
         $window.onbeforeunload = function () {
-          var anyUnsavedChanges = false;
-          $scope.homeDirectory.forEachChildDo(function (t) {
-            anyUnsavedChanges = anyUnsavedChanges || t.dirty;
-          });
-          if (anyUnsavedChanges) {
+          if (!$window.alreadyNotifiedExit && $window.editorFilesystemIsDirty()) {
             return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
           }
         };

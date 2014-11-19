@@ -302,15 +302,20 @@
           $scope.sourceUpdated();
         });
 
-        // Warn before leaving the page
-        $window.onbeforeunload = function () {
-          var anyUnsavedChanges = false;
+        $window.alreadyNotifiedExit = false;
 
+        $window.editorFilesystemIsDirty = function editorFilesystemIsDirty() {
+          var dirtyFile = false;
           $scope.homeDirectory.forEachChildDo(function (t) {
-            anyUnsavedChanges = anyUnsavedChanges || t.dirty;
+            dirtyFile = t.dirty || dirtyFile;
           });
 
-          if (anyUnsavedChanges) {
+          return dirtyFile;
+        };
+
+        // Warn before leaving the page
+        $window.onbeforeunload = function () {
+          if (!$window.alreadyNotifiedExit && $window.editorFilesystemIsDirty()) {
             return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
           }
         };
