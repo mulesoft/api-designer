@@ -19,8 +19,8 @@
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",
     "raml-js-parser": "raml-org/raml-js-parser#3d7f702b618a99afcc56f85deb4693921af8bbe5",
     "showdown": "~0.3.1",
-    "raml-object-to-raml": "mulesoft/raml-object-to-raml#7baa1b0475e4cfd1be336ebee9f4e29101de2aed",
-    "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#a883151f10a766a955e4a371c9f206a2f1837ceb",
+    "raml-object-to-raml": "mulesoft/raml-object-to-raml#33ff487f7a3ec27c82e109e09f89017eb9fa3cd1",
+    "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#44897d92f0cc7c0a51a736bc8d45b2d35cfb2559",
     "jszip": "~2.0.0"
   },
   "devDependencies": {
