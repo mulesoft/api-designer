@@ -286,11 +286,15 @@ module.exports = function sanitizeResources (resources) {
   var obj = {};
 
   resources.forEach(function (resource) {
-    if (!resource.relativeUri) {
-      return;
+    var child = obj;
+
+    if (resource.relativeUri) {
+      child = obj[resource.relativeUri] = obj[resource.relativeUri] || {};
     }
 
-    var child = obj[resource.relativeUri] = {};
+    if (resource.uriParameters) {
+      child.uriParameters = sanitizeParameters(resource.uriParameters);
+    }
 
     if (is.string(resource.type) || is.object(resource.type)) {
       child.type = resource.type;
