@@ -17,7 +17,7 @@ npm install -g bower
 npm install -g karma # Optional for running the test suite
 ```
 
-Install node modules
+Install node modules in the main project and in raml-rest/ subproject
 ```
 npm install 
 ```
