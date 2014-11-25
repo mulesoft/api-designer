@@ -198,7 +198,14 @@ module.exports = function (grunt) {
             cwd:    'bower_components/font-awesome/fonts',
             src:    '*',
             dest:   '<%= yeoman.dist %>/fonts'
-          }
+          },
+
+          {
+            expand: true,
+            cwd:    'bower_components/api-console/app/authentication',
+            src:    '*',
+            dest:   '<%= yeoman.dist %>/authentication'
+          },
         ]
       }
     },
