@@ -66728,12 +66728,15 @@ RAML.Inspector = (function() {
   'use strict';
 
   RAML.Client.AuthStrategies.Oauth2.credentialsManager = function(credentials, responseType) {
+    credentials.scopes = credentials.scopes || [];
+
     return {
       authorizationUrl : function(baseUrl) {
         return baseUrl +
           '?client_id=' + credentials.clientId +
           '&response_type=' + responseType +
-          '&redirect_uri=' + RAML.Settings.oauth2RedirectUri;
+          '&redirect_uri=' + RAML.Settings.oauth2RedirectUri +
+          '&scope=' + encodeURIComponent(credentials.scopes.join(' '));
       },
 
       accessTokenParameters: function(code) {
@@ -66750,7 +66753,8 @@ RAML.Inspector = (function() {
         return {
           client_id: credentials.clientId,
           client_secret: credentials.clientSecret,
-          grant_type: 'client_credentials'
+          grant_type: 'client_credentials',
+          scope: credentials.scopes.join(' ')
         };
       },
 
@@ -66758,7 +66762,8 @@ RAML.Inspector = (function() {
         var params = {
           username: credentials.username,
           password: credentials.password,
-          grant_type: 'password'
+          grant_type: 'password',
+          scope: credentials.scopes.join(' ')
         };
 
         if (!credentials.clientSecret) {
@@ -68474,6 +68479,7 @@ RAML.Inspector = (function() {
     ];
 
     var controller = function($scope) {
+      var scopes              = $scope.scheme.settings.scopes || [];
       var authorizationGrants = $scope.scheme.settings.authorizationGrants;
 
       $scope.grantTypes = GRANT_TYPES.filter(function (grant) {
@@ -68485,8 +68491,21 @@ RAML.Inspector = (function() {
         clientSecret: '',
         username: '',
         password: '',
+        scopes: scopes.slice(),
         grantType: $scope.grantTypes[0]
       };
+
+      $scope.toggleScope = function (scope) {
+        var index = $scope.credentials.scopes.indexOf(scope);
+
+        if (index === -1) {
+          $scope.credentials.scopes.push(scope);
+        } else {
+          $scope.credentials.scopes.splice(index, 1);
+        }
+      };
+
+      $scope.scopes = scopes;
 
       $scope.$watch('credentials.grantType.type', function (type) {
         $scope.hasClientSecret      = type !== 'token';
@@ -69752,6 +69771,18 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    <label for=\"password\" class=\"required\">Password</label>\n" +
     "\n" +
     "    <input type=\"password\" name=\"password\" ng-model=\"credentials.password\" required>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div ng-if=\"!!scopes.length\">\n" +
+    "    <div>Scopes</div>\n" +
+    "\n" +
+    "    <label ng-repeat=\"scope in scopes\">\n" +
+    "      <input\n" +
+    "        type=\"checkbox\"\n" +
+    "        ng-checked=\"credentials.scopes.indexOf(scope) > -1\"\n" +
+    "        ng-click=\"toggleScope(scope)\">\n" +
+    "      {{scope}}\n" +
+    "    </label>\n" +
     "  </div>\n" +
     "</fieldset>\n"
   );
