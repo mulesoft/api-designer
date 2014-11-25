@@ -98,6 +98,7 @@ module.exports = function (grunt) {
 
               connect().use('/',                 connect.static(yeomanConfig.app)),
               connect().use('/bower_components', connect.static('./bower_components')),
+              connect().use('/authentication',   connect.static('./bower_components/api-console/dist/authentication')),
               connect().use('/proxy/',           proxy())
             ];
           }
