@@ -32,8 +32,8 @@
       $scope.rootDirectory = ramlRepository.getByPath('/');
 
       $scope.options = [
-        { name: 'Swagger spec', type: 'swagger' },
-        { name: '.zip file', type: 'file' }
+        { name: '.zip file', type: 'file' },
+        { name: 'Swagger spec', type: 'swagger' }
       ];
 
       $scope.mode = $scope.options[0];
