@@ -272,19 +272,15 @@ describe('RAML Editor Main Controller', function () {
       $controller('ramlEditorMain', params);
 
       // arrange
-      var loadFileDeferred = $q.defer();
-      var loadFileStub     = sinon.stub(ramlRepository, 'loadFile', function (file) {
+      var loadFileStub = sinon.stub(ramlRepository, 'getByPath', function (path) {
         // assert
-        file.path.should.be.equal('/2.raml');
+        path.should.be.equal('/2.raml');
 
         // restore
         loadFileStub.restore();
 
         // done
         done();
-
-        // return something to manage unhandled exception
-        return loadFileDeferred.promise;
       });
 
       // act
