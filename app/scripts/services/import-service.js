@@ -58,7 +58,7 @@
 
         if (entry.isFile) {
           entry.file(function (file) {
-            var path = directory.path + entry.fullPath;
+            var path = ramlRepository.join(directory.path, entry.fullPath);
 
             return importFileToPath(directory, path, file)
               .then(deferred.resolve, deferred.reject);
@@ -184,10 +184,9 @@
               var path = ramlRepository.join(directory.path, name);
               var file = ramlRepository.getByPath(path);
 
-              return ramlRepository.removeFile(file)
-                .then(function () {
-                  return createFileFromContents(directory, name, contents);
-                });
+              file.contents = contents;
+
+              return;
             }
 
             return createFileFromContents(directory, name, contents);
@@ -321,9 +320,9 @@
             var len = prefix.length > name.length ? name.length : prefix.length;
 
             // Iterate over each part and find the common prefix.
-            for (var i = 1; i < len; i++) {
-              if (name.slice(0, i).join('/') !== prefix.slice(0, i).join('/')) {
-                return name.slice(0, i - 1);
+            for (var i = 0; i < len; i++) {
+              if (name[i] !== prefix[i]) {
+                return name.slice(0, i);
               }
             }
 
@@ -331,14 +330,19 @@
           })
           .join('/');
 
+        // Return the file object with the same file names.
+        if (!prefix) {
+          return angular.extend({}, prefixedFiles);
+        }
+
         var files = {};
 
         // Iterate over the original files and create a new object.
         Object.keys(prefixedFiles).forEach(function (name) {
-          var newName = name.substr(prefix.length);
+          var newName = name.substr(prefix.length + 1);
 
           // If no text is left, it must have been the root directory.
-          if (newName !== '/') {
+          if (newName) {
             files[newName] = prefixedFiles[name];
           }
         });

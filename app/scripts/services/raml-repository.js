@@ -367,7 +367,12 @@
         var path  = service.join(parent.path, name);
         var file  = new RamlFile(path);
 
-        return insertFileSystem(parent, file);
+        return insertFileSystem(parent, file)
+          .then(function () {
+            $rootScope.$broadcast('event:raml-editor-file-created', file);
+
+            return file;
+          });
       };
 
       service.generateFile = function generateFile(parent, name) {
@@ -377,7 +382,7 @@
               file.contents = ramlSnippets.getEmptyRaml();
             }
 
-            $rootScope.$broadcast('event:raml-editor-file-created', file);
+            $rootScope.$broadcast('event:raml-editor-file-generated', file);
 
             return file;
           });
@@ -385,6 +390,11 @@
 
       // Gets the ramlDirectory/ramlFile object by path from the memory
       service.getByPath = function getByPath(path) {
+        // Nothing to do if no path
+        if (!path) {
+          return;
+        }
+
         if (path === '/') {
           return rootFile;
         }

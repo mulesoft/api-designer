@@ -693,12 +693,15 @@ RAML.Inspector = (function() {
   'use strict';
 
   RAML.Client.AuthStrategies.Oauth2.credentialsManager = function(credentials, responseType) {
+    credentials.scopes = credentials.scopes || [];
+
     return {
       authorizationUrl : function(baseUrl) {
         return baseUrl +
           '?client_id=' + credentials.clientId +
           '&response_type=' + responseType +
-          '&redirect_uri=' + RAML.Settings.oauth2RedirectUri;
+          '&redirect_uri=' + RAML.Settings.oauth2RedirectUri +
+          '&scope=' + encodeURIComponent(credentials.scopes.join(' '));
       },
 
       accessTokenParameters: function(code) {
@@ -709,6 +712,42 @@ RAML.Inspector = (function() {
           grant_type: 'authorization_code',
           redirect_uri: RAML.Settings.oauth2RedirectUri
         };
+      },
+
+      clientCredentialsParameters: function () {
+        return {
+          client_id: credentials.clientId,
+          client_secret: credentials.clientSecret,
+          grant_type: 'client_credentials',
+          scope: credentials.scopes.join(' ')
+        };
+      },
+
+      resourceOwnerParameters: function () {
+        var params = {
+          username: credentials.username,
+          password: credentials.password,
+          grant_type: 'password',
+          scope: credentials.scopes.join(' ')
+        };
+
+        if (!credentials.clientSecret) {
+          params.client_id = credentials.clientId;
+        }
+
+        return params;
+      },
+
+      resourceOwnerHeaders: function () {
+        if (!credentials.clientSecret) {
+          return {};
+        }
+
+        var authorization = btoa(credentials.clientId + ':' + credentials.clientSecret);
+
+        return {
+          'Authorization': 'Bearer ' + authorization
+        };
       }
     };
   };
@@ -717,27 +756,26 @@ RAML.Inspector = (function() {
 (function() {
   'use strict';
 
-  var GRANTS = [ 'code', 'token' ], IMPLICIT_GRANT = 'token';
   var Oauth2 = RAML.Client.AuthStrategies.Oauth2;
 
-  function grantTypeFrom(settings) {
-    var authorizationGrants = settings.authorizationGrants || [];
-    var filtered = authorizationGrants.filter(function(grant) { return grant === IMPLICIT_GRANT; });
-    var specifiedGrant = filtered[0] || authorizationGrants[0];
-
-    if (!GRANTS.some(function(grant) { return grant === specifiedGrant; })) {
-      throw new Error('Unknown grant type: ' + specifiedGrant);
-    }
-
-    return specifiedGrant;
-  }
+  var grants = {
+    code: true,
+    token: true,
+    owner: true,
+    credentials: true
+  };
 
   var Grant = {
     create: function(settings, credentials) {
-      var type = grantTypeFrom(settings);
+      var type = credentials.grantType.type;
       var credentialsManager = Oauth2.credentialsManager(credentials, type);
 
+      if (!grants[type]) {
+        throw new Error('Unknown grant type: ' + type);
+      }
+
       var className = type.charAt(0).toUpperCase() + type.slice(1);
+
       return new this[className](settings, credentialsManager);
     }
   };
@@ -763,6 +801,28 @@ RAML.Inspector = (function() {
     return Oauth2.requestAuthorization(this.settings, this.credentialsManager);
   };
 
+  Grant.Owner = function(settings, credentialsManager) {
+    this.settings = settings;
+    this.credentialsManager = credentialsManager;
+  };
+
+  Grant.Owner.prototype.request = function() {
+    var requestToken = Oauth2.requestOwnerToken(this.settings, this.credentialsManager);
+
+    return requestToken();
+  };
+
+  Grant.Credentials = function(settings, credentialsManager) {
+    this.settings = settings;
+    this.credentialsManager = credentialsManager;
+  };
+
+  Grant.Credentials.prototype.request = function() {
+    var requestToken = Oauth2.requestCredentialsToken(this.settings, this.credentialsManager);
+
+    return requestToken();
+  };
+
   Oauth2.Grant = Grant;
 })();
 
@@ -786,21 +846,44 @@ RAML.Inspector = (function() {
     return undefined;
   }
 
+  function extract(data) {
+    var method = accessTokenFromString;
+
+    if (typeof data === 'object') {
+      method = accessTokenFromObject;
+    }
+
+    return method(data);
+  }
+
   RAML.Client.AuthStrategies.Oauth2.requestAccessToken = function(settings, credentialsManager) {
     return function(code) {
       var request = RAML.Client.Request.create(settings.accessTokenUri, 'post');
 
       request.data(credentialsManager.accessTokenParameters(code));
 
-      return $.ajax(request.toOptions()).then(function(data) {
-        var extract = accessTokenFromString;
+      return $.ajax(request.toOptions()).then(extract);
+    };
+  };
 
-        if (typeof data === 'object') {
-          extract = accessTokenFromObject;
-        }
+  RAML.Client.AuthStrategies.Oauth2.requestCredentialsToken = function(settings, credentialsManager) {
+    return function() {
+      var request = RAML.Client.Request.create(settings.accessTokenUri, 'post');
 
-        return extract(data);
-      });
+      request.data(credentialsManager.clientCredentialsParameters());
+
+      return $.ajax(request.toOptions()).then(extract);
+    };
+  };
+
+  RAML.Client.AuthStrategies.Oauth2.requestOwnerToken = function(settings, credentialsManager) {
+    return function() {
+      var request = RAML.Client.Request.create(settings.accessTokenUri, 'post');
+
+      request.headers(credentialsManager.resourceOwnerHeaders());
+      request.data(credentialsManager.resourceOwnerParameters());
+
+      return $.ajax(request.toOptions()).then(extract);
     };
   };
 })();
@@ -973,6 +1056,7 @@ RAML.Inspector = (function() {
       if (name.toLowerCase() === CONTENT_TYPE) {
         if (value === FORM_DATA) {
           isMultipartRequest = true;
+          options.contentType = false;
           return;
         } else {
           isMultipartRequest = false;
@@ -986,7 +1070,6 @@ RAML.Inspector = (function() {
     this.headers = function(headers) {
       options.headers = {};
       isMultipartRequest = false;
-      options.contentType = false;
 
       for (var name in headers) {
         this.header(name, headers[name]);
@@ -1034,7 +1117,7 @@ RAML.Inspector = (function() {
 
   RAML.Client.Request = {
     create: function(url, method) {
-      return new RequestDsl({ url: url, type: method, contentType: false });
+      return new RequestDsl({ url: url, type: method });
     }
   };
 })();
@@ -2352,11 +2435,57 @@ RAML.Inspector = (function() {
 
 (function() {
   RAML.Directives.oauth2 = function() {
+
+    var GRANT_TYPES = [
+      { name: 'Implicit', type: 'token' },
+      { name: 'Authorization Code', type: 'code' },
+      { name: 'Client Credentials', type: 'credentials' },
+      { name: 'Resource Owner Password Credentials', type: 'owner' }
+    ];
+
+    var controller = function($scope) {
+      var scopes              = $scope.scheme.settings.scopes || [];
+      var authorizationGrants = $scope.scheme.settings.authorizationGrants;
+
+      $scope.grantTypes = GRANT_TYPES.filter(function (grant) {
+        return authorizationGrants.indexOf(grant.type) > -1;
+      });
+
+      $scope.credentials = {
+        clientId: '',
+        clientSecret: '',
+        username: '',
+        password: '',
+        scopes: scopes.slice(),
+        grantType: $scope.grantTypes[0]
+      };
+
+      $scope.toggleScope = function (scope) {
+        var index = $scope.credentials.scopes.indexOf(scope);
+
+        if (index === -1) {
+          $scope.credentials.scopes.push(scope);
+        } else {
+          $scope.credentials.scopes.splice(index, 1);
+        }
+      };
+
+      $scope.scopes = scopes;
+
+      $scope.$watch('credentials.grantType.type', function (type) {
+        $scope.hasClientSecret      = type !== 'token';
+        $scope.hasOwnerCredentials  = type === 'owner';
+        $scope.requiresClientSecret = $scope.hasClientSecret && type !== 'owner';
+      });
+    };
+
     return {
       restrict: 'E',
       templateUrl: 'views/oauth2.tmpl.html',
       replace: true,
+      controller: controller,
       scope: {
+        scheme: '=',
         credentials: '='
       }
     };
@@ -3575,13 +3704,50 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
   $templateCache.put('views/oauth2.tmpl.html',
     "<fieldset class=\"labelled-inline\" role=\"oauth2\">\n" +
     "  <div class=\"control-group\">\n" +
-    "    <label for=\"clientId\">Client ID</label>\n" +
-    "    <input type=\"text\" name=\"clientId\" ng-model='credentials.clientId'/>\n" +
+    "    <label for=\"grantType\">Grant Type</label>\n" +
+    "    <select\n" +
+    "      name=\"grantType\"\n" +
+    "      ng-model=\"credentials.grantType\"\n" +
+    "      ng-options=\"grant.name for grant in grantTypes\">\n" +
+    "    </select>\n" +
     "  </div>\n" +
     "\n" +
     "  <div class=\"control-group\">\n" +
-    "    <label for=\"clientSecret\">Client Secret</label>\n" +
-    "    <input type=\"password\" name=\"clientSecret\" ng-model='credentials.clientSecret'/>\n" +
+    "    <label for=\"clientId\" class=\"required\">Client ID</label>\n" +
+    "\n" +
+    "    <input type=\"text\" name=\"clientId\" ng-model=\"credentials.clientId\" required>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div class=\"control-group\" ng-if=\"hasClientSecret\">\n" +
+    "    <label for=\"clientSecret\" ng-class=\"{ required: requiresClientSecret }\">\n" +
+    "      Client Secret\n" +
+    "    </label>\n" +
+    "\n" +
+    "    <input type=\"password\" name=\"clientSecret\" ng-model=\"credentials.clientSecret\" ng-required=\"requiresClientSecret\">\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div class=\"control-group\" ng-if=\"hasOwnerCredentials\">\n" +
+    "    <label for=\"username\" class=\"required\">Username</label>\n" +
+    "\n" +
+    "    <input type=\"text\" name=\"username\" ng-model=\"credentials.username\" required>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div class=\"control-group\" ng-if=\"hasOwnerCredentials\">\n" +
+    "    <label for=\"password\" class=\"required\">Password</label>\n" +
+    "\n" +
+    "    <input type=\"password\" name=\"password\" ng-model=\"credentials.password\" required>\n" +
+    "  </div>\n" +
+    "\n" +
+    "  <div ng-if=\"!!scopes.length\">\n" +
+    "    <div>Scopes</div>\n" +
+    "\n" +
+    "    <label ng-repeat=\"scope in scopes\">\n" +
+    "      <input\n" +
+    "        type=\"checkbox\"\n" +
+    "        ng-checked=\"credentials.scopes.indexOf(scope) > -1\"\n" +
+    "        ng-click=\"toggleScope(scope)\">\n" +
+    "      {{scope}}\n" +
+    "    </label>\n" +
     "  </div>\n" +
     "</fieldset>\n"
   );
@@ -3612,8 +3778,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    <div class=\"parameter-field\" ng-repeat=\"definition in parameter.definitions\" ng-show=\"parameter.isSelected(definition)\">\n" +
     "      <div repeatable=\"definition.repeat\" repeatable-model=\"parameters.values[parameterName]\">\n" +
     "        <div class=\"control-group\">\n" +
-    "          <label for=\"{{parameterName}}\">\n" +
-    "            <span class=\"required\" ng-if=\"definition.required\">*</span>\n" +
+    "          <label for=\"{{parameterName}}\" ng-class=\"{ required: definition.required }\">\n" +
     "            {{definition.displayName}}\n" +
     "          </label>\n" +
     "          <parameter-field name='parameterName' model='repeatableModel[$index]' definition='definition' ></parameter-field>\n" +
@@ -3815,9 +3980,9 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "      <toggle-item heading=\"Anonymous\"></toggle-item>\n" +
     "      <toggle-item ng-repeat=\"(name, scheme) in schemes\" heading=\"{{name}}\">\n" +
     "        <div ng-switch=\"scheme.type\">\n" +
-    "          <basic-auth ng-switch-when=\"Basic Authentication\" credentials='keychain[name]'></basic-auth>\n" +
-    "          <oauth1 ng-switch-when=\"OAuth 1.0\" credentials='keychain[name]'></oauth1>\n" +
-    "          <oauth2 ng-switch-when=\"OAuth 2.0\" credentials='keychain[name]'></oauth2>\n" +
+    "          <basic-auth ng-switch-when=\"Basic Authentication\" scheme=\"scheme\" credentials=\"keychain[name]\"></basic-auth>\n" +
+    "          <oauth1 ng-switch-when=\"OAuth 1.0\" scheme=\"scheme\" credentials=\"keychain[name]\"></oauth1>\n" +
+    "          <oauth2 ng-switch-when=\"OAuth 2.0\" scheme=\"scheme\" credentials=\"keychain[name]\"></oauth2>\n" +
     "        </div>\n" +
     "      </toggle-item>\n" +
     "    </toggle>\n" +

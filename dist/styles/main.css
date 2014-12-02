@@ -444,7 +444,6 @@ div .noselect {
 }
 [ng-splitter] {
   position: relative;
-  z-index: 101;
   -webkit-box-flex: 0;
   -webkit-flex: 0;
   -ms-flex: 0;
@@ -779,7 +778,7 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
 }
 [role="context-menu"] {
   position: fixed;
-  z-index: 5;
+  z-index: 210;
   list-style: none;
   margin: 0;
   border: 1px solid #AAA;
@@ -907,6 +906,12 @@ div.CodeMirror {
 [role="raml-editor"].light .cm-s-solarized .cm-indent::before,
 [role="raml-editor"].light .cm-s-solarized .cm-indent-incomplete::before {
   border-right-color: rgba(0, 0, 0, 0.15);
+}
+
+/* https://github.com/FortAwesome/Font-Awesome/issues/216 */
+[class^="icon-"],
+[class*=" icon-"] {
+  line-height: 1;
 }
 
 * {
@@ -1171,13 +1176,8 @@ div[role=raml-editor] .menubar .file-absolute-path {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-div[role=raml-editor] .menubar .menu-item-mocking-service .beta {
-  background-color: #859900;
-  border-radius: 10px;
-  padding: 0px 5px;
-  color: #fff;
-  font-size: xx-small;
-  margin-right: 10px;
+div[role=raml-editor] .menubar .menu-item-mocking-service {
+  padding: 5px 10px;
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .title {
   float: left;

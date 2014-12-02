@@ -6,6 +6,7 @@
       $q,
       $window,
       $rootScope,
+      $timeout,
       config,
       eventService,
       ramlRepository,
@@ -192,7 +193,7 @@
           contextMenu = cm;
         };
 
-        $scope.$on('event:raml-editor-file-created', function (event, file) {
+        $scope.$on('event:raml-editor-file-generated', function (event, file) {
           fileBrowser.selectFile(file);
         });
 
@@ -214,17 +215,15 @@
         });
 
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
-          var files = [];
-          $scope.homeDirectory.forEachChildDo(function (child) {
-            if (!child.isDirectory) {
-              files.push(child);
+          $timeout(function () {
+            var files = $scope.homeDirectory.getFiles();
+
+            if (files.length === 0) {
+              promptWhenFileListIsEmpty();
+            } else if (file === fileBrowser.selectedFile) {
+              fileBrowser.selectFile(files[0]);
             }
           });
-          if (file === fileBrowser.selectedFile && files.length > 0) {
-            fileBrowser.selectFile(files[0]);
-          } else if (files.length === 0) {
-            setTimeout(promptWhenFileListIsEmpty, 0);
-          }
         });
 
         $scope.$on('$destroy', function () {

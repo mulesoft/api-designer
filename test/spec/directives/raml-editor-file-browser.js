@@ -22,19 +22,6 @@ describe('ramlEditorFileBrowser', function () {
     document.body.appendChild(el[0]);
   }
 
-  function verifyNewFilePrompt(newFilePromptStub, done) {
-    function verify() {
-      try {
-        newFilePromptStub.should.have.been.called;
-        done();
-      } catch(e) {
-        setTimeout(verify, 10);
-      }
-    }
-
-    setTimeout(verify, 10);
-  }
-
   angular.module('fileBrowserTest', ['ramlEditorApp', 'testFs']);
   beforeEach(module('fileBrowserTest'));
 
@@ -110,10 +97,13 @@ describe('ramlEditorFileBrowser', function () {
         openStub = sinon.spy(newNameModal, 'open');
       }));
 
-      it('prompts you to name a new file', function (done) {
+      it('prompts you to name a new file', inject(function ($timeout) {
         compileFileBrowser();
-        verifyNewFilePrompt(openStub, done);
-      });
+
+        $timeout.flush();
+
+        openStub.should.have.been.called;
+      }));
     });
 
     it('should prefer root file over first file as selected file', function () {
@@ -226,10 +216,10 @@ describe('ramlEditorFileBrowser', function () {
     });
   });
 
-  describe('when a new file is created', function () {
+  describe('when a new file is generated', function () {
     beforeEach(inject(function ($rootScope) {
       compileFileBrowser();
-      $rootScope.$broadcast('event:raml-editor-file-created', createMockFile('filenameOfTheNewFile'));
+      $rootScope.$broadcast('event:raml-editor-file-generated', createMockFile('filenameOfTheNewFile'));
       scope.$digest();
     }));
 
@@ -255,9 +245,11 @@ describe('ramlEditorFileBrowser', function () {
         scope.$digest();
       }));
 
-      it('prompts the user to create a new file', function (done) {
-        verifyNewFilePrompt(openStub, done);
-      });
+      it('prompts the user to create a new file', inject(function ($timeout) {
+        $timeout.flush();
+
+        openStub.should.have.been.called;
+      }));
     });
 
     describe('when it is the selected file', function () {
@@ -268,9 +260,11 @@ describe('ramlEditorFileBrowser', function () {
         scope.$digest();
       }));
 
-      it('selects the first file from the fileList', function () {
+      it('selects the first file from the fileList', inject(function ($timeout) {
+        $timeout.flush();
+
         scope.fileBrowser.selectedFile.name.should.equal('some.raml');
-      });
+      }));
     });
   });
 

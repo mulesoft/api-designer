@@ -2662,8 +2662,9 @@ raml-console article#raml-console input.warning,
   border-color: #fbb03b;
   outline: 0;
 }
-raml-console article#raml-console .required,
-#raml-console-loader .required {
+raml-console article#raml-console .required:before,
+#raml-console-loader .required:before {
+  content: "* ";
   color: #fbb03b;
 }
 raml-console article#raml-console input.error,

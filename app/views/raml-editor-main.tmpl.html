@@ -30,9 +30,9 @@
     </li>
     <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>
     <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">
-      <div class="title"><span class="beta">BETA</span>Mocking Service</div>
+      <div class="title">Mocking Service</div>
       <div class="field-wrapper" ng-class="{loading: loading}">
-        <span ng-if="loading"><i class="fa fa-spin fa-spinner"></i></span>
+        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>
         <div class="field" ng-if="!loading">
           <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />
           <label for="mockingServiceEnabled"></label>
@@ -40,8 +40,7 @@
       </div>
     </li>
     <li class="menu-item menu-item-fr" ng-click="openHelp()">
-      <i class="help fa fa-question-circle"></i>
-      <span>&nbsp;Help</span>
+      <span><i class="fa fa-question-circle"></i> Help</span>
     </li>
   </ul>
 
