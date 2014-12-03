@@ -6,7 +6,7 @@
     .factory('safeApply', function safeApplyFactory($rootScope, $exceptionHandler) {
       return function safeApply(scope, expr) {
         scope = scope || $rootScope;
-        if (['$apply', '$digest'].indexOf(scope.$root.$$phase) !== -1) {
+        if (['$apply', '$digest'].indexOf(scope.$root && scope.$root.$$phase || scope.$$phase) !== -1) {
           try {
             return scope.$eval(expr);
           } catch (e) {

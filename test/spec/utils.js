@@ -62,4 +62,119 @@ describe('Utils module', function () {
       wrapped.calledWith(1, '2', true).should.be.true;
     });
   });
+
+  describe('safeApply', function () {
+    var safeApply;
+    var exceptionHandler;
+    var rootScope;
+    var sandbox;
+
+    function createMockedRoot (phase) {
+      return {
+        $$phase: phase
+      };
+    }
+
+    function createMockedScope (mockedRoot, phase) {
+      return {
+        $eval: sandbox.stub(),
+        $root: mockedRoot,
+        $$phase: phase,
+        $apply: sandbox.stub()
+      };
+    }
+
+    beforeEach(inject(function ($injector) {
+      sandbox = sinon.sandbox.create();
+      safeApply = $injector.get('safeApply');
+      rootScope = $injector.get('$rootScope');
+      exceptionHandler = $injector.get('$exceptionHandler');
+    }));
+
+    afterEach(function() {
+      sandbox.restore();
+    });
+
+    it('should eval expression during apply phase', function () {
+      //Arrange
+      var root = createMockedRoot('$apply');
+      var scope = createMockedScope(root);
+      var expression = sinon.stub();
+
+      //Act
+      safeApply(scope, expression);
+
+      //Assert
+      scope.$eval.calledWith(expression).should.be.true;
+      scope.$apply.called.should.be.false;
+    });
+
+    it('should eval expression during digest phase', function () {
+      //Arrange
+      var root = createMockedRoot('$digest');
+      var scope = createMockedScope(root);
+      var expression = sinon.stub();
+
+      //Act
+      safeApply(scope, expression);
+
+      //Assert
+      scope.$eval.calledWith(expression).should.be.true;
+      scope.$apply.called.should.be.false;
+    });
+
+    it('should apply expression while not during digest or apply phase', function () {
+      //Arrange
+      var root = createMockedRoot('$idk');
+      var scope = createMockedScope(root);
+      var expression = sinon.stub();
+
+      //Act
+      safeApply(scope, expression);
+
+      //Assert
+      scope.$apply.calledWith(expression).should.be.true;
+      scope.$eval.called.should.be.false;
+    });
+
+    it('should NOT fail if $root is null during apply phase', function () {
+      //Arrange
+      var scope = createMockedScope(null, '$apply');
+      var expression = sinon.stub();
+
+      //Act
+      safeApply(scope, expression);
+
+      //Assert
+      scope.$eval.calledWith(expression).should.be.true;
+      scope.$apply.called.should.be.false;
+    });
+
+    it('should NOT fail if $root is null during digest phase', function () {
+      //Arrange
+      var scope = createMockedScope(null, '$digest');
+      var expression = sinon.stub();
+
+      //Act
+      safeApply(scope, expression);
+
+      //Assert
+      scope.$eval.calledWith(expression).should.be.true;
+      scope.$apply.called.should.be.false;
+    });
+
+    it('should NOT fail if $root is null while not in digest or apply phase', function () {
+      //Arrange
+      var scope = createMockedScope();
+      var expression = sinon.stub();
+
+      //Act
+      safeApply(scope, expression);
+
+      //Assert
+      scope.$apply.calledWith(expression).should.be.true;
+      scope.$eval.called.should.be.false;
+    });
+
+  });
 });
