@@ -39,7 +39,7 @@
         if ([
             '$apply',
             '$digest'
-          ].indexOf(scope.$root.$$phase) !== -1) {
+          ].indexOf(scope.$root && scope.$root.$$phase || scope.$$phase) !== -1) {
           try {
             return scope.$eval(expr);
           } catch (e) {
