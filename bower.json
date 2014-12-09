@@ -13,7 +13,7 @@
     "angular-resource": "~1.2.16",
     "angular-sanitize": "~1.2.16",
     "angular-ui-tree": "2.1.5",
-    "api-console": "mulesoft/api-console#475c109d2d9df84e795a09be7dfbe74b77bd7056",
+    "api-console": "mulesoft/api-console#ec89acf45f0986c11f3fd85f6976d48a21011bb6",
     "es5-shim": "~2.3.0",
     "font-awesome": "~4.0.3",
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",

@@ -61,10 +61,10 @@
       </div>
     </div>
 
-    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next"><div class="split split-right">&nbsp;</div></div>
+    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>
 
     <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
-      <raml-console single-view disable-theme-switcher></raml-console>
+      <raml-console single-view disable-theme-switcher style="padding: 0; margin-top: 0;"></raml-console>
     </div>
   </div>
 </div>
