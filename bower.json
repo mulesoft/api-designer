@@ -28,7 +28,7 @@
     "sinonjs": "~1.7.1"
   },
   "resolutions": {
-    "angular": "1.2.27",
+    "angular": "1.2.19",
     "codemirror": "~3.15.0"
   }
 }
