@@ -1,6 +1,6 @@
 #Editor File System
 
-This document summarizes the file system api for the RAML editor tool. This is the interface you must follow to crate a new file system to use with raml repository.
+This document summarizes the file system api for the RAML editor tool. This is the interface you must follow to create a new file system to use with raml repository.
 
 ##Concepts
 
