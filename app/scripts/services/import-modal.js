@@ -113,9 +113,9 @@
           .then(function () {
             return $modalInstance.close(true);
           })
-          .catch(function () {
+          .catch(function (err) {
             $rootScope.$broadcast('event:notification', {
-              message: 'Failed to load and parse Swagger: ' + mode.value,
+              message: 'Failed to import Swagger: ' + err.message,
               expires: true,
               level: 'error'
             });
