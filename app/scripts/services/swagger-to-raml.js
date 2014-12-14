@@ -11,7 +11,10 @@
         return $http.get(filename, { transformResponse: false })
           .then(function (response) {
             return done(null, response.data);
-          }, done);
+          })
+          .catch(function (err) {
+            return done(new Error(err.data));
+          });
       }
 
       self.convert = function convert(url) {
