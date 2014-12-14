@@ -26,7 +26,13 @@
   }
 
   angular.module('fs', ['ngCookies', 'raml', 'utils'])
-    .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
+    .factory('ramlRepository', function (
+      $q,
+      $window,
+      $rootScope,
+      ramlSnippets,
+      fileSystem
+    ) {
       var service   = {};
       var BASE_PATH = '/';
       var rootFile;
@@ -35,6 +41,10 @@
 
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
+      }
+
+      function supportsFileSystemExport() {
+        return fileSystem.hasOwnProperty('exportFiles');
       }
 
       function handleErrorFor(file) {
@@ -183,6 +193,9 @@
         this.children.sort(sortingFunction);
       };
 
+      // Expose the current RAML file.
+      service.raml = {};
+
       // Expose the sorting function
       service.sortingFunction = sortingFunction;
 
@@ -198,11 +211,42 @@
       };
 
       service.canExport = function canExport() {
-        return fileSystem.hasOwnProperty('exportFiles');
+        return supportsFileSystemExport() || $window.JSZip.support.blob;
       };
 
       service.exportFiles = function exportFiles() {
-        return fileSystem.exportFiles();
+        if (supportsFileSystemExport()) {
+          return fileSystem.exportFiles();
+        }
+
+        var zip  = new $window.JSZip();
+        var root = service.getByPath(BASE_PATH);
+        var promises = [];
+
+        (function append (dir, zip) {
+          dir.children.forEach(function (child) {
+            if (child.isDirectory) {
+              return append(child, zip.folder(child.name));
+            }
+
+            var loadFile = service.loadFile(child)
+              .then(function (child) {
+                zip.file(child.name, child.contents);
+              });
+
+            promises.push(loadFile);
+          });
+        })(root, zip);
+
+        return $q.all(promises)
+          .then(function () {
+            var contents = zip.generate({ type: 'blob' });
+            var filename = $window.slug(service.raml.title || 'api') + '.zip';
+
+            $window.saveAs(contents, filename);
+
+            return contents;
+          });
       };
 
       service.createDirectory = function createDirectory(parent, name) {

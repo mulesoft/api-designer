@@ -193,6 +193,8 @@
         $scope.version   = raml.version;
         $scope.currentError = undefined;
         lineOfCurrentError = undefined;
+
+        ramlRepository.raml = raml;
       }));
 
       eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {

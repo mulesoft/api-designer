@@ -1,10 +1,10 @@
-/* global JSZip */
 (function () {
   'use strict';
 
   angular.module('ramlEditorApp')
     .service('importService', function importServiceFactory (
       $q,
+      $window,
       ramlRepository,
       importServiceConflictModal
     ) {
@@ -236,7 +236,7 @@
        * @return {Promise}
        */
       function mergeZip (directory, contents) {
-        var zip   = new JSZip(contents);
+        var zip   = new $window.JSZip(contents);
         var files = removeCommonFilePrefixes(sanitizeZipFiles(zip.files));
 
         return importZipFiles(directory, files);
@@ -250,7 +250,7 @@
        * @return {Promise}
        */
       function importZip (directory, contents) {
-        var zip   = new JSZip(contents);
+        var zip   = new $window.JSZip(contents);
         var files = sanitizeZipFiles(zip.files);
 
         return importZipFiles(directory, files);

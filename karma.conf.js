@@ -25,6 +25,7 @@ module.exports = function(config) {
       'bower_components/angular-sanitize/angular-sanitize.js',
       'bower_components/angular-bootstrap/ui-bootstrap-tpls.js',
       'bower_components/angular-ui-tree/dist/angular-ui-tree.js',
+      'bower_components/slug/slug.js',
       'bower_components/es5-shim/es5-shim.js',
       'bower_components/showdown/src/showdown.js',
       'bower_components/raml-js-parser/dist/raml-parser.js',
@@ -36,6 +37,7 @@ module.exports = function(config) {
       'bower_components/jszip/jszip-load.js',
       'bower_components/jszip/jszip-deflate.js',
       'bower_components/jszip/jszip-inflate.js',
+      'bower_components/FileSaver/FileSaver.js',
 
       'app/scripts/app.js',
       'app/scripts/services/utils.js',
