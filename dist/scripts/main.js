@@ -2941,9 +2941,9 @@
           return importService.createFile($scope.rootDirectory, filename, contents);
         }).then(function () {
           return $modalInstance.close(true);
-        }).catch(function () {
+        }).catch(function (err) {
           $rootScope.$broadcast('event:notification', {
-            message: 'Failed to load and parse Swagger: ' + mode.value,
+            message: 'Failed to import Swagger: ' + err.message,
             expires: true,
             level: 'error'
           });
@@ -3087,7 +3087,9 @@
       function reader(filename, done) {
         return $http.get(filename, { transformResponse: false }).then(function (response) {
           return done(null, response.data);
-        }, done);
+        }).catch(function (err) {
+          return done(new Error(err.data));
+        });
       }
       self.convert = function convert(url) {
         var deferred = $q.defer();
