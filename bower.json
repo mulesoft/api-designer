@@ -21,7 +21,9 @@
     "showdown": "showdownjs/showdown#053288f2feb6b1db36044b212bb24294fb305df1",
     "raml-object-to-raml": "mulesoft/raml-object-to-raml#33ff487f7a3ec27c82e109e09f89017eb9fa3cd1",
     "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#44897d92f0cc7c0a51a736bc8d45b2d35cfb2559",
-    "jszip": "~2.0.0"
+    "jszip": "~2.0.0",
+    "FileSaver": "*",
+    "slug": "~0.8.0"
   },
   "devDependencies": {
     "angular-mocks": "~1.2.16",
