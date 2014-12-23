@@ -1,8 +1,6 @@
 (function () {
   'use strict';
   angular.module('ramlEditorApp', [
-    'ngResource',
-    'ngSanitize',
     'ui.bootstrap.modal',
     'ui.bootstrap.tpls',
     'ui.tree',
@@ -1952,7 +1950,6 @@
     this.root = options.root;
   }
   angular.module('fs', [
-    'ngCookies',
     'raml',
     'utils'
   ]).factory('ramlRepository', [

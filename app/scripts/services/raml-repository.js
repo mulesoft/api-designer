@@ -25,7 +25,7 @@
     this.root      = options.root;
   }
 
-  angular.module('fs', ['ngCookies', 'raml', 'utils'])
+  angular.module('fs', ['raml', 'utils'])
     .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
       var service   = {};
       var BASE_PATH = '/';

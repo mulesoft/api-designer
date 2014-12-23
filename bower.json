@@ -9,9 +9,6 @@
   "dependencies": {
     "angular": "~1.2.16",
     "angular-bootstrap": "~0.11.0",
-    "angular-cookies": "~1.2.16",
-    "angular-resource": "~1.2.16",
-    "angular-sanitize": "~1.2.16",
     "angular-ui-tree": "2.1.5",
     "api-console": "mulesoft/api-console#features/v2",
     "es5-shim": "~2.3.0",

@@ -2,10 +2,6 @@
   'use strict';
 
   angular.module('ramlEditorApp', [
-    // angular
-    'ngResource',
-    'ngSanitize',
-
     // angular-ui
     'ui.bootstrap.modal',
     'ui.bootstrap.tpls',
