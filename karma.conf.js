@@ -23,7 +23,6 @@ module.exports = function(config) {
       'bower_components/angular-bootstrap/ui-bootstrap-tpls.js',
       'bower_components/angular-ui-tree/dist/angular-ui-tree.js',
       'bower_components/es5-shim/es5-shim.js',
-      'bower_components/showdown/src/showdown.js',
       'bower_components/raml-js-parser/dist/raml-parser.js',
 
       'bower_components/api-console/dist/scripts/vendor/marked.js',
