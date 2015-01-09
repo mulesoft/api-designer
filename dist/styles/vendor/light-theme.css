@@ -466,8 +466,8 @@ th {
 }
 
 .raml-console-body {
-  background: #141519;
-  color: #ccc;
+  background: #eee;
+  color: #888;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 18px;
   line-height: 1.4;
@@ -513,8 +513,8 @@ th {
 }
 
 .raml-console-embedded {
-  background: #141519 !important;
-  color: #ccc;
+  background: #eee !important;
+  color: #888;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 18px;
   line-height: 1.4;
@@ -525,7 +525,7 @@ th {
 .raml-console-title {
   font-size: 24px;
   text-align: center;
-  color: #fff;
+  color: #333;
 }
 
 @media only screen and (min-width: 600px) {
@@ -572,9 +572,9 @@ th {
 .raml-console-toggle {
   margin: 0;
   padding: 10px 12px 12px;
-  border: 1px solid #000;
-  background-color: #0f1217;
-  color: rgba(255, 255, 255, 0.3);
+  border: 1px solid #ccc;
+  background-color: #f3f4f5;
+  color: #aaa;
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -584,14 +584,14 @@ th {
 }
 
 .raml-console-toggle:hover {
-  border-color: #12171f;
-  color: #4d7899;
+  border-color: #46778f;
+  color: #5B9DBD;
   border-width: 1px !important;
 }
 
 .raml-console-toggle.raml-console-is-active {
-  border-color: #12171f;
-  background: #4d7899;
+  border-color: #46778f;
+  background: #5B9DBD;
   color: #fff;
 }
 
@@ -635,8 +635,8 @@ th {
   padding-top: 10px;
   padding-bottom: 12px;
   border: none;
-  background-color: rgba(0, 0, 0, 0.25);
-  color: rgba(255, 255, 255, 0.3);
+  background-color: #e3e4e6;
+  color: #999;
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -648,16 +648,16 @@ th {
 }
 
 .raml-console-toggle-tabs .raml-console-toggle-tab:first-child {
-  box-shadow: inset -2px -3px 5px 1px rbga(0, 0, 0, 0.5);
+  box-shadow: inset -2px -3px 5px 1px #d6d7d9;
 }
 
 .raml-console-toggle-tabs .raml-console-toggle-tab:last-child {
-  box-shadow: inset 2px -3px 5px 1px rbga(0, 0, 0, 0.5);
+  box-shadow: inset 2px -3px 5px 1px #d6d7d9;
 }
 
 .raml-console-toggle-tabs .raml-console-toggle-tab.raml-console-is-active {
   background: none;
-  color: #fff;
+  color: #414247;
   box-shadow: none;
 }
 
@@ -843,11 +843,11 @@ th {
 
 .raml-console-tab.raml-console-is-active {
   z-index: 1;
-  color: #fff;
+  color: #333;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-box {
-  background: #18191d;
+  background: #fff;
 }
 
 /* Resource List */
@@ -872,10 +872,10 @@ th {
 
 .raml-console-resource-menu-item button.raml-console-button-is-active {
   border-radius: 0 !important;
-  background: #1c1e22 !important;
+  background: #fff !important;
   border-right: 0;
   height: 48px;
-  border-top: 1px #404040 solid !important;
+  border-top: 1px #ccc solid !important;
   border-right: 0 !important;
   width: 51px;
 }
@@ -912,10 +912,10 @@ th {
   border-radius: 0 !important;
   border: 0 !important;
   height: 48px !important;
-  background: rgba(0, 0, 0, 0.1) !important;
-  border-top: 1px #404040 solid !important;
-  border-left: 3px #404040 solid !important;
-  border-bottom: 1px #404040 solid !important;
+  background: #fafafa !important;
+  border-top: 1px #ccc solid !important;
+  border-left: 3px #ccc solid !important;
+  border-bottom: 1px #ccc solid !important;
 }
 
 .raml-console-resource-menu-btn-2xx {
@@ -941,11 +941,11 @@ th {
 }
 
 .raml-console-resource-list-root {
-  border-top: 1px solid #282a30;
+  border-top: 1px solid #ccc;
 }
 
 .raml-console-resource-list-item.raml-console-is-active + .raml-console-resource-list-item {
-  border-top: 1px solid #282a30;
+  border-top: 1px solid #ccc;
 }
 
 /* Resource Items */
@@ -956,7 +956,7 @@ th {
   flex-wrap: wrap;
   min-height: 50px;
   padding-left: 20px;
-  border-bottom: 1px solid #282a30;
+  border-bottom: 1px solid #ccc;
 }
 
 @media only screen and (min-width: 960px) {
@@ -975,8 +975,8 @@ th {
 .raml-console-resource.raml-console-is-active {
   min-height: 50px;
   margin: 10px 0 0;
-  border-color: #282a30;
-  background: #282a30;
+  border-color: #2d2d30;
+  background: #2d2d30;
 }
 
 @media only screen and (min-width: 600px) {
@@ -1039,7 +1039,7 @@ th {
   border-radius: 5px;
   border: none;
   background: transparent;
-  color: #808080;
+  color: #888a99;
   font-size: 10px;
   text-transform: uppercase;
   transition: 0.2s ease color;
@@ -1057,7 +1057,7 @@ th {
 }
 
 .raml-console-resource-close-btn:hover {
-  color: #57585a;
+  color: #9ea0ad;
 }
 
 .raml-console-resource-list-root > .raml-console-resource-list-item.raml-console-is-active + .raml-console-resource-list-item {
@@ -1065,7 +1065,7 @@ th {
 }
 
 .raml-console-resource.raml-console-is-active + .raml-console-resource-list {
-  border-top: 1px solid #282a30;
+  border-top: 1px solid #ccc;
 }
 
 .raml-console-resource.raml-console-is-active .raml-console-resource-path-active {
@@ -1121,7 +1121,7 @@ th {
   margin-top: -2.5px;
   margin-left: -5px;
   border: 5px solid transparent;
-  border-top-color: #fff;
+  border-top-color: #333;
 }
 
 .raml-console-resource-root-toggle:hover {
@@ -1234,10 +1234,10 @@ th {
 .raml-console-flag {
   display: inline-block;
   padding: 2px 8px;
-  border: 1px solid #000;
+  border: 1px solid #d5d7d9;
   border-radius: 5px;
-  background: #0f1217;
-  color: #ccc;
+  background: #e3e4e6;
+  color: #333;
   font-size: 12px;
 }
 
@@ -1246,7 +1246,7 @@ th {
   top: -1px;
   padding: 0px 3px;
   border-radius: 3px;
-  background: #0f1217;
+  background: #e3e4e6;
 }
 
 @media only screen and (min-width: 600px) {
@@ -1264,27 +1264,27 @@ th {
 }
 
 .raml-console-flag b {
-  color: #808080;
+  color: #888;
 }
 
 .raml-console-resource-path-active {
-  color: #fff;
+  color: #333;
 }
 
 .raml-console-resource-proxy {
   position: absolute;
   right: 5px;
-  color: #5685aa;
+  color: #585961;
   font-size: 13px;
   margin-bottom: 5px;
 }
 
 .raml-console-resource-proxy a {
-  color: #5685aa;
+  color: #585961;
 }
 
 .raml-console-resource-proxy a:visited {
-  color: #5685aa;
+  color: #585961;
 }
 
 .raml-console-resource-header {
@@ -1292,10 +1292,10 @@ th {
   padding-top: 8px;
   padding-right: 0;
   padding-bottom: 8px;
-  border-top: 1px solid #12171f;
-  border-bottom: 1px solid #12171f;
-  background: #12171f;
-  color: #ddd;
+  border-top: 1px solid #f1f1f1;
+  border-bottom: 1px solid #f1f1f1;
+  background: #fafafa;
+  color: #585961;
 }
 
 .raml-console-resource-head {
@@ -1317,8 +1317,8 @@ th {
 }
 
 .raml-console-resource-body-heading > span.raml-console-is-active {
-  background: #959595;
-  color: #fff;
+  background: #bbbbbb;
+  color: #333;
 }
 
 .raml-console-request-body-heading > span {
@@ -1327,8 +1327,8 @@ th {
 }
 
 .raml-console-request-body-heading > span.raml-console-is-active {
-  background: #959595;
-  color: #fff;
+  background: #bbbbbb;
+  color: #333;
 }
 
 .raml-console-request-body-heading span:first-child {
@@ -1338,11 +1338,11 @@ th {
 .raml-console-resource-panel {
   position: relative;
   min-height: 500px;
-  border: solid #282a30;
+  border: solid #ccc;
   border-width: 0 1px 1px;
   border-radius: 0 0 5px 5px;
-  background: #18191d;
-  color: #fff;
+  background: #fff;
+  color: #333;
 }
 
 @media only screen and (min-width: 960px) {
@@ -1386,7 +1386,7 @@ th {
 }
 
 .raml-console-resource-panel-primary a {
-  color: #217ec5;
+  color: #257dcf;
 }
 
 .raml-console-sidebar-controls-collapse {
@@ -1430,7 +1430,7 @@ th {
   margin-left: 60px;
   min-height: 500px;
   padding-top: 24px !important;
-  border: 1px solid #404040;
+  border: 1px solid #ccc;
   margin-top: 10px;
   margin-right: 10px;
   margin-bottom: 10px;
@@ -1454,7 +1454,7 @@ th {
 
 .raml-console-resource-panel-content {
   display: none;
-  background: #1c1e22;
+  background: #fff;
 }
 
 .raml-console-resource-panel-content.raml-console-is-active {
@@ -1474,8 +1474,8 @@ th {
 
 .raml-console-resource-panel-flag-list .raml-console-flag {
   margin-top: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid #eaeced;
+  background: #fafafa;
 }
 
 .raml-console-resource-panel-flag-list .raml-console-flag:first-child {
@@ -1516,7 +1516,7 @@ th {
 
 .raml-console-resource-heading-a {
   margin: 0 0 18px;
-  color: #5685aa;
+  color: #4c5272;
   font-size: 16px;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -1572,13 +1572,13 @@ th {
 .raml-console-resource-param-heading {
   margin-bottom: 0;
   padding-bottom: 3px;
-  border-bottom: 1px solid #404040;
+  border-bottom: 1px solid #ccc;
   font-size: 14px;
 }
 
 .raml-console-resource-param-instructional {
   margin-left: 5px;
-  color: #aaa;
+  color: #777;
   font-size: 14px;
   font-style: italic;
   font-weight: 400;
@@ -1596,7 +1596,7 @@ th {
 
 .raml-console-resource-param-example b {
   margin-right: 3px;
-  color: #aaa;
+  color: #777;
   font-style: italic;
   font-weight: 400;
 }
@@ -1613,10 +1613,10 @@ th {
   text-decoration: none;
   margin: 0 5px 0 0;
   padding: 5px 10px 6px 10px;
-  border: 1px solid #000;
+  border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: #0f1217;
-  color: #217ec5;
+  background-color: #f3f4f5;
+  color: #257dcf;
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -1628,22 +1628,22 @@ th {
 .raml-console-resource-btn.raml-console-is-active,
 .raml-console-resource-btn:hover {
   border-color: rgba(0, 0, 0, 0.25);
-  background-color: #217ec5;
+  background-color: #257dcf;
   color: #fff;
 }
 
 .raml-console-resource-response .raml-console-flag {
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid #eaeced;
   font-size: 16px;
-  background: rgba(0, 0, 0, 0.1);
-  color: #808080;
+  background: #fafafa;
+  color: #888;
 }
 
 .raml-console-resource-pre {
   margin: 0 0 18px 0;
-  border: 1px solid #141519;
+  border: 1px solid #c6cada;
   border-radius: 3px;
-  background: #141519;
+  background: rgba(255, 255, 255, 0.75);
   font-family: Source Code Pro;
   font-size: 14px;
 }
@@ -1663,7 +1663,7 @@ th {
 .raml-console-toggle-button,
 .raml-console-toggle-button:visited,
 .raml-console-toggle-button:active {
-  color: #5685aa;
+  color: #585961;
   text-decoration: none;
   text-transform: capitalize;
   font-size: 12px;
@@ -1675,11 +1675,11 @@ th {
   flex-shrink: 0;
   overflow: hidden;
   border-bottom-right-radius: 4px;
-  border-left: 3px solid #12171f;
+  border-left: 3px solid #d6d7d9;
   position: relative;
-  background: #1a202b;
+  background: #f3f4f5;
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1), inset 1px 0 0 rgba(0, 0, 0, 0.1);
-  color: #ddd;
+  color: rgba(0, 0, 0, 0.7);
 }
 
 @media only screen and (min-width: 960px) {
@@ -1718,8 +1718,8 @@ th {
   top: 0;
   right: -80px;
   border-radius: 0 0 0 4px;
-  border: 1px solid #000;
-  background: #0f1217;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #d6d7d9;
 }
 
 .raml-console-sidebar-controls,
@@ -1729,7 +1729,7 @@ th {
 
 .raml-console-sidebar-controls:hover,
 .raml-console-sidebar-controls:hover .raml-console-collapse {
-  background: #050608;
+  background: #c9cacd;
 }
 
 @media only screen and (min-width: 960px) {
@@ -1745,7 +1745,7 @@ th {
   border: none;
   width: 100%;
   height: 100%;
-  background: #0f1217;
+  background: #d6d7d9;
   outline: none;
 }
 
@@ -1966,7 +1966,7 @@ th {
 .raml-console-sidebar-content {
   display: none;
   overflow: hidden;
-  border: solid #12171f;
+  border: solid #d6d7d9;
   border-width: 0 1px;
 }
 
@@ -1999,7 +1999,7 @@ th {
   resize: none;
   font-family: Source Code Pro;
   font-size: 14px;
-  border: 1px solid #141519;
+  border: 1px solid #c6cada;
 }
 
 .raml-console-sidebar-header {
@@ -2007,10 +2007,10 @@ th {
   padding-top: 8px;
   padding-right: 0;
   padding-bottom: 8px;
-  border-top: 1px solid #12171f;
-  border-bottom: 1px solid #12171f;
-  background: #12171f;
-  color: #ddd;
+  border-top: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+  background: #ddd;
+  color: #585961;
 }
 
 .raml-console-sidebar-header .raml-console-resource-btn {
@@ -2044,7 +2044,7 @@ th {
 }
 
 .raml-console-sidebar-expand-btn:hover {
-  border-color: #5685aa;
+  border-color: #9ea0ad;
   opacity: 1;
 }
 
@@ -2057,7 +2057,7 @@ th {
   width: 0;
   height: 0;
   border-left: 7px solid transparent;
-  border-bottom: 7px solid #4d7899;
+  border-bottom: 7px solid #888a99;
   border-right: 7px solid transparent;
 }
 
@@ -2071,7 +2071,7 @@ th {
   height: 0;
   border-right: 7px solid transparent;
   border-left: 7px solid transparent;
-  border-top: 7px solid #4d7899;
+  border-top: 7px solid #888a99;
 }
 
 .raml-console-sidebar-subheader {
@@ -2079,10 +2079,10 @@ th {
   margin-right: 16px;
   padding-top: 10px;
   padding-bottom: 10px;
-  border-top: 2px solid #12171f;
+  border-top: 2px solid #d6d7d9;
   border-width: 1px 0;
   position: relative;
-  color: #5685aa;
+  color: #585961;
   font-size: 13px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -2111,8 +2111,8 @@ th {
   height: 17px;
   border: none;
   border-radius: 50%;
-  background: #4d7899;
-  color: #1a202b;
+  background: #888a99;
+  color: #f3f4f5;
   opacity: 0.4;
   transition: 0.2s ease all;
 }
@@ -2129,7 +2129,7 @@ th {
 }
 
 .raml-console-sidebar-add-btn:hover {
-  background-color: #5685aa;
+  background-color: #9ea0ad;
   opacity: 1;
 }
 
@@ -2271,19 +2271,19 @@ th {
 .raml-console-sidebar-action-clear {
   width: 80px;
   margin-left: 7px;
-  background-color: #0f1217;
+  background-color: #2d2d30;
 }
 
 .raml-console-sidebar-action-clear:hover {
-  background-color: #232a36;
+  background-color: #46464a;
 }
 
 .raml-console-sidebar-action-prefill {
   text-decoration: none;
   padding: 5px 10px 6px 10px;
-  border: 1px solid #000;
+  border: 1px solid #ccc;
   border-radius: 4px;
-  background-color: #0f1217;
+  background-color: #f3f4f5;
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 13px;
@@ -2301,11 +2301,11 @@ th {
 .raml-console-sidebar-action-reset {
   width: 80px;
   margin-left: 7px;
-  background-color: #404040;
+  background-color: #888a99;
 }
 
 .raml-console-sidebar-action-reset:hover {
-  background-color: #5a5a5a;
+  background-color: #a3a5b1;
 }
 
 .raml-console-sidebar-input-container {
@@ -2314,7 +2314,7 @@ th {
 
 .raml-console-sidebar-label {
   display: block;
-  color: #fff;
+  color: #000;
   font-size: 14px;
   font-weight: 700;
 }
@@ -2326,10 +2326,10 @@ th {
   margin-bottom: 18px;
   height: 36px;
   padding: 0 4px 0 36px;
-  border: 1px solid #000;
+  border: 1px solid #d6d7d9;
   border-radius: 3px;
-  background-color: #0f1217;
-  color: #eee;
+  background-color: #fff;
+  color: #333;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
@@ -2340,7 +2340,7 @@ th {
   left: 2px;
   border: 0;
   background: transparent;
-  color: #ccc;
+  color: #bbb;
   font-weight: 900;
   transition: 0.3s ease color;
 }
@@ -2373,10 +2373,10 @@ th {
   display: none;
   width: 19px;
   height: 19px;
-  border: 1px solid #ccc;
+  border: 1px solid #bbb;
   border-radius: 50%;
   background: transparent;
-  color: #ccc;
+  color: #bbb;
   font-weight: 900;
   transition: 0.3s ease color, 0.3s ease border-color;
 }
@@ -2419,8 +2419,8 @@ th {
   margin: 0 0 18px 0;
   padding: 6px 12px;
   border-radius: 4px;
-  background-color: #ccc;
-  color: #0f1217;
+  background-color: #2d2d30;
+  color: #fff;
   font-size: 14px;
   text-align: right;
 }
@@ -2439,7 +2439,7 @@ th {
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid #ccc;
+  border-bottom: 5px solid #2d2d30;
 }
 
 .raml-console-sidebar-tooltip-flyout-left {
@@ -2452,8 +2452,8 @@ th {
   margin: 0 0 18px 0;
   padding: 6px 12px;
   border-radius: 4px;
-  background-color: #ccc;
-  color: #0f1217;
+  background-color: #2d2d30;
+  color: #fff;
   font-size: 14px;
   text-align: left;
 }
@@ -2472,7 +2472,7 @@ th {
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid #ccc;
+  border-bottom: 5px solid #2d2d30;
 }
 
 .raml-console-sidebar-input-container-custom {
@@ -2483,7 +2483,7 @@ th {
   margin-top: 5px;
   margin-bottom: 6px;
   padding: 0;
-  border: 2px solid #000;
+  border: 2px solid #d6d7d9;
   border-radius: 4px;
 }
 
@@ -2494,7 +2494,7 @@ th {
   padding: 0px 4px 3px 30px;
   border: none;
   background-color: transparent;
-  color: #fff;
+  color: #000;
   font-size: 15px;
   line-height: 30px;
   -webkit-font-smoothing: antialiased;
@@ -2510,7 +2510,7 @@ th {
   left: 3px;
   border: 0;
   background: transparent;
-  color: #ccc;
+  color: #bbb;
   font-weight: 900;
   font-size: 22px;
   transition: 0.3s ease color;
@@ -2565,8 +2565,8 @@ th {
   margin: 0;
   margin-bottom: 2px;
   padding-bottom: 3px;
-  border-bottom: 1px solid #12171f;
-  color: #ddd;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.6);
   font-size: 16px;
   font-weight: 700;
 }
@@ -2585,16 +2585,16 @@ th {
 .raml-console-sidebar-response-item b {
   margin-left: -16px;
   margin-right: 3px;
-  color: #aaa;
+  color: rgba(0, 0, 0, 0.55);
   font-weight: 400;
   font-style: italic;
 }
 
 .raml-console-sidebar-pre {
   margin: 0;
-  border: 1px solid #141519;
+  border: 1px solid #c6cada;
   border-radius: 3px;
-  background: #141519;
+  background: rgba(255, 255, 255, 0.75);
   font-family: Source Code Pro;
   font-size: 14px;
 }
@@ -2637,7 +2637,7 @@ th {
   z-index: 20;
   height: 25px;
   border-bottom-left-radius: 3px;
-  background-color: rgba(40, 42, 48, 0.5);
+  background-color: rgba(45, 45, 48, 0.5);
   color: #fff;
   text-align: center;
   font-weight: 900;
@@ -3072,7 +3072,7 @@ span.raml-console-side-bar-required-field {
 }
 
 .raml-console-initializer-content-wrapper section {
-  background: #1a202b;
+  background: #f3f4f5;
 }
 
 .raml-console-initializer-row {
@@ -3091,10 +3091,10 @@ span.raml-console-side-bar-required-field {
   margin-right: 16px;
   padding-top: 10px;
   padding-bottom: 10px;
-  border-top: 2px solid #12171f;
+  border-top: 2px solid #d6d7d9;
   border-width: 1px 0;
   position: relative;
-  color: #5685aa;
+  color: #585961;
   font-size: 13px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -3126,10 +3126,10 @@ span.raml-console-side-bar-required-field {
   margin-bottom: 18px;
   height: 36px;
   padding: 0 4px 0 36px;
-  border: 1px solid #000;
+  border: 1px solid #d6d7d9;
   border-radius: 3px;
-  background-color: #0f1217;
-  color: #eee;
+  background-color: #fff;
+  color: #333;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
@@ -3159,17 +3159,17 @@ span.raml-console-side-bar-required-field {
 
 .raml-console-initializer-action-btn {
   width: 25%;
-  background-color: #404040;
+  background-color: #888a99;
 }
 
 .raml-console-initializer-action-btn:hover {
-  background-color: #5a5a5a;
+  background-color: #a3a5b1;
 }
 
 .raml-console-toggle-all {
   text-transform: capitalize;
   font-size: 10px;
-  background-color: #19202b;
+  background-color: #b7b7b7;
   border: 0;
   color: #878787;
   font-weight: bold;
@@ -3212,8 +3212,8 @@ span.raml-console-side-bar-required-field {
 .raml-console-documentation-active .raml-console-document-header {
   min-height: 50px;
   margin: 10px 0 0;
-  border-color: #282a30;
-  background: #282a30;
+  border-color: #2d2d30;
+  background: #2d2d30;
 }
 
 @media only screen and (min-width: 600px) {
@@ -3223,7 +3223,7 @@ span.raml-console-side-bar-required-field {
 }
 
 .raml-console-documentation-header {
-  background: #252f3f;
+  background: #e0e0e0;
 }
 
 .raml-console-root-documentation {
@@ -3238,7 +3238,7 @@ span.raml-console-side-bar-required-field {
 .raml-console-root-documentation .raml-console-documentation-contents {
   padding-top: 11px;
   padding-bottom: 17px;
-  background: #4b4f5a;
+  background: #f5f5f5;
 }
 
 .raml-console-root-documentation .raml-console-documentation-contents .raml-console-documentation-clearfix {
@@ -3329,13 +3329,13 @@ Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmai
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #002b36;
-  color: #839496;
+  background: #fff;
+  color: #657b83;
   -webkit-text-size-adjust: none;
 }
 
-.raml-console-hljs-number {
-  color: #d33682 !important;
+.raml-console-hljs-string {
+  color: #657b83 !important;
 }
 
 .raml-console-hljs-comment,
@@ -3345,7 +3345,7 @@ Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmai
 .raml-console-hljs-pi,
 .raml-console-lisp .raml-console-hljs-string,
 .raml-console-hljs-javadoc {
-  color: #586e75;
+  color: #93a1a1;
 }
 
 /* Solarized Green */
@@ -3437,7 +3437,7 @@ Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmai
 }
 
 .raml-console-tex .raml-console-hljs-formula {
-  background: #073642;
+  background: #eee8d5;
 }
 /*
 raml-console theme for code-mirror
@@ -3446,7 +3446,7 @@ http://ethanschoonover.com/raml-console
 
 /*
 raml-console color pallet
-http://ethanschoonover.com/raml-console/img/solarized-palette.png
+http://ethanschoonover.com/raml-console/img/raml-console-palette.png
 */
 
 .raml-console.base03 { color: #002b36; }
@@ -3472,9 +3472,9 @@ http://ethanschoonover.com/raml-console/img/solarized-palette.png
   line-height: 1.45em !important;
   color-profile: sRGB !important;
   rendering-intent: auto !important;
-  color: #839496 !important;
-  background-color: #002b36 !important;
   position: relative !important;
+  background-color: #fff !important;
+  color: #657b83 !important;
 }
 
 .cm-s-raml-console .CodeMirror-widget {
@@ -3483,38 +3483,38 @@ http://ethanschoonover.com/raml-console/img/solarized-palette.png
 
 
 .cm-s-raml-console .cm-keyword { color: #cb4b16 }
-.cm-s-raml-console .cm-atom { color: #d33682; }
-.cm-s-raml-console .cm-number { color: #d33682; }
+.cm-s-raml-console .cm-atom { color: #2aa198; }
+.cm-s-raml-console .cm-number { color: #2aa198; }
 .cm-s-raml-console .cm-def { color: #b58900; }
 
 .cm-s-raml-console .cm-variable { color: #268bd2; }
 .cm-s-raml-console .cm-variable-2 { color: #b58900; }
 .cm-s-raml-console .cm-variable-3 { color: #6c71c4; }
 
-.cm-s-raml-console .cm-property { color: #b58900 !important; }
+.cm-s-raml-console .cm-property { color: #b58900; }
 .cm-s-raml-console .cm-operator {color: #6c71c4;}
 
 .cm-s-raml-console .cm-comment { color: #586e75; font-style:italic; }
 
-.cm-s-raml-console .cm-string { color: #2aa198; }
-.cm-s-raml-console .cm-string-2 { color: #b58900; }
+/*.cm-s-raml-console .cm-string { color: #859900; }*/
+/*.cm-s-raml-console .cm-string-2 { color: #b58900; }*/
 
 .cm-s-raml-console .cm-meta { color: #859900; }
 .cm-s-raml-console .cm-qualifier { color: #b58900; }
-.cm-s-raml-console .cm-builtin { color: #d33682; }
+.cm-s-raml-console .cm-builtin { color: #2aa198; }
 .cm-s-raml-console .cm-bracket { color: #cb4b16; }
 .cm-s-raml-console .CodeMirror-matchingbracket { color: #859900; }
 .cm-s-raml-console .CodeMirror-nonmatchingbracket { color: #dc322f; }
-.cm-s-raml-console .cm-tag { color: #93a1a1 }
+.cm-s-raml-console .cm-tag { color: #268bd2 }
 .cm-s-raml-console .cm-attribute {  color: #b58900; }
 .cm-s-raml-console .cm-header { color: #586e75; }
-.cm-s-raml-console .cm-quote { color: #93a1a1; }
+.cm-s-raml-console .cm-quote { color: #268bd2; }
 .cm-s-raml-console .cm-hr {
   color: transparent;
   border-top: 1px solid #586e75;
   display: block;
 }
-.cm-s-raml-console .cm-link { color: #93a1a1; cursor: pointer; }
+.cm-s-raml-console .cm-link { color: #268bd2; cursor: pointer; }
 .cm-s-raml-console .cm-special { color: #6c71c4; }
 .cm-s-raml-console .cm-em {
   color: #999;
@@ -3529,7 +3529,7 @@ http://ethanschoonover.com/raml-console/img/solarized-palette.png
 }
 
 .cm-s-raml-console .CodeMirror-selected {
-  background: #073642;
+  background: #eee8d5;
 }
 
 /* Editor styling */
@@ -3538,9 +3538,11 @@ http://ethanschoonover.com/raml-console/img/solarized-palette.png
 
 /* Little shadow on the view-port of the buffer view */
 .cm-s-raml-console.CodeMirror {
-  -moz-box-shadow: inset 7px 0 12px -6px #000;
+  /*-moz-box-shadow: inset 7px 0 12px -6px #000;
   -webkit-box-shadow: inset 7px 0 12px -6px #000;
-  box-shadow: inset 7px 0 12px -6px #000;
+  box-shadow: inset 7px 0 12px -6px #000;*/
+  /*height: 100%;*/
+  /*margin-top: -18px;*/
 }
 
 /* Gutter border and some shadow from it  */
@@ -3550,14 +3552,10 @@ http://ethanschoonover.com/raml-console/img/solarized-palette.png
 
 /* Gutter colors and line number styling based of color scheme (dark / light) */
 
-/* Dark */
+/* Light */
 .cm-s-raml-console .CodeMirror-gutters {
-  background-color:  #002b36;
-  border-color: #00232c;
-}
-
-.cm-s-raml-console .CodeMirror-linenumber {
-  text-shadow: #021014 0 -1px;
+  background-color: #fff;
+  border-color: #eee8d5;
 }
 
 /* Common */
@@ -3566,7 +3564,7 @@ http://ethanschoonover.com/raml-console/img/solarized-palette.png
   padding: 0 5px;
 }
 .cm-s-raml-console .CodeMirror-guttermarker-subtle { color: #586e75; }
-.cm-s-raml-console .CodeMirror-guttermarker { color: #ddd; }
+.cm-s-raml-console .CodeMirror-guttermarker { color: #cb4b16; }
 
 .cm-s-raml-console .CodeMirror-gutter .CodeMirror-gutter-text {
   color: #586e75;
@@ -3581,5 +3579,5 @@ Active line. Negative margin compensates left padding of the text in the
 view-port
 */
 .cm-s-raml-console .CodeMirror-activeline-background {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.10);
 }
