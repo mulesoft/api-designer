@@ -32,13 +32,35 @@
         return new Date().getTime();
       });
     })
-    .factory('debounce', function debounceFactory($timeout) {
-      var timeout;
-      return function debounce(fn, delay, invokeApply) {
-        if (timeout) {
-          $timeout.cancel(timeout);
-        }
-        timeout = $timeout(fn, delay, invokeApply);
+    .factory('debounce', function debounceFactory($timeout, $q) {
+      /**
+      * Ensures that a function will be called just once
+      * after a period of time expires.
+      *
+      * @param {Function} target the function to debounce
+      * @param {number} wait the wait delay in miliseconds
+      */
+      return function (target, wait) {
+        var timeout = null;
+        var deferred = $q.defer();
+
+        return function () {
+          var context = this;
+          var args = arguments;
+          var invokeTarget = function invokeTarget() {
+            // call the target function, resolve the promise and reset local state for following calls
+            timeout = null;
+            deferred.resolve(target.apply(context, args));
+            deferred = $q.defer();
+          };
+          // if timeout exists means that the function is being called again before the delay has finished
+          // so we cancel the delayed execution in order to re-schedule it
+          timeout && $timeout.cancel(timeout);
+          // schedule (or re-schedule) the delayed execution
+          timeout = $timeout(invokeTarget, wait);
+          // return a promise that will be resolved when the target function is called
+          return deferred.promise;
+        };
       };
     })
     .factory('throttle', function (getTime, $timeout) {

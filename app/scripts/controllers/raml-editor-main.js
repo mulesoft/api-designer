@@ -112,11 +112,9 @@
         }
       });
 
-      function updateFile () {
-        debounce(function emitSourceUpdated() {
-          eventService.broadcast('event:file-updated');
-        }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
-      }
+      var updateFile = debounce(function updateFile () {
+        eventService.broadcast('event:file-updated');
+      }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
 
       $scope.$on('event:raml-editor-file-created', updateFile);
 

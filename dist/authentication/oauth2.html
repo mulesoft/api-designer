@@ -2,6 +2,7 @@
 <html>
   <head>
     <script type='text/javascript'>
+<<<<<<< HEAD
        function getVariable(string, variable) {
          var vars = string.split('&');
          for (var i = 0; i < vars.length; i++) {
@@ -26,6 +27,9 @@
 
        var result = getFragmentVariable('access_token') || getQueryVariable('code');
        window.opener.RAML.authorizationSuccess(result);
+=======
+       window.opener.oauth2Callback(window.location.href);
+>>>>>>> Simplify integration and building
        window.close();
     </script>
   </head>
