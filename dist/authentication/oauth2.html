@@ -2,34 +2,7 @@
 <html>
   <head>
     <script type='text/javascript'>
-<<<<<<< HEAD
-       function getVariable(string, variable) {
-         var vars = string.split('&');
-         for (var i = 0; i < vars.length; i++) {
-             var pair = vars[i].split('=');
-             if (decodeURIComponent(pair[0]) == variable) {
-                 return decodeURIComponent(pair[1]);
-             }
-         }
-
-        return undefined;
-       }
-
-       function getFragmentVariable(variable) {
-         var hash = window.location.hash.substring(1);
-         return getVariable(hash, variable);
-       }
-
-       function getQueryVariable(variable) {
-         var query = window.location.search.substring(1);
-         return getVariable(query, variable);
-       }
-
-       var result = getFragmentVariable('access_token') || getQueryVariable('code');
-       window.opener.RAML.authorizationSuccess(result);
-=======
        window.opener.oauth2Callback(window.location.href);
->>>>>>> Simplify integration and building
        window.close();
     </script>
   </head>

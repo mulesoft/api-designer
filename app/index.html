@@ -38,6 +38,13 @@
     </div>
 
     <!-- build:js({.,.tmp,app}) scripts/api-designer-vendor.js -->
+    <!--
+      jQuery has to go before AngularJS otherwise we'll end up with jqLite,
+      which isn't enough for API Console to work properly
+    -->
+    <script src="bower_components/jquery/dist/jquery.js"></script>
+    <script src="bower_components/velocity/velocity.js"></script>
+
     <script src="bower_components/angular/angular.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="bower_components/angular-ui-tree/dist/angular-ui-tree.js"></script>
@@ -55,8 +62,6 @@
     <script src="bower_components/marked/lib/marked.js"></script>
     <script src="bower_components/highlightjs/highlight.pack.js"></script>
     <script src="bower_components/vkbeautify/vkbeautify.js"></script>
-    <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/velocity/velocity.js"></script>
     <script src="bower_components/crypto-js/rollups/hmac-sha1.js"></script>
     <script src="bower_components/crypto-js/components/enc-base64.js"></script>
     <script src="bower_components/codemirror/lib/codemirror.js"></script>
