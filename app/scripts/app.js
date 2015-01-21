@@ -13,7 +13,6 @@
     // project
     'codeMirror',
     'fs',
-    'helpers',
     'raml',
     'stringFilters',
     'utils',

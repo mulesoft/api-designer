@@ -9068,7 +9068,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'ramlConsoleApp',
     'codeMirror',
     'fs',
-    'helpers',
     'raml',
     'stringFilters',
     'utils',
@@ -9898,9 +9897,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'ramlEditorApp',
     'codeFolding'
   ]).factory('codeMirror', [
+    '$rootScope',
     'ramlHint',
     'codeMirrorHighLight',
-    'eventService',
     'generateSpaces',
     'generateTabs',
     'getFoldRange',
@@ -9909,7 +9908,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'getTabCount',
     'config',
     'extractKeyValue',
-    function (ramlHint, codeMirrorHighLight, eventService, generateSpaces, generateTabs, getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue) {
+    function ($rootScope, ramlHint, codeMirrorHighLight, generateSpaces, generateTabs, getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue) {
       var editor = null;
       var service = { CodeMirror: CodeMirror };
       service.removeTabs = function (line, indentUnit) {
@@ -10108,13 +10107,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           fallthrough: ['default']
         };
         CodeMirror.commands.save = function () {
-          eventService.broadcast('event:save');
+          $rootScope.$broadcast('event:save');
         };
         CodeMirror.commands.autocomplete = function (cm) {
           CodeMirror.showHint(cm, CodeMirror.hint.raml, { ghosting: true });
         };
         CodeMirror.commands.toggleTheme = function () {
-          eventService.broadcast('event:toggle-theme');
+          $rootScope.$broadcast('event:toggle-theme');
         };
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
         CodeMirror.defineMIME('text/x-raml', 'raml');
@@ -10266,37 +10265,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       service.clearAnnotations = function () {
         var editor = codeMirror.getEditor();
         clearMarks(editor);
-      };
-      return service;
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
-  var module;
-  try {
-    module = angular.module('helpers');
-  } catch (e) {
-    module = angular.module('helpers', []);
-  }
-  module.factory('eventService', [
-    '$rootScope',
-    '$timeout',
-    function ($rootScope, $timeout) {
-      var service = {};
-      var lastEvents = {};
-      service.broadcast = function broadcast(eventName, data) {
-        $rootScope.$broadcast(eventName, data);
-        lastEvents[eventName] = { data: data };
-      };
-      service.on = function on(eventName, handler) {
-        $rootScope.$on(eventName, handler);
-        if (lastEvents[eventName] && handler) {
-          $timeout(function () {
-            handler({}, lastEvents[eventName].data);
-          });
-        }
       };
       return service;
     }
@@ -12687,14 +12655,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'ramlParser',
     'ramlParserFileReader',
     'ramlRepository',
-    'eventService',
     'codeMirror',
     'codeMirrorErrors',
     'config',
     '$prompt',
     '$confirm',
     '$modal',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -12734,7 +12701,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         codeMirror.configureEditor(editor, file.extension);
         currentFile = file;
         // Empty console so that we remove content from previous open RAML file
-        eventService.broadcast('event:raml-parsed', {});
+        $rootScope.$broadcast('event:raml-parsed', {});
         editor.setValue(file.contents);
         $scope.fileParsable = $scope.getIsFileParsable(file);
       });
@@ -12744,7 +12711,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         }
       });
       var updateFile = debounce(function updateFile() {
-          eventService.broadcast('event:file-updated');
+          $rootScope.$broadcast('event:file-updated');
         }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
       $scope.$on('event:raml-editor-file-created', updateFile);
       $scope.$on('event:raml-editor-file-removed', updateFile);
@@ -12778,7 +12745,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
       };
-      eventService.on('event:file-updated', function onFileUpdated() {
+      $scope.$on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
         var file = $scope.fileBrowser.selectedFile;
         if (!file || !$scope.fileParsable || file.contents.trim() === '') {
@@ -12790,18 +12757,18 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           // hack: we have to make a full copy of an object because console modifies
           // it later and makes it unusable for mocking service
           $scope.fileBrowser.selectedFile.raml = angular.copy(value);
-          eventService.broadcast('event:raml-parsed', value);
+          $rootScope.$broadcast('event:raml-parsed', value);
         }), safeApplyWrapper($scope, function failure(error) {
-          eventService.broadcast('event:raml-parser-error', error);
+          $rootScope.$broadcast('event:raml-parser-error', error);
         }));
       });
-      eventService.on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
         $scope.title = raml.title;
         $scope.version = raml.version;
         $scope.currentError = undefined;
         lineOfCurrentError = undefined;
       }));
-      eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
+      $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
         /*jshint sub: true */
         var problemMark = error['problem_mark'], displayLine = 0, displayColumn = 0, message = error.message;
         lineOfCurrentError = displayLine;
@@ -12861,7 +12828,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
         return extractCurrentFileLabel(currentFile);
       };
-      eventService.on('event:toggle-theme', function onToggleTheme() {
+      $scope.$on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme($scope.theme === 'dark' ? 'light' : 'dark');
       });
       (function bootstrap() {
@@ -13042,10 +13009,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   'use strict';
   angular.module('ramlEditorApp').constant('NOTIFICATION_TIMEOUT', 3000).controller('notifications', [
     'NOTIFICATION_TIMEOUT',
-    'eventService',
     '$scope',
     '$timeout',
-    function (NOTIFICATION_TIMEOUT, eventService, $scope, $timeout) {
+    function (NOTIFICATION_TIMEOUT, $scope, $timeout) {
       var notifications = [];
       $scope.shouldDisplayNotifications = false;
       function processNotifications() {
@@ -13065,7 +13031,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           }
         }
       }
-      eventService.on('event:notification', function (e, args) {
+      $scope.$on('event:notification', function (e, args) {
         notifications.push(JSON.parse(JSON.stringify(args)));
         processNotifications();
       });
@@ -13678,11 +13644,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$rootScope',
     '$timeout',
     'config',
-    'eventService',
     'ramlRepository',
     'newNameModal',
     'importService',
-    function ($q, $window, $rootScope, $timeout, config, eventService, ramlRepository, newNameModal, importService) {
+    function ($q, $window, $rootScope, $timeout, config, ramlRepository, newNameModal, importService) {
       function Controller($scope) {
         var fileBrowser = this;
         var unwatchSelectedFile = angular.noop;
@@ -13781,7 +13746,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         }
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file).then(function () {
-            return eventService.broadcast('event:notification', {
+            return $rootScope.$broadcast('event:notification', {
               message: 'File saved.',
               expires: true
             });

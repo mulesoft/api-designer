@@ -1,76 +1,50 @@
 'use strict';
 
-describe('Notifications', function () {
-
-  var notifications, params, $controller, eventServiceMock, eventService, scope, $timeout;
+describe('notifications', function () {
+  var $rootScope;
+  var $timeout;
+  var scope;
 
   beforeEach(module('ramlEditorApp'));
-
   beforeEach(inject(function ($injector) {
-    var $rootScope = $injector.get('$rootScope');
-    $controller = $injector.get('$controller');
-    $timeout = $injector.get('$timeout');
-    eventService  = $injector.get('eventService');
+    $rootScope = $injector.get('$rootScope');
+    $timeout   = $injector.get('$timeout');
 
-    scope = $rootScope.$new();
-
-    eventServiceMock = sinon.mock(eventService);
-
-    params = {
-      $scope: scope,
-      eventService: eventService
-    };
+    $injector.get('$controller')('notifications', {
+      $scope: scope = $rootScope.$new()
+    });
   }));
 
   afterEach(function () {
-    eventServiceMock.verify();
     $timeout.verifyNoPendingTasks();
   });
 
-  it('should correctly receive the "event:notification" event and act', function () {
-    // Arrange
-    var message = 'My Message';
-    eventServiceMock.expects('on').once().callsArgWith(1, {}, {message: message, expires: false});
-
-    // Act
-    notifications = $controller('notifications', params);
-
-    // Assert
-    scope.shouldDisplayNotifications.should.be.equal(true);
-    scope.message.should.be.equal(message);
-    scope.expires.should.be.equal(false);
+  it('should process notification when event:notification is broadcasted', function () {
+    var args = broadcast();
+    scope.should.have.property('message', args.message);
+    scope.should.have.property('level',   'info');
+    scope.should.have.property('shouldDisplayNotifications', true);
   });
 
-  it('should hide notifications when called "hideNotifications"', function () {
-    // Arrange
-    eventServiceMock.expects('on').once().callsArgWith(1, {}, {message: 'My Message'});
+  it('should expire notification when requested', function () {
+    var args = broadcast({
+      expires: true
+    });
 
-    // Act
-    notifications = $controller('notifications', params);
-    scope.hideNotifications();
+    scope.should.have.property('expires', args.expires);
+    scope.should.have.property('shouldDisplayNotifications', true);
 
-    // Assert
-    scope.shouldDisplayNotifications.should.be.equal(false);
-
-  });
-
-  it('should expire the notifications correctly', function () {
-    // Arrange
-    var message = 'My message',
-        displayedNotifications;
-    eventServiceMock.expects('on').once().callsArgWith(1, {}, {message: message, expires: true});
-
-    // Act
-    notifications = $controller('notifications', params);
-    displayedNotifications = scope.shouldDisplayNotifications;
     $timeout.flush();
 
-    // Assert
-    displayedNotifications.should.be.equal(true);
-    scope.shouldDisplayNotifications.should.be.equal(false);
-    scope.message.should.be.equal(message);
-    scope.expires.should.be.equal(true);
-
+    scope.should.have.property('shouldDisplayNotifications', false);
   });
-});
 
+  // ---
+
+  function broadcast(args) {
+    $rootScope.$broadcast('event:notification', args = angular.extend({message: '' + Date.now()}, args));
+    $rootScope.$apply();
+
+    return args;
+  }
+});

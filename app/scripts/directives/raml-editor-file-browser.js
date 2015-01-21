@@ -8,7 +8,6 @@
       $rootScope,
       $timeout,
       config,
-      eventService,
       ramlRepository,
       newNameModal,
       importService
@@ -146,7 +145,7 @@
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
             .then(function () {
-              return eventService.broadcast('event:notification', {
+              return $rootScope.$broadcast('event:notification', {
                 message: 'File saved.',
                 expires: true
               });

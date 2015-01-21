@@ -3,7 +3,7 @@
 
   angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     .factory('codeMirror', function (
-      ramlHint, codeMirrorHighLight, eventService, generateSpaces, generateTabs,
+      $rootScope, ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
       getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue
     ) {
       var editor  = null;
@@ -232,7 +232,7 @@
         };
 
         CodeMirror.commands.save = function () {
-          eventService.broadcast('event:save');
+          $rootScope.$broadcast('event:save');
         };
 
         CodeMirror.commands.autocomplete = function (cm) {
@@ -242,7 +242,7 @@
         };
 
         CodeMirror.commands.toggleTheme = function () {
-          eventService.broadcast('event:toggle-theme');
+          $rootScope.$broadcast('event:toggle-theme');
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);

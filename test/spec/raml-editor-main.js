@@ -1,6 +1,6 @@
 'use strict';
 
-var codeMirror, eventService, codeMirrorErrors,
+var codeMirror, codeMirrorErrors,
   $rootScope, $controller, $q, applySuggestion;
 
 describe('RAML Editor Main Controller', function () {
@@ -24,7 +24,6 @@ describe('RAML Editor Main Controller', function () {
     $confirm        = $injector.get('$confirm');
     $window         = $injector.get('$window');
     codeMirror      = $injector.get('codeMirror');
-    eventService    = $injector.get('eventService');
     applySuggestion = $injector.get('applySuggestion');
     ramlRepository  = $injector.get('ramlRepository');
   }));
@@ -54,7 +53,6 @@ describe('RAML Editor Main Controller', function () {
       $scope: scope,
       codeMirror: codeMirror,
       codeMirrorErrors: codeMirrorErrors,
-      eventService: eventService,
       $confirm: $confirm,
     };
   });
@@ -107,7 +105,7 @@ describe('RAML Editor Main Controller', function () {
       should.not.exist(scope.currentError);
 
       // Act
-      eventService.broadcast('event:raml-parser-error', error);
+      $rootScope.$broadcast('event:raml-parser-error', error);
 
       // Assert
       annotationsToDisplay.length.should.be.equal(1);
@@ -129,7 +127,7 @@ describe('RAML Editor Main Controller', function () {
           }
         };
 
-        eventService.broadcast('event:raml-parser-error', error);
+        $rootScope.$broadcast('event:raml-parser-error', error);
         CodeMirror.signal(editor, 'fold', editor, {line: 6}, {line: 10});
 
         annotationsToDisplay[0].line.should.be.equal(7);
@@ -147,7 +145,7 @@ describe('RAML Editor Main Controller', function () {
           }
         };
 
-        eventService.broadcast('event:raml-parser-error', error);
+        $rootScope.$broadcast('event:raml-parser-error', error);
         CodeMirror.signal(editor, 'fold', editor, {line: 6}, {line: 10});
         CodeMirror.signal(editor, 'unfold', editor, {line: 6}, {line: 10});
 
@@ -174,7 +172,7 @@ describe('RAML Editor Main Controller', function () {
           }
         };
 
-        eventService.broadcast('event:raml-parser-error', error);
+        $rootScope.$broadcast('event:raml-parser-error', error);
         CodeMirror.signal(editor, 'fold', editor, {line: 7}, {line: 10});
         CodeMirror.signal(editor, 'fold', editor, {line: 6}, {line: 10});
         CodeMirror.signal(editor, 'unfold', editor, {line: 6}, {line: 10});

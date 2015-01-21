@@ -46,7 +46,7 @@
       });
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, eventService, codeMirror,
+      safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -100,7 +100,7 @@
         currentFile = file;
 
         // Empty console so that we remove content from previous open RAML file
-        eventService.broadcast('event:raml-parsed', {});
+        $rootScope.$broadcast('event:raml-parsed', {});
 
         editor.setValue(file.contents);
         $scope.fileParsable = $scope.getIsFileParsable(file);
@@ -113,7 +113,7 @@
       });
 
       var updateFile = debounce(function updateFile () {
-        eventService.broadcast('event:file-updated');
+        $rootScope.$broadcast('event:file-updated');
       }, config.get('updateResponsivenessInterval', UPDATE_RESPONSIVENESS_INTERVAL));
 
       $scope.$on('event:raml-editor-file-created', updateFile);
@@ -158,7 +158,7 @@
         $scope.hasErrors = false;
       };
 
-      eventService.on('event:file-updated', function onFileUpdated() {
+      $scope.$on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
 
         var file = $scope.fileBrowser.selectedFile;
@@ -176,24 +176,24 @@
             // it later and makes it unusable for mocking service
             $scope.fileBrowser.selectedFile.raml = angular.copy(value);
 
-            eventService.broadcast('event:raml-parsed', value);
+            $rootScope.$broadcast('event:raml-parsed', value);
           }),
 
           // failure
           safeApplyWrapper($scope, function failure(error) {
-            eventService.broadcast('event:raml-parser-error', error);
+            $rootScope.$broadcast('event:raml-parser-error', error);
           })
         );
       });
 
-      eventService.on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
         $scope.title     = raml.title;
         $scope.version   = raml.version;
         $scope.currentError = undefined;
         lineOfCurrentError = undefined;
       }));
 
-      eventService.on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
+      $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
         /*jshint sub: true */
         var problemMark = error['problem_mark'],
             displayLine = 0,
@@ -275,7 +275,7 @@
         return extractCurrentFileLabel(currentFile);
       };
 
-      eventService.on('event:toggle-theme', function onToggleTheme() {
+      $scope.$on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme(($scope.theme === 'dark') ? 'light' : 'dark');
       });
 
