@@ -80238,9 +80238,10 @@ exports.javascript = require('./javascript');
 
           // If the response fails because of CORS, responseText is null
           var editorHeight = 50;
+
           if (jqXhr.responseText) {
             var lines = jqXhr.responseText.split('\n').length;
-            var editorHeight = lines > 100 ? 2000 : 25*lines;
+            editorHeight = lines > 100 ? 2000 : 25*lines;
           }
 
           $scope.editorStyle = {
@@ -81696,18 +81697,16 @@ exports.javascript = require('./javascript');
         }
       }
 
-      o.baseUrl = options.uri;
+      o.baseUrl = options.url;
 
       if (!RAML.Utils.isEmpty(queryParams)) {
-        var separator = (options.uri.match('\\?') ? '&' : '?');
+        var separator = (options.url.match('\\?') ? '&' : '?');
 
-        o.baseUrl = options.uri + separator;
-        o.uri = options.uri + separator + jQuery.param(queryParams, true);
+        o.baseUrl = options.url + separator;
         o.url = options.url + separator + jQuery.param(queryParams, true);
       }
 
       if (!RAML.Settings.disableProxy && RAML.Settings.proxy) {
-        o.uri = RAML.Settings.proxy + o.uri;
         o.url = RAML.Settings.proxy + o.url;
       }
 
@@ -84207,8 +84206,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
   $templateCache.put('directives/method-list.tpl.html',
     "<div class=\"raml-console-tab-list\">\n" +
     "  <div class=\"raml-console-tab\" ng-repeat=\"method in resource.methods\" ng-click=\"showResource($event, $index)\">\n" +
-    "    <span class=\"raml-console-tab-label\">{{method.method.toLocaleUpperCase()}}</span>\n" +
-    "    <div class=\"raml-console-tab-box raml-console-tab-{{method.method}}\"></div>\n" +
+    "    <span class=\"raml-console-tab-label raml-console-tab-{{method.method}}\">{{method.method.toLocaleUpperCase()}}</span>\n" +
     "  </div>\n" +
     "</div>\n"
   );
@@ -84560,8 +84558,8 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "              <div class=\"raml-console-sidebar-request-metadata\" ng-class=\"{'raml-console-is-active':showRequestMetadata}\">\n" +
     "\n" +
     "                <div class=\"raml-console-sidebar-row\">\n" +
-    "                  <div ng-if=\"requestOptions.uri\">\n" +
-    "                    <h3 class=\"raml-console-sidebar-response-head raml-console-sidebar-response-head-pre\">Request URI</h3>\n" +
+    "                  <div ng-if=\"requestOptions.url\">\n" +
+    "                    <h3 class=\"raml-console-sidebar-response-head raml-console-sidebar-response-head-pre\">Request URL</h3>\n" +
     "                    <div class=\"raml-console-sidebar-response-item\">\n" +
     "                      <p class=\"raml-console-sidebar-response-metadata raml-console-sidebar-request-url\">{{requestOptions.baseUrl}}<span ng-repeat=\"(key, value) in parameters\"><span ng-hide=\"$first\">&amp;</span><b>{{key}}</b>=<i>{{value[0]}}</i></span>\n" +
     "                      </p>\n" +

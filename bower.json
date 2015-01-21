@@ -10,7 +10,7 @@
     "angular": "~1.2.16",
     "angular-bootstrap": "~0.11.0",
     "angular-ui-tree": "2.1.5",
-    "api-console": "mulesoft/api-console#c2c43df591edc0c864ad420bf29322c0b4c86c07",
+    "api-console": "mulesoft/api-console#883ee443b2cb35ebd835f6f78d50a3c996cec08e",
     "es5-shim": "~2.3.0",
     "font-awesome": "~4.0.3",
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",

@@ -3354,84 +3354,192 @@ th {
   }
 }
 
-.raml-console-tab-get {
+.raml-console-tab-get::before {
   background: #0B88B9;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -40px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-put {
+.raml-console-tab-put::before {
   background: #87538f;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -40px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-delete {
+.raml-console-tab-delete::before {
   background: #d14956;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -28px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-post {
+.raml-console-tab-post::before {
   background: #1EA18D;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -36px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-patch {
+.raml-console-tab-patch::before {
   background: #02B0E2;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -32px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-connect {
+.raml-console-tab-connect::before {
   background: #E48F0A;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -19px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-head {
+.raml-console-tab-head::before {
   background: #8A45A2;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -34px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-options {
+.raml-console-tab-options::before {
   background: #1EBD77;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -21px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab-trace {
+.raml-console-tab-trace::before {
   background: #98B805;
+  content: '';
+  height: 31px;
+  border-radius: 4px;
+  margin: 0 10px 0;
+  -webkit-transform: perspective(45px) rotateX(30deg);
+  -moz-transform: perspective(45px) rotateX(30deg);
+  -ms-transform: perspective(45px) rotateX(30deg);
+  width: 108px;
+  position: absolute;
+  margin-left: -31px;
+  z-index: -1;
+  top: 0px;
 }
 
-.raml-console-tab:hover .raml-console-tab-get,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-get {
+.raml-console-tab:hover .raml-console-tab-get::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-get::before {
   background: #5F9ACA;
 }
 
-.raml-console-tab:hover .raml-console-tab-put,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-put {
+.raml-console-tab:hover .raml-console-tab-put::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-put::before {
   background: #B16DBB;
 }
 
-.raml-console-tab:hover .raml-console-tab-delete,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-delete {
+.raml-console-tab:hover .raml-console-tab-delete::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-delete::before {
   background: #EC5D5E;
 }
 
-.raml-console-tab:hover .raml-console-tab-post,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-post {
+.raml-console-tab:hover .raml-console-tab-post::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-post::before {
   background: #77C5A2;
 }
 
-.raml-console-tab:hover .raml-console-tab-patch,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-patch {
+.raml-console-tab:hover .raml-console-tab-patch::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-patch::before {
   background: #96e7fe;
 }
 
-.raml-console-tab:hover .raml-console-tab-connect,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-connect {
+.raml-console-tab:hover .raml-console-tab-connect::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-connect::before {
   background: #f8ba58;
 }
 
-.raml-console-tab:hover .raml-console-tab-head,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-head {
+.raml-console-tab:hover .raml-console-tab-head::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-head::before {
   background: #b680c9;
 }
 
-.raml-console-tab:hover .raml-console-tab-options,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-options {
+.raml-console-tab:hover .raml-console-tab-options::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-options::before {
   background: #59e5a7;
 }
 
-.raml-console-tab:hover .raml-console-tab-trace,
-.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-trace {
+.raml-console-tab:hover .raml-console-tab-trace::before,
+.raml-console-resource:not(.raml-console-is-active) .raml-console-tab.raml-console-is-hovered .raml-console-tab-trace::before {
   background: #c7f107;
 }
 
@@ -3440,7 +3548,39 @@ th {
   color: #333;
 }
 
-.raml-console-tab.raml-console-is-active .raml-console-tab-box {
+.raml-console-tab.raml-console-is-active .raml-console-tab-get::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-post::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-put::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-patch::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-delete::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-trace::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-options::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-head::before {
+  background: #fff;
+}
+
+.raml-console-tab.raml-console-is-active .raml-console-tab-connect::before {
   background: #fff;
 }
 
