@@ -3773,6 +3773,14 @@ th {
   }
 }
 
+span.raml-console-resource-path-active {
+  cursor: default;
+}
+
+a.raml-console-resource-path-active {
+  cursor: pointer;
+}
+
 .raml-console-resource-heading {
   display: inline-block;
   margin: 0;
@@ -3783,10 +3791,6 @@ th {
 
 .raml-console-resource:not(.raml-console-is-active) .raml-console-resource-heading:hover {
   background-image: linear-gradient(to top, rgba(255, 255, 255, 0) 1px, #999 2px, rgba(255, 255, 255, 0) 1px);
-}
-
-.raml-console-resource .raml-console-resource-heading:hover {
-  cursor: pointer;
 }
 
 @media only screen and (min-width: 600px) {
