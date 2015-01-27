@@ -13,10 +13,10 @@
         <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>
       </div>
 
-      <div style="margin-left: 145px;">
-        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-if="mode.type === 'swagger'" placeholder="http://example.swagger.wordnik.com/api/api-docs">
+      <div style="margin-left: 145px;" ng-switch="mode.type">
+        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
 
-        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" multiple required ng-if="mode.type === 'file'">
+        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" multiple required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">
       </div>
     </div>
 

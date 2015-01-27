@@ -43,6 +43,12 @@
         window.File && window.FileReader && window.FileList && window.Blob
       );
 
+      // Handles <input type="file" onchange="angular.element(this).scope().handleFileSelect(this)">
+      // this workaroud for binding the input file to a model won't work for 1.3.x since scope isn't available in onchange
+      $scope.handleFileSelect = function (element) {
+        $scope.mode.value = element.files;
+      };
+
       /**
        * Import using either import modes.
        *
@@ -78,7 +84,6 @@
         }
 
         $scope.importing = true;
-
         return importService.mergeFileList($scope.rootDirectory, mode.value)
           .then(function () {
             return $modalInstance.close(true);
