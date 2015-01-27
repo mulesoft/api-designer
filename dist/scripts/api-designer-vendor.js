@@ -65287,7 +65287,7 @@ var block = {
   lheading: /^([^\n]+)\n *(=|-){2,} *(?:\n+|$)/,
   blockquote: /^( *>[^\n]+(\n(?!def)[^\n]+)*\n*)+/,
   list: /^( *)(bull) [\s\S]+?(?:hr|def|\n{2,}(?! )(?!\1bull )\n*|\s*$)/,
-  html: /^ *(?:comment|closed|closing) *(?:\n{2,}|\s*$)/,
+  html: /^ *(?:comment *(?:\n|\s*$)|closed *(?:\n{2,}|\s*$)|closing *(?:\n{2,}|\s*$))/,
   def: /^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +["(]([^\n]+)[")])? *(?:\n+|$)/,
   table: noop,
   paragraph: /^((?:[^\n]+\n?(?!hr|heading|lheading|blockquote|tag|def))+)\n*/,
@@ -66135,7 +66135,7 @@ Renderer.prototype.link = function(href, title, text) {
     } catch (e) {
       return '';
     }
-    if (prot.indexOf('javascript:') === 0) {
+    if (prot.indexOf('javascript:') === 0 || prot.indexOf('vbscript:') === 0) {
       return '';
     }
   }
@@ -66421,8 +66421,13 @@ function marked(src, opt, callback) {
 
     pending = tokens.length;
 
-    var done = function() {
-      var out, err;
+    var done = function(err) {
+      if (err) {
+        opt.highlight = highlight;
+        return callback(err);
+      }
+
+      var out;
 
       try {
         out = Parser.parse(tokens, opt);
@@ -66451,6 +66456,7 @@ function marked(src, opt, callback) {
           return --pending || done();
         }
         return highlight(token.text, token.lang, function(err, code) {
+          if (err) return done(err);
           if (code == null || code === token.text) {
             return --pending || done();
           }
@@ -66520,7 +66526,7 @@ marked.inlineLexer = InlineLexer.output;
 
 marked.parse = marked;
 
-if (typeof exports === 'object') {
+if (typeof module !== 'undefined' && typeof exports === 'object') {
   module.exports = marked;
 } else if (typeof define === 'function' && define.amd) {
   define(function() { return marked; });
@@ -79418,6 +79424,10 @@ exports.javascript = require('./javascript');
 
         $scope.currentStatusCode = '200';
 
+        if ($scope.methodInfo.responseCodes && $scope.methodInfo.responseCodes.length > 0) {
+          $scope.currentStatusCode = $scope.methodInfo.responseCodes[0];
+        }
+
         function beautify(body, contentType) {
           if(contentType.indexOf('json')) {
             body = vkbeautify.json(body, 2);
@@ -79642,7 +79652,7 @@ exports.javascript = require('./javascript');
 
           if (responses) {
             Object.keys(responses).map(function (key) {
-              if(typeof responses[key].body !== 'undefined') {
+              if(responses[key] && typeof responses[key].body !== 'undefined') {
                 responseInfo[key] = {};
 
                 Object.keys(responses[key].body).sort().reverse().map(function (type) {
@@ -80240,7 +80250,7 @@ exports.javascript = require('./javascript');
           var editorHeight = 50;
 
           if (jqXhr.responseText) {
-            var lines = jqXhr.responseText.split('\n').length;
+            var lines = $scope.response.body.split('\n').length;
             editorHeight = lines > 100 ? 2000 : 25*lines;
           }
 
@@ -80593,6 +80603,12 @@ exports.javascript = require('./javascript');
           } else {
             $scope.showRequestMetadata = true;
           }
+        };
+
+        $scope.showResponseMetadata = true;
+
+        $scope.toggleResponseMetadata = function () {
+          $scope.showResponseMetadata = !$scope.showResponseMetadata;
         };
       }
     };
@@ -84594,10 +84610,14 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "            <section class=\"raml-console-side-bar-try-it-description\">\n" +
     "              <header class=\"raml-console-sidebar-row raml-console-sidebar-header\">\n" +
-    "                <h3 class=\"raml-console-sidebar-head\">Response</h3>\n" +
+    "                <h3 class=\"raml-console-sidebar-head\">\n" +
+    "                  <button ng-class=\"{'raml-console-is-open':showResponseMetadata, 'raml-console-is-collapsed':!showResponseMetadata}\" class=\"raml-console-sidebar-expand-btn\" ng-click=\"toggleResponseMetadata()\">\n" +
+    "                    Response\n" +
+    "                  </button>\n" +
+    "                </h3>\n" +
     "              </header>\n" +
     "\n" +
-    "              <div class=\"raml-console-sidebar-row sidebar-response\" ng-class=\"{'raml-console-is-active':requestEnd}\">\n" +
+    "              <div class=\"raml-console-sidebar-row raml-console-sidebar-response\" ng-class=\"{'raml-console-is-active':showResponseMetadata}\">\n" +
     "                <h3 class=\"raml-console-sidebar-response-head\">Status</h3>\n" +
     "                <p class=\"raml-console-sidebar-response-item\">{{response.status}}</p>\n" +
     "\n" +
@@ -84788,7 +84808,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "  <p class=\"raml-console-sidebar-input-container\" ng-if=\"ownerOptionsEnabled()\">\n" +
     "    <label for=\"username\" class=\"raml-console-sidebar-label\">Username <span class=\"raml-console-side-bar-required-field\">*</span></label>\n" +
-    "    <input required=\"true\" type=\"text\" name=\"username\" class=\"raml-console-sidebar-input sidebar-security-field\" ng-model=\"credentials.username\" ng-change=\"onChange()\"/>\n" +
+    "    <input required=\"true\" type=\"text\" name=\"username\" class=\"raml-console-sidebar-input raml-console-sidebar-security-field\" ng-model=\"credentials.username\" ng-change=\"onChange()\"/>\n" +
     "    <span class=\"raml-console-field-validation-error\"></span>\n" +
     "  </p>\n" +
     "\n" +
