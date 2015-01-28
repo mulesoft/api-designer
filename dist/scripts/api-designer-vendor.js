@@ -80875,12 +80875,14 @@ exports.javascript = require('./javascript');
           var $this = jQuery($event.currentTarget);
 
           if ($this.hasClass('raml-console-resources-expanded')) {
+            $scope.collapsed = true;
             $this.text('expand all');
             $this.removeClass('raml-console-resources-expanded');
             jQuery('#raml-console-resources-container').find('ol.raml-console-resource-list').velocity('slideUp', {
               duration: 200
             });
           } else {
+            $scope.collapsed = false;
             $this.text('collapse all');
             $this.addClass('raml-console-resources-expanded');
             jQuery('#raml-console-resources-container').find('ol.raml-console-resource-list').velocity('slideDown', {
@@ -80888,8 +80890,8 @@ exports.javascript = require('./javascript');
             });
           }
 
-          jQuery('#raml-console-resources-container').find('.raml-console-resource-list-root ol.raml-console-resource-list').toggleClass('raml-console-is-collapsed');
-          jQuery('#raml-console-resources-container').find('button.raml-console-resource-root-toggle').toggleClass('raml-console-is-active');
+          // jQuery('#raml-console-resources-container').find('.raml-console-resource-list-item ol.raml-console-resource-list').toggleClass('raml-console-is-collapsed');
+          // jQuery('#raml-console-resources-container').find('button.raml-console-resource-root-toggle').toggleClass('raml-console-is-active');
         };
 
         $scope.hasResourcesWithChilds = function () {
@@ -81376,7 +81378,7 @@ exports.javascript = require('./javascript');
       var options = request.toOptions();
 
       return [
-        options.type.toUpperCase(),
+        options.method.toUpperCase(),
         this.encodeURI(options.url),
         rfc3986Encode(this.encodeParameters(request, oauthParams))
       ].join('&');
@@ -81732,7 +81734,7 @@ exports.javascript = require('./javascript');
 
   RAML.Client.Request = {
     create: function(url, method) {
-      return new RequestDsl({ url: url, type: method });
+      return new RequestDsl({ url: url, method: method });
     }
   };
 })();
@@ -82894,8 +82896,8 @@ RAML.Inspector = (function() {
       var xhr     = new root.XMLHttpRequest();
       var headers = options.headers || {};
 
-      // Open the request to the uri and method.
-      xhr.open(options.method, options.uri);
+      // Open the request to the url and method.
+      xhr.open(options.method, options.url);
 
       // When the request has loaded, attempt to automatically parse the body.
       xhr.onload = function () {
@@ -82932,20 +82934,20 @@ RAML.Inspector = (function() {
      * @param {Function} done
      */
     ClientOAuth2.prototype.request = function (options, done) {
-      var lib     = http;
-      var reqOpts = url.parse(options.uri);
+      var lib        = http;
+      var reqOptions = url.parse(options.url);
 
       // If the protocol is over https, switch request library.
-      if (reqOpts.protocol === 'https:') {
+      if (reqOptions.protocol === 'https:') {
         lib = https;
       }
 
       // Alias request options.
-      reqOpts.method  = options.method;
-      reqOpts.headers = options.headers;
+      reqOptions.method  = options.method;
+      reqOptions.headers = options.headers;
 
       // Send the http request and listen for the response to finish.
-      var req = lib.request(reqOpts, function (res) {
+      var req = lib.request(reqOptions, function (res) {
         var data = '';
 
         // Callback to `done` if a response error occurs.
@@ -83005,44 +83007,44 @@ RAML.Inspector = (function() {
   /**
    * Sign a standardised request object with user authentication information.
    *
-   * @param  {Object} opts
+   * @param  {Object} options
    * @return {Object}
    */
-  ClientOAuth2Token.prototype.sign = function (opts) {
+  ClientOAuth2Token.prototype.sign = function (options) {
     if (!this.accessToken) {
       throw new Error('Unable to sign without access token');
     }
 
-    opts.headers = opts.headers || {};
+    options.headers = options.headers || {};
 
     if (this.tokenType === 'bearer') {
-      opts.headers.Authorization = 'Bearer ' + this.accessToken;
+      options.headers.Authorization = 'Bearer ' + this.accessToken;
     } else {
-      var parts    = opts.uri.split('#');
+      var parts    = options.url.split('#');
       var token    = 'access_token=' + this.accessToken;
-      var uri      = parts[0].replace(/[?&]access_token=[^&#]/, '');
+      var url      = parts[0].replace(/[?&]access_token=[^&#]/, '');
       var fragment = parts[1] ? '#' + parts[1] : '';
 
-      // Prepend the correct query string parameter to the uri.
-      opts.uri = uri + (uri.indexOf('?') > -1 ? '&' : '?') + token + fragment;
+      // Prepend the correct query string parameter to the url.
+      options.url = url + (url.indexOf('?') > -1 ? '&' : '?') + token + fragment;
 
-      // Attempt to avoid storing the uri in proxies, since the access token
+      // Attempt to avoid storing the url in proxies, since the access token
       // is exposed in the query parameters.
-      opts.headers.Pragma           = 'no-store';
-      opts.headers['Cache-Control'] = 'no-store';
+      options.headers.Pragma           = 'no-store';
+      options.headers['Cache-Control'] = 'no-store';
     }
 
-    return opts;
+    return options;
   };
 
   /**
    * Make a HTTP request as the user.
    *
-   * @param {Object}   opts
+   * @param {Object}   options
    * @param {Function} done
    */
-  ClientOAuth2Token.prototype.request = function (opts, done) {
-    return this.client.client.request(this.sign(opts), done);
+  ClientOAuth2Token.prototype.request = function (options, done) {
+    return this.client.client.request(this.sign(options), done);
   };
 
   /**
@@ -84684,7 +84686,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "    <root-documentation></root-documentation>\n" +
     "\n" +
-    "    <ol <ol ng-class=\"{'raml-console-resources-container-no-title': disableTitle, 'raml-console-resources-container': !disableTitle}\" id=\"raml-console-resources-container\" class=\"raml-console-resource-list raml-console-resource-list-root\">\n" +
+    "    <ol ng-class=\"{'raml-console-resources-container-no-title': disableTitle, 'raml-console-resources-container': !disableTitle}\" id=\"raml-console-resources-container\" class=\"raml-console-resource-list raml-console-resource-list-root\">\n" +
     "      <li id=\"raml_documentation\" class=\"raml-console-resource-list-item raml-console-documentation-header\">\n" +
     "        <div ng-if=\"proxy\" align=\"right\" class=\"raml-console-resource-proxy\">\n" +
     "          <label for=\"raml-console-api-behind-firewall\">API is behind a firewall <a href=\"http://www.mulesoft.org/documentation/display/current/Accessing+Your+API+Behind+a+Firewall\" target=\"_blank\">(?)</a></label>\n" +
