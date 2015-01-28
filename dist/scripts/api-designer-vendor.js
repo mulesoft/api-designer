@@ -80490,14 +80490,17 @@ exports.javascript = require('./javascript');
               //// TODO: Make a uniform interface
               if (scheme && scheme.type === 'OAuth 2.0') {
                 authStrategy = new RAML.Client.AuthStrategies.Oauth2(scheme, $scope.credentials);
-                authStrategy.authenticate(request.toOptions(), handleResponse);
+                authStrategy.authenticate(request.toOptions(), function (jqXhr) {
+                  $scope.requestOptions = request.toOptions();
+                  handleResponse(jqXhr);
+                });
                 return;
               }
 
               authStrategy = RAML.Client.AuthStrategies.for(scheme, $scope.credentials);
               authStrategy.authenticate().then(function(token) {
                 token.sign(request);
-
+                $scope.requestOptions = request.toOptions();
                 jQuery.ajax(request.toOptions()).then(
                   function(data, textStatus, jqXhr) { handleResponse(jqXhr); },
                   function(jqXhr) { handleResponse(jqXhr); }
