@@ -80513,6 +80513,8 @@ exports.javascript = require('./javascript');
           }
         };
 
+        $scope.documentationEnabled = true;
+
         $scope.toggleSidebar = function ($event) {
           var $this        = jQuery($event.currentTarget);
           var $panel       = $this.closest('.raml-console-resource-panel');
@@ -80524,6 +80526,7 @@ exports.javascript = require('./javascript');
           }
 
           if ($sidebar.hasClass('raml-console-is-fullscreen')) {
+            $scope.documentationEnabled = true;
             $sidebar.velocity(
               { width: $scope.singleView ? 0 : sidebarWidth },
               {
@@ -80541,9 +80544,14 @@ exports.javascript = require('./javascript');
               { width: '100%' },
               {
                 duration: 200,
-                complete: completeAnimation
+                complete: function (element) {
+                  jQuery(element).removeAttr('style');
+                  $scope.documentationEnabled = false;
+                  apply();
+                }
               }
             );
+
             $sidebar.addClass('raml-console-is-fullscreen');
             $sidebar.addClass('raml-console-is-responsive');
             $panel.addClass('raml-console-has-sidebar-fullscreen');
@@ -80576,7 +80584,11 @@ exports.javascript = require('./javascript');
             { width: animation },
             {
               duration: speed,
-              complete: completeAnimation
+              complete: function (element) {
+                jQuery(element).removeAttr('style');
+                $scope.documentationEnabled = false;
+                apply();
+              }
             }
           );
 
@@ -83063,7 +83075,7 @@ RAML.Inspector = (function() {
     var authorization = btoa(options.clientId + ':' + options.clientSecret);
 
     return this.client._request({
-      uri: options.accessTokenUri,
+      url: options.accessTokenUri,
       method: 'POST',
       headers: {
         'Accept':        'application/json, application/x-www-form-urlencoded',
@@ -83125,7 +83137,7 @@ RAML.Inspector = (function() {
     var authorization = btoa(options.clientId + ':' + options.clientSecret);
 
     return this.client._request({
-      uri: options.accessTokenUri,
+      url: options.accessTokenUri,
       method: 'POST',
       headers: {
         'Accept':        'application/json, application/x-www-form-urlencoded',
@@ -83185,13 +83197,13 @@ RAML.Inspector = (function() {
   };
 
   /**
-   * Get the user access token from the uri.
+   * Get the user access token from the url.
    *
-   * @param {String}   uri
+   * @param {String}   url
    * @param {String}   [state]
    * @param {Function} done
    */
-  TokenFlow.prototype.getToken = function (uri, state, done) {
+  TokenFlow.prototype.getToken = function (url, state, done) {
     var options = this.client.options;
     var err;
 
@@ -83201,17 +83213,17 @@ RAML.Inspector = (function() {
       state = null;
     }
 
-    // Make sure the uri matches our expected redirect uri.
-    if (uri.substr(0, options.redirectUri.length) !== options.redirectUri) {
-      return done(new Error('Invalid uri (should to match redirect): ' + uri));
+    // Make sure the url matches our expected redirect url.
+    if (url.substr(0, options.redirectUri.length) !== options.redirectUri) {
+      return done(new Error('Invalid url (should to match redirect): ' + url));
     }
 
-    var queryString    = uri.replace(/^[^\?]*|\#.*$/g, '').substr(1);
-    var fragmentString = uri.replace(/^[^\#]*/, '').substr(1);
+    var queryString    = url.replace(/^[^\?]*|\#.*$/g, '').substr(1);
+    var fragmentString = url.replace(/^[^\#]*/, '').substr(1);
 
-    // Check whether a query string is present in the uri.
+    // Check whether a query string is present in the url.
     if (!queryString && !fragmentString) {
-      return done(new Error('Unable to process uri: ' + uri));
+      return done(new Error('Unable to process url: ' + url));
     }
 
     // Merge the fragment with the the query string. This is because, at least,
@@ -83275,7 +83287,7 @@ RAML.Inspector = (function() {
     var authorization = btoa(options.clientId + ':' + options.clientSecret);
 
     return this.client._request({
-      uri: options.accessTokenUri,
+      url: options.accessTokenUri,
       method: 'POST',
       headers: {
         'Accept':        'application/json, application/x-www-form-urlencoded',
@@ -83335,11 +83347,11 @@ RAML.Inspector = (function() {
    * Get the code token from the redirected uri and make another request for
    * the user access token.
    *
-   * @param {String}   uri
+   * @param {String}   url
    * @param {String}   [state]
    * @param {Function} done
    */
-  CodeFlow.prototype.getToken = function (uri, state, done) {
+  CodeFlow.prototype.getToken = function (url, state, done) {
     var self    = this;
     var options = this.client.options;
     var err;
@@ -83357,17 +83369,17 @@ RAML.Inspector = (function() {
       'accessTokenUri'
     ]);
 
-    // Make sure the uri matches our expected redirect uri.
-    if (uri.substr(0, options.redirectUri.length) !== options.redirectUri) {
-      return done(new Error('Invalid uri (should to match redirect): ' + uri));
+    // Make sure the url matches our expected redirect url.
+    if (url.substr(0, options.redirectUri.length) !== options.redirectUri) {
+      return done(new Error('Invalid url (should to match redirect): ' + url));
     }
 
     // Extract the query string from the url.
-    var queryString = uri.replace(/^[^\?]*|\#.*$/g, '').substr(1);
+    var queryString = url.replace(/^[^\?]*|\#.*$/g, '').substr(1);
 
-    // Check whether a query string is present in the uri.
+    // Check whether a query string is present in the url.
     if (!queryString) {
-      return done(new Error('Unable to process uri: ' + uri));
+      return done(new Error('Unable to process url: ' + url));
     }
 
     var query = uriDecode(queryString);
@@ -83388,7 +83400,7 @@ RAML.Inspector = (function() {
     }
 
     return this.client._request({
-      uri: options.accessTokenUri,
+      url: options.accessTokenUri,
       method: 'POST',
       headers: {
         'Accept':       'application/json, application/x-www-form-urlencoded',
@@ -84076,7 +84088,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
 
   $templateCache.put('directives/documentation.tpl.html',
-    "<div class=\"raml-console-resource-panel-primary\">\n" +
+    "<div class=\"raml-console-resource-panel-primary\" ng-if=\"documentationEnabled\">\n" +
     "  <!-- Request -->\n" +
     "  <header class=\"raml-console-resource-header\">\n" +
     "    <h3 class=\"raml-console-resource-head\">\n" +
