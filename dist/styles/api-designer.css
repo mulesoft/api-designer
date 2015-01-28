@@ -892,6 +892,9 @@ div.CodeMirror {
   width: 80px;
   margin-left: -21px;
 }
+[role=raml-editor] .raml-console-resource-list {
+  margin-top: 0;
+}
 [role=raml-editor] .raml-console-resource-heading-large {
   font-size: 15px;
 }
