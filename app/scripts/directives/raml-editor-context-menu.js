@@ -77,7 +77,7 @@
 
             return confirmModal.open(message, title)
               .then(function () {
-                ramlRepository.remove(target);
+                return ramlRepository.remove(target);
               })
             ;
           }
