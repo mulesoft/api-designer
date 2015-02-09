@@ -79336,20 +79336,28 @@ exports.javascript = require('./javascript');
   var loc      = window.location;
   var uri      = loc.protocol + '//' + loc.host + loc.pathname.replace(/\/$/, '');
 
-  // Marked Settings
-  renderer.paragraph = function (text) {
-    return text;
-  };
+  window.hljs.configure({
+    classPrefix: 'raml-console-hljs-'
+  });
 
   window.marked.setOptions({
     renderer: renderer,
     gfm: true,
     tables: true,
-    breaks: false,
+    breaks: true,
     pedantic: false,
-    sanitize: true,
+    sanitize: false,
     smartLists: true,
-    smartypants: false
+    smartypants: false,
+    highlight: function (code, lang) {
+      var result = [
+        '<pre class="raml-console-resource-pre raml-console-hljs hljs">',
+        lang ? window.hljs.highlightAuto(code).value : code,
+        '</pre>'
+      ];
+
+      return result.join('');
+    }
   });
 
   // Settings
@@ -80441,7 +80449,6 @@ exports.javascript = require('./javascript');
             var segmentContexts = resolveSegementContexts($scope.resource.pathSegments, $scope.context.uriParameters.data());
 
             $scope.showSpinner = true;
-            // $scope.toggleSidebar($event, true);
             $scope.toggleRequestMetadata($event, true);
 
             try {
@@ -80589,7 +80596,9 @@ exports.javascript = require('./javascript');
               duration: speed,
               complete: function (element) {
                 jQuery(element).removeAttr('style');
-                $scope.documentationEnabled = false;
+                if ($scope.singleView) {
+                  $scope.documentationEnabled = false;
+                }
                 apply();
               }
             }
@@ -80994,6 +81003,10 @@ exports.javascript = require('./javascript');
 
         $scope.ownerOptionsEnabled = function () {
           return $scope.credentials.grant === 'owner';
+        };
+
+        $scope.isImplicitEnabled = function () {
+          return $scope.credentials.grant === 'token';
         };
 
         $scope.grants = [
@@ -81521,7 +81534,7 @@ exports.javascript = require('./javascript');
   };
 
   Oauth2.prototype.authenticate = function(options, done) {
-    var githubAuth = new ClientOAuth2({
+    var auth = new ClientOAuth2({
       clientId:         this.credentials.clientId,
       clientSecret:     this.credentials.clientSecret,
       accessTokenUri:   this.scheme.settings.accessTokenUri,
@@ -81533,7 +81546,7 @@ exports.javascript = require('./javascript');
 
     if (grantType === 'token' || grantType === 'code') {
       window.oauth2Callback = function (uri) {
-        githubAuth[grantType].getToken(uri, function (err, user, raw) {
+        auth[grantType].getToken(uri, function (err, user, raw) {
           if (err) {
             done(raw);
           }
@@ -81546,11 +81559,11 @@ exports.javascript = require('./javascript');
         });
       };
       //// TODO: Find a way to handle 404
-      window.open(githubAuth[grantType].getUri());
+      window.open(auth[grantType].getUri());
     }
 
     if (grantType === 'owner') {
-      githubAuth.owner.getToken(this.credentials.username, this.credentials.password, function (err, user, raw) {
+      auth.owner.getToken(this.credentials.username, this.credentials.password, function (err, user, raw) {
         if (err) {
           done(raw);
         }
@@ -81564,7 +81577,7 @@ exports.javascript = require('./javascript');
     }
 
     if (grantType === 'credentials') {
-      githubAuth.credentials.getToken(function (err, user, raw) {
+      auth.credentials.getToken(function (err, user, raw) {
         if (err) {
           done(raw);
         }
@@ -84574,11 +84587,9 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "              <div class=\"raml-console-sidebar-action-group\">\n" +
     "                <button ng-hide=\"showSpinner\" type=\"submit\" class=\"raml-console-sidebar-action raml-console-sidebar-action-{{methodInfo.method}}\" ng-click=\"tryIt($event)\" ng-class=\"{'raml-console-sidebar-action-force':context.forceRequest}\"><span ng-if=\"context.forceRequest\">Force</span> {{methodInfo.method.toUpperCase()}}\n" +
     "                </button>\n" +
-    "                <button ng-if=\"showSpinner\" type=\"submit\" class=\"raml-console-sidebar-action raml-console-sidebar-action-{{methodInfo.method}} raml-console-sidebar-action-cancel-request\" ng-click=\"cancelRequest()\">Cancel</button>\n" +
+    "                <button ng-if=\"showSpinner\" type=\"submit\" class=\"raml-console-sidebar-action raml-console-sidebar-action-{{methodInfo.method}} raml-console-sidebar-action-cancel-request\" ng-click=\"cancelRequest()\">Cancel <div class=\"raml-console-spinner-request\" ng-if=\"showSpinner\">Loading ...</div></button>\n" +
     "                <button class=\"raml-console-sidebar-action raml-console-sidebar-action-clear\" ng-click=\"clearFields()\">Clear</button>\n" +
     "                <button class=\"raml-console-sidebar-action raml-console-sidebar-action-reset\" ng-click=\"resetFields()\">Reset</button>\n" +
-    "\n" +
-    "                <div class=\"raml-console-spinner-request\" ng-if=\"showSpinner\">Loading ...</div>\n" +
     "              </div>\n" +
     "            </div>\n" +
     "          </section>\n" +
@@ -84821,7 +84832,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    <span class=\"raml-console-field-validation-error\"></span>\n" +
     "  </p>\n" +
     "\n" +
-    "  <p class=\"raml-console-sidebar-input-container\">\n" +
+    "  <p class=\"raml-console-sidebar-input-container\" ng-if=\"!isImplicitEnabled()\">\n" +
     "    <label for=\"clientSecret\" class=\"raml-console-sidebar-label\">Client Secret <span class=\"raml-console-side-bar-required-field\">*</span></label>\n" +
     "    <input required=\"true\" type=\"password\" name=\"clientSecret\" class=\"raml-console-sidebar-input raml-console-sidebar-security-field\" ng-model=\"credentials.clientSecret\" ng-change=\"onChange()\"/>\n" +
     "    <span class=\"raml-console-field-validation-error\"></span>\n" +

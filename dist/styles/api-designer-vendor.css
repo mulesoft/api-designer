@@ -5697,7 +5697,7 @@ span.raml-console-side-bar-required-field {
 
 /*spinner request*/
 
-@-webkit-keyframes raml-console-spinner_request {
+@-webkit-keyframes raml-console-spinner-request {
   0% {
     -webkit-transform: rotate(0deg);
     -moz-transform: rotate(0deg);
@@ -5715,7 +5715,7 @@ span.raml-console-side-bar-required-field {
   }
 }
 
-@-moz-keyframes raml-console-spinner_request {
+@-moz-keyframes raml-console-spinner-request {
   0% {
     -webkit-transform: rotate(0deg);
     -moz-transform: rotate(0deg);
@@ -5733,7 +5733,7 @@ span.raml-console-side-bar-required-field {
   }
 }
 
-@-o-keyframes raml-console-spinner_request {
+@-o-keyframes raml-console-spinner-request {
   0% {
     -webkit-transform: rotate(0deg);
     -moz-transform: rotate(0deg);
@@ -5791,9 +5791,9 @@ span.raml-console-side-bar-required-field {
   height: 1em;
   overflow: hidden;
   text-indent: 100%;
-  position: relative;
-  left: 153px;
-  top: -27px;
+  position: absolute;
+  left: 125px;
+  margin-top: 7px;
 }
 
 .raml-console-initializer-container {
