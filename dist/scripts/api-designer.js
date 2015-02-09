@@ -12162,14 +12162,14 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     }
   ]);
 }());
-/* global JSZip */
 (function () {
   'use strict';
   angular.module('ramlEditorApp').service('importService', [
     '$q',
+    '$window',
     'ramlRepository',
     'importServiceConflictModal',
-    function importServiceFactory($q, ramlRepository, importServiceConflictModal) {
+    function importServiceFactory($q, $window, ramlRepository, importServiceConflictModal) {
       var self = this;
       /**
        * Merge a file with the specified directory.
@@ -12184,7 +12184,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           return self.importFile(directory, file);
         }
         return readFileAsText(file).then(function (contents) {
-          return mergeZip(directory, contents);
+          return self.mergeZip(directory, contents);
         });
       };
       /**
@@ -12307,7 +12307,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
        * @return {Promise}
        */
       self.createFile = function (directory, name, contents) {
-        return checkExistence(directory, name).then(function (option) {
+        return self.checkExistence(directory, name).then(function (option) {
           if (option === importServiceConflictModal.SKIP_FILE) {
             return;
           }
@@ -12325,6 +12325,54 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         });
       };
       /**
+       * Create a directory in the filesystem.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @return {Promise}
+       */
+      self.createDirectory = function (directory, name) {
+        return ramlRepository.createDirectory(directory, name);
+      };
+      /**
+       * Merge a zip with a directory in the file system.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      self.mergeZip = function (directory, contents) {
+        var zip = new $window.JSZip(contents);
+        var files = removeCommonFilePrefixes(sanitizeZipFiles(zip.files));
+        return importZipFiles(directory, files);
+      };
+      /**
+       * Import a zip file into the current directory.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      self.importZip = function (directory, contents) {
+        var zip = new $window.JSZip(contents);
+        var files = sanitizeZipFiles(zip.files);
+        return importZipFiles(directory, files);
+      };
+      /**
+       * Check whether a file exists and make a decision based on that.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @return {Promise}
+       */
+      self.checkExistence = function (directory, name) {
+        var path = ramlRepository.join(directory.path, name);
+        if (!pathExists(path)) {
+          return $q.when(null);
+        }
+        return importServiceConflictModal.open(path);
+      };
+      /**
        * Import a single file at specific path.
        *
        * @param  {Object}  directory
@@ -12336,8 +12384,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return readFileAsText(file).then(function (contents) {
           if (isZip(file)) {
             var dirname = path.replace(/[\\\/][^\\\/]*$/, '');
-            return ramlRepository.createDirectory(directory, dirname).then(function (directory) {
-              return importZip(directory, contents);
+            return self.createDirectory(directory, dirname).then(function (directory) {
+              return self.importZip(directory, contents);
             });
           }
           return self.createFile(directory, path, contents);
@@ -12354,30 +12402,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return /\.zip$/i.test(file.name);
       }
       /**
-       * Merge a zip with a directory in the file system.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  contents
-       * @return {Promise}
-       */
-      function mergeZip(directory, contents) {
-        var zip = new JSZip(contents);
-        var files = removeCommonFilePrefixes(sanitizeZipFiles(zip.files));
-        return importZipFiles(directory, files);
-      }
-      /**
-       * Import a zip file into the current directory.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  contents
-       * @return {Promise}
-       */
-      function importZip(directory, contents) {
-        var zip = new JSZip(contents);
-        var files = sanitizeZipFiles(zip.files);
-        return importZipFiles(directory, files);
-      }
-      /**
        * Import files from the zip object.
        *
        * @param  {Object}  directory
@@ -12385,17 +12409,16 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
        * @return {Promise}
        */
       function importZipFiles(directory, files) {
-        var promise = $q.when(true);
-        Object.keys(files).filter(canImport).forEach(function (name) {
-          promise = promise.then(function () {
-            // Directories seem to be stored under the files object.
-            if (/\/$/.test(name)) {
-              return createDirectory(directory, name);
-            }
-            return self.createFile(directory, name, files[name].asText());
+        var imports = Object.keys(files).filter(canImport).map(function (name) {
+            return function () {
+              // Directories are stored under the files object.
+              if (/\/$/.test(name)) {
+                return self.createDirectory(directory, name);
+              }
+              return self.createFile(directory, name, files[name].asText());
+            };
           });
-        });
-        return promise;
+        return promiseChain(imports);
       }
       /**
        * Sanitize a zip file object and remove unwanted metadata.
@@ -12427,9 +12450,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             }
             return name.replace(/[\\\/][^\\\/]*$/, '').split(/[\\\/]/);
           }).reduce(function (prefix, name) {
-            var len = prefix.length > name.length ? name.length : prefix.length;
-            // Iterate over each part and find the common prefix.
-            for (var i = 0; i < len; i++) {
+            // Iterate over each part and check the prefix matches. If a part
+            // does not match, return everything before it as the new prefix.
+            for (var i = 0; i < prefix.length; i++) {
               if (name[i] !== prefix[i]) {
                 return name.slice(0, i);
               }
@@ -12470,20 +12493,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return !!ramlRepository.getByPath(path);
       }
       /**
-       * Check whether a file exists and make a decision based on that.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  name
-       * @return {Promise}
-       */
-      function checkExistence(directory, name) {
-        var path = ramlRepository.join(directory.path, name);
-        if (!pathExists(path)) {
-          return $q.when(null);
-        }
-        return importServiceConflictModal.open(path);
-      }
-      /**
        * Create a file in the filesystem without checking prior existence.
        *
        * @param  {Object}  directory
@@ -12517,15 +12526,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return path;
       }
       /**
-       * Create a directory in the file system.
-       *
-       * @param  {String}  name
-       * @return {Promise}
-       */
-      function createDirectory(directory, name) {
-        return ramlRepository.createDirectory(directory, name);
-      }
-      /**
        * Read a file object as a text file.
        *
        * @param  {File}    file
@@ -12533,7 +12533,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
        */
       function readFileAsText(file) {
         var deferred = $q.defer();
-        var reader = new FileReader();
+        var reader = new $window.FileReader();
         reader.onload = function () {
           return deferred.resolve(reader.result);
         };
