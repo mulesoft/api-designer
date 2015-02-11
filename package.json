@@ -7,6 +7,7 @@
   },
   "license": "CPAL 1.0",
   "devDependencies": {
+    "chai": "~1.10.0",
     "connect-livereload": "~0.3.2",
     "grunt-angular-templates": "~0.4.7",
     "grunt-autoprefixer": "~0.6.4",
@@ -25,7 +26,7 @@
     "grunt-protractor-runner": "~0.2.3",
     "grunt-usemin": "~2.0.2",
     "karma": "~0.12.16",
-    "karma-chai-sinon": "~0.1.1",
+    "karma-chai-sinon": "~0.1.4",
     "karma-coverage": "~0.1.5",
     "karma-mocha": "~0.1.1",
     "karma-phantomjs-launcher": "~0.1.2",

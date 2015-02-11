@@ -230,7 +230,6 @@ div[role=preview-wrapper] {
   -ms-flex: 0;
   flex: 0;
   min-width: 475px;
-  z-index: 70;
   position: relative;
 }
 
@@ -1026,6 +1025,12 @@ div.CodeMirror {
 }
 [role=raml-editor] .raml-console-sidebar-response-item {
   font-size: 14px;
+}
+
+/* https://github.com/FortAwesome/Font-Awesome/issues/216 */
+[class^="icon-"],
+[class*=" icon-"] {
+  line-height: 1;
 }
 
 * {
