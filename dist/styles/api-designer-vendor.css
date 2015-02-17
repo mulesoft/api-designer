@@ -5454,6 +5454,13 @@ a.raml-console-resource-path-active {
   color: red;
 }
 
+.raml-console-sidebar-oauth-scopes {
+  list-style-type: none;
+  padding-left: 0;
+  font-size: 14px;
+  margin-top: -10px !important;
+}
+
 /* ==========================================================================
    Helper classes
    ========================================================================== */

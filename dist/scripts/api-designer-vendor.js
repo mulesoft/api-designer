@@ -80228,21 +80228,24 @@ exports.javascript = require('./javascript');
           return body;
         }
 
-        function handleResponse(jqXhr) {
-          $scope.response.status  = jqXhr.status;
-          $scope.response.headers = parseHeaders(jqXhr.getAllResponseHeaders());
+        function handleResponse(jqXhr, err) {
+          $scope.response.status = jqXhr ? jqXhr.status : err ? err.status : 0;
 
-          $scope.currentStatusCode = jqXhr.status.toString();
+          if (jqXhr) {
+            $scope.response.headers = parseHeaders(jqXhr.getAllResponseHeaders());
 
-          if ($scope.response.headers['content-type']) {
-            $scope.response.contentType = $scope.response.headers['content-type'].split(';')[0];
-          }
+            if ($scope.response.headers['content-type']) {
+              $scope.response.contentType = $scope.response.headers['content-type'].split(';')[0];
+            }
 
-          try {
-            $scope.response.body = beautify(jqXhr.responseText, $scope.response.contentType);
-          }
-          catch (e) {
-            $scope.response.body = jqXhr.responseText;
+            $scope.currentStatusCode = jqXhr.status.toString();
+
+            try {
+              $scope.response.body = beautify(jqXhr.responseText, $scope.response.contentType);
+            }
+            catch (e) {
+              $scope.response.body = jqXhr.responseText;
+            }
           }
 
           $scope.requestEnd      = true;
@@ -80257,7 +80260,7 @@ exports.javascript = require('./javascript');
           // If the response fails because of CORS, responseText is null
           var editorHeight = 50;
 
-          if (jqXhr.responseText) {
+          if (jqXhr && jqXhr.responseText) {
             var lines = $scope.response.body.split('\n').length;
             editorHeight = lines > 100 ? 2000 : 25*lines;
           }
@@ -80497,9 +80500,9 @@ exports.javascript = require('./javascript');
               //// TODO: Make a uniform interface
               if (scheme && scheme.type === 'OAuth 2.0') {
                 authStrategy = new RAML.Client.AuthStrategies.Oauth2(scheme, $scope.credentials);
-                authStrategy.authenticate(request.toOptions(), function (jqXhr) {
+                authStrategy.authenticate(request.toOptions(), function (jqXhr, err) {
                   $scope.requestOptions = request.toOptions();
-                  handleResponse(jqXhr);
+                  handleResponse(jqXhr, err);
                 });
                 return;
               }
@@ -81031,6 +81034,9 @@ exports.javascript = require('./javascript');
         /* jshint camelcase: false */
         var authorizationGrants = $scope.$parent.securitySchemes.oauth_2_0.settings.authorizationGrants;
 
+        $scope.scopes = $scope.$parent.securitySchemes.oauth_2_0.settings.scopes;
+        $scope.credentials.scopes = {};
+
         if (authorizationGrants) {
           $scope.grants = $scope.grants.filter(function (el) {
             return authorizationGrants.indexOf(el.value) > -1;
@@ -81225,7 +81231,7 @@ exports.javascript = require('./javascript');
   };
 
   Basic.Token = function(credentials) {
-    var words = CryptoJS.enc.Utf8.parse(credentials.username + ':' + credentials.password);
+    var words = CryptoJS.enc.Utf8.parse((credentials.username || '') + ':' + (credentials.password || ''));
     this.encoded = CryptoJS.enc.Base64.stringify(words);
   };
 
@@ -81540,7 +81546,7 @@ exports.javascript = require('./javascript');
       accessTokenUri:   this.scheme.settings.accessTokenUri,
       authorizationUri: this.scheme.settings.authorizationUri,
       redirectUri:      RAML.Settings.oauth2RedirectUri,
-      scopes:           this.scheme.settings.scopes
+      scopes:           this.credentials.scopes ? Object.keys(this.credentials.scopes) : []
     });
     var grantType = this.credentials.grant;
 
@@ -81548,12 +81554,12 @@ exports.javascript = require('./javascript');
       window.oauth2Callback = function (uri) {
         auth[grantType].getToken(uri, function (err, user, raw) {
           if (err) {
-            done(raw);
+            done(raw, err);
           }
 
           if (user && user.accessToken) {
             user.request(options, function (err, res) {
-              done(res.raw);
+              done(res.raw, err);
             });
           }
         });
@@ -81565,12 +81571,12 @@ exports.javascript = require('./javascript');
     if (grantType === 'owner') {
       auth.owner.getToken(this.credentials.username, this.credentials.password, function (err, user, raw) {
         if (err) {
-          done(raw);
+          done(raw, err);
         }
 
         if (user && user.accessToken) {
           user.request(options, function (err, res) {
-            done(res.raw);
+            done(res.raw, err);
           });
         }
       });
@@ -81579,12 +81585,12 @@ exports.javascript = require('./javascript');
     if (grantType === 'credentials') {
       auth.credentials.getToken(function (err, user, raw) {
         if (err) {
-          done(raw);
+          done(raw, err);
         }
 
         if (user && user.accessToken) {
           user.request(options, function (err, res) {
-            done(res.raw);
+            done(res.raw, err);
           });
         }
       });
@@ -84653,7 +84659,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "                <h3 class=\"raml-console-sidebar-response-head\">Status</h3>\n" +
     "                <p class=\"raml-console-sidebar-response-item\">{{response.status}}</p>\n" +
     "\n" +
-    "                <h3 class=\"raml-console-sidebar-response-head\">Headers</h3>\n" +
+    "                <h3 class=\"raml-console-sidebar-response-head\" ng-if=\"response.headers\">Headers</h3>\n" +
     "                <div class=\"raml-console-sidebar-response-item\">\n" +
     "                  <p class=\"raml-console-sidebar-response-metadata\" ng-repeat=\"(key, value) in response.headers\">\n" +
     "                    <b>{{key}}:</b> <br>{{value}}\n" +
@@ -84848,6 +84854,15 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    <label for=\"password\" class=\"raml-console-sidebar-label\">Password <span class=\"raml-console-side-bar-required-field\">*</span></label>\n" +
     "    <input required=\"true\" type=\"password\" name=\"password\" class=\"raml-console-sidebar-input raml-console-sidebar-security-field\" ng-model=\"credentials.password\" ng-change=\"onChange()\"/>\n" +
     "    <span class=\"raml-console-field-validation-error\"></span>\n" +
+    "  </p>\n" +
+    "\n" +
+    "  <p class=\"raml-console-sidebar-input-container\">\n" +
+    "    <label for=\"password\" class=\"raml-console-sidebar-label\">Scopes</label>\n" +
+    "    <ol class=\"raml-console-sidebar-oauth-scopes\">\n" +
+    "      <li ng-repeat=\"scope in scopes\">\n" +
+    "        <input type=\"checkbox\" ng-model=\"credentials.scopes[scope]\"> {{scope}}\n" +
+    "      </li>\n" +
+    "    </ol>\n" +
     "  </p>\n" +
     "</div>\n"
   );
