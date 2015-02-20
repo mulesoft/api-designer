@@ -79715,6 +79715,10 @@ exports.javascript = require('./javascript');
           }
         });
 
+        $scope.sortMethods = function (method) {
+          return method.method;
+        };
+
         $scope.showResource = function ($event, $index) {
           var $this             = jQuery($event.currentTarget);
           var $resource         = $this.closest('.raml-console-resource');
@@ -79741,6 +79745,8 @@ exports.javascript = require('./javascript');
           toUIModel($scope.methodInfo.headers.plain);
           toUIModel($scope.resource.uriParametersForDocumentation);
 
+          $rootScope.$broadcast('resetData');
+
           $scope.securitySchemes.anonymous = {
             type: 'Anonymous'
           };
@@ -79751,12 +79757,6 @@ exports.javascript = require('./javascript');
           /*jshint camelcase: true */
 
           loadExamples();
-
-          var defaultScheme = Object.keys($scope.securitySchemes).sort()[0];
-          $scope.currentScheme = {
-            type: $scope.securitySchemes[defaultScheme].type,
-            name: defaultScheme
-          };
 
           // Hack for codemirror
           setTimeout(function () {
@@ -79822,14 +79822,6 @@ exports.javascript = require('./javascript');
           $scope.showBaseUrl = true;
         }
 
-        Object.keys($scope.context[$scope.type].plain).map(function (key) {
-          var definition = $scope.context[$scope.type].plain[key].definitions[0];
-
-          if (typeof definition.enum !== 'undefined') {
-            $scope.context[$scope.type].values[definition.id][0] = definition.enum[0];
-          }
-        });
-
         $scope.segments = [];
 
         var baseUri = $scope.$parent.raml.baseUri;
@@ -79856,48 +79848,6 @@ exports.javascript = require('./javascript');
           }
         });
 
-        $scope.onChange = function () {
-          $scope.context.forceRequest = false;
-        };
-
-        $scope.unique = function (arr) {
-          return arr.filter (function (v, i, a) { return a.indexOf (v) === i; });
-        };
-
-        $scope.canOverride = function (definition) {
-          return definition.type === 'boolean' ||  typeof definition.enum !== 'undefined';
-        };
-
-        $scope.overrideField = function ($event, definition) {
-          var $this      = jQuery($event.currentTarget);
-          var $container = $this.closest('p');
-          var $el        = $container.find('#' + definition.id);
-          var $checkbox  = $container.find('#checkbox_' + definition.id);
-          var $select    = $container.find('#select_' + definition.id);
-
-          $el.toggleClass('raml-console-sidebar-override-show');
-          $checkbox.toggleClass('raml-console-sidebar-override-hide');
-          $select.toggleClass('raml-console-sidebar-override-hide');
-
-          $this.text('Override');
-
-          if($el.hasClass('raml-console-sidebar-override-show')) {
-            definition.overwritten = true;
-            $this.text('Cancel override');
-          } else {
-            definition.overwritten = false;
-            $scope.context[$scope.type].values[definition.id][0] = definition.enum[0];
-          }
-        };
-
-        $scope.reset = function (param) {
-          $scope.context[$scope.type].reset($scope.src, param[0].id);
-        };
-
-        $scope.hasExampleValue = function (value) {
-          return value.type === 'boolean' ? false : typeof value.enum !== 'undefined' ? false : typeof value.example !== 'undefined' ? true : false;
-        };
-
         $scope.addCustomParameter = function () {
           $scope.context.customParameters[$scope.type].push({});
         };
@@ -79906,18 +79856,6 @@ exports.javascript = require('./javascript');
           $scope.context.customParameters[$scope.type] = $scope.context.customParameters[$scope.type].filter(function (el) {
             return el.name !== param.name;
           });
-        };
-
-        $scope.isDefault = function (definition) {
-          return typeof definition.enum === 'undefined' && definition.type !== 'boolean';
-        };
-
-        $scope.isEnum = function (definition) {
-          return typeof definition.enum !== 'undefined';
-        };
-
-        $scope.isBoolean = function (definition) {
-          return definition.type === 'boolean';
         };
       }
     };
@@ -79962,6 +79900,100 @@ exports.javascript = require('./javascript');
 
   angular.module('RAML.Directives')
     .directive('ramlClientGenerator', RAML.Directives.ramlClientGenerator);
+})();
+
+(function () {
+  'use strict';
+
+  RAML.Directives.ramlField = function() {
+    return {
+      restrict: 'E',
+      templateUrl: 'directives/raml-field.tpl.html',
+      replace: true,
+      scope: {
+        model: '=',
+        param: '='
+      },
+      controller: function($scope) {
+        var bodyContent = $scope.$parent.context.bodyContent;
+        var context     = $scope.$parent.context[$scope.$parent.type];
+
+        if (bodyContent) {
+          context = context || bodyContent.definitions[bodyContent.selected];
+        }
+
+        Object.keys(context.plain).map(function (key) {
+          var definition = context.plain[key].definitions[0];
+
+          if (typeof definition.enum !== 'undefined') {
+            context.values[definition.id][0] = definition.enum[0];
+          }
+        });
+
+        $scope.canOverride = function (definition) {
+          return definition.type === 'boolean' ||  typeof definition.enum !== 'undefined';
+        };
+
+        $scope.overrideField = function ($event, definition) {
+          var $this      = jQuery($event.currentTarget);
+          var $container = $this.closest('p');
+          var $el        = $container.find('#' + definition.id);
+          var $checkbox  = $container.find('#checkbox_' + definition.id);
+          var $select    = $container.find('#select_' + definition.id);
+
+          $el.toggleClass('raml-console-sidebar-override-show');
+          $checkbox.toggleClass('raml-console-sidebar-override-hide');
+          $select.toggleClass('raml-console-sidebar-override-hide');
+
+          $this.text('Override');
+
+          if($el.hasClass('raml-console-sidebar-override-show')) {
+            definition.overwritten = true;
+            $this.text('Cancel override');
+          } else {
+            definition.overwritten = false;
+            $scope.context[$scope.type].values[definition.id][0] = definition.enum[0];
+          }
+        };
+
+        $scope.onChange = function () {
+          $scope.$parent.context.forceRequest = false;
+        };
+
+        $scope.isDefault = function (definition) {
+          return typeof definition.enum === 'undefined' && definition.type !== 'boolean';
+        };
+
+        $scope.isEnum = function (definition) {
+          return typeof definition.enum !== 'undefined';
+        };
+
+        $scope.isBoolean = function (definition) {
+          return definition.type === 'boolean';
+        };
+
+        $scope.hasExampleValue = function (value) {
+          return $scope.isEnum(value) ? false : value.type === 'boolean' ? false : typeof value.enum !== 'undefined' ? false : typeof value.example !== 'undefined' ? true : false;
+        };
+
+        $scope.reset = function (param) {
+          var type = $scope.$parent.type || 'bodyContent';
+          var info = {};
+
+          info[param.id] = [param];
+
+          $scope.$parent.context[type].reset(info, param.id);
+        };
+
+        $scope.unique = function (arr) {
+          return arr.filter (function (v, i, a) { return a.indexOf (v) === i; });
+        };
+      }
+    };
+  };
+
+  angular.module('RAML.Directives')
+    .directive('ramlField', RAML.Directives.ramlField);
 })();
 
 (function () {
@@ -80352,6 +80384,10 @@ exports.javascript = require('./javascript');
             }
           });
         }
+
+        $scope.$on('resetData', function() {
+          $scope.currentSchemeType = 'Anonymous';
+        });
 
         $scope.cancelRequest = function () {
           $scope.showSpinner = false;
@@ -80887,6 +80923,13 @@ exports.javascript = require('./javascript');
 
           $section.toggleClass('raml-console-is-collapsed');
           $this.toggleClass('raml-console-is-active');
+        };
+
+        $scope.showResourceDescription = function ($event) {
+          var $this      = jQuery($event.currentTarget);
+          var $container = $this.closest('.raml-console-resource-list-item');
+
+          $container.find('.raml-console-resource-description').toggleClass('ng-hide');
         };
 
         $scope.toggleInverted = function ($event) {
@@ -82338,6 +82381,28 @@ RAML.Inspector = (function() {
 
     if (this.contentTypes.some(function(contentType) { return contentType === oldContent.selected; })) {
       this.selected = oldContent.selected;
+    }
+  };
+
+  BodyContent.prototype.clear = function (info) {
+    var that = this.definitions[this.selected];
+    Object.keys(this.values).map(function (key) {
+      if (typeof info[key][0].enum === 'undefined' || info[key][0].overwritten === true) {
+        that.values[key] = [''];
+      }
+    });
+  };
+
+  BodyContent.prototype.reset = function (info, field) {
+    var that = this.definitions[this.selected];
+    if (info) {
+      Object.keys(info).map(function (key) {
+        if (typeof field === 'undefined' || field === key) {
+          if (typeof info[key][0].enum === 'undefined') {
+            that.values[key][0] = info[key][0].example;
+          }
+        }
+      });
     }
   };
 
@@ -84283,7 +84348,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
   $templateCache.put('directives/method-list.tpl.html',
     "<div class=\"raml-console-tab-list\">\n" +
-    "  <div class=\"raml-console-tab\" ng-repeat=\"method in resource.methods\" ng-click=\"showResource($event, $index)\">\n" +
+    "  <div class=\"raml-console-tab\" ng-repeat=\"method in resource.methods | orderBy:sortMethods\" ng-click=\"showResource($event, $index)\">\n" +
     "    <span class=\"raml-console-tab-label raml-console-tab-{{method.method}}\">{{method.method.toLocaleUpperCase()}}</span>\n" +
     "  </div>\n" +
     "</div>\n"
@@ -84322,25 +84387,8 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "          <span marked=\"param.definitions[0].description\" opts=\"markedOptions\"></span>\n" +
     "        </span>\n" +
     "      </span>\n" +
-    "      <label for=\"{{param.definitions[0].id}}\" class=\"raml-console-sidebar-label\">{{param.definitions[0].displayName}} <a class=\"raml-console-sidebar-override\" ng-if=\"canOverride(param.definitions[0])\" ng-click=\"overrideField($event, param.definitions[0])\">Override</a> <span class=\"raml-console-side-bar-required-field\" ng-if=\"param.definitions[0].required\">*</span></label>\n" +
     "\n" +
-    "      <span class=\"raml-console-sidebar-input-tooltip-container raml-console-sidebar-input-left\" ng-if=\"hasExampleValue(param.definitions[0])\">\n" +
-    "        <button tabindex=\"-1\" class=\"raml-console-sidebar-input-reset\" ng-click=\"reset(param.definitions)\"><span class=\"raml-console-visuallyhidden\">Reset field</span></button>\n" +
-    "        <span class=\"raml-console-sidebar-tooltip-flyout-left\">\n" +
-    "          <span>Use example value</span>\n" +
-    "        </span>\n" +
-    "      </span>\n" +
-    "\n" +
-    "      <select id=\"select_{{param.definitions[0].id}}\" ng-if=\"isEnum(param.definitions[0])\" name=\"param.definitions[0].id\" class=\"raml-console-sidebar-input\" ng-model=\"context[type].values[param.definitions[0].id][0]\" style=\"margin-bottom: 0;\" ng-change=\"onChange()\">\n" +
-    "       {{$index}}\n" +
-    "       <option ng-repeat=\"enum in unique(param.definitions[0].enum)\" value=\"{{enum}}\">{{enum}}</option>\n" +
-    "      </select>\n" +
-    "\n" +
-    "      <input id=\"{{param.definitions[0].id}}\" ng-hide=\"!isDefault(param.definitions[0])\" class=\"raml-console-sidebar-input\" ng-model=\"context[type].values[param.definitions[0].id][0]\" ng-class=\"{'raml-console-sidebar-field-no-default': !hasExampleValue(param.definitions[0])}\" validate=\"param.definitions[0]\" dynamic-name=\"param.definitions[0].id\" ng-change=\"onChange()\"/>\n" +
-    "\n" +
-    "      <input id=\"checkbox_{{param.definitions[0].id}}\" ng-if=\"isBoolean(param.definitions[0])\" class=\"raml-console-sidebar-input\" type=\"checkbox\" ng-model=\"context[type].values[param.definitions[0].id][0]\" dynamic-name=\"param.definitions[0].id\" ng-change=\"onChange()\" />\n" +
-    "\n" +
-    "      <span class=\"raml-console-field-validation-error\"></span>\n" +
+    "      <raml-field param=\"param.definitions[0]\" model=\"context[type].values[param.definitions[0].id]\"></raml-field>\n" +
     "    </p>\n" +
     "  </div>\n" +
     "</section>\n"
@@ -84361,6 +84409,30 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "      JavaScript\n" +
     "    </a>\n" +
     "  </div>\n" +
+    "</div>\n"
+  );
+
+
+  $templateCache.put('directives/raml-field.tpl.html',
+    "<div>\n" +
+    "  <label for=\"{{param.id}}\" class=\"raml-console-sidebar-label\">{{param.displayName}} <a class=\"raml-console-sidebar-override\" ng-if=\"canOverride(param)\" ng-click=\"overrideField($event, param)\">Override</a> <span class=\"raml-console-side-bar-required-field\" ng-if=\"param.required\">*</span></label>\n" +
+    "\n" +
+    "  <span class=\"raml-console-sidebar-input-tooltip-container raml-console-sidebar-input-left\" ng-if=\"hasExampleValue(param)\">\n" +
+    "    <button tabindex=\"-1\" class=\"raml-console-sidebar-input-reset\" ng-click=\"reset(param)\"><span class=\"raml-console-visuallyhidden\">Reset field</span></button>\n" +
+    "    <span class=\"raml-console-sidebar-tooltip-flyout-left\">\n" +
+    "      <span>Use example value</span>\n" +
+    "    </span>\n" +
+    "  </span>\n" +
+    "\n" +
+    "  <select id=\"select_{{param.id}}\" ng-if=\"isEnum(param)\" name=\"param.id\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" style=\"margin-bottom: 0;\" ng-change=\"onChange()\">\n" +
+    "   <option ng-repeat=\"enum in unique(param.enum)\" value=\"{{enum}}\">{{enum}}</option>\n" +
+    "  </select>\n" +
+    "\n" +
+    "  <input id=\"{{param.id}}\" ng-hide=\"!isDefault(param)\" class=\"raml-console-sidebar-input\" ng-model=\"model[0]\" ng-class=\"{'raml-console-sidebar-field-no-default': !hasExampleValue(param)}\" validate=\"param\" dynamic-name=\"param.id\" ng-change=\"onChange()\"/>\n" +
+    "\n" +
+    "  <input id=\"checkbox_{{param.id}}\" ng-if=\"isBoolean(param)\" class=\"raml-console-sidebar-input\" type=\"checkbox\" ng-model=\"model[0]\" dynamic-name=\"param.id\" ng-change=\"onChange()\" />\n" +
+    "\n" +
+    "  <span class=\"raml-console-field-validation-error\"></span>\n" +
     "</div>\n"
   );
 
@@ -84594,17 +84666,8 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "                      <span marked=\"param.definitions[0].description\" opts=\"markedOptions\"></span>\n" +
     "                    </span>\n" +
     "                  </span>\n" +
-    "                  <label for=\"{{param.definitions[0].id}}\" class=\"raml-console-sidebar-label\">{{param.definitions[0].displayName}} <span class=\"raml-console-side-bar-required-field\" ng-if=\"param.definitions[0].required\">*</span></label>\n" +
     "\n" +
-    "                  <span class=\"raml-console-sidebar-input-tooltip-container raml-console-sidebar-input-left\" ng-if=\"hasExampleValue(param.definitions[0].example)\">\n" +
-    "                    <button tabindex=\"-1\" class=\"raml-console-sidebar-input-reset\" ng-click=\"resetFormParameter(param.definitions[0])\"><span class=\"raml-console-visuallyhidden\">Reset field</span></button>\n" +
-    "                    <span class=\"raml-console-sidebar-tooltip-flyout-left\">\n" +
-    "                      <span>Use example value</span>\n" +
-    "                    </span>\n" +
-    "                  </span>\n" +
-    "\n" +
-    "                  <input class=\"raml-console-sidebar-input\" ng-model=\"context.bodyContent.definitions[context.bodyContent.selected].values[param.definitions[0].id][0]\" ng-class=\"{'raml-console-sidebar-field-no-default': !hasExampleValue(param.definitions[0].example)}\" validate=\"param.definitions[0]\" dynamic-name=\"param.definitions[0].id\" />\n" +
-    "                  <span class=\"raml-console-field-validation-error\"></span>\n" +
+    "                  <raml-field param=\"param.definitions[0]\" model=\"context.bodyContent.definitions[context.bodyContent.selected].values[param.definitions[0].id]\"></raml-field>\n" +
     "                </p>\n" +
     "              </div>\n" +
     "            </div>\n" +
@@ -84767,16 +84830,15 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "            <button class=\"raml-console-resource-root-toggle\" ng-class=\"{'raml-console-is-active': collapsed}\" ng-if=\"resourceGroup.length > 1\" ng-click=\"toggle($event)\"></button>\n" +
     "\n" +
     "            <h2 class=\"raml-console-resource-heading raml-console-resource-heading-large\">\n" +
-    "              <a class=\"raml-console-resource-path-active\" ng-repeat='segment in resource.pathSegments' ng-if=\"resourceGroup.length > 1\" ng-click=\"toggleInverted($event)\">{{segment.toString()}}</a>\n" +
+    "              <a class=\"raml-console-resource-path-active\" ng-class=\"{'raml-console-resource-heading-hover':resourceGroup.length > 1}\" ng-repeat='segment in resource.pathSegments' ng-if=\"resourceGroup.length > 1\" ng-click=\"toggleInverted($event)\">{{segment.toString()}}</a>\n" +
     "\n" +
-    "              <span class=\"raml-console-resource-path-active\" ng-repeat='segment in resource.pathSegments' ng-if=\"resourceGroup.length <= 1\">{{segment.toString()}}</span>\n" +
+    "              <span class=\"raml-console-resource-path-active\" ng-class=\"{'raml-console-resource-heading-hover':resource.description}\" ng-repeat='segment in resource.pathSegments' ng-if=\"resourceGroup.length <= 1\" ng-click=\"showResourceDescription($event)\">{{segment.toString()}}</span>\n" +
     "            </h2>\n" +
     "\n" +
     "            <resource-type></resource-type>\n" +
     "            <span ng-if=\"methodInfo.is\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Trait:</b> {{traits}}</span>\n" +
     "\n" +
     "          </div>\n" +
-    "\n" +
     "          <method-list></method-list>\n" +
     "          <close-button></close-button>\n" +
     "        </header>\n" +
@@ -84785,6 +84847,14 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "        <!-- Child Resources -->\n" +
     "        <ol class=\"raml-console-resource-list\" ng-class=\"{'raml-console-is-collapsed': collapsed}\">\n" +
+    "\n" +
+    "          <li class=\"raml-console-resource-list-item raml-console-resource-description\" ng-show=\"resourceGroup.length > 1\" ng-if=\"resource.description\">\n" +
+    "            <div class=\"raml-console-resource-panel-primary-row raml-console-resource-panel-content raml-console-is-active\">\n" +
+    "              <h3 class=\"raml-console-resource-heading-a\">Description</h3>\n" +
+    "              <p marked=\"resource.description\" opts=\"markedOptions\"></p>\n" +
+    "            </div>\n" +
+    "          </li>\n" +
+    "\n" +
     "          <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\" ng-repeat=\"resource in resourceGroup\" ng-if=\"!$first\">\n" +
     "            <div class=\"raml-console-resource raml-console-clearfix\" ng-class=\"{ 'raml-console-is-active':showPanel }\">\n" +
     "              <div class=\"raml-console-resource-path-container\">\n" +
