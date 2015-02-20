@@ -3268,14 +3268,17 @@ th {
 }
 
 .raml-console-tab-list {
-  right: 12px;
+  right: 9px;
   position: relative;
+  position: absolute;
   bottom: -1px;
   display: flex;
+  display: -webkit-flex;
   flex-grow: 1;
   flex-flow: row-reverse;
   align-self: flex-end;
   padding-left: 16px;
+  float: right;
 }
 
 @media only screen and (min-width: 600px) {
@@ -3358,9 +3361,9 @@ th {
 .raml-console-tab-get::before {
   background: #0B88B9;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3374,9 +3377,9 @@ th {
 .raml-console-tab-put::before {
   background: #87538f;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3390,9 +3393,9 @@ th {
 .raml-console-tab-delete::before {
   background: #d14956;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3406,9 +3409,9 @@ th {
 .raml-console-tab-post::before {
   background: #1EA18D;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3422,9 +3425,9 @@ th {
 .raml-console-tab-patch::before {
   background: #02B0E2;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3438,9 +3441,9 @@ th {
 .raml-console-tab-connect::before {
   background: #E48F0A;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3454,9 +3457,9 @@ th {
 .raml-console-tab-head::before {
   background: #8A45A2;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3470,9 +3473,9 @@ th {
 .raml-console-tab-options::before {
   background: #1EBD77;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3486,9 +3489,9 @@ th {
 .raml-console-tab-trace::before {
   background: #98B805;
   content: '';
-  height: 31px;
+  height: 45px;
   border-radius: 4px;
-  margin: 0 10px 0;
+  margin: -1px 10px 0;
   -webkit-transform: perspective(45px) rotateX(30deg);
   -moz-transform: perspective(45px) rotateX(30deg);
   -ms-transform: perspective(45px) rotateX(30deg);
@@ -3605,6 +3608,24 @@ ol.raml-console-resources-container {
   list-style: none;
   padding-left: 0px;
   margin-top: -5px;
+}
+
+.raml-console-resource-description {
+  border-bottom: 1px solid #ccc;
+}
+
+.raml-console-resource-description div {
+  padding: 17px;
+  background: #FAFAFA;
+}
+
+.raml-console-resource-description div h3 {
+  font-size: 12px;
+  margin: 0 0 11px;
+}
+
+.raml-console-resource-description div p {
+  font-size: 12px;
 }
 
 .raml-console-resource-menu-item {
@@ -3932,16 +3953,17 @@ a.raml-console-resource-path-active {
   cursor: pointer;
 }
 
+.raml-console-resource-heading-hover:hover {
+  cursor: pointer;
+  background-image: linear-gradient(to top, rgba(255, 255, 255, 0) 1px, #999 2px, rgba(255, 255, 255, 0) 1px);
+}
+
 .raml-console-resource-heading {
   display: inline-block;
   margin: 0;
   margin-right: 4px;
   color: #b9b9b9;
   font-size: 10px;
-}
-
-.raml-console-resource:not(.raml-console-is-active) .raml-console-resource-heading:hover {
-  background-image: linear-gradient(to top, rgba(255, 255, 255, 0) 1px, #999 2px, rgba(255, 255, 255, 0) 1px);
 }
 
 @media only screen and (min-width: 600px) {
@@ -4423,6 +4445,7 @@ a.raml-console-resource-path-active {
 .raml-console-sidebar {
   width: 0;
   flex-shrink: 0;
+  -webkit-flex-shrink: 0;
   overflow: hidden;
   border-bottom-right-radius: 4px;
   border-left: 3px solid #d6d7d9;
