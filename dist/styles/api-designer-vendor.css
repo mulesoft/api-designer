@@ -3945,10 +3945,6 @@ ol.raml-console-resources-container {
   }
 }
 
-span.raml-console-resource-path-active {
-  cursor: default;
-}
-
 a.raml-console-resource-path-active {
   cursor: pointer;
 }
@@ -5999,6 +5995,10 @@ span.raml-console-side-bar-required-field {
   .raml-console-documentation-active .raml-console-document-header {
     border-radius: 5px 5px 0 0;
   }
+}
+
+.raml-console-documentation-heading:hover {
+  cursor: pointer;
 }
 
 .raml-console-documentation-header {
