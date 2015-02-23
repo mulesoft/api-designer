@@ -84575,7 +84575,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        <li ng-repeat=\"header in content\" class=\"raml-console-resource-list-item\">\n" +
     "           <div class=\"raml-console-resource raml-console-clearfix raml-console-documentation-clearfix\">\n" +
     "            <div class=\"raml-console-resource-path-container raml-console-documentation-path-container\">\n" +
-    "              <h3 class=\"raml-console-resource-heading raml-console-md-heading-{{header.heading}}\">\n" +
+    "              <h3 class=\"raml-console-resource-heading raml-console-documentation-heading raml-console-md-heading-{{header.heading}}\">\n" +
     "                <div class=\"raml-console-resource-path-active\">\n" +
     "                  <div class=\"raml-consoledocumentation-title\" ng-click=\"showSection($event, header.value, doc.title)\">{{header.label}}</div>\n" +
     "                </div>\n" +
@@ -84858,7 +84858,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "          <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\" ng-repeat=\"resource in resourceGroup\" ng-if=\"!$first\">\n" +
     "            <div class=\"raml-console-resource raml-console-clearfix\" ng-class=\"{ 'raml-console-is-active':showPanel }\">\n" +
     "              <div class=\"raml-console-resource-path-container\">\n" +
-    "                <h3 class=\"raml-console-resource-heading\">\n" +
+    "                <h3 class=\"raml-console-resource-heading\" ng-click=\"showResourceDescription($event)\" ng-class=\"{'raml-console-resource-heading-hover':resource.description}\">\n" +
     "                  <span ng-repeat-start='segment in resource.pathSegments' ng-if=\"!$last\">{{segment.toString()}}</span><span ng-repeat-end ng-if=\"$last\" class=\"raml-console-resource-path-active\">{{segment.toString()}}</span>\n" +
     "                </h3>\n" +
     "\n" +
@@ -84869,6 +84869,13 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "              <method-list></method-list>\n" +
     "              <close-button></close-button>\n" +
     "            </div>\n" +
+    "\n" +
+    "            <span class=\"raml-console-resource-list-item raml-console-resource-description\" ng-show=\"resourceGroup.length > 1\" ng-if=\"resource.description\">\n" +
+    "              <div class=\"raml-console-resource-panel-primary-row raml-console-resource-panel-content raml-console-is-active\">\n" +
+    "                <h3 class=\"raml-console-resource-heading-a\">Description</h3>\n" +
+    "                <p marked=\"resource.description\" opts=\"markedOptions\"></p>\n" +
+    "              </div>\n" +
+    "            </span>\n" +
     "\n" +
     "            <resource-panel></resource-panel>\n" +
     "          </li>\n" +
