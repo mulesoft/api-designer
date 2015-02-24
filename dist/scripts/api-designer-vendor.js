@@ -79408,6 +79408,7 @@ exports.javascript = require('./javascript');
         $scope.close = function () {
           var $inactiveElements = jQuery('.raml-console-tab').add('.raml-console-resource').add('li');
 
+
           $inactiveElements.removeClass('raml-console-is-active');
           $scope.showPanel = false;
         };
@@ -79714,10 +79715,6 @@ exports.javascript = require('./javascript');
             $scope.showPanel = false;
           }
         });
-
-        $scope.sortMethods = function (method) {
-          return method.method;
-        };
 
         $scope.showResource = function ($event, $index) {
           var $this             = jQuery($event.currentTarget);
@@ -84348,7 +84345,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
   $templateCache.put('directives/method-list.tpl.html',
     "<div class=\"raml-console-tab-list\">\n" +
-    "  <div class=\"raml-console-tab\" ng-repeat=\"method in resource.methods | orderBy:sortMethods\" ng-click=\"showResource($event, $index)\">\n" +
+    "  <div class=\"raml-console-tab\" ng-repeat=\"method in resource.methods\" ng-click=\"showResource($event, $index)\">\n" +
     "    <span class=\"raml-console-tab-label raml-console-tab-{{method.method}}\">{{method.method.toLocaleUpperCase()}}</span>\n" +
     "  </div>\n" +
     "</div>\n"
