@@ -9982,7 +9982,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           'Cmd-S': 'save',
           'Ctrl-S': 'save',
           'Shift-Tab': 'indentLess',
-          'Shift-Ctrl-T': 'toggleTheme'
+          'Shift-Ctrl-T': 'toggleTheme',
+          'Ctrl-/': 'toggleComment',
+          'Cmd-/': 'toggleComment'
         };
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
@@ -10114,6 +10116,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         };
         CodeMirror.commands.toggleTheme = function () {
           $rootScope.$broadcast('event:toggle-theme');
+        };
+        CodeMirror.commands.toggleComment = function () {
+          $rootScope.$broadcast('event:toggle-comment', service.getEditor());
         };
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
         CodeMirror.defineMIME('text/x-raml', 'raml');
@@ -12872,6 +12877,28 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             message: formatErrorMessage(message, lineOfCurrentError, displayLine)
           }]);
       }));
+      $scope.$on('event:toggle-comment', function ($event, editor) {
+        var selection = editor.getSelection();
+        var currentLine = editor.getCursor().line;
+        var content = editor.getLine(currentLine);
+        if (selection.replace(/\s/g, '')) {
+          var lines = selection.split('\n');
+          for (var i = 0; i < lines.length; i++) {
+            lines[i] = toggleComment(lines[i]);
+          }
+          editor.replaceSelection(lines.join('\n'));
+        } else {
+          editor.setLine(currentLine, toggleComment(content));
+        }
+      });
+      function toggleComment(content) {
+        if (content.replace(/\s/g, '').indexOf('#')) {
+          content = '# ' + content;
+        } else {
+          content = content.replace(/# /g, '');
+        }
+        return content;
+      }
       $scope.openHelp = function openHelp() {
         $modal.open({ templateUrl: 'views/help.html' });
       };

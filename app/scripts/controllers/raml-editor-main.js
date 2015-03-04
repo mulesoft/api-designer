@@ -231,6 +231,34 @@
         }]);
       }));
 
+      $scope.$on('event:toggle-comment', function ($event, editor) {
+        var selection   = editor.getSelection();
+        var currentLine = editor.getCursor().line;
+        var content     = editor.getLine(currentLine);
+
+        if (selection.replace(/\s/g, '')) {
+          var lines = selection.split('\n');
+
+          for(var i = 0; i < lines.length; i++) {
+            lines[i] = toggleComment(lines[i]);
+          }
+
+          editor.replaceSelection(lines.join('\n'));
+        } else {
+          editor.setLine(currentLine, toggleComment(content));
+        }
+      });
+
+      function toggleComment (content) {
+        if (content.replace(/\s/g, '').indexOf('#')) {
+          content = '# ' + content;
+        } else {
+          content = content.replace(/# /g, '');
+        }
+
+        return content;
+      }
+
       $scope.openHelp = function openHelp() {
         $modal.open({
           templateUrl: 'views/help.html'
