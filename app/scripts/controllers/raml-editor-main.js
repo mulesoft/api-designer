@@ -47,7 +47,7 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal
+      codeMirrorErrors, config, $prompt, $confirm, $modal, newFileService
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -199,6 +199,26 @@
             $rootScope.$broadcast('event:raml-parser-error', error);
           })
         );
+      });
+
+      $rootScope.$on('event:extract', function ($event, editor) {
+        var message  = 'Creates a new file containing the selected content.';
+        var contents = editor.getSelection();
+        var key      = contents.split(':');
+        var filename;
+
+        if (key.length > 1) {
+          key      = key[0];
+          filename = (key + '.raml').replace(/\s/g, '');
+          contents = contents.replace(key + ':', '');
+
+          return newFileService.prompt($scope.homeDirectory, 'Extract to', message, contents, filename, true)
+          .then(function (result) {
+            if (filename) {
+              editor.replaceSelection(key + ': !include ' + result.path);
+            }
+          });
+        }
       });
 
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {

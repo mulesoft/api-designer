@@ -88,7 +88,9 @@
         'Cmd-S': 'save',
         'Ctrl-S': 'save',
         'Shift-Tab': 'indentLess',
-        'Shift-Ctrl-T': 'toggleTheme'
+        'Shift-Ctrl-T': 'toggleTheme',
+        'Ctrl-E': 'extract',
+        'Cmd-E': 'extract'
       };
 
       var autocomplete = function onChange(cm) {
@@ -243,6 +245,11 @@
 
         CodeMirror.commands.toggleTheme = function () {
           $rootScope.$broadcast('event:toggle-theme');
+        };
+
+        CodeMirror.commands.extract = function () {
+          console.log('extracting!');
+          $rootScope.$broadcast('event:extract', service.getEditor());
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
