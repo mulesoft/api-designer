@@ -75026,7 +75026,7 @@ if (typeof define !== 'undefined' && define.amd) { // AMD
 
 /* FileSaver.js
  * A saveAs() FileSaver implementation.
- * 2015-01-04
+ * 2015-03-04
  *
  * By Eli Grey, http://eligrey.com
  * License: X11/MIT
@@ -75160,6 +75160,10 @@ var saveAs = saveAs
 				dispatch_all();
 				revoke(object_url);
 				return;
+			}
+			// prepend BOM for UTF-8 XML and text/plain types
+			if (/^\s*(?:text\/(?:plain|xml)|application\/xml|\S*\/\S*\+xml)\s*;.*charset\s*=\s*utf-8/i.test(blob.type)) {
+				blob = new Blob(["\ufeff", blob], {type: blob.type});
 			}
 			// Object and web filesystem URLs have a problem saving in Google Chrome when
 			// viewed in a tab, so I force save with application/octet-stream
@@ -75409,10 +75413,11 @@ var generator = require('../../lib/generator');
  * @type {Function}
  */
 module.exports = generator({
-  files: {
+  templates: {
     '.gitignore':   require('./templates/.gitignore.hbs'),
     'index.js':     require('./templates/index.js.hbs'),
     'README.md':    require('./templates/README.md.hbs'),
+    'INSTALL.md':   require('./templates/INSTALL.md.hbs'),
     'package.json': require('./templates/package.json.hbs')
   },
   format: {
@@ -75432,347 +75437,355 @@ module.exports = generator({
   }
 });
 
-},{"../../lib/generator":21,"./helpers/dependencies":1,"./helpers/parameters-snippet":2,"./helpers/request-snippet":3,"./partials/auth.js.hbs":5,"./partials/client.js.hbs":6,"./partials/resources.js.hbs":7,"./partials/utils.js.hbs":8,"./templates/.gitignore.hbs":9,"./templates/README.md.hbs":10,"./templates/index.js.hbs":11,"./templates/package.json.hbs":12,"camel-case":27,"javascript-stringify":45}],5:[function(require,module,exports){
+},{"../../lib/generator":20,"./helpers/dependencies":1,"./helpers/parameters-snippet":2,"./helpers/request-snippet":3,"./partials/auth.js.hbs":5,"./partials/client.js.hbs":6,"./partials/resources.js.hbs":7,"./partials/utils.js.hbs":8,"./templates/.gitignore.hbs":9,"./templates/INSTALL.md.hbs":10,"./templates/README.md.hbs":11,"./templates/index.js.hbs":12,"./templates/package.json.hbs":13,"camel-case":27,"javascript-stringify":45}],5:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"1":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, buffer = "/**\n * @param {Object} options\n */\nfunction OAuth2 (options) {\n  ClientOAuth2.call(this, extend(";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + ", options));\n}\n\nOAuth2.prototype = Object.create(ClientOAuth2.prototype);\nOAuth2.prototype.constructor = OAuth2;\nOAuth2.prototype.request = popsicle;\n\nClient.OAuth2 = OAuth2;\n";
+    var stack1;
+
+  return "/**\n * @param {Object} options\n */\nfunction OAuth2 (options) {\n  ClientOAuth2.call(this, extend("
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || helpers.helperMissing).call(depth0,((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ", options));\n}\n\nOAuth2.prototype = Object.create(ClientOAuth2.prototype);\nOAuth2.prototype.constructor = OAuth2;\nOAuth2.prototype.request = popsicle;\n\nClient.OAuth2 = OAuth2;\n";
 },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-  var stack1, buffer = "";
-  stack1 = helpers['if'].call(depth0, ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1), {"name":"if","hash":{},"fn":this.program(1, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
+    var stack1;
+
+  return ((stack1 = helpers['if'].call(depth0,((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1),{"name":"if","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "");
 },"useData":true});
 
 },{"hbsfy/runtime":41}],6:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "function Client (options) {\n  this.options = extend({\n    baseUri: ";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, (depth0 != null ? depth0.baseUri : depth0), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += ",\n    baseUriParameters: ";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, ((helpers.object || (depth0 && depth0.object) || helperMissing).call(depth0, ((helpers.keys || (depth0 && depth0.keys) || helperMissing).call(depth0, (depth0 != null ? depth0.baseUriParameters : depth0), {"name":"keys","hash":{},"data":data})), ((helpers.pluck || (depth0 && depth0.pluck) || helperMissing).call(depth0, (depth0 != null ? depth0.baseUriParameters : depth0), "default", {"name":"pluck","hash":{},"data":data})), {"name":"object","hash":{},"data":data})), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "\n  }, options);\n\n  this.resources = new "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, ((stack1 = (depth0 != null ? depth0.resources : depth0)) != null ? stack1.id : stack1), {"name":"pascalCase","hash":{},"data":data})))
-    + "('', this);\n};\n\nClient.prototype.resource = function (route, parameters) {\n  var path = '/' + template(route, parameters).replace(/^\\//, '');\n\n  return new CustomResource(path, this);\n};\n\nClient.prototype.request = popsicle;\nClient.prototype.form = Client.form = popsicle.form;\nClient.prototype.version  = ";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, (depth0 != null ? depth0.version : depth0), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + ";\n";
+    var stack1, alias1=helpers.helperMissing;
+
+  return "function Client (options) {\n  this.options = extend({\n    baseUri: "
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(depth0 != null ? depth0.baseUri : depth0),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ",\n    baseUriParameters: "
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(helpers.object || (depth0 && depth0.object) || alias1).call(depth0,(helpers.keys || (depth0 && depth0.keys) || alias1).call(depth0,(depth0 != null ? depth0.baseUriParameters : depth0),{"name":"keys","hash":{},"data":data}),(helpers.pluck || (depth0 && depth0.pluck) || alias1).call(depth0,(depth0 != null ? depth0.baseUriParameters : depth0),"default",{"name":"pluck","hash":{},"data":data}),{"name":"object","hash":{},"data":data}),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + "\n  }, options);\n\n  this.resources = new "
+    + this.escapeExpression((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,((stack1 = (depth0 != null ? depth0.resources : depth0)) != null ? stack1.id : stack1),{"name":"pascalCase","hash":{},"data":data}))
+    + "('', this);\n};\n\nClient.prototype.resource = function (route, parameters) {\n  var path = '/' + template(route, parameters).replace(/^\\//, '');\n\n  return new CustomResource(path, this);\n};\n\nClient.prototype.request = popsicle;\nClient.prototype.form = Client.form = popsicle.form;\nClient.prototype.version  = "
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(depth0 != null ? depth0.version : depth0),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ";\n";
 },"useData":true});
 
 },{"hbsfy/runtime":41}],7:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
-module.exports = HandlebarsCompiler.template({"1":function(depth0,helpers,partials,data,depths) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "function "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.id : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + " (uri, client) {\n  this._uri    = uri;\n  this._client = client;\n\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.children : depth0), {"name":"each","hash":{},"fn":this.program(2, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "};\n\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.children : depth0), {"name":"each","hash":{},"fn":this.program(5, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.methods : depth0), {"name":"each","hash":{},"fn":this.program(8, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
+module.exports = HandlebarsCompiler.template({"1":function(depth0,helpers,partials,data,blockParams,depths) {
+    var stack1;
+
+  return "function "
+    + this.escapeExpression((helpers.pascalCase || (depth0 && depth0.pascalCase) || helpers.helperMissing).call(depth0,(depth0 != null ? depth0.id : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + " (uri, client) {\n  this._uri    = uri;\n  this._client = client;\n\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.children : depth0),{"name":"each","hash":{},"fn":this.program(2, data, 0, blockParams, depths),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "};\n\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.children : depth0),{"name":"each","hash":{},"fn":this.program(5, data, 0, blockParams, depths),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.methods : depth0),{"name":"each","hash":{},"fn":this.program(8, data, 0, blockParams, depths),"inverse":this.noop,"data":data})) != null ? stack1 : "");
 },"2":function(depth0,helpers,partials,data) {
-  var stack1, buffer = "";
-  stack1 = helpers.unless.call(depth0, (depth0 != null ? depth0.uriParameters : depth0), {"name":"unless","hash":{},"fn":this.program(3, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
+    var stack1;
+
+  return ((stack1 = helpers.unless.call(depth0,(depth0 != null ? depth0.uriParameters : depth0),{"name":"unless","hash":{},"fn":this.program(3, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "");
 },"3":function(depth0,helpers,partials,data) {
-  var stack1, lambda=this.lambda, escapeExpression=this.escapeExpression, helperMissing=helpers.helperMissing, buffer = "  this."
-    + escapeExpression(lambda((data && data.key), depth0))
+    var stack1, helper, alias1=helpers.helperMissing, alias2=this.escapeExpression;
+
+  return "  this."
+    + alias2(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : alias1),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
     + " = new "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.id : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + "(uri + ";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, (depth0 != null ? depth0.relativeUri : depth0), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + ", client);\n";
-},"5":function(depth0,helpers,partials,data,depths) {
-  var stack1, buffer = "";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.uriParameters : depth0), {"name":"if","hash":{},"fn":this.program(6, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
-},"6":function(depth0,helpers,partials,data,depths) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda, buffer = escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depths[2] != null ? depths[2].id : depths[2]), {"name":"pascalCase","hash":{},"data":data})))
+    + alias2((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.id : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + "(uri + "
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(depth0 != null ? depth0.relativeUri : depth0),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ", client);\n";
+},"5":function(depth0,helpers,partials,data,blockParams,depths) {
+    var stack1;
+
+  return ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.uriParameters : depth0),{"name":"if","hash":{},"fn":this.program(6, data, 0, blockParams, depths),"inverse":this.noop,"data":data})) != null ? stack1 : "");
+},"6":function(depth0,helpers,partials,data,blockParams,depths) {
+    var stack1, helper, alias1=helpers.helperMissing, alias2=this.escapeExpression;
+
+  return alias2((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depths[2] != null ? depths[2].id : depths[2]),{"name":"pascalCase","hash":{},"data":data}))
     + ".prototype."
-    + escapeExpression(lambda((data && data.key), depth0))
-    + " = function (/* ...args */) {\n  var uri = this._uri + template(";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, (depth0 != null ? depth0.relativeUri : depth0), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += ", arguments, ";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, ((helpers.pluck || (depth0 && depth0.pluck) || helperMissing).call(depth0, (depth0 != null ? depth0.uriParameters : depth0), "default", {"name":"pluck","hash":{},"data":data})), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + ");\n\n  return new "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.id : depth0), {"name":"pascalCase","hash":{},"data":data})))
+    + alias2(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : alias1),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
+    + " = function (/* ...args */) {\n  var uri = this._uri + template("
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(depth0 != null ? depth0.relativeUri : depth0),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ", arguments, "
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(helpers.pluck || (depth0 && depth0.pluck) || alias1).call(depth0,(depth0 != null ? depth0.uriParameters : depth0),"default",{"name":"pluck","hash":{},"data":data}),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ");\n\n  return new "
+    + alias2((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.id : depth0),{"name":"pascalCase","hash":{},"data":data}))
     + "(uri, this._client);\n};\n";
-},"8":function(depth0,helpers,partials,data,depths) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, lambda=this.lambda, buffer = escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depths[1] != null ? depths[1].id : depths[1]), {"name":"pascalCase","hash":{},"data":data})))
+},"8":function(depth0,helpers,partials,data,blockParams,depths) {
+    var stack1, helper, alias1=helpers.helperMissing, alias2=this.escapeExpression;
+
+  return alias2((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depths[1] != null ? depths[1].id : depths[1]),{"name":"pascalCase","hash":{},"data":data}))
     + ".prototype."
-    + escapeExpression(lambda((data && data.key), depth0))
-    + " = function (body, options) {\n";
-  stack1 = helpers['if'].call(depth0, ((helpers.keys || (depth0 && depth0.keys) || helperMissing).call(depth0, (depth0 != null ? depth0.headers : depth0), {"name":"keys","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(9, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "  return handleRequest(this._client, this._uri, ";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, ((helpers.upperCase || (depth0 && depth0.upperCase) || helperMissing).call(depth0, (depth0 != null ? depth0.method : depth0), {"name":"upperCase","hash":{},"data":data})), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + ", body, options);\n};\n";
+    + alias2(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : alias1),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
+    + " = function (body, options) {\n"
+    + ((stack1 = helpers['if'].call(depth0,(helpers.keys || (depth0 && depth0.keys) || alias1).call(depth0,(depth0 != null ? depth0.headers : depth0),{"name":"keys","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(9, data, 0, blockParams, depths),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "  return handleRequest(this._client, this._uri, "
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(helpers.upperCase || (depth0 && depth0.upperCase) || alias1).call(depth0,(depth0 != null ? depth0.method : depth0),{"name":"upperCase","hash":{},"data":data}),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ", body, options);\n};\n";
 },"9":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, buffer = "  options = extend({}, options);\n  options.headers = extend(";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, ((helpers.object || (depth0 && depth0.object) || helperMissing).call(depth0, ((helpers.keys || (depth0 && depth0.keys) || helperMissing).call(depth0, (depth0 != null ? depth0.headers : depth0), {"name":"keys","hash":{},"data":data})), ((helpers.pluck || (depth0 && depth0.pluck) || helperMissing).call(depth0, (depth0 != null ? depth0.headers : depth0), "default", {"name":"pluck","hash":{},"data":data})), {"name":"object","hash":{},"data":data})), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + ", options.headers);\n\n";
+    var stack1, alias1=helpers.helperMissing;
+
+  return "  options = extend({}, options);\n  options.headers = extend("
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(helpers.object || (depth0 && depth0.object) || alias1).call(depth0,(helpers.keys || (depth0 && depth0.keys) || alias1).call(depth0,(depth0 != null ? depth0.headers : depth0),{"name":"keys","hash":{},"data":data}),(helpers.pluck || (depth0 && depth0.pluck) || alias1).call(depth0,(depth0 != null ? depth0.headers : depth0),"default",{"name":"pluck","hash":{},"data":data}),{"name":"object","hash":{},"data":data}),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ", options.headers);\n\n";
 },"11":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "CustomResource.prototype."
-    + escapeExpression(((helpers.camelCase || (depth0 && depth0.camelCase) || helperMissing).call(depth0, depth0, {"name":"camelCase","hash":{},"data":data})))
-    + " = function (body, options) {\n  return handleRequest(this._client, this._uri, ";
-  stack1 = ((helpers.stringify || (depth0 && depth0.stringify) || helperMissing).call(depth0, ((helpers.upperCase || (depth0 && depth0.upperCase) || helperMissing).call(depth0, depth0, {"name":"upperCase","hash":{},"data":data})), {"name":"stringify","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + ", body, options);\n};\n";
-},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data,depths) {
-  var stack1, buffer = "function handleRequest (client, path, method, body, options) {\n  options = extend({}, client.options, options);\n\n  var baseUri = template(options.baseUri, options.baseUriParameters);\n  var reqOpts = {};\n\n  reqOpts.url     = baseUri.replace(/\\/$/, '') + path;\n  reqOpts.method  = method;\n  reqOpts.headers = extend({}, options.headers);\n\n  if (method === 'GET' || method === 'HEAD') {\n    reqOpts.body = options.body;\n    reqOpts.query = body == null ? options.query : body;\n  } else {\n    reqOpts.body = body == null ? options.body : body;\n    reqOpts.query = options.query;\n  }\n\n  if (options.user && typeof options.user.sign === 'function') {\n    options.user.sign(reqOpts);\n  }\n\n  return client.request(reqOpts);\n}\n\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.allResources : depth0), {"name":"each","hash":{},"fn":this.program(1, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "\nfunction CustomResource (uri, client) {\n  this._uri    = uri;\n  this._client = client;\n}\n\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.supportedMethods : depth0), {"name":"each","hash":{},"fn":this.program(11, data, depths),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
+    var stack1, alias1=helpers.helperMissing;
+
+  return "CustomResource.prototype."
+    + this.escapeExpression((helpers.camelCase || (depth0 && depth0.camelCase) || alias1).call(depth0,depth0,{"name":"camelCase","hash":{},"data":data}))
+    + " = function (body, options) {\n  return handleRequest(this._client, this._uri, "
+    + ((stack1 = (helpers.stringify || (depth0 && depth0.stringify) || alias1).call(depth0,(helpers.upperCase || (depth0 && depth0.upperCase) || alias1).call(depth0,depth0,{"name":"upperCase","hash":{},"data":data}),{"name":"stringify","hash":{},"data":data})) != null ? stack1 : "")
+    + ", body, options);\n};\n";
+},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data,blockParams,depths) {
+    var stack1;
+
+  return "function handleRequest (client, path, method, body, options) {\n  options = extend({}, client.options, options);\n\n  var baseUri = template(options.baseUri, options.baseUriParameters);\n  var hasBody = method !== 'GET' && method !== 'HEAD';\n  var reqOpts = {};\n\n  var reqBody = hasBody && body != null ? body : options.body;\n  var reqQuery = !hasBody && body != null ? body : options.query;\n\n  var reqOpts = {\n    url: baseUri.replace(/\\/$/, '') + path,\n    method: method,\n    headers: extend({}, options.headers),\n    body: reqBody,\n    query: typeof reqQuery === 'object' ? extend({}, reqQuery) : reqQuery\n  };\n\n  if (options.user && typeof options.user.sign === 'function') {\n    options.user.sign(reqOpts);\n  }\n\n  return client.request(reqOpts);\n}\n\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.allResources : depth0),{"name":"each","hash":{},"fn":this.program(1, data, 0, blockParams, depths),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "\nfunction CustomResource (uri, client) {\n  this._uri    = uri;\n  this._client = client;\n}\n\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.supportedMethods : depth0),{"name":"each","hash":{},"fn":this.program(11, data, 0, blockParams, depths),"inverse":this.noop,"data":data})) != null ? stack1 : "");
 },"useData":true,"useDepths":true});
 
 },{"hbsfy/runtime":41}],8:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-  return "var TEMPLATE_REGEXP = /\\{([^\\{\\}]+)\\}/g;\n\n/**\n * @param  {String} string\n * @param  {Object} interpolate\n * @param  {Object} defaults\n * @return {String}\n */\nfunction template (string, interpolate, defaults) {\n  defaults    = defaults || {};\n  interpolate = interpolate || {};\n\n  return string.replace(TEMPLATE_REGEXP, function (match, key) {\n    if (interpolate[key] != null) {\n      return encodeURIComponent(interpolate[key]);\n    }\n\n    if (defaults[key] != null) {\n      return encodeURIComponent(defaults[key]);\n    }\n\n    return '';\n  });\n}\n\n/**\n * @param  {Object} dest\n * @param  {Object} ...source\n * @return {Object}\n */\nfunction extend (dest /*, ...source */) {\n  for (var i = 1; i < arguments.length; i++) {\n    for (var key in arguments[i]) {\n      dest[key] = arguments[i][key];\n    }\n  }\n\n  return dest;\n}\n";
-  },"useData":true});
+    return "var TEMPLATE_REGEXP = /\\{([^\\{\\}]+)\\}/g;\n\n/**\n * @param  {String} string\n * @param  {Object} interpolate\n * @param  {Object} defaults\n * @return {String}\n */\nfunction template (string, interpolate, defaults) {\n  defaults    = defaults || {};\n  interpolate = interpolate || {};\n\n  return string.replace(TEMPLATE_REGEXP, function (match, key) {\n    if (interpolate[key] != null) {\n      return encodeURIComponent(interpolate[key]);\n    }\n\n    if (defaults[key] != null) {\n      return encodeURIComponent(defaults[key]);\n    }\n\n    return '';\n  });\n}\n\n/**\n * @param  {Object} dest\n * @param  {Object} ...source\n * @return {Object}\n */\nfunction extend (dest /*, ...source */) {\n  for (var i = 1; i < arguments.length; i++) {\n    for (var key in arguments[i]) {\n      dest[key] = arguments[i][key];\n    }\n  }\n\n  return dest;\n}\n";
+},"useData":true});
 
 },{"hbsfy/runtime":41}],9:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-  return "node_modules\n";
-  },"useData":true});
+    return "node_modules\n";
+},"useData":true});
 
 },{"hbsfy/runtime":41}],10:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
-module.exports = HandlebarsCompiler.template({"1":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "### Authentication\n\n#### OAuth 2.0\n\nThis API supports authentication with [OAuth 2.0](https://github.com/mulesoft/js-client-oauth2). Initialize the `OAuth2` instance with the application client id, client secret and a redirect uri to authenticate with users.\n\n```js\nvar auth = new "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + ".OAuth2({\n  clientId:     '123',\n  clientSecret: 'abc',\n  redirectUri:  'http://example.com/auth/callback'\n});\n```\n\n**All `getToken()` calls are asynchronous and return promise objects which resolve to an access token instance.**\n\n";
-  stack1 = helpers['if'].call(depth0, ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, ((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1), "code", {"name":"contains","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(2, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, ((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1), "token", {"name":"contains","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(4, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, ((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1), "owner", {"name":"contains","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(6, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.contains || (depth0 && depth0.contains) || helperMissing).call(depth0, ((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1), "credentials", {"name":"contains","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(8, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "##### Access Tokens\n\nAccess token instances can be manually re-created. This is critical for access token reuse, such as saving credentials to a database for reusing later in the codebase.\n\n```js\nvar token = auth.createToken('access token', 'refresh token');\n```\n\nAn access token instance (manually created or automatically generated by a `getToken()` method) can be passed into any API request. This will sign the API request with the current users access token credentials.\n\n```js\n// Existing API client instance.\nclient.resource('/').get(null, {\n  user: token\n});\n\n// New API client instance.\nvar client = new "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + "({\n  user: token\n});\n```\n\n";
-},"2":function(depth0,helpers,partials,data) {
-  return "##### [Authorization Code Grant](https://github.com/mulesoft/js-client-oauth2#authorization-code-grant)\n\n1. Redirect user to `auth.code.getUri()`.\n2. Parse response uri and get an access token instance using `auth.code.getToken(uri)`.\n\n";
-  },"4":function(depth0,helpers,partials,data) {
-  return "\n##### [Implicit Grant](https://github.com/mulesoft/js-client-oauth2#implicit-grant)\n\n1. Redirect user to `auth.token.getUri()` in a browser.\n2. Parse response uri and get an access token instance using `auth.token.getToken(uri)`.\n\n";
-  },"6":function(depth0,helpers,partials,data) {
-  return "\n##### [Resource Owner Password Credentials Grant](https://github.com/mulesoft/js-client-oauth2#resource-owner-password-credentials-grant)\n\n1. Make a direct request for the access token on behalf of the user using `auth.owner.getToken(username, password)`.\n\n";
-  },"8":function(depth0,helpers,partials,data) {
-  return "\n##### [Client Credentials Grant](https://github.com/mulesoft/js-client-oauth2#client-credentials-grant)\n\n1. Get the access token for the application by using `auth.credentials.getToken()`.\n\n";
-  },"10":function(depth0,helpers,partials,data) {
-  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
-  return escapeExpression(((helper = (helper = helpers.version || (depth0 != null ? depth0.version : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"version","hash":{},"data":data}) : helper)));
-  },"12":function(depth0,helpers,partials,data) {
-  return "v3";
-  },"14":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing;
-  stack1 = helpers['if'].call(depth0, ((helpers.keys || (depth0 && depth0.keys) || helperMissing).call(depth0, (depth0 != null ? depth0.methods : depth0), {"name":"keys","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(15, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { return stack1; }
-  else { return ''; }
-  },"15":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, buffer = "#### ";
-  stack1 = ((helpers.requestSnippet || (depth0 && depth0.requestSnippet) || helperMissing).call(depth0, depth0, {"name":"requestSnippet","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "\n\n";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.uriParameters : depth0), {"name":"if","hash":{},"fn":this.program(16, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.description : depth0), {"name":"if","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "```js\nvar resource = client.";
-  stack1 = ((helpers.requestSnippet || (depth0 && depth0.requestSnippet) || helperMissing).call(depth0, depth0, {"name":"requestSnippet","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += ";\n```\n\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.methods : depth0), {"name":"each","hash":{},"fn":this.program(20, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
-},"16":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, buffer = "";
-  stack1 = ((helpers.parametersSnippet || (depth0 && depth0.parametersSnippet) || helperMissing).call(depth0, (depth0 != null ? depth0.uriParameters : depth0), {"name":"parametersSnippet","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\n\n";
-},"18":function(depth0,helpers,partials,data) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, buffer = "";
-  stack1 = ((helper = (helper = helpers.description || (depth0 != null ? depth0.description : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"description","hash":{},"data":data}) : helper));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\n\n";
-},"20":function(depth0,helpers,partials,data) {
-  var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = "##### "
-    + escapeExpression(((helpers.upperCase || (depth0 && depth0.upperCase) || helperMissing).call(depth0, (depth0 != null ? depth0.method : depth0), {"name":"upperCase","hash":{},"data":data})))
-    + "\n\n";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.description : depth0), {"name":"if","hash":{},"fn":this.program(18, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "```js\nresource."
-    + escapeExpression(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"key","hash":{},"data":data}) : helper)))
-    + "().then(function (res) { ... });\n```\n\n";
-  stack1 = helpers['if'].call(depth0, ((helpers.keys || (depth0 && depth0.keys) || helperMissing).call(depth0, (depth0 != null ? depth0.queryParameters : depth0), {"name":"keys","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(21, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.keys || (depth0 && depth0.keys) || helperMissing).call(depth0, (depth0 != null ? depth0.headers : depth0), {"name":"keys","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(26, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, ((helpers.keys || (depth0 && depth0.keys) || helperMissing).call(depth0, (depth0 != null ? depth0.body : depth0), {"name":"keys","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(28, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
-},"21":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, buffer = "##### Query Parameters\n\n```javascript\n";
-  stack1 = helpers['if'].call(depth0, ((helpers.equal || (depth0 && depth0.equal) || helperMissing).call(depth0, (depth0 != null ? depth0.method : depth0), "get", {"name":"equal","hash":{},"data":data})), {"name":"if","hash":{},"fn":this.program(22, data),"inverse":this.program(24, data),"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "```\n\n";
-  stack1 = ((helpers.parametersSnippet || (depth0 && depth0.parametersSnippet) || helperMissing).call(depth0, (depth0 != null ? depth0.queryParameters : depth0), {"name":"parametersSnippet","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\n\n";
-},"22":function(depth0,helpers,partials,data) {
-  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
-  return "resource."
-    + escapeExpression(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"key","hash":{},"data":data}) : helper)))
-    + "({ ... });\n";
-},"24":function(depth0,helpers,partials,data) {
-  var helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression;
-  return "resource."
-    + escapeExpression(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"key","hash":{},"data":data}) : helper)))
-    + "(null, { query: { ... } });\n";
-},"26":function(depth0,helpers,partials,data) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "##### Headers\n\n```javascript\nresource."
-    + escapeExpression(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"key","hash":{},"data":data}) : helper)))
-    + "(null, {\n  headers: { ... }\n});\n```\n\n";
-  stack1 = ((helpers.parametersSnippet || (depth0 && depth0.parametersSnippet) || helperMissing).call(depth0, (depth0 != null ? depth0.headers : depth0), {"name":"parametersSnippet","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\n\n";
-},"28":function(depth0,helpers,partials,data) {
-  var stack1, buffer = "##### Body\n\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.body : depth0), {"name":"each","hash":{},"fn":this.program(29, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
-},"29":function(depth0,helpers,partials,data) {
-  var stack1, lambda=this.lambda, escapeExpression=this.escapeExpression, buffer = "**"
-    + escapeExpression(lambda((data && data.key), depth0))
-    + "**\n\n";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.schema : depth0), {"name":"if","hash":{},"fn":this.program(30, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.formParameters : depth0), {"name":"if","hash":{},"fn":this.program(32, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer;
-},"30":function(depth0,helpers,partials,data) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, buffer = "```\n";
-  stack1 = ((helper = (helper = helpers.schema || (depth0 != null ? depth0.schema : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"schema","hash":{},"data":data}) : helper));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\n```\n\n";
-},"32":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, buffer = "";
-  stack1 = ((helpers.json || (depth0 && depth0.json) || helperMissing).call(depth0, (depth0 != null ? depth0.formParameters : depth0), 2, {"name":"json","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\n\n";
-},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-  var stack1, helper, functionType="function", helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "# "
-    + escapeExpression(((helper = (helper = helpers.title || (depth0 != null ? depth0.title : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"title","hash":{},"data":data}) : helper)))
-    + "\n\nBrowser and node module for making API requests against ["
-    + escapeExpression(((helper = (helper = helpers.title || (depth0 != null ? depth0.title : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"title","hash":{},"data":data}) : helper)))
-    + "]("
-    + escapeExpression(((helper = (helper = helpers.baseUri || (depth0 != null ? depth0.baseUri : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"baseUri","hash":{},"data":data}) : helper)))
-    + ").\n\n**Please note: This module uses [Popsicle](https://github.com/blakeembrey/popsicle) to make API requests. Promises must be supported or polyfilled on all target environments.**\n\n## Installation\n\n```\nnpm install "
-    + escapeExpression(((helpers.paramCase || (depth0 && depth0.paramCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"paramCase","hash":{},"data":data})))
-    + " --save\n```\n\n## Usage\n\n```javascript\nvar "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + " = require('"
-    + escapeExpression(((helpers.paramCase || (depth0 && depth0.paramCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"paramCase","hash":{},"data":data})))
-    + "');\n\nvar client = new "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + "();\n```\n\n";
-  stack1 = helpers['if'].call(depth0, ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1), {"name":"if","hash":{},"fn":this.program(1, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "### Options\n\nYou can set options when you initialize a client or at any time with the `options` property. You may also override options for a single request by passing an object as the second argument of any request method. For example:\n\n```javascript\nvar client = new "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + "({ ... });\n\nclient.options = { ... };\n\nclient.resource('/').get(null, {\n  baseUri: 'http://example.com',\n  headers: {\n    'Content-Type': 'application/json'\n  }\n});\n```\n\n#### Base URI\n\nYou can override the base URI by setting the `baseUri` property, or initializing a client with a base URI. For example:\n\n```javascript\nnew "
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + "({\n  baseUri: 'https://example.com'\n});\n```\n\n#### Base URI Parameters\n\nIf the base URI has parameters inline, you can set them by updating the `baseUriParameters` property. For example:\n\n```javascript\nclient.options.baseUriParameters.version = '";
-  stack1 = helpers['if'].call(depth0, (depth0 != null ? depth0.version : depth0), {"name":"if","hash":{},"fn":this.program(10, data),"inverse":this.program(12, data),"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "';\n```\n\n### Resources\n\nAll methods return a HTTP request instance of [Popsicle](https://github.com/blakeembrey/popsicle), which allows the use of promises (and streaming in node).\n\n";
-  stack1 = helpers.each.call(depth0, (depth0 != null ? depth0.allResources : depth0), {"name":"each","hash":{},"fn":this.program(14, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\n\n### Custom Resources\n\nYou can make requests to a custom path in the API using the `#resource(path)` method.\n\n```javascript\nclient.resource('/example/path').get();\n```\n\n## License\n\nApache 2.0\n";
+module.exports = HandlebarsCompiler.template({"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+    var alias1=helpers.helperMissing, alias2=this.escapeExpression;
+
+  return "# Installation\n\nFollow these instructions to publish and subsequently install the module in your project.\n\n## Git\n\n```\n# Initialize with git\ngit init\ngit add .\ngit commit -m \"initial commit\"\ngit push [git-url]\n\n# Install in project from git\nnpm install [git-url] --save\n```\n\n## Source Directory\n\n```\n# Link module globally\nnpm link\n\n# Link in project to local module\nnpm link "
+    + alias2((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + "\n```\n\n**Note:** You should publish it before you use it publicly.\n\n## NPM\n\n```\n# Publish to npm\nnpm publish\n\n# Install from npm\nnpm install "
+    + alias2((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + " --save\n```\n\n## Bower\n\n```\n# Register with bower\nbower register "
+    + alias2((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + " [git-url]\n\n# Install from bower\nbower install "
+    + alias2((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + " --save\n```\n";
 },"useData":true});
 
 },{"hbsfy/runtime":41}],11:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"1":function(depth0,helpers,partials,data) {
-  var stack1, buffer = "";
-  stack1 = this.invokePartial(partials.utils, '', 'utils', depth0, undefined, helpers, partials, data);
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "\n";
-  stack1 = this.invokePartial(partials.resources, '', 'resources', depth0, undefined, helpers, partials, data);
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "\n";
-  stack1 = this.invokePartial(partials.client, '', 'client', depth0, undefined, helpers, partials, data);
-  if (stack1 != null) { buffer += stack1; }
-  buffer += "\n";
-  stack1 = this.invokePartial(partials.auth, '', 'auth', depth0, undefined, helpers, partials, data);
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\nreturn Client;\n";
+    var stack1, alias1=helpers.helperMissing, alias2=this.escapeExpression;
+
+  return "### Authentication\n\n#### OAuth 2.0\n\nThis API supports authentication with [OAuth 2.0](https://github.com/mulesoft/js-client-oauth2). Initialize the `OAuth2` instance with the application client id, client secret and a redirect uri to authenticate with users.\n\n```js\nvar auth = new "
+    + alias2((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + ".OAuth2({\n  clientId:     '123',\n  clientSecret: 'abc',\n  redirectUri:  'http://example.com/auth/callback'\n});\n```\n\n**All `getToken()` calls are asynchronous and return promise objects which resolve to an access token instance.**\n\n"
+    + ((stack1 = helpers['if'].call(depth0,(helpers.contains || (depth0 && depth0.contains) || alias1).call(depth0,((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1),"code",{"name":"contains","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(2, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(helpers.contains || (depth0 && depth0.contains) || alias1).call(depth0,((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1),"token",{"name":"contains","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(4, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(helpers.contains || (depth0 && depth0.contains) || alias1).call(depth0,((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1),"owner",{"name":"contains","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(6, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(helpers.contains || (depth0 && depth0.contains) || alias1).call(depth0,((stack1 = ((stack1 = ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1)) != null ? stack1.settings : stack1)) != null ? stack1.authorizationGrants : stack1),"credentials",{"name":"contains","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(8, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "##### Access Tokens\n\nAccess token instances can be manually re-created. This is critical for access token reuse, such as saving credentials to a database for reusing later in the codebase.\n\n```js\nvar token = auth.createToken('access token', 'refresh token');\n```\n\nAn access token instance (manually created or automatically generated by a `getToken()` method) can be passed into any API request. This will sign the API request with the current users access token credentials.\n\n```js\n// Existing API client instance.\nclient.resource('/').get(null, {\n  user: token\n});\n\n// New API client instance.\nvar client = new "
+    + alias2((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + "({\n  user: token\n});\n```\n\n";
+},"2":function(depth0,helpers,partials,data) {
+    return "##### [Authorization Code Grant](https://github.com/mulesoft/js-client-oauth2#authorization-code-grant)\n\n1. Redirect user to `auth.code.getUri()`.\n2. Parse response uri and get an access token instance using `auth.code.getToken(uri)`.\n\n";
+},"4":function(depth0,helpers,partials,data) {
+    return "\n##### [Implicit Grant](https://github.com/mulesoft/js-client-oauth2#implicit-grant)\n\n1. Redirect user to `auth.token.getUri()` in a browser.\n2. Parse response uri and get an access token instance using `auth.token.getToken(uri)`.\n\n";
+},"6":function(depth0,helpers,partials,data) {
+    return "\n##### [Resource Owner Password Credentials Grant](https://github.com/mulesoft/js-client-oauth2#resource-owner-password-credentials-grant)\n\n1. Make a direct request for the access token on behalf of the user using `auth.owner.getToken(username, password)`.\n\n";
+},"8":function(depth0,helpers,partials,data) {
+    return "\n##### [Client Credentials Grant](https://github.com/mulesoft/js-client-oauth2#client-credentials-grant)\n\n1. Get the access token for the application by using `auth.credentials.getToken()`.\n\n";
+},"10":function(depth0,helpers,partials,data) {
+    var helper;
+
+  return this.escapeExpression(((helper = (helper = helpers.version || (depth0 != null ? depth0.version : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"version","hash":{},"data":data}) : helper)));
+},"12":function(depth0,helpers,partials,data) {
+    return "v3";
+},"14":function(depth0,helpers,partials,data) {
+    var stack1;
+
+  return ((stack1 = helpers['if'].call(depth0,(helpers.keys || (depth0 && depth0.keys) || helpers.helperMissing).call(depth0,(depth0 != null ? depth0.methods : depth0),{"name":"keys","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(15, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "");
+},"15":function(depth0,helpers,partials,data) {
+    var stack1, alias1=helpers.helperMissing;
+
+  return "#### "
+    + ((stack1 = (helpers.requestSnippet || (depth0 && depth0.requestSnippet) || alias1).call(depth0,depth0,{"name":"requestSnippet","hash":{},"data":data})) != null ? stack1 : "")
+    + "\n\n"
+    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.uriParameters : depth0),{"name":"if","hash":{},"fn":this.program(16, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.description : depth0),{"name":"if","hash":{},"fn":this.program(18, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "```js\nvar resource = client."
+    + ((stack1 = (helpers.requestSnippet || (depth0 && depth0.requestSnippet) || alias1).call(depth0,depth0,{"name":"requestSnippet","hash":{},"data":data})) != null ? stack1 : "")
+    + ";\n```\n\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.methods : depth0),{"name":"each","hash":{},"fn":this.program(20, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "");
+},"16":function(depth0,helpers,partials,data) {
+    var stack1;
+
+  return ((stack1 = (helpers.parametersSnippet || (depth0 && depth0.parametersSnippet) || helpers.helperMissing).call(depth0,(depth0 != null ? depth0.uriParameters : depth0),{"name":"parametersSnippet","hash":{},"data":data})) != null ? stack1 : "")
+    + "\n\n";
+},"18":function(depth0,helpers,partials,data) {
+    var stack1, helper;
+
+  return ((stack1 = ((helper = (helper = helpers.description || (depth0 != null ? depth0.description : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"description","hash":{},"data":data}) : helper))) != null ? stack1 : "")
+    + "\n\n";
+},"20":function(depth0,helpers,partials,data) {
+    var stack1, helper, alias1=helpers.helperMissing, alias2=this.escapeExpression;
+
+  return "##### "
+    + alias2((helpers.upperCase || (depth0 && depth0.upperCase) || alias1).call(depth0,(depth0 != null ? depth0.method : depth0),{"name":"upperCase","hash":{},"data":data}))
+    + "\n\n"
+    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.description : depth0),{"name":"if","hash":{},"fn":this.program(18, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "```js\nresource."
+    + alias2(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : alias1),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
+    + "().then(function (res) { ... });\n```\n\n"
+    + ((stack1 = helpers['if'].call(depth0,(helpers.keys || (depth0 && depth0.keys) || alias1).call(depth0,(depth0 != null ? depth0.queryParameters : depth0),{"name":"keys","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(21, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(helpers.keys || (depth0 && depth0.keys) || alias1).call(depth0,(depth0 != null ? depth0.headers : depth0),{"name":"keys","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(26, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(helpers.keys || (depth0 && depth0.keys) || alias1).call(depth0,(depth0 != null ? depth0.body : depth0),{"name":"keys","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(28, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "");
+},"21":function(depth0,helpers,partials,data) {
+    var stack1, alias1=helpers.helperMissing;
+
+  return "##### Query Parameters\n\n```javascript\n"
+    + ((stack1 = helpers['if'].call(depth0,(helpers.equal || (depth0 && depth0.equal) || alias1).call(depth0,(depth0 != null ? depth0.method : depth0),"get",{"name":"equal","hash":{},"data":data}),{"name":"if","hash":{},"fn":this.program(22, data, 0),"inverse":this.program(24, data, 0),"data":data})) != null ? stack1 : "")
+    + "```\n\n"
+    + ((stack1 = (helpers.parametersSnippet || (depth0 && depth0.parametersSnippet) || alias1).call(depth0,(depth0 != null ? depth0.queryParameters : depth0),{"name":"parametersSnippet","hash":{},"data":data})) != null ? stack1 : "")
+    + "\n\n";
+},"22":function(depth0,helpers,partials,data) {
+    var helper;
+
+  return "resource."
+    + this.escapeExpression(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
+    + "({ ... });\n";
+},"24":function(depth0,helpers,partials,data) {
+    var helper;
+
+  return "resource."
+    + this.escapeExpression(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
+    + "(null, { query: { ... } });\n";
+},"26":function(depth0,helpers,partials,data) {
+    var stack1, helper, alias1=helpers.helperMissing;
+
+  return "##### Headers\n\n```javascript\nresource."
+    + this.escapeExpression(((helper = (helper = helpers.key || (depth0 != null ? depth0.key : depth0)) != null ? helper : alias1),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
+    + "(null, {\n  headers: { ... }\n});\n```\n\n"
+    + ((stack1 = (helpers.parametersSnippet || (depth0 && depth0.parametersSnippet) || alias1).call(depth0,(depth0 != null ? depth0.headers : depth0),{"name":"parametersSnippet","hash":{},"data":data})) != null ? stack1 : "")
+    + "\n\n";
+},"28":function(depth0,helpers,partials,data) {
+    var stack1;
+
+  return "##### Body\n\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.body : depth0),{"name":"each","hash":{},"fn":this.program(29, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "");
+},"29":function(depth0,helpers,partials,data) {
+    var stack1, helper;
+
+  return "**"
+    + this.escapeExpression(((helper = (helper = helpers.key || (data && data.key)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"key","hash":{},"data":data}) : helper)))
+    + "**\n\n"
+    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.schema : depth0),{"name":"if","hash":{},"fn":this.program(30, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.formParameters : depth0),{"name":"if","hash":{},"fn":this.program(32, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "");
+},"30":function(depth0,helpers,partials,data) {
+    var stack1, helper;
+
+  return "```\n"
+    + ((stack1 = ((helper = (helper = helpers.schema || (depth0 != null ? depth0.schema : depth0)) != null ? helper : helpers.helperMissing),(typeof helper === "function" ? helper.call(depth0,{"name":"schema","hash":{},"data":data}) : helper))) != null ? stack1 : "")
+    + "\n```\n\n";
+},"32":function(depth0,helpers,partials,data) {
+    var stack1;
+
+  return ((stack1 = (helpers.json || (depth0 && depth0.json) || helpers.helperMissing).call(depth0,(depth0 != null ? depth0.formParameters : depth0),2,{"name":"json","hash":{},"data":data})) != null ? stack1 : "")
+    + "\n\n";
 },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-  var stack1, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, buffer = "(function (root, client) {\n  if (typeof define === 'function' && define.amd) {\n    // AMD. Register as an anonymous module.\n    define(";
-  stack1 = ((helpers.dependencies || (depth0 && depth0.dependencies) || helperMissing).call(depth0, depth0, "amd", {"name":"dependencies","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += ", client);\n  } else if (typeof exports === 'object') {\n    // Node. Does not work with strict CommonJS, but only CommonJS-like\n    // environments that support `module.exports`, like Node.\n    module.exports = client(";
-  stack1 = ((helpers.dependencies || (depth0 && depth0.dependencies) || helperMissing).call(depth0, depth0, "node", {"name":"dependencies","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += ");\n  } else {\n    // Browser globals (root is window).\n    root."
-    + escapeExpression(((helpers.pascalCase || (depth0 && depth0.pascalCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"pascalCase","hash":{},"data":data})))
-    + " = client(";
-  stack1 = ((helpers.dependencies || (depth0 && depth0.dependencies) || helperMissing).call(depth0, depth0, "browser", {"name":"dependencies","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += ");\n  }\n})(this, function (";
-  stack1 = ((helpers.dependencies || (depth0 && depth0.dependencies) || helperMissing).call(depth0, depth0, false, {"name":"dependencies","hash":{},"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  buffer += ") {\n";
-  stack1 = ((helpers.indent || (depth0 && depth0.indent) || helperMissing).call(depth0, 2, {"name":"indent","hash":{},"fn":this.program(1, data),"inverse":this.noop,"data":data}));
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "});\n";
-},"usePartial":true,"useData":true});
+    var stack1, helper, alias1=helpers.helperMissing, alias2="function", alias3=this.escapeExpression;
+
+  return "# "
+    + alias3(((helper = (helper = helpers.title || (depth0 != null ? depth0.title : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"title","hash":{},"data":data}) : helper)))
+    + "\n\nBrowser and node module for making API requests against ["
+    + alias3(((helper = (helper = helpers.title || (depth0 != null ? depth0.title : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"title","hash":{},"data":data}) : helper)))
+    + "]("
+    + alias3(((helper = (helper = helpers.baseUri || (depth0 != null ? depth0.baseUri : depth0)) != null ? helper : alias1),(typeof helper === alias2 ? helper.call(depth0,{"name":"baseUri","hash":{},"data":data}) : helper)))
+    + ").\n\n**Please note: This module uses [Popsicle](https://github.com/blakeembrey/popsicle) to make API requests. Promises must be supported or polyfilled on all target environments.**\n\n## Installation\n\n```\nnpm install "
+    + alias3((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + " --save\nbower install "
+    + alias3((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + " --save\n```\n\n## Usage\n\n### Node\n\n```javascript\nvar "
+    + alias3((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + " = require('"
+    + alias3((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + "');\n\nvar client = new "
+    + alias3((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + "();\n```\n\n### Browsers\n\n```html\n<script src=\""
+    + alias3((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + "/index.js\">\n\n<script>\n  var client = new window."
+    + alias3((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + "();\n</script>\n```\n\n"
+    + ((stack1 = helpers['if'].call(depth0,((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1),{"name":"if","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "### Options\n\nYou can set options when you initialize a client or at any time with the `options` property. You may also override options for a single request by passing an object as the second argument of any request method. For example:\n\n```javascript\nvar client = new "
+    + alias3((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + "({ ... });\n\nclient.options = { ... };\n\nclient.resource('/').get(null, {\n  baseUri: 'http://example.com',\n  headers: {\n    'Content-Type': 'application/json'\n  }\n});\n```\n\n#### Base URI\n\nYou can override the base URI by setting the `baseUri` property, or initializing a client with a base URI. For example:\n\n```javascript\nnew "
+    + alias3((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + "({\n  baseUri: 'https://example.com'\n});\n```\n\n#### Base URI Parameters\n\nIf the base URI has parameters inline, you can set them by updating the `baseUriParameters` property. For example:\n\n```javascript\nclient.options.baseUriParameters.version = '"
+    + ((stack1 = helpers['if'].call(depth0,(depth0 != null ? depth0.version : depth0),{"name":"if","hash":{},"fn":this.program(10, data, 0),"inverse":this.program(12, data, 0),"data":data})) != null ? stack1 : "")
+    + "';\n```\n\n### Resources\n\nAll methods return a HTTP request instance of [Popsicle](https://github.com/blakeembrey/popsicle), which allows the use of promises (and streaming in node).\n\n"
+    + ((stack1 = helpers.each.call(depth0,(depth0 != null ? depth0.allResources : depth0),{"name":"each","hash":{},"fn":this.program(14, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "\n\n### Custom Resources\n\nYou can make requests to a custom path in the API using the `#resource(path)` method.\n\n```javascript\nclient.resource('/example/path').get();\n```\n\n## License\n\nApache 2.0\n";
+},"useData":true});
 
 },{"hbsfy/runtime":41}],12:[function(require,module,exports){
 // hbsfy compiled Handlebars template
 var HandlebarsCompiler = require('hbsfy/runtime');
 module.exports = HandlebarsCompiler.template({"1":function(depth0,helpers,partials,data) {
-  return "\"client-oauth2\": \"^0.1.0\",\n    ";
-  },"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
-  var stack1, helper, helperMissing=helpers.helperMissing, escapeExpression=this.escapeExpression, functionType="function", buffer = "{\n  \"name\": \""
-    + escapeExpression(((helpers.paramCase || (depth0 && depth0.paramCase) || helperMissing).call(depth0, (depth0 != null ? depth0.title : depth0), {"name":"paramCase","hash":{},"data":data})))
-    + "\",\n  \"version\": \"0.0.0\",\n  \"description\": \""
-    + escapeExpression(((helper = (helper = helpers.description || (depth0 != null ? depth0.description : depth0)) != null ? helper : helperMissing),(typeof helper === functionType ? helper.call(depth0, {"name":"description","hash":{},"data":data}) : helper)))
-    + "\",\n  \"main\": \"index.js\",\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"git://github.com/mulesoft/raml-client-generator.git\"\n  },\n  \"keywords\": [\n    \"raml-api\"\n  ],\n  \"author\": \"MuleSoft, Inc.\",\n  \"license\": \"Apache 2.0\",\n  \"bugs\": {\n    \"url\": \"https://github.com/mulesoft/raml-client-generator/issues\"\n  },\n  \"homepage\": \"https://github.com/mulesoft/raml-client-generator\",\n  \"dependencies\": {\n    ";
-  stack1 = helpers['if'].call(depth0, ((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1), {"name":"if","hash":{},"fn":this.program(1, data),"inverse":this.noop,"data":data});
-  if (stack1 != null) { buffer += stack1; }
-  return buffer + "\"popsicle\": \"^0.3.4\"\n  }\n}\n";
-},"useData":true});
+    var stack1;
+
+  return ((stack1 = this.invokePartial(partials.utils,depth0,{"name":"utils","data":data,"helpers":helpers,"partials":partials})) != null ? stack1 : "")
+    + "\n"
+    + ((stack1 = this.invokePartial(partials.resources,depth0,{"name":"resources","data":data,"helpers":helpers,"partials":partials})) != null ? stack1 : "")
+    + "\n"
+    + ((stack1 = this.invokePartial(partials.client,depth0,{"name":"client","data":data,"helpers":helpers,"partials":partials})) != null ? stack1 : "")
+    + "\n"
+    + ((stack1 = this.invokePartial(partials.auth,depth0,{"name":"auth","data":data,"helpers":helpers,"partials":partials})) != null ? stack1 : "")
+    + "\nreturn Client;\n";
+},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+    var stack1, alias1=helpers.helperMissing;
+
+  return "(function (root, client) {\n  if (typeof define === 'function' && define.amd) {\n    // AMD. Register as an anonymous module.\n    define("
+    + ((stack1 = (helpers.dependencies || (depth0 && depth0.dependencies) || alias1).call(depth0,depth0,"amd",{"name":"dependencies","hash":{},"data":data})) != null ? stack1 : "")
+    + ", client);\n  } else if (typeof exports === 'object') {\n    // Node. Does not work with strict CommonJS, but only CommonJS-like\n    // environments that support `module.exports`, like Node.\n    module.exports = client("
+    + ((stack1 = (helpers.dependencies || (depth0 && depth0.dependencies) || alias1).call(depth0,depth0,"node",{"name":"dependencies","hash":{},"data":data})) != null ? stack1 : "")
+    + ");\n  } else {\n    // Browser globals (root is window).\n    root."
+    + this.escapeExpression((helpers.pascalCase || (depth0 && depth0.pascalCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"pascalCase","hash":{},"data":data}))
+    + " = client("
+    + ((stack1 = (helpers.dependencies || (depth0 && depth0.dependencies) || alias1).call(depth0,depth0,"browser",{"name":"dependencies","hash":{},"data":data})) != null ? stack1 : "")
+    + ");\n  }\n})(this, function ("
+    + ((stack1 = (helpers.dependencies || (depth0 && depth0.dependencies) || alias1).call(depth0,depth0,false,{"name":"dependencies","hash":{},"data":data})) != null ? stack1 : "")
+    + ") {\n"
+    + ((stack1 = (helpers.indent || (depth0 && depth0.indent) || alias1).call(depth0,2,{"name":"indent","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "});\n";
+},"usePartial":true,"useData":true});
 
 },{"hbsfy/runtime":41}],13:[function(require,module,exports){
+// hbsfy compiled Handlebars template
+var HandlebarsCompiler = require('hbsfy/runtime');
+module.exports = HandlebarsCompiler.template({"1":function(depth0,helpers,partials,data) {
+    return "\"client-oauth2\": \"^0.1.0\",\n    ";
+},"compiler":[6,">= 2.0.0-beta.1"],"main":function(depth0,helpers,partials,data) {
+    var stack1, helper, alias1=helpers.helperMissing, alias2=this.escapeExpression;
+
+  return "{\n  \"name\": \""
+    + alias2((helpers.paramCase || (depth0 && depth0.paramCase) || alias1).call(depth0,(depth0 != null ? depth0.title : depth0),{"name":"paramCase","hash":{},"data":data}))
+    + "\",\n  \"version\": \"0.0.0\",\n  \"description\": \""
+    + alias2(((helper = (helper = helpers.description || (depth0 != null ? depth0.description : depth0)) != null ? helper : alias1),(typeof helper === "function" ? helper.call(depth0,{"name":"description","hash":{},"data":data}) : helper)))
+    + "\",\n  \"main\": \"index.js\",\n  \"files\": [\n    \"index.js\"\n  ],\n  \"repository\": {\n    \"type\": \"git\",\n    \"url\": \"git://github.com/mulesoft/raml-client-generator.git\"\n  },\n  \"keywords\": [\n    \"raml-api\"\n  ],\n  \"author\": \"MuleSoft, Inc.\",\n  \"license\": \"Apache 2.0\",\n  \"bugs\": {\n    \"url\": \"https://github.com/mulesoft/raml-client-generator/issues\"\n  },\n  \"homepage\": \"https://github.com/mulesoft/raml-client-generator\",\n  \"dependencies\": {\n    "
+    + ((stack1 = helpers['if'].call(depth0,((stack1 = (depth0 != null ? depth0.security : depth0)) != null ? stack1['OAuth 2.0'] : stack1),{"name":"if","hash":{},"fn":this.program(1, data, 0),"inverse":this.noop,"data":data})) != null ? stack1 : "")
+    + "\"popsicle\": \"^0.3.6\"\n  }\n}\n";
+},"useData":true});
+
+},{"hbsfy/runtime":41}],14:[function(require,module,exports){
 var extend             = require('extend');
 var sanitizeUri        = require('./uri');
 var sanitizeSecurity   = require('./security');
@@ -75907,7 +75920,7 @@ module.exports = function (ast, spec) {
   return context;
 };
 
-},{"./parameters":15,"./resources":16,"./security":17,"./uri":18,"extend":33,"methods":47}],14:[function(require,module,exports){
+},{"./parameters":16,"./resources":17,"./security":18,"./uri":19,"extend":33,"methods":47}],15:[function(require,module,exports){
 var pick               = require('object.pick');
 var sanitizeParameters = require('./parameters');
 
@@ -75967,7 +75980,7 @@ module.exports = function (methods, resource, spec) {
   return obj;
 };
 
-},{"./parameters":15,"object.pick":48}],15:[function(require,module,exports){
+},{"./parameters":16,"object.pick":48}],16:[function(require,module,exports){
 var pick = require('object.pick');
 
 /**
@@ -76023,7 +76036,7 @@ module.exports = function (parameters) {
   return obj;
 };
 
-},{"object.pick":48}],16:[function(require,module,exports){
+},{"object.pick":48}],17:[function(require,module,exports){
 var sanitizeUri        = require('./uri');
 var sanitizeMethods    = require('./methods');
 var sanitizeParameters = require('./parameters');
@@ -76201,7 +76214,7 @@ module.exports = function (resources, spec) {
   return obj;
 };
 
-},{"./methods":14,"./parameters":15,"./uri":18}],17:[function(require,module,exports){
+},{"./methods":15,"./parameters":16,"./uri":19}],18:[function(require,module,exports){
 /**
  * Sanitize resources into nested object form.
  *
@@ -76226,7 +76239,7 @@ module.exports = function (securitySchemes) {
   return obj;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /**
  * Sanitize all uris.
  *
@@ -76238,7 +76251,83 @@ module.exports = function (uri, spec) {
   return spec.format.uri(uri || '').replace(/\/+$/, '');
 };
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
+var extend        = require('extend');
+var helpers       = require('./helpers');
+var createContext = require('./context');
+
+// Handlebars required in node to support `require('x.hbs')`.
+require('handlebars');
+
+/**
+ * Compile an api client using a combination of the ast, spec and user data.
+ *
+ * @param  {Object} ast
+ * @param  {Object} spec
+ * @param  {Object} data
+ * @return {Object}
+ */
+function generate (ast, spec, data) {
+  // Handlebars compile options from the specification.
+  var options = {
+    data:     data,
+    helpers:  extend({}, helpers, spec.helpers),
+    partials: extend({}, spec.partials)
+  };
+
+  // Allow the language to override the file generator.
+  var createFiles = spec.files || generateFiles;
+  var context = createContext(ast, spec);
+  var files = createFiles(spec.templates, context, options);
+
+  // Create the compile object. We resolve this object instead of just the
+  // files so that external utilities have access to the context object. For
+  // example, the "API Notebook" project needs to add runtime documentation.
+  return {
+    files: files,
+    context: context,
+    options: options
+  };
+}
+
+/**
+ * Default file generator directly from templates.
+ *
+ * @param  {Object} templates
+ * @param  {Object} context
+ * @param  {Object} options
+ * @return {Object}
+ */
+function generateFiles (templates, context, options) {
+  var files = {};
+
+  Object.keys(templates).forEach(function (key) {
+    files[key] = templates[key](context, options);
+  });
+
+  return files;
+}
+
+/**
+ * Generate a language specific client generator based on passed in spec.
+ *
+ * @param  {Object}   spec
+ * @return {Function}
+ */
+module.exports = function (spec) {
+  /**
+   * Generate an API client by passed in an AST.
+   *
+   * @param  {Object} ast
+   * @param  {Object} options
+   * @return {Object}
+   */
+  return function (ast, options) {
+    return generate(ast, spec, options);
+  };
+};
+
+},{"./context":14,"./helpers":21,"extend":33,"handlebars":22}],21:[function(require,module,exports){
 var indent = require('indent-string');
 var trim   = String.prototype.trim;
 var hasOwn = Object.prototype.hasOwnProperty;
@@ -76436,68 +76525,7 @@ exports.join = function (array, value) {
   return Array.isArray(array) ? array.join(value) : array;
 };
 
-},{"camel-case":27,"constant-case":32,"indent-string":42,"lower-case":46,"param-case":53,"pascal-case":55,"snake-case":60,"upper-case":61}],20:[function(require,module,exports){
-var extend  = require('extend');
-var helpers = require('./helpers');
-var context = require('./context');
-
-/**
- * Compile an api client using a combination of the ast, spec and user data.
- *
- * @param  {Object} ast
- * @param  {Object} spec
- * @param  {Object} data
- * @return {Object}
- */
-module.exports = function (ast, spec, data) {
-  // Create the compile object. We resolve this object instead of just the
-  // files so that external utilities have access to the context object. For
-  // example, the "API Notebook" project needs to add runtime documentation.
-  var compile = {
-    files: {},
-    options: {
-      data:     data,
-      helpers:  extend({}, helpers, spec.helpers),
-      partials: extend({}, spec.partials)
-    },
-    context: context(ast, spec)
-  };
-
-  Object.keys(spec.files).forEach(function (key) {
-    var template = spec.files[key];
-
-    compile.files[key] = template(compile.context, compile.options);
-  });
-
-  return compile;
-};
-
-},{"./context":13,"./helpers":19,"extend":33}],21:[function(require,module,exports){
-var compile = require('./compile');
-
-// Handlebars must be required in node to support `require('x.hbs')`.
-require('handlebars');
-
-/**
- * Generate a language specific client generator based on passed in spec.
- *
- * @param  {Object}   spec
- * @return {Function}
- */
-module.exports = function (spec) {
-  /**
-   * Generate an API client by passed in an AST.
-   *
-   * @param  {Object} ast
-   * @param  {Object} options
-   * @return {Object}
-   */
-  return function (ast, options) {
-    return compile(ast, spec, options);
-  };
-};
-
-},{"./compile":20,"handlebars":22}],22:[function(require,module,exports){
+},{"camel-case":27,"constant-case":32,"indent-string":42,"lower-case":46,"param-case":53,"pascal-case":55,"snake-case":60,"upper-case":61}],22:[function(require,module,exports){
 
 },{}],23:[function(require,module,exports){
 /*!
@@ -76546,7 +76574,7 @@ Buffer.TYPED_ARRAY_SUPPORT = (function () {
     var buf = new ArrayBuffer(0)
     var arr = new Uint8Array(buf)
     arr.foo = function () { return 42 }
-    return 42 === arr.foo() && // typed array instances can be augmented
+    return arr.foo() === 42 && // typed array instances can be augmented
         typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
         new Uint8Array(1).subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
   } catch (e) {
@@ -76574,60 +76602,67 @@ function Buffer (subject, encoding, noZero) {
 
   // Find the length
   var length
-  if (type === 'number')
-    length = subject > 0 ? subject >>> 0 : 0
-  else if (type === 'string') {
+  if (type === 'number') {
+    length = +subject
+  } else if (type === 'string') {
     length = Buffer.byteLength(subject, encoding)
   } else if (type === 'object' && subject !== null) { // assume object is array-like
     if (subject.type === 'Buffer' && isArray(subject.data))
       subject = subject.data
-    length = +subject.length > 0 ? Math.floor(+subject.length) : 0
-  } else
+    length = +subject.length
+  } else {
     throw new TypeError('must start with number, buffer, array or string')
+  }
 
   if (length > kMaxLength)
     throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
       'size: 0x' + kMaxLength.toString(16) + ' bytes')
 
-  var buf
+  if (length < 0)
+    length = 0
+  else
+    length >>>= 0 // Coerce to uint32.
+
+  var self = this
   if (Buffer.TYPED_ARRAY_SUPPORT) {
     // Preferred: Return an augmented `Uint8Array` instance for best performance
-    buf = Buffer._augment(new Uint8Array(length))
+    /*eslint-disable consistent-this */
+    self = Buffer._augment(new Uint8Array(length))
+    /*eslint-enable consistent-this */
   } else {
     // Fallback: Return THIS instance of Buffer (created by `new`)
-    buf = this
-    buf.length = length
-    buf._isBuffer = true
+    self.length = length
+    self._isBuffer = true
   }
 
   var i
   if (Buffer.TYPED_ARRAY_SUPPORT && typeof subject.byteLength === 'number') {
     // Speed optimization -- use set if we're copying from a typed array
-    buf._set(subject)
+    self._set(subject)
   } else if (isArrayish(subject)) {
     // Treat array-ish objects as a byte array
     if (Buffer.isBuffer(subject)) {
       for (i = 0; i < length; i++)
-        buf[i] = subject.readUInt8(i)
+        self[i] = subject.readUInt8(i)
     } else {
       for (i = 0; i < length; i++)
-        buf[i] = ((subject[i] % 256) + 256) % 256
+        self[i] = ((subject[i] % 256) + 256) % 256
     }
   } else if (type === 'string') {
-    buf.write(subject, 0, encoding)
+    self.write(subject, 0, encoding)
   } else if (type === 'number' && !Buffer.TYPED_ARRAY_SUPPORT && !noZero) {
     for (i = 0; i < length; i++) {
-      buf[i] = 0
+      self[i] = 0
     }
   }
 
   if (length > 0 && length <= Buffer.poolSize)
-    buf.parent = rootParent
+    self.parent = rootParent
 
-  return buf
+  return self
 }
 
-function SlowBuffer(subject, encoding, noZero) {
+function SlowBuffer (subject, encoding, noZero) {
   if (!(this instanceof SlowBuffer))
     return new SlowBuffer(subject, encoding, noZero)
 
@@ -76643,6 +76678,8 @@ Buffer.isBuffer = function (b) {
 Buffer.compare = function (a, b) {
   if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b))
     throw new TypeError('Arguments must be Buffers')
+
+  if (a === b) return 0
 
   var x = a.length
   var y = b.length
@@ -76784,6 +76821,7 @@ Buffer.prototype.toString = function (encoding, start, end) {
 
 Buffer.prototype.equals = function (b) {
   if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  if (this === b) return true
   return Buffer.compare(this, b) === 0
 }
 
@@ -76800,6 +76838,7 @@ Buffer.prototype.inspect = function () {
 
 Buffer.prototype.compare = function (b) {
   if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  if (this === b) return 0
   return Buffer.compare(this, b)
 }
 
@@ -76862,7 +76901,7 @@ function base64Write (buf, string, offset, length) {
 }
 
 function utf16leWrite (buf, string, offset, length) {
-  var charsWritten = blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length, 2)
+  var charsWritten = blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
   return charsWritten
 }
 
@@ -76884,7 +76923,7 @@ Buffer.prototype.write = function (string, offset, length, encoding) {
   offset = Number(offset) || 0
 
   if (length < 0 || offset < 0 || offset > this.length)
-    throw new RangeError('attempt to write outside buffer bounds');
+    throw new RangeError('attempt to write outside buffer bounds')
 
   var remaining = this.length - offset
   if (!length) {
@@ -77007,7 +77046,7 @@ Buffer.prototype.slice = function (start, end) {
   end = end === undefined ? len : ~~end
 
   if (start < 0) {
-    start += len;
+    start += len
     if (start < 0)
       start = 0
   } else if (start > len) {
@@ -77076,7 +77115,7 @@ Buffer.prototype.readUIntBE = function (offset, byteLength, noAssert) {
   var val = this[offset + --byteLength]
   var mul = 1
   while (byteLength > 0 && (mul *= 0x100))
-    val += this[offset + --byteLength] * mul;
+    val += this[offset + --byteLength] * mul
 
   return val
 }
@@ -77484,7 +77523,7 @@ Buffer.prototype.writeDoubleBE = function (value, offset, noAssert) {
 
 // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
 Buffer.prototype.copy = function (target, target_start, start, end) {
-  var source = this
+  var self = this // source
 
   if (!start) start = 0
   if (!end && end !== 0) end = this.length
@@ -77494,12 +77533,12 @@ Buffer.prototype.copy = function (target, target_start, start, end) {
 
   // Copy 0 bytes; we're done
   if (end === start) return 0
-  if (target.length === 0 || source.length === 0) return 0
+  if (target.length === 0 || self.length === 0) return 0
 
   // Fatal error conditions
   if (target_start < 0)
     throw new RangeError('targetStart out of bounds')
-  if (start < 0 || start >= source.length) throw new RangeError('sourceStart out of bounds')
+  if (start < 0 || start >= self.length) throw new RangeError('sourceStart out of bounds')
   if (end < 0) throw new RangeError('sourceEnd out of bounds')
 
   // Are we oob?
@@ -77673,61 +77712,50 @@ function toHex (n) {
   return n.toString(16)
 }
 
-function utf8ToBytes(string, units) {
-  var codePoint, length = string.length
-  var leadSurrogate = null
+function utf8ToBytes (string, units) {
   units = units || Infinity
+  var codePoint
+  var length = string.length
+  var leadSurrogate = null
   var bytes = []
   var i = 0
 
-  for (; i<length; i++) {
+  for (; i < length; i++) {
     codePoint = string.charCodeAt(i)
 
     // is surrogate component
     if (codePoint > 0xD7FF && codePoint < 0xE000) {
-
       // last char was a lead
       if (leadSurrogate) {
-
         // 2 leads in a row
         if (codePoint < 0xDC00) {
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           leadSurrogate = codePoint
           continue
-        }
-
-        // valid surrogate pair
-        else {
+        } else {
+          // valid surrogate pair
           codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
           leadSurrogate = null
         }
-      }
+      } else {
+        // no lead yet
 
-      // no lead yet
-      else {
-
-        // unexpected trail
         if (codePoint > 0xDBFF) {
+          // unexpected trail
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
-        }
-
-        // unpaired lead
-        else if (i + 1 === length) {
+        } else if (i + 1 === length) {
+          // unpaired lead
           if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
           continue
-        }
-
-        // valid lead
-        else {
+        } else {
+          // valid lead
           leadSurrogate = codePoint
           continue
         }
       }
-    }
-
-    // valid bmp char, but last char was a lead
-    else if (leadSurrogate) {
+    } else if (leadSurrogate) {
+      // valid bmp char, but last char was a lead
       if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
       leadSurrogate = null
     }
@@ -77736,32 +77764,28 @@ function utf8ToBytes(string, units) {
     if (codePoint < 0x80) {
       if ((units -= 1) < 0) break
       bytes.push(codePoint)
-    }
-    else if (codePoint < 0x800) {
+    } else if (codePoint < 0x800) {
       if ((units -= 2) < 0) break
       bytes.push(
         codePoint >> 0x6 | 0xC0,
         codePoint & 0x3F | 0x80
-      );
-    }
-    else if (codePoint < 0x10000) {
+      )
+    } else if (codePoint < 0x10000) {
       if ((units -= 3) < 0) break
       bytes.push(
         codePoint >> 0xC | 0xE0,
         codePoint >> 0x6 & 0x3F | 0x80,
         codePoint & 0x3F | 0x80
-      );
-    }
-    else if (codePoint < 0x200000) {
+      )
+    } else if (codePoint < 0x200000) {
       if ((units -= 4) < 0) break
       bytes.push(
         codePoint >> 0x12 | 0xF0,
         codePoint >> 0xC & 0x3F | 0x80,
         codePoint >> 0x6 & 0x3F | 0x80,
         codePoint & 0x3F | 0x80
-      );
-    }
-    else {
+      )
+    } else {
       throw new Error('Invalid code point')
     }
   }
@@ -77782,7 +77806,6 @@ function utf16leToBytes (str, units) {
   var c, hi, lo
   var byteArray = []
   for (var i = 0; i < str.length; i++) {
-
     if ((units -= 2) < 0) break
 
     c = str.charCodeAt(i)
@@ -77799,8 +77822,7 @@ function base64ToBytes (str) {
   return base64.toByteArray(base64clean(str))
 }
 
-function blitBuffer (src, dst, offset, length, unitSize) {
-  if (unitSize) length -= length % unitSize;
+function blitBuffer (src, dst, offset, length) {
   for (var i = 0; i < length; i++) {
     if ((i + offset >= dst.length) || (i >= src.length))
       break
@@ -78065,73 +78087,93 @@ module.exports = isArray || function (val) {
 };
 
 },{}],27:[function(require,module,exports){
-var sentence = require('sentence-case');
+var upperCase    = require('upper-case');
+var sentenceCase = require('sentence-case');
 
 /**
  * Camel case a string.
  *
  * @param  {String} string
+ * @param  {String} [locale]
  * @return {String}
  */
-module.exports = function (string) {
-  return sentence(string)
+module.exports = function (string, locale) {
+  return sentenceCase(string, locale)
     // Replace periods between numeric entities with an underscore.
     .replace(/(\d) (?=\d)/g, '$1_')
-    // Replace spaces between words with a string upper cased character.
-    .replace(/ (\w)/g, function (_, $1) {
-      return $1.toUpperCase();
+    // Replace spaces between words with an upper cased character.
+    .replace(/ (.)/g, function (m, $1) {
+      return upperCase($1, locale);
     });
 };
 
-},{"sentence-case":28}],28:[function(require,module,exports){
-var NON_WORD_REGEXP       = require('./vendor/non-word-regexp.js');
-var CAMEL_CASE_REGEXP     = require('./vendor/camel-case-regexp.js');
-var TRAILING_DIGIT_REGEXP = require('./vendor/trailing-digit-regexp.js');
+},{"sentence-case":28,"upper-case":61}],28:[function(require,module,exports){
+var lowerCase = require('lower-case')
+
+var NON_WORD_REGEXP = require('./vendor/non-word-regexp')
+var CAMEL_CASE_REGEXP = require('./vendor/camel-case-regexp')
+var TRAILING_DIGIT_REGEXP = require('./vendor/trailing-digit-regexp')
 
 /**
  * Sentence case a string.
  *
  * @param  {String} str
+ * @param  {String} locale
+ * @param  {String} replacement
  * @return {String}
  */
-module.exports = function (str) {
+module.exports = function (str, locale, replacement) {
   if (str == null) {
-    return '';
+    return ''
   }
 
-  return String(str)
-    // Enables camel case support.
+  replacement = replacement || ' '
+
+  function replace (match, index, string) {
+    if (index === 0 || index === (string.length - match.length)) {
+      return ''
+    }
+
+    return replacement
+  }
+
+  str = String(str)
+    // Support camel case ("camelCase" -> "camel Case").
     .replace(CAMEL_CASE_REGEXP, '$1 $2')
-    // Add a space after any digits.
+    // Support digit groups ("test2012" -> "test 2012").
     .replace(TRAILING_DIGIT_REGEXP, '$1 $2')
     // Remove all non-word characters and replace with a single space.
-    .replace(NON_WORD_REGEXP, ' ')
-    // Trim whitespace around the string.
-    .replace(/^ | $/g, '')
-    // Finally lower case the entire string.
-    .toLowerCase();
-};
+    .replace(NON_WORD_REGEXP, replace)
 
-},{"./vendor/camel-case-regexp.js":29,"./vendor/non-word-regexp.js":30,"./vendor/trailing-digit-regexp.js":31}],29:[function(require,module,exports){
-module.exports = /([\u0061-\u007A\u00B5\u00DF-\u00F6\u00F8-\u00FF\u0101\u0103\u0105\u0107\u0109\u010B\u010D\u010F\u0111\u0113\u0115\u0117\u0119\u011B\u011D\u011F\u0121\u0123\u0125\u0127\u0129\u012B\u012D\u012F\u0131\u0133\u0135\u0137\u0138\u013A\u013C\u013E\u0140\u0142\u0144\u0146\u0148\u0149\u014B\u014D\u014F\u0151\u0153\u0155\u0157\u0159\u015B\u015D\u015F\u0161\u0163\u0165\u0167\u0169\u016B\u016D\u016F\u0171\u0173\u0175\u0177\u017A\u017C\u017E-\u0180\u0183\u0185\u0188\u018C\u018D\u0192\u0195\u0199-\u019B\u019E\u01A1\u01A3\u01A5\u01A8\u01AA\u01AB\u01AD\u01B0\u01B4\u01B6\u01B9\u01BA\u01BD-\u01BF\u01C6\u01C9\u01CC\u01CE\u01D0\u01D2\u01D4\u01D6\u01D8\u01DA\u01DC\u01DD\u01DF\u01E1\u01E3\u01E5\u01E7\u01E9\u01EB\u01ED\u01EF\u01F0\u01F3\u01F5\u01F9\u01FB\u01FD\u01FF\u0201\u0203\u0205\u0207\u0209\u020B\u020D\u020F\u0211\u0213\u0215\u0217\u0219\u021B\u021D\u021F\u0221\u0223\u0225\u0227\u0229\u022B\u022D\u022F\u0231\u0233-\u0239\u023C\u023F\u0240\u0242\u0247\u0249\u024B\u024D\u024F-\u0293\u0295-\u02AF\u0371\u0373\u0377\u037B-\u037D\u0390\u03AC-\u03CE\u03D0\u03D1\u03D5-\u03D7\u03D9\u03DB\u03DD\u03DF\u03E1\u03E3\u03E5\u03E7\u03E9\u03EB\u03ED\u03EF-\u03F3\u03F5\u03F8\u03FB\u03FC\u0430-\u045F\u0461\u0463\u0465\u0467\u0469\u046B\u046D\u046F\u0471\u0473\u0475\u0477\u0479\u047B\u047D\u047F\u0481\u048B\u048D\u048F\u0491\u0493\u0495\u0497\u0499\u049B\u049D\u049F\u04A1\u04A3\u04A5\u04A7\u04A9\u04AB\u04AD\u04AF\u04B1\u04B3\u04B5\u04B7\u04B9\u04BB\u04BD\u04BF\u04C2\u04C4\u04C6\u04C8\u04CA\u04CC\u04CE\u04CF\u04D1\u04D3\u04D5\u04D7\u04D9\u04DB\u04DD\u04DF\u04E1\u04E3\u04E5\u04E7\u04E9\u04EB\u04ED\u04EF\u04F1\u04F3\u04F5\u04F7\u04F9\u04FB\u04FD\u04FF\u0501\u0503\u0505\u0507\u0509\u050B\u050D\u050F\u0511\u0513\u0515\u0517\u0519\u051B\u051D\u051F\u0521\u0523\u0525\u0527\u0561-\u0587\u1D00-\u1D2B\u1D6B-\u1D77\u1D79-\u1D9A\u1E01\u1E03\u1E05\u1E07\u1E09\u1E0B\u1E0D\u1E0F\u1E11\u1E13\u1E15\u1E17\u1E19\u1E1B\u1E1D\u1E1F\u1E21\u1E23\u1E25\u1E27\u1E29\u1E2B\u1E2D\u1E2F\u1E31\u1E33\u1E35\u1E37\u1E39\u1E3B\u1E3D\u1E3F\u1E41\u1E43\u1E45\u1E47\u1E49\u1E4B\u1E4D\u1E4F\u1E51\u1E53\u1E55\u1E57\u1E59\u1E5B\u1E5D\u1E5F\u1E61\u1E63\u1E65\u1E67\u1E69\u1E6B\u1E6D\u1E6F\u1E71\u1E73\u1E75\u1E77\u1E79\u1E7B\u1E7D\u1E7F\u1E81\u1E83\u1E85\u1E87\u1E89\u1E8B\u1E8D\u1E8F\u1E91\u1E93\u1E95-\u1E9D\u1E9F\u1EA1\u1EA3\u1EA5\u1EA7\u1EA9\u1EAB\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5\u1EB7\u1EB9\u1EBB\u1EBD\u1EBF\u1EC1\u1EC3\u1EC5\u1EC7\u1EC9\u1ECB\u1ECD\u1ECF\u1ED1\u1ED3\u1ED5\u1ED7\u1ED9\u1EDB\u1EDD\u1EDF\u1EE1\u1EE3\u1EE5\u1EE7\u1EE9\u1EEB\u1EED\u1EEF\u1EF1\u1EF3\u1EF5\u1EF7\u1EF9\u1EFB\u1EFD\u1EFF-\u1F07\u1F10-\u1F15\u1F20-\u1F27\u1F30-\u1F37\u1F40-\u1F45\u1F50-\u1F57\u1F60-\u1F67\u1F70-\u1F7D\u1F80-\u1F87\u1F90-\u1F97\u1FA0-\u1FA7\u1FB0-\u1FB4\u1FB6\u1FB7\u1FBE\u1FC2-\u1FC4\u1FC6\u1FC7\u1FD0-\u1FD3\u1FD6\u1FD7\u1FE0-\u1FE7\u1FF2-\u1FF4\u1FF6\u1FF7\u210A\u210E\u210F\u2113\u212F\u2134\u2139\u213C\u213D\u2146-\u2149\u214E\u2184\u2C30-\u2C5E\u2C61\u2C65\u2C66\u2C68\u2C6A\u2C6C\u2C71\u2C73\u2C74\u2C76-\u2C7B\u2C81\u2C83\u2C85\u2C87\u2C89\u2C8B\u2C8D\u2C8F\u2C91\u2C93\u2C95\u2C97\u2C99\u2C9B\u2C9D\u2C9F\u2CA1\u2CA3\u2CA5\u2CA7\u2CA9\u2CAB\u2CAD\u2CAF\u2CB1\u2CB3\u2CB5\u2CB7\u2CB9\u2CBB\u2CBD\u2CBF\u2CC1\u2CC3\u2CC5\u2CC7\u2CC9\u2CCB\u2CCD\u2CCF\u2CD1\u2CD3\u2CD5\u2CD7\u2CD9\u2CDB\u2CDD\u2CDF\u2CE1\u2CE3\u2CE4\u2CEC\u2CEE\u2CF3\u2D00-\u2D25\u2D27\u2D2D\uA641\uA643\uA645\uA647\uA649\uA64B\uA64D\uA64F\uA651\uA653\uA655\uA657\uA659\uA65B\uA65D\uA65F\uA661\uA663\uA665\uA667\uA669\uA66B\uA66D\uA681\uA683\uA685\uA687\uA689\uA68B\uA68D\uA68F\uA691\uA693\uA695\uA697\uA723\uA725\uA727\uA729\uA72B\uA72D\uA72F-\uA731\uA733\uA735\uA737\uA739\uA73B\uA73D\uA73F\uA741\uA743\uA745\uA747\uA749\uA74B\uA74D\uA74F\uA751\uA753\uA755\uA757\uA759\uA75B\uA75D\uA75F\uA761\uA763\uA765\uA767\uA769\uA76B\uA76D\uA76F\uA771-\uA778\uA77A\uA77C\uA77F\uA781\uA783\uA785\uA787\uA78C\uA78E\uA791\uA793\uA7A1\uA7A3\uA7A5\uA7A7\uA7A9\uA7FA\uFB00-\uFB06\uFB13-\uFB17\uFF41-\uFF5A])([\u0041-\u005A\u00C0-\u00D6\u00D8-\u00DE\u0100\u0102\u0104\u0106\u0108\u010A\u010C\u010E\u0110\u0112\u0114\u0116\u0118\u011A\u011C\u011E\u0120\u0122\u0124\u0126\u0128\u012A\u012C\u012E\u0130\u0132\u0134\u0136\u0139\u013B\u013D\u013F\u0141\u0143\u0145\u0147\u014A\u014C\u014E\u0150\u0152\u0154\u0156\u0158\u015A\u015C\u015E\u0160\u0162\u0164\u0166\u0168\u016A\u016C\u016E\u0170\u0172\u0174\u0176\u0178\u0179\u017B\u017D\u0181\u0182\u0184\u0186\u0187\u0189-\u018B\u018E-\u0191\u0193\u0194\u0196-\u0198\u019C\u019D\u019F\u01A0\u01A2\u01A4\u01A6\u01A7\u01A9\u01AC\u01AE\u01AF\u01B1-\u01B3\u01B5\u01B7\u01B8\u01BC\u01C4\u01C7\u01CA\u01CD\u01CF\u01D1\u01D3\u01D5\u01D7\u01D9\u01DB\u01DE\u01E0\u01E2\u01E4\u01E6\u01E8\u01EA\u01EC\u01EE\u01F1\u01F4\u01F6-\u01F8\u01FA\u01FC\u01FE\u0200\u0202\u0204\u0206\u0208\u020A\u020C\u020E\u0210\u0212\u0214\u0216\u0218\u021A\u021C\u021E\u0220\u0222\u0224\u0226\u0228\u022A\u022C\u022E\u0230\u0232\u023A\u023B\u023D\u023E\u0241\u0243-\u0246\u0248\u024A\u024C\u024E\u0370\u0372\u0376\u0386\u0388-\u038A\u038C\u038E\u038F\u0391-\u03A1\u03A3-\u03AB\u03CF\u03D2-\u03D4\u03D8\u03DA\u03DC\u03DE\u03E0\u03E2\u03E4\u03E6\u03E8\u03EA\u03EC\u03EE\u03F4\u03F7\u03F9\u03FA\u03FD-\u042F\u0460\u0462\u0464\u0466\u0468\u046A\u046C\u046E\u0470\u0472\u0474\u0476\u0478\u047A\u047C\u047E\u0480\u048A\u048C\u048E\u0490\u0492\u0494\u0496\u0498\u049A\u049C\u049E\u04A0\u04A2\u04A4\u04A6\u04A8\u04AA\u04AC\u04AE\u04B0\u04B2\u04B4\u04B6\u04B8\u04BA\u04BC\u04BE\u04C0\u04C1\u04C3\u04C5\u04C7\u04C9\u04CB\u04CD\u04D0\u04D2\u04D4\u04D6\u04D8\u04DA\u04DC\u04DE\u04E0\u04E2\u04E4\u04E6\u04E8\u04EA\u04EC\u04EE\u04F0\u04F2\u04F4\u04F6\u04F8\u04FA\u04FC\u04FE\u0500\u0502\u0504\u0506\u0508\u050A\u050C\u050E\u0510\u0512\u0514\u0516\u0518\u051A\u051C\u051E\u0520\u0522\u0524\u0526\u0531-\u0556\u10A0-\u10C5\u10C7\u10CD\u1E00\u1E02\u1E04\u1E06\u1E08\u1E0A\u1E0C\u1E0E\u1E10\u1E12\u1E14\u1E16\u1E18\u1E1A\u1E1C\u1E1E\u1E20\u1E22\u1E24\u1E26\u1E28\u1E2A\u1E2C\u1E2E\u1E30\u1E32\u1E34\u1E36\u1E38\u1E3A\u1E3C\u1E3E\u1E40\u1E42\u1E44\u1E46\u1E48\u1E4A\u1E4C\u1E4E\u1E50\u1E52\u1E54\u1E56\u1E58\u1E5A\u1E5C\u1E5E\u1E60\u1E62\u1E64\u1E66\u1E68\u1E6A\u1E6C\u1E6E\u1E70\u1E72\u1E74\u1E76\u1E78\u1E7A\u1E7C\u1E7E\u1E80\u1E82\u1E84\u1E86\u1E88\u1E8A\u1E8C\u1E8E\u1E90\u1E92\u1E94\u1E9E\u1EA0\u1EA2\u1EA4\u1EA6\u1EA8\u1EAA\u1EAC\u1EAE\u1EB0\u1EB2\u1EB4\u1EB6\u1EB8\u1EBA\u1EBC\u1EBE\u1EC0\u1EC2\u1EC4\u1EC6\u1EC8\u1ECA\u1ECC\u1ECE\u1ED0\u1ED2\u1ED4\u1ED6\u1ED8\u1EDA\u1EDC\u1EDE\u1EE0\u1EE2\u1EE4\u1EE6\u1EE8\u1EEA\u1EEC\u1EEE\u1EF0\u1EF2\u1EF4\u1EF6\u1EF8\u1EFA\u1EFC\u1EFE\u1F08-\u1F0F\u1F18-\u1F1D\u1F28-\u1F2F\u1F38-\u1F3F\u1F48-\u1F4D\u1F59\u1F5B\u1F5D\u1F5F\u1F68-\u1F6F\u1FB8-\u1FBB\u1FC8-\u1FCB\u1FD8-\u1FDB\u1FE8-\u1FEC\u1FF8-\u1FFB\u2102\u2107\u210B-\u210D\u2110-\u2112\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u2130-\u2133\u213E\u213F\u2145\u2183\u2C00-\u2C2E\u2C60\u2C62-\u2C64\u2C67\u2C69\u2C6B\u2C6D-\u2C70\u2C72\u2C75\u2C7E-\u2C80\u2C82\u2C84\u2C86\u2C88\u2C8A\u2C8C\u2C8E\u2C90\u2C92\u2C94\u2C96\u2C98\u2C9A\u2C9C\u2C9E\u2CA0\u2CA2\u2CA4\u2CA6\u2CA8\u2CAA\u2CAC\u2CAE\u2CB0\u2CB2\u2CB4\u2CB6\u2CB8\u2CBA\u2CBC\u2CBE\u2CC0\u2CC2\u2CC4\u2CC6\u2CC8\u2CCA\u2CCC\u2CCE\u2CD0\u2CD2\u2CD4\u2CD6\u2CD8\u2CDA\u2CDC\u2CDE\u2CE0\u2CE2\u2CEB\u2CED\u2CF2\uA640\uA642\uA644\uA646\uA648\uA64A\uA64C\uA64E\uA650\uA652\uA654\uA656\uA658\uA65A\uA65C\uA65E\uA660\uA662\uA664\uA666\uA668\uA66A\uA66C\uA680\uA682\uA684\uA686\uA688\uA68A\uA68C\uA68E\uA690\uA692\uA694\uA696\uA722\uA724\uA726\uA728\uA72A\uA72C\uA72E\uA732\uA734\uA736\uA738\uA73A\uA73C\uA73E\uA740\uA742\uA744\uA746\uA748\uA74A\uA74C\uA74E\uA750\uA752\uA754\uA756\uA758\uA75A\uA75C\uA75E\uA760\uA762\uA764\uA766\uA768\uA76A\uA76C\uA76E\uA779\uA77B\uA77D\uA77E\uA780\uA782\uA784\uA786\uA78B\uA78D\uA790\uA792\uA7A0\uA7A2\uA7A4\uA7A6\uA7A8\uA7AA\uFF21-\uFF3A\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
+  // Lower case the entire string.
+  return lowerCase(str, locale)
+}
+
+},{"./vendor/camel-case-regexp":29,"./vendor/non-word-regexp":30,"./vendor/trailing-digit-regexp":31,"lower-case":46}],29:[function(require,module,exports){
+module.exports = /([\u0061-\u007A\u00B5\u00DF-\u00F6\u00F8-\u00FF\u0101\u0103\u0105\u0107\u0109\u010B\u010D\u010F\u0111\u0113\u0115\u0117\u0119\u011B\u011D\u011F\u0121\u0123\u0125\u0127\u0129\u012B\u012D\u012F\u0131\u0133\u0135\u0137\u0138\u013A\u013C\u013E\u0140\u0142\u0144\u0146\u0148\u0149\u014B\u014D\u014F\u0151\u0153\u0155\u0157\u0159\u015B\u015D\u015F\u0161\u0163\u0165\u0167\u0169\u016B\u016D\u016F\u0171\u0173\u0175\u0177\u017A\u017C\u017E-\u0180\u0183\u0185\u0188\u018C\u018D\u0192\u0195\u0199-\u019B\u019E\u01A1\u01A3\u01A5\u01A8\u01AA\u01AB\u01AD\u01B0\u01B4\u01B6\u01B9\u01BA\u01BD-\u01BF\u01C6\u01C9\u01CC\u01CE\u01D0\u01D2\u01D4\u01D6\u01D8\u01DA\u01DC\u01DD\u01DF\u01E1\u01E3\u01E5\u01E7\u01E9\u01EB\u01ED\u01EF\u01F0\u01F3\u01F5\u01F9\u01FB\u01FD\u01FF\u0201\u0203\u0205\u0207\u0209\u020B\u020D\u020F\u0211\u0213\u0215\u0217\u0219\u021B\u021D\u021F\u0221\u0223\u0225\u0227\u0229\u022B\u022D\u022F\u0231\u0233-\u0239\u023C\u023F\u0240\u0242\u0247\u0249\u024B\u024D\u024F-\u0293\u0295-\u02AF\u0371\u0373\u0377\u037B-\u037D\u0390\u03AC-\u03CE\u03D0\u03D1\u03D5-\u03D7\u03D9\u03DB\u03DD\u03DF\u03E1\u03E3\u03E5\u03E7\u03E9\u03EB\u03ED\u03EF-\u03F3\u03F5\u03F8\u03FB\u03FC\u0430-\u045F\u0461\u0463\u0465\u0467\u0469\u046B\u046D\u046F\u0471\u0473\u0475\u0477\u0479\u047B\u047D\u047F\u0481\u048B\u048D\u048F\u0491\u0493\u0495\u0497\u0499\u049B\u049D\u049F\u04A1\u04A3\u04A5\u04A7\u04A9\u04AB\u04AD\u04AF\u04B1\u04B3\u04B5\u04B7\u04B9\u04BB\u04BD\u04BF\u04C2\u04C4\u04C6\u04C8\u04CA\u04CC\u04CE\u04CF\u04D1\u04D3\u04D5\u04D7\u04D9\u04DB\u04DD\u04DF\u04E1\u04E3\u04E5\u04E7\u04E9\u04EB\u04ED\u04EF\u04F1\u04F3\u04F5\u04F7\u04F9\u04FB\u04FD\u04FF\u0501\u0503\u0505\u0507\u0509\u050B\u050D\u050F\u0511\u0513\u0515\u0517\u0519\u051B\u051D\u051F\u0521\u0523\u0525\u0527\u0561-\u0587\u1D00-\u1D2B\u1D6B-\u1D77\u1D79-\u1D9A\u1E01\u1E03\u1E05\u1E07\u1E09\u1E0B\u1E0D\u1E0F\u1E11\u1E13\u1E15\u1E17\u1E19\u1E1B\u1E1D\u1E1F\u1E21\u1E23\u1E25\u1E27\u1E29\u1E2B\u1E2D\u1E2F\u1E31\u1E33\u1E35\u1E37\u1E39\u1E3B\u1E3D\u1E3F\u1E41\u1E43\u1E45\u1E47\u1E49\u1E4B\u1E4D\u1E4F\u1E51\u1E53\u1E55\u1E57\u1E59\u1E5B\u1E5D\u1E5F\u1E61\u1E63\u1E65\u1E67\u1E69\u1E6B\u1E6D\u1E6F\u1E71\u1E73\u1E75\u1E77\u1E79\u1E7B\u1E7D\u1E7F\u1E81\u1E83\u1E85\u1E87\u1E89\u1E8B\u1E8D\u1E8F\u1E91\u1E93\u1E95-\u1E9D\u1E9F\u1EA1\u1EA3\u1EA5\u1EA7\u1EA9\u1EAB\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5\u1EB7\u1EB9\u1EBB\u1EBD\u1EBF\u1EC1\u1EC3\u1EC5\u1EC7\u1EC9\u1ECB\u1ECD\u1ECF\u1ED1\u1ED3\u1ED5\u1ED7\u1ED9\u1EDB\u1EDD\u1EDF\u1EE1\u1EE3\u1EE5\u1EE7\u1EE9\u1EEB\u1EED\u1EEF\u1EF1\u1EF3\u1EF5\u1EF7\u1EF9\u1EFB\u1EFD\u1EFF-\u1F07\u1F10-\u1F15\u1F20-\u1F27\u1F30-\u1F37\u1F40-\u1F45\u1F50-\u1F57\u1F60-\u1F67\u1F70-\u1F7D\u1F80-\u1F87\u1F90-\u1F97\u1FA0-\u1FA7\u1FB0-\u1FB4\u1FB6\u1FB7\u1FBE\u1FC2-\u1FC4\u1FC6\u1FC7\u1FD0-\u1FD3\u1FD6\u1FD7\u1FE0-\u1FE7\u1FF2-\u1FF4\u1FF6\u1FF7\u210A\u210E\u210F\u2113\u212F\u2134\u2139\u213C\u213D\u2146-\u2149\u214E\u2184\u2C30-\u2C5E\u2C61\u2C65\u2C66\u2C68\u2C6A\u2C6C\u2C71\u2C73\u2C74\u2C76-\u2C7B\u2C81\u2C83\u2C85\u2C87\u2C89\u2C8B\u2C8D\u2C8F\u2C91\u2C93\u2C95\u2C97\u2C99\u2C9B\u2C9D\u2C9F\u2CA1\u2CA3\u2CA5\u2CA7\u2CA9\u2CAB\u2CAD\u2CAF\u2CB1\u2CB3\u2CB5\u2CB7\u2CB9\u2CBB\u2CBD\u2CBF\u2CC1\u2CC3\u2CC5\u2CC7\u2CC9\u2CCB\u2CCD\u2CCF\u2CD1\u2CD3\u2CD5\u2CD7\u2CD9\u2CDB\u2CDD\u2CDF\u2CE1\u2CE3\u2CE4\u2CEC\u2CEE\u2CF3\u2D00-\u2D25\u2D27\u2D2D\uA641\uA643\uA645\uA647\uA649\uA64B\uA64D\uA64F\uA651\uA653\uA655\uA657\uA659\uA65B\uA65D\uA65F\uA661\uA663\uA665\uA667\uA669\uA66B\uA66D\uA681\uA683\uA685\uA687\uA689\uA68B\uA68D\uA68F\uA691\uA693\uA695\uA697\uA723\uA725\uA727\uA729\uA72B\uA72D\uA72F-\uA731\uA733\uA735\uA737\uA739\uA73B\uA73D\uA73F\uA741\uA743\uA745\uA747\uA749\uA74B\uA74D\uA74F\uA751\uA753\uA755\uA757\uA759\uA75B\uA75D\uA75F\uA761\uA763\uA765\uA767\uA769\uA76B\uA76D\uA76F\uA771-\uA778\uA77A\uA77C\uA77F\uA781\uA783\uA785\uA787\uA78C\uA78E\uA791\uA793\uA7A1\uA7A3\uA7A5\uA7A7\uA7A9\uA7FA\uFB00-\uFB06\uFB13-\uFB17\uFF41-\uFF5A])([\u0041-\u005A\u00C0-\u00D6\u00D8-\u00DE\u0100\u0102\u0104\u0106\u0108\u010A\u010C\u010E\u0110\u0112\u0114\u0116\u0118\u011A\u011C\u011E\u0120\u0122\u0124\u0126\u0128\u012A\u012C\u012E\u0130\u0132\u0134\u0136\u0139\u013B\u013D\u013F\u0141\u0143\u0145\u0147\u014A\u014C\u014E\u0150\u0152\u0154\u0156\u0158\u015A\u015C\u015E\u0160\u0162\u0164\u0166\u0168\u016A\u016C\u016E\u0170\u0172\u0174\u0176\u0178\u0179\u017B\u017D\u0181\u0182\u0184\u0186\u0187\u0189-\u018B\u018E-\u0191\u0193\u0194\u0196-\u0198\u019C\u019D\u019F\u01A0\u01A2\u01A4\u01A6\u01A7\u01A9\u01AC\u01AE\u01AF\u01B1-\u01B3\u01B5\u01B7\u01B8\u01BC\u01C4\u01C7\u01CA\u01CD\u01CF\u01D1\u01D3\u01D5\u01D7\u01D9\u01DB\u01DE\u01E0\u01E2\u01E4\u01E6\u01E8\u01EA\u01EC\u01EE\u01F1\u01F4\u01F6-\u01F8\u01FA\u01FC\u01FE\u0200\u0202\u0204\u0206\u0208\u020A\u020C\u020E\u0210\u0212\u0214\u0216\u0218\u021A\u021C\u021E\u0220\u0222\u0224\u0226\u0228\u022A\u022C\u022E\u0230\u0232\u023A\u023B\u023D\u023E\u0241\u0243-\u0246\u0248\u024A\u024C\u024E\u0370\u0372\u0376\u0386\u0388-\u038A\u038C\u038E\u038F\u0391-\u03A1\u03A3-\u03AB\u03CF\u03D2-\u03D4\u03D8\u03DA\u03DC\u03DE\u03E0\u03E2\u03E4\u03E6\u03E8\u03EA\u03EC\u03EE\u03F4\u03F7\u03F9\u03FA\u03FD-\u042F\u0460\u0462\u0464\u0466\u0468\u046A\u046C\u046E\u0470\u0472\u0474\u0476\u0478\u047A\u047C\u047E\u0480\u048A\u048C\u048E\u0490\u0492\u0494\u0496\u0498\u049A\u049C\u049E\u04A0\u04A2\u04A4\u04A6\u04A8\u04AA\u04AC\u04AE\u04B0\u04B2\u04B4\u04B6\u04B8\u04BA\u04BC\u04BE\u04C0\u04C1\u04C3\u04C5\u04C7\u04C9\u04CB\u04CD\u04D0\u04D2\u04D4\u04D6\u04D8\u04DA\u04DC\u04DE\u04E0\u04E2\u04E4\u04E6\u04E8\u04EA\u04EC\u04EE\u04F0\u04F2\u04F4\u04F6\u04F8\u04FA\u04FC\u04FE\u0500\u0502\u0504\u0506\u0508\u050A\u050C\u050E\u0510\u0512\u0514\u0516\u0518\u051A\u051C\u051E\u0520\u0522\u0524\u0526\u0531-\u0556\u10A0-\u10C5\u10C7\u10CD\u1E00\u1E02\u1E04\u1E06\u1E08\u1E0A\u1E0C\u1E0E\u1E10\u1E12\u1E14\u1E16\u1E18\u1E1A\u1E1C\u1E1E\u1E20\u1E22\u1E24\u1E26\u1E28\u1E2A\u1E2C\u1E2E\u1E30\u1E32\u1E34\u1E36\u1E38\u1E3A\u1E3C\u1E3E\u1E40\u1E42\u1E44\u1E46\u1E48\u1E4A\u1E4C\u1E4E\u1E50\u1E52\u1E54\u1E56\u1E58\u1E5A\u1E5C\u1E5E\u1E60\u1E62\u1E64\u1E66\u1E68\u1E6A\u1E6C\u1E6E\u1E70\u1E72\u1E74\u1E76\u1E78\u1E7A\u1E7C\u1E7E\u1E80\u1E82\u1E84\u1E86\u1E88\u1E8A\u1E8C\u1E8E\u1E90\u1E92\u1E94\u1E9E\u1EA0\u1EA2\u1EA4\u1EA6\u1EA8\u1EAA\u1EAC\u1EAE\u1EB0\u1EB2\u1EB4\u1EB6\u1EB8\u1EBA\u1EBC\u1EBE\u1EC0\u1EC2\u1EC4\u1EC6\u1EC8\u1ECA\u1ECC\u1ECE\u1ED0\u1ED2\u1ED4\u1ED6\u1ED8\u1EDA\u1EDC\u1EDE\u1EE0\u1EE2\u1EE4\u1EE6\u1EE8\u1EEA\u1EEC\u1EEE\u1EF0\u1EF2\u1EF4\u1EF6\u1EF8\u1EFA\u1EFC\u1EFE\u1F08-\u1F0F\u1F18-\u1F1D\u1F28-\u1F2F\u1F38-\u1F3F\u1F48-\u1F4D\u1F59\u1F5B\u1F5D\u1F5F\u1F68-\u1F6F\u1FB8-\u1FBB\u1FC8-\u1FCB\u1FD8-\u1FDB\u1FE8-\u1FEC\u1FF8-\u1FFB\u2102\u2107\u210B-\u210D\u2110-\u2112\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u2130-\u2133\u213E\u213F\u2145\u2183\u2C00-\u2C2E\u2C60\u2C62-\u2C64\u2C67\u2C69\u2C6B\u2C6D-\u2C70\u2C72\u2C75\u2C7E-\u2C80\u2C82\u2C84\u2C86\u2C88\u2C8A\u2C8C\u2C8E\u2C90\u2C92\u2C94\u2C96\u2C98\u2C9A\u2C9C\u2C9E\u2CA0\u2CA2\u2CA4\u2CA6\u2CA8\u2CAA\u2CAC\u2CAE\u2CB0\u2CB2\u2CB4\u2CB6\u2CB8\u2CBA\u2CBC\u2CBE\u2CC0\u2CC2\u2CC4\u2CC6\u2CC8\u2CCA\u2CCC\u2CCE\u2CD0\u2CD2\u2CD4\u2CD6\u2CD8\u2CDA\u2CDC\u2CDE\u2CE0\u2CE2\u2CEB\u2CED\u2CF2\uA640\uA642\uA644\uA646\uA648\uA64A\uA64C\uA64E\uA650\uA652\uA654\uA656\uA658\uA65A\uA65C\uA65E\uA660\uA662\uA664\uA666\uA668\uA66A\uA66C\uA680\uA682\uA684\uA686\uA688\uA68A\uA68C\uA68E\uA690\uA692\uA694\uA696\uA722\uA724\uA726\uA728\uA72A\uA72C\uA72E\uA732\uA734\uA736\uA738\uA73A\uA73C\uA73E\uA740\uA742\uA744\uA746\uA748\uA74A\uA74C\uA74E\uA750\uA752\uA754\uA756\uA758\uA75A\uA75C\uA75E\uA760\uA762\uA764\uA766\uA768\uA76A\uA76C\uA76E\uA779\uA77B\uA77D\uA77E\uA780\uA782\uA784\uA786\uA78B\uA78D\uA790\uA792\uA7A0\uA7A2\uA7A4\uA7A6\uA7A8\uA7AA\uFF21-\uFF3A\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g
+
 },{}],30:[function(require,module,exports){
-module.exports = /[^\u0041-\u005A\u0061-\u007A\u00AA\u00B5\u00BA\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u0527\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0\u08A2-\u08AC\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0977\u0979-\u097F\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C33\u0C35-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191C\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2183\u2184\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005\u3006\u3031-\u3035\u303B\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA697\uA6A0-\uA6E5\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA793\uA7A0-\uA7AA\uA7F8-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA80-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19]+/g;
+module.exports = /[^\u0041-\u005A\u0061-\u007A\u00AA\u00B5\u00BA\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u0527\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0\u08A2-\u08AC\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0977\u0979-\u097F\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C33\u0C35-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191C\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2183\u2184\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005\u3006\u3031-\u3035\u303B\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA697\uA6A0-\uA6E5\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA793\uA7A0-\uA7AA\uA7F8-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA80-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19]+/g
+
 },{}],31:[function(require,module,exports){
-module.exports = /([\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])([^\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
+module.exports = /([\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])([^\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g
+
 },{}],32:[function(require,module,exports){
-var snake = require('snake-case');
+var upperCase = require('upper-case');
+var snakeCase = require('snake-case');
 
 /**
  * Constant case a string.
  *
  * @param  {String} string
+ * @param  {String} [locale]
  * @return {String}
  */
-module.exports = function (string) {
-  return snake(string).toUpperCase();
+module.exports = function (string, locale) {
+  return upperCase(snakeCase(string, locale), locale);
 };
 
-},{"snake-case":60}],33:[function(require,module,exports){
+},{"snake-case":60,"upper-case":61}],33:[function(require,module,exports){
 var hasOwn = Object.prototype.hasOwnProperty;
 var toString = Object.prototype.toString;
 var undefined;
@@ -78215,6 +78257,7 @@ module.exports = function extend() {
 
 
 },{}],34:[function(require,module,exports){
+(function (global){
 "use strict";
 /*globals Handlebars: true */
 var base = require("./handlebars/base");
@@ -78247,15 +78290,27 @@ var create = function() {
 var Handlebars = create();
 Handlebars.create = create;
 
+/*jshint -W040 */
+/* istanbul ignore next */
+var root = typeof global !== 'undefined' ? global : window,
+    $Handlebars = root.Handlebars;
+/* istanbul ignore next */
+Handlebars.noConflict = function() {
+  if (root.Handlebars === Handlebars) {
+    root.Handlebars = $Handlebars;
+  }
+};
+
 Handlebars['default'] = Handlebars;
 
 exports["default"] = Handlebars;
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./handlebars/base":35,"./handlebars/exception":36,"./handlebars/runtime":37,"./handlebars/safe-string":38,"./handlebars/utils":39}],35:[function(require,module,exports){
 "use strict";
 var Utils = require("./utils");
 var Exception = require("./exception")["default"];
 
-var VERSION = "2.0.0";
+var VERSION = "3.0.0";
 exports.VERSION = VERSION;var COMPILER_REVISION = 6;
 exports.COMPILER_REVISION = COMPILER_REVISION;
 var REVISION_CHANGES = {
@@ -78301,6 +78356,9 @@ exports.HandlebarsEnvironment = HandlebarsEnvironment;HandlebarsEnvironment.prot
     if (toString.call(name) === objectType) {
       Utils.extend(this.partials,  name);
     } else {
+      if (typeof partial === 'undefined') {
+        throw new Exception('Attempting to register a partial as undefined');
+      }
       this.partials[name] = partial;
     }
   },
@@ -78368,35 +78426,46 @@ function registerDefaultHelpers(instance) {
       data = createFrame(options.data);
     }
 
+    function execIteration(key, i, last) {
+      if (data) {
+        data.key = key;
+        data.index = i;
+        data.first = i === 0;
+        data.last  = !!last;
+
+        if (contextPath) {
+          data.contextPath = contextPath + key;
+        }
+      }
+
+      ret = ret + fn(context[key], {
+        data: data,
+        blockParams: Utils.blockParams([context[key], key], [contextPath + key, null])
+      });
+    }
+
     if(context && typeof context === 'object') {
       if (isArray(context)) {
         for(var j = context.length; i<j; i++) {
-          if (data) {
-            data.index = i;
-            data.first = (i === 0);
-            data.last  = (i === (context.length-1));
-
-            if (contextPath) {
-              data.contextPath = contextPath + i;
-            }
-          }
-          ret = ret + fn(context[i], { data: data });
+          execIteration(i, i, i === context.length-1);
         }
       } else {
+        var priorKey;
+
         for(var key in context) {
           if(context.hasOwnProperty(key)) {
-            if(data) {
-              data.key = key;
-              data.index = i;
-              data.first = (i === 0);
-
-              if (contextPath) {
-                data.contextPath = contextPath + key;
-              }
+            // We're running the iterations one step out of sync so we can detect
+            // the last iteration without have to scan the object twice and create
+            // an itermediate keys array. 
+            if (priorKey) {
+              execIteration(priorKey, i-1);
             }
-            ret = ret + fn(context[key], {data: data});
+            priorKey = key;
             i++;
           }
+        }
+        if (priorKey) {
+          execIteration(priorKey, i-1, true);
         }
       }
     }
@@ -78461,15 +78530,13 @@ var logger = {
   INFO: 1,
   WARN: 2,
   ERROR: 3,
-  level: 3,
+  level: 1,
 
-  // can be overridden in the host environment
+  // Can be overridden in the host environment
   log: function(level, message) {
-    if (logger.level <= level) {
+    if (typeof console !== 'undefined' && logger.level <= level) {
       var method = logger.methodMap[level];
-      if (typeof console !== 'undefined' && console[method]) {
-        console[method].call(console, message);
-      }
+      (console[method] || console.log).call(console, message);
     }
   }
 };
@@ -78488,11 +78555,14 @@ exports.createFrame = createFrame;
 var errorProps = ['description', 'fileName', 'lineNumber', 'message', 'name', 'number', 'stack'];
 
 function Exception(message, node) {
-  var line;
-  if (node && node.firstLine) {
-    line = node.firstLine;
+  var loc = node && node.loc,
+      line,
+      column;
+  if (loc) {
+    line = loc.start.line;
+    column = loc.start.column;
 
-    message += ' - ' + line + ':' + node.firstColumn;
+    message += ' - ' + line + ':' + column;
   }
 
   var tmp = Error.prototype.constructor.call(this, message);
@@ -78502,9 +78572,9 @@ function Exception(message, node) {
     this[errorProps[idx]] = tmp[errorProps[idx]];
   }
 
-  if (line) {
+  if (loc) {
     this.lineNumber = line;
-    this.column = node.firstColumn;
+    this.column = column;
   }
 }
 
@@ -78552,38 +78622,44 @@ function template(templateSpec, env) {
   // for external users to override these as psuedo-supported APIs.
   env.VM.checkRevision(templateSpec.compiler);
 
-  var invokePartialWrapper = function(partial, indent, name, context, hash, helpers, partials, data, depths) {
-    if (hash) {
-      context = Utils.extend({}, context, hash);
+  var invokePartialWrapper = function(partial, context, options) {
+    if (options.hash) {
+      context = Utils.extend({}, context, options.hash);
     }
 
-    var result = env.VM.invokePartial.call(this, partial, name, context, helpers, partials, data, depths);
+    partial = env.VM.resolvePartial.call(this, partial, context, options);
+    var result = env.VM.invokePartial.call(this, partial, context, options);
 
     if (result == null && env.compile) {
-      var options = { helpers: helpers, partials: partials, data: data, depths: depths };
-      partials[name] = env.compile(partial, { data: data !== undefined, compat: templateSpec.compat }, env);
-      result = partials[name](context, options);
+      options.partials[options.name] = env.compile(partial, templateSpec.compilerOptions, env);
+      result = options.partials[options.name](context, options);
     }
     if (result != null) {
-      if (indent) {
+      if (options.indent) {
         var lines = result.split('\n');
         for (var i = 0, l = lines.length; i < l; i++) {
           if (!lines[i] && i + 1 === l) {
             break;
           }
 
-          lines[i] = indent + lines[i];
+          lines[i] = options.indent + lines[i];
         }
         result = lines.join('\n');
       }
       return result;
     } else {
-      throw new Exception("The partial " + name + " could not be compiled when running in runtime-only mode");
+      throw new Exception("The partial " + options.name + " could not be compiled when running in runtime-only mode");
     }
   };
 
   // Just add water
   var container = {
+    strict: function(obj, name) {
+      if (!(name in obj)) {
+        throw new Exception('"' + name + '" not defined in ' + obj);
+      }
+      return obj[name];
+    },
     lookup: function(depths, name) {
       var len = depths.length;
       for (var i = 0; i < len; i++) {
@@ -78604,11 +78680,11 @@ function template(templateSpec, env) {
     },
 
     programs: [],
-    program: function(i, data, depths) {
+    program: function(i, data, declaredBlockParams, blockParams, depths) {
       var programWrapper = this.programs[i],
           fn = this.fn(i);
-      if (data || depths) {
-        programWrapper = program(this, i, fn, data, depths);
+      if (data || depths || blockParams || declaredBlockParams) {
+        programWrapper = program(this, i, fn, data, declaredBlockParams, blockParams, depths);
       } else if (!programWrapper) {
         programWrapper = this.programs[i] = program(this, i, fn);
       }
@@ -78643,12 +78719,13 @@ function template(templateSpec, env) {
     if (!options.partial && templateSpec.useData) {
       data = initData(context, data);
     }
-    var depths;
+    var depths,
+        blockParams = templateSpec.useBlockParams ? [] : undefined;
     if (templateSpec.useDepths) {
       depths = options.depths ? [context].concat(options.depths) : [context];
     }
 
-    return templateSpec.main.call(container, context, container.helpers, container.partials, data, depths);
+    return templateSpec.main.call(container, context, container.helpers, container.partials, data, blockParams, depths);
   };
   ret.isTop = true;
 
@@ -78665,32 +78742,52 @@ function template(templateSpec, env) {
     }
   };
 
-  ret._child = function(i, data, depths) {
+  ret._child = function(i, data, blockParams, depths) {
+    if (templateSpec.useBlockParams && !blockParams) {
+      throw new Exception('must pass block params');
+    }
     if (templateSpec.useDepths && !depths) {
       throw new Exception('must pass parent depths');
     }
 
-    return program(container, i, templateSpec[i], data, depths);
+    return program(container, i, templateSpec[i], data, 0, blockParams, depths);
   };
   return ret;
 }
 
-exports.template = template;function program(container, i, fn, data, depths) {
+exports.template = template;function program(container, i, fn, data, declaredBlockParams, blockParams, depths) {
   var prog = function(context, options) {
     options = options || {};
 
-    return fn.call(container, context, container.helpers, container.partials, options.data || data, depths && [context].concat(depths));
+    return fn.call(container,
+        context,
+        container.helpers, container.partials,
+        options.data || data,
+        blockParams && [options.blockParams].concat(blockParams),
+        depths && [context].concat(depths));
   };
   prog.program = i;
   prog.depth = depths ? depths.length : 0;
+  prog.blockParams = declaredBlockParams || 0;
   return prog;
 }
 
-exports.program = program;function invokePartial(partial, name, context, helpers, partials, data, depths) {
-  var options = { partial: true, helpers: helpers, partials: partials, data: data, depths: depths };
+exports.program = program;function resolvePartial(partial, context, options) {
+  if (!partial) {
+    partial = options.partials[options.name];
+  } else if (!partial.call && !options.name) {
+    // This is a dynamic partial that returned a string
+    options.name = partial;
+    partial = options.partials[partial];
+  }
+  return partial;
+}
+
+exports.resolvePartial = resolvePartial;function invokePartial(partial, context, options) {
+  options.partial = true;
 
   if(partial === undefined) {
-    throw new Exception("The partial " + name + " could not be found");
+    throw new Exception("The partial " + options.name + " could not be found");
   } else if(partial instanceof Function) {
     return partial(context, options);
   }
@@ -78712,7 +78809,7 @@ function SafeString(string) {
   this.string = string;
 }
 
-SafeString.prototype.toString = function() {
+SafeString.prototype.toString = SafeString.prototype.toHTML = function() {
   return "" + this.string;
 };
 
@@ -78720,8 +78817,6 @@ exports["default"] = SafeString;
 },{}],39:[function(require,module,exports){
 "use strict";
 /*jshint -W004 */
-var SafeString = require("./safe-string")["default"];
-
 var escape = {
   "&": "&amp;",
   "<": "&lt;",
@@ -78771,11 +78866,21 @@ var isArray = Array.isArray || function(value) {
   return (value && typeof value === 'object') ? toString.call(value) === '[object Array]' : false;
 };
 exports.isArray = isArray;
+// Older IE versions do not directly support indexOf so we must implement our own, sadly.
+function indexOf(array, value) {
+  for (var i = 0, len = array.length; i < len; i++) {
+    if (array[i] === value) {
+      return i;
+    }
+  }
+  return -1;
+}
 
+exports.indexOf = indexOf;
 function escapeExpression(string) {
   // don't escape SafeStrings, since they're already safe
-  if (string instanceof SafeString) {
-    return string.toString();
+  if (string && string.toHTML) {
+    return string.toHTML();
   } else if (string == null) {
     return "";
   } else if (!string) {
@@ -78801,15 +78906,20 @@ exports.escapeExpression = escapeExpression;function isEmpty(value) {
   }
 }
 
-exports.isEmpty = isEmpty;function appendContextPath(contextPath, id) {
+exports.isEmpty = isEmpty;function blockParams(params, ids) {
+  params.path = ids;
+  return params;
+}
+
+exports.blockParams = blockParams;function appendContextPath(contextPath, id) {
   return (contextPath ? contextPath + '.' : '') + id;
 }
 
 exports.appendContextPath = appendContextPath;
-},{"./safe-string":38}],40:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 // Create a simple path alias to allow browserify to resolve
 // the runtime on a supported path.
-module.exports = require('./dist/cjs/handlebars.runtime');
+module.exports = require('./dist/cjs/handlebars.runtime').default;
 
 },{"./dist/cjs/handlebars.runtime":34}],41:[function(require,module,exports){
 module.exports = require("handlebars/runtime")["default"];
@@ -79118,7 +79228,42 @@ module.exports = Number.isFinite || function (val) {
 
 }).call(this,require("buffer").Buffer)
 },{"buffer":23}],46:[function(require,module,exports){
-var toLower = String.prototype.toLowerCase;
+/**
+ * Special language-specific overrides.
+ *
+ * Source: ftp://ftp.unicode.org/Public/UCD/latest/ucd/SpecialCasing.txt
+ *
+ * @type {Object}
+ */
+var LANGUAGES = {
+  tr: {
+    regexp: /\u0130|\u0049|\u0049\u0307/g,
+    map: {
+      '\u0130': '\u0069',
+      '\u0049': '\u0131',
+      '\u0049\u0307': '\u0069'
+    }
+  },
+  az: {
+    regexp: /[\u0130]/g,
+    map: {
+      '\u0130': '\u0069',
+      '\u0049': '\u0131',
+      '\u0049\u0307': '\u0069'
+    }
+  },
+  lt: {
+    regexp: /[\u0049\u004A\u012E\u00CC\u00CD\u0128]/g,
+    map: {
+      '\u0049': '\u0069\u0307',
+      '\u004A': '\u006A\u0307',
+      '\u012E': '\u012F\u0307',
+      '\u00CC': '\u0069\u0307\u0300',
+      '\u00CD': '\u0069\u0307\u0301',
+      '\u0128': '\u0069\u0307\u0303'
+    }
+  }
+}
 
 /**
  * Lowercase a string.
@@ -79126,9 +79271,17 @@ var toLower = String.prototype.toLowerCase;
  * @param  {String} str
  * @return {String}
  */
-module.exports = function (str) {
-  return str == null ? '' : toLower.call(str);
-};
+module.exports = function (str, locale) {
+  var lang = LANGUAGES[locale]
+
+  str = str == null ? '' : String(str)
+
+  if (lang) {
+    str = str.replace(lang.regexp, function (m) { return lang.map[m] })
+  }
+
+  return str.toLowerCase()
+}
 
 },{}],47:[function(require,module,exports){
 
@@ -79178,7 +79331,7 @@ if (http.METHODS) {
 /*!
  * object.pick <https://github.com/jonschlinkert/object.pick>
  *
- * Copyright (c) 2014 Jon Schlinkert, contributors.
+ * Copyright (c) 2014-2015 Jon Schlinkert, contributors.
  * Licensed under the MIT License
  */
 
@@ -79212,79 +79365,115 @@ module.exports = function pick(obj, keys) {
 
 },{}],49:[function(require,module,exports){
 arguments[4][28][0].apply(exports,arguments)
-},{"./vendor/camel-case-regexp.js":50,"./vendor/non-word-regexp.js":51,"./vendor/trailing-digit-regexp.js":52,"dup":28}],50:[function(require,module,exports){
+},{"./vendor/camel-case-regexp":50,"./vendor/non-word-regexp":51,"./vendor/trailing-digit-regexp":52,"dup":28,"lower-case":46}],50:[function(require,module,exports){
 arguments[4][29][0].apply(exports,arguments)
 },{"dup":29}],51:[function(require,module,exports){
 arguments[4][30][0].apply(exports,arguments)
 },{"dup":30}],52:[function(require,module,exports){
 arguments[4][31][0].apply(exports,arguments)
 },{"dup":31}],53:[function(require,module,exports){
-var sentence = require('sentence-case');
+var sentenceCase = require('sentence-case');
 
 /**
  * Param case a string.
  *
  * @param  {String} string
+ * @param  {String} [locale]
  * @return {String}
  */
-module.exports = function (string) {
-  return sentence(string).replace(/ /g, '-');
+module.exports = function (string, locale) {
+  return sentenceCase(string, locale, '-');
 };
 
 },{"sentence-case":49}],54:[function(require,module,exports){
+var upperCase = require('upper-case');
+
 /**
- * Uppercase the first character of a string.
+ * Upper case the first character of a string.
  *
  * @param  {String} str
  * @return {String}
  */
-module.exports = function (str) {
+module.exports = function (str, locale) {
   if (str == null) {
     return '';
   }
 
   str = String(str);
 
-  return str.charAt(0).toUpperCase() + str.substr(1);
+  return upperCase(str.charAt(0), locale) + str.substr(1);
 };
 
-},{}],55:[function(require,module,exports){
-var camel          = require('camel-case');
+},{"upper-case":61}],55:[function(require,module,exports){
+var camelCase      = require('camel-case');
 var upperCaseFirst = require('upper-case-first');
 
 /**
  * Pascal case a string.
  *
  * @param  {String} string
+ * @param  {String} [locale]
  * @return {String}
  */
-module.exports = function (string) {
-  return upperCaseFirst(camel(string));
+module.exports = function (string, locale) {
+  return upperCaseFirst(camelCase(string, locale), locale);
 };
 
 },{"camel-case":27,"upper-case-first":54}],56:[function(require,module,exports){
 arguments[4][28][0].apply(exports,arguments)
-},{"./vendor/camel-case-regexp.js":57,"./vendor/non-word-regexp.js":58,"./vendor/trailing-digit-regexp.js":59,"dup":28}],57:[function(require,module,exports){
+},{"./vendor/camel-case-regexp":57,"./vendor/non-word-regexp":58,"./vendor/trailing-digit-regexp":59,"dup":28,"lower-case":46}],57:[function(require,module,exports){
 arguments[4][29][0].apply(exports,arguments)
 },{"dup":29}],58:[function(require,module,exports){
 arguments[4][30][0].apply(exports,arguments)
 },{"dup":30}],59:[function(require,module,exports){
 arguments[4][31][0].apply(exports,arguments)
 },{"dup":31}],60:[function(require,module,exports){
-var sentence = require('sentence-case');
+var sentenceCase = require('sentence-case');
 
 /**
  * Snake case a string.
  *
- * @param  {String} string
+ * @param  {String} str
+ * @param  {String} [locale]
  * @return {String}
  */
-module.exports = function (string) {
-  return sentence(string).replace(/ /g, '_');
+module.exports = function (str, locale) {
+  return sentenceCase(str, locale, '_');
 };
 
 },{"sentence-case":56}],61:[function(require,module,exports){
-var upperCase = String.prototype.toUpperCase;
+/**
+ * Special language-specific overrides.
+ *
+ * Source: ftp://ftp.unicode.org/Public/UCD/latest/ucd/SpecialCasing.txt
+ *
+ * @type {Object}
+ */
+var LANGUAGES = {
+  tr: {
+    regexp: /[\u0069]/g,
+    map: {
+      '\u0069': '\u0130'
+    }
+  },
+  az: {
+    regexp: /[\u0069]/g,
+    map: {
+      '\u0069': '\u0130'
+    }
+  },
+  lt: {
+    regexp: /[\u0069\u006A\u012F]\u0307|\u0069\u0307[\u0300\u0301\u0303]/g,
+    map: {
+      '\u0069\u0307': '\u0049',
+      '\u006A\u0307': '\u004A',
+      '\u012F\u0307': '\u012E',
+      '\u0069\u0307\u0300': '\u00CC',
+      '\u0069\u0307\u0301': '\u00CD',
+      '\u0069\u0307\u0303': '\u0128'
+    }
+  }
+}
 
 /**
  * Upper case a string.
@@ -79292,9 +79481,17 @@ var upperCase = String.prototype.toUpperCase;
  * @param  {String} str
  * @return {String}
  */
-module.exports = function (str) {
-  return str == null ? '' : upperCase.call(str);
-};
+module.exports = function (str, locale) {
+  var lang = LANGUAGES[locale]
+
+  str = str == null ? '' : String(str)
+
+  if (lang) {
+    str = str.replace(lang.regexp, function (m) { return lang.map[m] })
+  }
+
+  return str.toUpperCase()
+}
 
 },{}],62:[function(require,module,exports){
 /**
@@ -79411,6 +79608,8 @@ exports.javascript = require('./javascript');
 
           $inactiveElements.removeClass('raml-console-is-active');
           $scope.showPanel = false;
+          $scope.traits = null;
+          $scope.methodInfo = {};
         };
       }
     };
@@ -79429,7 +79628,29 @@ exports.javascript = require('./javascript');
       templateUrl: 'directives/documentation.tpl.html',
       replace: true,
       controller: function($scope) {
+        var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
+        var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
+
         $scope.markedOptions = RAML.Settings.marked;
+        $scope.documentationSchemeSelected = defaultSchema;
+
+        $scope.isSchemeSelected = function isSchemeSelected(scheme) {
+          return scheme.id === $scope.documentationSchemeSelected.id;
+        };
+
+        $scope.selectDocumentationScheme = function selectDocumentationScheme(scheme) {
+          $scope.documentationSchemeSelected = scheme;
+        };
+
+        $scope.schemaSettingsDocumentation = function schemaSettingsDocumentation(settings) {
+          var doc = settings;
+
+          if (typeof settings === 'object') {
+            doc = settings.join(', ');
+          }
+
+          return doc;
+        };
 
         $scope.unique = function (arr) {
           return arr.filter (function (v, i, a) { return a.indexOf (v) === i; });
@@ -79489,50 +79710,52 @@ exports.javascript = require('./javascript');
         $scope.parameterDocumentation = function (parameter) {
           var result = '';
 
-          if (parameter.required) {
-            result += 'required, ';
-          }
-
-          if (parameter.enum) {
-            var enumValues = $scope.unique(parameter.enum);
-
-            if (enumValues.length > 1) {
-              result += 'one of ';
+          if (parameter) {
+            if (parameter.required) {
+              result += 'required, ';
             }
 
-            result += '(' + enumValues.join(', ') + ')';
+            if (parameter.enum) {
+              var enumValues = $scope.unique(parameter.enum);
 
-          } else {
-            result += parameter.type;
-          }
+              if (enumValues.length > 1) {
+                result += 'one of ';
+              }
 
-          if (parameter.pattern) {
-            result += ' matching ' + parameter.pattern;
-          }
+              result += '(' + enumValues.join(', ') + ')';
 
-          if (parameter.minLength && parameter.maxLength) {
-            result += ', ' + parameter.minLength + '-' + parameter.maxLength + ' characters';
-          } else if (parameter.minLength && !parameter.maxLength) {
-            result += ', at least ' + parameter.minLength + ' characters';
-          } else if (parameter.maxLength && !parameter.minLength) {
-            result += ', at most ' + parameter.maxLength + ' characters';
-          }
+            } else {
+              result += parameter.type || '';
+            }
+
+            if (parameter.pattern) {
+              result += ' matching ' + parameter.pattern;
+            }
+
+            if (parameter.minLength && parameter.maxLength) {
+              result += ', ' + parameter.minLength + '-' + parameter.maxLength + ' characters';
+            } else if (parameter.minLength && !parameter.maxLength) {
+              result += ', at least ' + parameter.minLength + ' characters';
+            } else if (parameter.maxLength && !parameter.minLength) {
+              result += ', at most ' + parameter.maxLength + ' characters';
+            }
 
 
-          if (parameter.minimum && parameter.maximum) {
-            result += ' between ' + parameter.minimum + '-' + parameter.maximum;
-          } else if (parameter.minimum && !parameter.maximum) {
-            result += ' ≥ ' + parameter.minimum;
-          } else if (parameter.maximum && !parameter.minimum) {
-            result += ' ≤ ' + parameter.maximum;
-          }
+            if (parameter.minimum && parameter.maximum) {
+              result += ' between ' + parameter.minimum + '-' + parameter.maximum;
+            } else if (parameter.minimum && !parameter.maximum) {
+              result += ' ≥ ' + parameter.minimum;
+            } else if (parameter.maximum && !parameter.minimum) {
+              result += ' ≤ ' + parameter.maximum;
+            }
 
-          if (parameter.repeat) {
-            result += ', repeatable';
-          }
+            if (parameter.repeat) {
+              result += ', repeatable';
+            }
 
-          if (parameter['default']) {
-            result += ', default: ' + parameter['default'];
+            if (parameter['default']) {
+              result += ', default: ' + parameter['default'];
+            }
           }
 
           return result;
@@ -79687,18 +79910,27 @@ exports.javascript = require('./javascript');
           }
         }
 
+        function beautifyCustomSecuritySchemeName (name) {
+          return (name.charAt(0).toUpperCase() + name.slice(1)).replace(/_/g, ' ');
+        }
+
         $scope.readTraits = function (traits) {
           var list = [];
+          var traitList = traits || [];
 
-          if (traits) {
-            traits.map(function (trait) {
-              if (typeof trait === 'string') {
-                list.push(trait);
-              } else if (typeof trait === 'object') {
-                list.push(Object.keys(trait).join(', '));
+          traitList = traitList.concat($scope.resource.traits);
+
+          traitList.map(function (trait) {
+            if (trait) {
+              if (typeof trait === 'object') {
+              trait = Object.keys(trait).join(', ');
               }
-            });
-          }
+
+              if (list.indexOf(trait) === -1) {
+                list.push(trait);
+              }
+            }
+          });
 
           return list.join(', ');
         };
@@ -79707,11 +79939,13 @@ exports.javascript = require('./javascript');
           return jQuery.trim(path.toString().replace(/\W/g, ' ')).replace(/\s+/g, '_');
         };
 
-        var $inactiveElements = jQuery('.raml-console-tab').add('.raml-console-resource').add('li');
+        var $inactiveElements = jQuery('.raml-console-tab').add('.raml-console-resource')
+                                                           .add('li')
+                                                           .add('.raml-console-tab');
 
         $scope.$on('openMethod', function(event, $currentScope) {
           if ($scope.$id !== $currentScope.$id) {
-            $inactiveElements.removeClass('is-active');
+            $inactiveElements.removeClass('raml-console-is-active');
             $scope.showPanel = false;
           }
         });
@@ -79719,8 +79953,10 @@ exports.javascript = require('./javascript');
         $scope.showResource = function ($event, $index) {
           var $this             = jQuery($event.currentTarget);
           var $resource         = $this.closest('.raml-console-resource');
-          var $inactiveElements = jQuery('.raml-console-tab').add('.raml-console-resource').add('li');
           var methodInfo        = $scope.resource.methods[$index];
+          var $inactiveElements = jQuery('.raml-console-tab').add('.raml-console-resource')
+                                                             .add('li')
+                                                             .add('.raml-console-tab');
 
           $scope.methodInfo               = methodInfo;
           $scope.responseInfo             = getResponseInfo();
@@ -79742,11 +79978,19 @@ exports.javascript = require('./javascript');
           toUIModel($scope.methodInfo.headers.plain);
           toUIModel($scope.resource.uriParametersForDocumentation);
 
-          $rootScope.$broadcast('resetData');
+          Object.keys($scope.securitySchemes).map(function (key) {
+            var type = $scope.securitySchemes[key].type;
 
-          $scope.securitySchemes.anonymous = {
-            type: 'Anonymous'
-          };
+            $scope.securitySchemes[key].name = type;
+            $scope.securitySchemes[key].id = type + '|' + key;
+
+            if (type === 'x-custom') {
+              $scope.securitySchemes[key].name = beautifyCustomSecuritySchemeName(key);
+              $scope.securitySchemes[key].id = type + '|' + key;
+            }
+          });
+
+          $rootScope.$broadcast('resetData');
 
           /*jshint camelcase: false */
           // Digest Authentication is not supported
@@ -79781,6 +80025,8 @@ exports.javascript = require('./javascript');
           } else if (jQuery($this).hasClass('raml-console-is-active')) {
             $scope.showPanel = false;
             $inactiveElements.removeClass('raml-console-is-active');
+            $scope.traits = null;
+            $scope.methodInfo = {};
           } else {
             jQuery($this).addClass('raml-console-is-active');
             jQuery($this).siblings('.raml-console-tab').removeClass('raml-console-is-active');
@@ -80107,36 +80353,13 @@ exports.javascript = require('./javascript');
           }).length > 0;
         };
 
-        $scope.collapseDocumentation = function ($event) {
-          var $this = jQuery($event.currentTarget);
-
-          if ($this.hasClass('raml-console-resources-expanded')) {
-            $this.text('expand all');
-            $this.removeClass('raml-console-resources-expanded');
-            jQuery('#raml-console-documentation-container').find('ol.raml-console-resource-list').velocity('slideUp', {
-              duration: 200
-            });
-          } else {
-            $this.text('collapse all');
-            $this.addClass('raml-console-resources-expanded');
-            jQuery('#raml-console-documentation-container').find('ol.raml-console-resource-list').velocity('slideDown', {
-              duration: 200
-            });
-          }
-
-          jQuery('#raml-console-documentation-container').find('button.raml-console-resource-root-toggle').toggleClass('raml-console-is-active');
-        };
-
         $scope.generateDocId = function (path) {
           return jQuery.trim(path.toString().replace(/\W/g, ' ')).replace(/\s+/g, '_').toLowerCase();
         };
 
-        $scope.showSection = function ($event, key, section) {
-          var $container = jQuery($event.currentTarget).closest('.raml-console-documentation');
-          jQuery('.raml-console-documentation').removeClass('raml-console-documentation-active');
+        $scope.toggleSection = function ($event, key, section) {
           $scope.selectedDocumentSection = key;
-          $container.toggleClass('raml-console-documentation-active');
-          $scope.documentationEnabled = true;
+          $scope.documentationEnabled = !$scope.documentationEnabled;
           $location.hash($scope.generateDocId(section));
         };
 
@@ -80217,9 +80440,14 @@ exports.javascript = require('./javascript');
       templateUrl: 'directives/sidebar.tpl.html',
       replace: true,
       controller: function ($scope, $location, $anchorScroll) {
-        $scope.markedOptions = RAML.Settings.marked;
-        $scope.currentSchemeType = 'Anonymous';
-        $scope.responseDetails = false;
+        var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
+        var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
+
+        $scope.markedOptions     = RAML.Settings.marked;
+        $scope.currentSchemeType = defaultSchema.type;
+        $scope.currentScheme     = defaultSchema.id;
+        $scope.responseDetails   = false;
+        $scope.currentProtocol   = $scope.raml.protocols[0];
 
         function completeAnimation (element) {
           jQuery(element).removeAttr('style');
@@ -80383,7 +80611,13 @@ exports.javascript = require('./javascript');
         }
 
         $scope.$on('resetData', function() {
-          $scope.currentSchemeType = 'Anonymous';
+          var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
+          var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
+
+          $scope.currentSchemeType = defaultSchema.type;
+          $scope.currentScheme     = defaultSchema.id;
+          $scope.currentProtocol   = $scope.raml.protocols[0];
+          $scope.documentationSchemeSelected = defaultSchema;
         });
 
         $scope.cancelRequest = function () {
@@ -80478,6 +80712,71 @@ exports.javascript = require('./javascript');
 
         $scope.context.forceRequest = false;
 
+        function cleanSchemeMetadata(collection, context) {
+          Object.keys(collection).map(function (key) {
+            if (collection[key][0].isFromSecurityScheme) {
+              delete collection[key];
+            }
+
+            if (context.plain[key].definitions[0].isFromSecurityScheme) {
+              delete context.plain[key];
+            }
+          });
+        }
+
+        function updateContextData (type, scheme, collection, context) {
+          var details         = $scope.securitySchemes[scheme].describedBy || {};
+          var securityHeaders = details[type] || {};
+
+          if (securityHeaders) {
+            Object.keys(securityHeaders).map(function (key) {
+              if (!securityHeaders[key]) {
+                securityHeaders[key] = {
+                  id: key,
+                  type: 'string'
+                };
+              }
+
+              securityHeaders[key].displayName             = key;
+              securityHeaders[key].isFromSecurityScheme    = true;
+              collection[key] = [securityHeaders[key]];
+
+              context.plain[key] = {
+                definitions: [securityHeaders[key]],
+                selected: securityHeaders[key].type
+              };
+              context.values[key] = [undefined];
+            });
+          }
+        }
+
+        $scope.protocolChanged = function protocolChanged(protocol) {
+          $scope.currentProtocol = protocol;
+        };
+
+        $scope.securitySchemeChanged = function securitySchemeChanged(scheme) {
+          var info            = scheme.split('|');
+          var type            = info[0];
+          var name            = info[1];
+
+          $scope.currentSchemeType = type;
+          $scope.context.forceRequest = false;
+
+          cleanSchemeMetadata($scope.methodInfo.headers.plain, $scope.context.headers);
+          cleanSchemeMetadata($scope.methodInfo.queryParameters, $scope.context.queryParameters);
+
+          $scope.documentationSchemeSelected = $scope.securitySchemes[name];
+
+          if (type === 'x-custom') {
+            if (!$scope.methodInfo.headers.plain) {
+              $scope.methodInfo.headers.plain = {};
+            }
+
+            updateContextData('headers', name, $scope.methodInfo.headers.plain, $scope.context.headers);
+            updateContextData('queryParameters', name, $scope.methodInfo.queryParameters, $scope.context.queryParameters);
+          }
+        };
+
         $scope.tryIt = function ($event) {
           $scope.requestOptions  = null;
           $scope.responseDetails = false;
@@ -80509,6 +80808,8 @@ exports.javascript = require('./javascript');
                 }
                 client.baseUriParameters(pathBuilder.baseUriContext);
               });
+
+              client.baseUri = client.baseUri.replace(/(https)|(http)/, $scope.currentProtocol.toLocaleLowerCase());
               url = client.baseUri + pathBuilder(segmentContexts);
             } catch (e) {
               $scope.response = {};
@@ -80870,9 +81171,10 @@ exports.javascript = require('./javascript');
         src: '@'
       },
       controller: function($scope, $window, $attrs) {
-        $scope.proxy = $window.RAML.Settings.proxy;
-        $scope.disableTitle = false;
-        $scope.collapsed = false;
+        $scope.proxy                  = $window.RAML.Settings.proxy;
+        $scope.disableTitle           = false;
+        $scope.resourcesCollapsed     = false;
+        $scope.documentationCollapsed = false;
 
         if ($attrs.hasOwnProperty('singleView')) {
           $scope.singleView = true;
@@ -80890,19 +81192,41 @@ exports.javascript = require('./javascript');
           $scope.disableTitle = true;
         }
 
-        if ($attrs.hasOwnProperty('collapsed')) {
-          $scope.collapsed = true;
+        if ($attrs.hasOwnProperty('resourcesCollapsed')) {
+          $scope.resourcesCollapsed = true;
+        }
+
+        if ($attrs.hasOwnProperty('documentationCollapsed')) {
+          $scope.documentationCollapsed = true;
         }
 
         if ($scope.src) {
           ramlParserWrapper.load($scope.src);
         }
 
+        $scope.readResourceTraits = function readResourceTraits(traits) {
+          var list = [];
+
+          if (traits) {
+            traits.map(function (trait) {
+              if (trait) {
+                if (typeof trait === 'object') {
+                  list.push(Object.keys(trait).join(', '));
+                } else {
+                  list.push(trait);
+                }
+              }
+            });
+          }
+
+          return list.join(', ');
+        };
+
         $scope.updateProxyConfig = function (status) {
           $window.RAML.Settings.disableProxy = status;
         };
 
-        $scope.toggle = function ($event) {
+        $scope.toggle = function ($event, index, collection, flagKey) {
           var $this    = jQuery($event.currentTarget);
           var $section = $this
             .closest('.raml-console-resource-list-item')
@@ -80918,62 +81242,44 @@ exports.javascript = require('./javascript');
             });
           }
 
-          $section.toggleClass('raml-console-is-collapsed');
-          $this.toggleClass('raml-console-is-active');
-        };
+          collection[index] = !collection[index];
 
-        $scope.showResourceDescription = function ($event) {
-          var $this      = jQuery($event.currentTarget);
-          var $container = $this.closest('.raml-console-resource-list-item');
-
-          $container.find('.raml-console-resource-description').toggleClass('ng-hide');
-        };
-
-        $scope.toggleInverted = function ($event) {
-          var $section    = jQuery($event.currentTarget)
-            .closest('.raml-console-resource-list-item')
-            .find('.raml-console-resource-list');
-
-          var $this = $section
-            .closest('.raml-console-resource-list-item')
-            .find('.raml-console-resource-root-toggle');
-
-          if ($section.hasClass('raml-console-is-collapsed')) {
-            $section.velocity('slideDown', {
-              duration: 200
-            });
-          } else {
-            $section.velocity('slideUp', {
-              duration: 200
-            });
-          }
+          $scope[flagKey] = checkItemStatus(false, collection) ? false : $scope[flagKey];
+          $scope[flagKey] = checkItemStatus(true, collection) ? true : $scope[flagKey];
 
           $section.toggleClass('raml-console-is-collapsed');
-          $this.toggleClass('raml-console-is-active');
         };
 
-        $scope.collapseAll = function ($event) {
+        $scope.collapseAll = function ($event, collection, flagKey) {
           var $this = jQuery($event.currentTarget);
 
           if ($this.hasClass('raml-console-resources-expanded')) {
-            $scope.collapsed = true;
-            $this.text('expand all');
-            $this.removeClass('raml-console-resources-expanded');
-            jQuery('#raml-console-resources-container').find('ol.raml-console-resource-list').velocity('slideUp', {
+            $scope[flagKey] = true;
+            jQuery('.raml-console-resources-' + flagKey).find('ol.raml-console-resource-list').velocity('slideUp', {
               duration: 200
             });
           } else {
-            $scope.collapsed = false;
-            $this.text('collapse all');
-            $this.addClass('raml-console-resources-expanded');
-            jQuery('#raml-console-resources-container').find('ol.raml-console-resource-list').velocity('slideDown', {
+            if (flagKey === 'resourcesCollapsed') {
+              jQuery('.raml-console-resource-description').removeClass('ng-hide');
+            }
+            $scope[flagKey] = false;
+            jQuery('.raml-console-resources-' + flagKey).find('ol.raml-console-resource-list').velocity('slideDown', {
               duration: 200
             });
           }
 
-          // jQuery('#raml-console-resources-container').find('.raml-console-resource-list-item ol.raml-console-resource-list').toggleClass('raml-console-is-collapsed');
-          // jQuery('#raml-console-resources-container').find('button.raml-console-resource-root-toggle').toggleClass('raml-console-is-active');
+          toggleCollapsed($scope[flagKey], collection);
         };
+
+        function toggleCollapsed (status, collection) {
+          for (var i = 0; i < collection.length; i++) {
+            collection[i] = collection[i] !== null ? status : collection[i];
+          }
+        }
+
+        function checkItemStatus(status, collection) {
+          return collection.filter(function (el) { return el === status || el === null; }).length === collection.length;
+        }
 
         $scope.hasResourcesWithChilds = function () {
           return $scope.raml.resourceGroups.filter(function (el) {
@@ -80983,9 +81289,23 @@ exports.javascript = require('./javascript');
       },
       link: function($scope) {
         ramlParserWrapper.onParseSuccess(function(raml) {
-          $scope.raml    = RAML.Inspector.create(raml);
-          $scope.rawRaml = raml;
-          $scope.loaded  = true;
+          $scope.raml         = RAML.Inspector.create(raml);
+          $scope.rawRaml      = raml;
+          $scope.loaded       = true;
+          $scope.resourceList = [];
+          $scope.documentList = [];
+
+          for (var i = 0; i < $scope.raml.resourceGroups.length; i++) {
+            var resources = $scope.raml.resourceGroups[i];
+            var status = resources.length > 1 ? false : null;
+            $scope.resourceList.push($scope.resourcesCollapsed ? true : status);
+          }
+
+          if ($scope.raml.documentation) {
+            for (var j = 0; j < $scope.raml.documentation.length; j++) {
+              $scope.documentList.push($scope.documentationCollapsed ? true : false);
+            }
+          }
         });
       }
     };
@@ -81235,6 +81555,10 @@ exports.javascript = require('./javascript');
         return new RAML.Client.AuthStrategies.Oauth2(scheme, credentials);
       case 'OAuth 1.0':
         return new RAML.Client.AuthStrategies.Oauth1(scheme, credentials);
+      case 'x-custom':
+        return RAML.Client.AuthStrategies.anonymous();
+      case 'Anonymous':
+        return RAML.Client.AuthStrategies.anonymous();
       default:
         throw new Error('Unknown authentication strategy: ' + scheme.type);
       }
@@ -81601,6 +81925,14 @@ exports.javascript = require('./javascript');
     return scopes;
   }
 
+  function popup(location) {
+    var w    = 640;
+    var h    = 480;
+    var left = (screen.width / 2) - (w / 2);
+    var top  = (screen.height / 2) - (h / 2);
+    return window.open(location, 'Authentication', 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=' + w + ', height=' + h + ', top=' + top + ', left=' + left);
+  }
+
   Oauth2.prototype.authenticate = function(options, done) {
     var auth = new ClientOAuth2({
       clientId:         this.credentials.clientId,
@@ -81627,7 +81959,7 @@ exports.javascript = require('./javascript');
         });
       };
       //// TODO: Find a way to handle 404
-      window.open(auth[grantType].getUri());
+      popup(auth[grantType].getUri());
     }
 
     if (grantType === 'owner') {
@@ -82210,6 +82542,26 @@ RAML.Inspector = (function() {
       var securedBy = this.securedBy || [],
           selectedSchemes = {};
 
+      var overwrittenSchemes = {};
+
+      securedBy.map(function(el) {
+        if (el === null) {
+          securitySchemes.push({
+            anonymous: {
+              type: 'Anonymous'
+            }
+          });
+          securedBy.push('anonymous');
+        }
+
+        if (typeof el === 'object' && el) {
+          var key = Object.keys(el)[0];
+
+          overwrittenSchemes[key] = el[key];
+          securedBy.push(key);
+        }
+      });
+
       securedBy = securedBy.filter(function(name) {
         return name !== null && typeof name !== 'object';
       });
@@ -82217,10 +82569,24 @@ RAML.Inspector = (function() {
       securitySchemes.forEach(function(scheme) {
         securedBy.forEach(function(name) {
           if (scheme[name]) {
-            selectedSchemes[name] = scheme[name];
+            selectedSchemes[name] = jQuery.extend(true, {}, scheme[name]);
           }
         });
       });
+
+      Object.keys(overwrittenSchemes).map(function (key) {
+        Object.keys(overwrittenSchemes[key]).map(function (prop) {
+          if (selectedSchemes[key].settings) {
+            selectedSchemes[key].settings[prop] = overwrittenSchemes[key][prop];
+          }
+        });
+      });
+
+      if(Object.keys(selectedSchemes).length === 0) {
+        selectedSchemes.anonymous = {
+          type: 'Anonymous'
+        };
+      }
 
       return selectedSchemes;
     };
@@ -82556,6 +82922,10 @@ RAML.Inspector = (function() {
       Object.keys(info).map(function (key) {
         if (typeof field === 'undefined' || field === key) {
           if (typeof info[key][0].enum === 'undefined') {
+            if (info[key][0].type === 'date' && typeof info[key][0].example === 'object') {
+              info[key][0].example = info[key][0].example.toUTCString();
+            }
+
             that.values[key][0] = info[key][0].example;
           }
         }
@@ -82757,11 +83127,6 @@ RAML.Inspector = (function() {
   function expects (obj, props) {
     for (var i = 0; i < props.length; i++) {
       var prop = props[i];
-
-      // Check whether the property is empty.
-      if (obj[prop] == null) {
-        throw new TypeError('Expected "' + prop + '" to exist');
-      }
     }
   }
 
@@ -84226,7 +84591,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    <section class=\"raml-console-resource-section\" id=\"docs-headers\" ng-if=\"methodInfo.headers.plain\">\n" +
     "      <h3 class=\"raml-console-resource-heading-a\">Headers</h3>\n" +
     "\n" +
-    "      <div class=\"raml-console-resource-param\" ng-repeat=\"header in methodInfo.headers.plain\">\n" +
+    "      <div class=\"raml-console-resource-param\" ng-repeat=\"header in methodInfo.headers.plain\" ng-if=\"!header[0].isFromSecurityScheme\">\n" +
     "        <h4 class=\"raml-console-resource-param-heading\">{{header[0].displayName}}<span class=\"raml-console-resource-param-instructional\">{{parameterDocumentation(header[0])}}</span></h4>\n" +
     "\n" +
     "        <p marked=\"header[0].description\" opts=\"markedOptions\"></p>\n" +
@@ -84240,7 +84605,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    <section class=\"raml-console-resource-section\" id=\"docs-query-parameters\" ng-if=\"methodInfo.queryParameters\">\n" +
     "      <h3 class=\"raml-console-resource-heading-a\">Query Parameters</h3>\n" +
     "\n" +
-    "      <div class=\"raml-console-resource-param\" ng-repeat=\"queryParam in methodInfo.queryParameters\">\n" +
+    "      <div class=\"raml-console-resource-param\" ng-repeat=\"queryParam in methodInfo.queryParameters\" ng-if=\"!queryParam[0].isFromSecurityScheme\">\n" +
     "        <h4 class=\"raml-console-resource-param-heading\">{{queryParam[0].displayName}}<span class=\"raml-console-resource-param-instructional\">{{parameterDocumentation(queryParam[0])}}</span></h4>\n" +
     "\n" +
     "        <p marked=\"queryParam[0].description\" opts=\"markedOptions\"></p>\n" +
@@ -84250,6 +84615,62 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        </p>\n" +
     "      </div>\n" +
     "    </section>\n" +
+    "\n" +
+    "    <section class=\"raml-console-resource-section raml-console-documentation-schemes\">\n" +
+    "      <h3 class=\"raml-console-resource-heading-a\">Security Schemes</h3>\n" +
+    "      <ol class=\"raml-console-documentation-security-scheme\">\n" +
+    "        <li class=\"raml-console-documentation-scheme\" ng-class=\"{'raml-console-is-active':isSchemeSelected(value)}\" ng-click=\"selectDocumentationScheme(value)\" ng-repeat=\"(key, value) in securitySchemes\">{{value.name}}</li>\n" +
+    "      </ol>\n" +
+    "\n" +
+    "      <p ng-if\"documentationSchemeSelected.description\" marked=\"documentationSchemeSelected.description\" opts=\"markedOptions\"></p>\n" +
+    "\n" +
+    "      <section class=\"raml-console-resource-section raml-console-scheme-headers\" ng-if=\"documentationSchemeSelected.describedBy.headers\">\n" +
+    "        <h4 class=\"raml-console-resource-heading-a\">Headers</h4>\n" +
+    "\n" +
+    "        <div class=\"raml-console-resource-param\" ng-repeat=\"(key, header) in documentationSchemeSelected.describedBy.headers\">\n" +
+    "          <h4 class=\"raml-console-resource-param-heading\">{{key}}<span class=\"raml-console-resource-param-instructional\">{{parameterDocumentation(header)}}</span></h4>\n" +
+    "\n" +
+    "          <p marked=\"header.description\" opts=\"markedOptions\"></p>\n" +
+    "\n" +
+    "          <p ng-if=\"header.example\">\n" +
+    "            <span class=\"raml-console-resource-param-example\"><b>Example:</b> {{header.example}}</span>\n" +
+    "          </p>\n" +
+    "        </div>\n" +
+    "      </section>\n" +
+    "\n" +
+    "      <section class=\"raml-console-resource-section raml-console-scheme-query-parameters\" ng-if=\"documentationSchemeSelected.describedBy.queryParameters\">\n" +
+    "        <h4 class=\"raml-console-resource-heading-a\">Query Parameters</h4>\n" +
+    "\n" +
+    "        <div class=\"raml-console-resource-param\" ng-repeat=\"(key, queryParameter) in documentationSchemeSelected.describedBy.queryParameters\">\n" +
+    "          <h4 class=\"raml-console-resource-param-heading\">{{key}}<span class=\"raml-console-resource-param-instructional\">{{parameterDocumentation(queryParameter)}}</span></h4>\n" +
+    "\n" +
+    "          <p marked=\"queryParameter.description\" opts=\"markedOptions\"></p>\n" +
+    "\n" +
+    "          <p ng-if=\"queryParameter.example\">\n" +
+    "            <span class=\"raml-console-resource-param-example\"><b>Example:</b> {{queryParameter.example}}</span>\n" +
+    "          </p>\n" +
+    "        </div>\n" +
+    "      </section>\n" +
+    "\n" +
+    "      <section class=\"raml-console-resource-section raml-console-scheme-responses\" ng-if=\"documentationSchemeSelected.describedBy.responses\">\n" +
+    "        <h4 class=\"raml-console-resource-heading-a\">Responses</h4>\n" +
+    "\n" +
+    "        <div class=\"raml-console-resource-param\" ng-repeat=\"(code, info) in documentationSchemeSelected.describedBy.responses\">\n" +
+    "          <h4 class=\"raml-console-resource-param-heading\">{{code}}</h4>\n" +
+    "          <p marked=\"info.description\" opts=\"markedOptions\"></p>\n" +
+    "        </div>\n" +
+    "      </section>\n" +
+    "\n" +
+    "      <section class=\"raml-console-resource-section raml-console-scheme-settings\" ng-if=\"documentationSchemeSelected.settings\">\n" +
+    "        <h4 class=\"raml-console-resource-heading-a\">Settings</h4>\n" +
+    "\n" +
+    "        <div class=\"raml-console-resource-param\" ng-repeat=\"(key, config) in documentationSchemeSelected.settings\">\n" +
+    "          <h4 class=\"raml-console-resource-param-heading\">{{key}}</h4>\n" +
+    "          <p>{{schemaSettingsDocumentation(config)}}</p>\n" +
+    "        </div>\n" +
+    "      </section>\n" +
+    "    </section>\n" +
+    "\n" +
     "\n" +
     "    <section class=\"raml-console-resource-section\" ng-if=\"methodInfo.body\">\n" +
     "      <h3 class=\"raml-console-resource-heading-a\">\n" +
@@ -84412,7 +84833,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
   $templateCache.put('directives/raml-field.tpl.html',
     "<div>\n" +
-    "  <label for=\"{{param.id}}\" class=\"raml-console-sidebar-label\">{{param.displayName}} <a class=\"raml-console-sidebar-override\" ng-if=\"canOverride(param)\" ng-click=\"overrideField($event, param)\">Override</a> <span class=\"raml-console-side-bar-required-field\" ng-if=\"param.required\">*</span></label>\n" +
+    "  <label for=\"{{param.id}}\" class=\"raml-console-sidebar-label\">{{param.displayName}} <a class=\"raml-console-sidebar-override\" ng-if=\"canOverride(param)\" ng-click=\"overrideField($event, param)\">Override</a> <span class=\"raml-console-side-bar-required-field\" ng-if=\"param.required\">*</span><label ng-if=\"param.isFromSecurityScheme\" class=\"raml-console-sidebar-security-label\">from security scheme</label></label>\n" +
     "\n" +
     "  <span class=\"raml-console-sidebar-input-tooltip-container raml-console-sidebar-input-left\" ng-if=\"hasExampleValue(param)\">\n" +
     "    <button tabindex=\"-1\" class=\"raml-console-sidebar-input-reset\" ng-click=\"reset(param)\"><span class=\"raml-console-visuallyhidden\">Reset field</span></button>\n" +
@@ -84532,10 +84953,10 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
 
   $templateCache.put('directives/root-documentation.tpl.html',
-    "<ol id=\"raml-console-documentation-container\" ng-if=\"raml.documentation\" class=\"raml-console-resource-list raml-console-resource-list-root raml-console-root-documentation\">\n" +
+    "<ol id=\"raml-console-documentation-container\" ng-if=\"raml.documentation\" class=\"raml-console-resource-list raml-console-resource-list-root raml-console-root-documentation raml-console-resources-documentationCollapsed\">\n" +
     "  <li class=\"raml-console-resource-list-item raml-console-documentation-header\" ng-if=\"raml.documentation.length > 0\">\n" +
     "    <header class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\">\n" +
-    "      <span ng-if=\"hasDocumentationWithIndex()\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-toggle-all\" ng-click=\"collapseDocumentation($event)\" ng-class=\"{'raml-console-resources-expanded':!collapsed}\"><span ng-if=\"!collapsed\">collapse</span><span ng-if=\"collapsed\">expand</span> all</span>\n" +
+    "      <span ng-if=\"hasDocumentationWithIndex()\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-toggle-all\" ng-click=\"collapseAll($event, documentList, 'documentationCollapsed')\" ng-class=\"{'raml-console-resources-expanded':!documentationCollapsed}\"><span ng-if=\"!documentationCollapsed\">collapse</span><span ng-if=\"documentationCollapsed\">expand</span> all</span>\n" +
     "      <div class=\"raml-console-resource-path-container\">\n" +
     "        <h2 class=\"raml-console-resource-section-title\">\n" +
     "          <span class=\"raml-console-resource-path-active\">Documentation</span>\n" +
@@ -84544,13 +84965,13 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    </header>\n" +
     "  </li>\n" +
     "\n" +
-    "  <li id=\"{{generateDocId(doc.title)}}\" class=\"raml-console-resource-list-item raml-console-documentation\" ng-repeat=\"doc in raml.documentation\">\n" +
+    "  <li id=\"{{generateDocId(doc.title)}}\" class=\"raml-console-resource-list-item raml-console-documentation\" ng-repeat=\"doc in raml.documentation\" ng-class=\"{'raml-console-documentation-active':documentationEnabled}\">\n" +
     "    <div ng-init=\"content = getMarkdownHeaders(doc.content)\">\n" +
     "      <div class=\"raml-console-resource raml-console-clearfix raml-console-document-header\">\n" +
-    "        <div class=\"raml-console-resource-path-container\" style=\"padding-top: 11px;\">\n" +
+    "        <div class=\"raml-console-resource-path-container\" style=\"padding-top: 11px;\" ng-init=\"index=$index\">\n" +
     "          <h3 class=\"raml-console-resource-heading\">\n" +
-    "            <button class=\"raml-console-resource-root-toggle\" ng-if=\"content\" ng-click=\"toggle($event)\" ng-class=\"{'raml-console-is-active': collapsed}\"></button>\n" +
-    "            <span class=\"raml-console-resource-path-active\" ng-click=\"showSection($event, 'all', doc.title)\">{{doc.title}}</span>\n" +
+    "            <button class=\"raml-console-resource-root-toggle\" ng-if=\"content\" ng-click=\"toggle($event, index, documentList, 'documentationCollapsed')\" ng-class=\"{'raml-console-is-active': documentList[index]}\"></button>\n" +
+    "            <span class=\"raml-console-resource-path-active raml-console-document-heading\" ng-click=\"toggleSection($event, 'all', doc.title)\">{{doc.title}}</span>\n" +
     "          </h3>\n" +
     "          <select ng-if=\"content.length > 0\" ng-model=\"selectedSection\" ng-if=\"documentationEnabled\" class=\"raml-console-document-section-selector\" ng-change=\"sectionChange(selectedSection)\">\n" +
     "            <option value=\"all\">-- choose a section --</option>\n" +
@@ -84568,13 +84989,13 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        </div>\n" +
     "      </div>\n" +
     "\n" +
-    "      <ol class=\"raml-console-resource-list raml-console-documentation-contents\" ng-if=\"content\" ng-class=\"{'raml-console-is-collapsed': collapsed}\">\n" +
+    "      <ol class=\"raml-console-resource-list raml-console-documentation-contents\" ng-if=\"content\" ng-class=\"{'raml-console-is-collapsed': documentationCollapsed}\">\n" +
     "        <li ng-repeat=\"header in content\" class=\"raml-console-resource-list-item\">\n" +
     "           <div class=\"raml-console-resource raml-console-clearfix raml-console-documentation-clearfix\">\n" +
     "            <div class=\"raml-console-resource-path-container raml-console-documentation-path-container\">\n" +
     "              <h3 class=\"raml-console-resource-heading raml-console-documentation-heading raml-console-md-heading-{{header.heading}}\">\n" +
     "                <div class=\"raml-console-resource-path-active\">\n" +
-    "                  <div class=\"raml-consoledocumentation-title\" ng-click=\"showSection($event, header.value, doc.title)\">{{header.label}}</div>\n" +
+    "                  <div class=\"raml-consoledocumentation-title raml-console-document-heading\" ng-click=\"toggleSection($event, header.value, doc.title)\">{{header.label}}</div>\n" +
     "                </div>\n" +
     "              </h3>\n" +
     "            </div>\n" +
@@ -84608,16 +85029,27 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        </header>\n" +
     "\n" +
     "        <div class=\"raml-console-sidebar-content-wrapper\">\n" +
-    "          <section>\n" +
+    "          <section ng-if=\"raml.protocols.length > 1\">\n" +
     "            <header class=\"raml-console-sidebar-row raml-console-sidebar-subheader raml-console-sidebar-subheader-top\">\n" +
+    "              <h4 class=\"raml-console-sidebar-subhead\">Protocols</h4>\n" +
+    "            </header>\n" +
+    "            <div class=\"raml-console-sidebar-row raml-console-sidebar-securty\">\n" +
+    "              <select ng-change=\"protocolChanged(currentProtocol)\" class=\"raml-console-sidebar-input\" ng-model=\"currentProtocol\" style=\"margin-bottom: 0;\">\n" +
+    "               <option ng-repeat=\"protocol in raml.protocols\" value=\"{{protocol}}\">{{protocol}}</option>\n" +
+    "              </select>\n" +
+    "            </div>\n" +
+    "          </section>\n" +
+    "\n" +
+    "          <section>\n" +
+    "            <header class=\"raml-console-sidebar-row raml-console-sidebar-subheader\" ng-class=\"{'raml-console-sidebar-subheader-top':raml.protocols.length == 1}\">\n" +
     "              <h4 class=\"raml-console-sidebar-subhead\">Authentication</h4>\n" +
     "            </header>\n" +
     "\n" +
     "            <div class=\"raml-console-sidebar-row raml-console-sidebar-securty\">\n" +
     "              <div class=\"raml-console-toggle-group raml-console-sidebar-toggle-group\">\n" +
     "                <label class=\"raml-console-sidebar-label\">Security Scheme</label>\n" +
-    "                <select class=\"raml-console-sidebar-input\" ng-model=\"currentSchemeType\" style=\"margin-bottom: 0;\">\n" +
-    "                 <option ng-repeat=\"(key, scheme) in securitySchemes\" value=\"{{scheme.type}}\" ng-selected=\"scheme.type=='Anonymous'\">{{scheme.type}}</option>\n" +
+    "                <select ng-change=\"securitySchemeChanged(currentScheme)\" class=\"raml-console-sidebar-input\" ng-model=\"currentScheme\" style=\"margin-bottom: 0;\">\n" +
+    "                 <option ng-repeat=\"(key, scheme) in securitySchemes\" value=\"{{scheme.id}}\">{{scheme.name}}</option>\n" +
     "                </select>\n" +
     "              </div>\n" +
     "            </div>\n" +
@@ -84804,14 +85236,18 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "    <root-documentation></root-documentation>\n" +
     "\n" +
-    "    <ol ng-class=\"{'raml-console-resources-container-no-title': disableTitle, 'raml-console-resources-container': !disableTitle}\" id=\"raml-console-resources-container\" class=\"raml-console-resource-list raml-console-resource-list-root\">\n" +
+    "    <ol ng-class=\"{'raml-console-resources-container-no-title': disableTitle, 'raml-console-resources-container': !disableTitle}\" id=\"raml-console-resources-container\" class=\"raml-console-resource-list raml-console-resource-list-root raml-console-resources-resourcesCollapsed\">\n" +
     "      <li id=\"raml_documentation\" class=\"raml-console-resource-list-item raml-console-documentation-header\">\n" +
     "        <div ng-if=\"proxy\" align=\"right\" class=\"raml-console-resource-proxy\">\n" +
     "          <label for=\"raml-console-api-behind-firewall\">API is behind a firewall <a href=\"http://www.mulesoft.org/documentation/display/current/Accessing+Your+API+Behind+a+Firewall\" target=\"_blank\">(?)</a></label>\n" +
     "          <input id=\"raml-console-api-behind-firewall\" type=\"checkbox\" ng-model=\"disableProxy\" ng-change=\"updateProxyConfig(disableProxy)\">\n" +
     "        </div>\n" +
     "        <header class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\">\n" +
-    "          <span ng-if=\"hasResourcesWithChilds()\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-toggle-all\" ng-click=\"collapseAll($event)\" ng-class=\"{'raml-console-resources-expanded':!collapsed}\"><span ng-if=\"!collapsed\">collapse</span><span ng-if=\"collapsed\">expand</span> all</span>\n" +
+    "          <span ng-if=\"hasResourcesWithChilds()\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-toggle-all\" ng-click=\"collapseAll($event, resourceList, 'resourcesCollapsed')\" ng-class=\"{'raml-console-resources-expanded':!resourcesCollapsed}\">\n" +
+    "            <span ng-if=\"!resourcesCollapsed\">collapse</span>\n" +
+    "            <span ng-if=\"resourcesCollapsed\">expand</span> all\n" +
+    "          </span>\n" +
+    "\n" +
     "          <div class=\"raml-console-resource-path-container\">\n" +
     "            <h2 class=\"raml-console-resource-section-title\">\n" +
     "              <span class=\"raml-console-resource-path-active\">Resources</span>\n" +
@@ -84823,17 +85259,22 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "      <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\" ng-repeat=\"resourceGroup in raml.resourceGroups\">\n" +
     "        <header class=\"raml-console-resource raml-console-resource-root raml-console-clearfix\" ng-class=\"{ 'raml-console-is-active':showPanel }\" ng-init=\"resource = resourceGroup[0]\">\n" +
-    "          <div class=\"raml-console-resource-path-container\">\n" +
-    "            <button class=\"raml-console-resource-root-toggle\" ng-class=\"{'raml-console-is-active': collapsed}\" ng-if=\"resourceGroup.length > 1\" ng-click=\"toggle($event)\"></button>\n" +
+    "          <div class=\"raml-console-resource-path-container\" ng-init=\"index=$index\" ng-class=\"{'raml-console-resource-with-description': resource.description}\">\n" +
+    "            <button class=\"raml-console-resource-root-toggle\" ng-class=\"{'raml-console-is-active': resourceList[$index]}\" ng-if=\"resourceGroup.length > 1\" ng-click=\"toggle($event, index, resourceList, 'resourcesCollapsed')\"></button>\n" +
     "\n" +
     "            <h2 class=\"raml-console-resource-heading raml-console-resource-heading-large\">\n" +
-    "              <a class=\"raml-console-resource-path-active\" ng-class=\"{'raml-console-resource-heading-hover':resourceGroup.length > 1}\" ng-repeat='segment in resource.pathSegments' ng-if=\"resourceGroup.length > 1\" ng-click=\"toggleInverted($event)\">{{segment.toString()}}</a>\n" +
+    "              <a ng-if=\"resourceGroup.length > 1\" class=\"raml-console-resource-path-active\" ng-class=\"{'raml-console-resource-heading-hover':resourceGroup.length > 1}\" ng-repeat='segment in resource.pathSegments' ng-click=\"toggle($event, index, resourceList, 'resourcesCollapsed')\">{{segment.toString()}}</a>\n" +
     "\n" +
-    "              <span class=\"raml-console-resource-path-active\" ng-class=\"{'raml-console-resource-heading-hover':resource.description}\" ng-repeat='segment in resource.pathSegments' ng-if=\"resourceGroup.length <= 1\" ng-click=\"showResourceDescription($event)\">{{segment.toString()}}</span>\n" +
+    "              <a ng-if=\"resourceGroup.length == 1\" style=\"cursor: default;\" class=\"raml-console-resource-path-active\" ng-repeat='segment in resource.pathSegments'>{{segment.toString()}}</a>\n" +
     "            </h2>\n" +
     "\n" +
     "            <resource-type></resource-type>\n" +
-    "            <span ng-if=\"methodInfo.is\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Trait:</b> {{traits}}</span>\n" +
+    "\n" +
+    "            <span ng-if=\"methodInfo.is\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Traits:</b> {{readTraits(methodInfo.is)}}</span>\n" +
+    "\n" +
+    "            <span ng-hide=\"methodInfo.is\" ng-if=\"resource.traits\" class=\"raml-console-flag raml-console-resource-heading-flag\"><b>Traits:</b> {{readResourceTraits(resource.traits)}}</span>\n" +
+    "\n" +
+    "            <span class=\"raml-console-resource-level-description\" marked=\"resource.description\" opts=\"markedOptions\"></span>\n" +
     "\n" +
     "          </div>\n" +
     "          <method-list></method-list>\n" +
@@ -84843,36 +85284,26 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "        <resource-panel></resource-panel>\n" +
     "\n" +
     "        <!-- Child Resources -->\n" +
-    "        <ol class=\"raml-console-resource-list\" ng-class=\"{'raml-console-is-collapsed': collapsed}\">\n" +
-    "\n" +
-    "          <li class=\"raml-console-resource-list-item raml-console-resource-description\" ng-show=\"resourceGroup.length > 1\" ng-if=\"resource.description\">\n" +
-    "            <div class=\"raml-console-resource-panel-primary-row raml-console-resource-panel-content raml-console-is-active\">\n" +
-    "              <h3 class=\"raml-console-resource-heading-a\">Description</h3>\n" +
-    "              <p marked=\"resource.description\" opts=\"markedOptions\"></p>\n" +
-    "            </div>\n" +
-    "          </li>\n" +
+    "        <ol class=\"raml-console-resource-list\" ng-class=\"{'raml-console-is-collapsed': resourcesCollapsed}\">\n" +
     "\n" +
     "          <li id=\"{{generateId(resource.pathSegments)}}\" class=\"raml-console-resource-list-item\" ng-repeat=\"resource in resourceGroup\" ng-if=\"!$first\">\n" +
     "            <div class=\"raml-console-resource raml-console-clearfix\" ng-class=\"{ 'raml-console-is-active':showPanel }\">\n" +
-    "              <div class=\"raml-console-resource-path-container\">\n" +
-    "                <h3 class=\"raml-console-resource-heading\" ng-click=\"showResourceDescription($event)\" ng-class=\"{'raml-console-resource-heading-hover':resource.description}\">\n" +
+    "              <div class=\"raml-console-resource-path-container\" ng-class=\"{'raml-console-resource-with-description': resource.description}\">\n" +
+    "                <h3 class=\"raml-console-resource-heading\" style=\"cursor: default;\">\n" +
     "                  <span ng-repeat-start='segment in resource.pathSegments' ng-if=\"!$last\">{{segment.toString()}}</span><span ng-repeat-end ng-if=\"$last\" class=\"raml-console-resource-path-active\">{{segment.toString()}}</span>\n" +
     "                </h3>\n" +
     "\n" +
     "                <resource-type></resource-type>\n" +
-    "                <span ng-if=\"methodInfo.is\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Trait:</b> {{traits}}</span>\n" +
+    "                <span ng-if=\"methodInfo.is\" class=\"raml-console-flag raml-console-resource-heading-flag raml-console-resource-trait\"><b>Traits:</b> {{readTraits(methodInfo.is)}}</span>\n" +
+    "\n" +
+    "                <span ng-hide=\"methodInfo.is\" ng-if=\"resource.traits\" class=\"raml-console-flag raml-console-resource-heading-flag\"><b>Traits:</b> {{readResourceTraits(resource.traits)}}</span>\n" +
+    "\n" +
+    "                <span class=\"raml-console-resource-level-description\" marked=\"resource.description\" opts=\"markedOptions\"></span>\n" +
     "              </div>\n" +
     "\n" +
     "              <method-list></method-list>\n" +
     "              <close-button></close-button>\n" +
     "            </div>\n" +
-    "\n" +
-    "            <span class=\"raml-console-resource-list-item raml-console-resource-description\" ng-show=\"resourceGroup.length > 1\" ng-if=\"resource.description\">\n" +
-    "              <div class=\"raml-console-resource-panel-primary-row raml-console-resource-panel-content raml-console-is-active\">\n" +
-    "                <h3 class=\"raml-console-resource-heading-a\">Description</h3>\n" +
-    "                <p marked=\"resource.description\" opts=\"markedOptions\"></p>\n" +
-    "              </div>\n" +
-    "            </span>\n" +
     "\n" +
     "            <resource-panel></resource-panel>\n" +
     "          </li>\n" +
