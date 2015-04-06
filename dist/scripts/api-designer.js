@@ -13595,8 +13595,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         templateUrl: 'views/raml-editor-context-menu.tmpl.html',
         link: function link(scope, element) {
           function positionMenu(element, event) {
-            var top = event.y;
-            var left = event.x;
+            var top = event.pageY;
+            var left = event.pageX;
             var menuContainer = angular.element(element[0].children[0]);
             menuContainer.css('top', top + 'px');
             menuContainer.css('left', left + 'px');
