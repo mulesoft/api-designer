@@ -243,7 +243,7 @@
       };
 
       $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
-        if (!$scope.fileParsable) {
+        if ($scope.mockingServiceDisabled || !$scope.fileParsable) {
           return false;
         }
 

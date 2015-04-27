@@ -433,14 +433,19 @@ describe('RAML Editor Main Controller', function () {
       getIsMockingServiceVisible = scope.getIsMockingServiceVisible;
     });
 
-    it('should return true when file is parsable', function () {
-      scope.fileParsable = true;
-      getIsMockingServiceVisible().should.be.true;
+    it('should return false when mocking service is disabled', function () {
+      scope.mockingServiceDisabled = true;
+      getIsMockingServiceVisible().should.be.false;
     });
 
-    it('should return false when file is NOT parsable', function () {
+    it('should return false when mocking service is not disabled and file is NOT parsable', function () {
       scope.fileParsable = false;
       getIsMockingServiceVisible().should.be.false;
+    });
+
+    it('should return true when mocking service is not disabled and file is parsable', function () {
+      scope.fileParsable = true;
+      getIsMockingServiceVisible().should.be.true;
     });
   });
 

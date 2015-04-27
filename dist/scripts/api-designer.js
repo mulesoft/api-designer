@@ -12809,7 +12809,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return true;
       };
       $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
-        if (!$scope.fileParsable) {
+        if ($scope.mockingServiceDisabled || !$scope.fileParsable) {
           return false;
         }
         return true;
@@ -13435,6 +13435,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   angular.module('ramlEditorApp').directive('ramlEditor', function () {
     return {
       restrict: 'E',
+      scope: { mockingServiceDisabled: '=' },
       templateUrl: 'views/raml-editor-main.tmpl.html',
       controller: 'ramlEditorMain'
     };
@@ -13595,8 +13596,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         templateUrl: 'views/raml-editor-context-menu.tmpl.html',
         link: function link(scope, element) {
           function positionMenu(element, event) {
-            var top = event.y;
-            var left = event.x;
+            var top = event.pageY;
+            var left = event.pageX;
             var menuContainer = angular.element(element[0].children[0]);
             menuContainer.css('top', top + 'px');
             menuContainer.css('left', left + 'px');
