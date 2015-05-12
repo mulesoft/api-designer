@@ -10,11 +10,11 @@
     "angular": "~1.2.16",
     "angular-bootstrap": "~0.11.0",
     "angular-ui-tree": "2.1.5",
-    "api-console": "mulesoft/api-console#4846bbd9fac05b9e2b95d3b2772a7c26f8ef8345",
+    "api-console": "mulesoft/api-console#4cdda20b87ac958d0e063a5c63ebe72612c13f6e",
     "es5-shim": "~2.3.0",
     "font-awesome": "~4.0.3",
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",
-    "raml-js-parser": "raml-org/raml-js-parser#3d7f702b618a99afcc56f85deb4693921af8bbe5",
+    "raml-js-parser": "raml-org/raml-js-parser#e1513e34388d6bb6558f5cb5b221c19f90e225e5",
     "raml-object-to-raml": "mulesoft/raml-object-to-raml#33ff487f7a3ec27c82e109e09f89017eb9fa3cd1",
     "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#44897d92f0cc7c0a51a736bc8d45b2d35cfb2559",
     "jszip": "~2.0.0"
