@@ -3,7 +3,7 @@
     <h3>Import file (beta)</h3>
   </div>
 
-  <div class="modal-body" ng-class="{'has-error': submittedMode === mode && form.$invalid}">
+  <div class="modal-body" ng-class="{'has-error': submittedType === mode.type && form.$invalid}">
     <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">
       <i class="fa fa-spin fa-spinner"></i>
     </div>
@@ -16,16 +16,16 @@
       <div style="margin-left: 145px;" ng-switch="mode.type">
         <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
 
-        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" multiple required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">
+        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">
       </div>
     </div>
 
-    <div ng-if="submittedMode.type === 'swagger'">
+    <div ng-if="submittedType === 'swagger'">
       <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>
     </div>
 
-    <div ng-if="submittedMode.type === 'file'">
-      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>
+    <div ng-if="submittedType === 'zip'">
+      <p class="help-block" ng-show="form.zip.$error.required">Please select a .zip file to import.</p>
     </div>
   </div>
 

@@ -22,7 +22,6 @@ describe('importService', function () {
     var getByPathStub;
     var createFileStub;
     var checkExistenceStub;
-    var createDirectoryStub;
 
     beforeEach(function () {
       var file = {
@@ -55,17 +54,12 @@ describe('importService', function () {
       }
 
       createFileStub = sinon.stub(ramlRepository, 'createFile', resolve);
-      createDirectoryStub = sinon.stub(ramlRepository, 'createDirectory', resolve);
-
       checkExistenceStub = sinon.stub(importService, 'checkExistence', resolve);
     });
 
     afterEach(function () {
       zipStub.restore();
-
       createFileStub.restore();
-      createDirectoryStub.restore();
-
       checkExistenceStub.restore();
     });
 
@@ -80,15 +74,10 @@ describe('importService', function () {
           $rootScope.$digest();
 
           createFileStub.should.have.callCount(3);
-          createDirectoryStub.should.have.callCount(3);
 
           createFileStub.should.have.been.calledWith(root, '/api.raml');
           createFileStub.should.have.been.calledWith(root, '/examples/account/item.json');
           createFileStub.should.have.been.calledWith(root, '/examples/event/item.json');
-
-          createDirectoryStub.should.have.been.calledWith(root, '/examples/');
-          createDirectoryStub.should.have.been.calledWith(root, '/examples/account/');
-          createDirectoryStub.should.have.been.calledWith(root, '/examples/event/');
         });
       });
     });
