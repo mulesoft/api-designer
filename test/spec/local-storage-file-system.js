@@ -174,6 +174,22 @@ describe('Local Storage File System', function () {
         $timeout.flush();
         $timeout.flush();
       });
+
+      it('should remove only the folder when it has the same prefix as a file', function () {
+        localStorage.setItem(LOCAL_PERSISTENCE_KEY + './foo', '{ "path": "/foo", "name": "foo", "type": "folder" }');
+        localStorage.setItem(LOCAL_PERSISTENCE_KEY + './foo.raml', '{ "path": "/foo.raml", "name": "foo.raml", "type": "file" }');
+
+        localStorageFileSystem.remove('/foo')
+          .then(function () {
+            return localStorageFileSystem.directory('/');
+          })
+          .then(function (folder) {
+            hasPath(folder.children, '/foo.raml').should.be.ok;
+          });
+
+        $timeout.flush();
+        $timeout.flush();
+      });
     });
 
     describe('rename', function (){

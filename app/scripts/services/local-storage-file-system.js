@@ -109,8 +109,7 @@
       function hasChildrens(path) {
         var has = false;
         localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() !== path.toLowerCase() &&
-              entry.path.indexOf(path) === 0) {
+          if (entry.path.indexOf(path + '/') === 0) {
             has = true;
           }
         });
