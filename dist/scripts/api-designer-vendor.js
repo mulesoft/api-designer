@@ -76037,7 +76037,7 @@ exports.javascript = require('./javascript');
             $this.text('Cancel override');
           } else {
             definition.overwritten = false;
-            $scope.context[$scope.type].values[definition.id][0] = definition.enum[0];
+            $scope.$parent.context[$scope.$parent.type].values[definition.id][0] = definition.enum[0];
           }
         };
 
