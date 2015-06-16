@@ -31,6 +31,11 @@ Install webdriver required to run `localScenario` task
 node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
 ```
 
+On some systems you need add `node` in front of the line above
+```
+node node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
+```
+
 Run the application locally
 ```
 grunt server
