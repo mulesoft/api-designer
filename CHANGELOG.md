@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Changed
 
 - README is now arranged to benefit consumers over developers.
+- Add notice that it uses in-browser storage location.
 
 ## 0.0.2 - 2014-06-18
 

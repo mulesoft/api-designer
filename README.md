@@ -1,4 +1,4 @@
-# RAML Editor
+# API Designer
 
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/mulesoft/api-designer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -6,7 +6,7 @@
 [![Dependency Status](https://david-dm.org/mulesoft/api-designer.png)](https://david-dm.org/mulesoft/api-designer#info=dependencies)
 [![DevDependency Status](https://david-dm.org/mulesoft/api-designer/dev-status.png)](https://david-dm.org/mulesoft/api-designer#info=devDependencies)
 
-This is a standalone/embeddable editor for [RAML](http://raml.org) (Restful Api Modeling language) written in JavaScript.
+**API Designer** is a standalone/embeddable editor for [RAML](http://raml.org) (RESTful API Modeling Language) written in JavaScript using Angular.JS. By default, the editor uses an in-browser filesystem stored in HTML5 Localstorage.
 
 ## Embedding
 
@@ -87,8 +87,13 @@ The following example details how to embed the API Designer:
           {message: 'File saved.', expires: true});
 
       });
-
     </script>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+    </style>
   </body>
 </html>
 ```
