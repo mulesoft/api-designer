@@ -8,50 +8,6 @@
 
 This is a standalone/embeddable editor for [RAML](http://raml.org) (Restful Api Modeling language) written in JavaScript.
 
-## Build and Run
-
-Install global tools
-```
-npm install -g grunt-cli
-npm install -g bower
-npm install -g karma # Optional for running the test suite
-```
-
-Install node modules
-```
-npm install 
-```
-
-Install bower modules
-```
-bower install
-```
-
-Install webdriver required to run `localScenario` task
-```
-node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
-```
-
-On some systems you need add `node` in front of the line above
-```
-node node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
-```
-
-Run the application locally
-```
-grunt server
-```
-
-Run the test suite
-```
-grunt test
-```
-
-Build the application
-```
-grunt
-```
-
 ## Embedding
 
 The following example details how to embed the API Designer:
@@ -62,14 +18,13 @@ The following example details how to embed the API Designer:
   <head>
     <meta charset="utf-8">
     <title>My App</title>
-    <link rel="stylesheet" href="styles/20dea081.main.css">
-    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+    <link rel="stylesheet" href="dist/styles/api-designer-vendor.css">
+    <link rel="stylesheet" href="dist/styles/api-designer.css">
   </head>
   <body ng-app="ramlEditorApp">
-    <div class="container" ng-include="" src="'views/raml-editor-main.tmpl.html'"></div>
-
-    <script src="scripts/d78281b9.vendor.js"></script>
-    <script src="scripts/8a9fbe21.scripts.js"></script>
+    <raml-editor></raml-editor>
+    <script src="dist/scripts/api-designer-vendor.js"></script>
+    <script src="dist/scripts/api-designer.js"></script>
     <script>
       // This part is needed only if you want to provide your own Persistance Implementation
       // Angular Module must match "ramlEditorApp"
@@ -137,7 +92,61 @@ The following example details how to embed the API Designer:
   </body>
 </html>
 ```
+
+## Development
+
+Install global tools
+
+```
+npm install -g grunt-cli
+npm install -g bower
+npm install -g karma # Optional for running the test suite
+```
+
+Install node modules
+
+```
+npm install 
+```
+
+Install bower modules
+
+```
+bower install
+```
+
+Install webdriver required to run `localScenario` task
+
+```
+node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
+```
+
+On some systems you need add `node` in front of the line above
+
+```
+node node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
+```
+
+Run the application locally
+
+```
+grunt server
+```
+
+Run the test suite
+
+```
+grunt test
+```
+
+Build the application
+
+```
+grunt
+```
+
 ## Contributor's Agreement
+
 To contribute source code to this repository, please read our [contributor's agreement](http://www.mulesoft.org/legal/contributor-agreement.html), and then execute it by running this notebook and following the instructions: https://api-notebook.anypoint.mulesoft.com/notebooks/#380297ed0e474010ff43 
 
 ## License
