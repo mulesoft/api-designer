@@ -1,0 +1,21 @@
+<span role="help-button">
+  <i class="fa fa-question-circle"></i>&nbsp;Help
+</span>
+<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">
+  <i class="fa fa-caret-down"></i>
+</span>
+<ul role="context-menu" class="menu-item-context" ng-show="contextHelpMenuOpen">
+  <li role="context-menu-item" ng-click="openLink('http://raml.org/spec')">RAML Specification</li>
+  <li role="context-menu-item" ng-click="openLink('http://raml.org')">RAML Website</li>
+  <li role="context-menu-item" ng-click="openLink('https://github.com/mulesoft/api-designer/issues')">Report a Bug</li>
+  <li role="context-menu-item" ng-click="openLink('http://raml.org/docs.html')">RAML Tutorial</li>
+  <hr class="style-two">
+  <style>/* Gradient transparent - color - transparent */
+    hr.style-two {
+      border: 0;
+      height: 1px;
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+    }
+  </style>
+  <li role="context-menu-item" ng-click="openHelpModal()">About</li>
+</ul>
