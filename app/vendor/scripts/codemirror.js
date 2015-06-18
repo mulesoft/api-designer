@@ -3377,7 +3377,7 @@ window.CodeMirror = (function() {
     },
     deleteLine: function(cm) {
       var l = cm.getCursor().line;
-      cm.replaceRange("", Pos(l, 0), Pos(l), "+delete");
+      cm.removeLine(l);
     },
     delLineLeft: function(cm) {
       var cur = cm.getCursor();
