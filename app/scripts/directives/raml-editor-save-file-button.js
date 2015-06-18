@@ -7,7 +7,8 @@
       ramlRepository,
       $window,
       $timeout,
-      $q
+      $q,
+      subMenuService
     ) {
       return {
         restrict: 'E',
@@ -21,20 +22,8 @@
           '</ul>'
         ].join('\n'),
         link:     function(scope) {
-          scope.contextMenuOpen = false;
-
           scope.openContextMenu = function () {
-            $timeout(function () {
-              $window.addEventListener('click', function self () {
-                scope.$apply(function () {
-                  scope.contextMenuOpen = false;
-                });
-
-                $window.removeEventListener('click', self);
-              });
-            });
-
-            scope.contextMenuOpen = true;
+            subMenuService.open(scope, 'contextMenuOpen');
           };
 
           scope.saveFile = function saveFile() {
