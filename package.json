@@ -40,6 +40,8 @@
     "selenium-webdriver": "~2.41.0"
   },
   "scripts": {
-    "test": "grunt test localScenario"
+    "test": "grunt test localScenario",
+    "build": "grunt build",
+    "prepublish": "npm run build"
   }
 }
