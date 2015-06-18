@@ -5,6 +5,10 @@
     "type": "git",
     "url": "https://github.com/mulesoft/api-designer.git"
   },
+  "files": [
+    "dist/",
+    "LICENSE"
+  ],
   "license": "CPAL 1.0",
   "devDependencies": {
     "chai": "~1.10.0",
