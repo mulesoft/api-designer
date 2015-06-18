@@ -11586,7 +11586,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function hasChildrens(path) {
         var has = false;
         localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() !== path.toLowerCase() && entry.path.indexOf(path) === 0) {
+          if (entry.path.indexOf(path + '/') === 0) {
             has = true;
           }
         });
@@ -11943,39 +11943,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $rootScope, importService, ramlRepository) {
       $scope.importing = false;
       $scope.rootDirectory = ramlRepository.getByPath('/');
-      $scope.options = [
-        {
-          name: '.zip file',
-          type: 'file'
-        },
-        {
-          name: 'Swagger spec',
-          type: 'swagger'
-        }
-      ];
-      $scope.mode = $scope.options[0];
-      // Check whether file import is supported.
-      $scope.fileSupported = !!(window.File && window.FileReader && window.FileList && window.Blob);
       // Handles <input type="file" onchange="angular.element(this).scope().handleFileSelect(this)">
       // this workaroud for binding the input file to a model won't work for 1.3.x since scope isn't available in onchange
       $scope.handleFileSelect = function (element) {
-        $scope.mode.value = element.files;
-      };
-      /**
-       * Import using either import modes.
-       *
-       * @param {Object} form
-       */
-      $scope.import = function (form) {
-        form.$submitted = true;
-        $scope.submittedMode = $scope.mode;
-        if (form.$invalid || $scope.importing) {
-          return;
-        }
-        if ($scope.mode.type === 'swagger') {
-          return importSwagger($scope.mode);
-        }
-        return importFile($scope.mode);
+        $scope.mode.value = element.files[0];
       };
       /**
        * Import files from the local filesystem.
@@ -11991,7 +11962,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           });
         }
         $scope.importing = true;
-        return importService.mergeFileList($scope.rootDirectory, mode.value).then(function () {
+        return importService.mergeFile($scope.rootDirectory, mode.value).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
           $rootScope.$broadcast('event:notification', {
@@ -12024,6 +11995,56 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           $scope.importing = false;
         });
       }
+      function importSwaggerZip(mode) {
+        $scope.importing = true;
+        return swaggerToRAML.zip(mode.value).then(function (contents) {
+          var filename = extractFileName(mode.value.name, 'raml');
+          return importService.createFile($scope.rootDirectory, filename, contents);
+        }).then(function () {
+          return $modalInstance.close(true);
+        }).catch(function (err) {
+          $rootScope.$broadcast('event:notification', {
+            message: 'Failed to parse Swagger: ' + err.message,
+            expires: true,
+            level: 'error'
+          });
+        }).finally(function () {
+          $scope.importing = false;
+        });
+      }
+      $scope.options = [
+        {
+          name: '.zip file',
+          type: 'zip',
+          callback: importFile
+        },
+        {
+          name: 'Swagger spec',
+          type: 'swagger',
+          callback: importSwagger
+        },
+        {
+          name: 'Swagger .zip',
+          type: 'zip',
+          callback: importSwaggerZip
+        }
+      ];
+      $scope.mode = $scope.options[0];
+      // Check whether file import is supported.
+      $scope.fileSupported = !!(window.File && window.FileReader && window.FileList && window.Blob);
+      /**
+       * Import using either import modes.
+       *
+       * @param {Object} form
+       */
+      $scope.import = function (form) {
+        form.$submitted = true;
+        $scope.submittedType = $scope.mode.type;
+        if (form.$invalid || $scope.importing) {
+          return;
+        }
+        return $scope.mode.callback($scope.mode);
+      };
       /**
        * Extract a useable filename from a path.
        *
@@ -12154,19 +12175,22 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$window',
     '$q',
     '$http',
-    function swaggerToRAML($window, $q, $http) {
+    'importService',
+    function swaggerToRAML($window, $q, $http, importService) {
       var self = this;
       var proxy = $window.RAML.Settings.proxy || '';
       function reader(filename, done) {
+        if (!/^https?\:\/\//.test(filename)) {
+          return done(new Error('Invalid file location: ' + filename));
+        }
         return $http.get(filename, { transformResponse: false }).then(function (response) {
           return done(null, response.data);
         }).catch(function (err) {
           return done(new Error(err.data));
         });
       }
-      self.convert = function convert(url) {
-        var deferred = $q.defer();
-        swaggerToRamlObject(proxy + url, reader, function (err, result) {
+      function parseResult(deferred) {
+        return function (err, result) {
           if (err) {
             return deferred.reject(err);
           }
@@ -12175,7 +12199,28 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           } catch (e) {
             return deferred.reject(e);
           }
-        });
+        };
+      }
+      self.convert = function convert(url) {
+        var deferred = $q.defer();
+        swaggerToRamlObject(proxy + url, reader, parseResult(deferred));
+        return deferred.promise;
+      };
+      self.zip = function zip(file) {
+        var deferred = $q.defer();
+        if (!importService.isZip(file)) {
+          deferred.reject(new Error('Invalid zip file'));
+        } else {
+          importService.readFileAsText(file).then(function (contents) {
+            var files = importService.parseZip(contents);
+            swaggerToRamlObject.files(Object.keys(files), function (filename, done) {
+              if (files.hasOwnProperty(filename)) {
+                return done(null, files[filename]);
+              }
+              return reader(filename, done);
+            }, parseResult(deferred));
+          });
+        }
         return deferred.promise;
       };
       return self;
@@ -12200,10 +12245,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
        */
       self.mergeFile = function (directory, file) {
         // Import every other file as normal.
-        if (!isZip(file)) {
+        if (!self.isZip(file)) {
           return self.importFile(directory, file);
         }
-        return readFileAsText(file).then(function (contents) {
+        return self.readFileAsText(file).then(function (contents) {
           return self.mergeZip(directory, contents);
         });
       };
@@ -12355,30 +12400,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return ramlRepository.createDirectory(directory, name);
       };
       /**
-       * Merge a zip with a directory in the file system.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  contents
-       * @return {Promise}
-       */
-      self.mergeZip = function (directory, contents) {
-        var zip = new $window.JSZip(contents);
-        var files = removeCommonFilePrefixes(sanitizeZipFiles(zip.files));
-        return importZipFiles(directory, files);
-      };
-      /**
-       * Import a zip file into the current directory.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  contents
-       * @return {Promise}
-       */
-      self.importZip = function (directory, contents) {
-        var zip = new $window.JSZip(contents);
-        var files = sanitizeZipFiles(zip.files);
-        return importZipFiles(directory, files);
-      };
-      /**
        * Check whether a file exists and make a decision based on that.
        *
        * @param  {Object}  directory
@@ -12393,6 +12414,66 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return importServiceConflictModal.open(path);
       };
       /**
+       * Check whether a file is a zip.
+       *
+       * @param  {File}    file
+       * @return {Boolean}
+       */
+      self.isZip = function (file) {
+        // Can't check `file.type` as it's empty when read from a `FileEntry`.
+        return /\.zip$/i.test(file.name);
+      };
+      /**
+       * Read a file object as a text file.
+       *
+       * @param  {File}    file
+       * @return {Promise}
+       */
+      self.readFileAsText = function (file) {
+        var deferred = $q.defer();
+        var reader = new $window.FileReader();
+        reader.onload = function () {
+          return deferred.resolve(reader.result);
+        };
+        reader.onerror = function () {
+          return deferred.reject(reader.error);
+        };
+        reader.readAsBinaryString(file);
+        return deferred.promise;
+      };
+      /**
+       * Parse a ZIP file.
+       *
+       * @param  {String} contents
+       * @return {Object}
+       */
+      self.parseZip = function (contents) {
+        var zip = new $window.JSZip(contents);
+        return sanitizeZipFiles(zip.files);
+      };
+      /**
+       * Merge a zip with a directory in the file system.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      self.mergeZip = function (directory, contents) {
+        var files = removeCommonFilePrefixes(self.parseZip(contents));
+        return importZipFiles(directory, files);
+      };
+      /**
+       * Import a zip file into the current directory.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  contents
+       * @return {Promise}
+       */
+      self.importZip = function (directory, contents) {
+        var files = self.parseZip(contents);
+        return importZipFiles(directory, files);
+      };
+      /**
        * Import a single file at specific path.
        *
        * @param  {Object}  directory
@@ -12401,8 +12482,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
        * @return {Promise}
        */
       function importFileToPath(directory, path, file) {
-        return readFileAsText(file).then(function (contents) {
-          if (isZip(file)) {
+        return self.readFileAsText(file).then(function (contents) {
+          if (self.isZip(file)) {
+            // Remove the zip file name from the end of the path.
             var dirname = path.replace(/[\\\/][^\\\/]*$/, '');
             return self.createDirectory(directory, dirname).then(function (directory) {
               return self.importZip(directory, contents);
@@ -12410,16 +12492,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           }
           return self.createFile(directory, path, contents);
         });
-      }
-      /**
-       * Check whether a file is a zip.
-       *
-       * @param  {File}    file
-       * @return {Boolean}
-       */
-      function isZip(file) {
-        // Can't check `file.type` as it's empty when read from a `FileEntry`.
-        return /\.zip$/i.test(file.name);
       }
       /**
        * Import files from the zip object.
@@ -12431,11 +12503,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function importZipFiles(directory, files) {
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
-              // Directories are stored under the files object.
-              if (/\/$/.test(name)) {
-                return self.createDirectory(directory, name);
-              }
-              return self.createFile(directory, name, files[name].asText());
+              return self.createFile(directory, name, files[name]);
             };
           });
         return promiseChain(imports);
@@ -12449,10 +12517,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function sanitizeZipFiles(originalFiles) {
         var files = {};
         Object.keys(originalFiles).forEach(function (name) {
-          if (/^__MACOSX\//.test(name)) {
+          if (/^__MACOSX\//.test(name) || /\/$/.test(name)) {
             return;
           }
-          files[name] = originalFiles[name];
+          files[name] = originalFiles[name].asText();
         });
         return files;
       }
@@ -12544,24 +12612,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           path = ramlRepository.join(directory.path, filename);
         } while (pathExists(path));
         return path;
-      }
-      /**
-       * Read a file object as a text file.
-       *
-       * @param  {File}    file
-       * @return {Promise}
-       */
-      function readFileAsText(file) {
-        var deferred = $q.defer();
-        var reader = new $window.FileReader();
-        reader.onload = function () {
-          return deferred.resolve(reader.result);
-        };
-        reader.onerror = function () {
-          return deferred.reject(reader.error);
-        };
-        reader.readAsBinaryString(file);
-        return deferred.promise;
       }
       /**
        * Chain promises one after another.
@@ -13588,7 +13638,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 title = 'Remove file';
               }
               return confirmModal.open(message, title).then(function () {
-                ramlRepository.remove(target);
+                return ramlRepository.remove(target);
               });
               ;
             }
@@ -14492,7 +14542,7 @@ angular.module('ramlEditorApp').run([
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{data.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{data.message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="button" class="btn btn-primary" ng-click="$close()" ng-auto-focus="true">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/help.html', '<div class="modal-header">\n' + '    <h3><i class="fa fa-question-circle"></i> Help</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
-    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedMode === mode && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" multiple required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedMode.type === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedMode.type === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a .zip file to import.</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
