@@ -1,0 +1,14 @@
+<span role="help-button">
+  <i class="fa fa-question-circle"></i>&nbsp;Help
+</span>
+<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">
+  <i class="fa fa-caret-down"></i>
+</span>
+<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">
+  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>
+  <li role="context-menu-item"><a href="http://raml.org/spec" target="_blank">Language Spec</a></li>
+  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>
+  <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>
+  <hr class="line-with-linear-gradient">
+  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>
+</ul>
