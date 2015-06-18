@@ -12777,12 +12777,18 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         currentFile = file;
         // Empty console so that we remove content from previous open RAML file
         $rootScope.$broadcast('event:raml-parsed', {});
-        editor.setValue(file.contents);
+        // Every file must have a unique document for history and cursors.
+        if (!file.doc) {
+          file.doc = new CodeMirror.Doc(file.contents);
+        }
+        editor.swapDoc(file.doc);
+        editor.focus();
         $scope.fileParsable = $scope.getIsFileParsable(file);
       });
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
-        if (contents && contents !== editor.getValue()) {
-          editor.setValue(contents);
+        if (contents != null && contents !== editor.getValue()) {
+          currentFile.doc = new CodeMirror.Doc(contents);
+          editor.swapDoc(currentFile.doc);
         }
       });
       var updateFile = debounce(function updateFile() {
@@ -12793,7 +12799,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
         if (currentFile === file) {
           currentFile = undefined;
-          editor.setValue('');
+          editor.swapDoc(new CodeMirror.Doc(''));
         }
       });
       $scope.canExportFiles = function canExportFiles() {
