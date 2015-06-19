@@ -6,6 +6,9 @@
     "type": "git",
     "url": "https://github.com/mulesoft/api-designer.git"
   },
+  "bin": {
+    "api-designer": "bin/api-designer.js"
+  },
   "files": [
     "dist/",
     "LICENSE"
@@ -45,5 +48,10 @@
     "test": "grunt test localScenario",
     "build": "grunt build",
     "prepublish": "npm run build"
+  },
+  "dependencies": {
+    "express": "^4.12.4",
+    "open": "0.0.5",
+    "yargs": "^3.11.0"
   }
 }

@@ -8,6 +8,16 @@
 
 **API Designer** is a standalone/embeddable editor for [RAML](http://raml.org) (RESTful API Modeling Language) written in JavaScript using Angular.JS. By default, the editor uses an in-browser filesystem stored in HTML5 Localstorage.
 
+## Running Locally
+
+```
+npm install -g api-designer
+
+api-designer
+```
+
+This will start a local designer instance using the in-browser filesystem.
+
 ## Embedding
 
 The following example details how to embed the API Designer:
