@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "express": "^4.12.4",
+    "open": "0.0.5",
     "yargs": "^3.11.0"
   }
 }
