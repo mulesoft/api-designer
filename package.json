@@ -11,6 +11,7 @@
   },
   "files": [
     "dist/",
+    "bin/",
     "LICENSE"
   ],
   "license": "CPAL 1.0",
