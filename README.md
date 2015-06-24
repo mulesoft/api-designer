@@ -8,6 +8,12 @@
 
 **API Designer** is a standalone/embeddable editor for [RAML](http://raml.org) (RESTful API Modeling Language) written in JavaScript using Angular.JS. By default, the editor uses an in-browser filesystem stored in HTML5 Localstorage.
 
+## Examples of designing RAML with API Designer in the Wild
+
+* [Remote Medicine API](http://static-anypoint-mulesoft-com.s3.amazonaws.com/API_examples_notebooks/raml-design4.html)
+* [Notes API](http://static-anypoint-mulesoft-com.s3.amazonaws.com/API_examples_notebooks/raml-design3.html)
+* [Congo API for Drone Delivery](http://static-anypoint-mulesoft-com.s3.amazonaws.com/API_examples_notebooks/raml-design2.html)
+
 ## Running Locally
 
 ```
@@ -39,7 +45,7 @@ The following example details how to embed the API Designer:
       // This part is needed only if you want to provide your own Persistance Implementation
       // Angular Module must match "ramlEditorApp"
       angular.module('ramlEditorApp')
-      .factory('MyFileSystem', function ($q, config, eventService) {
+      .factory('MyFileSystem', function ($q, config, $rootScope) {
         var service = {};
 
         service.directory = function (path) {
@@ -84,7 +90,7 @@ The following example details how to embed the API Designer:
 
         return service;
       })
-      .run(function (MyFileSystem, config, eventService) {
+      .run(function (MyFileSystem, config, $rootScope) {
         // Set MyFileSystem as the filesystem to use
         config.set('fsFactory', 'MyFileSystem');
         
@@ -93,7 +99,7 @@ The following example details how to embed the API Designer:
         // The expires flags means whether
         // it should be hidden after a period of time or the
         // user should dismiss it manually.
-        eventService.broadcast('event:notification',
+        $rootScope.$broadcast('event:notification',
           {message: 'File saved.', expires: true});
 
       });
@@ -108,61 +114,9 @@ The following example details how to embed the API Designer:
 </html>
 ```
 
-## Development
+## Contribution
 
-Install global tools
-
-```
-npm install -g grunt-cli
-npm install -g bower
-npm install -g karma # Optional for running the test suite
-```
-
-Install node modules
-
-```
-npm install 
-```
-
-Install bower modules
-
-```
-bower install
-```
-
-Install webdriver required to run `localScenario` task
-
-```
-node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
-```
-
-On some systems you need add `node` in front of the line above
-
-```
-node node_modules/grunt-protractor-runner/node_modules/protractor/bin/webdriver-manager update
-```
-
-Run the application locally
-
-```
-grunt server
-```
-
-Run the test suite
-
-```
-grunt test
-```
-
-Build the application
-
-```
-grunt
-```
-
-## Contributor's Agreement
-
-To contribute source code to this repository, please read our [contributor's agreement](http://www.mulesoft.org/legal/contributor-agreement.html), and then execute it by running this notebook and following the instructions: https://api-notebook.anypoint.mulesoft.com/notebooks/#380297ed0e474010ff43 
+If you want to contribute to this project, please read our [contribution guide](https://github.com/mulesoft/api-designer/blob/master/CONTRIBUTING.md) first.
 
 ## License
 
