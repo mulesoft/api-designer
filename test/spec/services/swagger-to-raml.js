@@ -17,7 +17,7 @@ describe('swaggerToRAML', function () {
     swaggerToRAML  = $injector.get('swaggerToRAML');
   }));
 
-  describe.only('parse zip files', function () {
+  describe('parse zip files', function () {
     var parseZipStub;
     var readFileAsTextStub;
 
