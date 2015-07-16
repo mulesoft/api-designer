@@ -889,4 +889,50 @@ describe('Muse: Mule Sales Enablement API', function () {
     }); // collapsed Console
 
   });// console validation - expanded
+
+  describe('editor with multiple files', function () {
+    describe('undo', function () {
+      it('should not mix file content when undoing a change', function () {
+        editor.addNewFile('example.json')
+          .then(function () {
+            return editor.setValue('example1');
+          })
+          .then(function () {
+            return editor.setValue('example1\\nexample2');
+          })
+          .then(function () {
+            return editor.saveFileButton();
+          })
+          .then(function () {
+            return editor.addNewFile('schema.json');
+          })
+          .then(function () {
+            return editor.setValue('schema1');
+          })
+          .then(function () {
+            return editor.setValue('schema1\\nschema2');
+          })
+          .then(function () {
+            return editor.saveFileButton();
+          })
+          .then(function () {
+            return editor.selectAFileByPos(1);
+          })
+          .then(function () {
+            var modifierKey = process.platform === 'darwin' ?
+              protractor.Key.COMMAND: protractor.Key.CONTROL;
+            var undoCommand = protractor.Key.chord(modifierKey, 'z');
+
+            return browser.actions().sendKeys(undoCommand).perform()
+              .then(function () {
+                return editor.saveFileButton();
+              });
+          })
+          .then(function () {
+            expect(editor.getLine(1)).toEqual('example1');
+            expect(editor.getLine(2)).toEqual(null);
+          });
+      });
+    });
+  });
 }); // MAIN

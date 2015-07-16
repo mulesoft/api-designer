@@ -12773,7 +12773,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         safeApply($scope);
       };
       $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
-        codeMirror.configureEditor(editor, file.extension);
         currentFile = file;
         // Empty console so that we remove content from previous open RAML file
         $rootScope.$broadcast('event:raml-parsed', {});
@@ -12783,6 +12782,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         }
         editor.swapDoc(file.doc);
         editor.focus();
+        // After swapping the doc, configure the editor for the current file
+        // extension.
+        codeMirror.configureEditor(editor, file.extension);
         $scope.fileParsable = $scope.getIsFileParsable(file);
       });
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
