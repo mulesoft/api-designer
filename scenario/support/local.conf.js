@@ -6,7 +6,7 @@ exports.config = {
   allScriptsTimeout: 120000,
 
   capabilities: {
-    'browserName': 'firefox'
+    'browserName': 'chrome'
   },
 
   specs: [
@@ -18,7 +18,7 @@ exports.config = {
 
   onPrepare: function() {
     browser.get('');
-    browser.driver.switchTo().alert().accept();
+    element(by.css('button.btn.btn-primary')).click();
     browser.executeScript(function () {
       localStorage['config.updateResponsivenessInterval'] = 1;
       window.onbeforeunload = null;
