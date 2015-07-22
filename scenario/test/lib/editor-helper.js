@@ -90,7 +90,7 @@ EditorHelper.prototype.getValue = function getValue(){
 
 EditorHelper.prototype.setCursor = function setCursor(line, char){
   line --;
-  browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
+  return browser.executeScript('window.editor.setCursor('+ line +','+ char +')');
 };
 
 EditorHelper.prototype.getSHighlightClass = function getSHighlightClass(line, pos){
@@ -138,24 +138,36 @@ EditorHelper.prototype.getSyntaxIndentClassArray = function getSyntaxIndentClass
 };
 
 EditorHelper.prototype.newFilePopUp = function newFilePopUp(fileName, dismiss){
-  var alertDialog = browser.driver.switchTo().alert();
-  expect(alertDialog.getText()).toEqual('Choose a name:');
-  if(dismiss){
-    alertDialog.dismiss();
-  }else{
-    alertDialog.sendKeys(fileName);
-    alertDialog.accept();
+  var d = webdriver.promise.defer();
+  if (dismiss) {
+    element(by.css('.modal-body .btn-default')).click()
+      .then(function () {
+        d.fulfill();
+      });
+  } else {
+    element(by.css('.modal-body #name')).sendKeys(fileName)
+      .then(function () {
+        element(by.css('.modal-footer .btn-primary')).click()
+          .then(function () {
+            d.fulfill();
+          });
+      });
   }
+
+  return d.promise;
 };
 
 EditorHelper.prototype.addNewFile = function addNewFile(fileName){
-  $(this.newButton).click();
-  this.newFilePopUp(fileName);
+  var self = this;
+
+  return element.all(by.css(this.newButton)).get(0).click().then(function() {
+    return self.newFilePopUp(fileName);
+  });
 };
 
 EditorHelper.prototype.saveFileButton = function saveFileButton(){
   // this save the current file
-  browser.$(this.saveButton).click();
+  element(by.css(this.saveButton)).click();
 };
 
 
@@ -184,8 +196,10 @@ EditorHelper.prototype.selectAFileByPos = function selectAFileByPos(pos){
   var d = webdriver.promise.defer();
   pos --;
   element.all(by.css('.file-list li')).then(function(list){
-    list[pos].click();
-    d.fulfill();
+    list[pos].click().then(function () {
+      browser.waitForAngular();
+      d.fulfill();
+    });
   });
   return d.promise;
 };

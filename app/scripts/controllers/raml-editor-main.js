@@ -95,20 +95,35 @@
       };
 
       $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
-        codeMirror.configureEditor(editor, file.extension);
-
         currentFile = file;
 
         // Empty console so that we remove content from previous open RAML file
         $rootScope.$broadcast('event:raml-parsed', {});
 
-        editor.setValue(file.contents);
+        // Every file must have a unique document for history and cursors.
+        if (!file.doc) {
+          file.doc = new CodeMirror.Doc(file.contents);
+        }
+
+        editor.swapDoc(file.doc);
+        editor.focus();
+
+        // After swapping the doc, configure the editor for the current file
+        // extension.
+        codeMirror.configureEditor(editor, file.extension);
+
         $scope.fileParsable = $scope.getIsFileParsable(file);
+
+        // Inform the editor source has changed. This is also called when the
+        // editor triggers the change event, swapping the doc does not trigger
+        // that event, so we must explicitly call the sourceUpdated function.
+        $scope.sourceUpdated();
       });
 
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
-        if (contents && contents !== editor.getValue()) {
-          editor.setValue(contents);
+        if (contents != null && contents !== editor.getValue()) {
+          currentFile.doc = new CodeMirror.Doc(contents);
+          editor.swapDoc(currentFile.doc);
         }
       });
 
@@ -123,7 +138,7 @@
       $scope.$on('event:raml-editor-file-removed', function onFileSelected(event, file) {
         if (currentFile === file) {
           currentFile = undefined;
-          editor.setValue('');
+          editor.swapDoc(new CodeMirror.Doc(''));
         }
       });
 
