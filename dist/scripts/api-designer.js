@@ -12183,7 +12183,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         if (!/^https?\:\/\//.test(filename)) {
           return done(new Error('Invalid file location: ' + filename));
         }
-        return $http.get(filename, { transformResponse: false }).then(function (response) {
+        return $http.get(proxy + filename, { transformResponse: false }).then(function (response) {
           return done(null, response.data);
         }).catch(function (err) {
           return done(new Error(err.data));
@@ -12203,7 +12203,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       }
       self.convert = function convert(url) {
         var deferred = $q.defer();
-        swaggerToRamlObject(proxy + url, reader, parseResult(deferred));
+        swaggerToRamlObject(url, reader, parseResult(deferred));
         return deferred.promise;
       };
       self.zip = function zip(file) {
@@ -13594,7 +13594,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           scope.$apply(function () {
             e.preventDefault();
             e.stopPropagation();
-            fn(scope, { $event: e });
+            fn(scope, { $event: e.originalEvent });
           });
         });
       };

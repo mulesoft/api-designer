@@ -65457,11 +65457,21 @@ function swaggerFilesToRamlObject (files, filereader, done) {
       fileMap[filename] = result;
     });
 
-    var rootFileName    = findResourceListing(fileMap);
+    var keys = Object.keys(fileMap);
+    var rootFileName = keys[0];
+
+    if (keys.length > 1) {
+      rootFileName = findResourceListing(fileMap);
+
+      if (!rootFileName) {
+        throw new TypeError('Unable to determine entry file (Swagger resource listing)');
+      }
+    }
+
     var resourceListing = fileMap[rootFileName];
 
-    if (!rootFileName) {
-      throw new Error('No entry file found (single resource listing)');
+    if (!isResourceListing(resourceListing)) {
+      return done(null, convertApiDeclaration(resourceListing));
     }
 
     var read       = wrapFileReader(filereader);
