@@ -76135,7 +76135,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/method-list.tpl.html',
       replace: true,
-      controller: function($scope, $location, $anchorScroll, $rootScope) {
+      controller: function($scope, $timeout, $rootScope) {
         function loadExamples () {
           $scope.context.uriParameters.reset($scope.resource.uriParametersForDocumentation);
           $scope.context.queryParameters.reset($scope.methodInfo.queryParameters);
@@ -76292,8 +76292,12 @@ exports.javascript = require('./javascript');
             jQuery($this).addClass('raml-console-is-active');
             $scope.showPanel = true;
 
-            $location.hash(hash);
-            $anchorScroll();
+            $timeout(function () {
+              jQuery('html, body').animate({
+                scrollTop: jQuery('#'+hash).offset().top + 'px'
+              }, 'fast');
+            }, 10);
+
           } else if (jQuery($this).hasClass('raml-console-is-active')) {
             $scope.showPanel = false;
             $inactiveElements.removeClass('raml-console-is-active');
@@ -76613,7 +76617,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/root-documentation.tpl.html',
       replace: true,
-      controller: function($scope, $location) {
+      controller: function($scope, $timeout) {
         $scope.markedOptions = RAML.Settings.marked;
         $scope.selectedSection = 'all';
 
@@ -76638,7 +76642,11 @@ exports.javascript = require('./javascript');
 
           $el[!$scope.documentationEnabled ? 'removeClass' : 'addClass']('raml-console-documentation-active');
 
-          $location.hash($scope.generateDocId(section));
+          $timeout(function () {
+            jQuery('html, body').animate({
+              scrollTop: jQuery('#'+$scope.generateDocId(section)).offset().top + 'px'
+            }, 'fast');
+          }, 10);
         };
 
         $scope.closeDocumentation = function ($event) {
@@ -76718,7 +76726,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/sidebar.tpl.html',
       replace: true,
-      controller: function ($scope, $location, $anchorScroll) {
+      controller: function ($scope, $timeout) {
         var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
         var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
 
@@ -76731,6 +76739,10 @@ exports.javascript = require('./javascript');
         function readCustomSchemeInfo (name) {
           if (!$scope.methodInfo.headers.plain) {
             $scope.methodInfo.headers.plain = {};
+          }
+
+          if (!$scope.methodInfo.queryParameters) {
+            $scope.methodInfo.queryParameters = {};
           }
 
           updateContextData('headers', name, $scope.methodInfo.headers.plain, $scope.context.headers);
@@ -76810,10 +76822,6 @@ exports.javascript = require('./javascript');
           $scope.showSpinner     = false;
           $scope.responseDetails = true;
 
-          var hash = 'request_' + $scope.generateId($scope.resource.pathSegments);
-          $location.hash(hash);
-          $anchorScroll();
-
           // If the response fails because of CORS, responseText is null
           var editorHeight = 50;
 
@@ -76827,6 +76835,14 @@ exports.javascript = require('./javascript');
           };
 
           apply();
+
+          var hash = 'request_' + $scope.generateId($scope.resource.pathSegments);
+
+          $timeout(function () {
+            jQuery('html, body').animate({
+              scrollTop: jQuery('#'+hash).offset().top + 'px'
+            }, 'fast');
+          }, 10);
         }
 
         function resolveSegementContexts(pathSegments, uriParameters) {

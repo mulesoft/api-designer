@@ -12786,6 +12786,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         // extension.
         codeMirror.configureEditor(editor, file.extension);
         $scope.fileParsable = $scope.getIsFileParsable(file);
+        // Inform the editor source has changed. This is also called when the
+        // editor triggers the change event, swapping the doc does not trigger
+        // that event, so we must explicitly call the sourceUpdated function.
+        $scope.sourceUpdated();
       });
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
         if (contents != null && contents !== editor.getValue()) {
