@@ -8,7 +8,7 @@
   "license": "CPAL 1.0",
   "dependencies": {
     "angular": ">=1.2.0 <1.4.0",
-    "angular-bootstrap": "~0.11.0",
+    "angular-bootstrap": ">=0.11.0 <0.14.0",
     "angular-ui-tree": "2.1.5",
     "api-console": "mulesoft/api-console#4842351e2e1f327d130d6fe14af27c68e75f3824",
     "es5-shim": "~2.3.0",
