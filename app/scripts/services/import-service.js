@@ -184,7 +184,7 @@
               var path = ramlRepository.join(directory.path, name);
               var file = ramlRepository.getByPath(path);
 
-              file.contents = contents;
+              file.doc.setValue(contents);
 
               return;
             }

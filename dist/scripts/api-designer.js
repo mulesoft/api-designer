@@ -12383,7 +12383,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           if (option === importServiceConflictModal.REPLACE_FILE) {
             var path = ramlRepository.join(directory.path, name);
             var file = ramlRepository.getByPath(path);
-            file.contents = contents;
+            file.doc.setValue(contents);
             return;
           }
           return createFileFromContents(directory, name, contents);
