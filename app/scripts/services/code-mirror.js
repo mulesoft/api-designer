@@ -137,7 +137,7 @@
               spaces += generateTabs(1);
             }
 
-            if (line.trimRight().slice(-1) === '|') {
+            if (line.replace(/\s+$/, '').slice(-1) === '|') {
               spaces += generateTabs(1);
               return;
             }

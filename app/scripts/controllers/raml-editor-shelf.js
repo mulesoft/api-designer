@@ -55,7 +55,7 @@
 
         // Calculate the place to insert the code:
         // + Make sure to start at end of node content so we don't erase anything!
-        var from = { line: node.lineNumber, ch: node.line.trimRight().length };
+        var from = { line: node.lineNumber, ch: node.line.replace(/\s+$/, '').length };
         var to = { line: from.line, ch: node.line.length };
         var nodeHasContent = !node.isEmpty && !lineIsArray;
 

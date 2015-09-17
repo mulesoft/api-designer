@@ -9941,7 +9941,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         var cursor = cm.getCursor();
         var line = cm.getLine(cursor.line).slice(0, cursor.ch);
         var indentUnit = cm.getOption('indentUnit');
-        var spaceCount = line.length - line.trimRight().length;
+        var spaceCount = line.length - line.replace(/\s+$/, '').length;
         var lineEndsWithTab = spaceCount >= indentUnit;
         // delete indentation if there is at least one right before
         // the cursor and number of whitespaces is a multiple of indentUnit
@@ -10027,7 +10027,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             } else if (lineStartsArray) {
               spaces += generateTabs(1);
             }
-            if (line.trimRight().slice(-1) === '|') {
+            if (line.replace(/\s+$/, '').slice(-1) === '|') {
               spaces += generateTabs(1);
               return;
             }
@@ -10500,7 +10500,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       hinter.autocompleteHelper = function (cm) {
         var cursor = cm.getCursor();
         var line = cm.getLine(cursor.line);
-        var word = line.trimLeft();
+        var word = line.replace(/^\s+/, '');
         var wordIsKey;
         var suggestions;
         var list;
@@ -12438,7 +12438,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         reader.onerror = function () {
           return deferred.reject(reader.error);
         };
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
         return deferred.promise;
       };
       /**
@@ -13016,7 +13016,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         // + Make sure to start at end of node content so we don't erase anything!
         var from = {
             line: node.lineNumber,
-            ch: node.line.trimRight().length
+            ch: node.line.replace(/\s+$/, '').length
           };
         var to = {
             line: from.line,
