@@ -48,7 +48,7 @@
         var cursor          = cm.getCursor();
         var line            = cm.getLine(cursor.line).slice(0, cursor.ch);
         var indentUnit      = cm.getOption('indentUnit');
-        var spaceCount      = line.length - line.trimRight().length;
+        var spaceCount      = line.length - line.replace(/\s+$/, '').length;
         var lineEndsWithTab = spaceCount >= indentUnit;
 
         // delete indentation if there is at least one right before
@@ -137,7 +137,7 @@
               spaces += generateTabs(1);
             }
 
-            if (line.trimRight().slice(-1) === '|') {
+            if (line.replace(/\s+$/, '').slice(-1) === '|') {
               spaces += generateTabs(1);
               return;
             }

@@ -254,7 +254,7 @@
       hinter.autocompleteHelper = function(cm) {
         var cursor       = cm.getCursor();
         var line         = cm.getLine(cursor.line);
-        var word         = line.trimLeft();
+        var word         = line.replace(/^\s+/, '');
         var wordIsKey;
         var suggestions;
         var list;
