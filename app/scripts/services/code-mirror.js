@@ -88,7 +88,9 @@
         'Cmd-S': 'save',
         'Ctrl-S': 'save',
         'Shift-Tab': 'indentLess',
-        'Shift-Ctrl-T': 'toggleTheme'
+        'Shift-Ctrl-T': 'toggleTheme',
+        'Ctrl-/': 'toggleComment',
+        'Cmd-/': 'toggleComment'
       };
 
       var autocomplete = function onChange(cm) {
@@ -243,6 +245,10 @@
 
         CodeMirror.commands.toggleTheme = function () {
           $rootScope.$broadcast('event:toggle-theme');
+        };
+
+        CodeMirror.commands.toggleComment = function () {
+          $rootScope.$broadcast('event:toggle-comment', service.getEditor());
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
