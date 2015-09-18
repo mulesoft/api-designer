@@ -9,11 +9,11 @@
     ) {
       var self = this;
 
-      self.prompt = function prompt (target) {
+      self.prompt = function prompt (target, prompTitle, proptMessage, contents, filename, stopPropagation) {
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var title  = 'Add a new file';
+        var title  = prompTitle || 'Add a new file';
 
-        var message = [
+        var message = proptMessage || [
           'For a new RAML spec, be sure to name your file <something>.raml; ',
           'For files to be !included, feel free to use an extension or not.'
         ].join('');
@@ -29,11 +29,11 @@
           }
         ];
 
-        return newNameModal.open(message, '', validations, title)
+        return newNameModal.open(message, filename || '', validations, title)
           .then(function (name) {
             // Need to catch errors from `generateFile`, otherwise
             // `newNameModel.open` will error random modal close strings.
-            return ramlRepository.generateFile(parent, name)
+            return ramlRepository.generateFile(parent, name, contents, stopPropagation)
               .catch(function (err) {
                 return $rootScope.$broadcast('event:notification', {
                   message: err.message,

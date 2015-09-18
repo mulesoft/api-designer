@@ -9982,7 +9982,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           'Cmd-S': 'save',
           'Ctrl-S': 'save',
           'Shift-Tab': 'indentLess',
-          'Shift-Ctrl-T': 'toggleTheme'
+          'Shift-Ctrl-T': 'toggleTheme',
+          'Ctrl-E': 'extract',
+          'Cmd-E': 'extract'
         };
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
@@ -10114,6 +10116,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         };
         CodeMirror.commands.toggleTheme = function () {
           $rootScope.$broadcast('event:toggle-theme');
+        };
+        CodeMirror.commands.extract = function () {
+          console.log('extracting!');
+          $rootScope.$broadcast('event:extract', service.getEditor());
         };
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
         CodeMirror.defineMIME('text/x-raml', 'raml');
@@ -11284,12 +11290,14 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           return file;
         });
       };
-      service.generateFile = function generateFile(parent, name) {
+      service.generateFile = function generateFile(parent, name, contents, stopPropagation) {
         return service.createFile(parent, name).then(function (file) {
           if (file.extension === 'raml') {
-            file.contents = ramlSnippets.getEmptyRaml();
+            file.contents = contents || ramlSnippets.getEmptyRaml();
           }
-          $rootScope.$broadcast('event:raml-editor-file-generated', file);
+          if (!stopPropagation) {
+            $rootScope.$broadcast('event:raml-editor-file-generated', file);
+          }
           return file;
         });
       };
@@ -11420,10 +11428,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$rootScope',
     function newFolderService(ramlRepository, newNameModal, $rootScope) {
       var self = this;
-      self.prompt = function prompt(target) {
+      self.prompt = function prompt(target, prompTitle, proptMessage, contents, filename, stopPropagation) {
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var title = 'Add a new file';
-        var message = [
+        var title = prompTitle || 'Add a new file';
+        var message = proptMessage || [
             'For a new RAML spec, be sure to name your file <something>.raml; ',
             'For files to be !included, feel free to use an extension or not.'
           ].join('');
@@ -11434,10 +11442,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 return !ramlRepository.getByPath(path);
               }
             }];
-        return newNameModal.open(message, '', validations, title).then(function (name) {
+        return newNameModal.open(message, filename || '', validations, title).then(function (name) {
           // Need to catch errors from `generateFile`, otherwise
           // `newNameModel.open` will error random modal close strings.
-          return ramlRepository.generateFile(parent, name).catch(function (err) {
+          return ramlRepository.generateFile(parent, name, contents, stopPropagation).catch(function (err) {
             return $rootScope.$broadcast('event:notification', {
               message: err.message,
               expires: true,
@@ -12737,7 +12745,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$prompt',
     '$confirm',
     '$modal',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal) {
+    'newFileService',
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, newFileService) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -12849,6 +12858,22 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         }), safeApplyWrapper($scope, function failure(error) {
           $rootScope.$broadcast('event:raml-parser-error', error);
         }));
+      });
+      $rootScope.$on('event:extract', function ($event, editor) {
+        var message = 'Creates a new file containing the selected content.';
+        var contents = editor.getSelection();
+        var key = contents.split(':');
+        var filename;
+        if (key.length > 1) {
+          key = key[0];
+          filename = (key + '.raml').replace(/\s/g, '');
+          contents = contents.replace(key + ':', '');
+          return newFileService.prompt($scope.homeDirectory, 'Extract to', message, contents, filename, true).then(function (result) {
+            if (filename) {
+              editor.replaceSelection(key + ': !include ' + result.path);
+            }
+          });
+        }
       });
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
         $scope.title = raml.title;

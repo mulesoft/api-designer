@@ -375,14 +375,16 @@
           });
       };
 
-      service.generateFile = function generateFile(parent, name) {
+      service.generateFile = function generateFile(parent, name, contents, stopPropagation) {
         return service.createFile(parent, name)
           .then(function (file) {
             if (file.extension === 'raml') {
-              file.contents = ramlSnippets.getEmptyRaml();
+              file.contents = contents || ramlSnippets.getEmptyRaml();
             }
 
-            $rootScope.$broadcast('event:raml-editor-file-generated', file);
+            if (!stopPropagation) {
+              $rootScope.$broadcast('event:raml-editor-file-generated', file);
+            }
 
             return file;
           });
