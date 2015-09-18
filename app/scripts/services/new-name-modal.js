@@ -12,6 +12,7 @@
           .open({
             templateUrl: 'views/new-name-modal.html',
             controller:  'NewNameController',
+            windowClass: 'modal in',
             resolve: {
               message:     function messageResolver () { return message; },
               title:       function titleResolver () { return title; },

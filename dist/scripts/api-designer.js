@@ -12113,6 +12113,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return $modal.open({
           templateUrl: 'views/new-name-modal.html',
           controller: 'NewNameController',
+          windowClass: 'modal in',
           resolve: {
             message: function messageResolver() {
               return message;
