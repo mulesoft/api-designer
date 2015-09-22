@@ -5157,6 +5157,10 @@ a.raml-console-resource-path-active {
   color: #777;
 }
 
+.raml-console-sidebar-input-tooltip-container-enum {
+  margin-right: 19px;
+}
+
 .raml-console-sidebar-input-tooltip-container {
   position: absolute;
   right: 7px;

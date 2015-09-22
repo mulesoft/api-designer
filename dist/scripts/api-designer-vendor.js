@@ -95082,11 +95082,11 @@ exports.javascript = require('./javascript');
     'hc.marked',
     'ui.codemirror',
     'hljs'
-  ]).config(function (hljsServiceProvider) {
+  ]).config(['hljsServiceProvider', function (hljsServiceProvider) {
     hljsServiceProvider.setOptions({
       classPrefix: 'raml-console-hljs-'
     });
-  });
+  }]);
 
   var loc = window.location;
   var uri = loc.protocol + '//' + loc.host + loc.pathname.replace(/\/$/, '');
@@ -95149,7 +95149,7 @@ exports.javascript = require('./javascript');
   };
 
   angular.module('RAML.Directives')
-    .directive('clickOutside', RAML.Directives.clickOutside);
+    .directive('clickOutside', ['$document', RAML.Directives.clickOutside]);
 })();
 
 (function () {
@@ -95160,7 +95160,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/close-button.tpl.html',
       replace: true,
-      controller: function($scope, $rootScope) {
+      controller: ['$scope', '$rootScope', function($scope, $rootScope) {
         $scope.close = function () {
           var $inactiveElements = jQuery('.raml-console-tab').add('.raml-console-resource').add('li');
 
@@ -95170,7 +95170,7 @@ exports.javascript = require('./javascript');
           $scope.traits = null;
           $scope.methodInfo = {};
         };
-      }
+      }]
     };
   };
 
@@ -95186,7 +95186,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/documentation.tpl.html',
       replace: true,
-      controller: function($scope) {
+      controller: ['$scope', function($scope) {
         var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
         var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
 
@@ -95280,8 +95280,8 @@ exports.javascript = require('./javascript');
               result += 'required, ';
             }
 
-            if (parameter.enum) {
-              var enumValues = $scope.unique(parameter.enum);
+            if (parameter['enum']) {
+              var enumValues = $scope.unique(parameter['enum']);
 
               if (enumValues.length > 1) {
                 result += 'one of ';
@@ -95395,7 +95395,7 @@ exports.javascript = require('./javascript');
               .velocity('slideUp');
           }
         };
-      }
+      }]
     };
   };
 
@@ -95408,14 +95408,14 @@ exports.javascript = require('./javascript');
   angular.module('RAML.Directives').directive('dynamicName', ['$parse', function($parse) {
     return {
       restrict: 'A',
-      controller: function($scope, $element, $attrs){
+      controller: ['$scope', '$element', '$attrs', function($scope, $element, $attrs){
         var name = $parse($attrs.dynamicName)($scope);
 
         delete($attrs.dynamicName);
         $element.removeAttr('data-dynamic-name');
         $element.removeAttr('dynamic-name');
         $attrs.$set('name', name);
-      }
+      }]
     };
   }]);
 })();
@@ -95428,7 +95428,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/method-list.tpl.html',
       replace: true,
-      controller: function($scope, $timeout, $rootScope) {
+      controller: ['$scope', '$timeout', '$rootScope', function($scope, $timeout, $rootScope) {
         function loadExamples () {
           $scope.context.uriParameters.reset($scope.resource.uriParametersForDocumentation);
           $scope.context.queryParameters.reset($scope.methodInfo.queryParameters);
@@ -95601,7 +95601,7 @@ exports.javascript = require('./javascript');
             jQuery($this).siblings('.raml-console-tab').removeClass('raml-console-is-active');
           }
         };
-      }
+      }]
     };
   };
 
@@ -95623,7 +95623,7 @@ exports.javascript = require('./javascript');
         type: '@',
         title: '@'
       },
-      controller: function ($scope, $attrs) {
+      controller: ['$scope', '$attrs', function ($scope, $attrs) {
         $scope.markedOptions = RAML.Settings.marked;
 
         if ($attrs.hasOwnProperty('enableCustomParameters')) {
@@ -95669,7 +95669,7 @@ exports.javascript = require('./javascript');
             return el.name !== param.name;
           });
         };
-      }
+      }]
     };
   };
 
@@ -95702,11 +95702,11 @@ exports.javascript = require('./javascript');
     return {
       restrict: 'E',
       templateUrl: 'directives/raml-client-generator.tpl.html',
-      controller: function ($scope) {
+      controller: ['$scope', function ($scope) {
         $scope.downloadJavaScriptClient = function () {
           return downloadClient('javascript', $scope.rawRaml);
         };
-      }
+      }]
     };
   };
 
@@ -95726,7 +95726,7 @@ exports.javascript = require('./javascript');
         model: '=',
         param: '='
       },
-      controller: function($scope) {
+      controller: ['$scope', function($scope) {
         var bodyContent = $scope.$parent.context.bodyContent;
         var context     = $scope.$parent.context[$scope.$parent.type];
 
@@ -95737,13 +95737,13 @@ exports.javascript = require('./javascript');
         Object.keys(context.plain).map(function (key) {
           var definition = context.plain[key].definitions[0];
 
-          if (typeof definition.enum !== 'undefined') {
-            context.values[definition.id][0] = definition.enum[0];
+          if (typeof definition['enum'] !== 'undefined') {
+            context.values[definition.id][0] = definition['enum'][0];
           }
         });
 
         $scope.canOverride = function (definition) {
-          return definition.type === 'boolean' ||  typeof definition.enum !== 'undefined';
+          return definition.type === 'boolean' ||  typeof definition['enum'] !== 'undefined';
         };
 
         $scope.overrideField = function ($event, definition) {
@@ -95764,7 +95764,7 @@ exports.javascript = require('./javascript');
             $this.text('Cancel override');
           } else {
             definition.overwritten = false;
-            $scope.$parent.context[$scope.$parent.type].values[definition.id][0] = definition.enum[0];
+            $scope.$parent.context[$scope.$parent.type].values[definition.id][0] = definition['enum'][0];
           }
         };
 
@@ -95773,11 +95773,11 @@ exports.javascript = require('./javascript');
         };
 
         $scope.isDefault = function (definition) {
-          return typeof definition.enum === 'undefined' && definition.type !== 'boolean';
+          return typeof definition['enum'] === 'undefined' && definition.type !== 'boolean';
         };
 
         $scope.isEnum = function (definition) {
-          return typeof definition.enum !== 'undefined';
+          return typeof definition['enum'] !== 'undefined';
         };
 
         $scope.isBoolean = function (definition) {
@@ -95785,7 +95785,7 @@ exports.javascript = require('./javascript');
         };
 
         $scope.hasExampleValue = function (value) {
-          return $scope.isEnum(value) ? false : value.type === 'boolean' ? false : typeof value.enum !== 'undefined' ? false : typeof value.example !== 'undefined' ? true : false;
+          return $scope.isEnum(value) ? false : value.type === 'boolean' ? false : typeof value['enum'] !== 'undefined' ? false : typeof value.example !== 'undefined' ? true : false;
         };
 
         $scope.reset = function (param) {
@@ -95800,7 +95800,7 @@ exports.javascript = require('./javascript');
         $scope.unique = function (arr) {
           return arr.filter (function (v, i, a) { return a.indexOf (v) === i; });
         };
-      }
+      }]
     };
   };
 
@@ -95816,7 +95816,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/raml-initializer.tpl.html',
       replace: true,
-      controller: function($scope, $window) {
+      controller: ['$scope', '$window', function($scope, $window) {
         $scope.ramlUrl    = '';
 
         ramlParserWrapper.onParseError(function(error) {
@@ -95879,12 +95879,12 @@ exports.javascript = require('./javascript');
           $scope.ramlUrl = document.location.search.replace('?raml=', '');
           $scope.loadFromUrl();
         }
-      }
+      }]
     };
   };
 
   angular.module('RAML.Directives')
-    .directive('ramlInitializer', RAML.Directives.ramlInitializer);
+    .directive('ramlInitializer', ['ramlParserWrapper', RAML.Directives.ramlInitializer]);
 })();
 
 (function () {
@@ -95910,7 +95910,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/root-documentation.tpl.html',
       replace: true,
-      controller: function($scope, $timeout) {
+      controller: ['$scope', '$timeout', function($scope, $timeout) {
         $scope.markedOptions = RAML.Settings.marked;
         $scope.selectedSection = 'all';
 
@@ -96003,7 +96003,7 @@ exports.javascript = require('./javascript');
 
           return result;
         };
-      }
+      }]
     };
   };
 
@@ -96019,7 +96019,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'directives/sidebar.tpl.html',
       replace: true,
-      controller: function ($scope, $timeout) {
+      controller: ['$scope', '$timeout', function ($scope, $timeout) {
         var defaultSchemaKey = Object.keys($scope.securitySchemes).sort()[0];
         var defaultSchema    = $scope.securitySchemes[defaultSchemaKey];
 
@@ -96464,7 +96464,7 @@ exports.javascript = require('./javascript');
                 return;
               }
 
-              authStrategy = RAML.Client.AuthStrategies.for(scheme, $scope.credentials);
+              authStrategy = RAML.Client.AuthStrategies.forScheme(scheme, $scope.credentials);
               authStrategy.authenticate().then(function(token) {
                 token.sign(request);
                 $scope.requestOptions = request.toOptions();
@@ -96620,7 +96620,7 @@ exports.javascript = require('./javascript');
         $scope.toggleResponseMetadata = function () {
           $scope.showResponseMetadata = !$scope.showResponseMetadata;
         };
-      }
+      }]
     };
   };
 
@@ -96743,7 +96743,7 @@ exports.javascript = require('./javascript');
           minLength: validation.minLength || null,
           maxLength: validation.maxLength || null,
           required: validation.required || null,
-          enum: validation.enum || null,
+          'enum': validation['enum'] || null,
           pattern: validation.pattern || null,
           minimum: validation.minimum || null,
           maximum: validation.maximum || null,
@@ -96764,7 +96764,7 @@ exports.javascript = require('./javascript');
   };
 
   angular.module('RAML.Directives')
-    .directive('validate', RAML.Directives.validate);
+    .directive('validate', ['$parse', RAML.Directives.validate]);
 })();
 
 (function () {
@@ -96784,13 +96784,13 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'resources/resource-type.tpl.html',
       replace: true,
-      controller: function ($scope) {
+      controller: ['$scope', function ($scope) {
         var resourceType = $scope.resource.resourceType;
 
         if (typeof resourceType === 'object') {
           $scope.resource.resourceType = Object.keys(resourceType).join();
         }
-      }
+      }]
     };
   };
 
@@ -96809,7 +96809,7 @@ exports.javascript = require('./javascript');
       scope: {
         src: '@'
       },
-      controller: function($scope, $window, $attrs) {
+      controller: ['$scope', '$window', '$attrs', function($scope, $window, $attrs) {
         $scope.proxy                  = $window.RAML.Settings.proxy;
         $scope.disableTitle           = false;
         $scope.resourcesCollapsed     = false;
@@ -96870,16 +96870,6 @@ exports.javascript = require('./javascript');
           var $section = $this
             .closest('.raml-console-resource-list-item')
             .find('.raml-console-resource-list');
-
-          if ($section.hasClass('raml-console-is-collapsed')) {
-            $section.velocity('slideDown', {
-              duration: 200
-            });
-          } else {
-            $section.velocity('slideUp', {
-              duration: 200
-            });
-          }
 
           collection[index] = !collection[index];
 
@@ -96950,7 +96940,7 @@ exports.javascript = require('./javascript');
             }, 10);
           }
         });
-      },
+      }],
       link: function($scope) {
         ramlParserWrapper.onParseSuccess(function(raml) {
           $scope.raml         = RAML.Inspector.create(raml);
@@ -96976,7 +96966,7 @@ exports.javascript = require('./javascript');
   };
 
   angular.module('RAML.Directives')
-    .directive('ramlConsole', RAML.Directives.resources);
+    .directive('ramlConsole', ['ramlParserWrapper', RAML.Directives.resources]);
 })();
 
 (function () {
@@ -96990,11 +96980,11 @@ exports.javascript = require('./javascript');
       scope: {
         credentials: '='
       },
-      controller: function ($scope) {
+      controller: ['$scope', function ($scope) {
         $scope.onChange = function () {
           $scope.$parent.context.forceRequest = false;
         };
-      }
+      }]
     };
   };
 
@@ -97013,11 +97003,11 @@ exports.javascript = require('./javascript');
       scope: {
         credentials: '='
       },
-      controller: function ($scope) {
+      controller: ['$scope', function ($scope) {
         $scope.onChange = function () {
           $scope.$parent.context.forceRequest = false;
         };
-      }
+      }]
     };
   };
 
@@ -97033,7 +97023,7 @@ exports.javascript = require('./javascript');
       restrict: 'E',
       templateUrl: 'security/oauth2.tpl.html',
       replace: true,
-      controller: function ($scope) {
+      controller: ['$scope', function ($scope) {
         $scope.onChange = function () {
           $scope.$parent.context.forceRequest = false;
         };
@@ -97079,7 +97069,7 @@ exports.javascript = require('./javascript');
         /* jshint camelcase: true */
 
         $scope.credentials.grant = $scope.grants[0].value;
-      }
+      }]
     };
   };
 
@@ -97151,7 +97141,7 @@ exports.javascript = require('./javascript');
   };
 
   angular.module('RAML.Services')
-    .service('ramlParserWrapper', RAML.Services.RAMLParserWrapper);
+    .service('ramlParserWrapper', ['$rootScope', 'ramlParser', '$q', RAML.Services.RAMLParserWrapper]);
 })();
 
 'use strict';
@@ -97207,7 +97197,7 @@ exports.javascript = require('./javascript');
   'use strict';
 
   RAML.Client.AuthStrategies = {
-    for: function(scheme, credentials) {
+    forScheme: function(scheme, credentials) {
       if (!scheme) {
         return RAML.Client.AuthStrategies.anonymous();
       }
@@ -97850,10 +97840,10 @@ exports.javascript = require('./javascript');
     required: function(value) {
       return !isEmpty(value);
     },
-    boolean: function(value) {
+    'boolean': function(value) {
       return isEmpty(value) || value === 'true' || value === 'false';
     },
-    enum: function(enumeration) {
+    'enum': function(enumeration) {
       return function(value) {
         return isEmpty(value) || enumeration.indexOf(value) > -1;
       };
@@ -97926,8 +97916,8 @@ exports.javascript = require('./javascript');
     string: function(definition) {
       var validations = baseValidations(definition);
 
-      if (Array.isArray(definition.enum)) {
-        validations.enum = VALIDATIONS.enum(definition.enum);
+      if (Array.isArray(definition['enum'])) {
+        validations['enum'] = VALIDATIONS['enum'](definition['enum']);
       }
 
       if (definition.minLength != null) {
@@ -97959,9 +97949,12 @@ exports.javascript = require('./javascript');
       return validations;
     },
 
-    boolean: function(definition) {
+    'boolean': function(definition) {
       var validations = baseValidations(definition);
-      validations.boolean = VALIDATIONS.boolean;
+      // Ignore better written in dot notation rule
+      /*jshint -W069 */
+      validations['boolean'] = VALIDATIONS['boolean'];
+      /*jshint +W069 */
       return validations;
     },
 
@@ -98414,7 +98407,7 @@ RAML.Inspector = (function() {
   BodyContent.prototype.clear = function (info) {
     var that = this.definitions[this.selected];
     Object.keys(this.values).map(function (key) {
-      if (typeof info[key][0].enum === 'undefined' || info[key][0].overwritten === true) {
+      if (typeof info[key][0]['enum'] === 'undefined' || info[key][0].overwritten === true) {
         that.values[key] = [''];
       }
     });
@@ -98425,7 +98418,7 @@ RAML.Inspector = (function() {
     if (info) {
       Object.keys(info).map(function (key) {
         if (typeof field === 'undefined' || field === key) {
-          if (typeof info[key][0].enum === 'undefined') {
+          if (typeof info[key][0]['enum'] === 'undefined') {
             that.values[key][0] = info[key][0].example;
           }
         }
@@ -98563,10 +98556,10 @@ RAML.Inspector = (function() {
     Object.keys(this.plain).map(function (key) {
       var data = this.plain[key].definitions[0];
 
-      if (typeof data.enum !== 'undefined') {
+      if (typeof data['enum'] !== 'undefined') {
         if (!data.required) {
           var temp = [''];
-          data.enum = temp.concat(data.enum);
+          data['enum'] = temp.concat(data['enum']);
         }
       }
 
@@ -98589,7 +98582,7 @@ RAML.Inspector = (function() {
   NamedParameters.prototype.clear = function (info) {
     var that = this;
     Object.keys(this.values).map(function (key) {
-      if (typeof info[key][0].enum === 'undefined' || info[key][0].overwritten === true) {
+      if (typeof info[key][0]['enum'] === 'undefined' || info[key][0].overwritten === true) {
         that.values[key] = [''];
       }
     });
@@ -98600,7 +98593,7 @@ RAML.Inspector = (function() {
     if (info) {
       Object.keys(info).map(function (key) {
         if (typeof field === 'undefined' || field === key) {
-          if (typeof info[key][0].enum === 'undefined') {
+          if (typeof info[key][0]['enum'] === 'undefined') {
             if (info[key][0].type === 'date' && typeof info[key][0].example === 'object') {
               info[key][0].example = info[key][0].example.toUTCString();
             }
@@ -98965,6 +98958,20 @@ RAML.Inspector = (function() {
   }
 
   /**
+   * Retrieve body request with valid format depending content type
+   *
+   * @param {Mixed} data
+   * @param {String} contentType
+   * @return {Mixed}
+   */
+  function getBodyRequest(data, contentType) {
+    if (contentType === 'application/x-www-form-urlencoded' && typeof data === 'object') {
+      return uriEncode(data);
+    }
+    return data;
+  }
+
+  /**
    * Sanitize the scopes option to be a string.
    *
    * @param  {Array}  scopes
@@ -99061,6 +99068,7 @@ RAML.Inspector = (function() {
     ClientOAuth2.prototype.request = function (options, done) {
       var xhr     = new root.XMLHttpRequest();
       var headers = options.headers || {};
+      var body = getBodyRequest(options.data, options.contentType);
 
       // Open the request to the url and method.
       xhr.open(options.method, options.url);
@@ -99086,7 +99094,7 @@ RAML.Inspector = (function() {
       });
 
       // Make the request with the body.
-      xhr.send(options.body);
+      xhr.send(body);
     };
   } else {
     var url   = require('url');
@@ -99236,7 +99244,7 @@ RAML.Inspector = (function() {
         'Content-Type':  'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + authorization
       },
-      body: uriEncode({
+      data: uriEncode({
         refresh_token: this.refreshToken,
         grant_type:    'refresh_token'
       })
@@ -99298,7 +99306,7 @@ RAML.Inspector = (function() {
         'Content-Type':  'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + authorization
       },
-      body: uriEncode({
+      data: uriEncode({
         scope:      sanitizeScope(options.scopes),
         username:   username,
         password:   password,
@@ -99448,7 +99456,7 @@ RAML.Inspector = (function() {
         'Content-Type':  'application/x-www-form-urlencoded',
         'Authorization': 'Basic ' + authorization
       },
-      body: uriEncode({
+      data: uriEncode({
         scope:      sanitizeScope(options.scopes),
         grant_type: 'client_credentials'
       })
@@ -99560,7 +99568,7 @@ RAML.Inspector = (function() {
         'Accept':       'application/json, application/x-www-form-urlencoded',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: uriEncode({
+      data: uriEncode({
         code:          query.code,
         grant_type:    'authorization_code',
         redirect_uri:  options.redirectUri,
@@ -99707,8 +99715,8 @@ RAML.Inspector = (function() {
         // Immediately return empty values with attempting to sanitize.
         if (isEmpty(value)) {
           // Fallback to providing the default value instead.
-          if (config.default != null) {
-            return sanitization(config.default, key, object);
+          if (config["default"] != null) {
+            return sanitization(config["default"], key, object);
           }
 
           // Return an empty array for repeatable values.
@@ -99827,7 +99835,7 @@ RAML.Inspector = (function() {
       string:  String,
       number:  toNumber,
       integer: toInteger,
-      boolean: toBoolean,
+      "boolean": toBoolean,
       date:    toDate
     };
 
@@ -100193,7 +100201,7 @@ RAML.Inspector = (function() {
       date:    isDate,
       number:  isNumber,
       integer: isInteger,
-      boolean: isBoolean,
+      "boolean": isBoolean,
       string:  isString
     };
 
@@ -100207,7 +100215,7 @@ RAML.Inspector = (function() {
       maximum:   isMaximum,
       minLength: isMinimumLength,
       maxLength: isMaximumLength,
-      enum:      isEnum,
+      "enum":      isEnum,
       pattern:   isPattern
     };
 
@@ -100478,7 +100486,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    </div>\n" +
     "\n" +
     "    <p class=\"raml-console-sidebar-input-container\" ng-repeat=\"param in context[type].plain\">\n" +
-    "      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-if=\"param.definitions[0].description\">\n" +
+    "      <span class=\"raml-console-sidebar-input-tooltip-container\" ng-if=\"param.definitions[0].description\" ng-class=\"{'raml-console-sidebar-input-tooltip-container-enum': param.definitions[0].enum}\">\n" +
     "        <button tabindex=\"-1\" class=\"raml-console-sidebar-input-tooltip\"><span class=\"raml-console-visuallyhidden\">Show documentation</span></button>\n" +
     "        <span class=\"raml-console-sidebar-tooltip-flyout\">\n" +
     "          <span marked=\"param.definitions[0].description\" opts=\"markedOptions\" class=\"raml-console-marked-content\"></span>\n" +
@@ -100609,8 +100617,8 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    <sidebar ng-show=\"raml.baseUri\"></sidebar>\n" +
     "\n" +
     "    <div class=\"raml-console-sidebar-controls raml-console-sidebar-controls-collapse\" ng-click=\"collapseSidebar($event)\" style=\"right: -1px; position: absolute;\"ng-hide=\"!raml.baseUri\">\n" +
-    "      <button class=\"raml-console-collapse\">\n" +
-    "        <svg style=\"transform: rotate(-180deg);\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 612 792\" enable-background=\"new 0 0 612 792\" xml:space=\"preserve\">\n" +
+    "      <button class=\"raml-console-collapse\" style=\"height: 21px; margin-top: 9px;\">\n" +
+    "        <svg style=\"transform: rotate(-180deg); display: inline;\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 612 792\" enable-background=\"new 0 0 612 792\" xml:space=\"preserve\">\n" +
     "          <g id=\"Layer_3\">\n" +
     "            <polygon fill=\"#585961\" points=\"480.9,396 142.1,46.2 142.1,745.8  \"/>\n" +
     "          </g>\n" +
@@ -100620,8 +100628,9 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "    </div>\n" +
     "\n" +
     "    <div class=\"raml-console-sidebar-controls raml-console-sidebar-controls-fullscreen\" ng-click=\"toggleSidebar($event)\" style=\"right: -1px; position: absolute;\">\n" +
-    "      <button class=\"raml-console-collapse\">\n" +
-    "        <svg style=\"transform: rotate(-180deg);\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 612 792\" enable-background=\"new 0 0 612 792\" xml:space=\"preserve\">\n" +
+    "      <button class=\"raml-console-collapse\" style=\"height: 21px; margin-top: 9px;\">\n" +
+    "\n" +
+    "        <svg style=\"transform: rotate(-180deg); display: inline;\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 612 792\" enable-background=\"new 0 0 612 792\" xml:space=\"preserve\">\n" +
     "          <g id=\"Layer_3\">\n" +
     "            <polygon fill=\"#585961\" points=\"480.9,396 142.1,46.2 142.1,745.8  \"/>\n" +
     "          </g>\n" +
