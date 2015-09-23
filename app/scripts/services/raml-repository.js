@@ -22,11 +22,11 @@
     this.contents  = contents || '';
     this.persisted = options.persisted || false;
     this.dirty     = options.dirty || !this.persisted;
-    this.root      = options.root;
+    this.root      = options.root; //|| contents ? contents.startsWith('#%RAML 0.8') : undefined;
   }
 
   angular.module('fs', ['raml', 'utils'])
-    .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
+    .factory('ramlRepository', function ($q, ramlSnippets, fileSystem, eventEmitter) {
       var service   = {};
       var BASE_PATH = '/';
       var rootFile;
@@ -145,7 +145,7 @@
         });
 
         var files = separated.file.filter(notMetaFile).map(function (file) {
-          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true, root: file.root} );
+          return new RamlFile(file.path, file.content, { dirty: false, persisted: true, root: file.root} );
         });
 
         var directories = separated.folder.map(function (directory) {
@@ -227,7 +227,7 @@
       service.generateDirectory = function createDirectory(parent, name) {
         return service.createDirectory(parent, name)
           .then(function (directory) {
-            $rootScope.$broadcast('event:raml-editor-directory-created', directory);
+            eventEmitter.publish('event:raml-editor-directory-created', directory);
 
             return directory;
           });
@@ -263,7 +263,7 @@
             return fileSystem.remove(directory.path);
           })
           .then(function (directory) {
-            $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
+            eventEmitter.publish('event:raml-editor-directory-removed', directory);
           });
       };
 
@@ -281,7 +281,7 @@
             function () {
               directory.name = newName;
               directory.path = newPath;
-              $rootScope.$broadcast('event:raml-editor-filetree-modified', directory);
+              eventEmitter.publish('event:raml-editor-filetree-modified', directory);
               return directory;
             },
             handleErrorFor(directory)
@@ -307,7 +307,7 @@
         function modifyFile() {
           file.name = newName;
           file.path = newPath;
-          $rootScope.$broadcast('event:raml-editor-filetree-modified', file);
+          eventEmitter.publish('event:raml-editor-filetree-modified', file);
           return file;
         }
 
@@ -359,7 +359,7 @@
               parent.children.splice(index, 1);
             }
 
-            $rootScope.$broadcast('event:raml-editor-file-removed', file);
+            eventEmitter.publish('event:raml-editor-file-removed', file);
           });
       };
 
@@ -369,20 +369,24 @@
 
         return insertFileSystem(parent, file)
           .then(function () {
-            $rootScope.$broadcast('event:raml-editor-file-created', file);
+            eventEmitter.publish('event:raml-editor-file-created', file);
 
             return file;
           });
       };
 
-      service.generateFile = function generateFile(parent, name) {
+      service.generateFile = function generateFile(parent, name, contents, stopPropagation) {
         return service.createFile(parent, name)
           .then(function (file) {
             if (file.extension === 'raml') {
-              file.contents = ramlSnippets.getEmptyRaml();
+              file.contents = contents || ramlSnippets.getEmptyRaml();
+            } else {
+              file.contents = contents;
             }
 
-            $rootScope.$broadcast('event:raml-editor-file-generated', file);
+            if (!stopPropagation) {
+              eventEmitter.publish('event:raml-editor-file-generated', file);
+            }
 
             return file;
           });
@@ -464,6 +468,7 @@
         ;
       };
 
+      // TODO: Check Mocking Service
       service.loadMeta = function loadMeta(file) {
         var metaFile = new RamlFile(file.path + '.meta');
         return service.loadFile(metaFile).then(

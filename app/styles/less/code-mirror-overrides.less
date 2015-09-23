@@ -1,4 +1,41 @@
 /* CodeMirror Overrides */
+.cm-s-solarized.CodeMirror {
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+
+.cm-s-solarized.cm-s-dark .CodeMirror-selected {
+  background: ##6e8992;
+}
+
+.cm-s-solarized .cm-tab:before {
+  content: "➤";   /*visualize tab character*/
+  color: ##6e8992;
+}
+
+.cm-s-solarized .cm-comment {
+  color: #425358;
+  font-style:italic;
+}
+
+.CodeMirror-linebackground {
+  left: 4px;
+}
+
+.CodeMirror-activeline-background {
+  background: #35393c;
+}
+
+.cm-s-solarized.cm-s-dark {
+   text-shadow: none;
+}
+
+.CodeMirror-sizer {
+  position: relative;
+  border-right: 0;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
 
 div.CodeMirror {
   font-size: 12px;
@@ -29,11 +66,14 @@ div.CodeMirror {
 }
 
 .cm-s-solarized.cm-s-dark {
-  background-color: rgb(24,25,29);
+  // background-color: rgb(24,25,29);
+  background-color: #1D1F21;
 }
 
 .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
-  background-color: rgb(20,21,25);
+  // background-color: rgb(20,21,25);
+  background-color: #1D1F21;
+  border-color: #003746;
 }
 
 .CodeMirror-code .CodeMirror-hint-ghost {

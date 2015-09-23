@@ -7,6 +7,7 @@
   user-select: none;
   position: relative;
   z-index: 200;
+  font-size: 12px;
 
   flex: 0;
   min-width: 200px;
@@ -15,10 +16,132 @@
 
   flex-direction: column;
 
+  background-color: #1d1f21;
+
+  // border: solid 1px #1b1b1b;
+
   button {
     .button;
     float: left;
     margin: 4px 4px 4px 0;
+  }
+
+  .section-title:nth-last-child(2) {
+    border-top: none;
+  }
+
+  .section-title {
+    background-color: #282828;
+    padding: 1px;
+    color: #E1E1E4;
+    border: 1px solid #1b1b1b;
+    // font-size: 11px;
+    padding-top: 2px;
+
+    .caret-icon {
+      font-size: 13px;
+      margin-left: 5px;
+      margin-right: 3px;
+      vertical-align: text-top;
+      cursor: pointer;
+      min-width: 8px;
+    }
+
+    .file-icon {
+      float: right;
+      font-size: 12px;
+      margin: 1px;
+      margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .file-icon:hover::after  {
+      content: 'New File';
+      margin-top: 15px;
+      position: absolute;
+      font-size: 10px;
+      width: 40px;
+      background: #5a5a5a;
+      padding: 3px;
+      margin-left: -1px;
+      z-index: 10;
+    }
+
+    .folder-icon {
+      float: right;
+      font-size: 13px;
+      margin: 1px;
+      margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .folder-icon:hover::after  {
+      content: 'New Folder';
+      margin-top: 15px;
+      position: absolute;
+      font-size: 10px;
+      width: 55px;
+      background: #5a5a5a;
+      padding: 3px;
+      margin-left: -1px;
+      z-index: 10;
+    }
+
+    .save-icon {
+      float: right;
+      font-size: 13px;
+      margin: 1px;
+      margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .save-icon:hover::after  {
+      content: 'Save All';
+      margin-top: 15px;
+      position: absolute;
+      font-size: 10px;
+      width: 37px;
+      background: #5a5a5a;
+      padding: 3px;
+      margin-left: -1px;
+      z-index: 1;
+    }
+  }
+
+  .section-search {
+    margin: 2px;
+    border: 1px solid #3C3C3C;
+    background-color: #565656;
+    padding-left: 3px;
+
+    .search-icon {
+      float: right;
+      font-size: 13px;
+      margin: 1px;
+      margin-right: 3px;
+    }
+
+    input {
+      border: 0;
+      width: 91%;
+      background-color: #565656;
+      outline: none;
+    }
+  }
+
+  .angular-ui-tree-node {
+    margin: 2px;
+    margin-top: 1px;
+    margin-right: 0;
+  }
+
+  .angular-ui-tree-nodes {
+    padding-left: 13px;
+      // height: 1000px;
+  }
+
+  .angular-ui-working-node {
+    padding-left: 17px;
   }
 
   .file-list {
@@ -28,7 +151,8 @@
     list-style: none;
     line-height: 15px;
 
-    background-color: rgb(20,21,25);
+    // background-color: #252526;
+    background-color: #1d1f21;
     color: #888;
 
     flex: 1;
@@ -37,8 +161,20 @@
       color: #333;
     }
 
+    .file-item2 {
+      padding-left: 17px !important;
+
+      &.root::before {
+        content: '\2605 ';
+        font-size: 10px;
+        margin-left: -13px;
+        margin-right: 3px;
+        color: #ccc;
+        z-index: 1;
+      }
+    }
+
     .file-item {
-      padding: 5px 10px;
       cursor: pointer;
       white-space: nowrap;
 
@@ -62,9 +198,53 @@
         color: #ddd;
       }
 
+      i.close-icon {
+        z-index: 1;
+        margin-right: 5px;
+      }
+
+      &.workingfile {
+        color: #3C3C3C;
+
+        div.background {
+          background-color: #a2cde5;
+          width: 198px;
+          // position: fixed;
+          left: 0;
+          position: absolute;
+          left: -30%;
+        }
+
+        .file-name {
+          background-color: #a2cde5;
+        }
+      }
+
+      &.workingfile:hover{
+        color: #3C3C3C;
+        background-color: #a2cde5;
+      }
+
       &.currentfile {
         color: #ddd;
         background-color: @cello_blue;
+
+        i.fa-cog {
+          padding-right: 4px;
+        }
+
+        div.background {
+          background-color: @cello_blue;
+          width: 198px;
+          // position: fixed;
+          left: 0;
+          position: absolute;
+          left: -30%;
+        }
+
+        .file-name {
+          background-color: @cello_blue;
+        }
       }
 
       &.dragover {
@@ -83,10 +263,17 @@
       }
 
       .file-name {
+        z-index: 1;
         flex: 1;
 
         overflow: hidden;
         text-overflow: ellipsis;
+        font-size: 12px;
+
+        i {
+          font-size: 13px;
+          vertical-align: text-top;
+        }
       }
 
       .fa:not(.icon) {
@@ -100,7 +287,11 @@
       }
 
       &.dirty .file-name:before {
-        content: '* ';
+        content: '\25CF ';
+      }
+
+      &.dirty .file-name {
+        margin-left: -11px;
       }
 
       &.no-drop {
@@ -114,6 +305,7 @@
       /* Patch for embedded designer */
       [ng-click] {
         cursor: inherit;
+        z-index: 1;
       }
     }
   }

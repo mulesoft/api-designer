@@ -1,0 +1,14 @@
+<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)" class="omnisearch">
+  <input type="text" placeholder="Type '?' to get help" autofocus
+    ng-change="omnisearch.search()"
+    ng-model="omnisearch.searchText"
+    />
+  <ul>
+    <li class="result" ng-repeat="result in omnisearch.searchResults" ng-mouseover="omnisearch.showContent(result, false, true)" ng-click="omnisearch.showContent(result)">
+      <span ng-bind-html="result.name"></span>
+    </li>
+    <li ng-if="omnisearch.showHelp"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>
+    <li ng-if="omnisearch.showHelp"><span class="command">@</span> Go to resource</li>
+    <li ng-if="omnisearch.showHelp"><span class="command">#</span> Search text</li>
+  </ul>
+</div>

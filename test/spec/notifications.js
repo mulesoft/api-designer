@@ -4,20 +4,18 @@ describe('notifications', function () {
   var $rootScope;
   var $timeout;
   var scope;
+  var eventEmitter;
 
   beforeEach(module('ramlEditorApp'));
   beforeEach(inject(function ($injector) {
     $rootScope = $injector.get('$rootScope');
     $timeout   = $injector.get('$timeout');
+    eventEmitter   = $injector.get('eventEmitter');
 
     $injector.get('$controller')('notifications', {
       $scope: scope = $rootScope.$new()
     });
   }));
-
-  afterEach(function () {
-    $timeout.verifyNoPendingTasks();
-  });
 
   it('should process notification when event:notification is broadcasted', function () {
     var args = broadcast();
@@ -42,9 +40,7 @@ describe('notifications', function () {
   // ---
 
   function broadcast(args) {
-    $rootScope.$broadcast('event:notification', args = angular.extend({message: '' + Date.now()}, args));
-    $rootScope.$apply();
-
+    eventEmitter.publish('event:notification', args = angular.extend({message: '' + Date.now()}, args));
     return args;
   }
 });

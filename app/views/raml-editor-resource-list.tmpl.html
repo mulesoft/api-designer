@@ -1,0 +1,8 @@
+<div>
+  <ol>
+    <li ng-class="{active: resourceList.isActive('all')}" ng-click="resourceList.show('all')">Show All</li>
+    <li ng-class="{active: resourceList.isActive(resource)}" ng-repeat="resource in resourceList.resources" ng-click="resourceList.show(resource)">
+      {{resource}}
+    </li>
+  </ol>
+</div>

@@ -1,0 +1,58 @@
+.cfp-hotkeys-key {
+  font-size: 11px;
+}
+
+.cfp-hotkeys-text {
+  font-size: 11px;
+}
+
+.cfp-hotkeys-title {
+  font-size: 18px;
+}
+
+.cfp-hotkeys-close {
+  display: none;
+}
+
+.cfp-container {
+  left: 0;
+  right: 0;
+  margin: auto;
+  position: absolute;
+  width: 50%;
+  height: 390px;
+  top: 50px;
+  background-color: #FFFFFF;
+  z-index: 1001;
+
+  &.in {
+    display: block !important;
+  }
+
+  div {
+    height: 300px;
+    overflow-y: scroll;
+
+    table {
+      left: 0;
+      right: 0;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+}
+
+.cfp-overlay {
+  z-index: 1000;
+  background-color: #000;
+  opacity: 0.5;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  &.in {
+    display: block !important;
+  }
+}

@@ -9,7 +9,10 @@
     ) {
       function addBaseUri() {
         function setLine(lineNumber, line, prefix) {
-          $scope.editor.setLine(lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
+          var from = {line: lineNumber, ch: 0};
+          var to   = {line: lineNumber, ch: $scope.editor.getLine(lineNumber).length};
+
+          $scope.editor.replaceRange((prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line, from, to);
         }
 
         var baseUri = 'baseUri: ' + $scope.mock.baseUri;
@@ -41,6 +44,7 @@
         var baseUriLine = 'baseUri: ' + $scope.mock.baseUri;
         var lineNumber  = void(0);
         var line        = void(0);
+        var from, to;
 
         // trying to find mocked baseUri
         // and remove it
@@ -48,7 +52,10 @@
           line = $scope.editor.getLine(lineNumber).trim();
 
           if (line === baseUriLine) {
-            $scope.editor.removeLine(lineNumber);
+            from = {line: lineNumber, ch: 0};
+            to   = {line: lineNumber, ch: $scope.editor.getLine(lineNumber).length};
+
+            $scope.editor.replaceRange('', from, to);
             break;
           }
         }
@@ -59,7 +66,9 @@
           line = $scope.editor.getLine(lineNumber).trim();
 
           if (line.indexOf('#') === 0 && line.slice(1).trim().indexOf('baseUri: ') === 0) {
-            $scope.editor.setLine(lineNumber, line.slice(1).trim());
+            from = {line: lineNumber, ch: 0};
+            to   = {line: lineNumber, ch: $scope.editor.getLine(lineNumber).length};
+            $scope.editor.replaceRange(line.slice(1).trim(), from, to);
             break;
           }
         }

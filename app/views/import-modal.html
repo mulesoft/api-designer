@@ -14,9 +14,9 @@
       </div>
 
       <div style="margin-left: 145px;" ng-switch="mode.type">
-        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
+        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control file-selector" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
 
-        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">
+        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control file-selector" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">
       </div>
     </div>
 

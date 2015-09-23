@@ -1,0 +1,100 @@
+<div>
+  <div class="no-resource-message" ng-if="!tryIt.enabled">
+    There is no resource in context
+  </div>
+  <div ng-if="tryIt.enabled">
+  <!-- Protocols -->
+    <div class="container" ng-if="tryIt.protocols">
+      <div class="title">
+        <span>Protocols</span>
+      </div>
+      <div class="content">
+        <select class="control full-width" ng-model="tryIt.protocol">
+          <option ng-repeat="protocol in tryIt.protocols" value="{{protocol}}">{{protocol}}</option>
+        </select>
+      </div>
+    </div>
+  <!-- Authorization -->
+    <div class="container">
+      <div class="title">
+        <span>Authentication</span>
+      </div>
+      <div class="content">
+        <label>Security Scheme</label>
+        <select class="control" ng-model="tryIt.securityScheme">
+          <option ng-repeat="(key, value) in tryIt.securitySchemes" value="{{value.type}}">{{value.name}}</option>
+        </select>
+
+        <div ng-switch on="tryIt.securityScheme">
+          <div ng-switch-when="Anonymous"></div>
+          <div ng-switch-when="Basic Authentication">
+            <label>Username</label>
+            <input class="control" type="text" id="username" value="">
+            <label>Password</label>
+            <input class="control" type="text" id="password" value="">
+          </div>
+          <div ng-switch-when="Digest Authentication"></div>
+          <div ng-switch-when="OAuth 1.0"></div>
+          <div ng-switch-when="OAuth 2.0">
+            <label>Authorization Grant</label>
+            <select class="control">
+              <option value="code">Authorization Code</option>
+              <option value="credentials">Client Credentials</option>
+            </select>
+
+            <label>Client ID</label>
+            <input class="control" type="text" id="clientId" value="">
+
+            <label>Client Secret</label>
+            <input class="control" type="text" id="clientSecret" value="">
+          </div>
+          <div ng-switch-default></div>
+        </div>
+      </div>
+    </div>
+  <!-- URI Parameters -->
+    <div class="container" ng-if="tryIt.resource.uriParameters.length">
+      <div class="title">
+        <span>URI Parameters</span>
+      </div>
+      <div class="content">
+        <div ng-repeat="param in tryIt.resource.uriParameters">
+          <label>{{param.key}}</label>
+          <input class="control" type="text" id="{{param.key}}" value="">
+        </div>
+      </div>
+    </div>
+
+    <div class="container" ng-if="tryIt.resource.methods.length">
+      <div class="methods">
+        <button ng-repeat="method in tryIt.resource.methods" class="{{method.method}}" ng-click="tryIt.selectMethod(method)">{{method.method}}</button>
+      </div>
+      <div class="content method-container {{tryIt.selectedMethod.method}}">
+        <!-- Query Parameters -->
+          <div class="container" ng-if="tryIt.selectedMethod.queryParameters">
+            <div class="title">
+              <span>Query Parameters</span>
+            </div>
+            <div class="content">
+              <div ng-repeat="(key, value) in tryIt.selectedMethod.queryParameters">
+                <label>{{value.displayName}}</label>
+                <input class="control" type="text" id="{{key}}" value="">
+              </div>
+            </div>
+          </div>
+        <!-- Headers -->
+          <div class="container" ng-if="tryIt.selectedMethod.headers">
+            <div class="title">
+              <span>Headers</span>
+            </div>
+            <div class="content">
+              <div ng-repeat="(key, value) in tryIt.selectedMethod.headers">
+                <label>{{value.displayName}}</label>
+                <input class="control" type="text" id="{{key}}" value="">
+              </div>
+            </div>
+          </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -47,6 +47,7 @@
     "should": false,
     "sinon": false,
     "xdescribe": false,
-    "xit": false
+    "xit": false,
+    "Firebase": false
   }
 }

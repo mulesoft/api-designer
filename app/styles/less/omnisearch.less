@@ -1,0 +1,89 @@
+[role=omnisearch] {
+  div {
+    z-index: 10;
+    background-color: #47474b;
+    border: 1px solid #3a3a3e;
+    width: 600px;
+    max-height: 330px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 11px;
+
+    input {
+      margin: 3px;
+      border: 0;
+      width: 592px;
+      font-size: 12px;
+      padding: 3px;
+      outline: none;
+    }
+
+    ul {
+      list-style-type: none;
+      padding:         0;
+      color:           #E1E1E4;
+      margin:          0;
+      overflow-y:      scroll;
+      max-height:      303px;
+
+      li {
+        cursor: pointer;
+        padding: 3px;
+
+        &.result {
+          border-bottom: 1px solid #606065;
+        }
+
+        &.separator {
+          border-bottom: 1px solid #3a3a3e;
+        }
+
+        &.active {
+          background-color: #296d92;
+        }
+
+        &:hover {
+          // background-color: #6c6c72
+          background-color: #296d92;
+        }
+
+        span {
+          // color: #00FF00;
+          color: #CCC;
+          display: inline;
+          width: 100%;
+          text-align: left;
+
+          // text-overflow: ellipsis;
+          // white-space: nowrap;
+          // overflow: hidden;
+        }
+
+        span.command {
+         // color: #00FF00;
+         color: #CCC;
+         display: inline-block;
+         width: 13px;
+         text-align: center;
+         line-height: 9px;
+        }
+
+        span.description {
+          color: #00FF00;
+          // color: #CCC;
+          float: right;
+          width: 50%;
+          text-align: right;
+          margin-right: 1px;
+        }
+
+        span.command {
+          color: #00FF00;
+        }
+      }
+    }
+  }
+}

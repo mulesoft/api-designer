@@ -367,7 +367,7 @@ describe('Lightweight DOM Module', function () {
       var editor     = getEditor(codeMirror, ['key1: value1']);
       var cachedNode = getNode(editor);
 
-      editor.setLine(0, 'key2: value2');
+      editor.replaceRange('key2: value2', {line: 0, ch: 0}, {line: 0, ch: 0});
       getNode(editor).should.not.be.equal(cachedNode);
     });
   });

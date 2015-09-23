@@ -111,6 +111,8 @@
 
         marker.className = 'CodeMirror-lint-marker-' + severity;
 
+        marker.innerHtml = '&#x25cf;';
+
         if (multiple) {
           inner = marker.appendChild(document.createElement('div'));
           inner.className = 'CodeMirror-lint-marker-multiple';

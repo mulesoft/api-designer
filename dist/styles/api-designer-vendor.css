@@ -1343,10 +1343,7 @@
   /* Set height, width, borders, and global font properties here */
   font-family: monospace;
   height: 300px;
-}
-.CodeMirror-scroll {
-  /* Set scrolling behaviour here */
-  overflow: auto;
+  color: black;
 }
 
 /* PADDING */
@@ -1375,65 +1372,110 @@
   min-width: 20px;
   text-align: right;
   color: #999;
+  white-space: nowrap;
 }
+
+.CodeMirror-guttermarker { color: black; }
+.CodeMirror-guttermarker-subtle { color: #999; }
 
 /* CURSOR */
 
-.CodeMirror div.CodeMirror-cursor {
+.CodeMirror-cursor {
   border-left: 1px solid black;
-  z-index: 3;
+  border-right: none;
+  width: 0;
 }
 /* Shown when moving in bi-directional text */
 .CodeMirror div.CodeMirror-secondarycursor {
   border-left: 1px solid silver;
 }
-.CodeMirror.cm-keymap-fat-cursor div.CodeMirror-cursor {
+.cm-fat-cursor .CodeMirror-cursor {
   width: auto;
   border: 0;
   background: #7e7;
+}
+.cm-fat-cursor div.CodeMirror-cursors {
   z-index: 1;
 }
-/* Can style cursor different in overwrite (non-insert) mode */
-.CodeMirror div.CodeMirror-cursor.CodeMirror-overwrite {}
 
-.cm-tab { display: inline-block; }
+.cm-animate-fat-cursor {
+  width: auto;
+  border: 0;
+  -webkit-animation: blink 1.06s steps(1) infinite;
+  -moz-animation: blink 1.06s steps(1) infinite;
+  animation: blink 1.06s steps(1) infinite;
+  background-color: #7e7;
+}
+@-moz-keyframes blink {
+  0% {}
+  50% { background-color: transparent; }
+  100% {}
+}
+@-webkit-keyframes blink {
+  0% {}
+  50% { background-color: transparent; }
+  100% {}
+}
+@keyframes blink {
+  0% {}
+  50% { background-color: transparent; }
+  100% {}
+}
+
+/* Can style cursor different in overwrite (non-insert) mode */
+.CodeMirror-overwrite .CodeMirror-cursor {}
+
+.cm-tab { display: inline-block; text-decoration: inherit; }
+
+.CodeMirror-ruler {
+  border-left: 1px solid #ccc;
+  position: absolute;
+}
 
 /* DEFAULT THEME */
 
-.cm-s-default .cm-keyword {color: #708;}
-.cm-s-default .cm-atom {color: #219;}
-.cm-s-default .cm-number {color: #164;}
-.cm-s-default .cm-def {color: #00f;}
-.cm-s-default .cm-variable {color: black;}
-.cm-s-default .cm-variable-2 {color: #05a;}
-.cm-s-default .cm-variable-3 {color: #085;}
-.cm-s-default .cm-property {color: black;}
-.cm-s-default .cm-operator {color: black;}
-.cm-s-default .cm-comment {color: #a50;}
-.cm-s-default .cm-string {color: #a11;}
-.cm-s-default .cm-string-2 {color: #f50;}
-.cm-s-default .cm-meta {color: #555;}
-.cm-s-default .cm-error {color: #f00;}
-.cm-s-default .cm-qualifier {color: #555;}
-.cm-s-default .cm-builtin {color: #30a;}
-.cm-s-default .cm-bracket {color: #997;}
-.cm-s-default .cm-tag {color: #170;}
-.cm-s-default .cm-attribute {color: #00c;}
 .cm-s-default .cm-header {color: blue;}
 .cm-s-default .cm-quote {color: #090;}
-.cm-s-default .cm-hr {color: #999;}
-.cm-s-default .cm-link {color: #00c;}
-
 .cm-negative {color: #d44;}
 .cm-positive {color: #292;}
 .cm-header, .cm-strong {font-weight: bold;}
 .cm-em {font-style: italic;}
 .cm-link {text-decoration: underline;}
+.cm-strikethrough {text-decoration: line-through;}
 
+.cm-s-default .cm-keyword {color: #708;}
+.cm-s-default .cm-atom {color: #219;}
+.cm-s-default .cm-number {color: #164;}
+.cm-s-default .cm-def {color: #00f;}
+.cm-s-default .cm-variable,
+.cm-s-default .cm-punctuation,
+.cm-s-default .cm-property,
+.cm-s-default .cm-operator {}
+.cm-s-default .cm-variable-2 {color: #05a;}
+.cm-s-default .cm-variable-3 {color: #085;}
+.cm-s-default .cm-comment {color: #a50;}
+.cm-s-default .cm-string {color: #a11;}
+.cm-s-default .cm-string-2 {color: #f50;}
+.cm-s-default .cm-meta {color: #555;}
+.cm-s-default .cm-qualifier {color: #555;}
+.cm-s-default .cm-builtin {color: #30a;}
+.cm-s-default .cm-bracket {color: #997;}
+.cm-s-default .cm-tag {color: #170;}
+.cm-s-default .cm-attribute {color: #00c;}
+.cm-s-default .cm-hr {color: #999;}
+.cm-s-default .cm-link {color: #00c;}
+
+.cm-s-default .cm-error {color: #f00;}
 .cm-invalidchar {color: #f00;}
+
+.CodeMirror-composing { border-bottom: 2px solid; }
+
+/* Default styles for common addons */
 
 div.CodeMirror span.CodeMirror-matchingbracket {color: #0f0;}
 div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
+.CodeMirror-matchingtag { background: rgba(255, 150, 0, .3); }
+.CodeMirror-activeline-background {background: #e8f2ff;}
 
 /* STOP */
 
@@ -1441,24 +1483,24 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
    the editor. You probably shouldn't touch them. */
 
 .CodeMirror {
-  line-height: 1;
   position: relative;
   overflow: hidden;
   background: white;
-  color: black;
 }
 
 .CodeMirror-scroll {
+  overflow: scroll !important; /* Things will break if this is overridden */
   /* 30px is the magic margin used to hide the element's real scrollbars */
   /* See overflow: hidden in .CodeMirror */
   margin-bottom: -30px; margin-right: -30px;
-  padding-bottom: 30px; padding-right: 30px;
+  padding-bottom: 30px;
   height: 100%;
   outline: none; /* Prevent dragging from highlighting the element */
   position: relative;
 }
 .CodeMirror-sizer {
   position: relative;
+  border-right: 30px solid transparent;
 }
 
 /* The fake, visible scrollbars. Used to force redraw during scrolling
@@ -1488,27 +1530,42 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
 
 .CodeMirror-gutters {
   position: absolute; left: 0; top: 0;
-  padding-bottom: 30px;
   z-index: 3;
 }
 .CodeMirror-gutter {
   white-space: normal;
   height: 100%;
-  padding-bottom: 30px;
-  margin-bottom: -32px;
   display: inline-block;
+  margin-bottom: -30px;
   /* Hack to make IE7 behave */
   *zoom:1;
   *display:inline;
+}
+.CodeMirror-gutter-wrapper {
+  position: absolute;
+  z-index: 4;
+  background: none !important;
+  border: none !important;
+}
+.CodeMirror-gutter-background {
+  position: absolute;
+  top: 0; bottom: 0;
+  z-index: 4;
 }
 .CodeMirror-gutter-elt {
   position: absolute;
   cursor: default;
   z-index: 4;
 }
+.CodeMirror-gutter-wrapper {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
 
 .CodeMirror-lines {
   cursor: text;
+  min-height: 1px; /* prevents collapsing before first draw */
 }
 .CodeMirror pre {
   /* Reset some styles that the rest of the page might have set */
@@ -1525,12 +1582,14 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
   z-index: 2;
   position: relative;
   overflow: visible;
+  -webkit-tap-highlight-color: transparent;
 }
 .CodeMirror-wrap pre {
   word-wrap: break-word;
   white-space: pre-wrap;
   word-break: normal;
 }
+
 .CodeMirror-linebackground {
   position: absolute;
   left: 0; right: 0; top: 0; bottom: 0;
@@ -1543,33 +1602,51 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
   overflow: auto;
 }
 
-.CodeMirror-widget {
+.CodeMirror-widget {}
+
+.CodeMirror-code {
+  outline: none;
 }
 
-.CodeMirror-wrap .CodeMirror-scroll {
-  overflow-x: hidden;
+/* Force content-box sizing for the elements where we expect it */
+.CodeMirror-scroll,
+.CodeMirror-sizer,
+.CodeMirror-gutter,
+.CodeMirror-gutters,
+.CodeMirror-linenumber {
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
 }
 
 .CodeMirror-measure {
   position: absolute;
-  width: 100%; height: 0px;
+  width: 100%;
+  height: 0;
   overflow: hidden;
   visibility: hidden;
 }
+
+.CodeMirror-cursor { position: absolute; }
 .CodeMirror-measure pre { position: static; }
 
-.CodeMirror div.CodeMirror-cursor {
-  position: absolute;
+div.CodeMirror-cursors {
   visibility: hidden;
-  border-right: none;
-  width: 0;
+  position: relative;
+  z-index: 3;
 }
-.CodeMirror-focused div.CodeMirror-cursor {
+div.CodeMirror-dragcursors {
+  visibility: visible;
+}
+
+.CodeMirror-focused div.CodeMirror-cursors {
   visibility: visible;
 }
 
 .CodeMirror-selected { background: #d9d9d9; }
 .CodeMirror-focused .CodeMirror-selected { background: #d7d4f0; }
+.CodeMirror-crosshair { cursor: crosshair; }
+.CodeMirror-line::selection, .CodeMirror-line > span::selection, .CodeMirror-line > span > span::selection { background: #d7d4f0; }
+.CodeMirror-line::-moz-selection, .CodeMirror-line > span::-moz-selection, .CodeMirror-line > span > span::-moz-selection { background: #d7d4f0; }
 
 .cm-searching {
   background: #ffa;
@@ -1579,12 +1656,21 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
 /* IE7 hack to prevent it from returning funny offsetTops on the spans */
 .CodeMirror span { *vertical-align: text-bottom; }
 
+/* Used to force a border model for a node */
+.cm-force-border { padding-right: .1px; }
+
 @media print {
   /* Hide the cursor when printing */
-  .CodeMirror div.CodeMirror-cursor {
+  .CodeMirror div.CodeMirror-cursors {
     visibility: hidden;
   }
 }
+
+/* See issue #2901 */
+.cm-tab-wrap-hack:after { content: ''; }
+
+/* Help users use markselection to safely style text background */
+span.CodeMirror-selectedtext { background: none; }
 
 /*
 Solarized theme for code-mirror
@@ -1843,6 +1929,117 @@ View-port and gutter both get little noise background to give it a real feel.
 .CodeMirror-hint-active {
   background: #08f;
   color: white;
+}
+
+/*! 
+ * angular-hotkeys v1.6.0
+ * https://chieffancypants.github.io/angular-hotkeys
+ * Copyright (c) 2015 Wes Cruver
+ * License: MIT
+ */
+.cfp-hotkeys-container {
+  display: table !important;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  color: #333;
+  font-size: 1em;
+  background-color: rgba(255,255,255,0.9);
+}
+
+.cfp-hotkeys-container.fade {
+  z-index: -1024;
+  visibility: hidden;
+  opacity: 0;
+  -webkit-transition: opacity 0.15s linear;
+  -moz-transition: opacity 0.15s linear;
+  -o-transition: opacity 0.15s linear;
+  transition: opacity 0.15s linear;
+}
+
+.cfp-hotkeys-container.fade.in {
+  z-index: 10002;
+  visibility: visible;
+  opacity: 1;
+}
+
+.cfp-hotkeys-title {
+  font-weight: bold;
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.cfp-hotkeys {
+  width: 100%;
+  height: 100%;
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.cfp-hotkeys table {
+  margin: auto;
+  color: #333;
+}
+
+.cfp-content {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.cfp-hotkeys-keys {
+  padding: 5px;
+  text-align: right;
+}
+
+.cfp-hotkeys-key {
+  display: inline-block;
+  color: #fff;
+  background-color: #333;
+  border: 1px solid #333;
+  border-radius: 5px;
+  text-align: center;
+  margin-right: 5px;
+  box-shadow: inset 0 1px 0 #666, 0 1px 0 #bbb;
+  padding: 5px 9px;
+  font-size: 1em;
+}
+
+.cfp-hotkeys-text {
+  padding-left: 10px;
+  font-size: 1em;
+}
+
+.cfp-hotkeys-close {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  font-size: 2em;
+  font-weight: bold;
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  min-height: 45px;
+  min-width: 45px;
+  text-align: center;
+}
+
+.cfp-hotkeys-close:hover {
+  background-color: #fff;
+  cursor: pointer;
+}
+
+@media all and (max-width: 500px) {
+  .cfp-hotkeys {
+    font-size: 0.8em;
+  }
+}
+
+@media all and (min-width: 750px) {
+  .cfp-hotkeys {
+    font-size: 1.2em;
+  }
 }
 
 /* angular-ui-tree css file */
@@ -3013,8 +3210,8 @@ th {
 }
 
 .raml-console-body {
-  background: #eee;
-  color: #888;
+  background: #141519;
+  color: #ccc;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 18px;
   line-height: 1.4;
@@ -3060,8 +3257,8 @@ th {
 }
 
 .raml-console-embedded {
-  background: #eee !important;
-  color: #888;
+  background: #141519 !important;
+  color: #ccc;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 18px;
   line-height: 1.4;
@@ -3072,7 +3269,7 @@ th {
 .raml-console-title {
   font-size: 24px;
   text-align: center;
-  color: #333;
+  color: #fff;
 }
 
 @media only screen and (min-width: 600px) {
@@ -3167,9 +3364,9 @@ th {
 .raml-console-toggle {
   margin: 0;
   padding: 10px 12px 12px;
-  border: 1px solid #ccc;
-  background-color: #f3f4f5;
-  color: #aaa;
+  border: 1px solid #000;
+  background-color: #0f1217;
+  color: rgba(255, 255, 255, 0.3);
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -3179,14 +3376,14 @@ th {
 }
 
 .raml-console-toggle:hover {
-  border-color: #46778f;
-  color: #5B9DBD;
+  border-color: #12171f;
+  color: #4d7899;
   border-width: 1px !important;
 }
 
 .raml-console-toggle.raml-console-is-active {
-  border-color: #46778f;
-  background: #5B9DBD;
+  border-color: #12171f;
+  background: #4d7899;
   color: #fff;
 }
 
@@ -3230,8 +3427,8 @@ th {
   padding-top: 10px;
   padding-bottom: 12px;
   border: none;
-  background-color: #e3e4e6;
-  color: #999;
+  background-color: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.3);
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -3243,16 +3440,16 @@ th {
 }
 
 .raml-console-toggle-tabs .raml-console-toggle-tab:first-child {
-  box-shadow: inset -2px -3px 5px 1px #d6d7d9;
+  box-shadow: inset -2px -3px 5px 1px rbga(0, 0, 0, 0.5);
 }
 
 .raml-console-toggle-tabs .raml-console-toggle-tab:last-child {
-  box-shadow: inset 2px -3px 5px 1px #d6d7d9;
+  box-shadow: inset 2px -3px 5px 1px rbga(0, 0, 0, 0.5);
 }
 
 .raml-console-toggle-tabs .raml-console-toggle-tab.raml-console-is-active {
   background: none;
-  color: #414247;
+  color: #fff;
   box-shadow: none;
 }
 
@@ -3549,43 +3746,43 @@ th {
 
 .raml-console-tab.raml-console-is-active {
   z-index: 5;
-  color: #333;
+  color: #fff;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-get::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-post::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-put::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-patch::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-delete::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-trace::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-options::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-head::before {
-  background: #fff;
+  background: #18191d;
 }
 
 .raml-console-tab.raml-console-is-active .raml-console-tab-connect::before {
-  background: #fff;
+  background: #18191d;
 }
 
 /* Resource List */
@@ -3624,12 +3821,12 @@ ol.raml-console-resources-container {
 }
 
 .raml-console-resource-description {
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #282a30;
 }
 
 .raml-console-resource-description div {
   padding: 17px;
-  background: #FAFAFA;
+  background: #1C1E22;
 }
 
 .raml-console-resource-description div h3 {
@@ -3649,10 +3846,10 @@ ol.raml-console-resources-container {
 
 .raml-console-resource-menu-item button.raml-console-button-is-active {
   border-radius: 0 !important;
-  background: #fff !important;
+  background: #1c1e22 !important;
   border-right: 0;
   height: 48px;
-  border-top: 1px #ccc solid !important;
+  border-top: 1px #404040 solid !important;
   border-right: 0 !important;
   width: 51px;
 }
@@ -3689,10 +3886,10 @@ ol.raml-console-resources-container {
   border-radius: 0 !important;
   border: 0 !important;
   height: 48px !important;
-  background: #fafafa !important;
-  border-top: 1px #ccc solid !important;
-  border-left: 3px #ccc solid !important;
-  border-bottom: 1px #ccc solid !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+  border-top: 1px #404040 solid !important;
+  border-left: 3px #404040 solid !important;
+  border-bottom: 1px #404040 solid !important;
 }
 
 .raml-console-resource-menu-btn-2xx {
@@ -3720,11 +3917,11 @@ ol.raml-console-resources-container {
 }
 
 .raml-console-resource-list-root {
-  border-top: 1px solid #ccc;
+  border-top: 1px solid #282a30;
 }
 
 .raml-console-resource-list-item.raml-console-is-active + .raml-console-resource-list-item {
-  border-top: 1px solid #ccc;
+  border-top: 1px solid #282a30;
 }
 
 /* Resource Items */
@@ -3735,7 +3932,7 @@ ol.raml-console-resources-container {
   flex-wrap: wrap;
   min-height: 50px;
   padding-left: 20px;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #282a30;
 }
 
 @media only screen and (min-width: 960px) {
@@ -3754,8 +3951,8 @@ ol.raml-console-resources-container {
 .raml-console-resource.raml-console-is-active {
   min-height: 50px;
   margin: 10px 0 0;
-  border-color: #2d2d30;
-  background: #2d2d30;
+  border-color: #282a30;
+  background: #282a30;
 }
 
 @media only screen and (min-width: 600px) {
@@ -3818,7 +4015,7 @@ ol.raml-console-resources-container {
   border-radius: 5px;
   border: none;
   background: transparent;
-  color: #888a99;
+  color: #808080;
   font-size: 10px;
   text-transform: uppercase;
   transition: 0.2s ease color;
@@ -3836,7 +4033,7 @@ ol.raml-console-resources-container {
 }
 
 .raml-console-resource-close-btn:hover {
-  color: #9ea0ad;
+  color: #57585a;
 }
 
 .raml-console-resource-list-root > .raml-console-resource-list-item.raml-console-is-active + .raml-console-resource-list-item {
@@ -3844,7 +4041,7 @@ ol.raml-console-resources-container {
 }
 
 .raml-console-resource.raml-console-is-active + .raml-console-resource-list {
-  border-top: 1px solid #ccc;
+  border-top: 1px solid #282a30;
 }
 
 .raml-console-resource.raml-console-is-active .raml-console-resource-path-active {
@@ -3900,7 +4097,7 @@ ol.raml-console-resources-container {
   margin-top: -2.5px;
   margin-left: -5px;
   border: 5px solid transparent;
-  border-top-color: #333;
+  border-top-color: #fff;
 }
 
 .raml-console-resource-root-toggle:hover {
@@ -4014,10 +4211,10 @@ a.raml-console-resource-path-active {
 .raml-console-flag {
   display: inline-block;
   padding: 2px 8px;
-  border: 1px solid #d5d7d9;
+  border: 1px solid #000;
   border-radius: 5px;
-  background: #e3e4e6;
-  color: #333;
+  background: #0f1217;
+  color: #ccc;
   font-size: 12px;
 }
 
@@ -4026,7 +4223,7 @@ a.raml-console-resource-path-active {
   top: -1px;
   padding: 0px 3px;
   border-radius: 3px;
-  background: #e3e4e6;
+  background: #0f1217;
 }
 
 @media only screen and (min-width: 600px) {
@@ -4044,28 +4241,28 @@ a.raml-console-resource-path-active {
 }
 
 .raml-console-flag b {
-  color: #888;
+  color: #808080;
 }
 
 .raml-console-resource-path-active {
-  color: #333;
+  color: #fff;
 }
 
 .raml-console-resource-proxy {
   position: absolute;
   right: 5px;
-  color: #585961;
+  color: #5685aa;
   font-size: 13px;
   margin-bottom: 5px;
   z-index: 1;
 }
 
 .raml-console-resource-proxy a {
-  color: #585961;
+  color: #5685aa;
 }
 
 .raml-console-resource-proxy a:visited {
-  color: #585961;
+  color: #5685aa;
 }
 
 .raml-console-resource-no-baseuri {
@@ -4084,10 +4281,10 @@ a.raml-console-resource-path-active {
   padding-top: 8px;
   padding-right: 0;
   padding-bottom: 8px;
-  border-top: 1px solid #f1f1f1;
-  border-bottom: 1px solid #f1f1f1;
-  background: #fafafa;
-  color: #585961;
+  border-top: 1px solid #12171f;
+  border-bottom: 1px solid #12171f;
+  background: #12171f;
+  color: #ddd;
 }
 
 .raml-console-resource-head {
@@ -4109,8 +4306,8 @@ a.raml-console-resource-path-active {
 }
 
 .raml-console-resource-body-heading > span.raml-console-is-active {
-  background: #bbbbbb;
-  color: #333;
+  background: #959595;
+  color: #fff;
 }
 
 .raml-console-request-body-heading > span {
@@ -4119,8 +4316,8 @@ a.raml-console-resource-path-active {
 }
 
 .raml-console-request-body-heading > span.raml-console-is-active {
-  background: #bbbbbb;
-  color: #333;
+  background: #959595;
+  color: #fff;
 }
 
 .raml-console-request-body-heading span:first-child {
@@ -4130,11 +4327,11 @@ a.raml-console-resource-path-active {
 .raml-console-resource-panel {
   position: relative;
   min-height: 500px;
-  border: solid #ccc;
+  border: solid #282a30;
   border-width: 0 1px 1px;
   border-radius: 0 0 5px 5px;
-  background: #fff;
-  color: #333;
+  background: #18191d;
+  color: #fff;
 }
 
 @media only screen and (min-width: 960px) {
@@ -4179,7 +4376,7 @@ a.raml-console-resource-path-active {
 }
 
 .raml-console-resource-panel-primary a {
-  color: #257dcf;
+  color: #217ec5;
 }
 
 .raml-console-sidebar-controls-collapse {
@@ -4223,7 +4420,7 @@ a.raml-console-resource-path-active {
   margin-left: 60px;
   min-height: 500px;
   padding-top: 24px !important;
-  border: 1px solid #ccc;
+  border: 1px solid #404040;
   margin-top: 10px;
   margin-right: 10px;
   margin-bottom: 10px;
@@ -4247,7 +4444,7 @@ a.raml-console-resource-path-active {
 
 .raml-console-resource-panel-content {
   display: none;
-  background: #fff;
+  background: #1c1e22;
 }
 
 .raml-console-resource-panel-content.raml-console-is-active {
@@ -4267,8 +4464,8 @@ a.raml-console-resource-path-active {
 
 .raml-console-resource-panel-flag-list .raml-console-flag {
   margin-top: 8px;
-  border: 1px solid #eaeced;
-  background: #fafafa;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .raml-console-resource-panel-flag-list .raml-console-flag:first-child {
@@ -4309,7 +4506,7 @@ a.raml-console-resource-path-active {
 
 .raml-console-resource-heading-a {
   margin: 0 0 18px;
-  color: #4c5272;
+  color: #5685aa;
   font-size: 16px;
   font-weight: 900;
   letter-spacing: 0.1em;
@@ -4365,13 +4562,13 @@ a.raml-console-resource-path-active {
 .raml-console-resource-param-heading {
   margin-bottom: 0;
   padding-bottom: 3px;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid #404040;
   font-size: 14px;
 }
 
 .raml-console-resource-param-instructional {
   margin-left: 5px;
-  color: #777;
+  color: #aaa;
   font-size: 14px;
   font-style: italic;
   font-weight: 400;
@@ -4389,7 +4586,7 @@ a.raml-console-resource-path-active {
 
 .raml-console-resource-param-example b {
   margin-right: 3px;
-  color: #777;
+  color: #aaa;
   font-style: italic;
   font-weight: 400;
 }
@@ -4406,10 +4603,10 @@ a.raml-console-resource-path-active {
   text-decoration: none;
   margin: 0 5px 0 0;
   padding: 5px 10px 6px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #000;
   border-radius: 4px;
-  background-color: #f3f4f5;
-  color: #257dcf;
+  background-color: #0f1217;
+  color: #217ec5;
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -4421,22 +4618,22 @@ a.raml-console-resource-path-active {
 .raml-console-resource-btn.raml-console-is-active,
 .raml-console-resource-btn:hover {
   border-color: rgba(0, 0, 0, 0.25);
-  background-color: #257dcf;
+  background-color: #217ec5;
   color: #fff;
 }
 
 .raml-console-resource-response .raml-console-flag {
-  border: 1px solid #eaeced;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   font-size: 16px;
-  background: #fafafa;
-  color: #888;
+  background: rgba(0, 0, 0, 0.1);
+  color: #808080;
 }
 
 .raml-console-resource-pre {
   margin: 0 0 18px 0;
-  border: 1px solid #c6cada;
+  border: 1px solid #141519;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.75);
+  background: #141519;
   font-family: Source Code Pro;
   font-size: 14px;
 }
@@ -4456,7 +4653,7 @@ a.raml-console-resource-path-active {
 .raml-console-toggle-button,
 .raml-console-toggle-button:visited,
 .raml-console-toggle-button:active {
-  color: #585961;
+  color: #5685aa;
   text-decoration: none;
   text-transform: capitalize;
   font-size: 12px;
@@ -4469,11 +4666,11 @@ a.raml-console-resource-path-active {
   -webkit-flex-shrink: 0;
   overflow: hidden;
   border-bottom-right-radius: 4px;
-  border-left: 3px solid #d6d7d9;
+  border-left: 3px solid #12171f;
   position: relative;
-  background: #f3f4f5;
+  background: #1a202b;
   box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.1), inset 1px 0 0 rgba(0, 0, 0, 0.1);
-  color: rgba(0, 0, 0, 0.7);
+  color: #ddd;
 }
 
 @media only screen and (min-width: 960px) {
@@ -4512,8 +4709,8 @@ a.raml-console-resource-path-active {
   top: 0;
   right: -80px;
   border-radius: 0 0 0 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: #d6d7d9;
+  border: 1px solid #000;
+  background: #0f1217;
 }
 
 .raml-console-sidebar-controls,
@@ -4523,7 +4720,7 @@ a.raml-console-resource-path-active {
 
 .raml-console-sidebar-controls:hover,
 .raml-console-sidebar-controls:hover .raml-console-collapse {
-  background: #c9cacd;
+  background: #050608;
 }
 
 @media only screen and (min-width: 960px) {
@@ -4539,7 +4736,7 @@ a.raml-console-resource-path-active {
   border: none;
   width: 100%;
   height: 100%;
-  background: #d6d7d9;
+  background: #0f1217;
   outline: none;
 }
 
@@ -4760,7 +4957,7 @@ a.raml-console-resource-path-active {
 .raml-console-sidebar-content {
   display: none;
   overflow: hidden;
-  border: solid #d6d7d9;
+  border: solid #12171f;
   border-width: 0 1px;
 }
 
@@ -4793,7 +4990,7 @@ a.raml-console-resource-path-active {
   resize: none;
   font-family: Source Code Pro;
   font-size: 14px;
-  border: 1px solid #c6cada;
+  border: 1px solid #141519;
 }
 
 .raml-console-sidebar-header {
@@ -4801,10 +4998,10 @@ a.raml-console-resource-path-active {
   padding-top: 8px;
   padding-right: 0;
   padding-bottom: 8px;
-  border-top: 1px solid #ccc;
-  border-bottom: 1px solid #ccc;
-  background: #ddd;
-  color: #585961;
+  border-top: 1px solid #12171f;
+  border-bottom: 1px solid #12171f;
+  background: #12171f;
+  color: #ddd;
 }
 
 .raml-console-sidebar-header .raml-console-resource-btn {
@@ -4838,7 +5035,7 @@ a.raml-console-resource-path-active {
 }
 
 .raml-console-sidebar-expand-btn:hover {
-  border-color: #9ea0ad;
+  border-color: #5685aa;
   opacity: 1;
 }
 
@@ -4851,7 +5048,7 @@ a.raml-console-resource-path-active {
   width: 0;
   height: 0;
   border-left: 7px solid transparent;
-  border-bottom: 7px solid #888a99;
+  border-bottom: 7px solid #4d7899;
   border-right: 7px solid transparent;
 }
 
@@ -4865,7 +5062,7 @@ a.raml-console-resource-path-active {
   height: 0;
   border-right: 7px solid transparent;
   border-left: 7px solid transparent;
-  border-top: 7px solid #888a99;
+  border-top: 7px solid #4d7899;
 }
 
 .raml-console-sidebar-subheader {
@@ -4873,10 +5070,10 @@ a.raml-console-resource-path-active {
   margin-right: 16px;
   padding-top: 10px;
   padding-bottom: 10px;
-  border-top: 2px solid #d6d7d9;
+  border-top: 2px solid #12171f;
   border-width: 1px 0;
   position: relative;
-  color: #585961;
+  color: #5685aa;
   font-size: 13px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -4906,8 +5103,8 @@ a.raml-console-resource-path-active {
   height: 17px;
   border: none;
   border-radius: 50%;
-  background: #888a99;
-  color: #f3f4f5;
+  background: #4d7899;
+  color: #1a202b;
   opacity: 0.4;
   transition: 0.2s ease all;
 }
@@ -4924,7 +5121,7 @@ a.raml-console-resource-path-active {
 }
 
 .raml-console-sidebar-add-btn:hover {
-  background-color: #9ea0ad;
+  background-color: #5685aa;
   opacity: 1;
 }
 
@@ -5064,19 +5261,19 @@ a.raml-console-resource-path-active {
 .raml-console-sidebar-action-clear {
   width: 80px;
   margin-left: 7px;
-  background-color: #2d2d30;
+  background-color: #0f1217;
 }
 
 .raml-console-sidebar-action-clear:hover {
-  background-color: #46464a;
+  background-color: #232a36;
 }
 
 .raml-console-sidebar-action-prefill {
   text-decoration: none;
   padding: 5px 10px;
-  border: 1px solid #ccc;
+  border: 1px solid #000;
   border-radius: 4px;
-  background-color: #f3f4f5;
+  background-color: #0f1217;
   cursor: pointer;
   font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 13px;
@@ -5094,11 +5291,11 @@ a.raml-console-resource-path-active {
 .raml-console-sidebar-action-reset {
   width: 80px;
   margin-left: 7px;
-  background-color: #888a99;
+  background-color: #404040;
 }
 
 .raml-console-sidebar-action-reset:hover {
-  background-color: #a3a5b1;
+  background-color: #5a5a5a;
 }
 
 .raml-console-sidebar-input-container {
@@ -5107,7 +5304,7 @@ a.raml-console-resource-path-active {
 
 .raml-console-sidebar-label {
   display: block;
-  color: #000;
+  color: #fff;
   font-size: 14px;
   font-weight: 700;
 }
@@ -5128,10 +5325,10 @@ a.raml-console-resource-path-active {
   margin-bottom: 18px;
   height: 36px;
   padding: 0 4px 0 36px;
-  border: 1px solid #d6d7d9;
+  border: 1px solid #000;
   border-radius: 3px;
-  background-color: #fff;
-  color: #333;
+  background-color: #0f1217;
+  color: #eee;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
@@ -5142,7 +5339,7 @@ a.raml-console-resource-path-active {
   left: 2px;
   border: 0;
   background: transparent;
-  color: #bbb;
+  color: #ccc;
   font-weight: 900;
   transition: 0.3s ease color;
 }
@@ -5179,10 +5376,10 @@ a.raml-console-resource-path-active {
   display: none;
   width: 19px;
   height: 19px;
-  border: 1px solid #bbb;
+  border: 1px solid #ccc;
   border-radius: 50%;
   background: transparent;
-  color: #bbb;
+  color: #ccc;
   font-weight: 900;
   transition: 0.3s ease color, 0.3s ease border-color;
 }
@@ -5225,8 +5422,8 @@ a.raml-console-resource-path-active {
   margin: 0 0 18px 0;
   padding: 6px 12px;
   border-radius: 4px;
-  background-color: #2d2d30;
-  color: #fff;
+  background-color: #ccc;
+  color: #0f1217;
   font-size: 14px;
   text-align: right;
 }
@@ -5245,7 +5442,7 @@ a.raml-console-resource-path-active {
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid #2d2d30;
+  border-bottom: 5px solid #ccc;
 }
 
 .raml-console-sidebar-tooltip-flyout-left {
@@ -5258,8 +5455,8 @@ a.raml-console-resource-path-active {
   margin: 0 0 18px 0;
   padding: 6px 12px;
   border-radius: 4px;
-  background-color: #2d2d30;
-  color: #fff;
+  background-color: #ccc;
+  color: #0f1217;
   font-size: 14px;
   text-align: left;
 }
@@ -5278,7 +5475,7 @@ a.raml-console-resource-path-active {
   height: 0;
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
-  border-bottom: 5px solid #2d2d30;
+  border-bottom: 5px solid #ccc;
 }
 
 .raml-console-sidebar-input-container-custom {
@@ -5289,7 +5486,7 @@ a.raml-console-resource-path-active {
   margin-top: 5px;
   margin-bottom: 6px;
   padding: 0;
-  border: 2px solid #d6d7d9;
+  border: 2px solid #000;
   border-radius: 4px;
 }
 
@@ -5300,7 +5497,7 @@ a.raml-console-resource-path-active {
   padding: 0px 4px 3px 30px;
   border: none;
   background-color: transparent;
-  color: #000;
+  color: #fff;
   font-size: 15px;
   line-height: 30px;
   -webkit-font-smoothing: antialiased;
@@ -5316,7 +5513,7 @@ a.raml-console-resource-path-active {
   left: 3px;
   border: 0;
   background: transparent;
-  color: #bbb;
+  color: #ccc;
   font-weight: 900;
   font-size: 22px;
   transition: 0.3s ease color;
@@ -5371,8 +5568,8 @@ a.raml-console-resource-path-active {
   margin: 0;
   margin-bottom: 2px;
   padding-bottom: 3px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  color: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid #12171f;
+  color: #ddd;
   font-size: 16px;
   font-weight: 700;
 }
@@ -5391,16 +5588,16 @@ a.raml-console-resource-path-active {
 .raml-console-sidebar-response-item b {
   margin-left: -16px;
   margin-right: 3px;
-  color: rgba(0, 0, 0, 0.55);
+  color: #aaa;
   font-weight: 400;
   font-style: italic;
 }
 
 .raml-console-sidebar-pre {
   margin: 0;
-  border: 1px solid #c6cada;
+  border: 1px solid #141519;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.75);
+  background: #141519;
   font-family: Source Code Pro;
   font-size: 14px;
 }
@@ -5443,7 +5640,7 @@ a.raml-console-resource-path-active {
   z-index: 20;
   height: 25px;
   border-bottom-left-radius: 3px;
-  background-color: rgba(45, 45, 48, 0.5);
+  background-color: rgba(40, 42, 48, 0.5);
   color: #fff;
   text-align: center;
   font-weight: 900;
@@ -5885,7 +6082,7 @@ span.raml-console-side-bar-required-field {
 }
 
 .raml-console-initializer-content-wrapper section {
-  background: #f3f4f5;
+  background: #1a202b;
 }
 
 .raml-console-initializer-row {
@@ -5904,10 +6101,10 @@ span.raml-console-side-bar-required-field {
   margin-right: 16px;
   padding-top: 10px;
   padding-bottom: 10px;
-  border-top: 2px solid #d6d7d9;
+  border-top: 2px solid #12171f;
   border-width: 1px 0;
   position: relative;
-  color: #585961;
+  color: #5685aa;
   font-size: 13px;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -5939,10 +6136,10 @@ span.raml-console-side-bar-required-field {
   margin-bottom: 18px;
   height: 36px;
   padding: 0 4px 0 36px;
-  border: 1px solid #d6d7d9;
+  border: 1px solid #000;
   border-radius: 3px;
-  background-color: #fff;
-  color: #333;
+  background-color: #0f1217;
+  color: #eee;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
@@ -5972,17 +6169,17 @@ span.raml-console-side-bar-required-field {
 
 .raml-console-initializer-action-btn {
   width: 25%;
-  background-color: #888a99;
+  background-color: #404040;
 }
 
 .raml-console-initializer-action-btn:hover {
-  background-color: #a3a5b1;
+  background-color: #5a5a5a;
 }
 
 .raml-console-toggle-all {
   text-transform: capitalize;
   font-size: 10px;
-  background-color: #b7b7b7;
+  background-color: #19202b;
   border: 0;
   color: #878787;
   font-weight: bold;
@@ -6075,8 +6272,8 @@ span.raml-console-side-bar-required-field {
 .raml-console-documentation-active .raml-console-document-header {
   min-height: 50px;
   margin: 10px 0 0;
-  border-color: #2d2d30;
-  background: #2d2d30;
+  border-color: #282a30;
+  background: #282a30;
 }
 
 @media only screen and (min-width: 600px) {
@@ -6090,7 +6287,7 @@ span.raml-console-side-bar-required-field {
 }
 
 .raml-console-documentation-header {
-  background: #e0e0e0;
+  background: #252f3f;
   position: relative;
 }
 
@@ -6106,7 +6303,7 @@ span.raml-console-side-bar-required-field {
 .raml-console-root-documentation .raml-console-documentation-contents {
   padding-top: 11px;
   padding-bottom: 17px;
-  background: #f5f5f5;
+  background: #4b4f5a;
 }
 
 .raml-console-root-documentation .raml-console-documentation-contents .raml-console-documentation-clearfix {
@@ -6441,13 +6638,13 @@ Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmai
   display: block;
   overflow-x: auto;
   padding: 0.5em;
-  background: #fff;
-  color: #657b83;
+  background: #002b36;
+  color: #839496;
   -webkit-text-size-adjust: none;
 }
 
-.raml-console-hljs-string {
-  color: #657b83 !important;
+.raml-console-hljs-number {
+  color: #d33682 !important;
 }
 
 .raml-console-hljs-comment,
@@ -6457,7 +6654,7 @@ Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmai
 .raml-console-hljs-pi,
 .raml-console-lisp .raml-console-hljs-string,
 .raml-console-hljs-javadoc {
-  color: #93a1a1;
+  color: #586e75;
 }
 
 /* Solarized Green */
@@ -6549,7 +6746,7 @@ Orginal Style from ethanschoonover.com/solarized (c) Jeremy Hull <sourdrums@gmai
 }
 
 .raml-console-tex .raml-console-hljs-formula {
-  background: #eee8d5;
+  background: #073642;
 }
 /*
 raml-console theme for code-mirror
@@ -6558,7 +6755,7 @@ http://ethanschoonover.com/raml-console
 
 /*
 raml-console color pallet
-http://ethanschoonover.com/raml-console/img/raml-console-palette.png
+http://ethanschoonover.com/raml-console/img/solarized-palette.png
 */
 
 .raml-console.base03 { color: #002b36; }
@@ -6584,9 +6781,9 @@ http://ethanschoonover.com/raml-console/img/raml-console-palette.png
   line-height: 1.45em !important;
   color-profile: sRGB !important;
   rendering-intent: auto !important;
+  color: #839496 !important;
+  background-color: #002b36 !important;
   position: relative !important;
-  background-color: #fff !important;
-  color: #657b83 !important;
 }
 
 .cm-s-raml-console .CodeMirror-widget {
@@ -6595,38 +6792,38 @@ http://ethanschoonover.com/raml-console/img/raml-console-palette.png
 
 
 .cm-s-raml-console .cm-keyword { color: #cb4b16 }
-.cm-s-raml-console .cm-atom { color: #2aa198; }
-.cm-s-raml-console .cm-number { color: #2aa198; }
+.cm-s-raml-console .cm-atom { color: #d33682; }
+.cm-s-raml-console .cm-number { color: #d33682; }
 .cm-s-raml-console .cm-def { color: #b58900; }
 
 .cm-s-raml-console .cm-variable { color: #268bd2; }
 .cm-s-raml-console .cm-variable-2 { color: #b58900; }
 .cm-s-raml-console .cm-variable-3 { color: #6c71c4; }
 
-.cm-s-raml-console .cm-property { color: #b58900; }
+.cm-s-raml-console .cm-property { color: #b58900 !important; }
 .cm-s-raml-console .cm-operator {color: #6c71c4;}
 
 .cm-s-raml-console .cm-comment { color: #586e75; font-style:italic; }
 
-/*.cm-s-raml-console .cm-string { color: #859900; }*/
-/*.cm-s-raml-console .cm-string-2 { color: #b58900; }*/
+.cm-s-raml-console .cm-string { color: #2aa198; }
+.cm-s-raml-console .cm-string-2 { color: #b58900; }
 
 .cm-s-raml-console .cm-meta { color: #859900; }
 .cm-s-raml-console .cm-qualifier { color: #b58900; }
-.cm-s-raml-console .cm-builtin { color: #2aa198; }
+.cm-s-raml-console .cm-builtin { color: #d33682; }
 .cm-s-raml-console .cm-bracket { color: #cb4b16; }
 .cm-s-raml-console .CodeMirror-matchingbracket { color: #859900; }
 .cm-s-raml-console .CodeMirror-nonmatchingbracket { color: #dc322f; }
-.cm-s-raml-console .cm-tag { color: #268bd2 }
+.cm-s-raml-console .cm-tag { color: #93a1a1 }
 .cm-s-raml-console .cm-attribute {  color: #b58900; }
 .cm-s-raml-console .cm-header { color: #586e75; }
-.cm-s-raml-console .cm-quote { color: #268bd2; }
+.cm-s-raml-console .cm-quote { color: #93a1a1; }
 .cm-s-raml-console .cm-hr {
   color: transparent;
   border-top: 1px solid #586e75;
   display: block;
 }
-.cm-s-raml-console .cm-link { color: #268bd2; cursor: pointer; }
+.cm-s-raml-console .cm-link { color: #93a1a1; cursor: pointer; }
 .cm-s-raml-console .cm-special { color: #6c71c4; }
 .cm-s-raml-console .cm-em {
   color: #999;
@@ -6641,7 +6838,7 @@ http://ethanschoonover.com/raml-console/img/raml-console-palette.png
 }
 
 .cm-s-raml-console .CodeMirror-selected {
-  background: #eee8d5;
+  background: #073642;
 }
 
 /* Editor styling */
@@ -6650,11 +6847,9 @@ http://ethanschoonover.com/raml-console/img/raml-console-palette.png
 
 /* Little shadow on the view-port of the buffer view */
 .cm-s-raml-console.CodeMirror {
-  /*-moz-box-shadow: inset 7px 0 12px -6px #000;
+  -moz-box-shadow: inset 7px 0 12px -6px #000;
   -webkit-box-shadow: inset 7px 0 12px -6px #000;
-  box-shadow: inset 7px 0 12px -6px #000;*/
-  /*height: 100%;*/
-  /*margin-top: -18px;*/
+  box-shadow: inset 7px 0 12px -6px #000;
 }
 
 /* Gutter border and some shadow from it  */
@@ -6664,10 +6859,14 @@ http://ethanschoonover.com/raml-console/img/raml-console-palette.png
 
 /* Gutter colors and line number styling based of color scheme (dark / light) */
 
-/* Light */
+/* Dark */
 .cm-s-raml-console .CodeMirror-gutters {
-  background-color: #fff;
-  border-color: #eee8d5;
+  background-color:  #002b36;
+  border-color: #00232c;
+}
+
+.cm-s-raml-console .CodeMirror-linenumber {
+  text-shadow: #021014 0 -1px;
 }
 
 /* Common */
@@ -6676,7 +6875,7 @@ http://ethanschoonover.com/raml-console/img/raml-console-palette.png
   padding: 0 5px;
 }
 .cm-s-raml-console .CodeMirror-guttermarker-subtle { color: #586e75; }
-.cm-s-raml-console .CodeMirror-guttermarker { color: #cb4b16; }
+.cm-s-raml-console .CodeMirror-guttermarker { color: #ddd; }
 
 .cm-s-raml-console .CodeMirror-gutter .CodeMirror-gutter-text {
   color: #586e75;
@@ -6691,5 +6890,5 @@ Active line. Negative margin compensates left padding of the text in the
 view-port
 */
 .cm-s-raml-console .CodeMirror-activeline-background {
-  background: rgba(0, 0, 0, 0.10);
+  background: rgba(255, 255, 255, 0.10);
 }

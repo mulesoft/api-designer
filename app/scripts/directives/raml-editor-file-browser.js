@@ -5,17 +5,51 @@
     .directive('ramlEditorFileBrowser', function (
       $q,
       $window,
-      $rootScope,
       $timeout,
       config,
       ramlRepository,
       newNameModal,
-      importService
+      importService,
+      eventEmitter
     ) {
       function Controller($scope) {
         var fileBrowser         = this;
-        var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
+
+        eventEmitter.subscribe('event:editor:include', function (data) {
+          var path = data.path;
+
+          $scope.homeDirectory.forEachChildDo(function (child) {
+            if (!child.isDirectory) {
+              if (child.path.indexOf(path) !== -1) {
+                fileBrowser.selectFile(child);
+                return;
+              }
+            }
+          });
+        });
+
+        $scope.projectExplorerExpanded = true;
+
+        $scope.toggleProjectExplorer = function toggleProjectExplorer() {
+          $scope.projectExplorerExpanded = !$scope.projectExplorerExpanded;
+        };
+
+        $scope.workingFilesExpanded = false;
+
+        $scope.toggleWorkingFiles = function toggleWorkingFiles() {
+          $scope.workingFilesExpanded = Object.keys($scope.workingFiles).length === 0 ? false : !$scope.workingFilesExpanded;
+        };
+
+        $scope.$watchCollection(function (scope) {
+          return scope.workingFiles;
+        }, function (newValue) {
+          $scope.workingFilesExpanded = true;
+
+          if (Object.keys(newValue).length === 0) {
+            $scope.workingFilesExpanded = false;
+          }
+        });
 
         $scope.toggleFolderCollapse = function(node) {
           node.collapsed = !node.collapsed;
@@ -78,7 +112,7 @@
               fileBrowser.cursorState = '';
 
               if (!event.canceled && duplicateName) {
-                $rootScope.$broadcast('event:notification', {
+                eventEmitter.publish('event:notification', {
                   message: 'Failed: duplicate file name found in the destination folder.',
                   expires: true,
                   level: 'error'
@@ -87,6 +121,22 @@
             }
           };
         })();
+
+        $scope.workingFiles = {};
+
+        fileBrowser.close = function close(target) {
+          delete $scope.workingFiles[target.name];
+        };
+
+        fileBrowser.isEmpty = function (obj) {
+          return Object.keys(obj).length === 0;
+        };
+
+        fileBrowser.dblClick = function dblClick(target) {
+          if (!target.isDirectory) {
+            $scope.workingFiles[target.name] = target;
+          }
+        };
 
         fileBrowser.select = function select(target) {
           if (target.isDirectory) {
@@ -103,26 +153,19 @@
             return;
           }
 
-          unwatchSelectedFile();
-
           var isLoaded     = file.loaded || !file.persisted;
           var afterLoading = isLoaded ? $q.when(file) : ramlRepository.loadFile(file);
 
           afterLoading
             .then(function (file) {
               fileBrowser.selectedFile = fileBrowser.currentTarget = file;
-              $scope.$emit('event:raml-editor-file-selected', file);
-              unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
-                if (newContents !== oldContents) {
-                  file.dirty = true;
-                }
-              });
+              eventEmitter.publish('event:raml-editor-file-selected', file);
             })
           ;
         };
 
         fileBrowser.selectDirectory = function selectDirectory(directory) {
-          $scope.$emit('event:raml-editor-directory-selected', directory);
+          eventEmitter.publish('event:raml-editor-directory-selected', directory);
         };
 
         /**
@@ -144,22 +187,22 @@
 
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
-            .then(function () {
-              return $rootScope.$broadcast('event:notification', {
-                message: 'File saved.',
-                expires: true
-              });
-            })
+            // .then(function () {
+            //   // return eventEmitter.publish('event:notification', {
+            //   //   message: 'File saved.',
+            //   //   expires: true
+            //   // });
+            // })
           ;
         };
 
-        fileBrowser.dropFile = function dropFile (event, directory) {
+        fileBrowser.dropFile = function dropFile (directory) {
           return importService.importFromEvent(directory, event)
             .then(function () {
               directory.collapsed = false;
             })
             .catch(function (err) {
-              $rootScope.$broadcast('event:notification', {
+              eventEmitter.publish('event:notification', {
                 message: err.message,
                 expires: true,
                 level: 'error'
@@ -192,28 +235,28 @@
           contextMenu = cm;
         };
 
-        $scope.$on('event:raml-editor-file-generated', function (event, file) {
+        eventEmitter.subscribe('event:raml-editor-file-generated', function (file) {
           fileBrowser.selectFile(file);
         });
 
-        $scope.$on('event:raml-editor-directory-created', function (event, dir) {
+        eventEmitter.subscribe('event:raml-editor-directory-created', function (dir) {
           fileBrowser.selectDirectory(dir);
         });
 
-        $scope.$on('event:raml-editor-file-selected', function (event, file) {
+        eventEmitter.subscribe('event:raml-editor-file-selected', function (file) {
           expandAncestors(file);
         });
 
-        $scope.$on('event:raml-editor-directory-selected', function (event, dir) {
+        eventEmitter.subscribe('event:raml-editor-directory-selected', function (dir) {
           expandAncestors(dir);
         });
 
-        $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
+        eventEmitter.subscribe('event:raml-editor-filetree-modified', function (target) {
           var parent = ramlRepository.getParent(target);
           parent.sortChildren();
         });
 
-        $scope.$on('event:raml-editor-file-removed', function (event, file) {
+        eventEmitter.subscribe('event:raml-editor-file-removed', function (file) {
           $timeout(function () {
             var files = $scope.homeDirectory.getFiles();
 
@@ -225,7 +268,7 @@
           });
         });
 
-        $scope.$on('$destroy', function () {
+        eventEmitter.subscribe('$destroy', function () {
           $window.removeEventListener('keydown', saveListener);
         });
 

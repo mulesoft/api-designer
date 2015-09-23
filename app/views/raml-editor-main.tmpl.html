@@ -1,4 +1,4 @@
-<div role="raml-editor" class="{{theme}}">
+<div role="raml-editor" class="{{theme}}" ng-click="mainClick($event)" hotkey="{'mod+p': openOmnisearch, 'ctrl+h': toggleCheatSheet}">
   <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === 'error'}">
     {{message}}
     <i class="fa" ng-class="{'fa-check': level === 'info', 'fa-warning': level === 'error'}" ng-click="hideNotifications()"></i>
@@ -12,7 +12,7 @@
     <a role="logo" target="_blank" href="http://mulesoft.com"></a>
   </header>
 
-  <ul class="menubar">
+  <ul class="menubar" style="height: 21px;">
     <li class="menu-item menu-item-ll">
       <raml-editor-new-file-button></raml-editor-new-file-button>
     </li>
@@ -28,7 +28,10 @@
     <li ng-show="canExportFiles()" class="menu-item menu-item-ll">
       <raml-editor-export-files-button></raml-editor-export-files-button>
     </li>
-    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>
+    <li class="menu-item menu-item-ll" ng-click="openHelp()">
+      <span><i class="fa fa-question-circle"></i> Help</span>
+    </li>
+    <li class="spacer file-absolute-path"></li>
     <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">
       <div class="title">Mocking Service</div>
       <div class="field-wrapper" ng-class="{loading: loading}">
@@ -39,32 +42,82 @@
         </div>
       </div>
     </li>
-    <li class="menu-item menu-item-fr" ng-click="openHelp()">
-      <span><i class="fa fa-question-circle"></i> Help</span>
-    </li>
   </ul>
+
+  <raml-editor-omnisearch role="omnisearch"></raml-editor-omnisearch>
 
   <div role="flexColumns">
     <raml-editor-file-browser role="browser"></raml-editor-file-browser>
 
-    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>
+    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-min-width="200">
+    </div>
 
-    <div role="editor" ng-class="{error: currentError}">
-      <div id="code" role="code"></div>
 
-      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
+    <div role="editor">
+      <div class="editor-title">{{getSelectedFileAbsolutePath()}}</div>
+
+      <raml-editor-breadcrumb role="breadcrumb" ng-show="isActive('source')"></raml-editor-breadcrumb>
+
+      <!-- SOURCE -->
+      <div id="code" role="code" ng-show="isActive('source')"></div>
+      <!-- SOURCE -->
+
+      <!-- DOCUMENTATION -->
+      <div role="code" ng-show="isActive('documentation')" class="raml-console-embedded">
+        <raml-console documentation-collapsed disable-try-it disable-theme-switcher disable-raml-client-generator disable-title style="padding: 3px; margin-top: 0; margin-bottom: 0;"></raml-console>
+      </div>
+      <!-- DOCUMENTATION -->
+
+      <div class="editor-bottom">
+        <button ng-click="setMode('source')" ng-class="{'active': isActive('source')}">Source</button>
+        <button ng-click="setMode('documentation')" ng-class="{'active': isActive('documentation')}">Documentation</button>
+      </div>
+
+      <!-- <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
         <div role="shelf-tab" ng-click="toggleShelf()">
           <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? 'fa-caret-up' : 'fa-caret-down'"></i>
         </div>
 
         <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="'views/raml-editor-shelf.tmpl.html'"></div>
+      </div> -->
+    </div>
+
+    <div id="consoleAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">
+    </div>
+
+    <!-- SOURCE -->
+    <div role="preview-wrapper" ng-show="isActive('source')" ng-class="{collapsed: rightBarCollapsed}">
+      <div class="collapsed-right-bar" ng-show="rightBarCollapsed">
+        <span ng-click="toggleRightBar()">Try-It</span>
+        <!-- <span ng-click="toggleRightBar()">Snippets</span> -->
+      </div>
+      <div class="right-bar" ng-hide="rightBarCollapsed">
+        <div class="section">
+          <div class="section-title">
+            <!-- <i class="fa icon fa-caret-right caret-icon"></i> -->Try-It<span class="close" ng-click="toggleRightBar()">&#x2715;</span>
+          </div>
+          <raml-editor-try-it role="try-it"></raml-editor-try-it>
+        </div>
       </div>
     </div>
+    <!-- SOURCE -->
 
-    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>
-
-    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
-      <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console>
+    <!-- DOCUMENTATION -->
+    <div role="preview-wrapper" ng-show="isActive('documentation')" ng-class="{collapsed: rightBarCollapsed}">
+      <div class="collapsed-right-bar" ng-show="rightBarCollapsed">
+        <span ng-click="toggleRightBar()">Resources</span>
+        <!-- <span ng-click="toggleRightBar()">Snippets</span> -->
+      </div>
+      <div class="right-bar" ng-hide="rightBarCollapsed">
+        <div class="section">
+          <div class="section-title">
+            <!-- <i class="fa icon fa-caret-right caret-icon"></i> -->Resources<span class="close" ng-click="toggleRightBar()">&#x2715;</span>
+          </div>
+          <raml-editor-resource-list role="resource-list"></raml-editor-resource-list>
+        </div>
+      </div>
     </div>
+    <!-- DOCUMENTATION -->
   </div>
+  <raml-editor-bottom-bar role="bottom-bar"></raml-editor-bottom-bar>
 </div>

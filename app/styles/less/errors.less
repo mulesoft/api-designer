@@ -47,17 +47,25 @@
 }
 
 .CodeMirror-lint-message-error, .CodeMirror-lint-message-warning {
-  padding-left: 18px;
+  // padding-left: 18px;
   background-position: top left;
   background-repeat: no-repeat;
 }
 
-.CodeMirror-lint-marker-error, .CodeMirror-lint-message-error {
-  background-image: url("data:image/gif;base64,R0lGODlhEAAQANUAAPVvcvWHiPVucvRuc+ttcfV6f91KVN5LU99PV/FZY/JhaM4oN84pONE4Rd1ATfJLWutVYPRgbdxpcsgWKMgZKs4lNfE/UvE/U+artcpdSc5uXveimslHPuBhW/eJhfV5efaCgO2CgP+/v+PExP///////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAACUALAAAAAAQABAAAAZ+wJJwSCwaScgkySgkjTQZTkYzWhadnE5oE+pwqkSshwQqkzxfa4kkQXxEpA9J9EFI1KQGQQBAigYCBA14ExEWF0gXihETeA0QD3AkD5QQg0NsDnAJmwkOd5gYFSQKpXAFDBhqaxgLBwQBBAapq00YEg0UDRKqTGtKSL7Cw8JBADs=");
+.CodeMirror-lint-marker-error::before {
+  content: '\25CF ';
+  color: red;
+  font-size: 15px;
+  position: absolute;
+  top: -1px;
 }
 
-.CodeMirror-lint-marker-warning, .CodeMirror-lint-message-warning {
-  background-image: url("data:image/gif;base64,R0lGODlhEAAQANUAAP7bc//egf/ij/7ijv/jl/7kl//mnv7lnv/uwf7CTP7DTf7DT/7IW//Na/7Na//NbP7QdP/dmbltAIJNAF03AMSAJMSCLKqASa2DS6uBSquCSrGHTq6ETbCHT7WKUrKIUcCVXL+UXMOYX8GWXsSZYMiib6+ETbOIUcOXX86uhd3Muf///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAACsALAAAAAAQABAAAAZowJVwSCwaj0ihikRSJYcoBEL0XKlGkcjImQQhJBREKFnyICoThKeE/AAW6AXgdPyUAgrLJBEo0YsbAQyDhAEdRRwDDw8OaA4NDQImRBgFEJdglxAEGEQZKQcHBqOkKRpFF6mqq1WtrUEAOw==");
+.CodeMirror-lint-marker-warning::before {
+  content: '\25CF ';
+  color: yellow;
+  font-size: 15px;
+  position: absolute;
+  top: -1px;
 }
 
 .CodeMirror-lint-marker-multiple {

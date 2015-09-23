@@ -3,11 +3,11 @@
 
   angular.module('ramlEditorApp')
     .directive('ramlEditorSaveFileButton', function ramlEditorSaveFileButton(
-      $rootScope,
       ramlRepository,
       $window,
       $timeout,
-      $q
+      $q,
+      eventEmitter
     ) {
       return {
         restrict: 'E',
@@ -40,16 +40,16 @@
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
 
-            return ramlRepository.saveFile(file)
-              .then(function success() {
-                $rootScope.$broadcast('event:notification', {
-                  message: 'File saved.',
-                  expires: true
-                });
-              });
+            return ramlRepository.saveFile(file);
+              // .then(function success() {
+              //   // eventEmitter.publish('event:notification', {
+              //   //   message: 'File saved.',
+              //   //   expires: true
+              //   // });
+              // });
           };
 
-          scope.saveAllFiles = function saveAllFiles() {
+          function saveAll () {
             var promises = [];
 
             scope.homeDirectory.forEachChildDo(function (file) {
@@ -62,13 +62,25 @@
               }
             });
 
-            return $q.all(promises)
-              .then(function success() {
-                $rootScope.$broadcast('event:notification', {
-                  message: 'All files saved.',
-                  expires: true
-                });
-              });
+            return promises;
+          }
+
+          eventEmitter.subscribe('event:notification:save-all', function (data) {
+            if (data.notify) {
+              scope.saveAllFiles();
+            } else {
+              saveAll();
+            }
+          });
+
+          scope.saveAllFiles = function saveAllFiles() {
+            return $q.all(saveAll());
+              // .then(function success() {
+              //   // eventEmitter.publish('event:notification', {
+              //   //   message: 'All files saved.',
+              //   //   expires: true
+              //   // });
+              // });
           };
         }
       };

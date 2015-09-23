@@ -2,19 +2,20 @@
 
 <script type="text/ng-template" id="file-item.html">
   <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"
-    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
-      dirty: node.dirty,
+    ng-dblclick="fileBrowser.dblClick(node)" ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
       geared: fileBrowser.contextMenuOpenedFor(node),
       directory: node.isDirectory,
       'no-drop': fileBrowser.cursorState === 'no',
-      copy: fileBrowser.cursorState === 'ok'}"
+      copy: fileBrowser.cursorState === 'ok',
+      'file-item2': !node.isDirectory,
+      root: node.root
+    }"
     ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">
     <span class="file-name" ng-click="toggleFolderCollapse(node)">
-      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>
-      <i class="fa icon fa-fw" ng-class="{'fa-folder-o': node.isDirectory, 'fa-file-text-o': !node.isDirectory}"></i>
-      &nbsp;{{node.name}}
+      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>{{node.name}}
     </span>
     <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>
+    <div class="background">&nbsp</div>
   </div>
 
   <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">
@@ -24,8 +25,35 @@
 </script>
 
 <div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">
-  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
-    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>
+  <div class="section-title">
+    <i class="fa icon fa-caret-right caret-icon"
+      ng-click="toggleWorkingFiles()"
+      ng-class="{'fa-caret-down': workingFilesExpanded, 'fa-caret-right': !workingFilesExpanded}"></i>
+    Working Files
+    <i class="fa icon fa-save save-icon" ng-click="saveAllFiles()"></i>
+  </div>
+  <ul ng-if="!fileBrowser.isEmpty(workingFiles)" class="angular-ui-tree-nodes" ng-show="workingFilesExpanded">
+    <li ng-repeat="(key, node) in workingFiles" class="angular-ui-tree-node angular-ui-working-node">
+      <div class="file-item" ng-click="fileBrowser.select(node)"
+        ng-class="{workingfile: fileBrowser.currentTarget.path === node.path, dirty: node.dirty}">
+        <span class="file-name" >
+          {{key}}
+        </span>
+        <div class="background">&nbsp</div>
+        <i class="fa fa-times close-icon" ng-click="fileBrowser.close(node)"></i>
+      </div>
+    </li>
+  </ul>
+  <div class="section-title">
+    <i class="fa icon caret-icon"
+      ng-click="toggleProjectExplorer()"
+      ng-class="{'fa-caret-down': projectExplorerExpanded, 'fa-caret-right': !projectExplorerExpanded}"></i>
+    Project Explorer
+    <i class="fa icon fa-folder-open folder-icon" ng-click="newFolder()"></i>
+    <i class="fa icon fa-file file-icon" ng-click="newFile()"></i>
+  </div>
+  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root" ng-show="projectExplorerExpanded">
+
     <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'" data-collapsed="node.collapsed"
      ng-drag-enter="node.collapsed = false"
      ng-drag-leave="node.collapsed = true"></li>

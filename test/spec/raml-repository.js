@@ -1,9 +1,10 @@
 'use strict';
 
 describe('RAML Repository', function () {
-  var $rootScope, $q, $timeout, ramlRepository, fileSystem, sandbox;
+  var $rootScope, $q, $timeout, ramlRepository, fileSystem, sandbox, eventEmitter;
 
   beforeEach(module('fs'));
+  beforeEach(module('ramlEditorApp'));
   beforeEach(function () {
     module(function($exceptionHandlerProvider) {
       $exceptionHandlerProvider.mode('log');
@@ -15,6 +16,7 @@ describe('RAML Repository', function () {
     $q             = $injector.get('$q');
     $timeout       = $injector.get('$timeout');
     fileSystem     = $injector.get('fileSystem');
+    eventEmitter   = $injector.get('eventEmitter');
     ramlRepository = $injector.get('ramlRepository');
     sandbox        = sinon.sandbox.create();
   }));
@@ -228,7 +230,7 @@ describe('RAML Repository', function () {
       it('should broadcast an event on success', function (done) {
         ramlRepository.generateDirectory(rootDirectory, 'newFolder');
         createDirDeferred.resolve();
-        $rootScope.$on('event:raml-editor-directory-created', function () {
+        eventEmitter.subscribe('event:raml-editor-directory-created', function () {
           done();
         });
         $rootScope.$apply();
@@ -297,7 +299,7 @@ describe('RAML Repository', function () {
       });
 
       it('should broadcast an event on success', function (done) {
-        $rootScope.$on('event:raml-editor-directory-removed', function () {
+        eventEmitter.subscribe('event:raml-editor-directory-removed', function () {
           done();
         });
         $rootScope.$apply();
@@ -684,13 +686,14 @@ describe('RAML Repository', function () {
     beforeEach(inject(function ($injector) {
       $rootScope   = $injector.get('$rootScope');
       ramlSnippets = $injector.get('ramlSnippets');
+      eventEmitter = $injector.get('eventEmitter');
     }));
 
     beforeEach(function() {
       snippet = 'This is an empty RAML file content';
       sinon.stub(ramlSnippets, 'getEmptyRaml').returns(snippet);
 
-      broadcastSpy = sandbox.spy($rootScope, '$broadcast');
+      broadcastSpy = sandbox.spy(eventEmitter, 'publish');
 
       var directoryDeferred = $q.defer();
       sinon.stub(fileSystem, 'directory').returns(directoryDeferred.promise);

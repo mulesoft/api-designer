@@ -3,8 +3,9 @@
 
   angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     .factory('codeMirror', function (
-      $rootScope, ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
-      getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue
+      ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
+      getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
+      eventEmitter, getNode, ramlEditorContext, hotkeys
     ) {
       var editor  = null;
       var service = {
@@ -76,20 +77,38 @@
         raml: { name: 'raml' }
       };
 
+      var mac         = CodeMirror.keyMap['default'] === CodeMirror.keyMap.macDefault;
+      var ctrl        = mac ? 'Cmd-' : 'Ctrl-';
+      var swap        = mac ? 'Cmd-Ctrl-' : 'Shift-Ctrl-';
       var defaultKeys = {
-        'Cmd-S': 'save',
-        'Ctrl-S': 'save',
+        'Shift-Ctrl-T': 'toggleTheme',
         'Shift-Tab': 'indentLess',
-        'Shift-Ctrl-T': 'toggleTheme'
-      };
-
-      var ramlKeys = {
         'Ctrl-Space': 'autocomplete',
-        'Cmd-S': 'save',
-        'Ctrl-S': 'save',
-        'Shift-Tab': 'indentLess',
-        'Shift-Ctrl-T': 'toggleTheme'
+        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
+        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
+        'Ctrl-H': 'toggleCheatSheet'
       };
+      var ramlKeys;
+
+      defaultKeys[ctrl+'S']           = 'save';
+      defaultKeys['Shift-'+ctrl+'S']  = 'saveAll';
+      defaultKeys[ctrl+'P']           = 'showOmniSearch';
+      defaultKeys[ctrl+'D']           = CodeMirror.sublimeKeyMap[ctrl+'D'];
+      defaultKeys[ctrl+'L']           = CodeMirror.sublimeKeyMap[ctrl+'L'];
+      defaultKeys[swap+'Up']          = CodeMirror.sublimeKeyMap[swap+'Up'];
+      defaultKeys[swap+'Down']        = CodeMirror.sublimeKeyMap[swap+'Down'];
+      defaultKeys[ctrl+'K '+ctrl+'K'] = CodeMirror.sublimeKeyMap[ctrl+'K '+ctrl+'K'];
+      defaultKeys[ctrl+'K '+ctrl+'U'] = CodeMirror.sublimeKeyMap[ctrl+'K '+ctrl+'U'];
+      defaultKeys[ctrl+'K '+ctrl+'L'] = CodeMirror.sublimeKeyMap[ctrl+'K '+ctrl+'L'];
+      defaultKeys['Shift-'+ctrl+'D']  = CodeMirror.sublimeKeyMap['Shift-'+ctrl+'D'];
+
+      ramlKeys           = angular.extend({}, defaultKeys);
+      ramlKeys[ctrl+'/'] = 'toggleComment';
+      ramlKeys[ctrl+'E'] = 'extractTo';
+      ramlKeys['Shift-'+ctrl+'A'] = 'selectResource';
+
+      CodeMirror.normalizeKeyMap(ramlKeys);
+      CodeMirror.normalizeKeyMap(defaultKeys);
 
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
@@ -171,6 +190,7 @@
         }
 
         options = {
+          styleActiveLine: true,
           mode: 'raml',
           theme: 'solarized dark',
           lineNumbers: true,
@@ -196,6 +216,8 @@
           rangeFinder: CodeMirror.fold.indent
         });
 
+        service.cm = cm;
+
         var charWidth   = cm.defaultCharWidth();
         var basePadding = 4;
 
@@ -204,6 +226,40 @@
 
           el.style.textIndent  = '-' + offset + 'px';
           el.style.paddingLeft = (basePadding + offset) + 'px';
+        });
+
+        cm.on('mousedown', function (cm, event) {
+          var target = event.target;
+
+          if (target.className === 'cm-link') {
+            var path = target.innerText.match(/!include(.*)/).pop().trim();
+            eventEmitter.publish('event:editor:include', {path: path});
+          }
+        });
+
+        cm.on('cursorActivity', function () {
+          cm.operation(function() {
+            ramlEditorContext.read(cm.getValue().split('\n'));
+            eventEmitter.publish('event:editor:context:changed', {
+              context: ramlEditorContext.context,
+              cursor:  cm.getCursor()
+            });
+          });
+        });
+
+        cm.on('mousedown', function () {
+          eventEmitter.publish('event:editor:click');
+        });
+
+        cm.on('focus', function (cm) {
+          cm.operation(function() {
+            if (Object.keys(ramlEditorContext.context).length > 1) {
+              eventEmitter.publish('event:editor:context:changed', {
+                context: ramlEditorContext.context,
+                cursor:  cm.getCursor()
+              });
+            }
+          });
         });
 
         return cm;
@@ -228,21 +284,186 @@
           Tab:         service.tabKey,
           Backspace:   service.backspaceKey,
           Enter:       service.enterKey,
-          fallthrough: ['default']
+          fallthrough: 'default'
         };
 
-        CodeMirror.commands.save = function () {
-          $rootScope.$broadcast('event:save');
+        function parseLine(line) {
+          return isNaN(line) ? 0 : line-1;
+        }
+
+        function scrollTo(position) {
+          var cm     = window.editor;
+          var height = cm.getScrollInfo().clientHeight;
+          var coords = cm.charCoords(position, 'local');
+          cm.setCursor(position);
+          cm.scrollTo(null, (coords.top + coords.bottom - height) / 2);
+        }
+
+        eventEmitter.subscribe('event:goToLine', function (search) {
+          var position = {line: parseLine(search.line), ch: 0};
+
+          if (search.focus) {
+            window.editor.focus();
+          }
+
+          scrollTo(position);
+        });
+
+        eventEmitter.subscribe('event:goToResource', function (search) {
+          var context  = ramlEditorContext.context;
+          var root     = '/'+search.scope.split('/')[1];
+          var metadata = context.metadata[root] || context.metadata[search.scope];
+          var startAt  = metadata.startAt;
+          var endAt    = metadata.endAt || context.content.length;
+          var line     = 0;
+          var cm       = window.editor;
+          var path     = null;
+          var resource = search.text;
+
+          if (search.text !== search.resource) {
+            path = '';
+            var fragments = search.scope.split('/');
+
+            fragments = fragments.slice(1, fragments.length);
+
+            for(var j = 0; j <fragments.length; j++) {
+              var el = fragments[j];
+
+              if(el !== resource) {
+                path+='/'+el;
+              }
+
+              if (el === resource && search.index && search.index === j) {
+                path+='/'+el;
+                break;
+              } else if (el === resource && search.index) {
+                path+='/'+el;
+              }
+
+              if(!search.index && el === resource) {
+                path+='/'+el;
+                break;
+              }
+            }
+          }
+
+          path = path ? path : search.scope;
+
+          for(var i = startAt; i <= endAt; i++) {
+            if (context.scopes[i].indexOf(path) !== -1) {
+              line = i;
+              break;
+            }
+          }
+
+          if (search.focus) {
+            cm.focus();
+          }
+
+          scrollTo({line: line, ch: 0});
+        });
+
+        CodeMirror.commands.save = function save() {
+          eventEmitter.publish('event:save');
         };
 
-        CodeMirror.commands.autocomplete = function (cm) {
+        CodeMirror.commands.autocomplete = function autocomplete(cm) {
           CodeMirror.showHint(cm, CodeMirror.hint.raml, {
             ghosting: true
           });
         };
 
-        CodeMirror.commands.toggleTheme = function () {
-          $rootScope.$broadcast('event:toggle-theme');
+        CodeMirror.commands.toggleTheme = function toggleTheme() {
+          eventEmitter.publish('event:toggle-theme');
+        };
+
+        CodeMirror.commands.showOmniSearch = function showOmniSearch() {
+          eventEmitter.publish('event:open:omnisearch');
+        };
+
+        CodeMirror.commands.extractTo = function extractTo(cm) {
+          eventEmitter.publish('event:editor:extract-to', cm);
+        };
+
+        CodeMirror.commands.saveAll = function saveAll() {
+          eventEmitter.publish('event:notification:save-all', {notify: true});
+        };
+
+        CodeMirror.commands.toggleCheatSheet = function toggleCheatSheet() {
+          hotkeys.toggleCheatSheet();
+        };
+
+        CodeMirror.commands.selectResource = function selectResource(cm) {
+          function getIndentation(str) {
+            return str.match(/^\s*/)[0].length;
+          }
+
+          var context = ramlEditorContext.context;
+          var line = cm.getCursor('from').line;
+          var indentation = getIndentation(cm.getLine(line));
+
+          var startLine = 0;
+          var endLine = 0;
+          var value, i, currentIdentation;
+
+          for(i = line; i >= 0; i--){
+            value = cm.getLine(i);
+            currentIdentation = getIndentation(value);
+
+            if(currentIdentation < indentation) {
+              startLine = i;
+              break;
+            }
+          }
+
+          for(i = line; i <= context.scopes.length-1; i++){
+            value = cm.getLine(i);
+            currentIdentation = getIndentation(value);
+
+            if(currentIdentation < indentation) {
+              endLine = i;
+              break;
+            }
+          }
+
+          if (endLine > 0) {
+            var last = endLine-1;
+            cm.setSelection({line: startLine, ch: 0}, {line: last, ch: cm.getLine(last).length});
+          }
+        };
+
+        function toggleComment (content) {
+          if (content.replace(/\s/g, '').indexOf('#')) {
+            content = '# ' + content;
+          } else {
+            content = content.replace(/# /g, '');
+          }
+
+          return content;
+        }
+
+        CodeMirror.commands.toggleComment = function (cm) {
+          var selection   = cm.getSelection();
+          var currentLine = cm.getCursor().line;
+          var content     = cm.getLine(currentLine);
+
+          if (selection.replace(/\s/g, '')) {
+            var lines = selection.split('\n');
+
+            for(var i = 0; i < lines.length; i++) {
+              lines[i] = toggleComment(lines[i]);
+            }
+
+            cm.replaceSelection(lines.join('\n'));
+          } else {
+            cm.replaceRange(toggleComment(content), {
+              line: currentLine,
+              ch: 0
+            }, {
+              line: currentLine,
+              ch: cm.getLine(currentLine).length
+            });
+          }
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);

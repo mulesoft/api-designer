@@ -1,0 +1,5 @@
+<div class="content">
+  <div class="breadcrum">
+    <button ng-click="breadcrumb.show(resource, $index)" ng-class="{active: breadcrumb.isActive(resource)}" ng-repeat="resource in breadcrumb.resources track by $index">{{resource.text}}</button>
+  </div>
+</div>

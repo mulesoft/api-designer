@@ -3,7 +3,7 @@
 
   angular.module('ramlEditorApp')
     .constant('NOTIFICATION_TIMEOUT', 3000)
-    .controller('notifications', function (NOTIFICATION_TIMEOUT, $scope, $timeout) {
+    .controller('notifications', function (NOTIFICATION_TIMEOUT, $scope, $timeout, eventEmitter) {
       var notifications = [];
       $scope.shouldDisplayNotifications = false;
 
@@ -28,7 +28,7 @@
         }
       }
 
-      $scope.$on('event:notification', function (e, args) {
+      eventEmitter.subscribe('event:notification', function (args) {
         notifications.push(JSON.parse(JSON.stringify(args)));
         processNotifications();
       });
