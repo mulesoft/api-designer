@@ -224,12 +224,12 @@ div[role=preview-wrapper] {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   overflow: auto;
-  background: #e6e7eb;
+  background-color: #252526;
   -webkit-box-flex: 0;
   -webkit-flex: 0;
   -ms-flex: 0;
   flex: 0;
-  min-width: 475px;
+  min-width: 300px;
   position: relative;
 }
 
@@ -456,7 +456,7 @@ div .noselect {
   cursor: pointer;
 }
 [ng-splitter=vertical] {
-  min-width: 8px;
+  min-width: 2px;
 }
 [ng-splitter=vertical] .split {
   width: 8px;
@@ -643,7 +643,7 @@ div .noselect {
   overflow: auto;
   list-style: none;
   line-height: 15px;
-  background-color: #141519;
+  background-color: #252526;
   color: #888;
   -webkit-box-flex: 1;
   -webkit-flex: 1;

@@ -47,7 +47,8 @@
   <div role="flexColumns">
     <raml-editor-file-browser role="browser"></raml-editor-file-browser>
 
-    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>
+    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-min-width="200">
+    </div>
 
     <div role="editor" ng-class="{error: currentError}">
       <div id="code" role="code"></div>
@@ -61,10 +62,11 @@
       </div>
     </div>
 
-    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>
+    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">
+    </div>
 
-    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
-      <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console>
+    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">
+      <!-- <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console> -->
     </div>
   </div>
 </div>
