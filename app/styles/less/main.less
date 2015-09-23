@@ -6,19 +6,40 @@ html[role=api-designer] {
 
   body {
     box-sizing: border-box;
-    background: #fafafa;
+    // background: #fafafa;
+    background-color: #2D2D30;
     color: #333;
     width: 100%;
     height: 100%;
     margin: 0;
     padding: 0;
-    font-family: 'Open Sans', sans-serif;
+    // font-family: 'Open Sans', sans-serif;
+    font-family: Helvetica;
   }
 
   div.container {
     box-sizing: border-box;
     width: 100%;
     height: 100%;
+  }
+}
+
+div[role=raml-editor] div.editor-title {
+  /* padding: 0; */
+  /* margin: 0; */
+  background-color: #282828;
+  height: 20px;
+  padding: 3px;
+  color: #E1E1E4;
+  text-align: center;
+  // border: 1px solid #1b1b1b;
+  font-size: 11px;
+  // font-family: Helvetica;
+
+  span.close-button {
+    float: right;
+    margin-right: 5px;
+    margin-top: 1px;
   }
 }
 
@@ -128,7 +149,7 @@ div[role=flexColumns] {
 
 div[role=editor] {
   box-sizing: border-box;
-  border: 1px solid rgba(0, 0, 0, 0);
+  // border: 1px solid rgba(0, 0, 0, 0);
 
   transition: padding-bottom .05s ease-in;
   background: rgb(11,11,13);
@@ -202,6 +223,7 @@ div[role=code] {
   position: relative;
 
   flex: 1;
+  margin-top: 1px;
 }
 
 /* Preview - Console */
