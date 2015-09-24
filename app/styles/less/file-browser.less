@@ -7,6 +7,7 @@
   user-select: none;
   position: relative;
   z-index: 200;
+  font-size: 12px;
 
   flex: 0;
   min-width: 200px;
@@ -19,6 +20,68 @@
     .button;
     float: left;
     margin: 4px 4px 4px 0;
+  }
+
+  .section-title {
+    background-color: #282828;
+    padding: 1px;
+    color: #E1E1E4;
+    border: 1px solid #1b1b1b;
+    // font-size: 11px;
+    padding-top: 2px;
+
+    .caret-icon {
+      font-size: 13px;
+      margin-left: 5px;
+      margin-right: 3px;
+      vertical-align: text-top;
+    }
+
+    .file-icon {
+      float: right;
+      font-size: 12px;
+      margin: 1px;
+      margin-right: 3px;
+    }
+
+    .folder-icon {
+      float: right;
+      font-size: 13px;
+      margin: 1px;
+      margin-right: 3px;
+    }
+  }
+
+  .section-search {
+    margin: 2px;
+    border: 1px solid #3C3C3C;
+    background-color: #565656;
+    padding-left: 3px;
+
+    .search-icon {
+      float: right;
+      font-size: 13px;
+      margin: 1px;
+      margin-right: 3px;
+    }
+
+    input {
+      border: 0;
+      width: 91%;
+      background-color: #565656;
+      outline: none;
+      // font-size: 11px;
+    }
+  }
+
+  .angular-ui-tree-node {
+    margin: 2px;
+    margin-top: 1px;
+    // font-size: 11px;
+  }
+
+  .angular-ui-tree-nodes {
+    padding-left: 10px;
   }
 
   .file-list {
@@ -38,8 +101,11 @@
       color: #333;
     }
 
+    .file-item2 {
+      padding-left: 17px !important;
+    }
+
     .file-item {
-      padding: 5px 10px;
       cursor: pointer;
       white-space: nowrap;
 
@@ -65,7 +131,15 @@
 
       &.currentfile {
         color: #ddd;
-        background-color: @cello_blue;
+        // background-color: @cello_blue;
+        background-color: #3C3C3C;
+
+        div.background {
+          background-color: #3C3C3C;
+          width: 198px;
+          position: fixed;
+          left: 0;
+        }
       }
 
       &.dragover {
@@ -88,6 +162,12 @@
 
         overflow: hidden;
         text-overflow: ellipsis;
+        font-size: 12px;
+
+        i {
+          font-size: 13px;
+          vertical-align: text-top;
+        }
       }
 
       .fa:not(.icon) {
@@ -115,6 +195,7 @@
       /* Patch for embedded designer */
       [ng-click] {
         cursor: inherit;
+        z-index: 1;
       }
     }
   }

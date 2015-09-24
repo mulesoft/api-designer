@@ -7,14 +7,15 @@
       geared: fileBrowser.contextMenuOpenedFor(node),
       directory: node.isDirectory,
       'no-drop': fileBrowser.cursorState === 'no',
-      copy: fileBrowser.cursorState === 'ok'}"
+      copy: fileBrowser.cursorState === 'ok',
+      'file-item2': !node.isDirectory
+    }"
     ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">
     <span class="file-name" ng-click="toggleFolderCollapse(node)">
-      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>
-      <i class="fa icon fa-fw" ng-class="{'fa-folder-o': node.isDirectory, 'fa-file-text-o': !node.isDirectory}"></i>
-      &nbsp;{{node.name}}
+      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>{{node.name}}
     </span>
     <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>
+    <div class="background">&nbsp</div>
   </div>
 
   <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">
@@ -24,8 +25,20 @@
 </script>
 
 <div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">
+  <div class="section-title">
+    <!-- <span class="arrow">&#9660</span> -->
+    <i class="fa icon fa-caret-right caret-icon"></i>
+    Project Explorer
+    <i class="fa icon fa-folder-open folder-icon"></i>
+    <i class="fa icon fa-file file-icon"></i>
+    <i class="fa icon fa-filter file-icon"></i>
+  </div>
+  <div class="section-search" style="display: none;">
+    <i class="fa icon fa-search search-icon"></i>
+    <input type="text" />
+  </div>
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
-    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>
+
     <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'" data-collapsed="node.collapsed"
      ng-drag-enter="node.collapsed = false"
      ng-drag-leave="node.collapsed = true"></li>
