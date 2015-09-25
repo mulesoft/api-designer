@@ -127,8 +127,8 @@
 
       $scope.options = [
         {
-          name: '.zip file',
-          type: 'zip',
+          name: 'file',
+          type: 'file',
           callback: importFile
         },
         {
