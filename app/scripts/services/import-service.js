@@ -250,7 +250,7 @@
           return deferred.reject(reader.error);
         };
 
-        reader.readAsArrayBuffer(file);
+        reader.readAsText(file);
 
         return deferred.promise;
       };

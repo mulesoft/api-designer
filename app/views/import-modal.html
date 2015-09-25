@@ -16,7 +16,7 @@
       <div style="margin-left: 145px;" ng-switch="mode.type">
         <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
 
-        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">
+        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">
       </div>
     </div>
 
@@ -24,8 +24,12 @@
       <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>
     </div>
 
-    <div ng-if="submittedType === 'zip'">
-      <p class="help-block" ng-show="form.zip.$error.required">Please select a .zip file to import.</p>
+    <div ng-if="submittedType === 'file'">
+      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>
+    </div>
+
+    <div ng-if="mode.type === 'file'">
+      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>
     </div>
   </div>
 
