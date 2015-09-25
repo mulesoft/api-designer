@@ -92,18 +92,18 @@
 
         fileBrowser.close = function close(target) {
           delete $scope.workingFiles[target.name];
-        }
+        };
 
         fileBrowser.isEmpty = function (obj) {
           return Object.keys(obj).length === 0;
-        }
+        };
 
         fileBrowser.dblClick = function dblClick(target) {
           console.log(target);
           if (!target.isDirectory) {
             $scope.workingFiles[target.name] = target;
           }
-        }
+        };
 
         fileBrowser.select = function select(target) {
           if (target.isDirectory) {
