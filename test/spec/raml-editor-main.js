@@ -297,7 +297,7 @@ describe('RAML Editor Main Controller', function () {
         // arrange
         var httpGetStub = sinon.stub($http, 'get', function (url) {
           // assert
-          url.should.be.equal('http://api.com/title.raml');
+          url.should.be.equal('/proxy/http://api.com/title.raml');
 
           // restore
           httpGetStub.restore();
