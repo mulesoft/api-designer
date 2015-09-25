@@ -1,0 +1,67 @@
+[role=omnisearch] {
+  div {
+    z-index: 10;
+    background-color: #47474b;
+    border: 1px solid #3a3a3e;
+    width: 500px;
+    height: 116px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 3px;
+    font-size: 11px;
+
+    input {
+      margin: 0;
+      border: 0;
+      width: 494px;
+      font-size: 12px;
+      padding: 3px;
+      outline: none;
+    }
+
+    ul {
+      list-style-type: none;
+      padding:         0;
+      color:           #E1E1E4;
+      margin:          0;
+
+      li {
+        cursor: pointer;
+        padding-top: 3px;
+        padding-bottom: 3px;
+
+        &.separator {
+          border-bottom: 1px solid #3a3a3e;
+        }
+
+        &.active {
+          background-color: #4b4b55;
+        }
+
+        &:hover {
+          background-color: #6f6f7e;
+        }
+
+        span {
+          // color: #00FF00;
+          color: #CCC;
+          display: inline-block;
+          width: 13px;
+          text-align: center;
+        }
+
+        span.description {
+          // color: #00FF00;
+          color: #CCC;
+          float: right;
+          width: 50%;
+          text-align: right;
+          margin-right: 1px;
+        }
+      }
+    }
+  }
+}

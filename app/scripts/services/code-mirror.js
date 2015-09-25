@@ -88,7 +88,8 @@
         'Cmd-S': 'save',
         'Ctrl-S': 'save',
         'Shift-Tab': 'indentLess',
-        'Shift-Ctrl-T': 'toggleTheme'
+        'Shift-Ctrl-T': 'toggleTheme',
+        'Cmd-P': 'showOmniSearch'
       };
 
       var autocomplete = function onChange(cm) {
@@ -243,6 +244,11 @@
 
         CodeMirror.commands.toggleTheme = function () {
           $rootScope.$broadcast('event:toggle-theme');
+        };
+
+        CodeMirror.commands.showOmniSearch = function () {
+          $rootScope.$broadcast('event:show-omni-search');
+          console.log('showOmniSearch');
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);

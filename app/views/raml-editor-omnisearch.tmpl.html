@@ -1,0 +1,11 @@
+<div ng-if="showOmnisearch">
+  <input type="text" placeholder="What are you looking for?" autofocus
+    ng-change="omnisearch.search()"
+    ng-model="omnisearch.searchText" />
+  <ul>
+    <!-- <li><span>></span> Filter by label <span class="description">editor commands</span></li> -->
+    <li ng-repeat="result in omnisearch.searchResults">
+      <span>{{result}}</span>
+    </li>
+  </ul>
+</div>
