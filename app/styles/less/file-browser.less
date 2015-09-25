@@ -84,6 +84,10 @@
     padding-left: 10px;
   }
 
+  .angular-ui-working-node {
+    padding-left: 17px;
+  }
+
   .file-list {
     margin: 0;
     padding: 0;
@@ -129,13 +133,31 @@
         color: #ddd;
       }
 
-      &.currentfile {
-        color: #ddd;
-        // background-color: @cello_blue;
-        background-color: #3C3C3C;
+      i.close-icon {
+        z-index: 1;
+        margin-right: 5px;
+      }
+
+      &.workingfile {
+        color: #3C3C3C;
 
         div.background {
-          background-color: #3C3C3C;
+          background-color: #a2cde5;
+          width: 198px;
+          position: fixed;
+          left: 0;
+        }
+      }
+
+      &.workingfile:hover{
+        color: #3C3C3C;
+      }
+
+      &.currentfile {
+        color: #ddd;
+
+        div.background {
+          background-color: @cello_blue;
           width: 198px;
           position: fixed;
           left: 0;
@@ -158,6 +180,7 @@
       }
 
       .file-name {
+        z-index: 1;
         flex: 1;
 
         overflow: hidden;

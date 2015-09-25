@@ -2,7 +2,7 @@
 
 <script type="text/ng-template" id="file-item.html">
   <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"
-    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
+    ng-dblclick="fileBrowser.dblClick(node)" ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
       dirty: node.dirty,
       geared: fileBrowser.contextMenuOpenedFor(node),
       directory: node.isDirectory,
@@ -27,12 +27,25 @@
 <div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">
   <div class="section-title">
     <!-- <span class="arrow">&#9660</span> -->
-    <i class="fa icon fa-caret-right caret-icon"></i>
+    <i class="fa icon fa-caret-right caret-icon" ng-if="fileBrowser.isEmpty(workingFiles)"></i>
+    <i class="fa icon fa-caret-down caret-icon" ng-if="!fileBrowser.isEmpty(workingFiles)"></i>
     Working Files
   </div>
+  <ul ng-if="!fileBrowser.isEmpty(workingFiles)" class="angular-ui-tree-nodes">
+    <li ng-repeat="(key, node) in workingFiles" class="angular-ui-tree-node angular-ui-working-node">
+      <div class="file-item" ng-click="fileBrowser.select(node)"
+        ng-class="{workingfile: fileBrowser.currentTarget.path === node.path, dirty: node.dirty}">
+        <span class="file-name" >
+          {{key}}
+        </span>
+        <div class="background">&nbsp</div>
+        <i class="fa fa-times close-icon" ng-click="fileBrowser.close(node)"></i>
+      </div>
+    </li>
+  </ul>
   <div class="section-title">
     <!-- <span class="arrow">&#9660</span> -->
-    <i class="fa icon fa-caret-right caret-icon"></i>
+    <i class="fa icon fa-caret-down caret-icon"></i>
     Project Explorer
     <i class="fa icon fa-folder-open folder-icon"></i>
     <i class="fa icon fa-file file-icon"></i>
