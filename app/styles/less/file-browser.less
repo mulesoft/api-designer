@@ -42,6 +42,19 @@
       font-size: 12px;
       margin: 1px;
       margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .file-icon:hover::after  {
+      content: 'New File';
+      margin-top: 15px;
+      position: absolute;
+      font-size: 10px;
+      width: 47px;
+      background: #5a5a5a;
+      padding: 3px;
+      margin-left: -1px;
+      z-index: 1;
     }
 
     .folder-icon {
@@ -49,6 +62,39 @@
       font-size: 13px;
       margin: 1px;
       margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .folder-icon:hover::after  {
+      content: 'New Folder';
+      margin-top: 15px;
+      position: absolute;
+      font-size: 10px;
+      width: 61px;
+      background: #5a5a5a;
+      padding: 3px;
+      margin-left: -1px;
+      z-index: 1;
+    }
+
+    .save-icon {
+      float: right;
+      font-size: 13px;
+      margin: 1px;
+      margin-right: 3px;
+      cursor: pointer;
+    }
+
+    .save-icon:hover::after  {
+      content: 'Save All';
+      margin-top: 15px;
+      position: absolute;
+      font-size: 10px;
+      width: 43px;
+      background: #5a5a5a;
+      padding: 3px;
+      margin-left: -1px;
+      z-index: 1;
     }
   }
 
@@ -204,7 +250,11 @@
       }
 
       &.dirty .file-name:before {
-        content: '* ';
+        content: '\25CF ';
+      }
+
+      &.dirty .file-name {
+        margin-left: -11px;
       }
 
       &.no-drop {

@@ -3,7 +3,6 @@
 <script type="text/ng-template" id="file-item.html">
   <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"
     ng-dblclick="fileBrowser.dblClick(node)" ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,
-      dirty: node.dirty,
       geared: fileBrowser.contextMenuOpenedFor(node),
       directory: node.isDirectory,
       'no-drop': fileBrowser.cursorState === 'no',
@@ -30,6 +29,7 @@
     <i class="fa icon fa-caret-right caret-icon" ng-if="fileBrowser.isEmpty(workingFiles)"></i>
     <i class="fa icon fa-caret-down caret-icon" ng-if="!fileBrowser.isEmpty(workingFiles)"></i>
     Working Files
+    <i class="fa icon fa-save save-icon" ng-click="saveAllFiles()"></i>
   </div>
   <ul ng-if="!fileBrowser.isEmpty(workingFiles)" class="angular-ui-tree-nodes">
     <li ng-repeat="(key, node) in workingFiles" class="angular-ui-tree-node angular-ui-working-node">
@@ -47,9 +47,9 @@
     <!-- <span class="arrow">&#9660</span> -->
     <i class="fa icon fa-caret-down caret-icon"></i>
     Project Explorer
-    <i class="fa icon fa-folder-open folder-icon"></i>
-    <i class="fa icon fa-file file-icon"></i>
-    <i class="fa icon fa-filter file-icon"></i>
+    <i class="fa icon fa-folder-open folder-icon" ng-click="newFolder()"></i>
+    <i class="fa icon fa-file file-icon" ng-click="newFile()"></i>
+    <!-- <i class="fa icon fa-filter file-icon"></i> -->
   </div>
   <div class="section-search" style="display: none;">
     <i class="fa icon fa-search search-icon"></i>

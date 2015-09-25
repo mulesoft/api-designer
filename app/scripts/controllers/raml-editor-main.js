@@ -117,7 +117,8 @@
         // Inform the editor source has changed. This is also called when the
         // editor triggers the change event, swapping the doc does not trigger
         // that event, so we must explicitly call the sourceUpdated function.
-        $scope.sourceUpdated();
+        // console.log('event:raml-editor-file-selected');
+        // $scope.sourceUpdated();
       });
 
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
@@ -149,6 +150,7 @@
       $scope.supportsFolders = ramlRepository.supportsFolders;
 
       $scope.sourceUpdated = function sourceUpdated() {
+        // console.log('sourceUpdated');
         var source       = editor.getValue();
         var selectedFile = $scope.fileBrowser.selectedFile;
 
@@ -177,6 +179,10 @@
         $scope.clearErrorMarks();
 
         var file = $scope.fileBrowser.selectedFile;
+
+        // console.log($scope.workingFiles);
+        // console.log('edited');
+        $scope.workingFiles[file.name] = file;
 
         if (!file || !$scope.fileParsable || file.contents.trim() === '') {
           $scope.currentError = undefined;
