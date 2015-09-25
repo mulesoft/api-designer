@@ -3,7 +3,7 @@
 
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
-    .service('ramlParserFileReader', function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
+    .service('ramlParserFileReader', function ($http, $q, $window, ramlParser, ramlRepository, safeApplyWrapper) {
       function loadFile (path) {
         return ramlRepository.loadFile({path: path}).then(
           function success(file) {
@@ -23,7 +23,9 @@
       }
 
       function readExtFile(path) {
-        return $http.get(path, {transformResponse: null}).then(
+        var proxy = $window.RAML.Settings.proxy || '';
+        var target = proxy + path;
+        return $http.get(target, {transformResponse: null}).then(
           // success
           function success(response) {
             return response.data;
