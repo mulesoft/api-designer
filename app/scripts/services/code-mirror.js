@@ -248,7 +248,6 @@
 
         CodeMirror.commands.showOmniSearch = function () {
           $rootScope.$broadcast('event:show-omni-search');
-          console.log('showOmniSearch');
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);

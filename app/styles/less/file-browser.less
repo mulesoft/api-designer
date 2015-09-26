@@ -116,14 +116,13 @@
       width: 91%;
       background-color: #565656;
       outline: none;
-      // font-size: 11px;
     }
   }
 
   .angular-ui-tree-node {
     margin: 2px;
     margin-top: 1px;
-    // font-size: 11px;
+    margin-right: 0;
   }
 
   .angular-ui-tree-nodes {
@@ -141,7 +140,6 @@
     list-style: none;
     line-height: 15px;
 
-    // background-color: rgb(20,21,25);
     background-color: #252526;
     color: #888;
 
@@ -193,6 +191,10 @@
           position: fixed;
           left: 0;
         }
+
+        .file-name {
+          background-color: #a2cde5;
+        }
       }
 
       &.workingfile:hover{
@@ -207,6 +209,10 @@
           width: 198px;
           position: fixed;
           left: 0;
+        }
+
+        .file-name {
+          background-color: @cello_blue;
         }
       }
 

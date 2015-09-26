@@ -602,7 +602,6 @@ div .noselect {
   background-color: #2d8bca;
 }
 [role=browser] {
-  font-size: 12px;
   color: grey;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -610,6 +609,7 @@ div .noselect {
   user-select: none;
   position: relative;
   z-index: 200;
+  font-size: 12px;
   -webkit-box-flex: 0;
   -webkit-flex: 0;
   -ms-flex: 0;
@@ -654,6 +654,102 @@ div .noselect {
 [role=browser] button:hover {
   background-color: #2d8bca;
 }
+[role=browser] .section-title {
+  background-color: #282828;
+  padding: 1px;
+  color: #E1E1E4;
+  border: 1px solid #1b1b1b;
+  padding-top: 2px;
+}
+[role=browser] .section-title .caret-icon {
+  font-size: 13px;
+  margin-left: 5px;
+  margin-right: 3px;
+  vertical-align: text-top;
+}
+[role=browser] .section-title .file-icon {
+  float: right;
+  font-size: 12px;
+  margin: 1px;
+  margin-right: 3px;
+  cursor: pointer;
+}
+[role=browser] .section-title .file-icon:hover::after {
+  content: 'New File';
+  margin-top: 15px;
+  position: absolute;
+  font-size: 10px;
+  width: 47px;
+  background: #5a5a5a;
+  padding: 3px;
+  margin-left: -1px;
+  z-index: 1;
+}
+[role=browser] .section-title .folder-icon {
+  float: right;
+  font-size: 13px;
+  margin: 1px;
+  margin-right: 3px;
+  cursor: pointer;
+}
+[role=browser] .section-title .folder-icon:hover::after {
+  content: 'New Folder';
+  margin-top: 15px;
+  position: absolute;
+  font-size: 10px;
+  width: 61px;
+  background: #5a5a5a;
+  padding: 3px;
+  margin-left: -1px;
+  z-index: 1;
+}
+[role=browser] .section-title .save-icon {
+  float: right;
+  font-size: 13px;
+  margin: 1px;
+  margin-right: 3px;
+  cursor: pointer;
+}
+[role=browser] .section-title .save-icon:hover::after {
+  content: 'Save All';
+  margin-top: 15px;
+  position: absolute;
+  font-size: 10px;
+  width: 43px;
+  background: #5a5a5a;
+  padding: 3px;
+  margin-left: -1px;
+  z-index: 1;
+}
+[role=browser] .section-search {
+  margin: 2px;
+  border: 1px solid #3C3C3C;
+  background-color: #565656;
+  padding-left: 3px;
+}
+[role=browser] .section-search .search-icon {
+  float: right;
+  font-size: 13px;
+  margin: 1px;
+  margin-right: 3px;
+}
+[role=browser] .section-search input {
+  border: 0;
+  width: 91%;
+  background-color: #565656;
+  outline: none;
+}
+[role=browser] .angular-ui-tree-node {
+  margin: 2px;
+  margin-top: 1px;
+  margin-right: 0;
+}
+[role=browser] .angular-ui-tree-nodes {
+  padding-left: 10px;
+}
+[role=browser] .angular-ui-working-node {
+  padding-left: 17px;
+}
 [role=browser] .file-list {
   margin: 0;
   padding: 0;
@@ -670,8 +766,10 @@ div .noselect {
 [role=browser] .file-list .drag-elm div {
   color: #333;
 }
+[role=browser] .file-list .file-item2 {
+  padding-left: 17px !important;
+}
 [role=browser] .file-list .file-item {
-  padding: 5px 10px;
   cursor: pointer;
   white-space: nowrap;
   display: -webkit-box;
@@ -699,8 +797,35 @@ div .noselect {
 [role=browser] .file-list .file-item:not(.currentfile):hover {
   color: #ddd;
 }
+[role=browser] .file-list .file-item i.close-icon {
+  z-index: 1;
+  margin-right: 5px;
+}
+[role=browser] .file-list .file-item.workingfile {
+  color: #3C3C3C;
+}
+[role=browser] .file-list .file-item.workingfile div.background {
+  background-color: #a2cde5;
+  width: 198px;
+  position: fixed;
+  left: 0;
+}
+[role=browser] .file-list .file-item.workingfile .file-name {
+  background-color: #a2cde5;
+}
+[role=browser] .file-list .file-item.workingfile:hover {
+  color: #3C3C3C;
+}
 [role=browser] .file-list .file-item.currentfile {
   color: #ddd;
+}
+[role=browser] .file-list .file-item.currentfile div.background {
+  background-color: #1e4f6a;
+  width: 198px;
+  position: fixed;
+  left: 0;
+}
+[role=browser] .file-list .file-item.currentfile .file-name {
   background-color: #1e4f6a;
 }
 [role=browser] .file-list .file-item.dragover {
@@ -717,12 +842,18 @@ div .noselect {
   border-top: 1px #888 dotted;
 }
 [role=browser] .file-list .file-item .file-name {
+  z-index: 1;
   -webkit-box-flex: 1;
   -webkit-flex: 1;
   -ms-flex: 1;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 12px;
+}
+[role=browser] .file-list .file-item .file-name i {
+  font-size: 13px;
+  vertical-align: text-top;
 }
 [role=browser] .file-list .file-item .fa:not(.icon) {
   display: none;
@@ -734,7 +865,10 @@ div .noselect {
   display: block;
 }
 [role=browser] .file-list .file-item.dirty .file-name:before {
-  content: '* ';
+  content: '\25CF ';
+}
+[role=browser] .file-list .file-item.dirty .file-name {
+  margin-left: -11px;
 }
 [role=browser] .file-list .file-item.no-drop {
   cursor: no-drop !important;
@@ -744,6 +878,7 @@ div .noselect {
 }
 [role=browser] .file-list .file-item [ng-click] {
   cursor: inherit;
+  z-index: 1;
 }
 .hidden {
   display: none!important;
@@ -1374,4 +1509,61 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=checkbox]:checked + label {
   left: -webkit-calc(100% - 2em - 3px);
   left: calc(100% - 2em - 3px);
+}
+
+[role=omnisearch] div {
+  z-index: 10;
+  background-color: #47474b;
+  border: 1px solid #3a3a3e;
+  width: 500px;
+  max-height: 350px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 11px;
+}
+[role=omnisearch] div input {
+  margin: 3px;
+  border: 0;
+  width: 492px;
+  font-size: 12px;
+  padding: 3px;
+  outline: none;
+}
+[role=omnisearch] div ul {
+  list-style-type: none;
+  padding: 0;
+  color: #E1E1E4;
+  margin: 0;
+}
+[role=omnisearch] div ul li {
+  cursor: pointer;
+  padding: 3px;
+}
+[role=omnisearch] div ul li.separator {
+  border-bottom: 1px solid #3a3a3e;
+}
+[role=omnisearch] div ul li.active {
+  background-color: #296d92;
+}
+[role=omnisearch] div ul li:hover {
+  background-color: #6c6c72;
+}
+[role=omnisearch] div ul li span {
+  color: #CCC;
+  display: inline-block;
+  width: 13px;
+  text-align: center;
+}
+[role=omnisearch] div ul li span.description {
+  color: #00FF00;
+  float: right;
+  width: 50%;
+  text-align: right;
+  margin-right: 1px;
+}
+[role=omnisearch] div ul li span.command {
+  color: #00FF00;
 }
