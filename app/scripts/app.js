@@ -21,7 +21,8 @@
     'validate',
     'autoFocus',
     'rightClick',
-    'dragAndDrop'
+    'dragAndDrop',
+    'cfp.hotkeys'
   ])
     .run(function ($window) {
       // Adding proxy settings for api console

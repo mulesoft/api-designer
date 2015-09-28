@@ -10,7 +10,8 @@
       config,
       ramlRepository,
       newNameModal,
-      importService
+      importService,
+      eventEmitter
     ) {
       function Controller($scope) {
         var fileBrowser         = this;
@@ -78,7 +79,7 @@
               fileBrowser.cursorState = '';
 
               if (!event.canceled && duplicateName) {
-                $rootScope.$broadcast('event:notification', {
+                eventEmitter.publish('event:notification', {
                   message: 'Failed: duplicate file name found in the destination folder.',
                   expires: true,
                   level: 'error'
@@ -128,7 +129,7 @@
           afterLoading
             .then(function (file) {
               fileBrowser.selectedFile = fileBrowser.currentTarget = file;
-              $scope.$emit('event:raml-editor-file-selected', file);
+              eventEmitter.publish('event:raml-editor-file-selected', file);
               unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
                 if (newContents !== oldContents) {
                   file.dirty = true;
@@ -139,7 +140,7 @@
         };
 
         fileBrowser.selectDirectory = function selectDirectory(directory) {
-          $scope.$emit('event:raml-editor-directory-selected', directory);
+          eventEmitter.publish('event:raml-editor-directory-selected', directory);
         };
 
         /**
@@ -162,7 +163,7 @@
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
             .then(function () {
-              return $rootScope.$broadcast('event:notification', {
+              return eventEmitter.publish('event:notification', {
                 message: 'File saved.',
                 expires: true
               });
@@ -170,13 +171,13 @@
           ;
         };
 
-        fileBrowser.dropFile = function dropFile (event, directory) {
+        fileBrowser.dropFile = function dropFile (directory) {
           return importService.importFromEvent(directory, event)
             .then(function () {
               directory.collapsed = false;
             })
             .catch(function (err) {
-              $rootScope.$broadcast('event:notification', {
+              eventEmitter.publish('event:notification', {
                 message: err.message,
                 expires: true,
                 level: 'error'
@@ -209,28 +210,28 @@
           contextMenu = cm;
         };
 
-        $scope.$on('event:raml-editor-file-generated', function (event, file) {
+        eventEmitter.subscribe('event:raml-editor-file-generated', function (file) {
           fileBrowser.selectFile(file);
         });
 
-        $scope.$on('event:raml-editor-directory-created', function (event, dir) {
+        eventEmitter.subscribe('event:raml-editor-directory-created', function (dir) {
           fileBrowser.selectDirectory(dir);
         });
 
-        $scope.$on('event:raml-editor-file-selected', function (event, file) {
+        eventEmitter.subscribe('event:raml-editor-file-selected', function (file) {
           expandAncestors(file);
         });
 
-        $scope.$on('event:raml-editor-directory-selected', function (event, dir) {
+        eventEmitter.subscribe('event:raml-editor-directory-selected', function (dir) {
           expandAncestors(dir);
         });
 
-        $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
+        eventEmitter.subscribe('event:raml-editor-filetree-modified', function (target) {
           var parent = ramlRepository.getParent(target);
           parent.sortChildren();
         });
 
-        $scope.$on('event:raml-editor-file-removed', function (event, file) {
+        eventEmitter.subscribe('event:raml-editor-file-removed', function (file) {
           $timeout(function () {
             var files = $scope.homeDirectory.getFiles();
 
@@ -242,7 +243,7 @@
           });
         });
 
-        $scope.$on('$destroy', function () {
+        eventEmitter.subscribe('$destroy', function () {
           $window.removeEventListener('keydown', saveListener);
         });
 

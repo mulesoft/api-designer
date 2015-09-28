@@ -7,7 +7,8 @@
       ramlRepository,
       $window,
       $timeout,
-      $q
+      $q,
+      eventEmitter
     ) {
       return {
         restrict: 'E',
@@ -42,7 +43,7 @@
 
             return ramlRepository.saveFile(file)
               .then(function success() {
-                $rootScope.$broadcast('event:notification', {
+                eventEmitter.publish('event:notification', {
                   message: 'File saved.',
                   expires: true
                 });
@@ -64,7 +65,7 @@
 
             return $q.all(promises)
               .then(function success() {
-                $rootScope.$broadcast('event:notification', {
+                eventEmitter.publish('event:notification', {
                   message: 'All files saved.',
                   expires: true
                 });

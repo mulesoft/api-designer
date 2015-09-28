@@ -4,7 +4,8 @@
   angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     .factory('codeMirror', function (
       $rootScope, ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
-      getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue
+      getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
+      eventEmitter
     ) {
       var editor  = null;
       var service = {
@@ -80,7 +81,8 @@
         'Cmd-S': 'save',
         'Ctrl-S': 'save',
         'Shift-Tab': 'indentLess',
-        'Shift-Ctrl-T': 'toggleTheme'
+        'Shift-Ctrl-T': 'toggleTheme',
+        'Cmd-P': 'showOmniSearch'
       };
 
       var ramlKeys = {
@@ -233,7 +235,7 @@
         };
 
         CodeMirror.commands.save = function () {
-          $rootScope.$broadcast('event:save');
+          eventEmitter.publish('event:save');
         };
 
         CodeMirror.commands.autocomplete = function (cm) {
@@ -243,11 +245,11 @@
         };
 
         CodeMirror.commands.toggleTheme = function () {
-          $rootScope.$broadcast('event:toggle-theme');
+          eventEmitter.publish('event:toggle-theme');
         };
 
         CodeMirror.commands.showOmniSearch = function () {
-          $rootScope.$broadcast('event:show-omni-search');
+          eventEmitter.publish('event:open:omnisearch');
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);

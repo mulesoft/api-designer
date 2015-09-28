@@ -26,7 +26,8 @@
       $q,
       $rootScope,
       importService,
-      ramlRepository
+      ramlRepository,
+      eventEmitter
     ) {
       $scope.importing = false;
       $scope.rootDirectory = ramlRepository.getByPath('/');
@@ -44,7 +45,7 @@
        */
       function importFile (mode) {
         if (!$scope.fileSupported) {
-          return $rootScope.$broadcast('event:notification', {
+          return eventEmitter.publish('event:notification', {
             message: 'File upload not supported. Try upgrading your browser.',
             expires: true,
             level: 'error'
@@ -58,7 +59,7 @@
             return $modalInstance.close(true);
           })
           .catch(function (err) {
-            $rootScope.$broadcast('event:notification', {
+            eventEmitter.publish('event:notification', {
               message: err.message,
               expires: true,
               level: 'error'
@@ -88,7 +89,7 @@
             return $modalInstance.close(true);
           })
           .catch(function (err) {
-            $rootScope.$broadcast('event:notification', {
+            eventEmitter.publish('event:notification', {
               message: 'Failed to import Swagger: ' + err.message,
               expires: true,
               level: 'error'
@@ -114,7 +115,7 @@
             return $modalInstance.close(true);
           })
           .catch(function (err) {
-            $rootScope.$broadcast('event:notification', {
+            eventEmitter.publish('event:notification', {
               message: 'Failed to parse Swagger: ' + err.message,
               expires: true,
               level: 'error'

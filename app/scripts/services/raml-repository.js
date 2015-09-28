@@ -26,7 +26,7 @@
   }
 
   angular.module('fs', ['raml', 'utils'])
-    .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem) {
+    .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem, eventEmitter) {
       var service   = {};
       var BASE_PATH = '/';
       var rootFile;
@@ -227,7 +227,7 @@
       service.generateDirectory = function createDirectory(parent, name) {
         return service.createDirectory(parent, name)
           .then(function (directory) {
-            $rootScope.$broadcast('event:raml-editor-directory-created', directory);
+            eventEmitter.publish('event:raml-editor-directory-created', directory);
 
             return directory;
           });
@@ -263,7 +263,7 @@
             return fileSystem.remove(directory.path);
           })
           .then(function (directory) {
-            $rootScope.$broadcast('event:raml-editor-directory-removed', directory);
+            eventEmitter.publish('event:raml-editor-directory-removed', directory);
           });
       };
 
@@ -281,7 +281,7 @@
             function () {
               directory.name = newName;
               directory.path = newPath;
-              $rootScope.$broadcast('event:raml-editor-filetree-modified', directory);
+              eventEmitter.publish('event:raml-editor-filetree-modified', directory);
               return directory;
             },
             handleErrorFor(directory)
@@ -307,7 +307,7 @@
         function modifyFile() {
           file.name = newName;
           file.path = newPath;
-          $rootScope.$broadcast('event:raml-editor-filetree-modified', file);
+          eventEmitter.publish('event:raml-editor-filetree-modified', file);
           return file;
         }
 
@@ -359,7 +359,7 @@
               parent.children.splice(index, 1);
             }
 
-            $rootScope.$broadcast('event:raml-editor-file-removed', file);
+            eventEmitter.publish('event:raml-editor-file-removed', file);
           });
       };
 
@@ -369,7 +369,7 @@
 
         return insertFileSystem(parent, file)
           .then(function () {
-            $rootScope.$broadcast('event:raml-editor-file-created', file);
+            eventEmitter.publish('event:raml-editor-file-created', file);
 
             return file;
           });
@@ -382,7 +382,7 @@
               file.contents = ramlSnippets.getEmptyRaml();
             }
 
-            $rootScope.$broadcast('event:raml-editor-file-generated', file);
+            eventEmitter.publish('event:raml-editor-file-generated', file);
 
             return file;
           });

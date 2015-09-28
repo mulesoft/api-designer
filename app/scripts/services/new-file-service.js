@@ -5,7 +5,7 @@
     .service('newFileService', function newFolderService(
       ramlRepository,
       newNameModal,
-      $rootScope
+      eventEmitter
     ) {
       var self = this;
 
@@ -35,7 +35,7 @@
             // `newNameModel.open` will error random modal close strings.
             return ramlRepository.generateFile(parent, name)
               .catch(function (err) {
-                return $rootScope.$broadcast('event:notification', {
+                return eventEmitter.publish('event:notification', {
                   message: err.message,
                   expires: true,
                   level: 'error'

@@ -9,6 +9,7 @@
   "dependencies": {
     "angular": "~1.3.17",
     "angular-bootstrap": ">=0.11.0 <0.14.0",
+    "angular-hotkeys": "chieffancypants/angular-hotkeys#~1.6.0",
     "angular-ui-tree": "2.1.5",
     "api-console": "mulesoft/api-console#2570367f3f10337383e78a121813f0f9e565ec08",
     "es5-shim": "~2.3.0",

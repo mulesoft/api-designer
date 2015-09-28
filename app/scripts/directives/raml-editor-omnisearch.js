@@ -3,7 +3,8 @@
 
   angular.module('ramlEditorApp')
     .directive('ramlEditorOmnisearch', function ramlEditorOmniSearch(
-      safeApplyWrapper
+      safeApplyWrapper,
+      eventEmitter
     ) {
       return {
         restrict:    'E',
@@ -15,7 +16,7 @@
 
           $scope.showOmnisearch = false;
 
-          $scope.$on('event:show-omni-search', safeApplyWrapper($scope, function () {
+          omnisearch.open = function open() {
             omnisearch.searchResults = null;
             omnisearch.searchText    = null;
             $scope.showOmnisearch    = true;
@@ -23,7 +24,17 @@
             $timeout(function() {
               $element.find('input').focus();
             });
-          }));
+          };
+
+          omnisearch.close = function close() {
+            omnisearch.searchResults = null;
+            omnisearch.searchText    = null;
+            $scope.showOmnisearch    = false;
+          };
+
+          eventEmitter.subscribe('event:open:omnisearch', function () {
+            omnisearch.open();
+          });
 
           omnisearch.search = function search() {
             omnisearch.searchResults = [];
@@ -61,6 +72,11 @@
               omnisearch.openFile(null);
             }
 
+            if (keyCode === 27) {
+              omnisearch.close();
+            }
+
+            // Up Arrow
             if (keyCode === 38) {
               if (position > 0) {
                 position--;
@@ -69,7 +85,12 @@
               omnisearch.selected = omnisearch.searchResults[position];
             }
 
+            // Down Arrow
             if (keyCode === 40) {
+              $timeout(function() {
+                $element.focus();
+              });
+
               if (position < length-1) {
                 position++;
               }
