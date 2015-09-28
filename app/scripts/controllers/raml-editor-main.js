@@ -106,6 +106,8 @@
         // Empty console so that we remove content from previous open RAML file
         eventEmitter.publish('event:raml-parsed', {});
 
+        $scope.originalValue = file.contents;
+
         // Every file must have a unique document for history and cursors.
         if (!file.doc) {
           file.doc = new CodeMirror.Doc(file.contents);
@@ -123,8 +125,7 @@
         // Inform the editor source has changed. This is also called when the
         // editor triggers the change event, swapping the doc does not trigger
         // that event, so we must explicitly call the sourceUpdated function.
-        // console.log('event:raml-editor-file-selected');
-        // $scope.sourceUpdated();
+        $scope.sourceUpdated();
       });
 
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
@@ -156,12 +157,12 @@
       $scope.supportsFolders = ramlRepository.supportsFolders;
 
       $scope.sourceUpdated = function sourceUpdated() {
-        // console.log('sourceUpdated');
         var source       = editor.getValue();
         var selectedFile = $scope.fileBrowser.selectedFile;
 
-        $scope.clearErrorMarks();
         selectedFile.contents = source;
+
+        $scope.clearErrorMarks();
         $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
         updateFile();
@@ -185,10 +186,6 @@
         $scope.clearErrorMarks();
 
         var file = $scope.fileBrowser.selectedFile;
-
-        // console.log($scope.workingFiles);
-        // console.log('edited');
-        $scope.workingFiles[file.name] = file;
 
         if (!file || !$scope.fileParsable || file.contents.trim() === '') {
           $scope.currentError = undefined;
@@ -341,8 +338,17 @@
           }]);
         });
 
-        editor.on('change', function onChange() {
-          $scope.sourceUpdated();
+        editor.on('change', function onChange(cm) {
+          safeApplyWrapper($scope, function () {
+            var file    = $scope.fileBrowser.selectedFile;
+            var orig    = $scope.originalValue;
+            var current = cm.getValue();
+
+            file.dirty = orig !== current;
+
+            $scope.workingFiles[file.name] = file;
+            $scope.sourceUpdated();
+          })();
         });
 
         $window.alreadyNotifiedExit = false;

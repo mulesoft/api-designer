@@ -20,6 +20,7 @@
             omnisearch.searchResults = null;
             omnisearch.searchText    = null;
             omnisearch.searchLine    = null;
+            omnisearch.mode          = 'file';
 
             $scope.showOmnisearch    = true;
 
@@ -32,6 +33,7 @@
             omnisearch.searchResults = null;
             omnisearch.searchText    = null;
             omnisearch.searchLine    = null;
+            omnisearch.mode          = 'file';
 
             $scope.showOmnisearch    = false;
           };
@@ -44,15 +46,52 @@
             this.execute = execute;
           };
 
+          function goToResource() {
+            omnisearch.mode = 'resource';
+
+            function traverse(tree, resources, parentPath) {
+              if (Array.isArray(tree.resources)) {
+                tree.resources.forEach(function (el) {
+                  traverse(el, resources, tree.relativeUri);
+                });
+              }
+
+              if (tree.relativeUri) {
+                resources.push({
+                  name:     parentPath? parentPath + tree.relativeUri : tree.relativeUri,
+                  relative: tree.relativeUri
+                });
+              }
+            }
+
+            var resources = [];
+            var text      = omnisearch.searchText.split('@')[1];
+
+            traverse($scope.fileBrowser.selectedFile.raml, resources);
+
+            resources.forEach(function (el) {
+              if (el.name.indexOf(text) !== -1) {
+                omnisearch.searchResults.push(el);
+              }
+            });
+
+            omnisearch.selected = omnisearch.searchResults[0];
+            length              = omnisearch.searchResults.length;
+          }
+
           function goToLine() {
+            omnisearch.mode = 'line';
+
             var line = omnisearch.searchText.match(/(\d+)/g);
 
             omnisearch.searchLine = parseInt(line, 10);
 
-            eventEmitter.publish('event:searchLine', omnisearch.searchLine);
+            eventEmitter.publish('event:goToLine', {line: omnisearch.searchLine});
           }
 
           function searchFile() {
+            omnisearch.mode = 'file';
+
             $scope.homeDirectory.forEachChildDo(function (child) {
               if(!child.isDirectory) {
                 var filename = child.name.replace(child.extension, '');
@@ -72,11 +111,16 @@
               return new Command(goToLine);
             }
 
+            if (text.startsWith('@')) {
+              return new Command(goToResource);
+            }
+
             return new Command(searchFile);
           }
 
           omnisearch.search = function search() {
             omnisearch.searchResults = [];
+            position                 = 0;
 
             getCommand(omnisearch.searchText).execute();
           };
@@ -97,16 +141,30 @@
           };
 
           omnisearch.keyUp = function move(keyCode) {
+            // enter
             if (keyCode === 13) {
-              if (omnisearch.searchLine !== null) {
-                eventEmitter.publish('event:gotoline', omnisearch.searchLine);
-              } else {
+              if (omnisearch.mode === 'file') {
                 omnisearch.openFile(null);
+              }
+
+              if (omnisearch.mode === 'line') {
+                eventEmitter.publish('event:goToLine', {
+                  line:  omnisearch.searchLine,
+                  focus: true
+                });
+              }
+
+              if (omnisearch.mode === 'resource') {
+                eventEmitter.publish('event:goToResource', {
+                  text:  omnisearch.selected.relative,
+                  focus: true
+                });
               }
 
               omnisearch.close();
             }
 
+            // esc
             if (keyCode === 27) {
               omnisearch.close();
             }
@@ -118,6 +176,10 @@
               }
 
               omnisearch.selected = omnisearch.searchResults[position];
+
+              if(omnisearch.mode === 'resource') {
+                eventEmitter.publish('event:goToResource', {text: omnisearch.selected.relative});
+              }
             }
 
             // Down Arrow
@@ -129,7 +191,12 @@
               if (position < length-1) {
                 position++;
               }
+
               omnisearch.selected = omnisearch.searchResults[position];
+
+              if(omnisearch.mode === 'resource') {
+                eventEmitter.publish('event:goToResource', {text: omnisearch.selected.relative});
+              }
             }
           };
 

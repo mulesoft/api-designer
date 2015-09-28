@@ -10120,20 +10120,32 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           cm.setCursor(position);
           cm.scrollTo(null, (coords.top + coords.bottom - height) / 2);
         }
-        eventEmitter.subscribe('event:searchLine', function (line) {
+        eventEmitter.subscribe('event:goToLine', function (search) {
           var position = {
-              line: parseLine(line),
+              line: parseLine(search.line),
               ch: 0
             };
+          if (search.focus) {
+            window.editor.focus();
+          }
           scrollTo(position);
         });
-        eventEmitter.subscribe('event:gotoline', function (line) {
-          var position = {
-              line: parseLine(line),
-              ch: 0
-            };
-          window.editor.focus();
-          scrollTo(position);
+        eventEmitter.subscribe('event:goToResource', function (search) {
+          // TODO: Improve search :(
+          var file = window.editor.getValue().split('\n');
+          file.forEach(function (line, index) {
+            if (line.trim().startsWith(search.text)) {
+              var position = {
+                  line: index,
+                  ch: 0
+                };
+              if (search.focus) {
+                window.editor.focus();
+              }
+              scrollTo(position);
+              return;
+            }
+          });
         });
         CodeMirror.commands.save = function () {
           eventEmitter.publish('event:save');
@@ -12833,6 +12845,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         currentFile = file;
         // Empty console so that we remove content from previous open RAML file
         eventEmitter.publish('event:raml-parsed', {});
+        $scope.originalValue = file.contents;
         // Every file must have a unique document for history and cursors.
         if (!file.doc) {
           file.doc = new CodeMirror.Doc(file.contents);
@@ -12842,11 +12855,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         // After swapping the doc, configure the editor for the current file
         // extension.
         codeMirror.configureEditor(editor, file.extension);
-        $scope.fileParsable = $scope.getIsFileParsable(file);  // Inform the editor source has changed. This is also called when the
-                                                               // editor triggers the change event, swapping the doc does not trigger
-                                                               // that event, so we must explicitly call the sourceUpdated function.
-                                                               // console.log('event:raml-editor-file-selected');
-                                                               // $scope.sourceUpdated();
+        $scope.fileParsable = $scope.getIsFileParsable(file);
+        // Inform the editor source has changed. This is also called when the
+        // editor triggers the change event, swapping the doc does not trigger
+        // that event, so we must explicitly call the sourceUpdated function.
+        $scope.sourceUpdated();
       });
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
         if (contents != null && contents !== editor.getValue()) {
@@ -12870,11 +12883,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       };
       $scope.supportsFolders = ramlRepository.supportsFolders;
       $scope.sourceUpdated = function sourceUpdated() {
-        // console.log('sourceUpdated');
         var source = editor.getValue();
         var selectedFile = $scope.fileBrowser.selectedFile;
-        $scope.clearErrorMarks();
         selectedFile.contents = source;
+        $scope.clearErrorMarks();
         $scope.fileParsable = $scope.getIsFileParsable(selectedFile);
         updateFile();
       };
@@ -12893,9 +12905,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       eventEmitter.subscribe('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
         var file = $scope.fileBrowser.selectedFile;
-        // console.log($scope.workingFiles);
-        // console.log('edited');
-        $scope.workingFiles[file.name] = file;
         if (!file || !$scope.fileParsable || file.contents.trim() === '') {
           $scope.currentError = undefined;
           lineOfCurrentError = undefined;
@@ -13008,8 +13017,15 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               message: message
             }]);
         });
-        editor.on('change', function onChange() {
-          $scope.sourceUpdated();
+        editor.on('change', function onChange(cm) {
+          safeApplyWrapper($scope, function () {
+            var file = $scope.fileBrowser.selectedFile;
+            var orig = $scope.originalValue;
+            var current = cm.getValue();
+            file.dirty = orig !== current;
+            $scope.workingFiles[file.name] = file;
+            $scope.sourceUpdated();
+          })();
         });
         $window.alreadyNotifiedExit = false;
         $window.editorFilesystemIsDirty = function editorFilesystemIsDirty() {
@@ -13807,7 +13823,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     function ($q, $window, $timeout, config, ramlRepository, newNameModal, importService, eventEmitter) {
       function Controller($scope) {
         var fileBrowser = this;
-        var unwatchSelectedFile = angular.noop;
         var contextMenu = void 0;
         $scope.toggleFolderCollapse = function (node) {
           node.collapsed = !node.collapsed;
@@ -13865,7 +13880,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           return Object.keys(obj).length === 0;
         };
         fileBrowser.dblClick = function dblClick(target) {
-          console.log(target);
           if (!target.isDirectory) {
             $scope.workingFiles[target.name] = target;
           }
@@ -13882,17 +13896,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             fileBrowser.currentTarget = file;
             return;
           }
-          unwatchSelectedFile();
           var isLoaded = file.loaded || !file.persisted;
           var afterLoading = isLoaded ? $q.when(file) : ramlRepository.loadFile(file);
           afterLoading.then(function (file) {
             fileBrowser.selectedFile = fileBrowser.currentTarget = file;
             eventEmitter.publish('event:raml-editor-file-selected', file);
-            unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
-              if (newContents !== oldContents) {
-                file.dirty = true;
-              }
-            });
           });
           ;
         };
@@ -14224,6 +14232,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               omnisearch.searchResults = null;
               omnisearch.searchText = null;
               omnisearch.searchLine = null;
+              omnisearch.mode = 'file';
               $scope.showOmnisearch = true;
               $timeout(function () {
                 $element.find('input').focus();
@@ -14233,6 +14242,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               omnisearch.searchResults = null;
               omnisearch.searchText = null;
               omnisearch.searchLine = null;
+              omnisearch.mode = 'file';
               $scope.showOmnisearch = false;
             };
             eventEmitter.subscribe('event:open:omnisearch', function () {
@@ -14241,12 +14251,40 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             var Command = function (execute) {
               this.execute = execute;
             };
+            function goToResource() {
+              omnisearch.mode = 'resource';
+              function traverse(tree, resources, parentPath) {
+                if (Array.isArray(tree.resources)) {
+                  tree.resources.forEach(function (el) {
+                    traverse(el, resources, tree.relativeUri);
+                  });
+                }
+                if (tree.relativeUri) {
+                  resources.push({
+                    name: parentPath ? parentPath + tree.relativeUri : tree.relativeUri,
+                    relative: tree.relativeUri
+                  });
+                }
+              }
+              var resources = [];
+              var text = omnisearch.searchText.split('@')[1];
+              traverse($scope.fileBrowser.selectedFile.raml, resources);
+              resources.forEach(function (el) {
+                if (el.name.indexOf(text) !== -1) {
+                  omnisearch.searchResults.push(el);
+                }
+              });
+              omnisearch.selected = omnisearch.searchResults[0];
+              length = omnisearch.searchResults.length;
+            }
             function goToLine() {
+              omnisearch.mode = 'line';
               var line = omnisearch.searchText.match(/(\d+)/g);
               omnisearch.searchLine = parseInt(line, 10);
-              eventEmitter.publish('event:searchLine', omnisearch.searchLine);
+              eventEmitter.publish('event:goToLine', { line: omnisearch.searchLine });
             }
             function searchFile() {
+              omnisearch.mode = 'file';
               $scope.homeDirectory.forEachChildDo(function (child) {
                 if (!child.isDirectory) {
                   var filename = child.name.replace(child.extension, '');
@@ -14262,10 +14300,14 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               if (text.startsWith(':')) {
                 return new Command(goToLine);
               }
+              if (text.startsWith('@')) {
+                return new Command(goToResource);
+              }
               return new Command(searchFile);
             }
             omnisearch.search = function search() {
               omnisearch.searchResults = [];
+              position = 0;
               getCommand(omnisearch.searchText).execute();
             };
             omnisearch.openFile = function openFile(file) {
@@ -14280,14 +14322,26 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               return current.name === omnisearch.selected.name;
             };
             omnisearch.keyUp = function move(keyCode) {
+              // enter
               if (keyCode === 13) {
-                if (omnisearch.searchLine !== null) {
-                  eventEmitter.publish('event:gotoline', omnisearch.searchLine);
-                } else {
+                if (omnisearch.mode === 'file') {
                   omnisearch.openFile(null);
+                }
+                if (omnisearch.mode === 'line') {
+                  eventEmitter.publish('event:goToLine', {
+                    line: omnisearch.searchLine,
+                    focus: true
+                  });
+                }
+                if (omnisearch.mode === 'resource') {
+                  eventEmitter.publish('event:goToResource', {
+                    text: omnisearch.selected.relative,
+                    focus: true
+                  });
                 }
                 omnisearch.close();
               }
+              // esc
               if (keyCode === 27) {
                 omnisearch.close();
               }
@@ -14297,6 +14351,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                   position--;
                 }
                 omnisearch.selected = omnisearch.searchResults[position];
+                if (omnisearch.mode === 'resource') {
+                  eventEmitter.publish('event:goToResource', { text: omnisearch.selected.relative });
+                }
               }
               // Down Arrow
               if (keyCode === 40) {
@@ -14307,6 +14364,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                   position++;
                 }
                 omnisearch.selected = omnisearch.searchResults[position];
+                if (omnisearch.mode === 'resource') {
+                  eventEmitter.publish('event:goToResource', { text: omnisearch.selected.relative });
+                }
               }
             };
             $scope.omnisearch = omnisearch;

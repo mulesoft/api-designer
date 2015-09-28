@@ -247,15 +247,32 @@
           cm.scrollTo(null, (coords.top + coords.bottom - height) / 2);
         }
 
-        eventEmitter.subscribe('event:searchLine', function (line) {
-          var position = {line: parseLine(line), ch: 0};
+        eventEmitter.subscribe('event:goToLine', function (search) {
+          var position = {line: parseLine(search.line), ch: 0};
+
+          if (search.focus) {
+            window.editor.focus();
+          }
+
           scrollTo(position);
         });
 
-        eventEmitter.subscribe('event:gotoline', function (line) {
-          var position = {line: parseLine(line), ch: 0};
-          window.editor.focus();
-          scrollTo(position);
+        eventEmitter.subscribe('event:goToResource', function (search) {
+          // TODO: Improve search :(
+          var file = window.editor.getValue().split('\n');
+
+          file.forEach(function (line, index) {
+            if (line.trim().startsWith(search.text)) {
+              var position = {line: index, ch: 0};
+
+              if (search.focus) {
+                window.editor.focus();
+              }
+
+              scrollTo(position);
+              return;
+            }
+          });
         });
 
         CodeMirror.commands.save = function () {

@@ -14,7 +14,6 @@
     ) {
       function Controller($scope) {
         var fileBrowser         = this;
-        var unwatchSelectedFile = angular.noop;
         var contextMenu         = void(0);
 
         $scope.toggleFolderCollapse = function(node) {
@@ -99,7 +98,6 @@
         };
 
         fileBrowser.dblClick = function dblClick(target) {
-          console.log(target);
           if (!target.isDirectory) {
             $scope.workingFiles[target.name] = target;
           }
@@ -120,8 +118,6 @@
             return;
           }
 
-          unwatchSelectedFile();
-
           var isLoaded     = file.loaded || !file.persisted;
           var afterLoading = isLoaded ? $q.when(file) : ramlRepository.loadFile(file);
 
@@ -129,11 +125,6 @@
             .then(function (file) {
               fileBrowser.selectedFile = fileBrowser.currentTarget = file;
               eventEmitter.publish('event:raml-editor-file-selected', file);
-              unwatchSelectedFile = $scope.$watch('fileBrowser.selectedFile.contents', function (newContents, oldContents) {
-                if (newContents !== oldContents) {
-                  file.dirty = true;
-                }
-              });
             })
           ;
         };
