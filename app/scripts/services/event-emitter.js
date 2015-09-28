@@ -22,8 +22,7 @@
         }
 
         events[eventName].push(listener);
-      }
-
+      };
 
       return self;
     })

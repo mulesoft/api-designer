@@ -311,7 +311,7 @@
       };
 
       $scope.openOmnisearch = function openOmnisearch(e) {
-         e.preventDefault();
+        e.preventDefault();
         $scope.omnisearch.open();
       };
 
