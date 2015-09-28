@@ -26,7 +26,7 @@
   }
 
   angular.module('fs', ['raml', 'utils'])
-    .factory('ramlRepository', function ($q, $rootScope, ramlSnippets, fileSystem, eventEmitter) {
+    .factory('ramlRepository', function ($q, ramlSnippets, fileSystem, eventEmitter) {
       var service   = {};
       var BASE_PATH = '/';
       var rootFile;

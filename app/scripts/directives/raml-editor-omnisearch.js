@@ -19,6 +19,8 @@
           omnisearch.open = function open() {
             omnisearch.searchResults = null;
             omnisearch.searchText    = null;
+            omnisearch.searchLine    = null;
+
             $scope.showOmnisearch    = true;
 
             $timeout(function() {
@@ -29,6 +31,8 @@
           omnisearch.close = function close() {
             omnisearch.searchResults = null;
             omnisearch.searchText    = null;
+            omnisearch.searchLine    = null;
+
             $scope.showOmnisearch    = false;
           };
 
@@ -36,8 +40,19 @@
             omnisearch.open();
           });
 
-          omnisearch.search = function search() {
-            omnisearch.searchResults = [];
+          var Command = function (execute) {
+            this.execute = execute;
+          };
+
+          function goToLine() {
+            var line = omnisearch.searchText.match(/(\d+)/g);
+
+            omnisearch.searchLine = parseInt(line, 10);
+
+            eventEmitter.publish('event:searchLine', omnisearch.searchLine);
+          }
+
+          function searchFile() {
             $scope.homeDirectory.forEachChildDo(function (child) {
               if(!child.isDirectory) {
                 var filename = child.name.replace(child.extension, '');
@@ -50,6 +65,20 @@
 
             omnisearch.selected = omnisearch.searchResults[0];
             length              = omnisearch.searchResults.length;
+          }
+
+          function getCommand(text) {
+            if (text.startsWith(':')) {
+              return new Command(goToLine);
+            }
+
+            return new Command(searchFile);
+          }
+
+          omnisearch.search = function search() {
+            omnisearch.searchResults = [];
+
+            getCommand(omnisearch.searchText).execute();
           };
 
           omnisearch.openFile = function openFile(file) {
@@ -69,7 +98,13 @@
 
           omnisearch.keyUp = function move(keyCode) {
             if (keyCode === 13) {
-              omnisearch.openFile(null);
+              if (omnisearch.searchLine !== null) {
+                eventEmitter.publish('event:gotoline', omnisearch.searchLine);
+              } else {
+                omnisearch.openFile(null);
+              }
+
+              omnisearch.close();
             }
 
             if (keyCode === 27) {

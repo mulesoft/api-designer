@@ -3,7 +3,6 @@
 
   angular.module('ramlEditorApp')
     .directive('ramlEditorSaveFileButton', function ramlEditorSaveFileButton(
-      $rootScope,
       ramlRepository,
       $window,
       $timeout,

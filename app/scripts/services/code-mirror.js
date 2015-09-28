@@ -3,7 +3,7 @@
 
   angular.module('codeMirror', ['raml', 'ramlEditorApp', 'codeFolding'])
     .factory('codeMirror', function (
-      $rootScope, ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
+      ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
       getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
       eventEmitter
     ) {
@@ -82,7 +82,8 @@
         'Ctrl-S': 'save',
         'Shift-Tab': 'indentLess',
         'Shift-Ctrl-T': 'toggleTheme',
-        'Cmd-P': 'showOmniSearch'
+        'Cmd-P': 'showOmniSearch',
+        'Ctrl-Space': 'autocomplete'
       };
 
       var ramlKeys = {
@@ -233,6 +234,29 @@
           Enter:       service.enterKey,
           fallthrough: ['default']
         };
+
+        function parseLine(line) {
+          return isNaN(line) ? 0 : line-1;
+        }
+
+        function scrollTo(position) {
+          var cm     = window.editor;
+          var height = cm.getScrollInfo().clientHeight;
+          var coords = cm.charCoords(position, 'local');
+          cm.setCursor(position);
+          cm.scrollTo(null, (coords.top + coords.bottom - height) / 2);
+        }
+
+        eventEmitter.subscribe('event:searchLine', function (line) {
+          var position = {line: parseLine(line), ch: 0};
+          scrollTo(position);
+        });
+
+        eventEmitter.subscribe('event:gotoline', function (line) {
+          var position = {line: parseLine(line), ch: 0};
+          window.editor.focus();
+          scrollTo(position);
+        });
 
         CodeMirror.commands.save = function () {
           eventEmitter.publish('event:save');

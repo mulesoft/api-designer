@@ -5,7 +5,6 @@
     .directive('ramlEditorFileBrowser', function (
       $q,
       $window,
-      $rootScope,
       $timeout,
       config,
       ramlRepository,

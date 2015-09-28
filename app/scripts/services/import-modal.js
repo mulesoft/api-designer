@@ -24,7 +24,6 @@
       $modalInstance,
       swaggerToRAML,
       $q,
-      $rootScope,
       importService,
       ramlRepository,
       eventEmitter
