@@ -21,8 +21,9 @@
             omnisearch.searchText    = null;
             omnisearch.searchLine    = null;
             omnisearch.mode          = 'file';
-
+            omnisearch.selected      = null;
             $scope.showOmnisearch    = true;
+            position                 = 0;
 
             $timeout(function() {
               $element.find('input').focus();
@@ -34,7 +35,8 @@
             omnisearch.searchText    = null;
             omnisearch.searchLine    = null;
             omnisearch.mode          = 'file';
-
+            omnisearch.selected      = null;
+            position                 = 0;
             $scope.showOmnisearch    = false;
           };
 
@@ -75,7 +77,7 @@
               }
             });
 
-            omnisearch.selected = omnisearch.searchResults[0];
+            position            = -1;
             length              = omnisearch.searchResults.length;
           }
 
@@ -125,6 +127,16 @@
             getCommand(omnisearch.searchText).execute();
           };
 
+          omnisearch.showContent = function showContent(data) {
+            if(omnisearch.mode === 'resource') {
+              eventEmitter.publish('event:goToResource', {text: data.relative, focus: true});
+            }
+
+            if(omnisearch.mode === 'file') {
+              omnisearch.openFile(data);
+            }
+          };
+
           omnisearch.openFile = function openFile(file) {
             file = file || omnisearch.selected;
 
@@ -137,7 +149,7 @@
           };
 
           omnisearch.isSelected = function isSelected(current) {
-            return current.name === omnisearch.selected.name;
+            return omnisearch.selected ? current.name === omnisearch.selected.name : false;
           };
 
           omnisearch.keyUp = function move(keyCode) {

@@ -5,7 +5,7 @@
     />
   <ul>
     <!-- <li><span>></span> Filter by label <span class="description">editor commands</span></li> -->
-    <li ng-repeat="result in omnisearch.searchResults" ng-click="omnisearch.openFile(result)" ng-class="{active: omnisearch.isSelected(result)}">
+    <li ng-repeat="result in omnisearch.searchResults" ng-click="omnisearch.showContent(result)" ng-class="{active: omnisearch.isSelected(result)}">
       <span>{{result.name}}</span>
     </li>
     <li ng-if="!omnisearch.searchResults"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>
