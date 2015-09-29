@@ -210,10 +210,39 @@
           el.style.paddingLeft = (basePadding + offset) + 'px';
         });
 
+        function cursorChanged() {
+          var template  = new RegExp('^\/.*:$');
+          var node      = getNode(cm);
+          var resources = [];
+
+          for(;;) {
+            if (node === null) {
+              break;
+            }
+
+            if (template.test(node.lineIndent.content)) {
+              resources.push(node.lineIndent.content);
+
+              if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
+                break;
+              }
+            }
+
+            node = node.getParent();
+          }
+
+          eventEmitter.publish('event:editor:current:tree', resources.reverse());
+          eventEmitter.publish('event:editor:cursor', cm.getCursor());
+        }
+
         cm.on('cursorActivity', function () {
-          console.log(arguments);
-          // TODO: Contiune looking for parents!
-          console.log(getNode(cm).getParent());
+          cursorChanged();
+        });
+
+        cm.on('keyHandled', function (cm, key) {
+          if (key === 'Up' || key === 'Down') {
+            cursorChanged();
+          }
         });
 
         return cm;

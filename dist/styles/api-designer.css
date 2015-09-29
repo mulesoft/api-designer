@@ -1567,3 +1567,37 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 [role=omnisearch] div ul li span.command {
   color: #00FF00;
 }
+
+[role=bottom-bar] div {
+  height: 18px;
+  font-size: 12px;
+  background-color: #353535;
+}
+[role=bottom-bar] div div.cursor {
+  float: left;
+  color: #9a9a9a;
+  margin-left: 3px;
+  padding-top: 2px;
+}
+[role=bottom-bar] div div.breadcrum {
+  position: absolute;
+  margin-left: 200px;
+}
+[role=bottom-bar] div div.breadcrum button {
+  outline: none;
+  border-radius: 0;
+  border: 1px solid transparent;
+  margin-right: 0px;
+  background-color: #4e4e4e;
+  color: #9a9a9a;
+}
+[role=bottom-bar] div div.breadcrum button:hover {
+  background-color: #5b5b5b;
+}
+[role=bottom-bar] div div.breadcrum button.active {
+  background-color: #1E4F6A;
+  color: #ccc;
+}
+[role=bottom-bar] div div.breadcrum button.active:hover {
+  background-color: #245e7e;
+}

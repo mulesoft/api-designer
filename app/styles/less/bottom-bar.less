@@ -1,0 +1,41 @@
+[role=bottom-bar] {
+  div {
+    height: 18px;
+    font-size: 12px;
+    background-color: #353535;
+
+    div.cursor {
+      float: left;
+      color: #9a9a9a;
+      margin-left: 3px;
+      padding-top: 2px;
+    }
+
+    div.breadcrum {
+      position: absolute;
+      margin-left: 200px;
+
+      button {
+        outline: none;
+        border-radius: 0;
+        border: 1px solid transparent;
+        margin-right: 0px;
+        background-color: #4e4e4e;
+        color: #9a9a9a;
+
+        &:hover{
+          background-color: #5b5b5b;
+        }
+
+        &.active {
+          background-color: #1E4F6A;
+          color: #ccc;
+        }
+
+        &.active:hover {
+          background-color: #245e7e;
+        }
+      }
+    }
+  }
+}

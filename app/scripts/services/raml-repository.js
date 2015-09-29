@@ -465,7 +465,7 @@
       };
 
       // TODO: Check Mocking Service
-      service.loadMeta = function loadMeta(file) {
+      service.loadMeta = function loadMeta(/**file**/) {
         // var metaFile = new RamlFile(file.path + '.meta');
         // return service.loadFile(metaFile).then(
         //   function success(file) {

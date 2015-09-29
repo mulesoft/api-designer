@@ -1,0 +1,9 @@
+<div>
+  <div class="cursor">
+    <span>Line</span> {{bottomBar.cursor.line}},
+    <span>Column</span> {{bottomBar.cursor.column}}
+  </div>
+  <div class="breadcrum">
+    <button ng-click="bottomBar.show(resource)" ng-class="{active: bottomBar.isActive(resource)}" ng-repeat="resource in bottomBar.resources">{{resource}}</button>
+  </div>
+</div>

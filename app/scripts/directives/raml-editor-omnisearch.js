@@ -3,7 +3,6 @@
 
   angular.module('ramlEditorApp')
     .directive('ramlEditorOmnisearch', function ramlEditorOmniSearch(
-      safeApplyWrapper,
       eventEmitter,
       hotkeys
     ) {
@@ -126,7 +125,7 @@
               return new Command(goToResource);
             }
 
-            if (text === "?") {
+            if (text === '?') {
               return new Command(showCheatSheet);
             }
 
