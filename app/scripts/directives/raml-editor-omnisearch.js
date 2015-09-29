@@ -4,7 +4,8 @@
   angular.module('ramlEditorApp')
     .directive('ramlEditorOmnisearch', function ramlEditorOmniSearch(
       safeApplyWrapper,
-      eventEmitter
+      eventEmitter,
+      hotkeys
     ) {
       return {
         restrict:    'E',
@@ -71,6 +72,9 @@
 
             traverse($scope.fileBrowser.selectedFile.raml, resources);
 
+            resources = resources.sort(function (a,b) { return b.name < a.name; });
+            console.log(resources);
+
             resources.forEach(function (el) {
               if (el.name.indexOf(text) !== -1) {
                 omnisearch.searchResults.push(el);
@@ -108,6 +112,11 @@
             length              = omnisearch.searchResults.length;
           }
 
+          function showCheatSheet() {
+            omnisearch.close();
+            hotkeys.toggleCheatSheet();
+          }
+
           function getCommand(text) {
             if (text.startsWith(':')) {
               return new Command(goToLine);
@@ -115,6 +124,10 @@
 
             if (text.startsWith('@')) {
               return new Command(goToResource);
+            }
+
+            if (text === "?") {
+              return new Command(showCheatSheet);
             }
 
             return new Command(searchFile);

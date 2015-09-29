@@ -24,9 +24,26 @@
     'dragAndDrop',
     'cfp.hotkeys'
   ])
-    .run(function ($window) {
+    .run(function ($window, hotkeys) {
       // Adding proxy settings for api console
       $window.RAML.Settings.proxy = '/proxy/';
+
+      hotkeys.add({
+        combo: 'mod + p',
+        description: 'Open global search'
+      });
+
+      hotkeys.add({
+        combo: 'mod + s',
+        description: 'Save current file'
+      });
+
+      hotkeys.add({
+        combo: 'ctrl + space',
+        description: 'Start autocomplete'
+      });
+
+      hotkeys.del('?');
     })
   ;
 })();

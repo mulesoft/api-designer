@@ -22,7 +22,7 @@
     this.contents  = contents || '';
     this.persisted = options.persisted || false;
     this.dirty     = options.dirty || !this.persisted;
-    this.root      = options.root;
+    this.root      = options.root || contents ? contents.startsWith('#%RAML 0.8') : undefined;
   }
 
   angular.module('fs', ['raml', 'utils'])
@@ -145,7 +145,7 @@
         });
 
         var files = separated.file.filter(notMetaFile).map(function (file) {
-          return new RamlFile(file.path, file.contents, { dirty: false, persisted: true, root: file.root} );
+          return new RamlFile(file.path, file.content, { dirty: false, persisted: true, root: file.root} );
         });
 
         var directories = separated.folder.map(function (directory) {
@@ -464,17 +464,18 @@
         ;
       };
 
+      // TODO: Check Mocking Service
       service.loadMeta = function loadMeta(file) {
-        var metaFile = new RamlFile(file.path + '.meta');
-        return service.loadFile(metaFile).then(
-          function success(file) {
-            return JSON.parse(file.contents);
-          },
+        // var metaFile = new RamlFile(file.path + '.meta');
+        // return service.loadFile(metaFile).then(
+        //   function success(file) {
+        //     return JSON.parse(file.contents);
+        //   },
 
-          function failure() {
-            return {};
-          }
-        );
+        //   function failure() {
+        //     return {};
+        //   }
+        // );
       };
 
       service.join = function () {

@@ -12,6 +12,7 @@
     ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">
     <span class="file-name" ng-click="toggleFolderCollapse(node)">
       <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{'fa-rotate-90': !collapsed}"></i>{{node.name}}
+      <i class="fa icon fa-home" ng-if="node.root"></i>
     </span>
     <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>
     <div class="background">&nbsp</div>

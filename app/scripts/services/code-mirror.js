@@ -5,7 +5,7 @@
     .factory('codeMirror', function (
       ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
       getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
-      eventEmitter
+      eventEmitter, getNode
     ) {
       var editor  = null;
       var service = {
@@ -208,6 +208,12 @@
 
           el.style.textIndent  = '-' + offset + 'px';
           el.style.paddingLeft = (basePadding + offset) + 'px';
+        });
+
+        cm.on('cursorActivity', function () {
+          console.log(arguments);
+          // TODO: Contiune looking for parents!
+          console.log(getNode(cm).getParent());
         });
 
         return cm;
