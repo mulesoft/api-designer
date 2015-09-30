@@ -954,6 +954,18 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
 }
 
 /* CodeMirror Overrides */
+.CodeMirror-activeline-background {
+  background: #35393c;
+}
+.cm-s-solarized.cm-s-dark {
+  text-shadow: none;
+}
+.CodeMirror-sizer {
+  position: relative;
+  border-right: 0;
+  -moz-box-sizing: content-box;
+  box-sizing: content-box;
+}
 div.CodeMirror {
   font-size: 12px;
   position: absolute;
@@ -1516,7 +1528,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   background-color: #47474b;
   border: 1px solid #3a3a3e;
   width: 500px;
-  max-height: 350px;
+  max-height: 330px;
   position: absolute;
   left: 0;
   right: 0;
@@ -1537,6 +1549,8 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   padding: 0;
   color: #E1E1E4;
   margin: 0;
+  overflow-y: scroll;
+  max-height: 300px;
 }
 [role=omnisearch] div ul li {
   cursor: pointer;
@@ -1552,6 +1566,12 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   background-color: #6c6c72;
 }
 [role=omnisearch] div ul li span {
+  color: #CCC;
+  display: inline;
+  width: 100%;
+  text-align: left;
+}
+[role=omnisearch] div ul li span.command {
   color: #CCC;
   display: inline-block;
   width: 13px;

@@ -4,7 +4,7 @@
     background-color: #47474b;
     border: 1px solid #3a3a3e;
     width: 500px;
-    max-height: 350px;
+    max-height: 330px;
     position: absolute;
     left: 0;
     right: 0;
@@ -26,6 +26,8 @@
       padding:         0;
       color:           #E1E1E4;
       margin:          0;
+      overflow-y:      scroll;
+      max-height:      300px;
 
       li {
         cursor: pointer;
@@ -46,9 +48,17 @@
         span {
           // color: #00FF00;
           color: #CCC;
-          display: inline-block;
-          width: 13px;
-          text-align: center;
+          display: inline;
+          width: 100%;
+          text-align: left;
+        }
+
+        span.command {
+         // color: #00FF00;
+         color: #CCC;
+         display: inline-block;
+         width: 13px;
+         text-align: center;
         }
 
         span.description {

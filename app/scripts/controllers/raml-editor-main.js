@@ -53,7 +53,7 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter
+      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -112,6 +112,8 @@
         if (!file.doc) {
           file.doc = new CodeMirror.Doc(file.contents);
         }
+
+        ramlEditorContext.read(file.contents.split('\n'));
 
         editor.swapDoc(file.doc);
         editor.focus();

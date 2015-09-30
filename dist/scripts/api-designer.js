@@ -9924,7 +9924,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'extractKeyValue',
     'eventEmitter',
     'getNode',
-    function (ramlHint, codeMirrorHighLight, generateSpaces, generateTabs, getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue, eventEmitter, getNode) {
+    'ramlEditorContext',
+    function (ramlHint, codeMirrorHighLight, generateSpaces, generateTabs, getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue, eventEmitter, getNode, ramlEditorContext) {
       var editor = null;
       var service = { CodeMirror: CodeMirror };
       service.removeTabs = function (line, indentUnit) {
@@ -10075,6 +10076,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           };
         }
         options = {
+          styleActiveLine: true,
           mode: 'raml',
           theme: 'solarized dark',
           lineNumbers: true,
@@ -10099,6 +10101,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         cm = new CodeMirror(el, options);
         cm.setSize('100%', '100%');
         cm.foldCode(0, { rangeFinder: CodeMirror.fold.indent });
+        service.cm = cm;
         var charWidth = cm.defaultCharWidth();
         var basePadding = 4;
         cm.on('renderLine', function (cm, line, el) {
@@ -10106,32 +10109,80 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           el.style.textIndent = '-' + offset + 'px';
           el.style.paddingLeft = basePadding + offset + 'px';
         });
-        function cursorChanged() {
-          var template = new RegExp('^/.*:$');
-          var node = getNode(cm);
-          var resources = [];
-          for (;;) {
-            if (node === null) {
-              break;
-            }
-            if (template.test(node.lineIndent.content)) {
-              resources.push(node.lineIndent.content);
-              if (node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
-                break;
-              }
-            }
-            node = node.getParent();
-          }
-          eventEmitter.publish('event:editor:current:tree', resources.reverse());
-          eventEmitter.publish('event:editor:cursor', cm.getCursor());
-        }
+        // function readRamlFrament() {
+        //   var template  = new RegExp('^\/.*:$');
+        //   var node      = getNode(cm);
+        //   var raml      = [];
+        //   var nodes;
+        //   function read(tree, fragments) {
+        //     var temp = tree.getChildren();
+        //     fragments.push(tree.line);
+        //     if (Array.isArray(temp)) {
+        //       temp.forEach(function (el) {
+        //         read(el, fragments);
+        //       });
+        //     }
+        //   }
+        //   function readRamlHeader(cm) {
+        //     var temp  = [];
+        //     var count = cm.lineCount(), i;
+        //     for (i = 0; i < count; i++) {
+        //       var line = cm.getLine(i);
+        //       if(!template.test(line)) {
+        //         temp.push(line);
+        //       } else {
+        //         break;
+        //       }
+        //     }
+        //     return temp.join('\n');
+        //   }
+        //   for(;;) {
+        //     if (node === null) {
+        //       break;
+        //     }
+        //     if (template.test(node.lineIndent.content)) {
+        //       if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
+        //         nodes = node.getChildren();
+        //         break;
+        //       }
+        //     }
+        //     node = node.getParent();
+        //   }
+        //   if (node) {
+        //     raml.push(readRamlHeader(cm));
+        //     raml.push(node.line);
+        //     nodes.map(function (node) {
+        //       read(node, raml);
+        //     });
+        //     eventEmitter.publish('event:editor:context:raml', raml.join('\n'));
+        //   }
+        // }
+        // function cursorChanged() {
+        //   var template  = new RegExp('^\/.*:$');
+        //   var node      = getNode(cm);
+        //   var resources = [];
+        //   for(;;) {
+        //     if (node === null) {
+        //       break;
+        //     }
+        //     if (template.test(node.lineIndent.content)) {
+        //       resources.push(node.lineIndent.content);
+        //       if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
+        //         break;
+        //       }
+        //     }
+        //     node = node.getParent();
+        //   }
+        //   // eventEmitter.publish('event:editor:current:tree', resources.reverse());
+        // }
         cm.on('cursorActivity', function () {
-          cursorChanged();
+          eventEmitter.publish('event:editor:context', {
+            context: ramlEditorContext.context,
+            cursor: cm.getCursor()
+          });
         });
-        cm.on('keyHandled', function (cm, key) {
-          if (key === 'Up' || key === 'Down') {
-            cursorChanged();
-          }
+        cm.on('change', function (cm) {
+          ramlEditorContext.read(cm.getValue().split('\n'));
         });
         return cm;
       };
@@ -10173,20 +10224,47 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           scrollTo(position);
         });
         eventEmitter.subscribe('event:goToResource', function (search) {
-          // TODO: Improve search :(
-          var file = window.editor.getValue().split('\n');
-          file.forEach(function (line, index) {
-            if (line.trim().startsWith(search.text)) {
-              var position = {
-                  line: index,
-                  ch: 0
-                };
-              if (search.focus) {
-                window.editor.focus();
+          var context = ramlEditorContext.context;
+          var root = '/' + search.scope.split('/')[1];
+          var startAt = context.metadata[root].startAt;
+          var endAt = context.metadata[root].endAt;
+          var line = 0;
+          var cm = window.editor;
+          for (var i = startAt; i <= endAt; i++) {
+            var temp = null;
+            if (search.text !== search.resource) {
+              temp = '';
+              var fragments = search.scope.split('/');
+              fragments = fragments.slice(1, fragments.length);
+              for (var j = 0; j < fragments.length; j++) {
+                var resource = search.text + ':';
+                var el = fragments[j];
+                if (el !== resource) {
+                  temp += '/' + el;
+                }
+                if (el === resource) {
+                  temp += '/' + el;
+                  break;
+                }
               }
-              scrollTo(position);
-              return;
             }
+            if (context.scopes[i].indexOf(search.text) !== -1) {
+              if (temp && context.scopes[i] === temp) {
+                line = i;
+                break;
+              }
+              if (temp === null && context.scopes[i] === search.scope) {
+                line = i;
+                break;
+              }
+            }
+          }
+          if (search.focus) {
+            cm.focus();
+          }
+          scrollTo({
+            line: line,
+            ch: 0
           });
         });
         CodeMirror.commands.save = function () {
@@ -10205,6 +10283,36 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         CodeMirror.defineMIME('text/x-raml', 'raml');
         CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
         CodeMirror.registerHelper('fold', 'indent', getFoldRange);
+        // active-line addon
+        var WRAP_CLASS = 'CodeMirror-activeline';
+        var BACK_CLASS = 'CodeMirror-activeline-background';
+        CodeMirror.defineOption('styleActiveLine', false, function (cm, val, old) {
+          var prev = old && old !== CodeMirror.Init;
+          if (val && !prev) {
+            updateActiveLine(cm);
+            cm.on('cursorActivity', updateActiveLine);
+          } else if (!val && prev) {
+            cm.off('cursorActivity', updateActiveLine);
+            clearActiveLine(cm);
+            delete cm.state.activeLine;
+          }
+        });
+        function clearActiveLine(cm) {
+          if ('activeLine' in cm.state) {
+            cm.removeLineClass(cm.state.activeLine, 'wrap', WRAP_CLASS);
+            cm.removeLineClass(cm.state.activeLine, 'background', BACK_CLASS);
+          }
+        }
+        function updateActiveLine(cm) {
+          var line = cm.getLineHandleVisualStart(cm.getCursor().line);
+          if (cm.state.activeLine === line) {
+            return;
+          }
+          clearActiveLine(cm);
+          cm.addLineClass(line, 'wrap', WRAP_CLASS);
+          cm.addLineClass(line, 'background', BACK_CLASS);
+          cm.state.activeLine = line;
+        }
       }());
       return service;
     }
@@ -12778,6 +12886,67 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 }());
 (function () {
   'use strict';
+  angular.module('ramlEditorApp').factory('ramlEditorContext', function ramlEditorContext() {
+    var self = this;
+    function getIndentation(str) {
+      return str.match(/^\s*/)[0].length;
+    }
+    self.context = {};
+    self.read = function read(lines) {
+      var template = new RegExp('^/.*:$');
+      var path = [lines[0]];
+      var indentation = getIndentation(lines[0]);
+      var resource, root;
+      var linesScope = new Array(lines.length);
+      var resourceMeta = {};
+      var resources = {};
+      lines.forEach(function (line, index) {
+        resource = line.trim();
+        if (line.startsWith('/')) {
+          if (root !== resource && resourceMeta[root]) {
+            resourceMeta[root].endAt = index;
+          }
+          root = resource;
+          resourceMeta[root] = {
+            raml: [],
+            startAt: index
+          };
+          path = [line];
+        }
+        if (resourceMeta[root]) {
+          resourceMeta[root].raml.push(line);
+        }
+        if (template.test(resource)) {
+          if (indentation === getIndentation(line)) {
+            path.pop();
+          }
+          if (getIndentation(line) < indentation) {
+            path = path.slice(0, path.length - 2);
+          }
+          if (path.filter(function (el) {
+              return el.trim() === resource;
+            }).length === 0) {
+            path.push(resource);
+          }
+          indentation = getIndentation(line);
+          linesScope[index] = path.join('');
+          resources[path.join('')] = null;
+        }
+        linesScope[index] = path.join('');
+      });
+      self.context = {
+        scopes: linesScope,
+        metadata: resourceMeta,
+        resources: Object.keys(resources),
+        content: lines
+      };
+    };
+    return self;
+  });
+  ;
+}());
+(function () {
+  'use strict';
   angular.module('stringFilters', []).filter('dasherize', function () {
     return function (input) {
       return input ? input.toLowerCase().trim().replace(/\s/g, '-') : '';
@@ -12842,7 +13011,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$confirm',
     '$modal',
     'eventEmitter',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter) {
+    'ramlEditorContext',
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -12887,6 +13057,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         if (!file.doc) {
           file.doc = new CodeMirror.Doc(file.contents);
         }
+        ramlEditorContext.read(file.contents.split('\n'));
         editor.swapDoc(file.doc);
         editor.focus();
         // After swapping the doc, configure the editor for the current file
@@ -14252,7 +14423,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   angular.module('ramlEditorApp').directive('ramlEditorOmnisearch', [
     'eventEmitter',
     'hotkeys',
-    function ramlEditorOmniSearch(eventEmitter, hotkeys) {
+    'ramlEditorContext',
+    function ramlEditorOmniSearch(eventEmitter, hotkeys, ramlEditorContext) {
       return {
         restrict: 'E',
         templateUrl: 'views/raml-editor-omnisearch.tmpl.html',
@@ -14260,7 +14432,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           '$scope',
           '$element',
           '$timeout',
-          function controller($scope, $element, $timeout) {
+          '$sce',
+          function controller($scope, $element, $timeout, $sce) {
             var omnisearch = this;
             var length = 0;
             var position = 0;
@@ -14283,8 +14456,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               omnisearch.searchLine = null;
               omnisearch.mode = 'file';
               omnisearch.selected = null;
-              position = 0;
               $scope.showOmnisearch = false;
+              position = 0;
             };
             eventEmitter.subscribe('event:open:omnisearch', function () {
               omnisearch.open();
@@ -14294,33 +14467,20 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             };
             function goToResource() {
               omnisearch.mode = 'resource';
-              function traverse(tree, resources, parentPath) {
-                if (Array.isArray(tree.resources)) {
-                  tree.resources.forEach(function (el) {
-                    traverse(el, resources, tree.relativeUri);
-                  });
-                }
-                if (tree.relativeUri) {
-                  resources.push({
-                    name: parentPath ? parentPath + tree.relativeUri : tree.relativeUri,
-                    relative: tree.relativeUri
-                  });
-                }
-              }
-              var resources = [];
-              var text = omnisearch.searchText.split('@')[1];
-              traverse($scope.fileBrowser.selectedFile.raml, resources);
-              resources = resources.sort(function (a, b) {
-                return b.name < a.name;
-              });
-              console.log(resources);
+              var resources = ramlEditorContext.context.resources;
+              var text = omnisearch.searchText.split('@')[1].split(' ').join(':/');
               resources.forEach(function (el) {
-                if (el.name.indexOf(text) !== -1) {
-                  omnisearch.searchResults.push(el);
+                if (el.indexOf(text) !== -1) {
+                  omnisearch.searchResults.push({
+                    name: $sce.trustAsHtml(el.replace(text, '<strong style="color: #0090f1;">' + text + '</strong>')),
+                    text: el
+                  });
                 }
               });
-              position = -1;
+              position = 0;
               length = omnisearch.searchResults.length;
+              omnisearch.selected = omnisearch.searchResults[0];
+              selectResource(false);
             }
             function goToLine() {
               omnisearch.mode = 'line';
@@ -14331,15 +14491,39 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             function searchFile() {
               omnisearch.mode = 'file';
               $scope.homeDirectory.forEachChildDo(function (child) {
+                var text = omnisearch.searchText;
                 if (!child.isDirectory) {
                   var filename = child.name.replace(child.extension, '');
                   if (filename.indexOf(omnisearch.searchText) !== -1) {
-                    omnisearch.searchResults.push(child);
+                    omnisearch.searchResults.push({
+                      name: $sce.trustAsHtml(child.name.replace(text, '<strong style="color: #0090f1;">' + text + '</strong>')),
+                      text: child
+                    });
                   }
                 }
               });
               omnisearch.selected = omnisearch.searchResults[0];
               length = omnisearch.searchResults.length;
+            }
+            function searchText() {
+              omnisearch.mode = 'text';
+              var content = ramlEditorContext.context.content;
+              var text = omnisearch.searchText.replace('#', '');
+              content.forEach(function (line, i) {
+                if (text && text.length > 0 && line.toLowerCase().indexOf(text.toLowerCase()) !== -1) {
+                  omnisearch.searchResults.push({
+                    name: $sce.trustAsHtml(line.replace(text, '<strong style="color: #0090f1;">' + text + '</strong>')),
+                    line: i + 1
+                  });
+                }
+              });
+              position = 0;
+              length = omnisearch.searchResults.length;
+              omnisearch.selected = omnisearch.searchResults[0];
+              eventEmitter.publish('event:goToLine', {
+                line: omnisearch.selected.line,
+                focus: false
+              });
             }
             function showCheatSheet() {
               omnisearch.close();
@@ -14351,6 +14535,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               }
               if (text.startsWith('@')) {
                 return new Command(goToResource);
+              }
+              if (text.startsWith('#')) {
+                return new Command(searchText);
               }
               if (text === '?') {
                 return new Command(showCheatSheet);
@@ -14364,17 +14551,27 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             };
             omnisearch.showContent = function showContent(data) {
               if (omnisearch.mode === 'resource') {
+                var resource = data.text.split('/');
+                resource = resource.pop().replace(':', '');
                 eventEmitter.publish('event:goToResource', {
-                  text: data.relative,
+                  scope: data.text,
+                  resource: resource,
+                  text: resource,
                   focus: true
                 });
               }
               if (omnisearch.mode === 'file') {
-                omnisearch.openFile(data);
+                omnisearch.openFile(data.text);
+              }
+              if (omnisearch.mode === 'text') {
+                eventEmitter.publish('event:goToLine', {
+                  line: data.line,
+                  focus: true
+                });
               }
             };
             omnisearch.openFile = function openFile(file) {
-              file = file || omnisearch.selected;
+              file = file || omnisearch.selected.text;
               if (!file) {
                 $scope.showOmnisearch = false;
               }
@@ -14384,6 +14581,16 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             omnisearch.isSelected = function isSelected(current) {
               return omnisearch.selected ? current.name === omnisearch.selected.name : false;
             };
+            function selectResource(focus) {
+              var resource = omnisearch.searchResults[position].text.split('/');
+              resource = resource.pop().replace(':', '');
+              eventEmitter.publish('event:goToResource', {
+                scope: omnisearch.searchResults[position].text,
+                resource: resource,
+                text: resource,
+                focus: focus
+              });
+            }
             omnisearch.keyUp = function move(keyCode) {
               // enter
               if (keyCode === 13) {
@@ -14397,8 +14604,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                   });
                 }
                 if (omnisearch.mode === 'resource') {
-                  eventEmitter.publish('event:goToResource', {
-                    text: omnisearch.selected.relative,
+                  selectResource(true);
+                }
+                if (omnisearch.mode === 'text') {
+                  eventEmitter.publish('event:goToLine', {
+                    line: omnisearch.selected.line,
                     focus: true
                   });
                 }
@@ -14415,7 +14625,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 }
                 omnisearch.selected = omnisearch.searchResults[position];
                 if (omnisearch.mode === 'resource') {
-                  eventEmitter.publish('event:goToResource', { text: omnisearch.selected.relative });
+                  selectResource(false);
+                }
+                if (omnisearch.mode === 'text') {
+                  eventEmitter.publish('event:goToLine', {
+                    line: omnisearch.selected.line,
+                    focus: false
+                  });
                 }
               }
               // Down Arrow
@@ -14428,7 +14644,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 }
                 omnisearch.selected = omnisearch.searchResults[position];
                 if (omnisearch.mode === 'resource') {
-                  eventEmitter.publish('event:goToResource', { text: omnisearch.selected.relative });
+                  selectResource(false);
+                }
+                if (omnisearch.mode === 'text') {
+                  eventEmitter.publish('event:goToLine', {
+                    line: omnisearch.selected.line,
+                    focus: false
+                  });
                 }
               }
             };
@@ -14457,26 +14679,30 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               line: 1,
               column: 1
             };
-            eventEmitter.subscribe('event:editor:current:tree', safeApplyWrapper($scope, function (data) {
-              bottomBar.resources = [];
-              data.map(function (el) {
-                bottomBar.resources.push(el.replace(':', ''));
-              });
-              if (bottomBar.resources.length > 0) {
-                bottomBar.active = data.pop().replace(':', '');
+            eventEmitter.subscribe('event:editor:context', safeApplyWrapper($scope, function (data) {
+              var context = data.context;
+              var cursor = data.cursor;
+              var scope = context.scopes[cursor.line];
+              bottomBar.cursor = {
+                line: cursor.line + 1,
+                column: cursor.ch + 1
+              };
+              if (scope.startsWith('/')) {
+                bottomBar.resources = scope.replace(/:/g, '').split('/');
+                bottomBar.resources = bottomBar.resources.slice(1, bottomBar.resources.length);
+                bottomBar.active = {
+                  scope: scope,
+                  resource: bottomBar.resources[bottomBar.resources.length - 1]
+                };
               }
             }));
-            eventEmitter.subscribe('event:editor:cursor', safeApplyWrapper($scope, function (data) {
-              bottomBar.cursor = {
-                line: data.line + 1,
-                column: data.ch + 1
-              };
-            }));
             bottomBar.isActive = function isActive(current) {
-              return current === bottomBar.active;
+              return current === bottomBar.active.resource;
             };
             bottomBar.show = function show(current) {
               eventEmitter.publish('event:goToResource', {
+                scope: bottomBar.active.scope,
+                resource: bottomBar.active.resource,
                 text: current,
                 focus: true
               });
@@ -14928,7 +15154,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-dblclick="fileBrowser.dblClick(node)" ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\',\n' + '      \'file-item2\': !node.isDirectory\n' + '    }"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>{{node.name}}\n' + '      <i class="fa icon fa-home" ng-if="node.root"></i>\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '    <div class="background">&nbsp</div>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <div class="section-title">\n' + '    <!-- <span class="arrow">&#9660</span> -->\n' + '    <i class="fa icon fa-caret-right caret-icon" ng-if="fileBrowser.isEmpty(workingFiles)"></i>\n' + '    <i class="fa icon fa-caret-down caret-icon" ng-if="!fileBrowser.isEmpty(workingFiles)"></i>\n' + '    Working Files\n' + '    <i class="fa icon fa-save save-icon" ng-click="saveAllFiles()"></i>\n' + '  </div>\n' + '  <ul ng-if="!fileBrowser.isEmpty(workingFiles)" class="angular-ui-tree-nodes">\n' + '    <li ng-repeat="(key, node) in workingFiles" class="angular-ui-tree-node angular-ui-working-node">\n' + '      <div class="file-item" ng-click="fileBrowser.select(node)"\n' + '        ng-class="{workingfile: fileBrowser.currentTarget.path === node.path, dirty: node.dirty}">\n' + '        <span class="file-name" >\n' + '          {{key}}\n' + '        </span>\n' + '        <div class="background">&nbsp</div>\n' + '        <i class="fa fa-times close-icon" ng-click="fileBrowser.close(node)"></i>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '  <div class="section-title">\n' + '    <!-- <span class="arrow">&#9660</span> -->\n' + '    <i class="fa icon fa-caret-down caret-icon"></i>\n' + '    Project Explorer\n' + '    <i class="fa icon fa-folder-open folder-icon" ng-click="newFolder()"></i>\n' + '    <i class="fa icon fa-file file-icon" ng-click="newFile()"></i>\n' + '    <!-- <i class="fa icon fa-filter file-icon"></i> -->\n' + '  </div>\n' + '  <div class="section-search" style="display: none;">\n' + '    <i class="fa icon fa-search search-icon"></i>\n' + '    <input type="text" />\n' + '  </div>\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}" ng-click="mainClick()" hotkey="{\'mod+p\': openOmnisearch}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar" style="height: 25px;">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path"></li>\n' + '   <!--  <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li> -->\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <span><i class="fa fa-question-circle"></i> Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <raml-editor-omnisearch role="omnisearch"></raml-editor-omnisearch>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-min-width="200">\n' + '    </div>\n' + '\n' + '\n' + '    <div role="editor">\n' + '      <div class="editor-title">{{getSelectedFileAbsolutePath()}} <span class="close-button">&#x2715;</span></div>\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <!-- <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div> -->\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">\n' + '    </div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <!-- <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console> -->\n' + '    </div>\n' + '  </div>\n' + '  <raml-editor-bottom-bar role="bottom-bar"></raml-editor-bottom-bar>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-omnisearch.tmpl.html', '<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)">\n' + '  <input type="text" placeholder="What are you looking for?" autofocus\n' + '    ng-change="omnisearch.search()"\n' + '    ng-model="omnisearch.searchText"\n' + '    />\n' + '  <ul>\n' + '    <!-- <li><span>></span> Filter by label <span class="description">editor commands</span></li> -->\n' + '    <li ng-repeat="result in omnisearch.searchResults" ng-click="omnisearch.showContent(result)" ng-class="{active: omnisearch.isSelected(result)}">\n' + '      <span>{{result.name}}</span>\n' + '    </li>\n' + '    <li ng-if="!omnisearch.searchResults"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>\n' + '    <li ng-if="!omnisearch.searchResults"><span class="command">@</span> Go to resource</li>\n' + '    <li ng-if="!omnisearch.searchResults"><span class="command">?</span> Show cheatsheet</li>\n' + '  </ul>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-omnisearch.tmpl.html', '<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)">\n' + '  <input type="text" placeholder="What are you looking for?" autofocus\n' + '    ng-change="omnisearch.search()"\n' + '    ng-model="omnisearch.searchText"\n' + '    />\n' + '  <ul>\n' + '    <!-- <li><span>></span> Filter by label <span class="description">editor commands</span></li> -->\n' + '    <li ng-repeat="result in omnisearch.searchResults" ng-click="omnisearch.showContent(result)" ng-class="{active: omnisearch.isSelected(result)}">\n' + '      <span ng-bind-html="result.name"></span>\n' + '    </li>\n' + '    <li ng-if="!omnisearch.searchResults"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>\n' + '    <li ng-if="!omnisearch.searchResults"><span class="command">@</span> Go to resource</li>\n' + '    <li ng-if="!omnisearch.searchResults"><span class="command">#</span> Search text</li>\n' + '    <li ng-if="!omnisearch.searchResults"><span class="command">?</span> Show cheatsheet <span class="description">global commands</span></li></li>\n' + '  </ul>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

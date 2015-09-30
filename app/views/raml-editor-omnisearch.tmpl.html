@@ -6,10 +6,11 @@
   <ul>
     <!-- <li><span>></span> Filter by label <span class="description">editor commands</span></li> -->
     <li ng-repeat="result in omnisearch.searchResults" ng-click="omnisearch.showContent(result)" ng-class="{active: omnisearch.isSelected(result)}">
-      <span>{{result.name}}</span>
+      <span ng-bind-html="result.name"></span>
     </li>
     <li ng-if="!omnisearch.searchResults"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>
     <li ng-if="!omnisearch.searchResults"><span class="command">@</span> Go to resource</li>
-    <li ng-if="!omnisearch.searchResults"><span class="command">?</span> Show cheatsheet</li>
+    <li ng-if="!omnisearch.searchResults"><span class="command">#</span> Search text</li>
+    <li ng-if="!omnisearch.searchResults"><span class="command">?</span> Show cheatsheet <span class="description">global commands</span></li></li>
   </ul>
 </div>

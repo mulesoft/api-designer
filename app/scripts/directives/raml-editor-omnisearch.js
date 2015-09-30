@@ -4,12 +4,13 @@
   angular.module('ramlEditorApp')
     .directive('ramlEditorOmnisearch', function ramlEditorOmniSearch(
       eventEmitter,
-      hotkeys
+      hotkeys,
+      ramlEditorContext
     ) {
       return {
         restrict:    'E',
         templateUrl: 'views/raml-editor-omnisearch.tmpl.html',
-        controller:  function controller($scope, $element, $timeout) {
+        controller:  function controller($scope, $element, $timeout, $sce) {
           var omnisearch = this;
           var length     = 0;
           var position   = 0;
@@ -36,8 +37,8 @@
             omnisearch.searchLine    = null;
             omnisearch.mode          = 'file';
             omnisearch.selected      = null;
-            position                 = 0;
             $scope.showOmnisearch    = false;
+            position                 = 0;
           };
 
           eventEmitter.subscribe('event:open:omnisearch', function () {
@@ -51,37 +52,23 @@
           function goToResource() {
             omnisearch.mode = 'resource';
 
-            function traverse(tree, resources, parentPath) {
-              if (Array.isArray(tree.resources)) {
-                tree.resources.forEach(function (el) {
-                  traverse(el, resources, tree.relativeUri);
-                });
-              }
-
-              if (tree.relativeUri) {
-                resources.push({
-                  name:     parentPath? parentPath + tree.relativeUri : tree.relativeUri,
-                  relative: tree.relativeUri
-                });
-              }
-            }
-
-            var resources = [];
-            var text      = omnisearch.searchText.split('@')[1];
-
-            traverse($scope.fileBrowser.selectedFile.raml, resources);
-
-            resources = resources.sort(function (a,b) { return b.name < a.name; });
-            console.log(resources);
+            var resources = ramlEditorContext.context.resources;
+            var text      = omnisearch.searchText.split('@')[1].split(' ').join(':/');
 
             resources.forEach(function (el) {
-              if (el.name.indexOf(text) !== -1) {
-                omnisearch.searchResults.push(el);
+              if (el.indexOf(text) !== -1) {
+                omnisearch.searchResults.push({
+                  name: $sce.trustAsHtml(el.replace(text, '<strong style="color: #0090f1;">'+text+'</strong>')),
+                  text: el
+                });
               }
             });
 
-            position            = -1;
-            length              = omnisearch.searchResults.length;
+            position = 0;
+            length   = omnisearch.searchResults.length;
+            omnisearch.selected = omnisearch.searchResults[0];
+
+            selectResource(false);
           }
 
           function goToLine() {
@@ -98,17 +85,47 @@
             omnisearch.mode = 'file';
 
             $scope.homeDirectory.forEachChildDo(function (child) {
+              var text = omnisearch.searchText;
+
               if(!child.isDirectory) {
                 var filename = child.name.replace(child.extension, '');
 
                 if (filename.indexOf(omnisearch.searchText) !== -1) {
-                  omnisearch.searchResults.push(child);
+                  omnisearch.searchResults.push({
+                    name: $sce.trustAsHtml(child.name.replace(text, '<strong style="color: #0090f1;">'+text+'</strong>')),
+                    text: child
+                  });
                 }
               }
             });
 
             omnisearch.selected = omnisearch.searchResults[0];
             length              = omnisearch.searchResults.length;
+          }
+
+          function searchText() {
+            omnisearch.mode = 'text';
+
+            var content  = ramlEditorContext.context.content;
+            var text     = omnisearch.searchText.replace('#', '');
+
+            content.forEach(function (line, i) {
+              if (text && text.length > 0 && line.toLowerCase().indexOf(text.toLowerCase()) !== -1) {
+                omnisearch.searchResults.push({
+                  name: $sce.trustAsHtml(line.replace(text, '<strong style="color: #0090f1;">'+text+'</strong>')),
+                  line: i+1
+                });
+              }
+            });
+
+            position = 0;
+            length   = omnisearch.searchResults.length;
+            omnisearch.selected = omnisearch.searchResults[0];
+
+            eventEmitter.publish('event:goToLine', {
+              line:  omnisearch.selected.line,
+              focus: false
+            });
           }
 
           function showCheatSheet() {
@@ -123,6 +140,10 @@
 
             if (text.startsWith('@')) {
               return new Command(goToResource);
+            }
+
+            if (text.startsWith('#')) {
+              return new Command(searchText);
             }
 
             if (text === '?') {
@@ -141,16 +162,32 @@
 
           omnisearch.showContent = function showContent(data) {
             if(omnisearch.mode === 'resource') {
-              eventEmitter.publish('event:goToResource', {text: data.relative, focus: true});
+              var resource = data.text.split('/');
+
+              resource = resource.pop().replace(':', '');
+
+              eventEmitter.publish('event:goToResource', {
+                scope:     data.text,
+                resource:  resource,
+                text:      resource,
+                focus:     true
+              });
             }
 
             if(omnisearch.mode === 'file') {
-              omnisearch.openFile(data);
+              omnisearch.openFile(data.text);
+            }
+
+            if(omnisearch.mode === 'text') {
+              eventEmitter.publish('event:goToLine', {
+                line:  data.line,
+                focus: true
+              });
             }
           };
 
           omnisearch.openFile = function openFile(file) {
-            file = file || omnisearch.selected;
+            file = file || omnisearch.selected.text;
 
             if (!file) {
               $scope.showOmnisearch = false;
@@ -163,6 +200,19 @@
           omnisearch.isSelected = function isSelected(current) {
             return omnisearch.selected ? current.name === omnisearch.selected.name : false;
           };
+
+          function selectResource(focus) {
+            var resource = omnisearch.searchResults[position].text.split('/');
+
+            resource = resource.pop().replace(':', '');
+
+            eventEmitter.publish('event:goToResource', {
+              scope:    omnisearch.searchResults[position].text,
+              resource: resource,
+              text:     resource,
+              focus:    focus
+            });
+          }
 
           omnisearch.keyUp = function move(keyCode) {
             // enter
@@ -179,8 +229,12 @@
               }
 
               if (omnisearch.mode === 'resource') {
-                eventEmitter.publish('event:goToResource', {
-                  text:  omnisearch.selected.relative,
+                selectResource(true);
+              }
+
+              if(omnisearch.mode === 'text') {
+                eventEmitter.publish('event:goToLine', {
+                  line:  omnisearch.selected.line,
                   focus: true
                 });
               }
@@ -202,7 +256,14 @@
               omnisearch.selected = omnisearch.searchResults[position];
 
               if(omnisearch.mode === 'resource') {
-                eventEmitter.publish('event:goToResource', {text: omnisearch.selected.relative});
+                selectResource(false);
+              }
+
+              if(omnisearch.mode === 'text') {
+                eventEmitter.publish('event:goToLine', {
+                  line:  omnisearch.selected.line,
+                  focus: false
+                });
               }
             }
 
@@ -219,7 +280,14 @@
               omnisearch.selected = omnisearch.searchResults[position];
 
               if(omnisearch.mode === 'resource') {
-                eventEmitter.publish('event:goToResource', {text: omnisearch.selected.relative});
+                selectResource(false);
+              }
+
+              if(omnisearch.mode === 'text') {
+                eventEmitter.publish('event:goToLine', {
+                  line:  omnisearch.selected.line,
+                  focus: false
+                });
               }
             }
           };

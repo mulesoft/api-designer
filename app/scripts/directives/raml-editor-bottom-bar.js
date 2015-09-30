@@ -17,33 +17,36 @@
             column: 1
           };
 
-          eventEmitter.subscribe('event:editor:current:tree', safeApplyWrapper($scope, function (data) {
-            bottomBar.resources = [];
+          eventEmitter.subscribe('event:editor:context', safeApplyWrapper($scope, function (data) {
+            var context = data.context;
+            var cursor  = data.cursor;
+            var scope   = context.scopes[cursor.line];
 
-            data.map(function (el) {
-              bottomBar.resources.push(el.replace(':', ''));
-            });
+            bottomBar.cursor = {
+              line:   cursor.line+1,
+              column: cursor.ch+1
+            };
 
-            if (bottomBar.resources.length > 0) {
-              bottomBar.active = data.pop().replace(':', '');
+            if (scope.startsWith('/')) {
+              bottomBar.resources = scope.replace(/:/g, '').split('/');
+              bottomBar.resources = bottomBar.resources.slice(1, bottomBar.resources.length);
+              bottomBar.active    = {
+                scope:    scope,
+                resource: bottomBar.resources[bottomBar.resources.length-1]
+              };
             }
           }));
 
-          eventEmitter.subscribe('event:editor:cursor', safeApplyWrapper($scope, function (data) {
-            bottomBar.cursor = {
-              line:   data.line+1,
-              column: data.ch+1
-            };
-          }));
-
           bottomBar.isActive = function isActive(current) {
-            return current === bottomBar.active;
+            return current === bottomBar.active.resource;
           };
 
           bottomBar.show = function show(current) {
             eventEmitter.publish('event:goToResource', {
-              text:  current,
-              focus: true
+              scope:    bottomBar.active.scope,
+              resource: bottomBar.active.resource,
+              text:     current,
+              focus:    true
             });
           };
 

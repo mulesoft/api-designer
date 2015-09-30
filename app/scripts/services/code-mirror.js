@@ -5,7 +5,7 @@
     .factory('codeMirror', function (
       ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
       getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
-      eventEmitter, getNode
+      eventEmitter, getNode, ramlEditorContext
     ) {
       var editor  = null;
       var service = {
@@ -175,6 +175,7 @@
         }
 
         options = {
+          styleActiveLine: true,
           mode: 'raml',
           theme: 'solarized dark',
           lineNumbers: true,
@@ -200,6 +201,8 @@
           rangeFinder: CodeMirror.fold.indent
         });
 
+        service.cm = cm;
+
         var charWidth   = cm.defaultCharWidth();
         var basePadding = 4;
 
@@ -210,39 +213,99 @@
           el.style.paddingLeft = (basePadding + offset) + 'px';
         });
 
-        function cursorChanged() {
-          var template  = new RegExp('^\/.*:$');
-          var node      = getNode(cm);
-          var resources = [];
+        // function readRamlFrament() {
+        //   var template  = new RegExp('^\/.*:$');
+        //   var node      = getNode(cm);
+        //   var raml      = [];
+        //   var nodes;
 
-          for(;;) {
-            if (node === null) {
-              break;
-            }
+        //   function read(tree, fragments) {
+        //     var temp = tree.getChildren();
+        //     fragments.push(tree.line);
+        //     if (Array.isArray(temp)) {
+        //       temp.forEach(function (el) {
+        //         read(el, fragments);
+        //       });
+        //     }
+        //   }
 
-            if (template.test(node.lineIndent.content)) {
-              resources.push(node.lineIndent.content);
+        //   function readRamlHeader(cm) {
+        //     var temp  = [];
+        //     var count = cm.lineCount(), i;
 
-              if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
-                break;
-              }
-            }
+        //     for (i = 0; i < count; i++) {
+        //       var line = cm.getLine(i);
 
-            node = node.getParent();
-          }
+        //       if(!template.test(line)) {
+        //         temp.push(line);
+        //       } else {
+        //         break;
+        //       }
+        //     }
 
-          eventEmitter.publish('event:editor:current:tree', resources.reverse());
-          eventEmitter.publish('event:editor:cursor', cm.getCursor());
-        }
+        //     return temp.join('\n');
+        //   }
+
+        //   for(;;) {
+        //     if (node === null) {
+        //       break;
+        //     }
+
+        //     if (template.test(node.lineIndent.content)) {
+        //       if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
+        //         nodes = node.getChildren();
+        //         break;
+        //       }
+        //     }
+
+        //     node = node.getParent();
+        //   }
+
+        //   if (node) {
+        //     raml.push(readRamlHeader(cm));
+        //     raml.push(node.line);
+
+        //     nodes.map(function (node) {
+        //       read(node, raml);
+        //     });
+
+        //     eventEmitter.publish('event:editor:context:raml', raml.join('\n'));
+        //   }
+        // }
+
+        // function cursorChanged() {
+        //   var template  = new RegExp('^\/.*:$');
+        //   var node      = getNode(cm);
+        //   var resources = [];
+
+        //   for(;;) {
+        //     if (node === null) {
+        //       break;
+        //     }
+
+        //     if (template.test(node.lineIndent.content)) {
+        //       resources.push(node.lineIndent.content);
+
+        //       if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
+        //         break;
+        //       }
+        //     }
+
+        //     node = node.getParent();
+        //   }
+
+        //   // eventEmitter.publish('event:editor:current:tree', resources.reverse());
+        // }
 
         cm.on('cursorActivity', function () {
-          cursorChanged();
+          eventEmitter.publish('event:editor:context', {
+            context: ramlEditorContext.context,
+            cursor:  cm.getCursor()
+          });
         });
 
-        cm.on('keyHandled', function (cm, key) {
-          if (key === 'Up' || key === 'Down') {
-            cursorChanged();
-          }
+        cm.on('change', function (cm) {
+          ramlEditorContext.read(cm.getValue().split('\n'));
         });
 
         return cm;
@@ -293,21 +356,55 @@
         });
 
         eventEmitter.subscribe('event:goToResource', function (search) {
-          // TODO: Improve search :(
-          var file = window.editor.getValue().split('\n');
+          var context = ramlEditorContext.context;
+          var root    = '/'+search.scope.split('/')[1];
+          var startAt = context.metadata[root].startAt;
+          var endAt   = context.metadata[root].endAt;
+          var line    = 0;
+          var cm      = window.editor;
 
-          file.forEach(function (line, index) {
-            if (line.trim().startsWith(search.text)) {
-              var position = {line: index, ch: 0};
+          for(var i = startAt; i <= endAt; i++) {
+            var temp = null;
 
-              if (search.focus) {
-                window.editor.focus();
+            if (search.text !== search.resource) {
+              temp = '';
+              var fragments = search.scope.split('/');
+
+              fragments = fragments.slice(1, fragments.length);
+
+              for(var j = 0; j <fragments.length; j++) {
+                var resource = search.text+':';
+                var el       = fragments[j];
+
+                if(el !== resource) {
+                  temp+='/'+el;
+                }
+
+                if(el === resource) {
+                  temp+='/'+el;
+                  break;
+                }
+              }
+            }
+
+            if (context.scopes[i].indexOf(search.text) !== -1) {
+              if (temp && context.scopes[i] === temp) {
+                line = i;
+                break;
               }
 
-              scrollTo(position);
-              return;
+              if(temp === null && context.scopes[i] === search.scope) {
+                line = i;
+                break;
+              }
             }
-          });
+          }
+
+          if (search.focus) {
+            cm.focus();
+          }
+
+          scrollTo({line: line, ch: 0});
         });
 
         CodeMirror.commands.save = function () {
@@ -333,6 +430,40 @@
 
         CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
         CodeMirror.registerHelper('fold', 'indent', getFoldRange);
+
+        // active-line addon
+        var WRAP_CLASS = 'CodeMirror-activeline';
+        var BACK_CLASS = 'CodeMirror-activeline-background';
+
+        CodeMirror.defineOption('styleActiveLine', false, function(cm, val, old) {
+          var prev = old && old !== CodeMirror.Init;
+          if (val && !prev) {
+            updateActiveLine(cm);
+            cm.on('cursorActivity', updateActiveLine);
+          } else if (!val && prev) {
+            cm.off('cursorActivity', updateActiveLine);
+            clearActiveLine(cm);
+            delete cm.state.activeLine;
+          }
+        });
+
+        function clearActiveLine(cm) {
+          if ('activeLine' in cm.state) {
+            cm.removeLineClass(cm.state.activeLine, 'wrap', WRAP_CLASS);
+            cm.removeLineClass(cm.state.activeLine, 'background', BACK_CLASS);
+          }
+        }
+
+        function updateActiveLine(cm) {
+          var line = cm.getLineHandleVisualStart(cm.getCursor().line);
+          if (cm.state.activeLine === line) {
+            return;
+          }
+          clearActiveLine(cm);
+          cm.addLineClass(line, 'wrap', WRAP_CLASS);
+          cm.addLineClass(line, 'background', BACK_CLASS);
+          cm.state.activeLine = line;
+        }
       })();
 
       return service;
