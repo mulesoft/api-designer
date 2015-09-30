@@ -3,7 +3,7 @@
     z-index: 10;
     background-color: #47474b;
     border: 1px solid #3a3a3e;
-    width: 500px;
+    width: 600px;
     max-height: 330px;
     position: absolute;
     left: 0;
@@ -15,7 +15,7 @@
     input {
       margin: 3px;
       border: 0;
-      width: 492px;
+      width: 592px;
       font-size: 12px;
       padding: 3px;
       outline: none;
@@ -27,7 +27,7 @@
       color:           #E1E1E4;
       margin:          0;
       overflow-y:      scroll;
-      max-height:      300px;
+      max-height:      303px;
 
       li {
         cursor: pointer;
@@ -42,7 +42,8 @@
         }
 
         &:hover {
-          background-color: #6c6c72;
+          // background-color: #6c6c72
+          background-color: #296d92;
         }
 
         span {
@@ -51,6 +52,10 @@
           display: inline;
           width: 100%;
           text-align: left;
+
+          // text-overflow: ellipsis;
+          // white-space: nowrap;
+          // overflow: hidden;
         }
 
         span.command {
@@ -59,6 +64,7 @@
          display: inline-block;
          width: 13px;
          text-align: center;
+         line-height: 9px;
         }
 
         span.description {

@@ -57,8 +57,9 @@
 
             resources.forEach(function (el) {
               if (el.indexOf(text) !== -1) {
+                var formatedText = text.replace(/:/g, '');
                 omnisearch.searchResults.push({
-                  name: $sce.trustAsHtml(el.replace(text, '<strong style="color: #0090f1;">'+text+'</strong>')),
+                  name: $sce.trustAsHtml(el.replace(/:/g, '').replace(formatedText, '<strong style="color: #0090f1;">'+formatedText+'</strong>')),
                   text: el
                 });
               }
@@ -113,19 +114,22 @@
               if (text && text.length > 0 && line.toLowerCase().indexOf(text.toLowerCase()) !== -1) {
                 omnisearch.searchResults.push({
                   name: $sce.trustAsHtml(line.replace(text, '<strong style="color: #0090f1;">'+text+'</strong>')),
+                  text: line,
                   line: i+1
                 });
               }
             });
 
-            position = 0;
+            position = -1;
             length   = omnisearch.searchResults.length;
             omnisearch.selected = omnisearch.searchResults[0];
 
-            eventEmitter.publish('event:goToLine', {
-              line:  omnisearch.selected.line,
-              focus: false
-            });
+            if (omnisearch.selected) {
+              eventEmitter.publish('event:goToLine', {
+                line:  omnisearch.selected.line,
+                focus: false
+              });
+            }
           }
 
           function showCheatSheet() {
@@ -160,7 +164,7 @@
             getCommand(omnisearch.searchText).execute();
           };
 
-          omnisearch.showContent = function showContent(data) {
+          omnisearch.showContent = function showContent(data, focus) {
             if(omnisearch.mode === 'resource') {
               var resource = data.text.split('/');
 
@@ -170,7 +174,7 @@
                 scope:     data.text,
                 resource:  resource,
                 text:      resource,
-                focus:     true
+                focus:     typeof focus === 'undefined' ? true : focus
               });
             }
 
@@ -181,7 +185,7 @@
             if(omnisearch.mode === 'text') {
               eventEmitter.publish('event:goToLine', {
                 line:  data.line,
-                focus: true
+                focus: typeof focus === 'undefined' ? true : focus
               });
             }
           };
@@ -198,7 +202,11 @@
           };
 
           omnisearch.isSelected = function isSelected(current) {
-            return omnisearch.selected ? current.name === omnisearch.selected.name : false;
+            if (current.line) {
+              return omnisearch.selected ? current.line === omnisearch.selected.line : false;
+            }
+
+            return omnisearch.selected ? current.text === omnisearch.selected.text : false;
           };
 
           function selectResource(focus) {
@@ -213,6 +221,9 @@
               focus:    focus
             });
           }
+
+          // var scrollPosition = 0;
+          // var scrollSize     = 19;
 
           omnisearch.keyUp = function move(keyCode) {
             // enter
@@ -247,49 +258,56 @@
               omnisearch.close();
             }
 
-            // Up Arrow
-            if (keyCode === 38) {
-              if (position > 0) {
-                position--;
-              }
+            // // Up Arrow
+            // if (keyCode === 38) {
+            //   if (position > 0) {
+            //     position--;
+            //     scrollPosition = scrollPosition-scrollSize;
+            //     $($element.find('ul')).scrollTop(scrollPosition);
+            //   }
 
-              omnisearch.selected = omnisearch.searchResults[position];
+            //   omnisearch.selected = omnisearch.searchResults[position];
 
-              if(omnisearch.mode === 'resource') {
-                selectResource(false);
-              }
+            //   if(omnisearch.mode === 'resource') {
+            //     selectResource(false);
+            //   }
 
-              if(omnisearch.mode === 'text') {
-                eventEmitter.publish('event:goToLine', {
-                  line:  omnisearch.selected.line,
-                  focus: false
-                });
-              }
-            }
+            //   if(omnisearch.mode === 'text') {
+            //     eventEmitter.publish('event:goToLine', {
+            //       line:  omnisearch.selected.line,
+            //       focus: false
+            //     });
+            //   }
+            // }
 
-            // Down Arrow
-            if (keyCode === 40) {
-              $timeout(function() {
-                $element.focus();
-              });
+            // // Down Arrow
+            // if (keyCode === 40) {
+            //   $timeout(function() {
+            //     $element.focus();
+            //   });
 
-              if (position < length-1) {
-                position++;
-              }
+            //   if (position < length-1) {
+            //     position++;
 
-              omnisearch.selected = omnisearch.searchResults[position];
+            //     if (position > 15) {
+            //       scrollPosition = scrollPosition+scrollSize;
+            //       $($element.find('ul')).scrollTop(scrollPosition);
+            //     }
+            //   }
 
-              if(omnisearch.mode === 'resource') {
-                selectResource(false);
-              }
+            //   omnisearch.selected = omnisearch.searchResults[position];
 
-              if(omnisearch.mode === 'text') {
-                eventEmitter.publish('event:goToLine', {
-                  line:  omnisearch.selected.line,
-                  focus: false
-                });
-              }
-            }
+            //   if(omnisearch.mode === 'resource') {
+            //     selectResource(false);
+            //   }
+
+            //   if(omnisearch.mode === 'text') {
+            //     eventEmitter.publish('event:goToLine', {
+            //       line:  omnisearch.selected.line,
+            //       focus: false
+            //     });
+            //   }
+            // }
           };
 
           $scope.omnisearch = omnisearch;

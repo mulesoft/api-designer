@@ -1527,7 +1527,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   z-index: 10;
   background-color: #47474b;
   border: 1px solid #3a3a3e;
-  width: 500px;
+  width: 600px;
   max-height: 330px;
   position: absolute;
   left: 0;
@@ -1539,7 +1539,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 [role=omnisearch] div input {
   margin: 3px;
   border: 0;
-  width: 492px;
+  width: 592px;
   font-size: 12px;
   padding: 3px;
   outline: none;
@@ -1550,7 +1550,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   color: #E1E1E4;
   margin: 0;
   overflow-y: scroll;
-  max-height: 300px;
+  max-height: 303px;
 }
 [role=omnisearch] div ul li {
   cursor: pointer;
@@ -1563,7 +1563,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   background-color: #296d92;
 }
 [role=omnisearch] div ul li:hover {
-  background-color: #6c6c72;
+  background-color: #296d92;
 }
 [role=omnisearch] div ul li span {
   color: #CCC;
@@ -1576,6 +1576,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   display: inline-block;
   width: 13px;
   text-align: center;
+  line-height: 9px;
 }
 [role=omnisearch] div ul li span.description {
   color: #00FF00;
