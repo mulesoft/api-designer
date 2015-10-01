@@ -1,4 +1,4 @@
-<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)">
+<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)" class="omnisearch">
   <input type="text" placeholder="Type '?' to get help" autofocus
     ng-change="omnisearch.search()"
     ng-model="omnisearch.searchText"

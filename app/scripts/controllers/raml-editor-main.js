@@ -305,8 +305,10 @@
         $window.setTheme(($scope.theme === 'dark') ? 'light' : 'dark');
       });
 
-      $scope.mainClick = function mainClick() {
-        $scope.omnisearch.close();
+      $scope.mainClick = function mainClick($event) {
+        if ($event.target.parentElement.className.indexOf('omnisearch') === -1) {
+          $scope.omnisearch.close();
+        }
       };
 
       $scope.openOmnisearch = function openOmnisearch(e) {

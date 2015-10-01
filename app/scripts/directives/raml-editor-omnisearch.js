@@ -47,6 +47,10 @@
             omnisearch.open();
           });
 
+          eventEmitter.subscribe('event:editor:click', function () {
+            omnisearch.close();
+          });
+
           var Command = function (execute) {
             this.execute = execute;
           };

@@ -224,6 +224,10 @@
           ramlEditorContext.read(cm.getValue().split('\n'));
         });
 
+        cm.on('mousedown', function () {
+          eventEmitter.publish('event:editor:click');
+        });
+
         return cm;
       };
 
