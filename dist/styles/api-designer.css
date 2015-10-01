@@ -1630,3 +1630,42 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   font-size: 10px;
   color: #ccc;
 }
+[role=try-it] div div.container {
+  min-height: 19px;
+}
+[role=try-it] div div.container div.title {
+  padding: 3px;
+  background-color: #35393c;
+  font-size: 10px;
+}
+[role=try-it] div div.container div.title span {
+  text-transform: uppercase;
+  color: silver;
+}
+[role=try-it] div div.content {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+[role=try-it] div div.content label {
+  color: silver;
+  text-transform: capitalize;
+  margin-bottom: 4px;
+  margin-top: 3px;
+  font-size: 10px;
+  display: inline-block;
+  width: 37%;
+  text-align: right;
+  margin-right: 3px;
+}
+[role=try-it] div div.content .control {
+  border: 0;
+  border-radius: 0;
+  width: 58%;
+  display: inline-block;
+  font-size: 10px;
+}
+[role=try-it] div div.content .control.full-width {
+  width: 100%;
+}

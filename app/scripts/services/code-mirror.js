@@ -92,7 +92,9 @@
         'Ctrl-S': 'save',
         'Shift-Tab': 'indentLess',
         'Shift-Ctrl-T': 'toggleTheme',
-        'Cmd-P': 'showOmniSearch'
+        'Cmd-P': 'showOmniSearch',
+        'Ctrl-/': 'toggleComment',
+        'Cmd-/': 'toggleComment'
       };
 
       var autocomplete = function onChange(cm) {
@@ -345,6 +347,35 @@
 
         CodeMirror.commands.showOmniSearch = function () {
           eventEmitter.publish('event:open:omnisearch');
+        };
+
+        function toggleComment (content) {
+          if (content.replace(/\s/g, '').indexOf('#')) {
+            content = '# ' + content;
+          } else {
+            content = content.replace(/# /g, '');
+          }
+
+          return content;
+        }
+
+        CodeMirror.commands.toggleComment = function () {
+          var cm          = service.getEditor();
+          var selection   = cm.getSelection();
+          var currentLine = cm.getCursor().line;
+          var content     = cm.getLine(currentLine);
+
+          if (selection.replace(/\s/g, '')) {
+            var lines = selection.split('\n');
+
+            for(var i = 0; i < lines.length; i++) {
+              lines[i] = toggleComment(lines[i]);
+            }
+
+            cm.replaceSelection(lines.join('\n'));
+          } else {
+            cm.setLine(currentLine, toggleComment(content));
+          }
         };
 
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);

@@ -10002,7 +10002,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           'Ctrl-S': 'save',
           'Shift-Tab': 'indentLess',
           'Shift-Ctrl-T': 'toggleTheme',
-          'Cmd-P': 'showOmniSearch'
+          'Cmd-P': 'showOmniSearch',
+          'Ctrl-/': 'toggleComment',
+          'Cmd-/': 'toggleComment'
         };
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
@@ -10217,6 +10219,29 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         };
         CodeMirror.commands.showOmniSearch = function () {
           eventEmitter.publish('event:open:omnisearch');
+        };
+        function toggleComment(content) {
+          if (content.replace(/\s/g, '').indexOf('#')) {
+            content = '# ' + content;
+          } else {
+            content = content.replace(/# /g, '');
+          }
+          return content;
+        }
+        CodeMirror.commands.toggleComment = function () {
+          var cm = service.getEditor();
+          var selection = cm.getSelection();
+          var currentLine = cm.getCursor().line;
+          var content = cm.getLine(currentLine);
+          if (selection.replace(/\s/g, '')) {
+            var lines = selection.split('\n');
+            for (var i = 0; i < lines.length; i++) {
+              lines[i] = toggleComment(lines[i]);
+            }
+            cm.replaceSelection(lines.join('\n'));
+          } else {
+            cm.setLine(currentLine, toggleComment(content));
+          }
         };
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
         CodeMirror.defineMIME('text/x-raml', 'raml');
@@ -12825,77 +12850,89 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('ramlEditorContext', function ramlEditorContext() {
-    var self = this;
-    function getIndentation(str) {
-      return str.match(/^\s*/)[0].length;
-    }
-    function readRamlHeader(lines) {
-      var template = new RegExp('^/.*:$');
-      var temp = [];
-      for (var i = 0; i < lines.length; i++) {
-        var line = lines[i];
-        if (!template.test(line)) {
-          temp.push(line);
-        } else {
-          break;
-        }
+  angular.module('ramlEditorApp').factory('ramlEditorContext', [
+    'ramlParser',
+    function ramlEditorContext(ramlParser) {
+      var self = this;
+      function getIndentation(str) {
+        return str.match(/^\s*/)[0].length;
       }
-      return temp.join('\n');
-    }
-    self.context = {};
-    self.read = function read(lines) {
-      var template = new RegExp('^/.*:$');
-      var path = [lines[0]];
-      var indentation = getIndentation(lines[0]);
-      var resource, root;
-      var linesScope = new Array(lines.length);
-      var resourceMeta = {};
-      var resources = {};
-      lines.forEach(function (line, index) {
-        resource = line.trim();
-        if (line.startsWith('/')) {
-          if (root !== resource && resourceMeta[root]) {
-            resourceMeta[root].endAt = index;
+      function readRamlHeader(lines) {
+        var template = new RegExp('^/.*:$');
+        var temp = [];
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+          if (!template.test(line)) {
+            temp.push(line);
+          } else {
+            break;
           }
-          root = resource;
-          resourceMeta[root] = {
-            raml: [],
-            startAt: index
-          };
-          path = [line];
         }
-        if (resourceMeta[root]) {
-          resourceMeta[root].raml.push(line);
-        }
-        if (template.test(resource)) {
-          if (indentation === getIndentation(line)) {
-            path.pop();
+        return temp.join('\n');
+      }
+      self.context = {};
+      self.read = function read(lines) {
+        var template = new RegExp('^/.*:$');
+        var path = [lines[0]];
+        var indentation = getIndentation(lines[0]);
+        var resource, root;
+        var linesScope = new Array(lines.length);
+        var resourceMeta = {};
+        var resources = {};
+        lines.forEach(function (line, index) {
+          resource = line.trim();
+          if (line.startsWith('/')) {
+            if (root !== resource && resourceMeta[root]) {
+              resourceMeta[root].endAt = index;
+            }
+            root = resource;
+            resourceMeta[root] = {
+              raml: { raw: '' },
+              startAt: index
+            };
+            path = [line];
           }
-          if (getIndentation(line) < indentation) {
-            path = path.slice(0, path.length - 2);
+          if (resourceMeta[root]) {
+            resourceMeta[root].raml.raw += line + '\n';
           }
-          if (path.filter(function (el) {
-              return el.trim() === resource;
-            }).length === 0) {
-            path.push(resource);
+          if (template.test(resource)) {
+            if (indentation === getIndentation(line)) {
+              path.pop();
+            }
+            if (getIndentation(line) < indentation) {
+              path = path.slice(0, path.length - 2);
+            }
+            if (path.filter(function (el) {
+                return el.trim() === resource;
+              }).length === 0) {
+              path.push(resource);
+            }
+            indentation = getIndentation(line);
+            linesScope[index] = path.join('');
+            resources[path.join('')] = null;
           }
-          indentation = getIndentation(line);
           linesScope[index] = path.join('');
-          resources[path.join('')] = null;
-        }
-        linesScope[index] = path.join('');
-      });
-      self.context = {
-        scopes: linesScope,
-        metadata: resourceMeta,
-        resources: Object.keys(resources),
-        content: lines,
-        ramlHeader: readRamlHeader(lines)
+        });
+        self.context = {
+          scopes: linesScope,
+          metadata: resourceMeta,
+          resources: Object.keys(resources),
+          content: lines,
+          ramlHeader: { raw: readRamlHeader(lines) }
+        };
+        ramlParser.load(self.context.ramlHeader.raw).then(function (data) {
+          self.context.ramlHeader.compiled = data;
+        });
+        Object.keys(resourceMeta).map(function (resource) {
+          var raml = [self.context.ramlHeader.raw];
+          ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n')).then(function (data) {
+            resourceMeta[resource].raml.compiled = data;
+          });
+        });
       };
-    };
-    return self;
-  });
+      return self;
+    }
+  ]);
   ;
 }());
 (function () {
@@ -14702,6 +14739,15 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 }());
 (function () {
   'use strict';
+  // TODO: Extract to a different file
+  String.prototype.titleize = function () {
+    var words = this.split(' ');
+    var array = [];
+    for (var i = 0; i < words.length; ++i) {
+      array.push(words[i].charAt(0).toUpperCase() + words[i].toLowerCase().slice(1));
+    }
+    return array.join(' ');
+  };
   angular.module('ramlEditorApp').directive('ramlEditorTryIt', [
     'eventEmitter',
     'safeApplyWrapper',
@@ -14711,24 +14757,52 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         templateUrl: 'views/raml-editor-try-it.tmpl.html',
         controller: [
           '$scope',
-          '$sce',
-          function controller($scope, $sce) {
+          function controller($scope) {
             var tryIt = this;
+            function readSecuritySchemes(raml) {
+              var schemes = {
+                  anonymous: {
+                    type: 'Anonymous',
+                    name: 'Anonymous'
+                  }
+                };
+              if (raml.securitySchemes) {
+                raml.securitySchemes.forEach(function (scheme) {
+                  var key = Object.keys(scheme)[0];
+                  var type = scheme[key].type;
+                  schemes[key] = scheme[key];
+                  schemes[key].name = scheme[key].type;
+                  if (type.startsWith('x-')) {
+                    schemes[key].name = key.replace(/_/g, ' ').titleize();
+                  }
+                });
+              }
+              return schemes;
+            }
             eventEmitter.subscribe('event:editor:context', safeApplyWrapper($scope, function (data) {
               var context = data.context;
               var cursor = data.cursor;
               var scopes = context.scopes;
               var resource = scopes[cursor.line];
-              var ramlHeader = context.ramlHeader;
               var metadata;
               resource = '/' + resource.split('/').slice(1, 2);
               metadata = context.metadata[resource];
               if (metadata) {
-                var raml = [ramlHeader];
-                tryIt.current = $sce.trustAsHtml(context.metadata[resource].raml.join('\n').replace(/\n/g, '</br>').replace(/ /g, '&nbsp'));
-                tryIt.raml = raml.concat(context.metadata[resource].raml).join('\n');  // console.log(tryIt.raml);
+                var raml = context.metadata[resource].raml.compiled;
+                tryIt.securitySchemes = readSecuritySchemes(raml);
+                tryIt.protocols = raml.protocols;
+                tryIt.enabled = true;
+                console.log(raml);
+              } else {
+                tryIt.current = null;
+                tryIt.raml = null;
               }
             }));
+            // Init
+            tryIt.enabled = false;
+            tryIt.securityScheme = 'Anonymous';
+            tryIt.protocol = 'HTTP';
+            // Events
             $scope.tryIt = tryIt;
           }
         ]
@@ -15178,6 +15252,6 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}" ng-click="mainClick($event)" hotkey="{\'mod+p\': openOmnisearch}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar" style="height: 25px;">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path"></li>\n' + '   <!--  <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li> -->\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <span><i class="fa fa-question-circle"></i> Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <raml-editor-omnisearch role="omnisearch"></raml-editor-omnisearch>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-min-width="200">\n' + '    </div>\n' + '\n' + '\n' + '    <div role="editor">\n' + '      <div class="editor-title">{{getSelectedFileAbsolutePath()}} <span class="close-button">&#x2715;</span></div>\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <!-- <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div> -->\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">\n' + '    </div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <!-- <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console> -->\n' + '      <raml-editor-try-it role="try-it"></raml-editor-try-it>\n' + '    </div>\n' + '  </div>\n' + '  <raml-editor-bottom-bar role="bottom-bar"></raml-editor-bottom-bar>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-omnisearch.tmpl.html', '<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)" class="omnisearch">\n' + '  <input type="text" placeholder="Type \'?\' to get help" autofocus\n' + '    ng-change="omnisearch.search()"\n' + '    ng-model="omnisearch.searchText"\n' + '    />\n' + '  <ul>\n' + '    <li class="result" ng-repeat="result in omnisearch.searchResults" ng-mouseover="omnisearch.showContent(result, false, true)" ng-click="omnisearch.showContent(result)">\n' + '      <span ng-bind-html="result.name"></span>\n' + '    </li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">@</span> Go to resource</li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">#</span> Search text</li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">?</span> Show cheatsheet <span class="description">global commands</span></li></li>\n' + '  </ul>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-try-it.tmpl.html', '<div>\n' + '  <span ng-bind-html="tryIt.current"></span>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-try-it.tmpl.html', '<div ng-if="tryIt.enabled">\n' + '  <div class="container" ng-if="tryIt.protocols">\n' + '    <div class="title">\n' + '      <span>Protocols</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <select class="control full-width" ng-model="tryIt.protocol">\n' + '        <option ng-repeat="protocol in tryIt.protocols" value="{{protocol}}">{{protocol}}</option>\n' + '      </select>\n' + '    </div>\n' + '  </div>\n' + '  <div class="container">\n' + '    <div class="title">\n' + '      <span>Authentication</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <label>Security Scheme</label>\n' + '      <select class="control" ng-model="tryIt.securityScheme">\n' + '        <option ng-repeat="(key, value) in tryIt.securitySchemes" value="{{value.type}}">{{value.name}}</option>\n' + '      </select>\n' + '\n' + '      <div ng-switch on="tryIt.securityScheme">\n' + '        <div ng-switch-when="Anonymous"></div>\n' + '        <div ng-switch-when="Basic Authentication">\n' + '          <label>Username</label>\n' + '          <input class="control" type="text" id="username" value="">\n' + '          <label>Password</label>\n' + '          <input class="control" type="text" id="password" value="">\n' + '        </div>\n' + '        <div ng-switch-when="Digest Authentication"></div>\n' + '        <div ng-switch-when="OAuth 1.0"></div>\n' + '        <div ng-switch-when="OAuth 2.0">\n' + '          <label>Authorization Grant</label>\n' + '          <select class="control">\n' + '            <option value="code">Authorization Code</option>\n' + '            <option value="credentials">Client Credentials</option>\n' + '          </select>\n' + '\n' + '          <label>Client ID</label>\n' + '          <input class="control" type="text" id="clientId" value="">\n' + '\n' + '          <label>Client Secret</label>\n' + '          <input class="control" type="text" id="clientSecret" value="">\n' + '        </div>\n' + '        <div ng-switch-default></div>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
   }
 ]);
