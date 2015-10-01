@@ -1556,6 +1556,9 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   cursor: pointer;
   padding: 3px;
 }
+[role=omnisearch] div ul li.result {
+  border-bottom: 1px solid #606065;
+}
 [role=omnisearch] div ul li.separator {
   border-bottom: 1px solid #3a3a3e;
 }
@@ -1590,7 +1593,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 }
 
 [role=bottom-bar] div {
-  height: 18px;
+  height: 20px;
   font-size: 12px;
   background-color: #353535;
 }
@@ -1598,7 +1601,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   float: left;
   color: #9a9a9a;
   margin-left: 3px;
-  padding-top: 2px;
+  padding-top: 3px;
 }
 [role=bottom-bar] div div.breadcrum {
   position: absolute;

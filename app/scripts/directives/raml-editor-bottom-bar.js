@@ -27,8 +27,17 @@
               column: cursor.ch+1
             };
 
+            bottomBar.resources = [];
+
             if (scope.startsWith('/')) {
-              bottomBar.resources = scope.replace(/:/g, '').split('/');
+              scope.split('/').map(function (el) {
+                bottomBar.resources.push({
+                  text:  el.replace(/:/g, ''),
+                  value: el
+                });
+              });
+
+              // bottomBar.resources = scope.replace(/:/g, '').split('/');
               bottomBar.resources = bottomBar.resources.slice(1, bottomBar.resources.length);
               bottomBar.active    = {
                 scope:    scope,
@@ -38,14 +47,15 @@
           }));
 
           bottomBar.isActive = function isActive(current) {
-            return current === bottomBar.active.resource;
+            return current.text === bottomBar.active.resource.text;
           };
 
-          bottomBar.show = function show(current) {
+          bottomBar.show = function show(current, index) {
             eventEmitter.publish('event:goToResource', {
               scope:    bottomBar.active.scope,
               resource: bottomBar.active.resource,
-              text:     current,
+              text:     current.value,
+              index:    index,
               focus:    true
             });
           };

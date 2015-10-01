@@ -23,6 +23,7 @@
             omnisearch.searchLine    = null;
             omnisearch.mode          = 'file';
             omnisearch.selected      = null;
+            omnisearch.showHelp      = false;
             $scope.showOmnisearch    = true;
             position                 = 0;
 
@@ -37,6 +38,7 @@
             omnisearch.searchLine    = null;
             omnisearch.mode          = 'file';
             omnisearch.selected      = null;
+            omnisearch.showHelp      = false;
             $scope.showOmnisearch    = false;
             position                 = 0;
           };
@@ -53,13 +55,17 @@
             omnisearch.mode = 'resource';
 
             var resources = ramlEditorContext.context.resources;
-            var text      = omnisearch.searchText.split('@')[1].split(' ').join(':/');
+            var text      = omnisearch.searchText.replace('@', '')
+              .replace(/:/g, '')
+              .split(' ')
+              .join('/');
 
             resources.forEach(function (el) {
-              if (el.indexOf(text) !== -1) {
-                var formatedText = text.replace(/:/g, '');
+              var formatedEl   = el.replace(/:/g, '');
+
+              if (formatedEl.indexOf(text) !== -1) {
                 omnisearch.searchResults.push({
-                  name: $sce.trustAsHtml(el.replace(/:/g, '').replace(formatedText, '<strong style="color: #0090f1;">'+formatedText+'</strong>')),
+                  name: $sce.trustAsHtml(formatedEl.replace(text, '<strong style="color: #0090f1;">'+text+'</strong>')),
                   text: el
                 });
               }
@@ -91,7 +97,7 @@
               if(!child.isDirectory) {
                 var filename = child.name.replace(child.extension, '');
 
-                if (filename.indexOf(omnisearch.searchText) !== -1) {
+                if (text.length > 0 && filename.indexOf(text) !== -1) {
                   omnisearch.searchResults.push({
                     name: $sce.trustAsHtml(child.name.replace(text, '<strong style="color: #0090f1;">'+text+'</strong>')),
                     text: child
@@ -133,8 +139,9 @@
           }
 
           function showCheatSheet() {
-            omnisearch.close();
-            hotkeys.toggleCheatSheet();
+            // omnisearch.close();
+            // hotkeys.toggleCheatSheet();
+            omnisearch.showHelp = true;
           }
 
           function getCommand(text) {
@@ -160,11 +167,12 @@
           omnisearch.search = function search() {
             omnisearch.searchResults = [];
             position                 = 0;
+            omnisearch.showHelp      = false;
 
             getCommand(omnisearch.searchText).execute();
           };
 
-          omnisearch.showContent = function showContent(data, focus) {
+          omnisearch.showContent = function showContent(data, focus, skipFiles) {
             if(omnisearch.mode === 'resource') {
               var resource = data.text.split('/');
 
@@ -178,7 +186,7 @@
               });
             }
 
-            if(omnisearch.mode === 'file') {
+            if(!skipFiles && omnisearch.mode === 'file') {
               omnisearch.openFile(data.text);
             }
 
@@ -210,16 +218,18 @@
           };
 
           function selectResource(focus) {
-            var resource = omnisearch.searchResults[position].text.split('/');
+            if (omnisearch.searchResults[position]) {
+              var resource = omnisearch.searchResults[position].text.split('/');
 
-            resource = resource.pop().replace(':', '');
+              resource = resource.pop().replace(':', '');
 
-            eventEmitter.publish('event:goToResource', {
-              scope:    omnisearch.searchResults[position].text,
-              resource: resource,
-              text:     resource,
-              focus:    focus
-            });
+              eventEmitter.publish('event:goToResource', {
+                scope:    omnisearch.searchResults[position].text,
+                resource: resource,
+                text:     resource,
+                focus:    focus
+              });
+            }
           }
 
           // var scrollPosition = 0;

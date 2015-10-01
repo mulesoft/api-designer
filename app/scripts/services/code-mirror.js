@@ -213,90 +213,6 @@
           el.style.paddingLeft = (basePadding + offset) + 'px';
         });
 
-        // function readRamlFrament() {
-        //   var template  = new RegExp('^\/.*:$');
-        //   var node      = getNode(cm);
-        //   var raml      = [];
-        //   var nodes;
-
-        //   function read(tree, fragments) {
-        //     var temp = tree.getChildren();
-        //     fragments.push(tree.line);
-        //     if (Array.isArray(temp)) {
-        //       temp.forEach(function (el) {
-        //         read(el, fragments);
-        //       });
-        //     }
-        //   }
-
-        //   function readRamlHeader(cm) {
-        //     var temp  = [];
-        //     var count = cm.lineCount(), i;
-
-        //     for (i = 0; i < count; i++) {
-        //       var line = cm.getLine(i);
-
-        //       if(!template.test(line)) {
-        //         temp.push(line);
-        //       } else {
-        //         break;
-        //       }
-        //     }
-
-        //     return temp.join('\n');
-        //   }
-
-        //   for(;;) {
-        //     if (node === null) {
-        //       break;
-        //     }
-
-        //     if (template.test(node.lineIndent.content)) {
-        //       if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
-        //         nodes = node.getChildren();
-        //         break;
-        //       }
-        //     }
-
-        //     node = node.getParent();
-        //   }
-
-        //   if (node) {
-        //     raml.push(readRamlHeader(cm));
-        //     raml.push(node.line);
-
-        //     nodes.map(function (node) {
-        //       read(node, raml);
-        //     });
-
-        //     eventEmitter.publish('event:editor:context:raml', raml.join('\n'));
-        //   }
-        // }
-
-        // function cursorChanged() {
-        //   var template  = new RegExp('^\/.*:$');
-        //   var node      = getNode(cm);
-        //   var resources = [];
-
-        //   for(;;) {
-        //     if (node === null) {
-        //       break;
-        //     }
-
-        //     if (template.test(node.lineIndent.content)) {
-        //       resources.push(node.lineIndent.content);
-
-        //       if(node.lineIndent.spaceCount === 0 && node.lineIndent.tabCount === 0) {
-        //         break;
-        //       }
-        //     }
-
-        //     node = node.getParent();
-        //   }
-
-        //   // eventEmitter.publish('event:editor:current:tree', resources.reverse());
-        // }
-
         cm.on('cursorActivity', function () {
           eventEmitter.publish('event:editor:context', {
             context: ramlEditorContext.context,
@@ -356,47 +272,49 @@
         });
 
         eventEmitter.subscribe('event:goToResource', function (search) {
-          var context = ramlEditorContext.context;
-          var root    = '/'+search.scope.split('/')[1];
-          var startAt = context.metadata[root].startAt;
-          var endAt   = context.metadata[root].endAt;
-          var line    = 0;
-          var cm      = window.editor;
+          var context  = ramlEditorContext.context;
+          var root     = '/'+search.scope.split('/')[1];
+          var metadata = context.metadata[root] || context.metadata[search.scope];
+          var startAt  = metadata.startAt;
+          var endAt    = metadata.endAt || context.content.length;
+          var line     = 0;
+          var cm       = window.editor;
+          var path     = null;
+          var resource = search.text;
 
-          for(var i = startAt; i <= endAt; i++) {
-            var temp = null;
+          if (search.text !== search.resource) {
+            path = '';
+            var fragments = search.scope.split('/');
 
-            if (search.text !== search.resource) {
-              temp = '';
-              var fragments = search.scope.split('/');
+            fragments = fragments.slice(1, fragments.length);
 
-              fragments = fragments.slice(1, fragments.length);
+            for(var j = 0; j <fragments.length; j++) {
+              var el = fragments[j];
 
-              for(var j = 0; j <fragments.length; j++) {
-                var resource = search.text+':';
-                var el       = fragments[j];
+              if(el !== resource) {
+                path+='/'+el;
+              }
 
-                if(el !== resource) {
-                  temp+='/'+el;
-                }
+              if (el === resource && search.index && search.index === j) {
+                path+='/'+el;
+                break;
+              } else if (el === resource && search.index) {
+                path+='/'+el;
+              }
 
-                if(el === resource) {
-                  temp+='/'+el;
-                  break;
-                }
+              if(!search.index && el === resource) {
+                path+='/'+el;
+                break;
               }
             }
+          }
 
-            if (context.scopes[i].indexOf(search.text) !== -1) {
-              if (temp && context.scopes[i] === temp) {
-                line = i;
-                break;
-              }
+          path = path ? path : search.scope;
 
-              if(temp === null && context.scopes[i] === search.scope) {
-                line = i;
-                break;
-              }
+          for(var i = startAt; i <= endAt; i++) {
+            if (context.scopes[i].indexOf(path) !== -1) {
+              line = i;
+              break;
             }
           }
 

@@ -4,6 +4,6 @@
     <span>Column</span> {{bottomBar.cursor.column}}
   </div>
   <div class="breadcrum">
-    <button ng-click="bottomBar.show(resource)" ng-class="{active: bottomBar.isActive(resource)}" ng-repeat="resource in bottomBar.resources">{{resource}}</button>
+    <button ng-click="bottomBar.show(resource, $index)" ng-class="{active: bottomBar.isActive(resource)}" ng-repeat="resource in bottomBar.resources track by $index">{{resource.text}}</button>
   </div>
 </div>
