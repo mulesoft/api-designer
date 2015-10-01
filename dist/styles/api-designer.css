@@ -1625,3 +1625,8 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 [role=bottom-bar] div div.breadcrum button.active:hover {
   background-color: #245e7e;
 }
+
+[role=try-it] div {
+  font-size: 10px;
+  color: #ccc;
+}

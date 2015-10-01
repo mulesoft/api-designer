@@ -9,6 +9,23 @@
         return str.match(/^\s*/)[0].length;
       }
 
+      function readRamlHeader(lines) {
+        var template  = new RegExp('^\/.*:$');
+        var temp      = [];
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i];
+
+          if(!template.test(line)) {
+            temp.push(line);
+          } else {
+            break;
+          }
+        }
+
+        return temp.join('\n');
+      }
+
       self.context = {};
 
       self.read = function read(lines) {
@@ -63,10 +80,11 @@
         });
 
         self.context = {
-          scopes:    linesScope,
-          metadata:  resourceMeta,
-          resources: Object.keys(resources),
-          content:   lines
+          scopes:     linesScope,
+          metadata:   resourceMeta,
+          resources:  Object.keys(resources),
+          content:    lines,
+          ramlHeader: readRamlHeader(lines)
         };
       };
 
