@@ -5,7 +5,7 @@
     .factory('codeMirror', function (
       ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
       getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
-      eventEmitter, getNode, ramlEditorContext
+      eventEmitter, getNode, ramlEditorContext, ramlParser
     ) {
       var editor  = null;
       var service = {
@@ -230,6 +230,33 @@
 
         cm.on('mousedown', function () {
           eventEmitter.publish('event:editor:click');
+        });
+
+        cm.on('focus', function (cm) {
+          cm.operation(function() {
+            if (Object.keys(ramlEditorContext.context).length > 0) {
+              var context = ramlEditorContext.context;
+
+              ramlParser.load(context.ramlHeader.raw)
+                .then(function (data) {
+                  context.ramlHeader.compiled = data;
+                });
+
+              Object.keys(resourceMeta).map(function (resource) {
+                var raml = [context.ramlHeader.raw];
+
+                ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n'))
+                  .then(function (data) {
+                    resourceMeta[resource].raml.compiled = data;
+                  });
+              });
+
+              eventEmitter.publish('event:editor:context', {
+                context: ramlEditorContext.context,
+                cursor:  cm.getCursor()
+              });
+            }
+          });
         });
 
         return cm;

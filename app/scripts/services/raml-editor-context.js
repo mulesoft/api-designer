@@ -91,19 +91,19 @@
           }
         };
 
-        ramlParser.load(self.context.ramlHeader.raw)
-          .then(function (data) {
-            self.context.ramlHeader.compiled = data;
-          });
+        // ramlParser.load(self.context.ramlHeader.raw)
+        //   .then(function (data) {
+        //     self.context.ramlHeader.compiled = data;
+        //   });
 
-        Object.keys(resourceMeta).map(function (resource) {
-          var raml = [self.context.ramlHeader.raw];
+        // Object.keys(resourceMeta).map(function (resource) {
+        //   var raml = [self.context.ramlHeader.raw];
 
-          ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n'))
-            .then(function (data) {
-              resourceMeta[resource].raml.compiled = data;
-            });
-        });
+        //   ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n'))
+        //     .then(function (data) {
+        //       resourceMeta[resource].raml.compiled = data;
+        //     });
+        // });
       };
 
       return self;
