@@ -62,6 +62,10 @@
               tryIt.enabled         = true;
 
               console.log(raml);
+
+              // Initializing values
+              tryIt.protocol       = tryIt.protocols[0];
+              tryIt.securityScheme = 'Anonymous';
             } else {
               tryIt.current = null;
               tryIt.raml    = null;
@@ -70,8 +74,6 @@
 
           // Init
           tryIt.enabled        = false;
-          tryIt.securityScheme = 'Anonymous';
-          tryIt.protocol       = 'HTTP';
 
           // Events
 

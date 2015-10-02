@@ -10383,6 +10383,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         var marker = document.createElement('div');
         var inner = marker;
         marker.className = 'CodeMirror-lint-marker-' + severity;
+        marker.innerHtml = '&#x25cf; hola';
         if (multiple) {
           inner = marker.appendChild(document.createElement('div'));
           inner.className = 'CodeMirror-lint-marker-multiple';
@@ -14793,6 +14794,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 tryIt.protocols = raml.protocols;
                 tryIt.enabled = true;
                 console.log(raml);
+                // Initializing values
+                tryIt.protocol = tryIt.protocols[0];
+                tryIt.securityScheme = 'Anonymous';
               } else {
                 tryIt.current = null;
                 tryIt.raml = null;
@@ -14800,8 +14804,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             }));
             // Init
             tryIt.enabled = false;
-            tryIt.securityScheme = 'Anonymous';
-            tryIt.protocol = 'HTTP';
             // Events
             $scope.tryIt = tryIt;
           }
