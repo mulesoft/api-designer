@@ -1663,6 +1663,44 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
   text-transform: uppercase;
   color: silver;
 }
+[role=try-it] div div.methods {
+  margin-top: 10px;
+}
+[role=try-it] div div.methods button {
+  border: 0;
+  font-size: 10px;
+  color: white;
+  cursor: pointer;
+  text-transform: uppercase;
+  outline: none;
+}
+[role=try-it] div div.methods button.get {
+  background-color: #5F9ACA;
+}
+[role=try-it] div div.methods button.post {
+  background-color: #77C5A2;
+}
+[role=try-it] div div.methods button.put {
+  background-color: #B16DBB;
+}
+[role=try-it] div div.methods button.delete {
+  background-color: #EC5D5E;
+}
+[role=try-it] div div.methods button.patch {
+  background-color: #96e7fe;
+}
+[role=try-it] div div.methods button.connect {
+  background-color: #f8ba58;
+}
+[role=try-it] div div.methods button.head {
+  background-color: #b680c9;
+}
+[role=try-it] div div.methods button.options {
+  background-color: #59e5a7;
+}
+[role=try-it] div div.methods button.trace {
+  background-color: #c7f107;
+}
 [role=try-it] div div.content {
   margin-top: 5px;
   margin-bottom: 5px;
@@ -1689,4 +1727,44 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 }
 [role=try-it] div div.content .control.full-width {
   width: 100%;
+}
+[role=try-it] div div.content.method-container {
+  margin-top: 0;
+  padding: 3px;
+}
+[role=try-it] div div.content.method-container.get {
+  border: 1px solid #5F9ACA;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.post {
+  border: 1px solid #77C5A2;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.put {
+  border: 1px solid #B16DBB;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.delete {
+  border: 1px solid #EC5D5E;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.patch {
+  border: 1px solid #96e7fe;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.connect {
+  border: 1px solid #f8ba58;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.head {
+  border: 1px solid #b680c9;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.options {
+  border: 1px solid #59e5a7;
+  border-top-width: 3px;
+}
+[role=try-it] div div.content.method-container.trace {
+  border: 1px solid #c7f107;
+  border-top-width: 3px;
 }

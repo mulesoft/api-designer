@@ -1,4 +1,5 @@
 <div ng-if="tryIt.enabled">
+<!-- Protocols -->
   <div class="container" ng-if="tryIt.protocols">
     <div class="title">
       <span>Protocols</span>
@@ -9,6 +10,7 @@
       </select>
     </div>
   </div>
+<!-- Authorization -->
   <div class="container">
     <div class="title">
       <span>Authentication</span>
@@ -46,4 +48,49 @@
       </div>
     </div>
   </div>
+<!-- URI Parameters -->
+  <div class="container" ng-if="tryIt.resource.uriParameters.length">
+    <div class="title">
+      <span>URI Parameters</span>
+    </div>
+    <div class="content">
+      <div ng-repeat="param in tryIt.resource.uriParameters">
+        <label>{{param.key}}</label>
+        <input class="control" type="text" id="{{param.key}}" value="">
+      </div>
+    </div>
+  </div>
+
+  <div class="container" ng-if="tryIt.resource.methods.length">
+    <div class="methods">
+      <button ng-repeat="method in tryIt.resource.methods" class="{{method.method}}" ng-click="tryIt.selectMethod(method)">{{method.method}}</button>
+    </div>
+    <div class="content method-container {{tryIt.selectedMethod.method}}">
+      <!-- Query Parameters -->
+        <div class="container" ng-if="tryIt.selectedMethod.queryParameters">
+          <div class="title">
+            <span>Query Parameters</span>
+          </div>
+          <div class="content">
+            <div ng-repeat="(key, value) in tryIt.selectedMethod.queryParameters">
+              <label>{{value.displayName}}</label>
+              <input class="control" type="text" id="{{key}}" value="">
+            </div>
+          </div>
+        </div>
+      <!-- Headers -->
+        <div class="container" ng-if="tryIt.selectedMethod.headers">
+          <div class="title">
+            <span>Headers</span>
+          </div>
+          <div class="content">
+            <div ng-repeat="(key, value) in tryIt.selectedMethod.headers">
+              <label>{{value.displayName}}</label>
+              <input class="control" type="text" id="{{key}}" value="">
+            </div>
+          </div>
+        </div>
+    </div>
+  </div>
+
 </div>

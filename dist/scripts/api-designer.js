@@ -10118,7 +10118,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           });
         });
         cm.on('change', function (cm) {
-          ramlEditorContext.read(cm.getValue().split('\n'));
+          cm.operation(function () {
+            ramlEditorContext.read(cm.getValue().split('\n'));
+          });
         });
         cm.on('mousedown', function () {
           eventEmitter.publish('event:editor:click');
@@ -13172,10 +13174,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return true;
       };
       $scope.getIsConsoleVisible = function getIsConsoleVisible() {
-        if (!$scope.fileParsable) {
-          return false;
+        if ($scope.tryIt && $scope.tryIt.enabled && $scope.tryIt.selectedMethod) {
+          return true;
         }
-        return true;
+        return false;
       };
       $scope.toggleShelf = function toggleShelf() {
         $scope.shelf.collapsed = !$scope.shelf.collapsed;
@@ -14780,31 +14782,79 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               }
               return schemes;
             }
+            function readUriParameters(resource, uriParameters) {
+              if (resource.uriParameters) {
+                var parameters = angular.copy(resource.uriParameters);
+                for (var key in parameters) {
+                  parameters.key = key;
+                }
+                uriParameters.push(parameters);
+              }
+            }
+            function readResourceData(raml, path) {
+              var relativePath = path.replace(/:/g, '').split('/');
+              var resource, uriParameters = [];
+              relativePath = relativePath.slice(1, relativePath.length);
+              if (raml.resources) {
+                var resources = raml.resources;
+                for (var i = 0; i < resources.length; i++) {
+                  if (resources[i].relativeUri === '/' + relativePath.shift()) {
+                    resource = resources[i];
+                    break;
+                  }
+                }
+              }
+              readUriParameters(resource, uriParameters);
+              relativePath.forEach(function (el) {
+                var resources = resource.resources;
+                if (resource && resource.resources) {
+                  for (var i = 0; i < resources.length; i++) {
+                    if (resources[i].relativeUri === '/' + el) {
+                      resource = resources[i];
+                      break;
+                    }
+                  }
+                  readUriParameters(resource, uriParameters);
+                }
+              });
+              resource = angular.copy(resource);
+              resource.uriParameters = uriParameters;
+              return resource;
+            }
             eventEmitter.subscribe('event:editor:context', safeApplyWrapper($scope, function (data) {
               var context = data.context;
               var cursor = data.cursor;
               var scopes = context.scopes;
-              var resource = scopes[cursor.line];
-              var metadata;
-              resource = '/' + resource.split('/').slice(1, 2);
+              var path = scopes[cursor.line];
+              var metadata, resource;
+              resource = '/' + path.split('/').slice(1, 2);
               metadata = context.metadata[resource];
               if (metadata) {
                 var raml = context.metadata[resource].raml.compiled;
-                tryIt.securitySchemes = readSecuritySchemes(raml);
-                tryIt.protocols = raml.protocols;
-                tryIt.enabled = true;
-                console.log(raml);
-                // Initializing values
-                tryIt.protocol = tryIt.protocols[0];
-                tryIt.securityScheme = 'Anonymous';
+                if (raml) {
+                  // Initializing values
+                  tryIt.securitySchemes = readSecuritySchemes(raml);
+                  tryIt.protocols = raml.protocols;
+                  tryIt.resource = readResourceData(raml, path);
+                  tryIt.enabled = true;
+                  tryIt.protocol = tryIt.protocols[0];
+                  tryIt.securityScheme = 'Anonymous';
+                  tryIt.selectedMethod = tryIt.resource.methods ? tryIt.resource.methods[0] : null;  // console.log(tryIt.resource);
+                }
               } else {
                 tryIt.current = null;
                 tryIt.raml = null;
+                tryIt.enabled = false;
+                tryIt.selectedMethod = null;
               }
             }));
             // Init
             tryIt.enabled = false;
+            tryIt.selectedMethod = null;
             // Events
+            tryIt.selectMethod = function selectMethod(method) {
+              tryIt.selectedMethod = method;
+            };
             $scope.tryIt = tryIt;
           }
         ]
@@ -15254,6 +15304,6 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}" ng-click="mainClick($event)" hotkey="{\'mod+p\': openOmnisearch}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar" style="height: 25px;">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path"></li>\n' + '   <!--  <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li> -->\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <span><i class="fa fa-question-circle"></i> Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <raml-editor-omnisearch role="omnisearch"></raml-editor-omnisearch>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-min-width="200">\n' + '    </div>\n' + '\n' + '\n' + '    <div role="editor">\n' + '      <div class="editor-title">{{getSelectedFileAbsolutePath()}} <span class="close-button">&#x2715;</span></div>\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <!-- <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div> -->\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">\n' + '    </div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <!-- <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console> -->\n' + '      <raml-editor-try-it role="try-it"></raml-editor-try-it>\n' + '    </div>\n' + '  </div>\n' + '  <raml-editor-bottom-bar role="bottom-bar"></raml-editor-bottom-bar>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-omnisearch.tmpl.html', '<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)" class="omnisearch">\n' + '  <input type="text" placeholder="Type \'?\' to get help" autofocus\n' + '    ng-change="omnisearch.search()"\n' + '    ng-model="omnisearch.searchText"\n' + '    />\n' + '  <ul>\n' + '    <li class="result" ng-repeat="result in omnisearch.searchResults" ng-mouseover="omnisearch.showContent(result, false, true)" ng-click="omnisearch.showContent(result)">\n' + '      <span ng-bind-html="result.name"></span>\n' + '    </li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">@</span> Go to resource</li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">#</span> Search text</li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">?</span> Show cheatsheet <span class="description">global commands</span></li></li>\n' + '  </ul>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-try-it.tmpl.html', '<div ng-if="tryIt.enabled">\n' + '  <div class="container" ng-if="tryIt.protocols">\n' + '    <div class="title">\n' + '      <span>Protocols</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <select class="control full-width" ng-model="tryIt.protocol">\n' + '        <option ng-repeat="protocol in tryIt.protocols" value="{{protocol}}">{{protocol}}</option>\n' + '      </select>\n' + '    </div>\n' + '  </div>\n' + '  <div class="container">\n' + '    <div class="title">\n' + '      <span>Authentication</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <label>Security Scheme</label>\n' + '      <select class="control" ng-model="tryIt.securityScheme">\n' + '        <option ng-repeat="(key, value) in tryIt.securitySchemes" value="{{value.type}}">{{value.name}}</option>\n' + '      </select>\n' + '\n' + '      <div ng-switch on="tryIt.securityScheme">\n' + '        <div ng-switch-when="Anonymous"></div>\n' + '        <div ng-switch-when="Basic Authentication">\n' + '          <label>Username</label>\n' + '          <input class="control" type="text" id="username" value="">\n' + '          <label>Password</label>\n' + '          <input class="control" type="text" id="password" value="">\n' + '        </div>\n' + '        <div ng-switch-when="Digest Authentication"></div>\n' + '        <div ng-switch-when="OAuth 1.0"></div>\n' + '        <div ng-switch-when="OAuth 2.0">\n' + '          <label>Authorization Grant</label>\n' + '          <select class="control">\n' + '            <option value="code">Authorization Code</option>\n' + '            <option value="credentials">Client Credentials</option>\n' + '          </select>\n' + '\n' + '          <label>Client ID</label>\n' + '          <input class="control" type="text" id="clientId" value="">\n' + '\n' + '          <label>Client Secret</label>\n' + '          <input class="control" type="text" id="clientSecret" value="">\n' + '        </div>\n' + '        <div ng-switch-default></div>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-try-it.tmpl.html', '<div ng-if="tryIt.enabled">\n' + '<!-- Protocols -->\n' + '  <div class="container" ng-if="tryIt.protocols">\n' + '    <div class="title">\n' + '      <span>Protocols</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <select class="control full-width" ng-model="tryIt.protocol">\n' + '        <option ng-repeat="protocol in tryIt.protocols" value="{{protocol}}">{{protocol}}</option>\n' + '      </select>\n' + '    </div>\n' + '  </div>\n' + '<!-- Authorization -->\n' + '  <div class="container">\n' + '    <div class="title">\n' + '      <span>Authentication</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <label>Security Scheme</label>\n' + '      <select class="control" ng-model="tryIt.securityScheme">\n' + '        <option ng-repeat="(key, value) in tryIt.securitySchemes" value="{{value.type}}">{{value.name}}</option>\n' + '      </select>\n' + '\n' + '      <div ng-switch on="tryIt.securityScheme">\n' + '        <div ng-switch-when="Anonymous"></div>\n' + '        <div ng-switch-when="Basic Authentication">\n' + '          <label>Username</label>\n' + '          <input class="control" type="text" id="username" value="">\n' + '          <label>Password</label>\n' + '          <input class="control" type="text" id="password" value="">\n' + '        </div>\n' + '        <div ng-switch-when="Digest Authentication"></div>\n' + '        <div ng-switch-when="OAuth 1.0"></div>\n' + '        <div ng-switch-when="OAuth 2.0">\n' + '          <label>Authorization Grant</label>\n' + '          <select class="control">\n' + '            <option value="code">Authorization Code</option>\n' + '            <option value="credentials">Client Credentials</option>\n' + '          </select>\n' + '\n' + '          <label>Client ID</label>\n' + '          <input class="control" type="text" id="clientId" value="">\n' + '\n' + '          <label>Client Secret</label>\n' + '          <input class="control" type="text" id="clientSecret" value="">\n' + '        </div>\n' + '        <div ng-switch-default></div>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '<!-- URI Parameters -->\n' + '  <div class="container" ng-if="tryIt.resource.uriParameters.length">\n' + '    <div class="title">\n' + '      <span>URI Parameters</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <div ng-repeat="param in tryIt.resource.uriParameters">\n' + '        <label>{{param.key}}</label>\n' + '        <input class="control" type="text" id="{{param.key}}" value="">\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="container" ng-if="tryIt.resource.methods.length">\n' + '    <div class="methods">\n' + '      <button ng-repeat="method in tryIt.resource.methods" class="{{method.method}}" ng-click="tryIt.selectMethod(method)">{{method.method}}</button>\n' + '    </div>\n' + '    <div class="content method-container {{tryIt.selectedMethod.method}}">\n' + '      <!-- Query Parameters -->\n' + '        <div class="container" ng-if="tryIt.selectedMethod.queryParameters">\n' + '          <div class="title">\n' + '            <span>Query Parameters</span>\n' + '          </div>\n' + '          <div class="content">\n' + '            <div ng-repeat="(key, value) in tryIt.selectedMethod.queryParameters">\n' + '              <label>{{value.displayName}}</label>\n' + '              <input class="control" type="text" id="{{key}}" value="">\n' + '            </div>\n' + '          </div>\n' + '        </div>\n' + '      <!-- Headers -->\n' + '        <div class="container" ng-if="tryIt.selectedMethod.headers">\n' + '          <div class="title">\n' + '            <span>Headers</span>\n' + '          </div>\n' + '          <div class="content">\n' + '            <div ng-repeat="(key, value) in tryIt.selectedMethod.headers">\n' + '              <label>{{value.displayName}}</label>\n' + '              <input class="control" type="text" id="{{key}}" value="">\n' + '            </div>\n' + '          </div>\n' + '        </div>\n' + '    </div>\n' + '  </div>\n' + '\n' + '</div>\n');
   }
 ]);

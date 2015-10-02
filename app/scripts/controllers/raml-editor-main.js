@@ -285,11 +285,11 @@
       };
 
       $scope.getIsConsoleVisible = function getIsConsoleVisible() {
-        if (!$scope.fileParsable) {
-          return false;
+        if ($scope.tryIt && $scope.tryIt.enabled && $scope.tryIt.selectedMethod) {
+          return true;
         }
 
-        return true;
+        return false;
       };
 
       $scope.toggleShelf = function toggleShelf() {

@@ -223,7 +223,9 @@
         });
 
         cm.on('change', function (cm) {
-          ramlEditorContext.read(cm.getValue().split('\n'));
+          cm.operation(function() {
+            ramlEditorContext.read(cm.getValue().split('\n'));
+          });
         });
 
         cm.on('mousedown', function () {
