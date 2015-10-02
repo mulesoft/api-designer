@@ -9061,11 +9061,16 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   });
 (function () {
   'use strict';
+  (function () {
+    angular.module('raml', []).factory('ramlParser', function () {
+      return RAML.Parser;
+    });
+    RAML.Settings = RAML.Settings || {};
+  }());
   angular.module('ramlEditorApp', [
     'ui.bootstrap.modal',
     'ui.bootstrap.tpls',
     'ui.tree',
-    'ramlConsoleApp',
     'codeMirror',
     'fs',
     'raml',

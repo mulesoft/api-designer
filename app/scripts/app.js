@@ -1,6 +1,15 @@
 (function () {
   'use strict';
 
+  (function () {
+    angular.module('raml', [])
+      .factory('ramlParser', function () {
+        return RAML.Parser;
+      });
+
+    RAML.Settings = RAML.Settings || {};
+  })();
+
   angular.module('ramlEditorApp', [
     // angular-ui
     'ui.bootstrap.modal',
@@ -8,7 +17,7 @@
     'ui.tree',
 
     // console
-    'ramlConsoleApp',
+    // 'ramlConsoleApp',
 
     // project
     'codeMirror',
