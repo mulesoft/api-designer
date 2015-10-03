@@ -9101,7 +9101,14 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         combo: 'ctrl + space',
         description: 'Start autocomplete'
       });
-      hotkeys.del('?');
+      hotkeys.add({
+        combo: 'mod + /',
+        description: 'Toggle comment'
+      });
+      hotkeys.add({
+        combo: 'mod + e',
+        description: 'Extract to'
+      });  // hotkeys.del('?');
     }
   ]);
   ;
@@ -9999,7 +10006,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           'Shift-Tab': 'indentLess',
           'Shift-Ctrl-T': 'toggleTheme',
           'Cmd-P': 'showOmniSearch',
-          'Ctrl-Space': 'autocomplete'
+          'Ctrl-Space': 'autocomplete',
+          'Shift-Cmd-S': 'saveAll',
+          'Shift-Ctrl-S': 'saveAll'
         };
       var ramlKeys = {
           'Ctrl-Space': 'autocomplete',
@@ -10009,7 +10018,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           'Shift-Ctrl-T': 'toggleTheme',
           'Cmd-P': 'showOmniSearch',
           'Ctrl-/': 'toggleComment',
-          'Cmd-/': 'toggleComment'
+          'Cmd-/': 'toggleComment',
+          'Ctrl-E': 'extractTo',
+          'Cmd-E': 'extractTo',
+          'Shift-Cmd-S': 'saveAll',
+          'Shift-Ctrl-S': 'saveAll'
         };
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
@@ -10130,6 +10143,16 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         cm.on('mousedown', function () {
           eventEmitter.publish('event:editor:click');
         });
+        cm.on('focus', function (cm) {
+          cm.operation(function () {
+            if (Object.keys(ramlEditorContext.context).length > 0) {
+              eventEmitter.publish('event:editor:context', {
+                context: ramlEditorContext.context,
+                cursor: cm.getCursor()
+              });
+            }
+          });
+        });
         return cm;
       };
       service.initEditor = function () {
@@ -10215,17 +10238,23 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             ch: 0
           });
         });
-        CodeMirror.commands.save = function () {
+        CodeMirror.commands.save = function save() {
           eventEmitter.publish('event:save');
         };
-        CodeMirror.commands.autocomplete = function (cm) {
+        CodeMirror.commands.autocomplete = function autocomplete(cm) {
           CodeMirror.showHint(cm, CodeMirror.hint.raml, { ghosting: true });
         };
-        CodeMirror.commands.toggleTheme = function () {
+        CodeMirror.commands.toggleTheme = function toggleTheme() {
           eventEmitter.publish('event:toggle-theme');
         };
-        CodeMirror.commands.showOmniSearch = function () {
+        CodeMirror.commands.showOmniSearch = function showOmniSearch() {
           eventEmitter.publish('event:open:omnisearch');
+        };
+        CodeMirror.commands.extractTo = function extractTo(cm) {
+          eventEmitter.publish('event:editor:extract-to', cm);
+        };
+        CodeMirror.commands.saveAll = function saveAll() {
+          eventEmitter.publish('event:notification:save-all', { notify: true });
         };
         function toggleComment(content) {
           if (content.replace(/\s/g, '').indexOf('#')) {
@@ -11450,12 +11479,14 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           return file;
         });
       };
-      service.generateFile = function generateFile(parent, name) {
+      service.generateFile = function generateFile(parent, name, contents, stopPropagation) {
         return service.createFile(parent, name).then(function (file) {
           if (file.extension === 'raml') {
-            file.contents = ramlSnippets.getEmptyRaml();
+            file.contents = contents || ramlSnippets.getEmptyRaml();
           }
-          eventEmitter.publish('event:raml-editor-file-generated', file);
+          if (!stopPropagation) {
+            eventEmitter.publish('event:raml-editor-file-generated', file);
+          }
           return file;
         });
       };
@@ -11581,10 +11612,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'eventEmitter',
     function newFolderService(ramlRepository, newNameModal, eventEmitter) {
       var self = this;
-      self.prompt = function prompt(target) {
+      self.prompt = function prompt(target, prompTitle, proptMessage, contents, filename, stopPropagation) {
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var title = 'Add a new file';
-        var message = [
+        var title = prompTitle || 'Add a new file';
+        var message = proptMessage || [
             'For a new RAML spec, be sure to name your file <something>.raml; ',
             'For files to be !included, feel free to use an extension or not.'
           ].join('');
@@ -11595,10 +11626,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 return !ramlRepository.getByPath(path);
               }
             }];
-        return newNameModal.open(message, '', validations, title).then(function (name) {
+        return newNameModal.open(message, filename || '', validations, title).then(function (name) {
           // Need to catch errors from `generateFile`, otherwise
           // `newNameModel.open` will error random modal close strings.
-          return ramlRepository.generateFile(parent, name).catch(function (err) {
+          return ramlRepository.generateFile(parent, name, contents, stopPropagation).catch(function (err) {
             return eventEmitter.publish('event:notification', {
               message: err.message,
               expires: true,
@@ -12860,7 +12891,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   'use strict';
   angular.module('ramlEditorApp').factory('ramlEditorContext', [
     'ramlParser',
-    function ramlEditorContext(ramlParser) {
+    'ramlParserFileReader',
+    function ramlEditorContext(ramlParser, ramlParserFileReader) {
       var self = this;
       function getIndentation(str) {
         return str.match(/^\s*/)[0].length;
@@ -12928,12 +12960,18 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           content: lines,
           ramlHeader: { raw: readRamlHeader(lines) }
         };
-        ramlParser.load(self.context.ramlHeader.raw).then(function (data) {
+        var options = {
+            validate: true,
+            transform: true,
+            compose: true,
+            reader: ramlParserFileReader
+          };
+        ramlParser.load(self.context.ramlHeader.raw, null, options).then(function (data) {
           self.context.ramlHeader.compiled = data;
         });
         Object.keys(resourceMeta).map(function (resource) {
           var raml = [self.context.ramlHeader.raw];
-          ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n')).then(function (data) {
+          ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n'), null, options).then(function (data) {
             resourceMeta[resource].raml.compiled = data;
           });
         });
@@ -13010,7 +13048,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$modal',
     'eventEmitter',
     'ramlEditorContext',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext) {
+    'newFileService',
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext, newFileService) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -13146,6 +13185,23 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             column: displayColumn + 1,
             message: formatErrorMessage(message, lineOfCurrentError, displayLine)
           }]);
+      }));
+      eventEmitter.subscribe('event:editor:extract-to', safeApplyWrapper($scope, function extractTo(cm) {
+        var message = 'Creates a new file containing the selected content.';
+        var contents = cm.getSelection();
+        var key = contents.split(':');
+        var filename;
+        if (key.length > 1) {
+          key = key[0];
+          filename = (key + '.raml').replace(/\s/g, '');
+          contents = contents.replace(key + ':', '');
+          return newFileService.prompt($scope.homeDirectory, 'Extract to', message, contents, filename, true).then(function (result) {
+            if (filename) {
+              cm.replaceSelection(key + ': !include ' + result.path);
+            }
+            eventEmitter.publish('event:notification:save-all', { notify: false });
+          });
+        }
       }));
       $scope.openHelp = function openHelp() {
         $modal.open({ templateUrl: 'views/help.html' });
@@ -14322,7 +14378,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               });
             });
           };
-          scope.saveAllFiles = function saveAllFiles() {
+          function saveAll() {
             var promises = [];
             scope.homeDirectory.forEachChildDo(function (file) {
               if (file.isDirectory) {
@@ -14332,7 +14388,17 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 return promises.push(ramlRepository.saveFile(file));
               }
             });
-            return $q.all(promises).then(function success() {
+            return promises;
+          }
+          eventEmitter.subscribe('event:notification:save-all', function (data) {
+            if (data.notify) {
+              scope.saveAllFiles();
+            } else {
+              saveAll();
+            }
+          });
+          scope.saveAllFiles = function saveAllFiles() {
+            return $q.all(saveAll()).then(function success() {
               eventEmitter.publish('event:notification', {
                 message: 'All files saved.',
                 expires: true
@@ -15306,7 +15372,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/raml-editor-bottom-bar.tmpl.html', '<div>\n' + '  <div class="cursor">\n' + '    <span>Line</span> {{bottomBar.cursor.line}},\n' + '    <span>Column</span> {{bottomBar.cursor.column}}\n' + '  </div>\n' + '  <div class="breadcrum">\n' + '    <button ng-click="bottomBar.show(resource, $index)" ng-class="{active: bottomBar.isActive(resource)}" ng-repeat="resource in bottomBar.resources track by $index">{{resource.text}}</button>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-dblclick="fileBrowser.dblClick(node)" ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\',\n' + '      \'file-item2\': !node.isDirectory\n' + '    }"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>{{node.name}}\n' + '      <i class="fa icon fa-home" ng-if="node.root"></i>\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '    <div class="background">&nbsp</div>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <div class="section-title">\n' + '    <!-- <span class="arrow">&#9660</span> -->\n' + '    <i class="fa icon fa-caret-right caret-icon" ng-if="fileBrowser.isEmpty(workingFiles)"></i>\n' + '    <i class="fa icon fa-caret-down caret-icon" ng-if="!fileBrowser.isEmpty(workingFiles)"></i>\n' + '    Working Files\n' + '    <i class="fa icon fa-save save-icon" ng-click="saveAllFiles()"></i>\n' + '  </div>\n' + '  <ul ng-if="!fileBrowser.isEmpty(workingFiles)" class="angular-ui-tree-nodes">\n' + '    <li ng-repeat="(key, node) in workingFiles" class="angular-ui-tree-node angular-ui-working-node">\n' + '      <div class="file-item" ng-click="fileBrowser.select(node)"\n' + '        ng-class="{workingfile: fileBrowser.currentTarget.path === node.path, dirty: node.dirty}">\n' + '        <span class="file-name" >\n' + '          {{key}}\n' + '        </span>\n' + '        <div class="background">&nbsp</div>\n' + '        <i class="fa fa-times close-icon" ng-click="fileBrowser.close(node)"></i>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '  <div class="section-title">\n' + '    <!-- <span class="arrow">&#9660</span> -->\n' + '    <i class="fa icon fa-caret-down caret-icon"></i>\n' + '    Project Explorer\n' + '    <i class="fa icon fa-folder-open folder-icon" ng-click="newFolder()"></i>\n' + '    <i class="fa icon fa-file file-icon" ng-click="newFile()"></i>\n' + '    <!-- <i class="fa icon fa-filter file-icon"></i> -->\n' + '  </div>\n' + '  <div class="section-search" style="display: none;">\n' + '    <i class="fa icon fa-search search-icon"></i>\n' + '    <input type="text" />\n' + '  </div>\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}" ng-click="mainClick($event)" hotkey="{\'mod+p\': openOmnisearch}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar" style="height: 25px;">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path"></li>\n' + '   <!--  <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li> -->\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <span><i class="fa fa-question-circle"></i> Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <raml-editor-omnisearch role="omnisearch"></raml-editor-omnisearch>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-min-width="200">\n' + '    </div>\n' + '\n' + '\n' + '    <div role="editor">\n' + '      <div class="editor-title">{{getSelectedFileAbsolutePath()}} <span class="close-button">&#x2715;</span></div>\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <!-- <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div> -->\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">\n' + '    </div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <!-- <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console> -->\n' + '      <raml-editor-try-it role="try-it"></raml-editor-try-it>\n' + '    </div>\n' + '  </div>\n' + '  <raml-editor-bottom-bar role="bottom-bar"></raml-editor-bottom-bar>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}" ng-click="mainClick($event)" hotkey="{\'mod+p\': openOmnisearch}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar" style="height: 25px;">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path"></li>\n' + '   <!--  <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li> -->\n' + '    <li class="menu-item menu-item-fr" ng-click="openHelp()">\n' + '      <span><i class="fa fa-question-circle"></i> Help</span>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <raml-editor-omnisearch role="omnisearch"></raml-editor-omnisearch>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-min-width="200">\n' + '    </div>\n' + '\n' + '\n' + '    <div role="editor">\n' + '      <div class="editor-title">{{getSelectedFileAbsolutePath()}}</div>\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <!-- <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div> -->\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">\n' + '    </div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">\n' + '      <!-- <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console> -->\n' + '      <raml-editor-try-it role="try-it"></raml-editor-try-it>\n' + '    </div>\n' + '  </div>\n' + '  <raml-editor-bottom-bar role="bottom-bar"></raml-editor-bottom-bar>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-omnisearch.tmpl.html', '<div ng-if="showOmnisearch" ng-keyup="omnisearch.keyUp($event.keyCode)" class="omnisearch">\n' + '  <input type="text" placeholder="Type \'?\' to get help" autofocus\n' + '    ng-change="omnisearch.search()"\n' + '    ng-model="omnisearch.searchText"\n' + '    />\n' + '  <ul>\n' + '    <li class="result" ng-repeat="result in omnisearch.searchResults" ng-mouseover="omnisearch.showContent(result, false, true)" ng-click="omnisearch.showContent(result)">\n' + '      <span ng-bind-html="result.name"></span>\n' + '    </li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">:</span> Go to line <span class="description">editor commands</span></li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">@</span> Go to resource</li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">#</span> Search text</li>\n' + '    <li ng-if="omnisearch.showHelp"><span class="command">?</span> Show cheatsheet <span class="description">global commands</span></li></li>\n' + '  </ul>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-try-it.tmpl.html', '<div ng-if="tryIt.enabled">\n' + '<!-- Protocols -->\n' + '  <div class="container" ng-if="tryIt.protocols">\n' + '    <div class="title">\n' + '      <span>Protocols</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <select class="control full-width" ng-model="tryIt.protocol">\n' + '        <option ng-repeat="protocol in tryIt.protocols" value="{{protocol}}">{{protocol}}</option>\n' + '      </select>\n' + '    </div>\n' + '  </div>\n' + '<!-- Authorization -->\n' + '  <div class="container">\n' + '    <div class="title">\n' + '      <span>Authentication</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <label>Security Scheme</label>\n' + '      <select class="control" ng-model="tryIt.securityScheme">\n' + '        <option ng-repeat="(key, value) in tryIt.securitySchemes" value="{{value.type}}">{{value.name}}</option>\n' + '      </select>\n' + '\n' + '      <div ng-switch on="tryIt.securityScheme">\n' + '        <div ng-switch-when="Anonymous"></div>\n' + '        <div ng-switch-when="Basic Authentication">\n' + '          <label>Username</label>\n' + '          <input class="control" type="text" id="username" value="">\n' + '          <label>Password</label>\n' + '          <input class="control" type="text" id="password" value="">\n' + '        </div>\n' + '        <div ng-switch-when="Digest Authentication"></div>\n' + '        <div ng-switch-when="OAuth 1.0"></div>\n' + '        <div ng-switch-when="OAuth 2.0">\n' + '          <label>Authorization Grant</label>\n' + '          <select class="control">\n' + '            <option value="code">Authorization Code</option>\n' + '            <option value="credentials">Client Credentials</option>\n' + '          </select>\n' + '\n' + '          <label>Client ID</label>\n' + '          <input class="control" type="text" id="clientId" value="">\n' + '\n' + '          <label>Client Secret</label>\n' + '          <input class="control" type="text" id="clientSecret" value="">\n' + '        </div>\n' + '        <div ng-switch-default></div>\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '<!-- URI Parameters -->\n' + '  <div class="container" ng-if="tryIt.resource.uriParameters.length">\n' + '    <div class="title">\n' + '      <span>URI Parameters</span>\n' + '    </div>\n' + '    <div class="content">\n' + '      <div ng-repeat="param in tryIt.resource.uriParameters">\n' + '        <label>{{param.key}}</label>\n' + '        <input class="control" type="text" id="{{param.key}}" value="">\n' + '      </div>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="container" ng-if="tryIt.resource.methods.length">\n' + '    <div class="methods">\n' + '      <button ng-repeat="method in tryIt.resource.methods" class="{{method.method}}" ng-click="tryIt.selectMethod(method)">{{method.method}}</button>\n' + '    </div>\n' + '    <div class="content method-container {{tryIt.selectedMethod.method}}">\n' + '      <!-- Query Parameters -->\n' + '        <div class="container" ng-if="tryIt.selectedMethod.queryParameters">\n' + '          <div class="title">\n' + '            <span>Query Parameters</span>\n' + '          </div>\n' + '          <div class="content">\n' + '            <div ng-repeat="(key, value) in tryIt.selectedMethod.queryParameters">\n' + '              <label>{{value.displayName}}</label>\n' + '              <input class="control" type="text" id="{{key}}" value="">\n' + '            </div>\n' + '          </div>\n' + '        </div>\n' + '      <!-- Headers -->\n' + '        <div class="container" ng-if="tryIt.selectedMethod.headers">\n' + '          <div class="title">\n' + '            <span>Headers</span>\n' + '          </div>\n' + '          <div class="content">\n' + '            <div ng-repeat="(key, value) in tryIt.selectedMethod.headers">\n' + '              <label>{{value.displayName}}</label>\n' + '              <input class="control" type="text" id="{{key}}" value="">\n' + '            </div>\n' + '          </div>\n' + '        </div>\n' + '    </div>\n' + '  </div>\n' + '\n' + '</div>\n');

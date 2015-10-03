@@ -49,7 +49,7 @@
               });
           };
 
-          scope.saveAllFiles = function saveAllFiles() {
+          function saveAll () {
             var promises = [];
 
             scope.homeDirectory.forEachChildDo(function (file) {
@@ -62,7 +62,19 @@
               }
             });
 
-            return $q.all(promises)
+            return promises;
+          }
+
+          eventEmitter.subscribe('event:notification:save-all', function (data) {
+            if (data.notify) {
+              scope.saveAllFiles();
+            } else {
+              saveAll();
+            }
+          });
+
+          scope.saveAllFiles = function saveAllFiles() {
+            return $q.all(saveAll())
               .then(function success() {
                 eventEmitter.publish('event:notification', {
                   message: 'All files saved.',

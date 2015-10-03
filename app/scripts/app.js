@@ -52,7 +52,17 @@
         description: 'Start autocomplete'
       });
 
-      hotkeys.del('?');
+      hotkeys.add({
+        combo: 'mod + /',
+        description: 'Toggle comment'
+      });
+
+      hotkeys.add({
+        combo: 'mod + e',
+        description: 'Extract to'
+      });
+
+      // hotkeys.del('?');
     })
   ;
 })();

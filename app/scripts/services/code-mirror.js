@@ -5,7 +5,7 @@
     .factory('codeMirror', function (
       ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
       getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
-      eventEmitter, getNode, ramlEditorContext, ramlParser
+      eventEmitter, getNode, ramlEditorContext
     ) {
       var editor  = null;
       var service = {
@@ -83,7 +83,9 @@
         'Shift-Tab': 'indentLess',
         'Shift-Ctrl-T': 'toggleTheme',
         'Cmd-P': 'showOmniSearch',
-        'Ctrl-Space': 'autocomplete'
+        'Ctrl-Space': 'autocomplete',
+        'Shift-Cmd-S': 'saveAll',
+        'Shift-Ctrl-S': 'saveAll'
       };
 
       var ramlKeys = {
@@ -94,7 +96,11 @@
         'Shift-Ctrl-T': 'toggleTheme',
         'Cmd-P': 'showOmniSearch',
         'Ctrl-/': 'toggleComment',
-        'Cmd-/': 'toggleComment'
+        'Cmd-/': 'toggleComment',
+        'Ctrl-E': 'extractTo',
+        'Cmd-E': 'extractTo',
+        'Shift-Cmd-S': 'saveAll',
+        'Shift-Ctrl-S': 'saveAll'
       };
 
       var autocomplete = function onChange(cm) {
@@ -235,22 +241,6 @@
         cm.on('focus', function (cm) {
           cm.operation(function() {
             if (Object.keys(ramlEditorContext.context).length > 0) {
-              var context = ramlEditorContext.context;
-
-              ramlParser.load(context.ramlHeader.raw)
-                .then(function (data) {
-                  context.ramlHeader.compiled = data;
-                });
-
-              Object.keys(resourceMeta).map(function (resource) {
-                var raml = [context.ramlHeader.raw];
-
-                ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n'))
-                  .then(function (data) {
-                    resourceMeta[resource].raml.compiled = data;
-                  });
-              });
-
               eventEmitter.publish('event:editor:context', {
                 context: ramlEditorContext.context,
                 cursor:  cm.getCursor()
@@ -360,22 +350,30 @@
           scrollTo({line: line, ch: 0});
         });
 
-        CodeMirror.commands.save = function () {
+        CodeMirror.commands.save = function save() {
           eventEmitter.publish('event:save');
         };
 
-        CodeMirror.commands.autocomplete = function (cm) {
+        CodeMirror.commands.autocomplete = function autocomplete(cm) {
           CodeMirror.showHint(cm, CodeMirror.hint.raml, {
             ghosting: true
           });
         };
 
-        CodeMirror.commands.toggleTheme = function () {
+        CodeMirror.commands.toggleTheme = function toggleTheme() {
           eventEmitter.publish('event:toggle-theme');
         };
 
-        CodeMirror.commands.showOmniSearch = function () {
+        CodeMirror.commands.showOmniSearch = function showOmniSearch() {
           eventEmitter.publish('event:open:omnisearch');
+        };
+
+        CodeMirror.commands.extractTo = function extractTo(cm) {
+          eventEmitter.publish('event:editor:extract-to', cm);
+        };
+
+        CodeMirror.commands.saveAll = function saveAll() {
+          eventEmitter.publish('event:notification:save-all', {notify: true});
         };
 
         function toggleComment (content) {

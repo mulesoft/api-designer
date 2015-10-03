@@ -53,7 +53,7 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext
+      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext, newFileService
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -240,6 +240,28 @@
           column:  displayColumn + 1,
           message: formatErrorMessage(message, lineOfCurrentError, displayLine)
         }]);
+      }));
+
+      eventEmitter.subscribe('event:editor:extract-to', safeApplyWrapper($scope, function extractTo(cm) {
+        var message  = 'Creates a new file containing the selected content.';
+        var contents = cm.getSelection();
+        var key      = contents.split(':');
+        var filename;
+
+        if (key.length > 1) {
+          key      = key[0];
+          filename = (key + '.raml').replace(/\s/g, '');
+          contents = contents.replace(key + ':', '');
+
+          return newFileService.prompt($scope.homeDirectory, 'Extract to', message, contents, filename, true)
+          .then(function (result) {
+            if (filename) {
+              cm.replaceSelection(key + ': !include ' + result.path);
+            }
+
+            eventEmitter.publish('event:notification:save-all', {notify: false});
+          });
+        }
       }));
 
       $scope.openHelp = function openHelp() {

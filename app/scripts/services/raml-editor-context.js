@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .factory('ramlEditorContext', function ramlEditorContext(ramlParser) {
+    .factory('ramlEditorContext', function ramlEditorContext(ramlParser, ramlParserFileReader) {
       var self = this;
 
       function getIndentation(str) {
@@ -91,19 +91,26 @@
           }
         };
 
-        // ramlParser.load(self.context.ramlHeader.raw)
-        //   .then(function (data) {
-        //     self.context.ramlHeader.compiled = data;
-        //   });
+        var options = {
+          validate : true,
+          transform: true,
+          compose:   true,
+          reader:    ramlParserFileReader
+        };
 
-        // Object.keys(resourceMeta).map(function (resource) {
-        //   var raml = [self.context.ramlHeader.raw];
+        ramlParser.load(self.context.ramlHeader.raw, null, options)
+          .then(function (data) {
+            self.context.ramlHeader.compiled = data;
+          });
 
-        //   ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n'))
-        //     .then(function (data) {
-        //       resourceMeta[resource].raml.compiled = data;
-        //     });
-        // });
+        Object.keys(resourceMeta).map(function (resource) {
+          var raml = [self.context.ramlHeader.raw];
+
+          ramlParser.load(raml.concat(resourceMeta[resource].raml.raw).join('\n'), null, options)
+            .then(function (data) {
+              resourceMeta[resource].raml.compiled = data;
+            });
+        });
       };
 
       return self;
