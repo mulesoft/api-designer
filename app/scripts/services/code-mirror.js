@@ -94,14 +94,12 @@
         'Cmd-L': CodeMirror.sublimeKeyMap['Cmd-L'],
         'Cmd-Ctrl-Up': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Up'],
         'Cmd-Ctrl-Down': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Down'],
-        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
-        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
         'Shift-Cmd-D': CodeMirror.sublimeKeyMap['Shift-Cmd-D'],
-
-        'Cmd-K Cmd-K': 'save',
+        'Cmd-K Cmd-K': CodeMirror.sublimeKeyMap['Cmd-K Cmd-K'],
         'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
         'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
-        'Cmd-K Cmd-j': CodeMirror.sublimeKeyMap['Cmd-K Cmd-j']
+        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
+        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down']
       };
 
       var ramlKeys = {
@@ -121,15 +119,16 @@
         'Cmd-L': CodeMirror.sublimeKeyMap['Cmd-L'],
         'Cmd-Ctrl-Up': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Up'],
         'Cmd-Ctrl-Down': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Down'],
+        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
+        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
         'Shift-Cmd-D': CodeMirror.sublimeKeyMap['Shift-Cmd-D'],
         'Cmd-K Cmd-K': CodeMirror.sublimeKeyMap['Cmd-K Cmd-K'],
         'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
         'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
-        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
-        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
-        'Cmd-K Cmd-j': CodeMirror.sublimeKeyMap['Cmd-K Cmd-j']
         // 'Shift-Cmd-Space': CodeMirror.sublimeKeyMap['Shift-Cmd-Space'] // TODO: Select Resource
       };
+
+      console.log(CodeMirror.normalizeKeyMap((ramlKeys)));
 
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
