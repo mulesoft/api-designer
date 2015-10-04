@@ -221,6 +221,15 @@
           el.style.paddingLeft = (basePadding + offset) + 'px';
         });
 
+        cm.on('mousedown', function (cm, event) {
+          var target = event.target;
+
+          if (target.className === 'cm-link') {
+            var path = target.innerText.match(/!include(.*)/).pop().trim();
+            eventEmitter.publish('event:editor:include', {path: path});
+          }
+        });
+
         cm.on('cursorActivity', function () {
           eventEmitter.publish('event:editor:context', {
             context: ramlEditorContext.context,

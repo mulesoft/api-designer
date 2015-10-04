@@ -120,6 +120,10 @@
           return 'key';
         }
 
+        if (state.pair && stream.match(/(!include.*)/)) {
+          return 'link';
+        }
+
         if (state.pair && stream.match(/^:\s*/)) {
           state.pairStart = true;
           return 'meta';

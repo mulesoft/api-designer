@@ -16,6 +16,19 @@
         var fileBrowser         = this;
         var contextMenu         = void(0);
 
+        eventEmitter.subscribe('event:editor:include', function (data) {
+          var path = data.path;
+
+          $scope.homeDirectory.forEachChildDo(function (child) {
+            if (!child.isDirectory) {
+              if (child.path.indexOf(path) !== -1) {
+                fileBrowser.selectFile(child);
+                return;
+              }
+            }
+          });
+        });
+
         $scope.toggleFolderCollapse = function(node) {
           node.collapsed = !node.collapsed;
         };

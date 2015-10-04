@@ -10129,6 +10129,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           el.style.textIndent = '-' + offset + 'px';
           el.style.paddingLeft = basePadding + offset + 'px';
         });
+        cm.on('mousedown', function (cm, event) {
+          var target = event.target;
+          if (target.className === 'cm-link') {
+            var path = target.innerText.match(/!include(.*)/).pop().trim();
+            eventEmitter.publish('event:editor:include', { path: path });
+          }
+        });
         cm.on('cursorActivity', function () {
           eventEmitter.publish('event:editor:context', {
             context: ramlEditorContext.context,
@@ -10967,6 +10974,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             return 'resource';
           }
           return 'key';
+        }
+        if (state.pair && stream.match(/(!include.*)/)) {
+          return 'link';
         }
         if (state.pair && stream.match(/^:\s*/)) {
           state.pairStart = true;
@@ -14088,6 +14098,17 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function Controller($scope) {
         var fileBrowser = this;
         var contextMenu = void 0;
+        eventEmitter.subscribe('event:editor:include', function (data) {
+          var path = data.path;
+          $scope.homeDirectory.forEachChildDo(function (child) {
+            if (!child.isDirectory) {
+              if (child.path.indexOf(path) !== -1) {
+                fileBrowser.selectFile(child);
+                return;
+              }
+            }
+          });
+        });
         $scope.toggleFolderCollapse = function (node) {
           node.collapsed = !node.collapsed;
         };
