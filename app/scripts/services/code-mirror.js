@@ -413,48 +413,6 @@
           eventEmitter.publish('event:notification:save-all', {notify: true});
         };
 
-        // var position = CodeMirror.Pos;
-
-        // function wordAt(cm, pos) {
-        //   var start = pos.ch, end = start, line = cm.getLine(pos.line);
-        //   while (start && CodeMirror.isWordChar(line.charAt(start - 1))) {
-        //     --start;
-        //   }
-        //   while (end < line.length && CodeMirror.isWordChar(line.charAt(end))) {
-        //     ++end;
-        //   }
-
-        //   return {from: position(pos.line, start), to: position(pos.line, end), word: line.slice(start, end)};
-        // }
-
-        // CodeMirror.commands.selectNextOccurrence = function selectNextOccurrence(cm) {
-        //   var from = cm.getCursor('from'), to = cm.getCursor('to');
-        //   var fullWord = cm.state.sublimeFindFullWord === cm.doc.sel;
-        //   if (CodeMirror.cmpPos(from, to) === 0) {
-        //     var word = wordAt(cm, from);
-        //     if (!word.word) {
-        //       return;
-        //     }
-        //     cm.setSelection(word.from, word.to);
-        //     fullWord = true;
-        //   } else {
-        //     var text = cm.getRange(from, to);
-        //     var query = fullWord ? new RegExp('\\b' + text + '\\b') : text;
-        //     var cur = cm.getSearchCursor(query, to);
-        //     if (cur.findNext()) {
-        //       cm.addSelection(cur.from(), cur.to());
-        //     } else {
-        //       cur = cm.getSearchCursor(query, position(cm.firstLine(), 0));
-        //       if (cur.findNext()) {
-        //         cm.addSelection(cur.from(), cur.to());
-        //       }
-        //     }
-        //   }
-        //   if (fullWord) {
-        //     cm.state.sublimeFindFullWord = cm.doc.sel;
-        //   }
-        // };
-
         function toggleComment (content) {
           if (content.replace(/\s/g, '').indexOf('#')) {
             content = '# ' + content;
@@ -479,10 +437,12 @@
 
             cm.replaceSelection(lines.join('\n'));
           } else {
-            // TODO: Fix comment
             cm.replaceRange(toggleComment(content), {
-              from: cm.getCursor(),
-              to: { line: currentLine+1, ch: 0}
+              line: currentLine,
+              ch: 0
+            }, {
+              line: currentLine,
+              ch: cm.getLine(currentLine).length
             });
           }
         };
