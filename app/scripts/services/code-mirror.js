@@ -77,6 +77,10 @@
         raml: { name: 'raml' }
       };
 
+      // TODO: Implement Cmd or Ctrl is Mac or windows
+      var mac  = CodeMirror.keyMap["default"] == CodeMirror.keyMap.macDefault;
+      var ctrl = mac ? "Cmd-" : "Ctrl-";
+
       var defaultKeys = {
         'Cmd-S': 'save',
         'Ctrl-S': 'save',
@@ -85,7 +89,19 @@
         'Cmd-P': 'showOmniSearch',
         'Ctrl-Space': 'autocomplete',
         'Shift-Cmd-S': 'saveAll',
-        'Shift-Ctrl-S': 'saveAll'
+        'Shift-Ctrl-S': 'saveAll',
+        'Cmd-D': CodeMirror.sublimeKeyMap['Cmd-D'],
+        'Cmd-L': CodeMirror.sublimeKeyMap['Cmd-L'],
+        'Cmd-Ctrl-Up': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Up'],
+        'Cmd-Ctrl-Down': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Down'],
+        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
+        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
+        'Shift-Cmd-D': CodeMirror.sublimeKeyMap['Shift-Cmd-D'],
+
+        'Cmd-K Cmd-K': 'save',
+        'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
+        'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
+        'Cmd-K Cmd-j': CodeMirror.sublimeKeyMap['Cmd-K Cmd-j']
       };
 
       var ramlKeys = {
@@ -100,7 +116,19 @@
         'Ctrl-E': 'extractTo',
         'Cmd-E': 'extractTo',
         'Shift-Cmd-S': 'saveAll',
-        'Shift-Ctrl-S': 'saveAll'
+        'Shift-Ctrl-S': 'saveAll',
+        'Cmd-D': CodeMirror.sublimeKeyMap['Cmd-D'],
+        'Cmd-L': CodeMirror.sublimeKeyMap['Cmd-L'],
+        'Cmd-Ctrl-Up': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Up'],
+        'Cmd-Ctrl-Down': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Down'],
+        'Shift-Cmd-D': CodeMirror.sublimeKeyMap['Shift-Cmd-D'],
+        'Cmd-K Cmd-K': CodeMirror.sublimeKeyMap['Cmd-K Cmd-K'],
+        'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
+        'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
+        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
+        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
+        'Cmd-K Cmd-j': CodeMirror.sublimeKeyMap['Cmd-K Cmd-j']
+        // 'Shift-Cmd-Space': CodeMirror.sublimeKeyMap['Shift-Cmd-Space'] // TODO: Select Resource
       };
 
       var autocomplete = function onChange(cm) {
@@ -280,7 +308,7 @@
           Tab:         service.tabKey,
           Backspace:   service.backspaceKey,
           Enter:       service.enterKey,
-          fallthrough: ['default']
+          fallthrough: 'default'
         };
 
         function parseLine(line) {
@@ -385,6 +413,48 @@
           eventEmitter.publish('event:notification:save-all', {notify: true});
         };
 
+        // var position = CodeMirror.Pos;
+
+        // function wordAt(cm, pos) {
+        //   var start = pos.ch, end = start, line = cm.getLine(pos.line);
+        //   while (start && CodeMirror.isWordChar(line.charAt(start - 1))) {
+        //     --start;
+        //   }
+        //   while (end < line.length && CodeMirror.isWordChar(line.charAt(end))) {
+        //     ++end;
+        //   }
+
+        //   return {from: position(pos.line, start), to: position(pos.line, end), word: line.slice(start, end)};
+        // }
+
+        // CodeMirror.commands.selectNextOccurrence = function selectNextOccurrence(cm) {
+        //   var from = cm.getCursor('from'), to = cm.getCursor('to');
+        //   var fullWord = cm.state.sublimeFindFullWord === cm.doc.sel;
+        //   if (CodeMirror.cmpPos(from, to) === 0) {
+        //     var word = wordAt(cm, from);
+        //     if (!word.word) {
+        //       return;
+        //     }
+        //     cm.setSelection(word.from, word.to);
+        //     fullWord = true;
+        //   } else {
+        //     var text = cm.getRange(from, to);
+        //     var query = fullWord ? new RegExp('\\b' + text + '\\b') : text;
+        //     var cur = cm.getSearchCursor(query, to);
+        //     if (cur.findNext()) {
+        //       cm.addSelection(cur.from(), cur.to());
+        //     } else {
+        //       cur = cm.getSearchCursor(query, position(cm.firstLine(), 0));
+        //       if (cur.findNext()) {
+        //         cm.addSelection(cur.from(), cur.to());
+        //       }
+        //     }
+        //   }
+        //   if (fullWord) {
+        //     cm.state.sublimeFindFullWord = cm.doc.sel;
+        //   }
+        // };
+
         function toggleComment (content) {
           if (content.replace(/\s/g, '').indexOf('#')) {
             content = '# ' + content;
@@ -395,8 +465,7 @@
           return content;
         }
 
-        CodeMirror.commands.toggleComment = function () {
-          var cm          = service.getEditor();
+        CodeMirror.commands.toggleComment = function (cm) {
           var selection   = cm.getSelection();
           var currentLine = cm.getCursor().line;
           var content     = cm.getLine(currentLine);
@@ -410,7 +479,11 @@
 
             cm.replaceSelection(lines.join('\n'));
           } else {
-            cm.setLine(currentLine, toggleComment(content));
+            // TODO: Fix comment
+            cm.replaceRange(toggleComment(content), {
+              from: cm.getCursor(),
+              to: { line: currentLine+1, ch: 0}
+            });
           }
         };
 
@@ -419,40 +492,6 @@
 
         CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
         CodeMirror.registerHelper('fold', 'indent', getFoldRange);
-
-        // active-line addon
-        var WRAP_CLASS = 'CodeMirror-activeline';
-        var BACK_CLASS = 'CodeMirror-activeline-background';
-
-        CodeMirror.defineOption('styleActiveLine', false, function(cm, val, old) {
-          var prev = old && old !== CodeMirror.Init;
-          if (val && !prev) {
-            updateActiveLine(cm);
-            cm.on('cursorActivity', updateActiveLine);
-          } else if (!val && prev) {
-            cm.off('cursorActivity', updateActiveLine);
-            clearActiveLine(cm);
-            delete cm.state.activeLine;
-          }
-        });
-
-        function clearActiveLine(cm) {
-          if ('activeLine' in cm.state) {
-            cm.removeLineClass(cm.state.activeLine, 'wrap', WRAP_CLASS);
-            cm.removeLineClass(cm.state.activeLine, 'background', BACK_CLASS);
-          }
-        }
-
-        function updateActiveLine(cm) {
-          var line = cm.getLineHandleVisualStart(cm.getCursor().line);
-          if (cm.state.activeLine === line) {
-            return;
-          }
-          clearActiveLine(cm);
-          cm.addLineClass(line, 'wrap', WRAP_CLASS);
-          cm.addLineClass(line, 'background', BACK_CLASS);
-          cm.state.activeLine = line;
-        }
       })();
 
       return service;
