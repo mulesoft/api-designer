@@ -56,20 +56,25 @@
       codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext, newFileService, $firebaseObject
     ) {
       ///
+      $scope.cliendId = Math.round(Math.random() * 100000000);
       var url = 'https://vivid-heat-7827.firebaseio.com/';
       var fireRef = new Firebase(url);
 
       var syncObject = $firebaseObject(fireRef.child('contents'));
 
       syncObject.$bindTo($scope, 'data');
-      ///
 
-      // $scope.$watch('data', function () {
-      //   if ($scope.data && $scope.data.contents != null && $scope.data.contents !== editor.getValue()) {
-      //     $scope.fileBrowser.selectedFile.contents = $scope.data.contents;
-      //     // editor.setValue($scope.data.contents);
-      //   }
-      // });
+      $scope.$watch('data', function () {
+        if ($scope.fileBrowser && $scope.fileBrowser.selectedFile) {
+          var file = $scope.fileBrowser.selectedFile;
+          var filename = file.name.split('.')[0][0];
+
+          if ($scope.data && $scope.data.contents && $scope.data.contents[filename] != null && $scope.data.contents[filename] !== editor.getValue() && $scope.cliendId !== $scope.data.id) {
+            editor.setValue($scope.data.contents[filename]);
+          }
+        }
+      });
+      ///
 
       var editor, lineOfCurrentError, currentFile;
 
@@ -124,14 +129,20 @@
 
         $scope.originalValue = file.contents;
 
-        $scope.data = {contents: file.contents};
+
+        var filename  = file.name.replace('.')[0][0];
+        $scope.data = {};
+        $scope.data.contents = {id: $scope.cliendId};
+        $scope.data.contents[filename] = file.contents;
+
+        $scope.currentFile = file;
 
         // Every file must have a unique document for history and cursors.
         if (!file.doc) {
-          file.doc = new CodeMirror.Doc($scope.data.contents);
+          file.doc = new CodeMirror.Doc($scope.data.contents[filename]);
         }
 
-        ramlEditorContext.read($scope.data.contents.split('\n'));
+        ramlEditorContext.read($scope.data.contents[filename].split('\n'));
 
         editor.swapDoc(file.doc);
         editor.focus();
@@ -149,11 +160,9 @@
       });
 
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
-        console.log('changed');
-        $scope.data = { contents: contents };
-
         if (contents != null && contents !== editor.getValue()) {
-          currentFile.doc = new CodeMirror.Doc($scope.data.contents);
+          var filename  = $scope.fileBrowser.selectedFile.name.replace('.')[0][0];
+          currentFile.doc = new CodeMirror.Doc($scope.data.contents[filename]);
           editor.swapDoc(currentFile.doc);
         }
       });
@@ -184,6 +193,10 @@
         var selectedFile = $scope.fileBrowser.selectedFile;
 
         selectedFile.contents = source;
+
+        var filename  = selectedFile.name.replace('.')[0][0];
+        $scope.data.contents = { id: $scope.cliendId };
+        $scope.data.contents[filename] = source;
 
         $scope.clearErrorMarks();
         $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
