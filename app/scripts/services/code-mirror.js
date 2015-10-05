@@ -5,7 +5,7 @@
     .factory('codeMirror', function (
       ramlHint, codeMirrorHighLight, generateSpaces, generateTabs,
       getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue,
-      eventEmitter, getNode, ramlEditorContext
+      eventEmitter, getNode, ramlEditorContext, hotkeys
     ) {
       var editor  = null;
       var service = {
@@ -99,7 +99,8 @@
         'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
         'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
         'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
-        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down']
+        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
+        'Ctrl-H': 'toggleCheatSheet'
       };
 
       var ramlKeys = {
@@ -125,6 +126,7 @@
         'Cmd-K Cmd-K': CodeMirror.sublimeKeyMap['Cmd-K Cmd-K'],
         'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
         'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
+        'Ctrl-H': 'toggleCheatSheet'
         // 'Shift-Cmd-Space': CodeMirror.sublimeKeyMap['Shift-Cmd-Space'] // TODO: Select Resource
       };
 
@@ -410,6 +412,10 @@
 
         CodeMirror.commands.saveAll = function saveAll() {
           eventEmitter.publish('event:notification:save-all', {notify: true});
+        };
+
+        CodeMirror.commands.toggleCheatSheet = function toggleCheatSheet() {
+          hotkeys.toggleCheatSheet();
         };
 
         function toggleComment (content) {

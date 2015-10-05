@@ -53,27 +53,29 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext, newFileService, $firebaseObject
+      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext, newFileService, $firebaseObject, hotkeys
     ) {
-      ///
-      $scope.cliendId = Math.round(Math.random() * 100000000);
-      var url = 'https://vivid-heat-7827.firebaseio.com/';
-      var fireRef = new Firebase(url);
+      /// Firebase
+      if ($window.RAML.Settings.firebase) {
+        $scope.cliendId = Math.round(Math.random() * 100000000);
+        var url = 'https://vivid-heat-7827.firebaseio.com/';
+        var fireRef = new Firebase(url);
 
-      var syncObject = $firebaseObject(fireRef.child('contents'));
+        var syncObject = $firebaseObject(fireRef.child('contents'));
 
-      syncObject.$bindTo($scope, 'data');
+        syncObject.$bindTo($scope, 'data');
 
-      $scope.$watch('data', function () {
-        if ($scope.fileBrowser && $scope.fileBrowser.selectedFile) {
-          var file = $scope.fileBrowser.selectedFile;
-          var filename = file.name.split('.')[0][0];
+        $scope.$watch('data', function () {
+          if ($scope.fileBrowser && $scope.fileBrowser.selectedFile) {
+            var file = $scope.fileBrowser.selectedFile;
+            var filename = file.name.split('.')[0][0];
 
-          if ($scope.data && $scope.data.contents && $scope.data.contents[filename] != null && $scope.data.contents[filename] !== editor.getValue() && $scope.cliendId !== $scope.data.id) {
-            editor.setValue($scope.data.contents[filename]);
+            if ($scope.data && $scope.data.contents && $scope.data.contents[filename] != null && $scope.data.contents[filename] !== editor.getValue() && $scope.cliendId !== $scope.data.id) {
+              editor.setValue($scope.data.contents[filename]);
+            }
           }
-        }
-      });
+        });
+      }
       ///
 
       var editor, lineOfCurrentError, currentFile;
@@ -129,20 +131,24 @@
 
         $scope.originalValue = file.contents;
 
+        var dataContent = file.contents;
 
-        var filename  = file.name.replace('.')[0][0];
-        $scope.data = {};
-        $scope.data.contents = {id: $scope.cliendId};
-        $scope.data.contents[filename] = file.contents;
+        if ($window.RAML.Settings.firebase) {
+          var filename  = file.name.replace('.')[0][0];
+          $scope.data = {};
+          $scope.data.contents = {id: $scope.cliendId};
+          $scope.data.contents[filename] = file.contents;
+          dataContent = $scope.data.contents[filename];
+        }
 
         $scope.currentFile = file;
 
         // Every file must have a unique document for history and cursors.
         if (!file.doc) {
-          file.doc = new CodeMirror.Doc($scope.data.contents[filename]);
+          file.doc = new CodeMirror.Doc(dataContent);
         }
 
-        ramlEditorContext.read($scope.data.contents[filename].split('\n'));
+        ramlEditorContext.read(dataContent.split('\n'));
 
         editor.swapDoc(file.doc);
         editor.focus();
@@ -162,7 +168,13 @@
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
         if (contents != null && contents !== editor.getValue()) {
           var filename  = $scope.fileBrowser.selectedFile.name.replace('.')[0][0];
-          currentFile.doc = new CodeMirror.Doc($scope.data.contents[filename]);
+          var dataContent = contents;
+
+          if ($window.RAML.Settings.firebase) {
+            dataContent = $scope.data.contents[filename];
+          }
+
+          currentFile.doc = new CodeMirror.Doc(dataContent);
           editor.swapDoc(currentFile.doc);
         }
       });
@@ -194,9 +206,11 @@
 
         selectedFile.contents = source;
 
-        var filename  = selectedFile.name.replace('.')[0][0];
-        $scope.data.contents = { id: $scope.cliendId };
-        $scope.data.contents[filename] = source;
+        if ($window.RAML.Settings.firebase) {
+          var filename  = selectedFile.name.replace('.')[0][0];
+          $scope.data.contents = { id: $scope.cliendId };
+          $scope.data.contents[filename] = source;
+        }
 
         $scope.clearErrorMarks();
         $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
@@ -370,6 +384,10 @@
       $scope.openOmnisearch = function openOmnisearch(e) {
         e.preventDefault();
         $scope.omnisearch.open();
+      };
+
+      $scope.toggleCheatSheet = function toggleCheatSheet() {
+        hotkeys.toggleCheatSheet();
       };
 
       (function bootstrap() {
