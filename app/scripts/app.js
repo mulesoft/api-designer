@@ -31,7 +31,8 @@
     'autoFocus',
     'rightClick',
     'dragAndDrop',
-    'cfp.hotkeys'
+    'cfp.hotkeys',
+    'firebase'
   ])
     .run(function ($window, hotkeys) {
       // Adding proxy settings for api console

@@ -53,8 +53,24 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext, newFileService
+      codeMirrorErrors, config, $prompt, $confirm, $modal, eventEmitter, ramlEditorContext, newFileService, $firebaseObject
     ) {
+      ///
+      var url = 'https://vivid-heat-7827.firebaseio.com/';
+      var fireRef = new Firebase(url);
+
+      var syncObject = $firebaseObject(fireRef.child('contents'));
+
+      syncObject.$bindTo($scope, 'data');
+      ///
+
+      // $scope.$watch('data', function () {
+      //   if ($scope.data && $scope.data.contents != null && $scope.data.contents !== editor.getValue()) {
+      //     $scope.fileBrowser.selectedFile.contents = $scope.data.contents;
+      //     // editor.setValue($scope.data.contents);
+      //   }
+      // });
+
       var editor, lineOfCurrentError, currentFile;
 
       function extractCurrentFileLabel(file) {
@@ -108,12 +124,14 @@
 
         $scope.originalValue = file.contents;
 
+        $scope.data = {contents: file.contents};
+
         // Every file must have a unique document for history and cursors.
         if (!file.doc) {
-          file.doc = new CodeMirror.Doc(file.contents);
+          file.doc = new CodeMirror.Doc($scope.data.contents);
         }
 
-        ramlEditorContext.read(file.contents.split('\n'));
+        ramlEditorContext.read($scope.data.contents.split('\n'));
 
         editor.swapDoc(file.doc);
         editor.focus();
@@ -131,8 +149,11 @@
       });
 
       $scope.$watch('fileBrowser.selectedFile.contents', function (contents) {
+        console.log('changed');
+        $scope.data = { contents: contents };
+
         if (contents != null && contents !== editor.getValue()) {
-          currentFile.doc = new CodeMirror.Doc(contents);
+          currentFile.doc = new CodeMirror.Doc($scope.data.contents);
           editor.swapDoc(currentFile.doc);
         }
       });

@@ -128,7 +128,7 @@
         // 'Shift-Cmd-Space': CodeMirror.sublimeKeyMap['Shift-Cmd-Space'] // TODO: Select Resource
       };
 
-      console.log(CodeMirror.normalizeKeyMap((ramlKeys)));
+      CodeMirror.normalizeKeyMap((ramlKeys));
 
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
