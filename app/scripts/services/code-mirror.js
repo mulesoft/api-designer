@@ -405,8 +405,6 @@
           var line = cm.getCursor('from').line;
           var indentation = getIndentation(cm.getLine(line));
 
-          console.log(line);
-
           var startLine = 0;
           var endLine = 0;
 
@@ -430,7 +428,9 @@
             }
           }
 
-          cm.setSelection({line: startLine, ch: 0}, {line: endLine, ch: 0});
+          if (endLine > 0) {
+            cm.setSelection({line: startLine, ch: 0}, {line: endLine, ch: 0});
+          }
         };
 
         function toggleComment (content) {
