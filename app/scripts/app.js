@@ -60,6 +60,10 @@
         description: 'Toggle Comment'
       });
       hotkeys.add({
+        combo: 'shift+mod+A',
+        description: 'Select Resource'
+      });
+      hotkeys.add({
         combo: 'mod+Ctrl+down',
         description: 'Swap line down'
       });

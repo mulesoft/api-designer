@@ -77,60 +77,38 @@
         raml: { name: 'raml' }
       };
 
-      // TODO: Implement Cmd or Ctrl is Mac or windows
-      var mac  = CodeMirror.keyMap["default"] == CodeMirror.keyMap.macDefault;
-      var ctrl = mac ? "Cmd-" : "Ctrl-";
-
+      var mac         = CodeMirror.keyMap["default"] == CodeMirror.keyMap.macDefault;
+      var ctrl        = mac ? "Cmd-" : "Ctrl-";
+      var swap        = mac ? "Cmd-Ctrl-" : "Shift-Ctrl-";
       var defaultKeys = {
-        'Cmd-S': 'save',
-        'Ctrl-S': 'save',
-        'Shift-Tab': 'indentLess',
         'Shift-Ctrl-T': 'toggleTheme',
-        'Cmd-P': 'showOmniSearch',
+        'Shift-Tab': 'indentLess',
         'Ctrl-Space': 'autocomplete',
-        'Shift-Cmd-S': 'saveAll',
-        'Shift-Ctrl-S': 'saveAll',
-        'Cmd-D': CodeMirror.sublimeKeyMap['Cmd-D'],
-        'Cmd-L': CodeMirror.sublimeKeyMap['Cmd-L'],
-        'Cmd-Ctrl-Up': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Up'],
-        'Cmd-Ctrl-Down': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Down'],
-        'Shift-Cmd-D': CodeMirror.sublimeKeyMap['Shift-Cmd-D'],
-        'Cmd-K Cmd-K': CodeMirror.sublimeKeyMap['Cmd-K Cmd-K'],
-        'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
-        'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
         'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
         'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
         'Ctrl-H': 'toggleCheatSheet'
       };
+      var ramlKeys;
 
-      var ramlKeys = {
-        'Ctrl-Space': 'autocomplete',
-        'Cmd-S': 'save',
-        'Ctrl-S': 'save',
-        'Shift-Tab': 'indentLess',
-        'Shift-Ctrl-T': 'toggleTheme',
-        'Cmd-P': 'showOmniSearch',
-        'Ctrl-/': 'toggleComment',
-        'Cmd-/': 'toggleComment',
-        'Ctrl-E': 'extractTo',
-        'Cmd-E': 'extractTo',
-        'Shift-Cmd-S': 'saveAll',
-        'Shift-Ctrl-S': 'saveAll',
-        'Cmd-D': CodeMirror.sublimeKeyMap['Cmd-D'],
-        'Cmd-L': CodeMirror.sublimeKeyMap['Cmd-L'],
-        'Cmd-Ctrl-Up': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Up'],
-        'Cmd-Ctrl-Down': CodeMirror.sublimeKeyMap['Cmd-Ctrl-Down'],
-        'Shift-Alt-Up': CodeMirror.sublimeKeyMap['Shift-Alt-Up'],
-        'Shift-Alt-Down': CodeMirror.sublimeKeyMap['Shift-Alt-Down'],
-        'Shift-Cmd-D': CodeMirror.sublimeKeyMap['Shift-Cmd-D'],
-        'Cmd-K Cmd-K': CodeMirror.sublimeKeyMap['Cmd-K Cmd-K'],
-        'Cmd-K Cmd-U': CodeMirror.sublimeKeyMap['Cmd-K Cmd-U'],
-        'Cmd-K Cmd-L': CodeMirror.sublimeKeyMap['Cmd-K Cmd-L'],
-        'Ctrl-H': 'toggleCheatSheet'
-        // 'Shift-Cmd-Space': CodeMirror.sublimeKeyMap['Shift-Cmd-Space'] // TODO: Select Resource
-      };
+      defaultKeys[ctrl+'S']           = 'save';
+      defaultKeys['Shift-'+ctrl+'S']  = 'saveAll';
+      defaultKeys[ctrl+'P']           = 'showOmniSearch';
+      defaultKeys[ctrl+'D']           = CodeMirror.sublimeKeyMap[ctrl+'D'];
+      defaultKeys[ctrl+'L']           = CodeMirror.sublimeKeyMap[ctrl+'L'];
+      defaultKeys[swap+'Up']          = CodeMirror.sublimeKeyMap[swap+'Up'];
+      defaultKeys[swap+'Down']        = CodeMirror.sublimeKeyMap[swap+'Down'];
+      defaultKeys[ctrl+'K '+ctrl+'K'] = CodeMirror.sublimeKeyMap[ctrl+'K '+ctrl+'K'];
+      defaultKeys[ctrl+'K '+ctrl+'U'] = CodeMirror.sublimeKeyMap[ctrl+'K '+ctrl+'U'];
+      defaultKeys[ctrl+'K '+ctrl+'L'] = CodeMirror.sublimeKeyMap[ctrl+'K '+ctrl+'L'];
+      defaultKeys['Shift-'+ctrl+'D']  = CodeMirror.sublimeKeyMap['Shift-'+ctrl+'D'];
 
-      CodeMirror.normalizeKeyMap((ramlKeys));
+      ramlKeys           = angular.extend({}, defaultKeys);
+      ramlKeys[ctrl+'/'] = 'toggleComment';
+      ramlKeys[ctrl+'E'] = 'extractTo';
+      ramlKeys['Shift-'+ctrl+'A'] = 'selectResource';
+
+      CodeMirror.normalizeKeyMap(ramlKeys);
+      CodeMirror.normalizeKeyMap(defaultKeys);
 
       var autocomplete = function onChange(cm) {
         if (cm.getLine(cm.getCursor().line).trim()) {
@@ -416,6 +394,43 @@
 
         CodeMirror.commands.toggleCheatSheet = function toggleCheatSheet() {
           hotkeys.toggleCheatSheet();
+        };
+
+        CodeMirror.commands.selectResource = function selectResource(cm) {
+          function getIndentation(str) {
+            return str.match(/^\s*/)[0].length;
+          }
+
+          var context = ramlEditorContext.context;
+          var line = cm.getCursor('from').line;
+          var indentation = getIndentation(cm.getLine(line));
+
+          console.log(line);
+
+          var startLine = 0;
+          var endLine = 0;
+
+          for(var i = line; i >= 0; i--){
+            var value = cm.getLine(i);
+            var currentIdentation = getIndentation(value);
+
+            if(currentIdentation < indentation) {
+              startLine = i;
+              break;
+            }
+          }
+
+          for(var i = line; i <= context.scopes.length-1; i++){
+            var value = cm.getLine(i);
+            var currentIdentation = getIndentation(value);
+
+            if(currentIdentation < indentation) {
+              endLine = i;
+              break;
+            }
+          }
+
+          cm.setSelection({line: startLine, ch: 0}, {line: endLine, ch: 0});
         };
 
         function toggleComment (content) {
