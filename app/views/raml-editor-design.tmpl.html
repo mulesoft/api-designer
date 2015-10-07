@@ -1,0 +1,35 @@
+<div>
+  <div class="container">
+    <div class="title">
+      <span>Endpoint</span>
+    </div>
+    <div class="content">
+      content
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="title">
+      <span>Resources</span>
+    </div>
+    <div class="content">
+      <div class="content">
+        <input class="search" type="text" ng-model="designer.resource" />
+      </div>
+      <ul>
+        <li ng-repeat="resource in designer.resources | filter: designer.resource">
+          <i class="fa icon fa-caret-right caret-icon ng-scope"></i> {{resource}}
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="title">
+      <span>Examples</span>
+    </div>
+    <div class="content">
+      content
+    </div>
+  </div>
+</div>

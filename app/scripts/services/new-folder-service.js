@@ -10,7 +10,7 @@
 
       self.prompt = function prompt (target) {
         var parent  = target.isDirectory ? target : ramlRepository.getParent(target);
-        var message = 'Input a name for your new folder:';
+        var message = 'Enter the path for the new folder';
         var title   = 'Add a new folder';
 
         var validations = [

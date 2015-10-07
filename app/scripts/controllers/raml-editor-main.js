@@ -78,6 +78,16 @@
       }
       ///
 
+      $scope.activeMode = 'source';
+
+      $scope.setMode = function setMode(mode) {
+        $scope.activeMode = mode;
+      }
+
+      $scope.isActive = function isActive(mode) {
+        return $scope.activeMode === mode;
+      }
+
       var editor, lineOfCurrentError, currentFile;
 
       function extractCurrentFileLabel(file) {
@@ -291,7 +301,7 @@
       }));
 
       eventEmitter.subscribe('event:editor:extract-to', safeApplyWrapper($scope, function extractTo(cm) {
-        var message  = 'Creates a new file containing the selected content.';
+        var message  = 'Extract to';
         var contents = cm.getSelection();
         var key      = contents.split(':');
         var filename;

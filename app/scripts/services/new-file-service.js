@@ -13,10 +13,7 @@
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
         var title  = prompTitle || 'Add a new file';
 
-        var message = proptMessage || [
-          'For a new RAML spec, be sure to name your file <something>.raml; ',
-          'For files to be !included, feel free to use an extension or not.'
-        ].join('');
+        var message = proptMessage || 'Enter the path for the new file';
 
         var validations = [
           {

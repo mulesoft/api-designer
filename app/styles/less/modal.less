@@ -272,14 +272,18 @@
 // Actual modal
 .modal-content {
   position: relative;
-  background-color: @modal-content-bg;
+  // background-color: @modal-content-bg;
+  background-color: #282828;
+  color: #9a9a9a;
   border: 1px solid @modal-content-fallback-border-color; //old browsers fallback (ie8 etc)
   border: 1px solid @modal-content-border-color;
-  border-radius: @border-radius-large;
+  // border-radius: @border-radius-large;
+  border-radius: 0;
   .box-shadow(0 3px 9px rgba(0,0,0,.5));
   background-clip: padding-box;
   // Remove focus outline from opened modal
   outline: none;
+  font-size: 13px;
 }
 
 // Modal background
@@ -318,7 +322,8 @@
 // Where all modal content resides (sibling of .modal-header and .modal-footer)
 .modal-body {
   position: relative;
-  padding: @modal-inner-padding;
+  // padding: @modal-inner-padding;
+  padding: 15px;
 
   p {
     margin: 0 0 10px;
@@ -331,6 +336,7 @@ label {
   margin: 0;
   display: inline-block;
   max-width: 100%;
+  margin-bottom: 7px;
 }
 
 .required-field-label::after {
@@ -341,18 +347,20 @@ label {
 .form-control {
   display: block;
   width: 100%;
-  height: 30px;
-  padding: 4px 12px;
-  font-size: 14px;
+  height: 25px;
+  // padding: 4px 12px;
+  font-size: 12px;
   line-height: 1.42857143;
   color: @text-color;
   background-color: #ffffff;
   background-image: none;
-  border: 1px solid rgba(81, 92, 107, 0.2);
-  border-radius: 4px;
+  // border: 1px solid rgba(81, 92, 107, 0.2);
+  // border-radius: 4px;
   box-shadow: none;
   text-overflow: ellipsis;
   transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+  border: 0;
+  border-radius: 0;
 }
 
 .has-error .help-block,
@@ -432,7 +440,7 @@ label {
   // Automatically set modal's width for larger viewports
   .modal-dialog {
     width: @modal-md;
-    margin: 30px auto;
+    margin: 80px auto;
   }
   .modal-content {
     .box-shadow(0 5px 15px rgba(0,0,0,.5));

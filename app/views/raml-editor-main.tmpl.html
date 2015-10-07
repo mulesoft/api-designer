@@ -55,7 +55,12 @@
 
     <div role="editor">
       <div class="editor-title">{{getSelectedFileAbsolutePath()}}</div>
-      <div id="code" role="code"></div>
+      <div id="code" role="code" ng-show="isActive('source')"></div>
+      <!-- <div role="design" ng-show="isActive('design')"></div> -->
+      <!-- <div class="editor-bottom">
+        <button ng-click="setMode('design')" ng-class="{'active': isActive('design')}">Design</button>
+        <button ng-click="setMode('source')" ng-class="{'active': isActive('source')}">Source</button>
+      </div> -->
 
       <!-- <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">
         <div role="shelf-tab" ng-click="toggleShelf()">
@@ -66,13 +71,16 @@
       </div> -->
     </div>
 
-    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300">
+    <div id="consoleAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300" ng-show="isActive('source') && getIsConsoleVisible()">
     </div>
 
-    <div ng-show="getIsConsoleVisible()" role="preview-wrapper">
-      <!-- <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console> -->
+    <div role="preview-wrapper" ng-show="isActive('source') && getIsConsoleVisible()">
       <raml-editor-try-it role="try-it"></raml-editor-try-it>
     </div>
+
+    <!-- <div role="preview-wrapper" ng-show="isActive('design')">
+      <raml-editor-design role="editor-design"></raml-editor-design>
+    </div> -->
   </div>
   <raml-editor-bottom-bar role="bottom-bar"></raml-editor-bottom-bar>
 </div>

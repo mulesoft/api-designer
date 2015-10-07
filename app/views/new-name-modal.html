@@ -1,14 +1,14 @@
 <form name="form" novalidate ng-submit="submit(form)">
-  <div class="modal-header">
+<!--   <div class="modal-header">
     <h3>{{input.title}}</h3>
-  </div>
+  </div> -->
 
   <div class="modal-body">
     <!-- name -->
     <div class="form-group" ng-class="{'has-error': form.$submitted && form.name.$invalid}">
-      <p>{{input.message}}</p>
+      <!-- <p>{{input.message}}</p> -->
       <!-- label -->
-      <label for="name" class="control-label required-field-label">Name</label>
+      <label for="name" class="control-label">{{input.message}}</label>
 
       <!-- input -->
       <input id="name" name="name" type="text"
@@ -23,8 +23,8 @@
     </div>
   </div>
 
-  <div class="modal-footer">
+<!--   <div class="modal-footer">
     <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>
     <button type="submit" class="btn btn-primary">OK</button>
-  </div>
+  </div> -->
 </form>

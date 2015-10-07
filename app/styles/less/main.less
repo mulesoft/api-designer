@@ -24,17 +24,51 @@ html[role=api-designer] {
   }
 }
 
+div[role=design] {
+  overflow: auto;
+  position: relative;
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+  margin-top: 1px;
+  background-color: #1D1F21;
+}
+
+div[role=raml-editor] div.editor-bottom {
+  background-color: #282828;
+  height: 25px;
+  padding: 3px;
+  color: #E1E1E4;
+  text-align: center;
+  font-size: 11px;
+
+  button {
+    outline: none;
+    border-radius: 0;
+    border: 1px solid transparent;
+    margin-right: 0px;
+    background-color: #282828;
+    color: #9a9a9a;
+    float: left;
+    margin-right: 3px;
+    cursor: pointer;
+
+    &.active {
+      border: 1px solid black;
+      background-color: #CCC;
+      color: black;
+    }
+  }
+}
+
 div[role=raml-editor] div.editor-title {
-  /* padding: 0; */
-  /* margin: 0; */
   background-color: #282828;
   height: 20px;
   padding: 3px;
   color: #E1E1E4;
   text-align: center;
-  // border: 1px solid #1b1b1b;
   font-size: 11px;
-  // font-family: Helvetica;
 
   span.close-button {
     float: right;
