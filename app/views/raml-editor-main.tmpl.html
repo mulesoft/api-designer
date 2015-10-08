@@ -75,7 +75,19 @@
     </div>
 
     <div role="preview-wrapper" ng-show="isActive('source') && getIsConsoleVisible()">
-      <raml-editor-try-it role="try-it"></raml-editor-try-it>
+      <div class="right-bar">
+        <div class="section">
+          <div class="section-title">
+            <i class="fa icon fa-caret-right caret-icon"></i>Try-It<span class="close">&#x2715;</span>
+          </div>
+          <raml-editor-try-it role="try-it"></raml-editor-try-it>
+        </div>
+        <div class="section">
+          <div class="section-title">
+            <i class="fa icon fa-caret-right caret-icon"></i>Snippets<span class="close">&#x2715;</span>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- <div role="preview-wrapper" ng-show="isActive('design')">
