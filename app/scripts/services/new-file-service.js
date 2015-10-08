@@ -31,6 +31,9 @@
             // Need to catch errors from `generateFile`, otherwise
             // `newNameModel.open` will error random modal close strings.
             return ramlRepository.generateFile(parent, name, contents, stopPropagation)
+              .then(function (file) {
+                eventEmitter.publish('event:editor:new:file', {file:file});
+              })
               .catch(function (err) {
                 return eventEmitter.publish('event:notification', {
                   message: err.message,

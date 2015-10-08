@@ -165,12 +165,12 @@
 
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
-            .then(function () {
-              return eventEmitter.publish('event:notification', {
-                message: 'File saved.',
-                expires: true
-              });
-            })
+            // .then(function () {
+            //   // return eventEmitter.publish('event:notification', {
+            //   //   message: 'File saved.',
+            //   //   expires: true
+            //   // });
+            // })
           ;
         };
 

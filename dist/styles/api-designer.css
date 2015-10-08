@@ -20,11 +20,41 @@ html[role=api-designer] div.container {
   width: 100%;
   height: 100%;
 }
+div[role=design] {
+  overflow: auto;
+  position: relative;
+  -webkit-box-flex: 1;
+  -webkit-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+  margin-top: 1px;
+  background-color: #1D1F21;
+}
+div[role=raml-editor] div.editor-bottom {
+  background-color: #282828;
+  height: 25px;
+  padding: 3px;
+  color: #E1E1E4;
+  text-align: center;
+  font-size: 11px;
+}
+div[role=raml-editor] div.editor-bottom button {
+  outline: none;
+  border-radius: 0;
+  border: 1px solid transparent;
+  margin-right: 0px;
+  background-color: #282828;
+  color: #9a9a9a;
+  float: left;
+  margin-right: 3px;
+  cursor: pointer;
+}
+div[role=raml-editor] div.editor-bottom button.active {
+  border: 1px solid black;
+  background-color: #CCC;
+  color: black;
+}
 div[role=raml-editor] div.editor-title {
-  /* padding: 0; */
-
-  /* margin: 0; */
-
   background-color: #282828;
   height: 20px;
   padding: 3px;
@@ -684,11 +714,11 @@ div .noselect {
   margin-top: 15px;
   position: absolute;
   font-size: 10px;
-  width: 47px;
+  width: 40px;
   background: #5a5a5a;
   padding: 3px;
   margin-left: -1px;
-  z-index: 1;
+  z-index: 10;
 }
 [role=browser] .section-title .folder-icon {
   float: right;
@@ -702,11 +732,11 @@ div .noselect {
   margin-top: 15px;
   position: absolute;
   font-size: 10px;
-  width: 61px;
+  width: 55px;
   background: #5a5a5a;
   padding: 3px;
   margin-left: -1px;
-  z-index: 1;
+  z-index: 10;
 }
 [role=browser] .section-title .save-icon {
   float: right;
@@ -720,7 +750,7 @@ div .noselect {
   margin-top: 15px;
   position: absolute;
   font-size: 10px;
-  width: 43px;
+  width: 37px;
   background: #5a5a5a;
   padding: 3px;
   margin-left: -1px;
@@ -773,6 +803,14 @@ div .noselect {
 }
 [role=browser] .file-list .file-item2 {
   padding-left: 17px !important;
+}
+[role=browser] .file-list .file-item2.root::before {
+  content: '\2605 ';
+  font-size: 10px;
+  margin-left: -13px;
+  margin-right: 3px;
+  color: #ccc;
+  z-index: 1;
 }
 [role=browser] .file-list .file-item {
   cursor: pointer;
@@ -1130,13 +1168,15 @@ div.CodeMirror {
 }
 .modal-content {
   position: relative;
-  background-color: #ffffff;
+  background-color: #282828;
+  color: #9a9a9a;
   border: 1px solid #999999;
   border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  border-radius: 0;
   box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5);
   background-clip: padding-box;
   outline: none;
+  font-size: 13px;
 }
 .modal-backdrop {
   position: fixed;
@@ -1157,8 +1197,11 @@ div.CodeMirror {
 }
 .modal-header {
   padding: 15px;
-  border-bottom: 1px solid #e5e5e5;
   min-height: 16.428571429px;
+  padding-bottom: 0;
+}
+.modal-header h3 {
+  margin: 0;
 }
 .modal-header .close {
   margin-top: -2px;
@@ -1169,7 +1212,7 @@ div.CodeMirror {
 }
 .modal-body {
   position: relative;
-  padding: 20px;
+  padding: 15px;
 }
 .modal-body p {
   margin: 0 0 10px;
@@ -1179,6 +1222,7 @@ label {
   margin: 0;
   display: inline-block;
   max-width: 100%;
+  margin-bottom: 7px;
 }
 .required-field-label::after {
   content: ' *';
@@ -1187,19 +1231,18 @@ label {
 .form-control {
   display: block;
   width: 100%;
-  height: 30px;
-  padding: 4px 12px;
-  font-size: 14px;
+  height: 25px;
+  font-size: 12px;
   line-height: 1.42857143;
   color: #333333;
   background-color: #ffffff;
   background-image: none;
-  border: 1px solid rgba(81, 92, 107, 0.2);
-  border-radius: 4px;
   box-shadow: none;
   text-overflow: ellipsis;
   -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
   transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+  border: 0;
+  border-radius: 0;
 }
 .has-error .help-block,
 .has-error .control-label {
@@ -1210,10 +1253,8 @@ label {
   box-shadow: none;
 }
 .modal-footer {
-  margin-top: 15px;
-  padding: 19px 20px 20px;
+  padding: 0 15px 15px;
   text-align: right;
-  border-top: 1px solid #e5e5e5;
 }
 .modal-footer .btn + .btn {
   margin-left: 5px;
@@ -1235,9 +1276,8 @@ label {
   border: none;
   white-space: nowrap;
   padding: 5px 12px;
-  font-size: 14px;
+  font-size: 11px;
   line-height: 1.42857143;
-  border-radius: 4px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -1266,7 +1306,7 @@ label {
 @media (min-width: 768px) {
   .modal-dialog {
     width: 600px;
-    margin: 30px auto;
+    margin: 80px auto;
   }
   .modal-content {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
@@ -1647,4 +1687,124 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 [role=try-it] div div.content.method-container.trace {
   border: 1px solid #c7f107;
   border-top-width: 3px;
+}
+
+[role=editor-design] div {
+  font-size: 10px;
+  color: #ccc;
+}
+[role=editor-design] div div.container {
+  min-height: 19px;
+}
+[role=editor-design] div div.container div.title {
+  padding: 3px;
+  background-color: #35393c;
+  font-size: 10px;
+}
+[role=editor-design] div div.container div.title span {
+  text-transform: uppercase;
+  color: silver;
+}
+[role=editor-design] div div.content {
+  margin-top: 5px;
+  margin-bottom: 5px;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+[role=editor-design] div div.content input.search {
+  outline: none;
+  margin-left: 3px;
+  width: 100%;
+  border: 0;
+}
+[role=editor-design] div div.content label {
+  color: silver;
+  text-transform: capitalize;
+  margin-bottom: 4px;
+  margin-top: 3px;
+  font-size: 10px;
+  display: inline-block;
+  width: 37%;
+  text-align: right;
+  margin-right: 3px;
+}
+[role=editor-design] div div.content ul {
+  font-size: 11px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  padding-left: 7px;
+  height: 194px;
+  overflow-y: scroll;
+}
+[role=editor-design] div div.content ul li {
+  cursor: pointer;
+  border-bottom: 1px solid #4b4b4d;
+  margin-bottom: 3px;
+  padding-bottom: 3px
+
+          width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+[role=editor-design] div div.content .control {
+  border: 0;
+  border-radius: 0;
+  width: 58%;
+  display: inline-block;
+  font-size: 10px;
+}
+[role=editor-design] div div.content .control.full-width {
+  width: 100%;
+}
+
+.cfp-hotkeys-key {
+  font-size: 11px;
+}
+.cfp-hotkeys-text {
+  font-size: 11px;
+}
+.cfp-hotkeys-title {
+  font-size: 18px;
+}
+.cfp-hotkeys-close {
+  display: none;
+}
+.cfp-container {
+  left: 0;
+  right: 0;
+  margin: auto;
+  position: absolute;
+  width: 50%;
+  height: 390px;
+  top: 50px;
+  background-color: #FFFFFF;
+  z-index: 1001;
+}
+.cfp-container.in {
+  display: block !important;
+}
+.cfp-container div {
+  height: 300px;
+  overflow-y: scroll;
+}
+.cfp-container div table {
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+}
+.cfp-overlay {
+  z-index: 1000;
+  background-color: #000;
+  opacity: 0.5;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+.cfp-overlay.in {
+  display: block !important;
 }

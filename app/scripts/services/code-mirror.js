@@ -77,9 +77,9 @@
         raml: { name: 'raml' }
       };
 
-      var mac         = CodeMirror.keyMap["default"] == CodeMirror.keyMap.macDefault;
-      var ctrl        = mac ? "Cmd-" : "Ctrl-";
-      var swap        = mac ? "Cmd-Ctrl-" : "Shift-Ctrl-";
+      var mac         = CodeMirror.keyMap['default'] === CodeMirror.keyMap.macDefault;
+      var ctrl        = mac ? 'Cmd-' : 'Ctrl-';
+      var swap        = mac ? 'Cmd-Ctrl-' : 'Shift-Ctrl-';
       var defaultKeys = {
         'Shift-Ctrl-T': 'toggleTheme',
         'Shift-Tab': 'indentLess',
@@ -407,10 +407,11 @@
 
           var startLine = 0;
           var endLine = 0;
+          var value, i, currentIdentation;
 
-          for(var i = line; i >= 0; i--){
-            var value = cm.getLine(i);
-            var currentIdentation = getIndentation(value);
+          for(i = line; i >= 0; i--){
+            value = cm.getLine(i);
+            currentIdentation = getIndentation(value);
 
             if(currentIdentation < indentation) {
               startLine = i;
@@ -418,9 +419,9 @@
             }
           }
 
-          for(var i = line; i <= context.scopes.length-1; i++){
-            var value = cm.getLine(i);
-            var currentIdentation = getIndentation(value);
+          for(i = line; i <= context.scopes.length-1; i++){
+            value = cm.getLine(i);
+            currentIdentation = getIndentation(value);
 
             if(currentIdentation < indentation) {
               endLine = i;

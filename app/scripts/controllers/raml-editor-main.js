@@ -82,11 +82,11 @@
 
       $scope.setMode = function setMode(mode) {
         $scope.activeMode = mode;
-      }
+      };
 
       $scope.isActive = function isActive(mode) {
         return $scope.activeMode === mode;
-      }
+      };
 
       var editor, lineOfCurrentError, currentFile;
 
@@ -438,6 +438,11 @@
             $scope.sourceUpdated();
           })();
         });
+
+        eventEmitter.subscribe('event:editor:new:file', safeApplyWrapper($scope, function (data) {
+          var file = data.file;
+          $scope.workingFiles[file.name] = file;
+        }));
 
         $window.alreadyNotifiedExit = false;
 

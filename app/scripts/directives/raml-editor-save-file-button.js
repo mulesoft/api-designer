@@ -40,13 +40,13 @@
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
 
-            return ramlRepository.saveFile(file)
-              .then(function success() {
-                eventEmitter.publish('event:notification', {
-                  message: 'File saved.',
-                  expires: true
-                });
-              });
+            return ramlRepository.saveFile(file);
+              // .then(function success() {
+              //   // eventEmitter.publish('event:notification', {
+              //   //   message: 'File saved.',
+              //   //   expires: true
+              //   // });
+              // });
           };
 
           function saveAll () {
@@ -74,13 +74,13 @@
           });
 
           scope.saveAllFiles = function saveAllFiles() {
-            return $q.all(saveAll())
-              .then(function success() {
-                eventEmitter.publish('event:notification', {
-                  message: 'All files saved.',
-                  expires: true
-                });
-              });
+            return $q.all(saveAll());
+              // .then(function success() {
+              //   // eventEmitter.publish('event:notification', {
+              //   //   message: 'All files saved.',
+              //   //   expires: true
+              //   // });
+              // });
           };
         }
       };
