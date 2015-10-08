@@ -701,6 +701,8 @@ div .noselect {
   margin-left: 5px;
   margin-right: 3px;
   vertical-align: text-top;
+  cursor: pointer;
+  min-width: 8px;
 }
 [role=browser] .section-title .file-icon {
   float: right;
@@ -780,7 +782,7 @@ div .noselect {
   margin-right: 0;
 }
 [role=browser] .angular-ui-tree-nodes {
-  padding-left: 10px;
+  padding-left: 13px;
 }
 [role=browser] .angular-ui-working-node {
   padding-left: 17px;

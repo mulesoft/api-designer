@@ -29,6 +29,28 @@
           });
         });
 
+        $scope.projectExplorerExpanded = true;
+
+        $scope.toggleProjectExplorer = function toggleProjectExplorer() {
+          $scope.projectExplorerExpanded = !$scope.projectExplorerExpanded;
+        };
+
+        $scope.workingFilesExpanded = false;
+
+        $scope.toggleWorkingFiles = function toggleWorkingFiles() {
+          $scope.workingFilesExpanded = Object.keys($scope.workingFiles).length === 0 ? false : !$scope.workingFilesExpanded;
+        };
+
+        $scope.$watchCollection(function (scope) {
+          return scope.workingFiles;
+        }, function (newValue) {
+          $scope.workingFilesExpanded = true;
+
+          if (Object.keys(newValue).length === 0) {
+            $scope.workingFilesExpanded = false;
+          }
+        });
+
         $scope.toggleFolderCollapse = function(node) {
           node.collapsed = !node.collapsed;
         };
