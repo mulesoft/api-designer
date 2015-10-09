@@ -71,22 +71,29 @@
       </div> -->
     </div>
 
-    <div id="consoleAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300" ng-show="isActive('source') && getIsConsoleVisible()">
+    <div id="consoleAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="300" ng-show="isActive('source')">
     </div>
 
-    <div role="preview-wrapper" ng-show="isActive('source') && getIsConsoleVisible()">
-      <div class="right-bar">
+    <!-- <div role="preview-wrapper" ng-show="isActive('source') && getIsConsoleVisible()"> -->
+    <div role="preview-wrapper" ng-show="isActive('source')" ng-class="{collapsed: rightBarCollapsed}">
+
+      <div class="collapsed-right-bar" ng-show="rightBarCollapsed">
+        <span ng-click="toggleRightBar()">Try-It</span>
+        <!-- <span ng-click="toggleRightBar()">Snippets</span> -->
+      </div>
+
+      <div class="right-bar" ng-hide="rightBarCollapsed">
         <div class="section">
           <div class="section-title">
-            <i class="fa icon fa-caret-right caret-icon"></i>Try-It<span class="close">&#x2715;</span>
+            <!-- <i class="fa icon fa-caret-right caret-icon"></i> -->Try-It<span class="close" ng-click="toggleRightBar()">&#x2715;</span>
           </div>
           <raml-editor-try-it role="try-it"></raml-editor-try-it>
         </div>
-        <div class="section">
+        <!-- <div class="section">
           <div class="section-title">
-            <i class="fa icon fa-caret-right caret-icon"></i>Snippets<span class="close">&#x2715;</span>
+            <i class="fa icon fa-caret-right caret-icon"></i>Snippets<span class="close" ng-click="toggleRightBar()">&#x2715;</span>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
 

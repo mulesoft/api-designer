@@ -78,6 +78,12 @@
       }
       ///
 
+      $scope.rightBarCollapsed = true;
+
+      $scope.toggleRightBar = function toggleRightBar() {
+        $scope.rightBarCollapsed = !$scope.rightBarCollapsed;
+      };
+
       $scope.activeMode = 'source';
 
       $scope.setMode = function setMode(mode) {
