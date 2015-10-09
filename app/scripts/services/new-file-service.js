@@ -33,6 +33,7 @@
             return ramlRepository.generateFile(parent, name, contents, stopPropagation)
               .then(function (file) {
                 eventEmitter.publish('event:editor:new:file', {file:file});
+                return file;
               })
               .catch(function (err) {
                 return eventEmitter.publish('event:notification', {
