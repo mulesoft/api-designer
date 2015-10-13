@@ -55,7 +55,7 @@ div[role=raml-editor] div.editor-bottom button.active {
   color: black;
 }
 div[role=raml-editor] div.editor-title {
-  background-color: #282828;
+  background-color: #1D1F21;
   height: 20px;
   padding: 3px;
   color: #E1E1E4;
@@ -72,7 +72,7 @@ div[role=raml-editor] {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  background: #57585a;
+  background-color: #2c2c2c;
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -138,6 +138,7 @@ div[role=raml-editor] > header {
   align-items: center;
   padding: 10px 20px;
   background: #57585a;
+  background-color: #252526;
 }
 div[role=raml-editor] > header > h1 {
   -moz-box-sizing: border-box;
@@ -181,6 +182,7 @@ div[role=flexColumns] {
   -webkit-flex: 1;
   -ms-flex: 1;
   flex: 1;
+  background-color: #252526;
 }
 div[role=editor] {
   -moz-box-sizing: border-box;
@@ -264,14 +266,13 @@ div[role=code] {
   -webkit-flex: 1;
   -ms-flex: 1;
   flex: 1;
-  margin-top: 1px;
 }
 /* Preview - Console */
 div[role=preview-wrapper] {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   overflow: auto;
-  background-color: #252526;
+  background-color: #1d1f21;
   -webkit-box-flex: 0;
   -webkit-flex: 0;
   -ms-flex: 0;
@@ -279,8 +280,38 @@ div[role=preview-wrapper] {
   min-width: 300px;
   position: relative;
 }
+div[role=preview-wrapper].collapsed {
+  min-width: 25px !important;
+}
+div.collapsed-right-bar {
+  -webkit-transform: rotate(90deg);
+  transform: rotate(90deg);
+  position: absolute;
+  width: 126px;
+  margin-top: -18px;
+  -webkit-transform-origin: left bottom 0;
+  transform-origin: left bottom 0;
+  margin-left: 3px;
+}
+div.collapsed-right-bar span {
+  font-size: 11px;
+  padding: 2px;
+  color: #E1E1E4;
+  border-top: 5px solid #353535;
+  text-align: center;
+  padding-left: 9px;
+  padding-right: 9px;
+  margin-right: 7px;
+  cursor: pointer;
+}
+div.collapsed-right-bar span:hover {
+  border-top: 5px solid #5C5C5C;
+}
 div.right-bar {
   font-size: 12px;
+}
+div.right-bar div.section .section-title:nth-last-child(1) {
+  border-top: none;
 }
 div.right-bar div.section div.section-title {
   min-height: 20px;
@@ -303,6 +334,7 @@ div.right-bar div.section div.section-title .close {
   margin-right: 5px;
   font-size: 10px;
   margin-top: 1px;
+  cursor: pointer;
 }
 
 /* Shelf */
@@ -520,7 +552,7 @@ div .noselect {
   -ms-flex: 0;
   flex: 0;
   cursor: col-resize;
-  background-color: #57585a;
+  background-color: #252526;
 }
 [ng-splitter] .split {
   position: absolute;
@@ -684,6 +716,7 @@ div .noselect {
   -webkit-flex-direction: column;
   -ms-flex-direction: column;
   flex-direction: column;
+  background-color: #1d1f21;
 }
 [role=browser] button {
   border: none;
@@ -713,6 +746,9 @@ div .noselect {
 }
 [role=browser] button:hover {
   background-color: #2d8bca;
+}
+[role=browser] .section-title:nth-last-child(2) {
+  border-top: none;
 }
 [role=browser] .section-title {
   background-color: #282828;
@@ -818,7 +854,7 @@ div .noselect {
   overflow: auto;
   list-style: none;
   line-height: 15px;
-  background-color: #252526;
+  background-color: #1d1f21;
   color: #888;
   -webkit-box-flex: 1;
   -webkit-flex: 1;
@@ -1024,6 +1060,9 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
 }
 
 /* CodeMirror Overrides */
+.cm-s-solarized.CodeMirror {
+  box-shadow: none;
+}
 .cm-s-solarized.cm-s-dark .CodeMirror-selected {
   background: ##6e8992;
 }
@@ -1369,11 +1408,10 @@ div[role=raml-editor] .menubar {
   -ms-flex-align: center;
   align-items: center;
   color: gray;
-  background-color: #343436;
+  background-color: #1D1F21;
   font-size: 14px;
   line-height: 1em;
-  border: 1px solid #2c2c2e;
-  border-width: 1px 0;
+  margin-bottom: 1px;
 }
 div[role=raml-editor] .menubar > li {
   margin: 0;
@@ -1382,8 +1420,8 @@ div[role=raml-editor] .menubar > li {
 }
 div[role=raml-editor] .menubar > li span {
   float: left;
-  padding: 5px 10px;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+  padding: 3px 10px;
+  margin-top: 1px;
 }
 div[role=raml-editor] .menubar .menu-item-toggle {
   padding-left: 5px;
@@ -1563,7 +1601,8 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 [role=bottom-bar] div {
   height: 20px;
   font-size: 12px;
-  background-color: #353535;
+  background-color: #1d1f21;
+  margin-top: 1px;
 }
 [role=bottom-bar] div div.cursor {
   float: left;
@@ -1573,7 +1612,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 }
 [role=bottom-bar] div div.breadcrum {
   position: absolute;
-  margin-left: 200px;
+  margin-left: 201px;
 }
 [role=bottom-bar] div div.breadcrum button {
   outline: none;
@@ -1595,8 +1634,12 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 }
 
 [role=try-it] div {
-  font-size: 10px;
+  font-size: 11px;
   color: #ccc;
+}
+[role=try-it] div div.no-resource-message {
+  margin-top: 10px;
+  text-align: center;
 }
 [role=try-it] div div.container {
   min-height: 19px;

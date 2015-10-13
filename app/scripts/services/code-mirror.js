@@ -430,7 +430,8 @@
           }
 
           if (endLine > 0) {
-            cm.setSelection({line: startLine, ch: 0}, {line: endLine, ch: 0});
+            var last = endLine-1;
+            cm.setSelection({line: startLine, ch: 0}, {line: last, ch: cm.getLine(last).length});
           }
         };
 

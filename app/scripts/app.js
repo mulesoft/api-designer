@@ -91,10 +91,10 @@
         combo: 'mod+L',
         description: 'Select line'
       });
-      hotkeys.add({
-        combo: 'shift+Alt+down',
-        description: 'Select lines downward'
-      });
+      // hotkeys.add({
+      //   combo: 'shift+Alt+down',
+      //   description: 'Select lines downward'
+      // });
       hotkeys.add({
         combo: 'shift+Alt+up',
         description: 'Select lines upward'

@@ -310,21 +310,28 @@
         var message  = 'Extract to';
         var contents = cm.getSelection();
         var key      = contents.split(':');
-        var filename;
+        var filename, last;
 
         if (key.length > 1) {
           key      = key[0];
           filename = (key + '.raml').replace(/\s/g, '');
           contents = contents.replace(key + ':', '');
+          last     = cm.getCursor('to').line;
+
+          if (cm.getCursor('to').xRel === 0) {
+            last = cm.getCursor('to').line-1;
+          }
+
+          cm.setSelection(cm.getCursor('from'), {line: last, ch: cm.getLine(last).length});
 
           return newFileService.prompt($scope.homeDirectory, 'Extract to', message, contents, filename, true)
-          .then(function (result) {
-            if (filename) {
-              cm.replaceSelection(key + ': !include ' + result.path);
-            }
+            .then(function (result) {
+              if (filename) {
+                cm.replaceSelection(key + ': !include ' + result.path);
+              }
 
-            eventEmitter.publish('event:notification:save-all', {notify: false});
-          });
+              eventEmitter.publish('event:notification:save-all', {notify: false});
+            });
         }
       }));
 
