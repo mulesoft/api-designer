@@ -209,8 +209,10 @@
         div.background {
           background-color: #a2cde5;
           width: 198px;
-          position: fixed;
+          // position: fixed;
           left: 0;
+          position: absolute;
+          left: -30%;
         }
 
         .file-name {
@@ -220,16 +222,24 @@
 
       &.workingfile:hover{
         color: #3C3C3C;
+        background-color: #a2cde5;
       }
 
       &.currentfile {
         color: #ddd;
+        background-color: @cello_blue;
+
+        i.fa-cog {
+          padding-right: 4px;
+        }
 
         div.background {
           background-color: @cello_blue;
           width: 198px;
-          position: fixed;
+          // position: fixed;
           left: 0;
+          position: absolute;
+          left: -30%;
         }
 
         .file-name {

@@ -913,23 +913,30 @@ div .noselect {
 [role=browser] .file-list .file-item.workingfile div.background {
   background-color: #a2cde5;
   width: 198px;
-  position: fixed;
   left: 0;
+  position: absolute;
+  left: -30%;
 }
 [role=browser] .file-list .file-item.workingfile .file-name {
   background-color: #a2cde5;
 }
 [role=browser] .file-list .file-item.workingfile:hover {
   color: #3C3C3C;
+  background-color: #a2cde5;
 }
 [role=browser] .file-list .file-item.currentfile {
   color: #ddd;
+  background-color: #1e4f6a;
+}
+[role=browser] .file-list .file-item.currentfile i.fa-cog {
+  padding-right: 4px;
 }
 [role=browser] .file-list .file-item.currentfile div.background {
   background-color: #1e4f6a;
   width: 198px;
-  position: fixed;
   left: 0;
+  position: absolute;
+  left: -30%;
 }
 [role=browser] .file-list .file-item.currentfile .file-name {
   background-color: #1e4f6a;

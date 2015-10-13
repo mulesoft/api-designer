@@ -1375,10 +1375,10 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
       //   combo: 'shift+Alt+down',
       //   description: 'Select lines downward'
       // });
-      hotkeys.add({
-        combo: 'shift+Alt+up',
-        description: 'Select lines upward'
-      });
+      // hotkeys.add({
+      //   combo: 'shift+Alt+up',
+      //   description: 'Select lines upward'
+      // });
       hotkeys.add({
         combo: 'shift+mod+D',
         description: 'Duplicate line'
