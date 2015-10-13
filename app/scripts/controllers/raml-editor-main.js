@@ -457,6 +457,11 @@
           $scope.workingFiles[file.name] = file;
         }));
 
+        eventEmitter.subscribe('event:editor:remove:file', safeApplyWrapper($scope, function (data) {
+          var file = data.file;
+          delete $scope.workingFiles[file.name];
+        }));
+
         $window.alreadyNotifiedExit = false;
 
         $window.editorFilesystemIsDirty = function editorFilesystemIsDirty() {

@@ -6,6 +6,7 @@
       $injector,
       $window,
       confirmModal,
+      eventEmitter,
       newNameModal,
       ramlRepository,
       newFileService,
@@ -77,6 +78,7 @@
 
             return confirmModal.open(message, title)
               .then(function () {
+                eventEmitter.publish('event:editor:remove:file', {file: target});
                 return ramlRepository.remove(target);
               })
             ;

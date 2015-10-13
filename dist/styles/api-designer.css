@@ -1310,6 +1310,9 @@ label {
   border: 0;
   border-radius: 0;
 }
+.form-control.file-selector {
+  padding-top: 4px;
+}
 .has-error .help-block,
 .has-error .control-label {
   color: #d9534f;
