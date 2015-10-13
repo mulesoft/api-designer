@@ -117,7 +117,6 @@
                 tryIt.securityScheme  = 'Anonymous';
                 tryIt.selectedMethod  = tryIt.resource.methods ? tryIt.resource.methods[0] : null;
 
-                // console.log(tryIt.resource);
               }
             } else {
               tryIt.current        = null;

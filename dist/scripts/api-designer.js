@@ -5523,6 +5523,7 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
         }
         $scope.clearErrorMarks();
         $scope.fileParsable = $scope.getIsFileParsable(selectedFile);
+        eventEmitter.publish('event:editor:include', {});
         updateFile();
       };
       $scope.loadRaml = function loadRaml(definition, location) {
@@ -7207,6 +7208,9 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
               line: 1,
               column: 1
             };
+            eventEmitter.subscribe('event:editor:include', safeApplyWrapper($scope, function () {
+              bottomBar.resources = [];
+            }));
             eventEmitter.subscribe('event:editor:context', safeApplyWrapper($scope, function (data) {
               var context = data.context;
               var cursor = data.cursor;
@@ -7349,7 +7353,7 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
                   tryIt.enabled = true;
                   tryIt.protocol = tryIt.protocols[0];
                   tryIt.securityScheme = 'Anonymous';
-                  tryIt.selectedMethod = tryIt.resource.methods ? tryIt.resource.methods[0] : null;  // console.log(tryIt.resource);
+                  tryIt.selectedMethod = tryIt.resource.methods ? tryIt.resource.methods[0] : null;
                 }
               } else {
                 tryIt.current = null;

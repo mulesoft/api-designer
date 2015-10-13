@@ -231,6 +231,8 @@
         $scope.clearErrorMarks();
         $scope.fileParsable   = $scope.getIsFileParsable(selectedFile);
 
+        eventEmitter.publish('event:editor:include', {});
+
         updateFile();
       };
 

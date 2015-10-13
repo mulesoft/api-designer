@@ -17,6 +17,10 @@
             column: 1
           };
 
+          eventEmitter.subscribe('event:editor:include', safeApplyWrapper($scope, function () {
+            bottomBar.resources = [];
+          }));
+
           eventEmitter.subscribe('event:editor:context', safeApplyWrapper($scope, function (data) {
             var context = data.context;
             var cursor  = data.cursor;
