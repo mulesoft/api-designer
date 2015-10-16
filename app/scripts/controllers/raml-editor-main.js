@@ -49,7 +49,7 @@
     })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal
+      codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -343,6 +343,10 @@
             return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
           }
         };
+
+        if ($scope.mockingServiceBaseUri) {
+          mockingServiceClient.baseUri = $scope.mockingServiceBaseUri;
+        }
       })();
     })
   ;

@@ -5,12 +5,11 @@
     .service('mockingServiceClient', function mockingServiceClientFactory($http, $q, $window) {
       var self = this;
 
-      self.proxy = null;
-      self.host  = 'http://mocksvc.mulesoft.com';
-      self.base  = '/mocks';
+      self.proxy   = null;
+      self.baseUri = 'http://mocksvc.mulesoft.com';
 
       self.buildURL = function buildURL() {
-        var url   = self.host + self.base + [''].concat(Array.prototype.slice.call(arguments, 0)).join('/');
+        var url   = self.baseUri + ['/mocks'].concat(Array.prototype.slice.call(arguments, 0)).join('/');
         var proxy = self.proxy || $window.RAML.Settings.proxy;
 
         if (proxy) {

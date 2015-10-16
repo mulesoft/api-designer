@@ -6,7 +6,8 @@
       return {
         restrict:    'E',
         scope:       {
-          mockingServiceDisabled: '='
+          mockingServiceDisabled: '=',
+          mockingServiceBaseUri:  '='
         },
         templateUrl: 'views/raml-editor-main.tmpl.html',
         controller:  'ramlEditorMain'

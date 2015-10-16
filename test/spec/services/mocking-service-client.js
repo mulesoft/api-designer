@@ -19,39 +19,35 @@ describe('mockingServiceClient', function () {
 
   describe('buildURL', function () {
     it('should return proper URL', function () {
-      var host = mockingServiceClient.host = 'http://host';
-      var base = mockingServiceClient.base = '/base';
-      var path = 'path';
+      var baseUri = mockingServiceClient.baseUri = 'http://host';
+      var path    = 'path';
 
-      mockingServiceClient.buildURL(path).should.be.equal(host + base + '/' + path);
+      mockingServiceClient.buildURL(path).should.be.equal(baseUri + '/mocks/' + path);
     });
 
     it('should use proxy configured via $window.RAML.Settings.proxy', inject(function ($window) {
-      var proxy = $window.RAML.Settings.proxy = '/proxy/';
-      var host  = mockingServiceClient.host   = 'http://host';
-      var base  = mockingServiceClient.base   = '/base';
-      var path  = 'path';
-      var url   = proxy + host + base + '/' + path;
+      var proxy   = $window.RAML.Settings.proxy  = '/proxy/';
+      var baseUri = mockingServiceClient.baseUri = 'http://host';
+      var path    = 'path';
+      var url     = proxy + baseUri + '/mocks/' + path;
 
       mockingServiceClient.buildURL(path).should.be.equal(url);
     }));
 
     it('should use proxy configured via "proxy" property', function () {
-      var proxy = mockingServiceClient.proxy = '/proxy/';
-      var host  = mockingServiceClient.host  = 'http://host';
-      var base  = mockingServiceClient.base  = '/base';
-      var path  = 'path';
-      var url   = proxy + host + base + '/' + path;
+      var proxy   = mockingServiceClient.proxy   = '/proxy/';
+      var baseUri = mockingServiceClient.baseUri = 'http://host';
+      var path    = 'path';
+      var url     = proxy + baseUri + '/mocks/' + path;
 
       mockingServiceClient.buildURL(path).should.be.equal(url);
     });
 
     it('should use proxy configured via "proxy" property with $window.RAML.Settings.proxy configured at the same time', inject(function ($window) {
-      var proxy = mockingServiceClient.proxy = '/proxy1/';
-      var host  = mockingServiceClient.host  = 'http://host';
-      var base  = mockingServiceClient.base  = '/base';
-      var path  = 'path';
-      var url   = proxy + host + base + '/' + path;
+      var proxy   = mockingServiceClient.proxy    = '/proxy1/';
+      var baseUri = mockingServiceClient.baseUri  = 'http://host';
+      var path    = 'path';
+      var url     = proxy + baseUri + '/mocks/' + path;
 
       $window.RAML.Settings.proxy = '/proxy2/';
 

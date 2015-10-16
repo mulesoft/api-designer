@@ -11809,10 +11809,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     function mockingServiceClientFactory($http, $q, $window) {
       var self = this;
       self.proxy = null;
-      self.host = 'http://mocksvc.mulesoft.com';
-      self.base = '/mocks';
+      self.baseUri = 'http://mocksvc.mulesoft.com';
       self.buildURL = function buildURL() {
-        var url = self.host + self.base + [''].concat(Array.prototype.slice.call(arguments, 0)).join('/');
+        var url = self.baseUri + ['/mocks'].concat(Array.prototype.slice.call(arguments, 0)).join('/');
         var proxy = self.proxy || $window.RAML.Settings.proxy;
         if (proxy) {
           url = proxy + url;
@@ -12014,8 +12013,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       }
       $scope.options = [
         {
-          name: '.zip file',
-          type: 'zip',
+          name: 'file',
+          type: 'file',
           callback: importFile
         },
         {
@@ -12439,7 +12438,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         reader.onerror = function () {
           return deferred.reject(reader.error);
         };
-        reader.readAsArrayBuffer(file);
+        reader.readAsText(file);
         return deferred.promise;
       };
       /**
@@ -12686,10 +12685,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   angular.module('ramlEditorApp').constant('UPDATE_RESPONSIVENESS_INTERVAL', 800).service('ramlParserFileReader', [
     '$http',
     '$q',
+    '$window',
     'ramlParser',
     'ramlRepository',
     'safeApplyWrapper',
-    function ($http, $q, ramlParser, ramlRepository, safeApplyWrapper) {
+    function ($http, $q, $window, ramlParser, ramlRepository, safeApplyWrapper) {
       function loadFile(path) {
         return ramlRepository.loadFile({ path: path }).then(function success(file) {
           return file.contents;
@@ -12703,7 +12703,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return $q.reject('File with path "' + path + '" does not exist');
       }
       function readExtFile(path) {
-        return $http.get(path, { transformResponse: null }).then(function success(response) {
+        var proxy = $window.RAML.Settings.proxy || '';
+        var target = proxy + path;
+        return $http.get(target, { transformResponse: null }).then(function success(response) {
           return response.data;
         }, function failure(response) {
           var error = 'cannot fetch ' + path + ', check that the server is up and that CORS is enabled';
@@ -12737,7 +12739,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$prompt',
     '$confirm',
     '$modal',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal) {
+    'mockingServiceClient',
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -12958,6 +12961,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             return 'WARNING: You have unsaved changes. Those will be lost if you leave this page.';
           }
         };
+        if ($scope.mockingServiceBaseUri) {
+          mockingServiceClient.baseUri = $scope.mockingServiceBaseUri;
+        }
       }());
     }
   ]);
@@ -13518,7 +13524,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   angular.module('ramlEditorApp').directive('ramlEditor', function () {
     return {
       restrict: 'E',
-      scope: { mockingServiceDisabled: '=' },
+      scope: {
+        mockingServiceDisabled: '=',
+        mockingServiceBaseUri: '='
+      },
       templateUrl: 'views/raml-editor-main.tmpl.html',
       controller: 'ramlEditorMain'
     };
@@ -14555,7 +14564,7 @@ angular.module('ramlEditorApp').run([
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{data.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{data.message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="button" class="btn btn-primary" ng-click="$close()" ng-auto-focus="true">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/help.html', '<div class="modal-header">\n' + '    <h3><i class="fa fa-question-circle"></i> Help</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
-    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a .zip file to import.</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
