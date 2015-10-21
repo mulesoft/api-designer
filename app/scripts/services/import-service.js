@@ -23,7 +23,7 @@
           return self.importFile(directory, file);
         }
 
-        return self.readFileAsText(file)
+        return self.readFile(file)
           .then(function (contents) {
             return self.mergeZip(directory, contents);
           });
@@ -238,7 +238,7 @@
        * @param  {File}    file
        * @return {Promise}
        */
-      self.readFileAsText = function (file) {
+      self.readFile = function (file) {
         var deferred = $q.defer();
         var reader   = new $window.FileReader();
 
@@ -250,7 +250,11 @@
           return deferred.reject(reader.error);
         };
 
-        reader.readAsText(file);
+        if (self.isZip(file)) {
+          reader.readAsArrayBuffer(file);
+        } else {
+          reader.readAsText(file);
+        }
 
         return deferred.promise;
       };
@@ -302,7 +306,7 @@
        * @return {Promise}
        */
       function importFileToPath (directory, path, file) {
-        return self.readFileAsText(file)
+        return self.readFile(file)
           .then(function (contents) {
             if (self.isZip(file)) {
               // Remove the zip file name from the end of the path.

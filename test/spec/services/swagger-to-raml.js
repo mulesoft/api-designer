@@ -29,7 +29,7 @@ describe('swaggerToRAML', function () {
         };
       });
 
-      readFileAsTextStub = sinon.stub(importService, 'readFileAsText', function () {
+      readFileAsTextStub = sinon.stub(importService, 'readFile', function () {
         return $q.when('');
       });
     });
