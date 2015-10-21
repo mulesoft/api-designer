@@ -12,7 +12,7 @@
           return done(new Error('Invalid file location: ' + filename));
         }
 
-        return $http.get(filename, { transformResponse: false })
+        return $http.get(proxy + filename, { transformResponse: false })
           .then(function (response) {
             return done(null, response.data);
           })
@@ -38,7 +38,7 @@
       self.convert = function convert(url) {
         var deferred = $q.defer();
 
-        swaggerToRamlObject(proxy + url, reader, parseResult(deferred));
+        swaggerToRamlObject(url, reader, parseResult(deferred));
 
         return deferred.promise;
       };
