@@ -49,7 +49,7 @@
         if (!importService.isZip(file)) {
           deferred.reject(new Error('Invalid zip file'));
         } else {
-          importService.readFileAsText(file).then(function (contents) {
+          importService.readFile(file).then(function (contents) {
             var files = importService.parseZip(contents);
 
             swaggerToRamlObject.files(

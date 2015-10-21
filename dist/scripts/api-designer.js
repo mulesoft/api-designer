@@ -12211,7 +12211,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         if (!importService.isZip(file)) {
           deferred.reject(new Error('Invalid zip file'));
         } else {
-          importService.readFileAsText(file).then(function (contents) {
+          importService.readFile(file).then(function (contents) {
             var files = importService.parseZip(contents);
             swaggerToRamlObject.files(Object.keys(files), function (filename, done) {
               if (files.hasOwnProperty(filename)) {
@@ -12248,7 +12248,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         if (!self.isZip(file)) {
           return self.importFile(directory, file);
         }
-        return self.readFileAsText(file).then(function (contents) {
+        return self.readFile(file).then(function (contents) {
           return self.mergeZip(directory, contents);
         });
       };
@@ -12429,7 +12429,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
        * @param  {File}    file
        * @return {Promise}
        */
-      self.readFileAsText = function (file) {
+      self.readFile = function (file) {
         var deferred = $q.defer();
         var reader = new $window.FileReader();
         reader.onload = function () {
@@ -12438,7 +12438,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         reader.onerror = function () {
           return deferred.reject(reader.error);
         };
-        reader.readAsText(file);
+        if (self.isZip(file)) {
+          reader.readAsArrayBuffer(file);
+        } else {
+          reader.readAsText(file);
+        }
         return deferred.promise;
       };
       /**
@@ -12482,7 +12486,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
        * @return {Promise}
        */
       function importFileToPath(directory, path, file) {
-        return self.readFileAsText(file).then(function (contents) {
+        return self.readFile(file).then(function (contents) {
           if (self.isZip(file)) {
             // Remove the zip file name from the end of the path.
             var dirname = path.replace(/[\\\/][^\\\/]*$/, '');
