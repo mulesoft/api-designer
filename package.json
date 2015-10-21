@@ -1,6 +1,6 @@
 {
   "name": "api-designer",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A web editor for creating and sharing RAML API specifications",
   "repository": {
     "type": "git",
