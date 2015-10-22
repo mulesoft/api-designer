@@ -28,6 +28,9 @@
     <li ng-show="canExportFiles()" class="menu-item menu-item-ll">
       <raml-editor-export-files-button></raml-editor-export-files-button>
     </li>
+    <li class="menu-item menu-item-ll">
+      <raml-editor-help-button></raml-editor-help-button>
+    </li>
     <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>
     <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">
       <div class="title">Mocking Service</div>
@@ -38,9 +41,6 @@
           <label for="mockingServiceEnabled"></label>
         </div>
       </div>
-    </li>
-    <li class="menu-item menu-item-fr" ng-click="openHelp()">
-      <span><i class="fa fa-question-circle"></i> Help</span>
     </li>
   </ul>
 
