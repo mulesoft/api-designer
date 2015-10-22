@@ -26,33 +26,64 @@ describe('swaggerToRAML', function () {
 
   describe('parse zip files', function () {
     var parseZipStub;
-    var readFileAsTextStub;
+    var readFileStub;
 
-    beforeEach(function () {
-      parseZipStub = sinon.stub(importService, 'parseZip', function () {
-        return FILES;
+    describe('multi-file zip', function () {
+      beforeEach(function () {
+        parseZipStub = sinon.stub(importService, 'parseZip', function () {
+          return FILES;
+        });
+
+        readFileStub = sinon.stub(importService, 'readFile', function () {
+          return $q.when('');
+        });
       });
 
-      readFileAsTextStub = sinon.stub(importService, 'readFile', function () {
-        return $q.when('');
+      afterEach(function () {
+        parseZipStub.restore();
+        readFileStub.restore();
+      });
+
+      it('should respond with RAML', function () {
+        var spy     = sinon.spy();
+        var promise = swaggerToRAML.zip({ name: 'api.zip' });
+
+        promise.then(spy);
+
+        $rootScope.$digest();
+
+        spy.should.have.been.called.once;
+        spy.getCall(0).args[0].should.be.a('string').and.match(/^#%RAML 0.8/);
       });
     });
 
-    afterEach(function () {
-      parseZipStub.restore();
-      readFileAsTextStub.restore();
-    });
+    describe('single-file zip', function () {
+      beforeEach(function () {
+        parseZipStub = sinon.stub(importService, 'parseZip', function () {
+          return { 'pet-store-1.2.json': FILES.pet };
+        });
 
-    it('should respond with RAML', function () {
-      var spy     = sinon.spy();
-      var promise = swaggerToRAML.zip({ name: 'api.zip' });
+        readFileStub = sinon.stub(importService, 'readFile', function () {
+          return $q.when('');
+        });
+      });
 
-      promise.then(spy);
+      afterEach(function () {
+        parseZipStub.restore();
+        readFileStub.restore();
+      });
 
-      $rootScope.$digest();
+      it('should respond with RAML', function () {
+        var spy     = sinon.spy();
+        var promise = swaggerToRAML.zip({ name: 'api.zip' });
 
-      spy.should.have.been.called.once;
-      spy.getCall(0).args[0].should.be.a('string').and.match(/^#%RAML 0.8/);
+        promise.then(spy).catch(function (err) { console.log(err); });
+
+        $rootScope.$digest();
+
+        spy.should.have.been.called.once;
+        spy.getCall(0).args[0].should.be.a('string').and.match(/^#%RAML 0.8/);
+      });
     });
   });
 
