@@ -4068,6 +4068,17 @@ a.raml-console-resource-path-active {
   color: #585961;
 }
 
+.raml-console-resource-no-baseuri {
+  background-color: red;
+  margin-top: -1px;
+  font-family: Lato;
+  font-size: 13px;
+  padding: 3px;
+  color: white;
+  text-align: center;
+  text-rendering: optimizeLegibility;
+}
+
 .raml-console-resource-header {
   position: relative;
   padding-top: 8px;
@@ -5146,6 +5157,10 @@ a.raml-console-resource-path-active {
   color: #777;
 }
 
+.raml-console-sidebar-input-tooltip-container-enum {
+  margin-right: 19px;
+}
+
 .raml-console-sidebar-input-tooltip-container {
   position: absolute;
   right: 7px;
@@ -6170,6 +6185,250 @@ span.raml-console-side-bar-required-field {
 
 .raml-console-md-line-5 {
   margin-left: 72px;
+}
+
+.raml-console-marked-content table {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 20px;
+}
+
+.raml-console-marked-content table > thead > tr > th,
+.raml-console-marked-content table > tbody > tr > th,
+.raml-console-marked-content table > tfoot > tr > th,
+.raml-console-marked-content table > thead > tr > td,
+.raml-console-marked-content table > tbody > tr > td,
+.raml-console-marked-content table > tfoot > tr > td {
+  padding: 10px;
+  line-height: 1.42857143;
+  vertical-align: top;
+  border-top: 1px solid #e0e0e0;
+}
+
+.raml-console-marked-content table > thead > tr > th {
+  vertical-align: bottom;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.raml-console-marked-content table > caption + thead > tr:first-child > th,
+.raml-console-marked-content table > colgroup + thead > tr:first-child > th,
+.raml-console-marked-content table > thead:first-child > tr:first-child > th,
+.raml-console-marked-content table > caption + thead > tr:first-child > td,
+.raml-console-marked-content table > colgroup + thead > tr:first-child > td,
+.raml-console-marked-content table > thead:first-child > tr:first-child > td {
+  border-top: 0;
+}
+
+.raml-console-marked-content table > tbody + tbody {
+  border-top: 2px solid #e0e0e0;
+}
+
+.raml-console-marked-content table .raml-console-table {
+  background-color: #ffffff;
+}
+
+.raml-console-marked-content table-hover > tbody > tr:hover {
+  background-color: #f2f2f2;
+}
+
+.raml-console-marked-content table > thead > tr > td.raml-console-active,
+.raml-console-marked-content table > tbody > tr > td.raml-console-active,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-active,
+.raml-console-marked-content table > thead > tr > th.raml-console-active,
+.raml-console-marked-content table > tbody > tr > th.raml-console-active,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-active,
+.raml-console-marked-content table > thead > tr.raml-console-active > td,
+.raml-console-marked-content table > tbody > tr.raml-console-active > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-active > td,
+.raml-console-marked-content table > thead > tr.raml-console-active > th,
+.raml-console-marked-content table > tbody > tr.raml-console-active > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-active > th,
+.raml-console-marked-content table > thead > tr > td.raml-console-active,
+.raml-console-marked-content table > tbody > tr > td.raml-console-active,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-active,
+.raml-console-marked-content table > thead > tr > th.raml-console-active,
+.raml-console-marked-content table > tbody > tr > th.raml-console-active,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-active,
+.raml-console-marked-content table > thead > tr.raml-console-active > td,
+.raml-console-marked-content table > tbody > tr.raml-console-active > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-active > td,
+.raml-console-marked-content table > thead > tr.raml-console-active > th,
+.raml-console-marked-content table > tbody > tr.raml-console-active > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-active > th {
+  background-color: #f2f2f2;
+}
+
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-active:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-active:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-active:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-active,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-active:hover > th,
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-active:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-active:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-active:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-active,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-active:hover > th {
+  background-color: #e5e5e5;
+}
+
+.raml-console-marked-content table > thead > tr > td.raml-console-success,
+.raml-console-marked-content table > tbody > tr > td.raml-console-success,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-success,
+.raml-console-marked-content table > thead > tr > th.raml-console-success,
+.raml-console-marked-content table > tbody > tr > th.raml-console-success,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-success,
+.raml-console-marked-content table > thead > tr.raml-console-success > td,
+.raml-console-marked-content table > tbody > tr.raml-console-success > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-success > td,
+.raml-console-marked-content table > thead > tr.raml-console-success > th,
+.raml-console-marked-content table > tbody > tr.raml-console-success > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-success > th,
+.raml-console-marked-content table > thead > tr > td.raml-console-success,
+.raml-console-marked-content table > tbody > tr > td.raml-console-success,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-success,
+.raml-console-marked-content table > thead > tr > th.raml-console-success,
+.raml-console-marked-content table > tbody > tr > th.raml-console-success,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-success,
+.raml-console-marked-content table > thead > tr.raml-console-success > td,
+.raml-console-marked-content table > tbody > tr.raml-console-success > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-success > td,
+.raml-console-marked-content table > thead > tr.raml-console-success > th,
+.raml-console-marked-content table > tbody > tr.raml-console-success > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-success > th {
+  background-color: #dff0d8;
+}
+
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-success:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-success:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-success:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-success,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-success:hover > th,
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-success:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-success:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-success:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-success,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-success:hover > th {
+  background-color: #d0e9c6;
+}
+
+.raml-console-marked-content table > thead > tr > td.raml-console-info,
+.raml-console-marked-content table > tbody > tr > td.raml-console-info,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-info,
+.raml-console-marked-content table > thead > tr > th.raml-console-info,
+.raml-console-marked-content table > tbody > tr > th.raml-console-info,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-info,
+.raml-console-marked-content table > thead > tr.raml-console-info > td,
+.raml-console-marked-content table > tbody > tr.raml-console-info > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-info > td,
+.raml-console-marked-content table > thead > tr.raml-console-info > th,
+.raml-console-marked-content table > tbody > tr.raml-console-info > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-info > th,
+.raml-console-marked-content table > thead > tr > td.raml-console-info,
+.raml-console-marked-content table > tbody > tr > td.raml-console-info,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-info,
+.raml-console-marked-content table > thead > tr > th.raml-console-info,
+.raml-console-marked-content table > tbody > tr > th.raml-console-info,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-info,
+.raml-console-marked-content table > thead > tr.raml-console-info > td,
+.raml-console-marked-content table > tbody > tr.raml-console-info > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-info > td,
+.raml-console-marked-content table > thead > tr.raml-console-info > th,
+.raml-console-marked-content table > tbody > tr.raml-console-info > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-info > th {
+  background-color: #d9edf7;
+}
+
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-info:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-info:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-info:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-info,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-info:hover > th,
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-info:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-info:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-info:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-info,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-info:hover > th {
+  background-color: #c4e3f3;
+}
+
+.raml-console-marked-content table > thead > tr > td.raml-console-warning,
+.raml-console-marked-content table > tbody > tr > td.raml-console-warning,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-warning,
+.raml-console-marked-content table > thead > tr > th.raml-console-warning,
+.raml-console-marked-content table > tbody > tr > th.raml-console-warning,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-warning,
+.raml-console-marked-content table > thead > tr.raml-console-warning > td,
+.raml-console-marked-content table > tbody > tr.raml-console-warning > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-warning > td,
+.raml-console-marked-content table > thead > tr.raml-console-warning > th,
+.raml-console-marked-content table > tbody > tr.raml-console-warning > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-warning > th,
+.raml-console-marked-content table > thead > tr > td.raml-console-warning,
+.raml-console-marked-content table > tbody > tr > td.raml-console-warning,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-warning,
+.raml-console-marked-content table > thead > tr > th.raml-console-warning,
+.raml-console-marked-content table > tbody > tr > th.raml-console-warning,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-warning,
+.raml-console-marked-content table > thead > tr.raml-console-warning > td,
+.raml-console-marked-content table > tbody > tr.raml-console-warning > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-warning > td,
+.raml-console-marked-content table > thead > tr.raml-console-warning > th,
+.raml-console-marked-content table > tbody > tr.raml-console-warning > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-warning > th {
+  background-color: #fcf8e3;
+}
+
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-warning:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-warning:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-warning:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-warning,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-warning:hover > th,
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-warning:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-warning:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-warning:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-warning,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-warning:hover > th {
+  background-color: #faf2cc;
+}
+
+.raml-console-marked-content table > thead > tr > td.raml-console-danger,
+.raml-console-marked-content table > tbody > tr > td.raml-console-danger,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-danger,
+.raml-console-marked-content table > thead > tr > th.raml-console-danger,
+.raml-console-marked-content table > tbody > tr > th.raml-console-danger,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-danger,
+.raml-console-marked-content table > thead > tr.raml-console-danger > td,
+.raml-console-marked-content table > tbody > tr.raml-console-danger > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-danger > td,
+.raml-console-marked-content table > thead > tr.raml-console-danger > th,
+.raml-console-marked-content table > tbody > tr.raml-console-danger > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-danger > th,
+.raml-console-marked-content table > thead > tr > td.raml-console-danger,
+.raml-console-marked-content table > tbody > tr > td.raml-console-danger,
+.raml-console-marked-content table > tfoot > tr > td.raml-console-danger,
+.raml-console-marked-content table > thead > tr > th.raml-console-danger,
+.raml-console-marked-content table > tbody > tr > th.raml-console-danger,
+.raml-console-marked-content table > tfoot > tr > th.raml-console-danger,
+.raml-console-marked-content table > thead > tr.raml-console-danger > td,
+.raml-console-marked-content table > tbody > tr.raml-console-danger > td,
+.raml-console-marked-content table > tfoot > tr.raml-console-danger > td,
+.raml-console-marked-content table > thead > tr.raml-console-danger > th,
+.raml-console-marked-content table > tbody > tr.raml-console-danger > th,
+.raml-console-marked-content table > tfoot > tr.raml-console-danger > th {
+  background-color: #f2dede;
+}
+
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-danger:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-danger:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-danger:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-danger,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-danger:hover > th,
+.raml-console-marked-content table-hover > tbody > tr > td.raml-console-danger:hover,
+.raml-console-marked-content table-hover > tbody > tr > th.raml-console-danger:hover,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-danger:hover > td,
+.raml-console-marked-content table-hover > tbody > tr:hover > .raml-console-danger,
+.raml-console-marked-content table-hover > tbody > tr.raml-console-danger:hover > th {
+  background-color: #ebcccc;
 }
 
 /*
