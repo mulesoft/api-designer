@@ -61,7 +61,7 @@
             e.preventDefault();
             e.stopPropagation();
 
-            fn(scope, { $event: e });
+            fn(scope, { $event: e.originalEvent });
           });
         });
       };
