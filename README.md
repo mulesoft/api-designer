@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.org/mulesoft/api-designer.png)](https://travis-ci.org/mulesoft/api-designer)
 [![Dependency Status](https://david-dm.org/mulesoft/api-designer.png)](https://david-dm.org/mulesoft/api-designer#info=dependencies)
-[![DevDependency Status](https://david-dm.org/mulesoft/api-designer/dev-status.png)](https://david-dm.org/mulesoft/api-designer#info=devDependencies) [![npm version](https://badge.fury.io/js/api-designer.svg)](https://badge.fury.io/js/api-designer)
+[![DevDependency Status](https://david-dm.org/mulesoft/api-designer/dev-status.png)](https://david-dm.org/mulesoft/api-designer#info=devDependencies) [![npm version](https://badge.fury.io/js/api-designer.svg)](https://badge.fury.io/js/api-designer) [![Bower version](https://badge.fury.io/bo/api-designer.svg)](https://badge.fury.io/bo/api-designer)
 
 **API Designer** is a standalone/embeddable editor for [RAML](http://raml.org) (RESTful API Modeling Language) written in JavaScript using Angular.JS. By default, the editor uses an in-browser filesystem stored in HTML5 Localstorage.
 
