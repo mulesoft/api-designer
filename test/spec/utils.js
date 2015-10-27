@@ -177,4 +177,26 @@ describe('Utils module', function () {
     });
 
   });
+
+  describe('resolveUri', function () {
+    var $window;
+    var resolveUri;
+
+    beforeEach(inject(function ($injector) {
+      $window    = $injector.get('$window');
+      resolveUri = $injector.get('resolveUri');
+    }));
+
+    it('should return same value when it is URI (starts with scheme + ://)', function () {
+      resolveUri('http://1.2.3.4/test').should.be.equal('http://1.2.3.4/test');
+    });
+
+    it('should append origin to value when it is root-absolute path (starts with /)', function () {
+      resolveUri('/test').should.be.equal($window.location.origin + '/test');
+    });
+
+    it('should append origin and pathname to value when it is relative path (not URI nor starts with /)', function () {
+      resolveUri('test').should.be.equal($window.location.origin + '/test');
+    });
+  });
 });

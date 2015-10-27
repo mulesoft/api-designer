@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .service('mockingServiceClient', function mockingServiceClientFactory($http, $q, $window) {
+    .service('mockingServiceClient', function mockingServiceClientFactory($http, $q, $window, resolveUri) {
       var self = this;
 
       self.proxy   = null;
@@ -13,7 +13,7 @@
         var proxy = self.proxy || $window.RAML.Settings.proxy;
 
         if (proxy) {
-          url = proxy + url;
+          url = proxy + resolveUri(url);
         }
 
         return url;

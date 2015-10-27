@@ -174,5 +174,20 @@
         }
       };
     })
+    .factory('resolveUri', function resolveUri($window) {
+      return function resolveUri(uri) {
+        // starts with "http://" OR "https://" OR <scheme>://"
+        if (/^\w+:\/\//.test(uri)) {
+          return uri;
+        }
+
+        // starts with "/"
+        if (uri[0] === '/') {
+          return $window.location.origin + uri;
+        }
+
+        return $window.location.origin + $window.location.pathname.split('/').slice(0, -1).concat(uri).join('/');
+      };
+    })
   ;
 })();

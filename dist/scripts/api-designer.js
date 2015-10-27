@@ -9268,7 +9268,22 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         document.onkeydown = keyDown;
       }
     };
-  });
+  }).factory('resolveUri', [
+    '$window',
+    function resolveUri($window) {
+      return function resolveUri(uri) {
+        // starts with "http://" OR "https://" OR <scheme>://"
+        if (/^\w+:\/\//.test(uri)) {
+          return uri;
+        }
+        // starts with "/"
+        if (uri[0] === '/') {
+          return $window.location.origin + uri;
+        }
+        return $window.location.origin + $window.location.pathname.split('/').slice(0, -1).concat(uri).join('/');
+      };
+    }
+  ]);
   ;
 }());
 (function () {
@@ -11806,7 +11821,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$http',
     '$q',
     '$window',
-    function mockingServiceClientFactory($http, $q, $window) {
+    'resolveUri',
+    function mockingServiceClientFactory($http, $q, $window, resolveUri) {
       var self = this;
       self.proxy = null;
       self.baseUri = 'http://mocksvc.mulesoft.com';
@@ -11814,7 +11830,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         var url = self.baseUri + ['/mocks'].concat(Array.prototype.slice.call(arguments, 0)).join('/');
         var proxy = self.proxy || $window.RAML.Settings.proxy;
         if (proxy) {
-          url = proxy + url;
+          url = proxy + resolveUri(url);
         }
         return url;
       };
