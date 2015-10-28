@@ -40,6 +40,7 @@ div[role=raml-editor] .hide-display {
   display: none !important;
 }
 div[role=raml-editor] > div[role=notifications] {
+  z-index: 10000;
   background-color: #caccd4;
   position: absolute;
   top: 0px;

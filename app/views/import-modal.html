@@ -17,6 +17,8 @@
         <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
 
         <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">
+
+        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">
       </div>
     </div>
 
@@ -28,8 +30,16 @@
       <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>
     </div>
 
+    <div ng-if="submittedType === 'zip'">
+      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>
+    </div>
+
     <div ng-if="mode.type === 'file'">
       <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>
+    </div>
+
+    <div ng-if="mode.type !== 'file'">
+      <p>Note: Currently only supports Swagger v1.2</p>
     </div>
   </div>
 
