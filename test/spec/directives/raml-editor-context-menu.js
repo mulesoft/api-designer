@@ -100,7 +100,7 @@ describe('ramlEditorContextMenu', function() {
         confirmStub.returns(promise.stub());
         removeItem.dispatchEvent(events.click());
 
-        confirmStub.should.have.been.calledWith('Are you sure you want to delete "' + file.name + '"?', 'Remove file');
+        confirmStub.should.have.been.calledWith('Are you sure you want to delete "' + file.name + '"?', 'Delete file',{closeButtonCssClass: 'btn-danger', closeButtonLabel: 'Delete' });
       });
 
       describe('upon success', function () {

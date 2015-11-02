@@ -68,14 +68,19 @@
 
             if (target.isDirectory) {
               message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
-              title   = 'Remove folder';
+              title   = 'Delete folder';
             }
             else {
               message = 'Are you sure you want to delete "' + target.name + '"?';
-              title   = 'Remove file';
+              title   = 'Delete file';
             }
 
-            return confirmModal.open(message, title)
+            return confirmModal
+              .open(
+                message,
+                title,
+                { closeButtonLabel: 'Delete', closeButtonCssClass: 'btn-danger' }
+              )
               .then(function () {
                 return ramlRepository.remove(target);
               })
