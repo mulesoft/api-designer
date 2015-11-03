@@ -12104,21 +12104,35 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 (function () {
   'use strict';
   angular.module('ramlEditorApp').service('confirmModal', [
+    '$rootScope',
     '$modal',
-    function confirmModal($modal) {
+    function confirmModal($rootScope, $modal) {
       var self = this;
-      self.open = function open(message, title) {
+      /**
+       * @param {String} title
+       * @param {String} message
+       * @param {Object} [options = {canDiscard, closeButtonLabel, discardButtonLabel, dismissButtonLabel, closeButtonCssClass}]
+       */
+      self.open = function open(message, title, options) {
+        options = angular.extend({
+          canDiscard: false,
+          closeButtonLabel: 'OK',
+          discardButtonLabel: 'Discard',
+          dismissButtonLabel: 'Cancel',
+          closeButtonCssClass: 'btn-primary'
+        }, options);
         return $modal.open({
           templateUrl: 'views/confirm-modal.html',
           controller: 'ConfirmController',
-          resolve: {
-            message: function messageResolver() {
-              return message;
-            },
-            title: function titleResolver() {
-              return title;
-            }
-          }
+          scope: angular.extend($rootScope.$new(), {
+            title: title,
+            message: message,
+            canDiscard: options.canDiscard,
+            closeButtonLabel: options.closeButtonLabel,
+            discardButtonLabel: options.discardButtonLabel,
+            dismissButtonLabel: options.dismissButtonLabel,
+            closeButtonCssClass: options.closeButtonCssClass
+          })
         }).result;
         ;
       };
@@ -12127,12 +12141,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   ]).controller('ConfirmController', [
     '$modalInstance',
     '$scope',
-    'message',
-    'title',
-    function ConfirmController($modalInstance, $scope, message, title) {
-      $scope.data = {
-        message: message,
-        title: title
+    function ConfirmController($modalInstance, $scope) {
+      $scope.discard = function discard() {
+        $modalInstance.dismiss(angular.extend(new Error(), { discard: true }));
       };
     }
   ]);
@@ -13694,12 +13705,15 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               var title;
               if (target.isDirectory) {
                 message = 'Are you sure you want to delete "' + target.name + '" and all its contents?';
-                title = 'Remove folder';
+                title = 'Delete folder';
               } else {
                 message = 'Are you sure you want to delete "' + target.name + '"?';
-                title = 'Remove file';
+                title = 'Delete file';
               }
-              return confirmModal.open(message, title).then(function () {
+              return confirmModal.open(message, title, {
+                closeButtonLabel: 'Delete',
+                closeButtonCssClass: 'btn-danger'
+              }).then(function () {
                 return ramlRepository.remove(target);
               });
               ;
@@ -14083,6 +14097,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               });
             });
           };
+          scope.$on('event:save-all', function () {
+            scope.saveAllFiles();
+          });
         }
       };
     }
@@ -14617,7 +14634,7 @@ angular.module('ramlEditorApp').run([
   '$templateCache',
   function ($templateCache) {
     'use strict';
-    $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{data.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{data.message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="button" class="btn btn-primary" ng-click="$close()" ng-auto-focus="true">OK</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently only supports Swagger v1.2</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '</span>\n' + '<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>\n' + '  <li role="context-menu-item"><a href="http://raml.org/spec" target="_blank">Language Spec</a></li>\n' + '  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <hr class="line-with-linear-gradient">\n' + '  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>\n' + '</ul>\n');
