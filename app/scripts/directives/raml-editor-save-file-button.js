@@ -59,6 +59,10 @@
                 });
               });
           };
+
+          scope.$on('event:save-all', function() {
+            scope.saveAllFiles();
+          });
         }
       };
     })
