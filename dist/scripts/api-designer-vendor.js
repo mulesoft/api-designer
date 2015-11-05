@@ -97549,6 +97549,11 @@ exports.javascript = require('./javascript');
         $scope.documentationCollapsed = false;
         $scope.credentials = {};
         $scope.allowUnsafeMarkdown    = false;
+        $scope.disableTryIt           = false;
+
+        if ($attrs.hasOwnProperty('disableTryIt')) {
+          $scope.disableTryIt = true;
+        }
 
         if ($attrs.hasOwnProperty('allowUnsafeMarkdown')) {
           $scope.allowUnsafeMarkdown = true;
@@ -97623,18 +97628,14 @@ exports.javascript = require('./javascript');
 
           if ($this.hasClass('raml-console-resources-expanded')) {
             $scope[flagKey] = true;
-            jQuery('.raml-console-resources-' + flagKey).find('ol.raml-console-resource-list').velocity('slideUp', {
-              duration: 200
-            });
           } else {
             if (flagKey === 'resourcesCollapsed') {
               jQuery('.raml-console-resource-description').removeClass('ng-hide');
             }
             $scope[flagKey] = false;
-            jQuery('.raml-console-resources-' + flagKey).find('ol.raml-console-resource-list').velocity('slideDown', {
-              duration: 200
-            });
           }
+
+          jQuery('.raml-console-resources-' + flagKey).find('ol.raml-console-resource-list').toggleClass('raml-console-is-collapsed');
 
           toggleCollapsed($scope[flagKey], collection);
         };
@@ -101355,7 +101356,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
     "\n" +
     "    <sidebar ng-show=\"raml.baseUri\"></sidebar>\n" +
     "\n" +
-    "    <div class=\"raml-console-sidebar-controls raml-console-sidebar-controls-collapse\" ng-click=\"collapseSidebar($event)\" style=\"right: -1px; position: absolute;\"ng-hide=\"!raml.baseUri\">\n" +
+    "    <div class=\"raml-console-sidebar-controls raml-console-sidebar-controls-collapse\" ng-click=\"collapseSidebar($event)\" style=\"right: -1px; position: absolute;\"ng-hide=\"!raml.baseUri\" ng-if=\"!disableTryIt\">\n" +
     "      <button class=\"raml-console-collapse\" style=\"height: 21px; margin-top: 9px;\">\n" +
     "        <svg style=\"transform: rotate(-180deg); display: inline;\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" x=\"0px\" y=\"0px\" viewBox=\"0 0 612 792\" enable-background=\"new 0 0 612 792\" xml:space=\"preserve\">\n" +
     "          <g id=\"Layer_3\">\n" +
@@ -101439,7 +101440,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
 
   $templateCache.put('directives/sidebar.tpl.html',
-    "  <form name=\"form\" class=\"raml-console-sidebar\" novalidate ng-class=\"{ 'raml-console-is-collapsed': singleView }\">\n" +
+    "  <form name=\"form\" class=\"raml-console-sidebar\" novalidate ng-class=\"{ 'raml-console-is-collapsed': singleView }\" ng-if=\"!disableTryIt\">\n" +
     "    <div class=\"raml-console-sidebar-flex-wrapper\">\n" +
     "      <div class=\"raml-console-sidebar-content\">\n" +
     "        <header class=\"raml-console-sidebar-row raml-console-sidebar-header\">\n" +
