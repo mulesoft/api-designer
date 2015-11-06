@@ -96900,16 +96900,16 @@ exports.javascript = require('./javascript');
         }
 
         function validateForm(form) {
-          var errors    = form.$error;
+          var errors    = form.form.$error;
           // var uriParams = $scope.context.uriParameters.plain;
           var flag      = false;
 
-          Object.keys(form.$error).map(function (key) {
+          Object.keys(form.form.$error).map(function (key) {
             for (var i = 0; i < errors[key].length; i++) {
               var fieldName = errors[key][i].$name;
               // var fieldValue = form[fieldName].$viewValue;
 
-              form[fieldName].$setViewValue(form[fieldName].$viewValue);
+              form.form[fieldName].$setViewValue(form.form[fieldName].$viewValue);
 
               // Enforce request without URI parameters
               // if (typeof uriParams[fieldName] !== 'undefined' && (typeof fieldValue === 'undefined' || fieldValue === '')) {
@@ -97121,6 +97121,10 @@ exports.javascript = require('./javascript');
           if (type === 'x-custom') {
             readCustomSchemeInfo(name);
           }
+        };
+
+        $scope.setFormScope = function (form) {
+          $scope.form = form;
         };
 
         $scope.tryIt = function ($event) {
@@ -101440,7 +101444,7 @@ angular.module('ramlConsoleApp').run(['$templateCache', function($templateCache)
 
 
   $templateCache.put('directives/sidebar.tpl.html',
-    "  <form name=\"form\" class=\"raml-console-sidebar\" novalidate ng-class=\"{ 'raml-console-is-collapsed': singleView }\" ng-if=\"!disableTryIt\">\n" +
+    "  <form name=\"form\" class=\"raml-console-sidebar\" novalidate ng-class=\"{ 'raml-console-is-collapsed': singleView }\" ng-if=\"!disableTryIt\" ng-init=\"setFormScope(this)\">\n" +
     "    <div class=\"raml-console-sidebar-flex-wrapper\">\n" +
     "      <div class=\"raml-console-sidebar-content\">\n" +
     "        <header class=\"raml-console-sidebar-row raml-console-sidebar-header\">\n" +
