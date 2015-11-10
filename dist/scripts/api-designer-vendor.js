@@ -97069,7 +97069,7 @@ exports.javascript = require('./javascript');
         }
 
         function handleResponse(jqXhr, err) {
-          $scope.response.status = jqXhr ? jqXhr.status : err ? err.status : 0;
+          $scope.response.status = jqXhr ? jqXhr.status : err ? (err.status ? err.status : err.message) : 0;
 
           if (jqXhr) {
             $scope.response.headers = parseHeaders(jqXhr.getAllResponseHeaders());
