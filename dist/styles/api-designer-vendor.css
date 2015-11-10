@@ -2442,11 +2442,15 @@ span.CodeMirror-selectedtext { background: none; }
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
 }
 
-input.ng-invalid {
+/*input.ng-dirty.ng-invalid {
+  border: 1px solid red;
+}*/
+
+input.ng-dirty.ng-invalid-required {
   border: 1px solid red;
 }
 
-input.ng-invalid-required + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-required + span.raml-console-field-validation-error::after {
   content: 'Required';
   color: white;
   position: absolute;
@@ -2455,6 +2459,10 @@ input.ng-invalid-required + span.raml-console-field-validation-error::after {
   background-color: red;
   width: 100%;
   text-align: center;
+}
+
+input.ng-dirty.ng-invalid-min-length {
+  border: 1px solid red;
 }
 
 input.ng-invalid-min-length + span.raml-console-field-validation-error::after {
@@ -2468,7 +2476,11 @@ input.ng-invalid-min-length + span.raml-console-field-validation-error::after {
   text-align: center;
 }
 
-input.ng-invalid-max-length + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-max-length {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-max-length + span.raml-console-field-validation-error::after {
   content: 'Invalid max length';
   color: white;
   position: absolute;
@@ -2479,7 +2491,11 @@ input.ng-invalid-max-length + span.raml-console-field-validation-error::after {
   text-align: center;
 }
 
-input.ng-invalid-enum + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-enum {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-enum + span.raml-console-field-validation-error::after {
   content: 'Invalid enum value';
   color: white;
   position: absolute;
@@ -2490,7 +2506,11 @@ input.ng-invalid-enum + span.raml-console-field-validation-error::after {
   text-align: center;
 }
 
-input.ng-invalid-minimum + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-minimum {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-minimum + span.raml-console-field-validation-error::after {
   content: 'Invalid minimum';
   color: white;
   position: absolute;
@@ -2501,7 +2521,11 @@ input.ng-invalid-minimum + span.raml-console-field-validation-error::after {
   text-align: center;
 }
 
-input.ng-invalid-maximum + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-maximum {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-maximum + span.raml-console-field-validation-error::after {
   content: 'Invalid maximum';
   color: white;
   position: absolute;
@@ -2512,7 +2536,11 @@ input.ng-invalid-maximum + span.raml-console-field-validation-error::after {
   text-align: center;
 }
 
-input.ng-invalid-type + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-type {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-type + span.raml-console-field-validation-error::after {
   content: 'Invalid type';
   color: white;
   position: absolute;
@@ -2523,7 +2551,11 @@ input.ng-invalid-type + span.raml-console-field-validation-error::after {
   text-align: center;
 }
 
-input.ng-invalid-pattern + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-pattern {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-pattern + span.raml-console-field-validation-error::after {
   content: 'Invalid pattern';
   color: white;
   position: absolute;
@@ -2534,7 +2566,11 @@ input.ng-invalid-pattern + span.raml-console-field-validation-error::after {
   text-align: center;
 }
 
-input.ng-invalid-repeat + span.raml-console-field-validation-error::after {
+input.ng-dirty.ng-invalid-repeat {
+  border: 1px solid red;
+}
+
+input.ng-dirty.ng-invalid-repeat + span.raml-console-field-validation-error::after {
   content: 'Invalid repeat';
   color: white;
   position: absolute;

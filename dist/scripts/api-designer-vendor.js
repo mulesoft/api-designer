@@ -97149,6 +97149,11 @@ exports.javascript = require('./javascript');
 
           keys.forEach(function (fieldName) {
             var value = angular.copy(form.form[fieldName].$viewValue);
+
+            value = value || '';
+
+            console.log(value);
+
             form.form[fieldName].$setViewValue(value);
           });
 
