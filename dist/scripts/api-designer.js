@@ -12554,7 +12554,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function importZipFiles(directory, files) {
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
-              return self.createFile(directory, name, files[name]);
+              return self.createFile(directory, name, files[name]).then(function (file) {
+                return ramlRepository.saveFile(file);
+              });
             };
           });
         return promiseChain(imports);
