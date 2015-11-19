@@ -334,7 +334,10 @@
           .filter(canImport)
           .map(function (name) {
             return function () {
-              return self.createFile(directory, name, files[name]);
+              return self.createFile(directory, name, files[name])
+                .then(function (file) {
+                  return ramlRepository.saveFile(file);
+                });
             };
           });
 

@@ -21,6 +21,7 @@ describe('importService', function () {
     var zipStub;
     var getByPathStub;
     var createFileStub;
+    var saveFileStub;
     var checkExistenceStub;
 
     beforeEach(function () {
@@ -54,6 +55,7 @@ describe('importService', function () {
       }
 
       createFileStub = sinon.stub(ramlRepository, 'createFile', resolve);
+      saveFileStub = sinon.stub(ramlRepository, 'saveFile', resolve);
       checkExistenceStub = sinon.stub(importService, 'checkExistence', resolve);
     });
 
@@ -74,6 +76,7 @@ describe('importService', function () {
           $rootScope.$digest();
 
           createFileStub.should.have.callCount(3);
+          saveFileStub.should.have.callCount(3);
 
           createFileStub.should.have.been.calledWith(root, '/api.raml');
           createFileStub.should.have.been.calledWith(root, '/examples/account/item.json');
