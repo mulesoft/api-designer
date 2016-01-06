@@ -97,6 +97,7 @@ module.exports = function (grunt) {
               lrSnippet,
 
               connect().use('/',                 connect.static(yeomanConfig.app)),
+              connect().use('/.tmp',             connect.static('./.tmp')),
               connect().use('/bower_components', connect.static('./bower_components')),
               connect().use('/authentication',   connect.static('./bower_components/api-console/dist/authentication')),
               connect().use('/proxy/',           proxy())
@@ -307,6 +308,20 @@ module.exports = function (grunt) {
       saucelabs: {
         configFile: 'scenario/support/saucelabs.conf.js'
       }
+    },
+
+    browserify: {
+      jsTraverse: {
+        options: {
+          browserifyOptions: {
+            standalone: 'jsTraverse.traverse'
+          }
+        },
+
+        files: {
+          '.tmp/js-traverse/js-traverse.js': 'node_modules/traverse/index.js'
+        }
+      }
     }
   });
 
@@ -327,6 +342,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('server', [
     'jshint-once',
+    'browserify:jsTraverse',
     'less-and-autoprefixer',
     'connect:livereload',
     'open',
@@ -336,6 +352,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'jshint-once',
     'clean:build',
+    'browserify:jsTraverse',
     'useminPrepare',
     'less-and-autoprefixer',
     'ngtemplates',

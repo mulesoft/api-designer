@@ -2,7 +2,11 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .service('mockingService', function mockingServiceFactory(mockingServiceClient, ramlRepository) {
+    .service('mockingService', function mockingServiceFactory(
+      mockingServiceClient,
+      mockingServiceUtils,
+      ramlRepository
+    ) {
       var self = this;
 
       function getMockMeta(file) {
@@ -30,22 +34,31 @@
       };
 
       self.createMock = function createMock(file, raml) {
-        return mockingServiceClient.createMock({raml: file.contents, json: raml})
-          .then(function success(mock) {
+        return dereferenceRaml(raml)
+          .then(function () {
+            return mockingServiceClient.createMock({
+              raml: file.contents,
+              json: raml
+            });
+          })
+          .then(function (mock) {
             return setMockMeta(file, mock);
           })
         ;
       };
 
       self.updateMock = function updateMock(file, raml) {
-        return getMockMeta(file)
-          .then(function success(mock) {
+        return dereferenceRaml(raml)
+          .then(function () {
+            return getMockMeta(file);
+          })
+          .then(function (mock) {
             return mock && mockingServiceClient.updateMock(angular.extend(mock, {
               raml: file.contents,
               json: raml
             }));
           })
-          .then(function success(mock) {
+          .then(function (mock) {
             return setMockMeta(file, mock);
           })
         ;
@@ -61,6 +74,16 @@
           })
         ;
       };
+
+      // ---
+
+      function dereferenceRaml(raml) {
+        return mockingServiceUtils.dereference(raml)
+          .catch(function (error) {
+            console.error('dereferenceRaml failed', error.stack);
+          })
+        ;
+      }
     })
   ;
 })();

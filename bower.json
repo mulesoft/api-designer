@@ -18,7 +18,8 @@
     "raml-grammar": "mulesoft/raml-grammar#cfc1e2bf2d0f7796848294dde61e821a52204a3d",
     "raml-js-parser": "raml-org/raml-js-parser#e1513e34388d6bb6558f5cb5b221c19f90e225e5",
     "raml-object-to-raml": "mulesoft/raml-object-to-raml#33ff487f7a3ec27c82e109e09f89017eb9fa3cd1",
-    "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#ee0f609a7bd72a1cb2d69760dae88eeef6216a28"
+    "swagger-to-raml-object": "mulesoft/swagger-to-raml-object#ee0f609a7bd72a1cb2d69760dae88eeef6216a28",
+    "json-schema-ref-parser": "xaka/json-schema-ref-parser#features/override-internal-reader"
   },
   "devDependencies": {
     "angular-mocks": ">=1.2.0 <1.4.0",
