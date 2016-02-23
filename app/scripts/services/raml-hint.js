@@ -130,13 +130,23 @@
        */
       hinter.getSuggestions = function getSuggestions(editor) {
         if (hinter.shouldSuggestVersion(editor)) {
-          return [{
-            key:     '#%RAML 0.8',
-            metadata: {
-              category: 'main',
-              isText:   true
+          return [
+            {
+              key:     '#%RAML 0.8',
+              metadata: {
+                category: 'main',
+                isText:   true
+              }
+            },
+
+            {
+              key:     '#%RAML 1.0',
+              metadata: {
+                category: 'main',
+                isText:   true
+              }
             }
-          }];
+          ];
         }
 
         //Pivotal 61664576: We use the DOM API to check to see if the current node or any
