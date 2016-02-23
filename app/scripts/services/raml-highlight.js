@@ -34,7 +34,7 @@
         state.escaped = false;
 
         /* RAML tag */
-        if (ch === '#' && stream.string.trim() === '#%RAML 0.8') {
+        if (ch === '#' && /^#%RAML (0\.8|1\.0)$/.test(stream.string.trim())) {
           stream.skipToEnd();
           return 'raml-tag';
         }
