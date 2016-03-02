@@ -3,6 +3,7 @@
 
   angular.module('ramlEditorApp')
     .service('importService', function importServiceFactory (
+      $rootScope,
       $q,
       $window,
       ramlRepository,
@@ -184,7 +185,25 @@
               var path = ramlRepository.join(directory.path, name);
               var file = ramlRepository.getByPath(path);
 
-              file.doc.setValue(contents);
+              // Set the new contents as file contents.
+              file.contents = contents;
+
+              // SE-2805: When replacing a file, if it had not been opened in
+              // the Designer yet, it might had not been initialized with its
+              // CodeMirror instance.
+              if (!file.doc) {
+                file.doc = new CodeMirror.Doc(file.contents);
+              } else {
+                file.doc.setValue(file.contents);
+              }
+
+              // Save file with new contents.
+              ramlRepository.saveFile(file).then(function success() {
+                $rootScope.$broadcast('event:notification', {
+                  message: 'File saved.',
+                  expires: true
+                });
+              });
 
               return;
             }
