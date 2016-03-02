@@ -12825,8 +12825,30 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           if (option === importServiceConflictModal.REPLACE_FILE) {
             var path = ramlRepository.join(directory.path, name);
             var file = ramlRepository.getByPath(path);
-            file.doc.setValue(contents);
-            return;
+            // Load the file if not loaded.
+            return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (theFile) {
+              // Check if content has changed.
+              if (theFile.contents !== contents) {
+                // Load the file current contents.
+                file.contents = theFile.contents;
+                // Mark the file as loaded.
+                file.loaded = true;
+                // When replacing a file, if it had not been opened in
+                // the Designer yet, it might had not been initialized with its
+                // CodeMirror instance.
+                // Replace the original file contents with the imported file
+                // contents.
+                if (!file.doc) {
+                  file.doc = new CodeMirror.Doc(contents);
+                } else {
+                  file.doc.setValue(contents);
+                }
+                // Mark the file as dirty.
+                file.dirty = true;
+                return file;
+              }
+            });
+            ;
           }
           return createFileFromContents(directory, name, contents);
         });
