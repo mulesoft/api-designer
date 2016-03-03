@@ -10,7 +10,7 @@
     "angular": "~1.3.17",
     "angular-bootstrap": ">=0.11.0 <0.14.0",
     "angular-ui-tree": "2.1.5",
-    "api-console": "mulesoft/api-console#d654204168e7421cec3d284ee67ba8303b4ec410",
+    "api-console": "mulesoft/api-console#1df932a659e6c693aae3417cd2995c7bf6b4d20f",
     "es5-shim": "~2.3.0",
     "file-saver.js": "~1.20150304.1",
     "font-awesome": "~4.0.3",
