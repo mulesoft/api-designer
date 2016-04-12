@@ -3,53 +3,9 @@
 
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
-    .service('ramlParserFileReader', function ($http, $q, $window, ramlParser, ramlRepository, safeApplyWrapper) {
-      function loadFile (path) {
-        return ramlRepository.loadFile({path: path}).then(
-          function success(file) {
-            return file.contents;
-          }
-        );
-      }
-
-      function readLocFile(path) {
-        var file = ramlRepository.getByPath(path);
-
-        if (file) {
-          return file.loaded ? $q.when(file.contents) : loadFile(path);
-        }
-
-        return $q.reject('File with path "' + path + '" does not exist');
-      }
-
-      function readExtFile(path) {
-        var proxy = $window.RAML.Settings.proxy || '';
-        var target = proxy + path;
-        return $http.get(target, {transformResponse: null}).then(
-          // success
-          function success(response) {
-            return response.data;
-          },
-
-          // failure
-          function failure(response) {
-            var error = 'cannot fetch ' + path + ', check that the server is up and that CORS is enabled';
-            if (response.status) {
-              error += '(HTTP ' + response.status + ')';
-            }
-
-            throw error;
-          }
-        );
-      }
-
-      this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
-        return (/^https?:\/\//).test(file) ? readExtFile(file) : readLocFile(file);
-      });
-    })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient
+      safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlRepository, codeMirror,
+      codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -162,11 +118,18 @@
       };
 
       $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParser.load(definition, location, {
-          validate : true,
-          transform: true,
-          compose:   true,
-          reader:    ramlParserFileReader
+        return ramlParser.loadPath(location, function contentAsync(path) {
+          var file = ramlRepository.getByPath(path);
+
+          if (file) {
+            return (file.loaded ? $q.when(file) : ramlRepository.loadFile({path: path}))
+              .then(function (file) {
+                return file.contents;
+              })
+            ;
+          }
+
+          return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
         });
       };
 
@@ -204,10 +167,11 @@
       });
 
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
-        $scope.title     = raml.title;
-        $scope.version   = raml.version;
+        $scope.raml         = raml;
+        $scope.title        = raml.title;
+        $scope.version      = raml.version;
         $scope.currentError = undefined;
-        lineOfCurrentError = undefined;
+        lineOfCurrentError  = undefined;
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
@@ -276,11 +240,7 @@
       };
 
       $scope.getIsConsoleVisible = function getIsConsoleVisible() {
-        if (!$scope.fileParsable) {
-          return false;
-        }
-
-        return true;
+        return $scope.fileParsable && $scope.raml;
       };
 
       $scope.toggleShelf = function toggleShelf() {
