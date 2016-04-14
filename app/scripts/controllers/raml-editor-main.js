@@ -175,26 +175,13 @@
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
-        /*jshint sub: true */
-        var problemMark = error['problem_mark'],
-            displayLine = 0,
-            displayColumn = 0,
-            message = error.message;
-
-        lineOfCurrentError = displayLine;
-        $scope.currentError = error;
-
-        if (problemMark) {
-          lineOfCurrentError = problemMark.line;
-          displayLine = calculatePositionOfErrorMark(lineOfCurrentError);
-          displayColumn = problemMark.column;
-        }
-
-        codeMirrorErrors.displayAnnotations([{
-          line:    displayLine + 1,
-          column:  displayColumn + 1,
-          message: formatErrorMessage(message, lineOfCurrentError, displayLine)
-        }]);
+        codeMirrorErrors.displayAnnotations((error.parserErrors || []).map(function mapErrorToAnnotation(error) {
+          return {
+            line:    error.line,
+            column:  error.column,
+            message: error.message
+          };
+        }));
       }));
 
       $scope.openHelp = function openHelp() {
