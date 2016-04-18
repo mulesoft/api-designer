@@ -85,8 +85,7 @@
     .factory('ramlHint', function ramlHintFactory(generateTabs, getNeighborKeys, getTabCount,
                                                   getScopes, getEditorTextAsArrayOfLines, getNode) {
       var hinter = {};
-      var RAML_VERSION = '#%RAML (0\\.8|1\\.0)';
-      var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
+      var RAML_PATTERN = /^#%RAML\s(0\.8|1\.0)(\s[a-z]+)?$/i;
 
       hinter.getScopes = function (editor) {
         return getScopes(getEditorTextAsArrayOfLines(editor));
@@ -95,7 +94,7 @@
       hinter.shouldSuggestVersion = function (editor) {
         var lineNumber    = editor.getCursor().line;
         var line          = editor.getLine(lineNumber);
-        var lineIsVersion = RAML_VERSION_PATTERN.test(line);
+        var lineIsVersion = RAML_PATTERN.test(line);
 
         return lineNumber === 0 &&
               !lineIsVersion
@@ -130,7 +129,19 @@
        * @return {String}
        */
       hinter.getVersion = function getVersion(editor) {
-        return RAML_VERSION_PATTERN.exec(editor.getLine(0))[1];
+        return RAML_PATTERN.exec(editor.getLine(0))[1];
+      };
+
+      /**
+       * Parses first line of current editor document in order to get
+       * its RAML frament otherwise falls back to ApiDefinition.
+       *
+       * @param {CodeMirror} editor
+       *
+       * @return {String}
+       */
+      hinter.getFragment = function getFragment(editor) {
+        return (RAML_PATTERN.exec(editor.getLine(0))[2] || 'ApiDefinition').trim();
       };
 
       /**
@@ -143,7 +154,7 @@
        * @return {RAML.Grammar}
        */
       hinter.suggestRAML = function suggestRAML(editor, path) {
-        return RAML.Grammar.suggestRAML(path, hinter.getVersion(editor));
+        return RAML.Grammar.suggestRAML(path, hinter.getVersion(editor), hinter.getFragment(editor));
       };
 
       /**
@@ -160,16 +171,26 @@
                 category: 'main',
                 isText:   true
               }
-            },
-
-            {
-              key:     '#%RAML 1.0',
+            }
+          ].concat([
+            'ApiDefinition',
+            'DataType',
+            'DocumentationItem',
+            'Extension',
+            'Library',
+            'Overlay',
+            'ResourceType',
+            'SecurityScheme',
+            'Trait'
+          ].map(function (frament) {
+            return {
+              key:     '#%RAML 1.0' + (frament === 'ApiDefinition' ? '' : (' ' + frament)),
               metadata: {
                 category: 'main',
                 isText:   true
               }
-            }
-          ];
+            };
+          }));
         }
 
         //Pivotal 61664576: We use the DOM API to check to see if the current node or any

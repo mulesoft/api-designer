@@ -5,7 +5,7 @@
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
       safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q
+      codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -191,14 +191,20 @@
       };
 
       $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
-        // check for file extension
-        if (file.extension !== 'raml') {
+        contents = arguments.length > 1 ? contents : file.contents;
+
+        // does file extension match?
+        if (!ramlEditorMainHelpers.isRamlFile(file.extension)) {
           return false;
         }
 
-        // check for raml version tag as a very first line of the file
-        contents = arguments.length > 1 ? contents : file.contents;
-        if (contents.search(/^\s*#%RAML( \d*\.\d*)?\s*(\n|$)/) !== 0) {
+        // overlay files always parsable regardless of whether it's root file or not
+        if (ramlEditorMainHelpers.isOverlay(contents)) {
+          return true;
+        }
+
+        // does it looke like API definition?
+        if (!ramlEditorMainHelpers.isApiDefinition(contents)) {
           return false;
         }
 

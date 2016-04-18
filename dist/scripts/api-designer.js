@@ -10709,16 +10709,14 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'getNode',
     function ramlHintFactory(generateTabs, getNeighborKeys, getTabCount, getScopes, getEditorTextAsArrayOfLines, getNode) {
       var hinter = {};
-      var RAML_VERSION = '#%RAML 0.8';
-      var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
-      hinter.suggestRAML = RAML.Grammar.suggestRAML;
+      var RAML_PATTERN = /^#%RAML\s(0\.8|1\.0)(\s[a-z]+)?$/i;
       hinter.getScopes = function (editor) {
         return getScopes(getEditorTextAsArrayOfLines(editor));
       };
       hinter.shouldSuggestVersion = function (editor) {
         var lineNumber = editor.getCursor().line;
         var line = editor.getLine(lineNumber);
-        var lineIsVersion = RAML_VERSION_PATTERN.test(line);
+        var lineIsVersion = RAML_PATTERN.test(line);
         return lineNumber === 0 && !lineIsVersion;
         ;
       };
@@ -10737,6 +10735,40 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return values.indexOf(suggestionKey) !== -1 || !suggestion.metadata.isText && suggestion.metadata.canBeOptional && values.indexOf(suggestionKey + '?') !== -1;
       };
       /**
+       * Parses first line of current editor document in order to get
+       * its RAML version.
+       *
+       * @param {CodeMirror} editor
+       *
+       * @return {String}
+       */
+      hinter.getVersion = function getVersion(editor) {
+        return RAML_PATTERN.exec(editor.getLine(0))[1];
+      };
+      /**
+       * Parses first line of current editor document in order to get
+       * its RAML frament otherwise falls back to ApiDefinition.
+       *
+       * @param {CodeMirror} editor
+       *
+       * @return {String}
+       */
+      hinter.getFragment = function getFragment(editor) {
+        return (RAML_PATTERN.exec(editor.getLine(0))[2] || 'ApiDefinition').trim();
+      };
+      /**
+       * Suggests next possible RAML elements based on path and
+       * current editor document RAML version.
+       *
+       * @param {CodeMirror} editor
+       * @param {String[]}   path
+       *
+       * @return {RAML.Grammar}
+       */
+      hinter.suggestRAML = function suggestRAML(editor, path) {
+        return RAML.Grammar.suggestRAML(path, hinter.getVersion(editor), hinter.getFragment(editor));
+      };
+      /**
        * @param editor The RAML editor
        * @returns {{key, metadata {category, isText}}} Where keys are the RAML node names, and metadata
        *          contains extra information about the node, such as its category
@@ -10749,7 +10781,25 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
                 category: 'main',
                 isText: true
               }
-            }];
+            }].concat([
+            'ApiDefinition',
+            'DataType',
+            'DocumentationItem',
+            'Extension',
+            'Library',
+            'Overlay',
+            'ResourceType',
+            'SecurityScheme',
+            'Trait'
+          ].map(function (frament) {
+            return {
+              key: '#%RAML 1.0' + (frament === 'ApiDefinition' ? '' : ' ' + frament),
+              metadata: {
+                category: 'main',
+                isText: true
+              }
+            };
+          }));
         }
         //Pivotal 61664576: We use the DOM API to check to see if the current node or any
         //of its parents contains a YAML reference. If it does, then we provide no suggestions.
@@ -10785,7 +10835,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           var path = node.getPath().map(function (node) {
               return node.getKey();
             });
-          raml = hinter.suggestRAML(path);
+          raml = this.suggestRAML(editor, path);
           suggestions = raml.suggestions;
           var isText = Object.keys(suggestions).some(function (suggestion) {
               return suggestions[suggestion].metadata.isText;
@@ -10994,7 +11044,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       var service = {};
       service.getEmptyRaml = function () {
         return [
-          '#%RAML 0.8',
+          '#%RAML 1.0',
           'title:'
         ].join('\n');
       };
@@ -11057,7 +11107,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         var esc = state.escaped;
         state.escaped = false;
         /* RAML tag */
-        if (ch === '#' && stream.string.trim() === '#%RAML 0.8') {
+        if (ch === '#' && /^#%RAML (0\.8|1\.0|1\.0\s\w+)$/.test(stream.string.trim())) {
           stream.skipToEnd();
           return 'raml-tag';
         }
@@ -13170,44 +13220,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').constant('UPDATE_RESPONSIVENESS_INTERVAL', 800).service('ramlParserFileReader', [
-    '$http',
-    '$q',
-    '$window',
-    'ramlParser',
-    'ramlRepository',
-    'safeApplyWrapper',
-    function ($http, $q, $window, ramlParser, ramlRepository, safeApplyWrapper) {
-      function loadFile(path) {
-        return ramlRepository.loadFile({ path: path }).then(function success(file) {
-          return file.contents;
-        });
-      }
-      function readLocFile(path) {
-        var file = ramlRepository.getByPath(path);
-        if (file) {
-          return file.loaded ? $q.when(file.contents) : loadFile(path);
-        }
-        return $q.reject('File with path "' + path + '" does not exist');
-      }
-      function readExtFile(path) {
-        var proxy = $window.RAML.Settings.proxy || '';
-        var target = proxy + path;
-        return $http.get(target, { transformResponse: null }).then(function success(response) {
-          return response.data;
-        }, function failure(response) {
-          var error = 'cannot fetch ' + path + ', check that the server is up and that CORS is enabled';
-          if (response.status) {
-            error += '(HTTP ' + response.status + ')';
-          }
-          throw error;
-        });
-      }
-      this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
-        return /^https?:\/\//.test(file) ? readExtFile(file) : readLocFile(file);
-      });
-    }
-  ]).controller('ramlEditorMain', [
+  angular.module('ramlEditorApp').constant('UPDATE_RESPONSIVENESS_INTERVAL', 800).controller('ramlEditorMain', [
     'UPDATE_RESPONSIVENESS_INTERVAL',
     '$scope',
     '$rootScope',
@@ -13219,7 +13232,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'throttle',
     'ramlHint',
     'ramlParser',
-    'ramlParserFileReader',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -13228,7 +13240,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$confirm',
     '$modal',
     'mockingServiceClient',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient) {
+    '$q',
+    'ramlEditorMainHelpers',
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -13313,11 +13327,15 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         updateFile();
       };
       $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParser.load(definition, location, {
-          validate: true,
-          transform: true,
-          compose: true,
-          reader: ramlParserFileReader
+        return ramlParser.loadPath(location, function contentAsync(path) {
+          var file = ramlRepository.getByPath(path);
+          if (file) {
+            return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (file) {
+              return file.contents;
+            });
+            ;
+          }
+          return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
         });
       };
       $scope.clearErrorMarks = function clearErrorMarks() {
@@ -13342,38 +13360,36 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         }));
       });
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
+        $scope.raml = raml;
         $scope.title = raml.title;
         $scope.version = raml.version;
         $scope.currentError = undefined;
         lineOfCurrentError = undefined;
       }));
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
-        /*jshint sub: true */
-        var problemMark = error['problem_mark'], displayLine = 0, displayColumn = 0, message = error.message;
-        lineOfCurrentError = displayLine;
-        $scope.currentError = error;
-        if (problemMark) {
-          lineOfCurrentError = problemMark.line;
-          displayLine = calculatePositionOfErrorMark(lineOfCurrentError);
-          displayColumn = problemMark.column;
-        }
-        codeMirrorErrors.displayAnnotations([{
-            line: displayLine + 1,
-            column: displayColumn + 1,
-            message: formatErrorMessage(message, lineOfCurrentError, displayLine)
-          }]);
+        codeMirrorErrors.displayAnnotations((error.parserErrors || []).map(function mapErrorToAnnotation(error) {
+          return {
+            line: error.line,
+            column: error.column,
+            message: error.message
+          };
+        }));
       }));
       $scope.openHelp = function openHelp() {
         $modal.open({ templateUrl: 'views/help.html' });
       };
       $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
-        // check for file extension
-        if (file.extension !== 'raml') {
+        contents = arguments.length > 1 ? contents : file.contents;
+        // does file extension match?
+        if (!ramlEditorMainHelpers.isRamlFile(file.extension)) {
           return false;
         }
-        // check for raml version tag as a very first line of the file
-        contents = arguments.length > 1 ? contents : file.contents;
-        if (contents.search(/^\s*#%RAML( \d*\.\d*)?\s*(\n|$)/) !== 0) {
+        // overlay files always parsable regardless of whether it's root file or not
+        if (ramlEditorMainHelpers.isOverlay(contents)) {
+          return true;
+        }
+        // does it looke like API definition?
+        if (!ramlEditorMainHelpers.isApiDefinition(contents)) {
           return false;
         }
         // if there is root file only that file is marked as parsable
@@ -13395,10 +13411,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return true;
       };
       $scope.getIsConsoleVisible = function getIsConsoleVisible() {
-        if (!$scope.fileParsable) {
-          return false;
-        }
-        return true;
+        return $scope.fileParsable && $scope.raml;
       };
       $scope.toggleShelf = function toggleShelf() {
         $scope.shelf.collapsed = !$scope.shelf.collapsed;
@@ -13455,6 +13468,27 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       }());
     }
   ]);
+  ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').factory('ramlEditorMainHelpers', function ramlEditorMainHelpers() {
+    return {
+      isRamlFile: isRamlFile,
+      isApiDefinition: isApiDefinition,
+      isOverlay: isOverlay
+    };
+    // ---
+    function isRamlFile(extension) {
+      return extension === 'raml';
+    }
+    function isApiDefinition(raml) {
+      return /^#%RAML\s(0\.8|1\.0)(\s*|$)/.test(raml);
+    }
+    function isOverlay(raml) {
+      return /^#%RAML\s1\.0\sOverlay(\s*|$)/.test(raml);
+    }
+  });
   ;
 }());
 (function () {
@@ -15079,7 +15113,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console single-view disable-theme-switcher disable-raml-client-generator disable-title style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);
