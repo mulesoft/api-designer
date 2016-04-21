@@ -175,7 +175,8 @@
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
-        codeMirrorErrors.displayAnnotations((error.parserErrors || []).map(function mapErrorToAnnotation(error) {
+        var parserErrors = error.parserErrors || [{line: 1, column: 0, message: error.message}];
+        codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           return {
             line:    error.line,
             column:  error.column,
