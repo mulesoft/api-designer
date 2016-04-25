@@ -4149,6 +4149,7 @@ a.raml-console-resource-path-active {
   color: #333;
 }
 
+root
 .raml-console-request-body-heading > span {
   margin-left: 5px;
   cursor: pointer;
@@ -4171,6 +4172,10 @@ a.raml-console-resource-path-active {
   border-radius: 0 0 5px 5px;
   background: #fff;
   color: #333;
+}
+
+.raml-console-resource-panel.raml-console-type-panel {
+  min-height: 0;
 }
 
 @media only screen and (min-width: 960px) {
@@ -4516,6 +4521,10 @@ a.raml-console-resource-path-active {
 
 .raml-console-type-info-popover .raml-console-resource-param {
   margin-bottom: 5px;
+}
+
+.raml-console-type-info-popover .raml-console-subtitle {
+  font-size: 12px;
 }
 
 .raml-console-sidebar {
