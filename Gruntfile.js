@@ -90,6 +90,17 @@ module.exports = function (grunt) {
         port:      grunt.option('port') || 9013
       },
 
+      dist: {
+        options: {
+          middleware: function (connect) {
+            return [
+              connect().use('/',       connect.static(yeomanConfig.dist)),
+              connect().use('/proxy/', proxy())
+            ];
+          }
+        }
+      },
+
       livereload: {
         options: {
           middleware: function (connect) {
@@ -338,6 +349,12 @@ module.exports = function (grunt) {
   grunt.registerTask('less-and-autoprefixer', [
     'less',
     'autoprefixer'
+  ]);
+
+  grunt.registerTask('server:dist', [
+    'connect:dist',
+    'open',
+    'watch'
   ]);
 
   grunt.registerTask('server', [
