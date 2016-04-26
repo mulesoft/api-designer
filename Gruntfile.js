@@ -62,6 +62,14 @@ module.exports = function (grunt) {
     yeoman: yeomanConfig,
 
     watch: {
+      dist: {
+        options: {
+          livereload: LIVERELOAD_PORT
+        },
+
+        files: '<%= yeoman.dist %>/**/*'
+      },
+
       livereload: {
         options: {
           livereload: LIVERELOAD_PORT
@@ -94,6 +102,8 @@ module.exports = function (grunt) {
         options: {
           middleware: function (connect) {
             return [
+              lrSnippet,
+
               connect().use('/',       connect.static(yeomanConfig.dist)),
               connect().use('/proxy/', proxy())
             ];
@@ -354,7 +364,7 @@ module.exports = function (grunt) {
   grunt.registerTask('server:dist', [
     'connect:dist',
     'open',
-    'watch'
+    'watch:dist'
   ]);
 
   grunt.registerTask('server', [
