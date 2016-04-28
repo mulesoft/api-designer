@@ -130,7 +130,15 @@
           }
 
           return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
-        });
+        })
+          .catch(function (error) {
+            if (error.message.indexOf('api.expand') !== -1) {
+              return {};
+            }
+
+            throw error;
+          })
+        ;
       };
 
       $scope.clearErrorMarks = function clearErrorMarks() {
@@ -167,9 +175,12 @@
       });
 
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
-        $scope.raml         = raml;
-        $scope.title        = raml.title;
-        $scope.version      = raml.version;
+        if (raml) {
+          $scope.raml         = raml;
+          $scope.title        = raml.title;
+          $scope.version      = raml.version;
+        }
+
         $scope.currentError = undefined;
         lineOfCurrentError  = undefined;
       }));
@@ -178,7 +189,7 @@
         var parserErrors = error.parserErrors || [{line: 1, column: 0, message: error.message}];
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           return {
-            line:    error.line,
+            line:    error.line + 1,
             column:  error.column,
             message: error.message
           };
