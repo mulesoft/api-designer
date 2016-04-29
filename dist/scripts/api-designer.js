@@ -13281,8 +13281,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       };
       $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
         currentFile = file;
-        // Empty console so that we remove content from previous open RAML file
-        $rootScope.$broadcast('event:raml-parsed', {});
+        if (ramlEditorMainHelpers.isApiDefinitionLike(file.contents)) {
+          // Empty console so that we remove content from previous open RAML file
+          $rootScope.$broadcast('event:raml-parsed', {});
+        }
         // Every file must have a unique document for history and cursors.
         if (!file.doc) {
           file.doc = new CodeMirror.Doc(file.contents);
@@ -13337,11 +13339,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
             ;
           }
           return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
-        }).catch(function (error) {
-          if (error.message.indexOf('api.expand') !== -1) {
-            return {};
-          }
-          throw error;
+        }).then(function (raml) {
+          return ramlEditorMainHelpers.isApiDefinitionLike(definition) ? raml : null;
         });
         ;
       };
@@ -13367,11 +13366,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         }));
       });
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
-        if (raml) {
-          $scope.raml = raml;
-          $scope.title = raml.title;
-          $scope.version = raml.version;
-        }
+        $scope.raml = raml;
+        $scope.title = raml && raml.title;
+        $scope.version = raml && raml.version;
         $scope.currentError = undefined;
         lineOfCurrentError = undefined;
       }));
@@ -13392,25 +13389,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       $scope.openHelp = function openHelp() {
         $modal.open({ templateUrl: 'views/help.html' });
       };
-      $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
-        contents = arguments.length > 1 ? contents : file.contents;
-        // does file extension match?
-        if (!ramlEditorMainHelpers.isRamlFile(file.extension)) {
-          return false;
-        }
-        // overlay files always parsable regardless of whether it's root file or not
-        if (ramlEditorMainHelpers.isOverlay(contents)) {
-          return true;
-        }
-        // does it looke like API definition?
-        if (!ramlEditorMainHelpers.isApiDefinition(contents)) {
-          return false;
-        }
-        // if there is root file only that file is marked as parsable
-        if ((($scope.fileBrowser || {}).rootFile || file) !== file) {
-          return false;
-        }
-        return true;
+      $scope.getIsFileParsable = function getIsFileParsable(file) {
+        return ramlEditorMainHelpers.isRamlFile(file.extension);
       };
       $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
         if ($scope.mockingServiceDisabled || !$scope.fileParsable) {
@@ -13489,18 +13469,27 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   angular.module('ramlEditorApp').factory('ramlEditorMainHelpers', function ramlEditorMainHelpers() {
     return {
       isRamlFile: isRamlFile,
-      isApiDefinition: isApiDefinition,
-      isOverlay: isOverlay
+      isApiDefinitionLike: isApiDefinitionLike
     };
     // ---
     function isRamlFile(extension) {
       return extension === 'raml';
     }
+    function isApiDefinitionLike(raml) {
+      return isApiDefinition(raml) || isOverlay(raml) || isExtension(raml);
+    }
+    // ---
     function isApiDefinition(raml) {
-      return /^#%RAML\s(0\.8|1\.0)(\s*|$)/.test(raml);
+      return /^#%RAML\s(0\.8|1\.0)\s*$/.test(getFirstLine(raml));
     }
     function isOverlay(raml) {
-      return /^#%RAML\s1\.0\sOverlay(\s*|$)/.test(raml);
+      return /^#%RAML\s1\.0\sOverlay\s*$/.test(getFirstLine(raml));
+    }
+    function isExtension(raml) {
+      return /^#%RAML\s1\.0\sExtension\s*$/.test(getFirstLine(raml));
+    }
+    function getFirstLine(raml) {
+      return raml.split(/\r\n|\n/)[0];
     }
   });
   ;
