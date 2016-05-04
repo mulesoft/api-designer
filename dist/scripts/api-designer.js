@@ -12223,10 +12223,22 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return $q.when().then(function () {
           var promises = [];
           jsTraverse.traverse(raml).forEach(function (value) {
-            if (this.path.slice(-2).join('.') === 'body.application/json' && value.schema) {
-              promises.push(refParser.dereference(JSON.parse(value.schema), { $refs: { read$Ref: read$Ref } }).then(JSON.stringify).then(function (schema) {
-                value.schema = schema;
-              }));
+            if (this.path.slice(-2).join('.') === 'body.application/json') {
+              var jsonSchema;
+              if (value.schema) {
+                jsonSchema = value.schema;
+              } else if (value.type) {
+                jsonSchema = value.type;
+              }
+              if (Array.isArray(jsonSchema)) {
+                jsonSchema = jsonSchema[0];
+              }
+              try {
+                promises.push(refParser.dereference(JSON.parse(jsonSchema), { $refs: { read$Ref: read$Ref } }).then(JSON.stringify).then(function (schema) {
+                  value.schema = schema;
+                }));
+              } catch (e) {
+              }
             }
           });
           return $q.all(promises);
