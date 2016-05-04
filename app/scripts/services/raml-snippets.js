@@ -22,7 +22,7 @@
 
       service.getEmptyRaml = function () {
         return [
-          '#%RAML 1.0',
+          '#%RAML 0.8',
           'title:'
         ].join('\n');
       };
