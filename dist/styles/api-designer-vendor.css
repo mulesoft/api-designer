@@ -5249,6 +5249,7 @@ root
   color: #bbb;
   font-weight: 900;
   transition: 0.3s ease color, 0.3s ease border-color;
+  z-index: 999;
 }
 
 .raml-console-sidebar-input-tooltip:before {
