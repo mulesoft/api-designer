@@ -13402,7 +13402,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         $modal.open({ templateUrl: 'views/help.html' });
       };
       $scope.getIsFileParsable = function getIsFileParsable(file) {
-        return ramlEditorMainHelpers.isRamlFile(file.extension);
+        return ramlEditorMainHelpers.isRamlFile(file.extension) && ramlEditorMainHelpers.isApiDefinitionLike(file.contents);
       };
       $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
         if ($scope.mockingServiceDisabled || !$scope.fileParsable) {
