@@ -13390,6 +13390,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               column: 0,
               message: error.message
             }];
+        parserErrors = parserErrors.filter(function (item) {
+          return !item.isWarning;
+        });
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           return {
             line: error.line + 1,
