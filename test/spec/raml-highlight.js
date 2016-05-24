@@ -20,8 +20,18 @@ describe('RAML Syntax Highlight', function () {
         token(stream, {}).should.be.equal('comment');
       });
 
-      it('should mark proper string as a RAML tag (RT-346)', function () {
+      it('should mark RAML 0.8 string with raml-tag', function () {
         var stream = new CodeMirror.StringStream('#%RAML 0.8');
+        token(stream, {}).should.be.equal('raml-tag');
+      });
+
+      it('should mark RAML 1.0 string with raml-tag', function () {
+        var stream = new CodeMirror.StringStream('#%RAML 1.0');
+        token(stream, {}).should.be.equal('raml-tag');
+      });
+
+      it('should mark RAML 1.0 fragment string with raml-tag', function () {
+        var stream = new CodeMirror.StringStream('#%RAML 1.0 Overlay');
         token(stream, {}).should.be.equal('raml-tag');
       });
 

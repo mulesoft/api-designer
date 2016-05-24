@@ -85,10 +85,7 @@
     .factory('ramlHint', function ramlHintFactory(generateTabs, getNeighborKeys, getTabCount,
                                                   getScopes, getEditorTextAsArrayOfLines, getNode) {
       var hinter = {};
-      var RAML_VERSION = '#%RAML 0.8';
-      var RAML_VERSION_PATTERN = new RegExp('^\\s*' + RAML_VERSION + '\\s*$', 'i');
-
-      hinter.suggestRAML = RAML.Grammar.suggestRAML;
+      var RAML_PATTERN = /^#%RAML\s(0\.8|1\.0)(\s[a-z]+)?$/i;
 
       hinter.getScopes = function (editor) {
         return getScopes(getEditorTextAsArrayOfLines(editor));
@@ -97,7 +94,7 @@
       hinter.shouldSuggestVersion = function (editor) {
         var lineNumber    = editor.getCursor().line;
         var line          = editor.getLine(lineNumber);
-        var lineIsVersion = RAML_VERSION_PATTERN.test(line);
+        var lineIsVersion = RAML_PATTERN.test(line);
 
         return lineNumber === 0 &&
               !lineIsVersion
@@ -124,19 +121,76 @@
       };
 
       /**
+       * Parses first line of current editor document in order to get
+       * its RAML version.
+       *
+       * @param {CodeMirror} editor
+       *
+       * @return {String}
+       */
+      hinter.getVersion = function getVersion(editor) {
+        return RAML_PATTERN.exec(editor.getLine(0))[1];
+      };
+
+      /**
+       * Parses first line of current editor document in order to get
+       * its RAML frament otherwise falls back to ApiDefinition.
+       *
+       * @param {CodeMirror} editor
+       *
+       * @return {String}
+       */
+      hinter.getFragment = function getFragment(editor) {
+        return (RAML_PATTERN.exec(editor.getLine(0))[2] || 'ApiDefinition').trim();
+      };
+
+      /**
+       * Suggests next possible RAML elements based on path and
+       * current editor document RAML version.
+       *
+       * @param {CodeMirror} editor
+       * @param {String[]}   path
+       *
+       * @return {RAML.Grammar}
+       */
+      hinter.suggestRAML = function suggestRAML(editor, path) {
+        return RAML.Grammar.suggestRAML(path, hinter.getVersion(editor), hinter.getFragment(editor));
+      };
+
+      /**
        * @param editor The RAML editor
        * @returns {{key, metadata {category, isText}}} Where keys are the RAML node names, and metadata
        *          contains extra information about the node, such as its category
        */
       hinter.getSuggestions = function getSuggestions(editor) {
         if (hinter.shouldSuggestVersion(editor)) {
-          return [{
-            key:     '#%RAML 0.8',
-            metadata: {
-              category: 'main',
-              isText:   true
+          return [
+            {
+              key:     '#%RAML 0.8',
+              metadata: {
+                category: 'main',
+                isText:   true
+              }
             }
-          }];
+          ].concat([
+            'ApiDefinition',
+            'DataType',
+            'DocumentationItem',
+            'Extension',
+            'Library',
+            'Overlay',
+            'ResourceType',
+            'SecurityScheme',
+            'Trait'
+          ].map(function (frament) {
+            return {
+              key:     '#%RAML 1.0' + (frament === 'ApiDefinition' ? '' : (' ' + frament)),
+              metadata: {
+                category: 'main',
+                isText:   true
+              }
+            };
+          }));
         }
 
         //Pivotal 61664576: We use the DOM API to check to see if the current node or any
@@ -170,7 +224,7 @@
 
         if (node) {
           var path = node.getPath().map(function(node) { return node.getKey(); });
-          raml         = hinter.suggestRAML(path);
+          raml         = this.suggestRAML(editor, path);
           suggestions  = raml.suggestions;
           var isText = Object.keys(suggestions).some(function(suggestion) { return suggestions[suggestion].metadata.isText; });
           //Get all structural nodes' keys/values so we can filter them out. This bit is tricky; if

@@ -62,6 +62,14 @@ module.exports = function (grunt) {
     yeoman: yeomanConfig,
 
     watch: {
+      dist: {
+        options: {
+          livereload: LIVERELOAD_PORT
+        },
+
+        files: '<%= yeoman.dist %>/**/*'
+      },
+
       livereload: {
         options: {
           livereload: LIVERELOAD_PORT
@@ -88,6 +96,19 @@ module.exports = function (grunt) {
       options: {
         hostname: 'localhost',
         port:      grunt.option('port') || 9013
+      },
+
+      dist: {
+        options: {
+          middleware: function (connect) {
+            return [
+              lrSnippet,
+
+              connect().use('/',       connect.static(yeomanConfig.dist)),
+              connect().use('/proxy/', proxy())
+            ];
+          }
+        }
       },
 
       livereload: {
@@ -338,6 +359,12 @@ module.exports = function (grunt) {
   grunt.registerTask('less-and-autoprefixer', [
     'less',
     'autoprefixer'
+  ]);
+
+  grunt.registerTask('server:dist', [
+    'connect:dist',
+    'open',
+    'watch:dist'
   ]);
 
   grunt.registerTask('server', [

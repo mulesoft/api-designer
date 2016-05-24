@@ -3,53 +3,9 @@
 
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
-    .service('ramlParserFileReader', function ($http, $q, $window, ramlParser, ramlRepository, safeApplyWrapper) {
-      function loadFile (path) {
-        return ramlRepository.loadFile({path: path}).then(
-          function success(file) {
-            return file.contents;
-          }
-        );
-      }
-
-      function readLocFile(path) {
-        var file = ramlRepository.getByPath(path);
-
-        if (file) {
-          return file.loaded ? $q.when(file.contents) : loadFile(path);
-        }
-
-        return $q.reject('File with path "' + path + '" does not exist');
-      }
-
-      function readExtFile(path) {
-        var proxy = $window.RAML.Settings.proxy || '';
-        var target = proxy + path;
-        return $http.get(target, {transformResponse: null}).then(
-          // success
-          function success(response) {
-            return response.data;
-          },
-
-          // failure
-          function failure(response) {
-            var error = 'cannot fetch ' + path + ', check that the server is up and that CORS is enabled';
-            if (response.status) {
-              error += '(HTTP ' + response.status + ')';
-            }
-
-            throw error;
-          }
-        );
-      }
-
-      this.readFileAsync = safeApplyWrapper(null, function readFileAsync(file) {
-        return (/^https?:\/\//).test(file) ? readExtFile(file) : readLocFile(file);
-      });
-    })
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlParserFileReader, ramlRepository, codeMirror,
-      codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient
+      safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlRepository, codeMirror,
+      codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
 
@@ -99,8 +55,10 @@
       $scope.$on('event:raml-editor-file-selected', function onFileSelected(event, file) {
         currentFile = file;
 
-        // Empty console so that we remove content from previous open RAML file
-        $rootScope.$broadcast('event:raml-parsed', {});
+        if (ramlEditorMainHelpers.isApiDefinitionLike(file.contents)) {
+          // Empty console so that we remove content from previous open RAML file
+          $rootScope.$broadcast('event:raml-parsed', {});
+        }
 
         // Every file must have a unique document for history and cursors.
         if (!file.doc) {
@@ -162,12 +120,23 @@
       };
 
       $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParser.load(definition, location, {
-          validate : true,
-          transform: true,
-          compose:   true,
-          reader:    ramlParserFileReader
-        });
+        return ramlParser.loadPath(location, function contentAsync(path) {
+          var file = ramlRepository.getByPath(path);
+
+          if (file) {
+            return (file.loaded ? $q.when(file) : ramlRepository.loadFile({path: path}))
+              .then(function (file) {
+                return file.contents;
+              })
+            ;
+          }
+
+          return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
+        })
+          .then(function (raml) {
+            return ramlEditorMainHelpers.isApiDefinitionLike(definition) ? raml : null;
+          })
+        ;
       };
 
       $scope.clearErrorMarks = function clearErrorMarks() {
@@ -204,33 +173,25 @@
       });
 
       $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
-        $scope.title     = raml.title;
-        $scope.version   = raml.version;
+        $scope.raml         = raml;
+        $scope.title        = raml && raml.title;
+        $scope.version      = raml && raml.version;
         $scope.currentError = undefined;
-        lineOfCurrentError = undefined;
+        lineOfCurrentError  = undefined;
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
-        /*jshint sub: true */
-        var problemMark = error['problem_mark'],
-            displayLine = 0,
-            displayColumn = 0,
-            message = error.message;
-
-        lineOfCurrentError = displayLine;
-        $scope.currentError = error;
-
-        if (problemMark) {
-          lineOfCurrentError = problemMark.line;
-          displayLine = calculatePositionOfErrorMark(lineOfCurrentError);
-          displayColumn = problemMark.column;
-        }
-
-        codeMirrorErrors.displayAnnotations([{
-          line:    displayLine + 1,
-          column:  displayColumn + 1,
-          message: formatErrorMessage(message, lineOfCurrentError, displayLine)
-        }]);
+        var parserErrors = error.parserErrors || [{line: 1, column: 0, message: error.message}];
+        parserErrors = parserErrors.filter(function (item) {
+          return !item.isWarning;
+        });
+        codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
+          return {
+            line:    error.line + 1,
+            column:  error.column,
+            message: error.message
+          };
+        }));
       }));
 
       $scope.openHelp = function openHelp() {
@@ -239,24 +200,9 @@
         });
       };
 
-      $scope.getIsFileParsable = function getIsFileParsable(file, contents) {
-        // check for file extension
-        if (file.extension !== 'raml') {
-          return false;
-        }
-
-        // check for raml version tag as a very first line of the file
-        contents = arguments.length > 1 ? contents : file.contents;
-        if (contents.search(/^\s*#%RAML( \d*\.\d*)?\s*(\n|$)/) !== 0) {
-          return false;
-        }
-
-        // if there is root file only that file is marked as parsable
-        if ((($scope.fileBrowser || {}).rootFile || file) !== file) {
-          return false;
-        }
-
-        return true;
+      $scope.getIsFileParsable = function getIsFileParsable(file) {
+        return ramlEditorMainHelpers.isRamlFile(file.extension) &&
+          ramlEditorMainHelpers.isApiDefinitionLike(file.contents);
       };
 
       $scope.getIsMockingServiceVisible = function getIsMockingServiceVisible() {
@@ -276,11 +222,7 @@
       };
 
       $scope.getIsConsoleVisible = function getIsConsoleVisible() {
-        if (!$scope.fileParsable) {
-          return false;
-        }
-
-        return true;
+        return $scope.fileParsable && $scope.raml;
       };
 
       $scope.toggleShelf = function toggleShelf() {

@@ -6,7 +6,8 @@
       var self = this;
 
       self.proxy   = null;
-      self.baseUri = 'http://mocksvc.mulesoft.com';
+      // self.baseUri = 'http://mocksvc.mulesoft.com';
+      self.baseUri = 'http://ec2-52-201-242-128.compute-1.amazonaws.com';
 
       self.buildURL = function buildURL() {
         var url   = self.baseUri + ['/mocks'].concat(Array.prototype.slice.call(arguments, 0)).join('/');
