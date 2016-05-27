@@ -181,7 +181,7 @@
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
-        var parserErrors = error.parserErrors || [{line: 1, column: 0, message: error.message}];
+        var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message}];
         parserErrors = parserErrors.filter(function (item) {
           return !item.isWarning;
         });

@@ -22,7 +22,7 @@ module.exports = function(config) {
       'bower_components/angular-sanitize/angular-sanitize.js',
       'bower_components/es5-shim/es5-shim.js',
 
-      'bower_components/raml-js-parser/dist/raml-parser.js',
+      'bower_components/raml-1-parser/raml-1-parser.js',
       'bower_components/raml-grammar/dist/suggest.js',
       'bower_components/raml-object-to-raml/dist/raml-object-to-raml.js',
       'bower_components/swagger-to-raml-object/dist/swagger-to-raml-object.js',

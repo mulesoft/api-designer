@@ -19,6 +19,7 @@ describe('ramlEditorApp', function () {
       it('should exclude optional keys', function () {
         var suggestions = ramlHint.getSuggestions(getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             'resourceTypes:',
             '  - resourceType1:',
             '      get?:'
@@ -37,12 +38,13 @@ describe('ramlEditorApp', function () {
       it('should exclude "title" and "content" keys at documentation level at different cursor positions', function () {
         var editor = getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             'documentation:',
             '  - title: Title',
             '    content: Content'
           ],
           {
-            line: 1,
+            line: 2,
             ch:   4
           }
         );
@@ -70,13 +72,14 @@ describe('ramlEditorApp', function () {
       it('should not exclude keys from another array for documentation suggestions', function () {
         var editor = getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             'documentation:',
             '  - title: Title',
             '    content: Content',
             '  - '
           ],
           {
-            line: 3,
+            line: 4,
             ch:   4
           }
         );
@@ -93,6 +96,7 @@ describe('ramlEditorApp', function () {
       it('should include values from array for protocol suggestions', function() {
         var editor = getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             'protocols:',
             '  - HTTP',
             '  '
@@ -115,6 +119,7 @@ describe('ramlEditorApp', function () {
       it('should include values from array for resource method protocol suggestions', function() {
         var editor = getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             '/newResource:',
             '  displayName: resourceName',
             '  get:',
@@ -140,6 +145,7 @@ describe('ramlEditorApp', function () {
       it('should exclude "title" and "version" keys at root level', function () {
         var editor = getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             'title: Title',
             'version: Version'
           ],
@@ -162,6 +168,7 @@ describe('ramlEditorApp', function () {
       it('should exclude "get" and "post" keys at resource level', function () {
         var editor = getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             'title: Title',
             '/:',
             '  get:',
@@ -186,12 +193,13 @@ describe('ramlEditorApp', function () {
       it('should return suggestions for trait in alphabetical order', function () {
         var editor = getEditor(codeMirror,
           [
+            '#%RAML 0.8',
             'traits:',
             '  - trait:',
             '    '
           ],
           {
-            line: 2,
+            line: 3,
             ch:   4
           }
         );
@@ -205,6 +213,7 @@ describe('ramlEditorApp', function () {
       it('should not show any suggestions for nodes whose value is a reference', function() {
         var editor = getEditor(codeMirror,
         [
+          '#%RAML 0.8',
           '/res1: &res1',
           '  description: this is res1 description',
           '  displayName: resource 1',
@@ -215,19 +224,19 @@ describe('ramlEditorApp', function () {
           '  '
         ],
         {
-          line: 5,
+          line: 6,
           ch: 12
         });
 
         //Cursor is to right of *res1, should get no suggestions
         ramlHint.getSuggestions(editor).should.be.empty;
-        editor.setCursor({line:6, ch:0});
-        ramlHint.getSuggestions(editor).should.be.empty;
-        editor.setCursor({line:6, ch:2});
-        ramlHint.getSuggestions(editor).should.be.empty;
         editor.setCursor({line:7, ch:0});
-        ramlHint.getSuggestions(editor).should.not.be.empty;
+        ramlHint.getSuggestions(editor).should.be.empty;
         editor.setCursor({line:7, ch:2});
+        ramlHint.getSuggestions(editor).should.be.empty;
+        editor.setCursor({line:8, ch:0});
+        ramlHint.getSuggestions(editor).should.not.be.empty;
+        editor.setCursor({line:8, ch:2});
         ramlHint.getSuggestions(editor).should.be.empty;
       });
     });
