@@ -257,6 +257,17 @@
       };
 
       /**
+       * Check whether a file is a JSON.
+       *
+       * @param  {File}    file
+       * @return {Boolean}
+       */
+      self.isJson = function (file) {
+        // Can't check `file.type` as it's empty when read from a `FileEntry`.
+        return (/\.json$/i).test(file.name);
+      };
+
+      /**
        * Read a file object as a text file.
        *
        * @param  {File}    file

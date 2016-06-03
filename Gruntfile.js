@@ -342,6 +342,18 @@ module.exports = function (grunt) {
         files: {
           '.tmp/js-traverse/js-traverse.js': 'node_modules/traverse/index.js'
         }
+      },
+      apiSpecConverter: {
+        options: {
+          browserifyOptions: {
+            standalone: 'apiSpecConverter'
+          },
+          transform: ['brfs'],
+        },
+
+        files: {
+          '.tmp/api-spec-converter/api-spec-converter.js': 'node_modules/api-spec-converter/index.js'
+        }
       }
     }
   });
@@ -370,6 +382,7 @@ module.exports = function (grunt) {
   grunt.registerTask('server', [
     'jshint-once',
     'browserify:jsTraverse',
+    'browserify:apiSpecConverter',
     'less-and-autoprefixer',
     'connect:livereload',
     'open',
@@ -380,6 +393,7 @@ module.exports = function (grunt) {
     'jshint-once',
     'clean:build',
     'browserify:jsTraverse',
+    'browserify:apiSpecConverter',
     'useminPrepare',
     'less-and-autoprefixer',
     'ngtemplates',

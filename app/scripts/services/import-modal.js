@@ -22,6 +22,7 @@
     .controller('ImportController', function ConfirmController(
       $scope,
       $modalInstance,
+      specConverter,
       swaggerToRAML,
       $q,
       $rootScope,
@@ -99,6 +100,30 @@
           });
       }
 
+      function importSwaggerV2 (mode) {
+        $scope.importing = true;
+
+        return specConverter.swaggerToRAML(mode.value)
+          .then(function (contents) {
+            var filename = extractFileName(mode.value.name, 'raml');
+
+            return importService.createFile($scope.rootDirectory, filename, contents);
+          })
+          .then(function () {
+            return $modalInstance.close(true);
+          })
+          .catch(function (err) {
+            $rootScope.$broadcast('event:notification', {
+              message: err.message,
+              expires: true,
+              level: 'error'
+            });
+          })
+          .finally(function () {
+            $scope.importing = false;
+          });
+      }
+
       function importSwaggerZip (mode) {
         $scope.importing = true;
 
@@ -130,6 +155,11 @@
           name: 'file',
           type: 'file',
           callback: importFile
+        },
+        {
+          name: 'Swagger 2.0 spec',
+          type: 'swaggerV2',
+          callback: importSwaggerV2
         },
         {
           name: 'Swagger spec',

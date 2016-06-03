@@ -9,12 +9,14 @@
     </div>
 
     <div class="form-group" style="margin-bottom: 10px;">
-      <div style="float: left; width: 130px;">
+      <div style="float: left; width: 145px;">
         <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>
       </div>
 
-      <div style="margin-left: 145px;" ng-switch="mode.type">
+      <div style="margin-left: 160px;" ng-switch="mode.type">
         <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
+
+        <input id="swaggerV2" name="swaggerV2" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="swaggerV2" onchange="angular.element(this).scope().handleFileSelect(this)">
 
         <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">
 
@@ -24,6 +26,10 @@
 
     <div ng-if="submittedType === 'swagger'">
       <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>
+    </div>
+
+    <div ng-if="submittedType === 'swaggerV2'">
+      <p class="help-block" ng-show="form.swaggerV2.$error.required">Please select a Swagger 2.0 spec file to import.</p>
     </div>
 
     <div ng-if="submittedType === 'file'">
@@ -38,8 +44,8 @@
       <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>
     </div>
 
-    <div ng-if="mode.type !== 'file'">
-      <p>Note: Currently only supports Swagger v1.2</p>
+    <div ng-if="mode.type === 'swagger' || mode.type === 'zip'">
+      <p><b>Note:</b> This option works for Swagger 1.2 only, for Swagger 2.0 support use the <i>Swagger 2.0 spec</i> option</p>
     </div>
   </div>
 

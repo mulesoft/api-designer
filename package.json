@@ -21,6 +21,8 @@
     "yargs": "~3.11.0"
   },
   "devDependencies": {
+    "api-spec-converter": "stoplightio/api-spec-converter#91f7ccd3f428dfb1453e62f1c6db01a8b74dba81",
+    "brfs": "~1.4.3",
     "chai": "~1.10.0",
     "connect-livereload": "~0.3.2",
     "grunt": "~0.4.5",
@@ -49,7 +51,7 @@
     "karma-phantomjs-launcher": "~0.1.2",
     "load-grunt-tasks": "~0.5.0",
     "mocha": "~2.0.0",
-    "request": "~2.33.0",
+    "request": "~2.51.0",
     "selenium-webdriver": "2.53.2",
     "traverse": "~0.6.6"
   },
