@@ -13388,16 +13388,15 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         var parserErrors = error.parserErrors || [{
               line: 0,
               column: 1,
-              message: error.message
+              message: error.message,
+              isWarning: error.isWarning
             }];
-        parserErrors = parserErrors.filter(function (item) {
-          return !item.isWarning;
-        });
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           return {
             line: error.line + 1,
             column: error.column,
-            message: error.message
+            message: error.message,
+            severity: error.isWarning ? 'warning' : 'error'
           };
         }));
       }));

@@ -181,15 +181,13 @@
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
-        var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message}];
-        parserErrors = parserErrors.filter(function (item) {
-          return !item.isWarning;
-        });
+        var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message, isWarning: error.isWarning}];
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           return {
             line:    error.line + 1,
             column:  error.column,
-            message: error.message
+            message: error.message,
+            severity: error.isWarning ? 'warning' : 'error'
           };
         }));
       }));

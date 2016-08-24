@@ -95,6 +95,28 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
+  describe('on raml parser warning', function () {
+    it('should display warnings', function () {
+      // Arrange
+      ctrl = $controller('ramlEditorMain', params);
+      var warning = {
+        message: 'Unknown property',
+        isWarning: true
+      };
+      should.not.exist(scope.currentError);
+
+      // Act
+      $rootScope.$broadcast('event:raml-parser-error', warning);
+
+      // Assert
+      annotationsToDisplay.length.should.be.equal(1);
+      annotationsToDisplay[0].line.should.be.equal(1);
+      annotationsToDisplay[0].column.should.be.equal(1);
+      annotationsToDisplay[0].message.should.be.equal(warning.message);
+      annotationsToDisplay[0].severity.be.equal('warning');
+    });
+  });
+
   describe('on raml parser error', function () {
     it('should display errors on first line if no line specified', function () {
       // Arrange
@@ -112,6 +134,7 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].line.should.be.equal(1);
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
+      annotationsToDisplay[0].severity.be.equal('error');
     });
 
     describe.skip('code folding a block containing the errored line', function() {
@@ -131,6 +154,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(7);
         annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
+        annotationsToDisplay[0].severity.be.equal('error');
       });
 
       it('restores the error marker on unfolding', function() {
@@ -150,6 +174,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(9);
         annotationsToDisplay[0].message.should.be.equal(error.message);
+        annotationsToDisplay[0].severity.be.equal('error');
       });
 
       it('moves the error marker to the next fold when nested', function() {
@@ -178,6 +203,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(8);
         annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
+        annotationsToDisplay[0].severity.be.equal('error');
       });
     });
   });
