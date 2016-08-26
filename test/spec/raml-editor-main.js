@@ -113,7 +113,7 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].line.should.be.equal(1);
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(warning.message);
-      annotationsToDisplay[0].severity.be.equal('warning');
+      annotationsToDisplay[0].severity.should.be.equal('warning');
     });
   });
 
@@ -134,7 +134,7 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].line.should.be.equal(1);
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
-      annotationsToDisplay[0].severity.be.equal('error');
+      annotationsToDisplay[0].severity.should.be.equal('error');
     });
 
     describe.skip('code folding a block containing the errored line', function() {
@@ -154,7 +154,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(7);
         annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
-        annotationsToDisplay[0].severity.be.equal('error');
+        annotationsToDisplay[0].severity.should.be.equal('error');
       });
 
       it('restores the error marker on unfolding', function() {
@@ -174,7 +174,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(9);
         annotationsToDisplay[0].message.should.be.equal(error.message);
-        annotationsToDisplay[0].severity.be.equal('error');
+        annotationsToDisplay[0].severity.should.be.equal('error');
       });
 
       it('moves the error marker to the next fold when nested', function() {
@@ -203,7 +203,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(8);
         annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
-        annotationsToDisplay[0].severity.be.equal('error');
+        annotationsToDisplay[0].severity.should.be.equal('error');
       });
     });
   });
