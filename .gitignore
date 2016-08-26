@@ -5,6 +5,7 @@ bower_components
 .DS_Store
 *.orig
 *.log
+*.iml
 .vimrc
 .idea
 coverage
