@@ -448,6 +448,79 @@ describe('RAML Editor Main Controller', function () {
         });
       });
     });
+
+    describe('typed fragments are parsable', function () {
+      beforeEach(function () {
+        scope.fileBrowser = {
+          rootFile: {
+            name:      'root.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0', '---', 'title: My API'].join('\n')
+          },
+          libraryFile: {
+            name:      'library.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Library', '---', 'title: My API'].join('\n')
+          },
+          overlayFile: {
+            name:      'overlay.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Overlay', '---', 'title: My API'].join('\n')
+          },
+          extensionFile: {
+            name:      'extension.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Extension', '---', 'title: My API'].join('\n')
+          },
+          traitFile: {
+            name:      'trait.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Trait', '---', 'title: My API'].join('\n')
+          },
+          resourceTypeFile: {
+            name:      'resourceType.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 ResourceType', '---', 'title: My API'].join('\n')
+          }
+        };
+      });
+
+      describe('root file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.rootFile).should.be.true;
+        });
+      });
+
+      describe('library file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.libraryFile).should.be.true;
+        });
+      });
+
+      describe('overlay file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.overlayFile).should.be.true;
+        });
+      });
+
+      describe('extension file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.extensionFile).should.be.true;
+        });
+      });
+
+      describe('trait file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.traitFile).should.be.true;
+        });
+      });
+
+      describe('resourceType file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.resourceTypeFile).should.be.true;
+        });
+      });
+    });
   });
 
   describe('getIsMockingServiceVisible', function () {
