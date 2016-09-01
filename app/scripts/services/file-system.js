@@ -115,6 +115,13 @@
     },
 
     /**
+     * Returns a the content of the file found at fullpath. Fails if the fullpath does not exist or is a folder.
+     */
+    loadSync: function (fullpath) {
+      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
+    },
+
+    /**
      * Removes a fullpath and all the nested children of the hierarchy.
      *
      * Returns a promise that fulfills on success or rejects on fail.

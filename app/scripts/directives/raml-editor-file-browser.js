@@ -117,8 +117,7 @@
                   file.dirty = true;
                 }
               });
-            })
-          ;
+            });
         };
 
         fileBrowser.selectDirectory = function selectDirectory(directory) {
