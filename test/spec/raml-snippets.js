@@ -40,7 +40,7 @@ describe('RAML Snippets', function () {
 
   it('should provide an empty RAML', function () {
     ramlSnippets.getEmptyRaml().should.be.equal([
-      '#%RAML 0.8',
+      '#%RAML 1.0',
       'title:'
     ].join('\n'));
   });
