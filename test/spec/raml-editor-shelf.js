@@ -15,13 +15,13 @@ describe('Shelf controller', function () {
   }));
 
   describe('updateSuggestions', function () {
-    var updateSuggestions;
+    var newSuggestions;
 
     beforeEach(inject(function ($injector) {
-      updateSuggestions = $injector.get('updateSuggestions');
+      newSuggestions = $injector.get('newSuggestions');
     }));
 
-    it('should provide suggestions for root without "title"', function () {
+    it('should provide suggestions for root without "title"', function (done) {
       var contentLines = ['#%RAML 1.0', 'title: Nice Title', ''];
       var editor = getEditor(codeMirror,
         contentLines,
@@ -32,26 +32,32 @@ describe('Shelf controller', function () {
       ramlRepository.children = [file];
       ramlRepository.loadDirectory();
 
-      var model = updateSuggestions(ramlRepository.rootDirectory, file, editor);
 
-      var keys = model.categories[0].items
-        .map(function (s) { return s.title; });
-      keys.should.not.include('title');
-      keys.should.include('schemas');
-      keys.should.include('uses');
-      keys.should.include('types');
-      keys.should.include('traits');
-      keys.should.include('resourceTypes');
-      keys.should.include('annotationTypes');
-      keys.should.include('securitySchemes');
-      keys.should.include('description');
-      keys.should.include('version');
-      keys.should.include('baseUri');
-      keys.should.include('baseUriParameters');
-      keys.should.include('protocols');
-      keys.should.include('mediaType');
-      keys.should.include('securedBy');
-      keys.should.include('documentation');
+      newSuggestions(ramlRepository.rootDirectory, file, editor)
+        .then(function(model) {
+          var keys = model.categories
+            .map(function (category) { return category.items; })
+            .reduce(function (result, value) { return result.concat(value); }, [])
+            .map(function (s) { return s.title; });
+          keys.should.not.include('title');
+          keys.should.include('schemas');
+          keys.should.include('uses');
+          keys.should.include('types');
+          keys.should.include('traits');
+          keys.should.include('resourceTypes');
+          keys.should.include('annotationTypes');
+          keys.should.include('securitySchemes');
+          keys.should.include('description');
+          keys.should.include('version');
+          keys.should.include('baseUri');
+          keys.should.include('baseUriParameters');
+          keys.should.include('protocols');
+          keys.should.include('mediaType');
+          keys.should.include('securedBy');
+          keys.should.include('documentation');
+
+          done();
+        });
     });
   });
 

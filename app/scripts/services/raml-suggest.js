@@ -36,14 +36,28 @@ var FSResolver = function (homeDirectory, ramlRepository) {
   };
 
   this.getFileContent = function (file) {
-    if (file.loaded) { return file.doc.getValue(); }
+    if (file.loaded && file.doc) { return file.doc.getValue(); }
     return ramlRepository.loadFileSync(file).contents;
+  };
+
+  this.getFileContentAsync = function (file) {
+    if (file.loaded && file.doc) { return Promise.resolve(file.doc.getValue()); }
+
+    var getFileContent = function (file) { return file.contents; };
+    return ramlRepository.loadFile(file)
+      .then(getFileContent);
   };
 
   this.content = function (path) {
     var element = this.getElement(path);
     if (!element || element.isDirectory) { return ''; }
     return this.getFileContent(element);
+  };
+
+  this.contentAsync = function (path) {
+    var element = this.getElement(path);
+    if (!element || element.isDirectory) { return Promise.resolve(''); }
+    return this.getFileContentAsync(element);
   };
 
   this.list = function (path) {
@@ -54,16 +68,11 @@ var FSResolver = function (homeDirectory, ramlRepository) {
       .map(function (child) { return child.name; });
   };
 
-  this.exists = function (path) {
-    return this.getElement(path);
-  };
+  this.listAsync = function(path){ return Promise.resolve(this.list(path)); };
 
-  this.contentAsync = function (path) {
-    var getFileContent = function (file) { return file.contents; };
+  this.exists = function(path) { return this.getElement(path); };
 
-    return ramlRepository.loadFile(path)
-      .then(getFileContent);
-  };
+  this.existsAsync = function(path) { return Promise.resolve(this.exists(path)); };
 
   this.dirname = function (path) {
     var element = this.getElement(path);
@@ -93,6 +102,8 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     var element = this.getElement(path);
     return element && element.isDirectory;
   };
+
+  this.isDirectoryAsync = function (path) { return Promise.resolve(this.isDirectory(path)); };
 };
 
 var EditorStateProvider = function (fsResolver, path, editor) {
@@ -165,32 +176,36 @@ angular.module('ramlEditorApp')
       };
     }
 
-    function getSuggestions(homeDirectory, currentFile, editor) {
+    this.getSuggestions = function(homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
       var fsResolver = new FSResolver(homeDirectory, ramlRepository);
 
       var contentProvider = ramlSuggestions.getContentProvider(fsResolver);
       var editorStateProvider = new EditorStateProvider(fsResolver, currentFile.path, editor);
-      var suggestions = ramlSuggestions.suggest(editorStateProvider, contentProvider);
-      
-      return suggestions || [];
-    }
+
+      return ramlSuggestions.suggestAsync(editorStateProvider, contentProvider)
+        .then(
+          function (result) { return Array.isArray(result)? result: []; },
+          function () { return []; }
+        );
+    };
 
     // class methods
 
     this.suggest = function (homeDirectory, currentFile, editor) {
-      return getSuggestions(homeDirectory, currentFile, editor);
+      return this.getSuggestions(homeDirectory, currentFile, editor);
     };
 
-    this.autocompleteHelper = function (editor, homeDirectory, currentFile) {
+    this.autocompleteHelper = function (editor, callback, options, homeDirectory, currentFile) {
       if (!homeDirectory || !currentFile) {
         var $scope = angular.element(editor.getInputField()).scope();
-        homeDirectory = $scope.homeDirectory;
-        currentFile = $scope.fileBrowser.selectedFile;
+        homeDirectory = homeDirectory || $scope.homeDirectory;
+        currentFile = currentFile || $scope.fileBrowser.selectedFile;
       }
 
-      var suggestions = getSuggestions(homeDirectory, currentFile, editor);
-      return codemirrorHint(editor, suggestions);
+      this.getSuggestions(homeDirectory, currentFile, editor)
+        .then(function(suggestions) { return codemirrorHint(editor, suggestions); })
+        .then(function(codemirrorHint) { callback(codemirrorHint); });
     };
 
     return this;

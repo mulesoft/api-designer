@@ -18,17 +18,50 @@
         editor.focus();
       };
     })
-    .factory('updateSuggestions', function(ramlSuggest) {
+    .factory('newSuggestions', function(ramlSuggest) {
+      Array.prototype.groupBy = function(key) {
+        var addItemToResult = function (result, item) {
+          var list = result[item[key]] || [];
+          list.push(item);
+          result[item[key]] = list;
+          return result;
+        };
+
+        return this.reduce(addItemToResult, {});
+      };
+
+      var createModel = function (suggestions) {
+        var items = suggestions.map(function (suggestion) {
+          return {
+            category: suggestion.category,
+            title: suggestion.displayText || suggestion.text,
+            key: suggestion.text
+          };
+        });
+        var categoryMap = items.groupBy('category');
+        var categories = Object.keys(categoryMap)
+          .map(function(key) { return {name: key, items: categoryMap[key]}; });
+
+        // model.path = suggestions.path;
+          return {categories: categories}; // model
+      };
+
       return function (homeDirectory, selectedFile, editor) {
-        var suggestions = ramlSuggest.suggest(homeDirectory, selectedFile, editor);
-        return createModel(suggestions);
+        return ramlSuggest.suggest(homeDirectory, selectedFile, editor)
+          .then(createModel);
       };
     })
-    .controller('ramlEditorShelf', function ($scope, safeApplyWrapper, updateSuggestions, applySuggestion) {
+    .controller('ramlEditorShelf', function ($scope, safeApplyWrapper, newSuggestions, applySuggestion) {
       var editor = $scope.editor;
 
+      function updateModel(suggestions) {
+        $scope.model = suggestions;
+        $scope.$digest();
+      }
+
       $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
-        $scope.model = updateSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor);
+        newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor)
+          .then(updateModel);
       });
 
       $scope.orderSections = function orderSections(section) {
@@ -50,17 +83,4 @@
 
       editor.on('cursorActivity', $scope.cursorMoved);
     });
-
-  var createModel = function (suggestions) {
-    var category = {name: 'Category Name'};
-    category.items = suggestions.map(function (suggestion) {
-      return {
-        title: suggestion.displayText || suggestion.text,
-        key: suggestion.text
-      };
-    });
-
-    // model.path = suggestions.path;
-    return {categories: [category]}; // model
-  };
 })();
