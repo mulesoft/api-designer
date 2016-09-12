@@ -1,5 +1,7 @@
 'use strict';
 
+// Util Functions
+
 function range(start, stop) {
   var result = new Array(stop - start + 1);
   for (var i = start; i <= stop; i++) {
@@ -8,6 +10,8 @@ function range(start, stop) {
 
   return result;
 }
+
+// end Util Functions
 
 var FSResolver = function (homeDirectory, ramlRepository) {
   this.parsePath = function (path) {
@@ -134,6 +138,7 @@ var EditorStateProvider = function (fsResolver, path, editor) {
 
 angular.module('ramlEditorApp')
   .factory('ramlSuggest', function (ramlRepository) {
+
     function codemirrorHint(editor, suggestions) {
       var currentWord = function(line){
         if (!line) { return ''; }
@@ -142,13 +147,15 @@ angular.module('ramlEditorApp')
       };
 
       var render = function (element, self, data) {
-        element.innerHTML = ['<div>', data.displayText, '</div>'].join('');
+        element.innerHTML = ['<div>', data.displayText, '</div>', '<div class="category">', data.category,'</div>']
+            .join('');
       };
 
       var codemirrorSuggestion = function(suggestion) {
         return {
           displayText: suggestion.displayText || suggestion.text,
           text: suggestion.text,
+          category: suggestion.category,
           render: render
         };
       };
@@ -176,6 +183,13 @@ angular.module('ramlEditorApp')
       };
     }
 
+    function beautifyCategoryName(suggestion) {
+      if(suggestion.category === undefined || suggestion.category.toLowerCase() === 'unknown') {
+        suggestion.category = 'others';
+      }
+      return suggestion;
+    }
+
     this.getSuggestions = function(homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
       var fsResolver = new FSResolver(homeDirectory, ramlRepository);
@@ -187,7 +201,8 @@ angular.module('ramlEditorApp')
         .then(
           function (result) { return Array.isArray(result)? result: []; },
           function () { return []; }
-        );
+        )
+        .then(function (suggestions) { return suggestions.map(beautifyCategoryName); });
     };
 
     // class methods
