@@ -183,11 +183,24 @@
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
         var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message, isWarning: error.isWarning}];
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
+          var errorInfo = error;
+          var tracingInfo = { line : undefined, column : undefined, path : undefined };
+          var needErrorPath = error.trace !== undefined;
+          if (needErrorPath) {
+            errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
+              return trace.path === event.currentScope.fileBrowser.selectedFile.name;
+            });
+            tracingInfo = { line : error.line, column : error.column, path : error.path };
+          }
+
           return {
-            line:    error.line + 1,
-            column:  error.column,
-            message: error.message,
-            severity: error.isWarning ? 'warning' : 'error'
+            line          : errorInfo.line + 1,
+            column        : errorInfo.column,
+            message       : errorInfo.message,
+            severity      : errorInfo.isWarning ? 'warning' : 'error',
+            path          : tracingInfo.path,
+            tracingLine   : tracingInfo.line,
+            tracingColumn : tracingInfo.column
           };
         }));
       }));

@@ -8,22 +8,10 @@
       var SEVERITIES = /^(?:error|warning)$/;
       var service = {};
 
-      function showTooltip (e, content) {
+      function showTooltip (content) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
-        document.body.appendChild(tt);
-
-        function position (e) {
-          if (!tt.parentNode) {
-            return CodeMirror.off(document, 'mousemove', position);
-          }
-          tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + 'px';
-          tt.style.left = (e.clientX + 5) + 'px';
-        }
-
-        CodeMirror.on(document, 'mousemove', position);
-        position(e);
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
@@ -47,11 +35,21 @@
         $timeout(function () { rm(tt); }, 200);
       }
 
-      function showTooltipFor (e, content, node) {
-        var tooltip = showTooltip(e, content);
+      function showTooltipFor (content, node) {
+        var tooltip = showTooltip(content, node);
+        node.appendChild(tooltip);
+
+        var openTrace = function(event){
+          var path = event.target.dataset.path;
+          if (path) {
+            var $scope = angular.element(event.target).scope();
+            $scope.$emit('event:raml-editor-file-select', path);
+          }
+        };
 
         function hide () {
-          CodeMirror.off(node, 'mouseout', hide);
+          CodeMirror.off(node, 'mouseleave', hide);
+          CodeMirror.off(node, 'mousedown', openTrace);
           if (tooltip) {
             hideTooltip(tooltip);
             tooltip = null;
@@ -74,7 +72,8 @@
           }
         }, 400);
 
-        CodeMirror.on(node, 'mouseout', hide);
+        CodeMirror.on(node, 'mouseleave', hide);
+        CodeMirror.on(node, 'mousedown', openTrace);
       }
 
       function clearMarks (cm) {
@@ -101,7 +100,17 @@
         }
         var tip = document.createElement('div');
         tip.className = 'CodeMirror-lint-message-' + severity;
-        tip.appendChild(document.createTextNode(ann.message));
+
+        var message = ann.message;
+
+        // if error belongs to different file, add tracing information to message
+        if (ann.path) {
+          var line = ann.tracingLine + 1;
+          message += ' at line ' + line + ' col ' + ann.tracingColumn + ' in ' +
+            '<a href="#/'+ann.path+'" data-path="/'+ann.path+'">'+ann.path+'</a>';
+        }
+
+        tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' + message;
         return tip;
       }
 
@@ -117,8 +126,8 @@
         }
 
         if (tooltips !== false) {
-          CodeMirror.on(inner, 'mouseover', function (e) {
-            showTooltipFor(e, labels, inner);
+          CodeMirror.on(inner, 'mouseenter', function () {
+            showTooltipFor(labels, inner);
           });
         }
 

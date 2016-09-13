@@ -4,7 +4,7 @@ var codeMirror, codeMirrorErrors,
   $rootScope, $controller, $q, applySuggestion;
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository, sandbox;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository, sandbox, ramlParser;
 
   beforeEach(module('ramlEditorApp'));
 
@@ -26,6 +26,7 @@ describe('RAML Editor Main Controller', function () {
     codeMirror      = $injector.get('codeMirror');
     applySuggestion = $injector.get('applySuggestion');
     ramlRepository  = $injector.get('ramlRepository');
+    ramlParser      = $injector.get('ramlParser');
   }));
 
   beforeEach(function () {
@@ -286,6 +287,53 @@ describe('RAML Editor Main Controller', function () {
       $timeout.flush();
 
       scope.fileBrowser.selectedFile.contents.should.equal('updated editor contents');
+    });
+  });
+
+  describe('tracing errors', function () {
+    beforeEach(function () {
+      scope.fileBrowser = {
+        rootFile: {
+          type: 'file',
+          path: '/api.raml',
+          isDirectory : false,
+          extension: 'raml',
+          name: 'api.raml',
+          contents: '#%RAML 1.0\ntitle: My API\nresourceTypes:\n  collection: !include resourceType.raml',
+          children: []
+        },
+
+        resourceFile: {
+          name: 'resourceType.raml',
+          path:      '/resourceType.raml',
+          extension: 'raml',
+          contents : '#%RAML 1.0 ResourceType'
+        }
+      };
+    });
+
+    it('error should be traced in files including it', function () {
+      ctrl = $controller('ramlEditorMain', params);
+
+      sinon.stub(ramlRepository, 'getByPath', function (path) {
+        return { path: path };
+      });
+
+      var loadRaml = sinon.spy(scope, 'loadRaml');
+
+      scope.fileBrowser.selectedFile = scope.fileBrowser.rootFile;
+      scope.$emit('event:raml-editor-file-selected', scope.fileBrowser.selectedFile);
+      scope.$emit('event:file-updated');
+      scope.$digest();
+      loadRaml.exceptions.length.should.be.equal(1);
+      loadRaml.should.have.been.calledWith(scope.fileBrowser.rootFile.contents, scope.fileBrowser.rootFile.path);
+
+      scope.fileBrowser.selectedFile = scope.fileBrowser.resourceFile;
+      scope.$emit('event:raml-editor-file-selected', scope.fileBrowser.selectedFile);
+      scope.$emit('event:file-updated');
+      scope.$digest();
+      loadRaml.exceptions.length.should.be.equal(2);
+      loadRaml.should.have.been.calledWith(scope.fileBrowser.resourceFile.contents, scope.fileBrowser.resourceFile.path);
     });
   });
 

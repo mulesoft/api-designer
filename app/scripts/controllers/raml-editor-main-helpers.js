@@ -25,7 +25,7 @@
       }
 
       function isTypedFragment(raml) {
-        return /^#%RAML\s1\.0\s(Trait|ResourceType|Library|Overlay|Extension)\s*$/.test(getFirstLine(raml));
+        return /^#%RAML\s1\.0\s(Trait|ResourceType|Library|Overlay|Extension|DataType|DocumentationItem|NamedExample|AnnotationTypeDeclaration|SecurityScheme)\s*$/.test(getFirstLine(raml));
       }
 
       function getFirstLine(raml) {

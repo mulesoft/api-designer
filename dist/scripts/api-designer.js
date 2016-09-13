@@ -10494,20 +10494,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       var GUTTER_ID = 'CodeMirror-lint-markers';
       var SEVERITIES = /^(?:error|warning)$/;
       var service = {};
-      function showTooltip(e, content) {
+      function showTooltip(content) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
-        document.body.appendChild(tt);
-        function position(e) {
-          if (!tt.parentNode) {
-            return CodeMirror.off(document, 'mousemove', position);
-          }
-          tt.style.top = Math.max(0, e.clientY - tt.offsetHeight - 5) + 'px';
-          tt.style.left = e.clientX + 5 + 'px';
-        }
-        CodeMirror.on(document, 'mousemove', position);
-        position(e);
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
@@ -10530,10 +10520,19 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           rm(tt);
         }, 200);
       }
-      function showTooltipFor(e, content, node) {
-        var tooltip = showTooltip(e, content);
+      function showTooltipFor(content, node) {
+        var tooltip = showTooltip(content, node);
+        node.appendChild(tooltip);
+        var openTrace = function (event) {
+          var path = event.target.dataset.path;
+          if (path) {
+            var $scope = angular.element(event.target).scope();
+            $scope.$emit('event:raml-editor-file-select', path);
+          }
+        };
         function hide() {
-          CodeMirror.off(node, 'mouseout', hide);
+          CodeMirror.off(node, 'mouseleave', hide);
+          CodeMirror.off(node, 'mousedown', openTrace);
           if (tooltip) {
             hideTooltip(tooltip);
             tooltip = null;
@@ -10554,7 +10553,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               return clearInterval(poll);
             }
           }, 400);
-        CodeMirror.on(node, 'mouseout', hide);
+        CodeMirror.on(node, 'mouseleave', hide);
+        CodeMirror.on(node, 'mousedown', openTrace);
       }
       function clearMarks(cm) {
         cm.clearGutter(GUTTER_ID);
@@ -10577,7 +10577,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         }
         var tip = document.createElement('div');
         tip.className = 'CodeMirror-lint-message-' + severity;
-        tip.appendChild(document.createTextNode(ann.message));
+        var message = ann.message;
+        // if error belongs to different file, include tracing information in message
+        if (ann.path) {
+          var line = ann.tracingLine + 1;
+          message += ' at line ' + line + ' col ' + ann.tracingColumn + ' in ' + '<a href="#/' + ann.path + '" data-path="/' + ann.path + '">' + ann.path + '</a>';
+        }
+        tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' + message;
         return tip;
       }
       function makeMarker(labels, severity, multiple, tooltips, annotations) {
@@ -10589,8 +10595,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           inner.className = 'CodeMirror-lint-marker-multiple';
         }
         if (tooltips !== false) {
-          CodeMirror.on(inner, 'mouseover', function (e) {
-            showTooltipFor(e, labels, inner);
+          CodeMirror.on(inner, 'mouseenter', function () {
+            showTooltipFor(labels, inner);
           });
         }
         //For testing automation purposes
@@ -13394,11 +13400,31 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               isWarning: error.isWarning
             }];
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
+          var errorInfo = error;
+          var tracingInfo = {
+              line: undefined,
+              column: undefined,
+              path: undefined
+            };
+          var needErrorPath = error.trace !== undefined;
+          if (needErrorPath) {
+            errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
+              return trace.path === event.currentScope.fileBrowser.selectedFile.name;
+            });
+            tracingInfo = {
+              line: error.line,
+              column: error.column,
+              path: error.path
+            };
+          }
           return {
-            line: error.line + 1,
-            column: error.column,
-            message: error.message,
-            severity: error.isWarning ? 'warning' : 'error'
+            line: errorInfo.line + 1,
+            column: errorInfo.column,
+            message: errorInfo.message,
+            severity: errorInfo.isWarning ? 'warning' : 'error',
+            path: tracingInfo.path,
+            tracingLine: tracingInfo.line,
+            tracingColumn: tracingInfo.column
           };
         }));
       }));
@@ -13499,7 +13525,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       return /^#%RAML\s(0\.8|1\.0)\s*$/.test(getFirstLine(raml));
     }
     function isTypedFragment(raml) {
-      return /^#%RAML\s1\.0\s(Trait|ResourceType|Library|Overlay|Extension)\s*$/.test(getFirstLine(raml));
+      return /^#%RAML\s1\.0\s(Trait|ResourceType|Library|Overlay|Extension|DataType|DocumentationItem|NamedExample|AnnotationTypeDeclaration|SecurityScheme)\s*$/.test(getFirstLine(raml));
     }
     function getFirstLine(raml) {
       return raml.split(/\r\n|\n/)[0];
@@ -14345,6 +14371,10 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           }
           return fileBrowser.selectFile(target);
         };
+        $scope.$on('event:raml-editor-file-select', function (event, filePath) {
+          var file = ramlRepository.getByPath(filePath);
+          fileBrowser.selectFile(file);
+        });
         fileBrowser.selectFile = function selectFile(file) {
           // If we select a file that is already active, just modify 'currentTarget', no load needed
           if (fileBrowser.selectedFile && fileBrowser.selectedFile.$$hashKey === file.$$hashKey) {
