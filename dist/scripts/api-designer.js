@@ -10257,7 +10257,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'codeFolding'
   ]).factory('codeMirror', [
     '$rootScope',
-    'ramlHint',
+    'ramlSuggest',
     'codeMirrorHighLight',
     'generateSpaces',
     'generateTabs',
@@ -10267,7 +10267,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'getTabCount',
     'config',
     'extractKeyValue',
-    function ($rootScope, ramlHint, codeMirrorHighLight, generateSpaces, generateTabs, getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue) {
+    function ($rootScope, ramlSuggest, codeMirrorHighLight, generateSpaces, generateTabs, getFoldRange, isArrayStarter, getSpaceCount, getTabCount, config, extractKeyValue) {
       var editor = null;
       var service = { CodeMirror: CodeMirror };
       service.removeTabs = function (line, indentUnit) {
@@ -10469,14 +10469,17 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           $rootScope.$broadcast('event:save');
         };
         CodeMirror.commands.autocomplete = function (cm) {
-          CodeMirror.showHint(cm, CodeMirror.hint.raml, { ghosting: true });
+          CodeMirror.showHint(cm, CodeMirror.hint.raml, {
+            ghosting: true,
+            async: true
+          });
         };
         CodeMirror.commands.toggleTheme = function () {
           $rootScope.$broadcast('event:toggle-theme');
         };
         CodeMirror.defineMode('raml', codeMirrorHighLight.highlight);
         CodeMirror.defineMIME('text/x-raml', 'raml');
-        CodeMirror.registerHelper('hint', 'raml', ramlHint.autocompleteHelper);
+        CodeMirror.registerHelper('hint', 'raml', ramlSuggest.autocompleteHelper.bind(ramlSuggest));
         CodeMirror.registerHelper('fold', 'indent', getFoldRange);
       }());
       return service;
@@ -10632,368 +10635,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('getNeighborLines', [
-    'getLineIndent',
-    'isArrayStarter',
-    function (getLineIndent, isArrayStarter) {
-      return function (editor, lineNumber) {
-        if (typeof lineNumber !== 'number') {
-          lineNumber = editor.getCursor().line;
-        }
-        var lineNumbers = [lineNumber];
-        var line = editor.getLine(lineNumber).slice(0, editor.getCursor().ch + 1);
-        var lineIndent = getLineIndent(line);
-        var lineIsArray = isArrayStarter(line);
-        var linesCount = editor.lineCount();
-        var i;
-        var nextLine;
-        var nextLineIndent;
-        // lines above specified
-        for (i = lineNumber - 1; i >= 0; i--) {
-          nextLine = editor.getLine(i);
-          nextLineIndent = getLineIndent(nextLine);
-          if (nextLineIndent.tabCount !== lineIndent.tabCount) {
-            // level is decreasing, no way we can get back
-            if (nextLineIndent.tabCount < lineIndent.tabCount) {
-              if (!lineIsArray && isArrayStarter(nextLine) && nextLineIndent.tabCount + 1 === lineIndent.tabCount) {
-                lineNumbers.push(i);
-              }
-              break;
-            }
-            // level is increasing, but we still can get back
-            continue;
-          } else if (isArrayStarter(nextLine)) {
-            break;
-          }
-          lineNumbers.push(i);
-        }
-        // lines below specified
-        for (i = lineNumber + 1; i < linesCount; i++) {
-          nextLine = editor.getLine(i);
-          nextLineIndent = getLineIndent(nextLine);
-          if (nextLineIndent.tabCount !== lineIndent.tabCount) {
-            // level is decreasing, no way we can get back
-            if (nextLineIndent.tabCount < lineIndent.tabCount) {
-              break;
-            }
-            if (!lineIsArray || nextLineIndent.tabCount !== lineIndent.tabCount + 1) {
-              // level is increasing, but we still can get back
-              continue;
-            }
-          } else if (isArrayStarter(nextLine)) {
-            break;
-          }
-          lineNumbers.push(i);
-        }
-        return lineNumbers.sort().map(function (lineNumber) {
-          return editor.getLine(lineNumber);
-        });
-      };
-    }
-  ]).factory('getNeighborKeys', [
-    'getNeighborLines',
-    'extractKeyValue',
-    function (getNeighborLines, extractKeyValue) {
-      return function (editor) {
-        return getNeighborLines(editor).map(function (line) {
-          return extractKeyValue(line).key;
-        });
-      };
-    }
-  ]).factory('ramlHint', [
-    'generateTabs',
-    'getNeighborKeys',
-    'getTabCount',
-    'getScopes',
-    'getEditorTextAsArrayOfLines',
-    'getNode',
-    function ramlHintFactory(generateTabs, getNeighborKeys, getTabCount, getScopes, getEditorTextAsArrayOfLines, getNode) {
-      var hinter = {};
-      var RAML_PATTERN = /^#%RAML\s(0\.8|1\.0)(\s[a-z]+)?$/i;
-      hinter.getScopes = function (editor) {
-        return getScopes(getEditorTextAsArrayOfLines(editor));
-      };
-      hinter.shouldSuggestVersion = function (editor) {
-        var lineNumber = editor.getCursor().line;
-        var line = editor.getLine(lineNumber);
-        var lineIsVersion = RAML_PATTERN.test(line);
-        return lineNumber === 0 && !lineIsVersion;
-        ;
-      };
-      /**
-       * @param suggestionKey The key to consider suggestion to the user
-       * @param suggestion The suggestion metadata for the key
-       * @param nodes The nodes to check for the suggestion
-       * @returns {boolean} Whether the suggestion is in use
-       */
-      hinter.isSuggestionInUse = function (suggestionKey, suggestion, nodes) {
-        var values = suggestion.metadata.isText ? nodes.map(function (node) {
-            return node.getValue() ? node.getValue().text : null;
-          }) : nodes.map(function (node) {
-            return node.getKey();
-          });
-        return values.indexOf(suggestionKey) !== -1 || !suggestion.metadata.isText && suggestion.metadata.canBeOptional && values.indexOf(suggestionKey + '?') !== -1;
-      };
-      /**
-       * Parses first line of current editor document in order to get
-       * its RAML version.
-       *
-       * @param {CodeMirror} editor
-       *
-       * @return {String}
-       */
-      hinter.getVersion = function getVersion(editor) {
-        return RAML_PATTERN.exec(editor.getLine(0))[1];
-      };
-      /**
-       * Parses first line of current editor document in order to get
-       * its RAML frament otherwise falls back to ApiDefinition.
-       *
-       * @param {CodeMirror} editor
-       *
-       * @return {String}
-       */
-      hinter.getFragment = function getFragment(editor) {
-        return (RAML_PATTERN.exec(editor.getLine(0))[2] || 'ApiDefinition').trim();
-      };
-      /**
-       * Suggests next possible RAML elements based on path and
-       * current editor document RAML version.
-       *
-       * @param {CodeMirror} editor
-       * @param {String[]}   path
-       *
-       * @return {RAML.Grammar}
-       */
-      hinter.suggestRAML = function suggestRAML(editor, path) {
-        return RAML.Grammar.suggestRAML(path, hinter.getVersion(editor), hinter.getFragment(editor));
-      };
-      /**
-       * @param editor The RAML editor
-       * @returns {{key, metadata {category, isText}}} Where keys are the RAML node names, and metadata
-       *          contains extra information about the node, such as its category
-       */
-      hinter.getSuggestions = function getSuggestions(editor) {
-        if (hinter.shouldSuggestVersion(editor)) {
-          return [{
-              key: '#%RAML 0.8',
-              metadata: {
-                category: 'main',
-                isText: true
-              }
-            }].concat([
-            'ApiDefinition',
-            'DataType',
-            'DocumentationItem',
-            'Extension',
-            'Library',
-            'Overlay',
-            'ResourceType',
-            'SecurityScheme',
-            'Trait'
-          ].map(function (frament) {
-            return {
-              key: '#%RAML 1.0' + (frament === 'ApiDefinition' ? '' : ' ' + frament),
-              metadata: {
-                category: 'main',
-                isText: true
-              }
-            };
-          }));
-        }
-        //Pivotal 61664576: We use the DOM API to check to see if the current node or any
-        //of its parents contains a YAML reference. If it does, then we provide no suggestions.
-        var node = getNode(editor);
-        var refNode = node.selfOrParent(function (node) {
-            return node.getValue() && node.getValue().isReference;
-          });
-        if (refNode) {
-          return [];
-        }
-        //Designer policy: If the cursor is at an empty line, then we
-        //provide shelf contents based on the node only. If the cursor is
-        //on a non-structural line, such as an empty line, then we provide
-        //shelf contents based on the tab level of the node.
-        if (node.isEmpty) {
-          var ch = editor.getCursor().ch;
-          var cursorTabCount = getTabCount(ch);
-          if (cursorTabCount <= node.lineIndent.tabCount) {
-            var atTabBoundary = ch % editor.getOption('indentUnit') === 0;
-            if (!atTabBoundary) {
-              return [];
-            }
-          }
-          cursorTabCount = Math.min(cursorTabCount, node.lineIndent.tabCount);
-          node = node.selfOrParent(function (node) {
-            return node.lineIndent.tabCount === cursorTabCount;
-          });
-        }
-        var raml = null;
-        var suggestions = [];
-        var peerNodes = [];
-        if (node) {
-          var path = node.getPath().map(function (node) {
-              return node.getKey();
-            });
-          raml = this.suggestRAML(editor, path);
-          suggestions = raml.suggestions;
-          var isText = Object.keys(suggestions).some(function (suggestion) {
-              return suggestions[suggestion].metadata.isText;
-            });
-          //Get all structural nodes' keys/values so we can filter them out. This bit is tricky; if
-          //we are in an array, and the elements of that array are text, then the peer group is
-          //every array in the parent. Otherwise, the peer group is every key in the current array.
-          var isTextNodeList = raml.metadata && raml.metadata.isList && isText;
-          peerNodes = isTextNodeList ? node.getParent().getChildren() : node.getSelfAndNeighbors();
-          peerNodes = peerNodes.filter(function (node) {
-            return node.isStructural;
-          });
-        }
-        //Next, filter out the keys from the returned suggestions
-        suggestions = Object.keys(suggestions).filter(function (key) {
-          return !hinter.isSuggestionInUse(key, suggestions[key], peerNodes);
-        }).sort().map(function (key) {
-          return {
-            key: key,
-            metadata: suggestions[key].metadata
-          };
-        });
-        //Pull out display-relevant metadata
-        suggestions.isList = raml && raml.metadata ? raml.metadata.isList : false;
-        return suggestions;
-      };
-      hinter.canAutocomplete = function (cm) {
-        var cursor = cm.getCursor();
-        var curLine = cm.getLine(cursor.line);
-        var curLineTrimmed = curLine.trim();
-        var offset = curLine.indexOf(curLineTrimmed);
-        var lineNumber = cursor.line;
-        // nothing to autocomplete within comments
-        // -> "#..."
-        if (function () {
-            var indexOf = curLineTrimmed.indexOf('#');
-            return lineNumber > 0 && indexOf !== -1 && cursor.ch > indexOf + offset;
-            ;
-          }()) {
-          return false;
-        }
-        // nothing to autocomplete within resources
-        // -> "/..."
-        if (function () {
-            var indexOf = curLineTrimmed.indexOf('/');
-            return indexOf === 0 && cursor.ch >= indexOf + offset;
-            ;
-          }()) {
-          return false;
-        }
-        // nothing to autocomplete for key value
-        // -> "key: ..."
-        if (function () {
-            var indexOf = curLineTrimmed.indexOf(': ');
-            return indexOf !== -1 && cursor.ch >= indexOf + offset + 2;
-            ;
-          }()) {
-          return false;
-        }
-        // nothing to autocomplete prior array
-        // -> "...- "
-        if (function () {
-            var indexOf = curLineTrimmed.indexOf('- ');
-            return indexOf === 0 && cursor.ch < indexOf + offset;
-            ;
-          }()) {
-          return false;
-        }
-        return true;
-      };
-      hinter.autocompleteHelper = function (cm) {
-        var cursor = cm.getCursor();
-        var line = cm.getLine(cursor.line);
-        var word = line.replace(/^\s+/, '');
-        var wordIsKey;
-        var suggestions;
-        var list;
-        var fromCh;
-        var toCh;
-        var render = function (element, self, data) {
-          element.innerHTML = [
-            '<div>',
-            data.displayText,
-            '</div>',
-            '<div class="category">',
-            data.category,
-            '</div>'
-          ].join('');
-        };
-        if (hinter.canAutocomplete(cm)) {
-          suggestions = hinter.getSuggestions(cm);
-        } else {
-          return;
-        }
-        // handle comment (except RAML tag)
-        (function () {
-          var indexOf = word.indexOf('#');
-          if (indexOf !== -1) {
-            if (cursor.line !== 0 || indexOf !== 0) {
-              word = word.slice(0, indexOf);
-            }
-          }
-        }());
-        // handle array
-        if (word.indexOf('- ') === 0) {
-          word = word.slice(2);
-        }
-        // handle map and extract key
-        (function () {
-          var match = word.match(/:(?:\s|$)/);
-          if (match) {
-            word = word.slice(0, match.index);
-            wordIsKey = true;
-          }
-        }());
-        function notDynamic(suggestion) {
-          return !suggestion.metadata.dynamic;
-        }
-        word = word.trim();
-        list = suggestions.filter(notDynamic).map(function (suggestion) {
-          var text = suggestion.key;
-          if (!suggestion.metadata.isText && !wordIsKey) {
-            text = text + ':';
-          }
-          return {
-            displayText: text,
-            text: text,
-            category: suggestion.metadata.category,
-            render: render
-          };
-        });
-        if (word) {
-          list = list.filter(function (e) {
-            return e.text.indexOf(word) === 0 && e.text.length !== word.length;
-            ;
-          });
-        }
-        if (word) {
-          fromCh = line.indexOf(word);
-          toCh = fromCh + word.length;
-        } else {
-          fromCh = cursor.ch;
-          toCh = fromCh;
-        }
-        return {
-          word: word,
-          list: list,
-          from: CodeMirror.Pos(cursor.line, fromCh),
-          to: CodeMirror.Pos(cursor.line, toCh)
-        };
-      };
-      return hinter;
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
   angular.module('raml').value('snippets', {
     options: [
       'options:',
@@ -11044,7 +10685,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       var service = {};
       service.getEmptyRaml = function () {
         return [
-          '#%RAML 0.8',
+          '#%RAML 1.0',
           'title:'
         ].join('\n');
       };
@@ -11661,6 +11302,17 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return fileSystem.load(file.path).then(modifyFile, handleErrorFor(file));
         ;
       };
+      service.loadFileSync = function loadFileSync(file) {
+        function modifyFile(data) {
+          file.dirty = false;
+          file.persisted = true;
+          file.loaded = true;
+          file.contents = data;
+          return file;
+        }
+        var loadedFile = fileSystem.loadSync(file.path);
+        return modifyFile(loadedFile);
+      };
       service.removeFile = function removeFile(file) {
         var promise;
         var parent = service.getParent(file);
@@ -11783,6 +11435,242 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   ]);
   ;
 }());
+'use strict';
+// Util Functions
+function range(start, stop) {
+  var result = new Array(stop - start + 1);
+  for (var i = start; i <= stop; i++) {
+    result[i - start] = i;
+  }
+  return result;
+}
+// end Util Functions
+var FSResolver = function (homeDirectory, ramlRepository) {
+  this.parsePath = function (path) {
+    return path.split('/').filter(function (pathMember) {
+      return pathMember && pathMember !== '';
+    });
+  };
+  this.getElement = function (path) {
+    var pathMembers = this.parsePath(path);
+    return this.getElementFromPath(pathMembers, 0, homeDirectory);
+  };
+  this.getElementFromPath = function (pathMembers, index, element) {
+    if (pathMembers.length === index) {
+      return element;
+    }
+    if (!element.isDirectory) {
+      return undefined;
+    }
+    var child = this.getChild(element, pathMembers[index]);
+    if (!child) {
+      return child;
+    }
+    return this.getElementFromPath(pathMembers, index + 1, child);
+  };
+  this.getChild = function (directory, childName) {
+    return directory.children.find(function (child) {
+      return child.name === childName;
+    });
+  };
+  this.getFileContent = function (file) {
+    if (file.loaded && file.doc) {
+      return file.doc.getValue();
+    }
+    return ramlRepository.loadFileSync(file).contents;
+  };
+  this.getFileContentAsync = function (file) {
+    if (file.loaded && file.doc) {
+      return Promise.resolve(file.doc.getValue());
+    }
+    var getFileContent = function (file) {
+      return file.contents;
+    };
+    return ramlRepository.loadFile(file).then(getFileContent);
+  };
+  this.content = function (path) {
+    var element = this.getElement(path);
+    if (!element || element.isDirectory) {
+      return '';
+    }
+    return this.getFileContent(element);
+  };
+  this.contentAsync = function (path) {
+    var element = this.getElement(path);
+    if (!element || element.isDirectory) {
+      return Promise.resolve('');
+    }
+    return this.getFileContentAsync(element);
+  };
+  this.list = function (path) {
+    var element = this.getElement(path);
+    if (!element || !element.isDirectory) {
+      return [];
+    }
+    return element.children.map(function (child) {
+      return child.name;
+    });
+  };
+  this.listAsync = function (path) {
+    return Promise.resolve(this.list(path));
+  };
+  this.exists = function (path) {
+    return this.getElement(path);
+  };
+  this.existsAsync = function (path) {
+    return Promise.resolve(this.exists(path));
+  };
+  this.dirname = function (path) {
+    var element = this.getElement(path);
+    if (!element) {
+      return '';
+    }
+    if (element.isDirectory) {
+      return element.path;
+    }
+    var result = path.substring(0, path.lastIndexOf('/'));
+    return result || '';
+  };
+  this.resolve = function (contextPath, relativePath) {
+    if (relativePath.startsWith('/')) {
+      return relativePath;
+    }
+    var pathBeginning = contextPath.endsWith('/') ? contextPath : contextPath + '/';
+    return pathBeginning + relativePath;
+  };
+  this.extname = function (path) {
+    var element = this.getElement(path);
+    if (element.isDirectory) {
+      return '';
+    }
+    var nameParts = element.name.split('.');
+    if (nameParts.length <= 1) {
+      return '';
+    }
+    return nameParts[nameParts.length - 1];
+  };
+  this.isDirectory = function (path) {
+    var element = this.getElement(path);
+    return element && element.isDirectory;
+  };
+  this.isDirectoryAsync = function (path) {
+    return Promise.resolve(this.isDirectory(path));
+  };
+};
+var EditorStateProvider = function (fsResolver, path, editor) {
+  function sum(total, size) {
+    return total + size;
+  }
+  this.getText = function () {
+    return fsResolver.content(path);
+  };
+  this.getPath = function () {
+    return path;
+  };
+  this.getBaseName = function () {
+    var element = fsResolver.getElement(path);
+    return element ? element.name : '';
+  };
+  var calcOffset = function (editor) {
+    var cursor = editor.getCursor();
+    var allPreviewsLinesSize = range(0, cursor.line - 1).map(function (index) {
+        return editor.getLine(index).length + 1;
+      }).reduce(sum, 0);
+    return allPreviewsLinesSize + cursor.ch;
+  };
+  this.offset = calcOffset(editor);
+  this.getOffset = function () {
+    return this.offset;
+  };
+};
+angular.module('ramlEditorApp').factory('ramlSuggest', [
+  'ramlRepository',
+  function (ramlRepository) {
+    function codemirrorHint(editor, suggestions) {
+      var currentWord = function (line) {
+        if (!line) {
+          return '';
+        }
+        var split = line.split(/:?(:|\s|\[|]|-)+/);
+        return split[split.length - 1];
+      };
+      var render = function (element, self, data) {
+        element.innerHTML = [
+          '<div>',
+          data.displayText,
+          '</div>',
+          '<div class="category">',
+          data.category,
+          '</div>'
+        ].join('');
+      };
+      var codemirrorSuggestion = function (suggestion) {
+        return {
+          displayText: suggestion.displayText || suggestion.text,
+          text: suggestion.text,
+          category: suggestion.category,
+          render: render
+        };
+      };
+      function isWordPartOfTheSuggestion(word, suggestion) {
+        if (!word) {
+          return true;
+        }
+        return suggestion.text.startsWith(word) && suggestion.text !== word;
+      }
+      var cursor = editor.getCursor();
+      var line = editor.getLine(cursor.line);
+      var word = currentWord(line);
+      var toCh = cursor.ch;
+      var fromCh = toCh - word.length;
+      var codeMirrorSuggestions = suggestions.filter(function (suggestion) {
+          return isWordPartOfTheSuggestion(word, suggestion);
+        }).map(codemirrorSuggestion);
+      return {
+        word: word,
+        list: codeMirrorSuggestions,
+        from: CodeMirror.Pos(cursor.line, fromCh),
+        to: CodeMirror.Pos(cursor.line, toCh)
+      };
+    }
+    function beautifyCategoryName(suggestion) {
+      if (suggestion.category === undefined || suggestion.category.toLowerCase() === 'unknown') {
+        suggestion.category = 'others';
+      }
+      return suggestion;
+    }
+    this.getSuggestions = function (homeDirectory, currentFile, editor) {
+      var ramlSuggestions = RAML.Suggestions;
+      var fsResolver = new FSResolver(homeDirectory, ramlRepository);
+      var contentProvider = ramlSuggestions.getContentProvider(fsResolver);
+      var editorStateProvider = new EditorStateProvider(fsResolver, currentFile.path, editor);
+      return ramlSuggestions.suggestAsync(editorStateProvider, contentProvider).then(function (result) {
+        return Array.isArray(result) ? result : [];
+      }, function () {
+        return [];
+      }).then(function (suggestions) {
+        return suggestions.map(beautifyCategoryName);
+      });
+    };
+    // class methods
+    this.suggest = function (homeDirectory, currentFile, editor) {
+      return this.getSuggestions(homeDirectory, currentFile, editor);
+    };
+    this.autocompleteHelper = function (editor, callback, options, homeDirectory, currentFile) {
+      if (!homeDirectory || !currentFile) {
+        var $scope = angular.element(editor.getInputField()).scope();
+        homeDirectory = homeDirectory || $scope.homeDirectory;
+        currentFile = currentFile || $scope.fileBrowser.selectedFile;
+      }
+      this.getSuggestions(homeDirectory, currentFile, editor).then(function (suggestions) {
+        return codemirrorHint(editor, suggestions);
+      }).then(function (codemirrorHint) {
+        callback(codemirrorHint);
+      });
+    };
+    return this;
+  }
+]);
 (function () {
   'use strict';
   function FileSystem() {
@@ -11798,6 +11686,9 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       throw 'Not implemented: FileSystem createFolder invoked with [fullpath=' + fullpath + ']';
     },
     load: function (fullpath) {
+      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
+    },
+    loadSync: function (fullpath) {
       throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
     },
     remove: function (fullpath) {
@@ -12125,6 +12016,17 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           }
         }, delay);
         return deferred.promise;
+      };
+      /**
+       * Loads the content of a file.
+       */
+      service.loadSync = function (path) {
+        var entry = localStorageHelper.get(path);
+        if (entry && entry.type === 'file') {
+          return localStorageHelper.get(path).content;
+        } else {
+          return fileNotFoundMessage(path);
+        }
       };
       /**
        * Removes a file or directory.
@@ -13245,7 +13147,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'safeApplyWrapper',
     'debounce',
     'throttle',
-    'ramlHint',
     'ramlParser',
     'ramlRepository',
     'codeMirror',
@@ -13257,7 +13158,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlParser, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -13509,112 +13410,66 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('applySuggestion', [
-    'ramlSnippets',
-    'generateTabs',
-    'getNode',
-    function applySuggestionFactory(ramlSnippets, generateTabs, getNode) {
-      return function applySuggestion(editor, suggestion) {
-        var snippet = ramlSnippets.getSnippet(suggestion);
-        var node = getNode(editor);
-        var lineIsArray = node.line.trim() === '-';
-        var tabCount = node.lineIndent.tabCount;
-        // Need to compute a prefix, such as '- ' or ' ' for the snippet
-        // as well as a padding for every line in the snippet. The padding
-        // is simply the current node tabbing, or the cursor position if
-        // there is no current node, which exactly what node.lineIndent.tabCount does:
-        var prefix = lineIsArray ? ' ' : '';
-        var padding = lineIsArray ? '' : generateTabs(tabCount);
-        // For list element suggestions, we need to know whether or not to add the '- ' list
-        // indicator: If a previous element at our tab depth already added the list indicator
-        // then we should not do so.
-        if (suggestion.isList && !lineIsArray) {
-          var arrayStarterNode = node.selfOrPrevious(function (node) {
-              return node.isArrayStarter;
-            });
-          //1. If we don't find an array starter node, we start a new array.
-          //2. If we have an array starter node, BUT the cursor is at same tab as it, we start a new array.
-          //3. If the suggestion a text node, we start a new array.
-          if (!arrayStarterNode || node.lineIndent.tabCount === arrayStarterNode.lineIndent.tabCount && node.lineNumber !== arrayStarterNode.lineNumber || suggestion.metadata && suggestion.metadata.isText) {
-            prefix = '- ';
-          } else if (node.isArrayStarter) {
-            // Add extra tab for children of root array node, e.g. those not prefixed with a '- '
-            padding = generateTabs(tabCount + 1);
-          }
-        }
-        // Add prefix and padding to snippet lines:
-        var codeToInsert = snippet.map(function (line, index) {
-            return padding + (index === 0 ? prefix : '') + line;
-          }).join('\n');
-        // Search for a line that is empty or has the same indentation as current line
-        while (true) {
-          if (node.isEmpty) {
-            break;  // Empty node, place code there
-          }
-          var nextNode = getNode(editor, node.lineNumber + 1);
-          if (!nextNode || nextNode.lineIndent.tabCount <= tabCount) {
-            break;  // At end of raml, place node here
-          }
-          node = nextNode;
-        }
-        // Calculate the place to insert the code:
-        // + Make sure to start at end of node content so we don't erase anything!
-        var from = {
-            line: node.lineNumber,
-            ch: node.line.replace(/\s+$/, '').length
-          };
-        var to = {
-            line: from.line,
-            ch: node.line.length
-          };
-        var nodeHasContent = !node.isEmpty && !lineIsArray;
-        // If cursor is on a non-empty/array starter line, add a newline:
-        if (nodeHasContent) {
-          codeToInsert = '\n' + codeToInsert;
-        }
-        editor.replaceRange(codeToInsert, from, to);
-        // in case of inserting into current line we're
-        // moving cursor one line less further as we're
-        // re-using current line
-        editor.setCursor({ line: from.line + snippet.length - (nodeHasContent ? 0 : 1) });
-        editor.focus();
+  angular.module('ramlEditorApp').factory('applySuggestion', function applySuggestionFactory() {
+    return function applySuggestion(editor, suggestion) {
+      var cursor = editor.getCursor();
+      editor.replaceRange(suggestion.key, cursor, cursor);
+      var suggestionLines = suggestion.key.split('\n');
+      var ch = suggestionLines.length > 1 ? suggestionLines[suggestionLines.length - 1].length : cursor.ch + suggestionLines[0].length;
+      var line = cursor.line + suggestionLines.length - 1;
+      editor.setCursor({
+        line: line,
+        ch: ch
+      });
+      editor.focus();
+    };
+  }).factory('newSuggestions', [
+    'ramlSuggest',
+    function (ramlSuggest) {
+      Array.prototype.groupBy = function (key) {
+        var addItemToResult = function (result, item) {
+          var list = result[item[key]] || [];
+          list.push(item);
+          result[item[key]] = list;
+          return result;
+        };
+        return this.reduce(addItemToResult, {});
       };
-    }
-  ]).value('suggestionKeyToTitleMapping', { '<resource>': 'New Resource' }).factory('updateSuggestions', [
-    'ramlHint',
-    'suggestionKeyToTitleMapping',
-    function (ramlHint, suggestionKeyToTitleMapping) {
-      return function (editor) {
-        var suggestions = ramlHint.getSuggestions(editor);
-        var sections = {};
-        var model = { sections: [] };
-        suggestions.forEach(function (item) {
-          item.title = suggestionKeyToTitleMapping[item.key] || item.key;
-          sections[item.metadata.category] = sections[item.metadata.category] || {
-            name: item.metadata.category,
-            items: []
-          };
-          sections[item.metadata.category].items.push(item);
-          //61553714: Because item is the model passed into the designer, we need to copy the
-          //isList property into it so that the designer can format things properly.
-          item.isList = suggestions.isList;
-        });
-        Object.keys(sections).forEach(function (key) {
-          model.sections.push(sections[key]);
-        });
-        model.path = suggestions.path;
-        return model;
+      var createModel = function (suggestions) {
+        var items = suggestions.map(function (suggestion) {
+            return {
+              category: suggestion.category,
+              title: suggestion.displayText || suggestion.text,
+              key: suggestion.text
+            };
+          });
+        var categoryMap = items.groupBy('category');
+        var categories = Object.keys(categoryMap).map(function (key) {
+            return {
+              name: key,
+              items: categoryMap[key]
+            };
+          });
+        // model.path = suggestions.path;
+        return { categories: categories };  // model
+      };
+      return function (homeDirectory, selectedFile, editor) {
+        return ramlSuggest.suggest(homeDirectory, selectedFile, editor).then(createModel);
       };
     }
   ]).controller('ramlEditorShelf', [
     '$scope',
     'safeApplyWrapper',
+    'newSuggestions',
     'applySuggestion',
-    'updateSuggestions',
-    function ($scope, safeApplyWrapper, applySuggestion, updateSuggestions) {
+    function ($scope, safeApplyWrapper, newSuggestions, applySuggestion) {
       var editor = $scope.editor;
+      function updateModel(suggestions) {
+        $scope.model = suggestions;
+        $scope.$digest();
+      }
       $scope.cursorMoved = safeApplyWrapper(null, function cursorMoved() {
-        $scope.model = updateSuggestions(editor);
+        newSuggestions($scope.homeDirectory, $scope.fileBrowser.selectedFile, editor).then(updateModel);
       });
       $scope.orderSections = function orderSections(section) {
         var index = [
@@ -13635,7 +13490,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       editor.on('cursorActivity', $scope.cursorMoved);
     }
   ]);
-  ;
 }());
 (function () {
   'use strict';
@@ -14363,7 +14217,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
               }
             });
           });
-          ;
         };
         fileBrowser.selectDirectory = function selectDirectory(directory) {
           $scope.$emit('event:raml-editor-directory-selected', directory);
@@ -15130,6 +14983,6 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="section in model.sections | orderBy:orderSections" class="{{section.name | dasherize}}">\n' + '    {{section.name}}&nbsp;({{section.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in section.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);
