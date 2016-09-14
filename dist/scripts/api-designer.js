@@ -10578,7 +10578,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         var tip = document.createElement('div');
         tip.className = 'CodeMirror-lint-message-' + severity;
         var message = ann.message;
-        // if error belongs to different file, include tracing information in message
+        // if error belongs to different file, add tracing information to message
         if (ann.path) {
           var line = ann.tracingLine + 1;
           message += ' at line ' + line + ' col ' + ann.tracingColumn + ' in ' + '<a href="#/' + ann.path + '" data-path="/' + ann.path + '">' + ann.path + '</a>';
