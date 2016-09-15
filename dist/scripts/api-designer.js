@@ -16262,17 +16262,6 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
         return fileSystem.load(file.path).then(modifyFile, handleErrorFor(file));
         ;
       };
-      service.loadFileSync = function loadFileSync(file) {
-        function modifyFile(data) {
-          file.dirty = false;
-          file.persisted = true;
-          file.loaded = true;
-          file.contents = data;
-          return file;
-        }
-        var loadedFile = fileSystem.loadSync(file.path);
-        return modifyFile(loadedFile);
-      };
       service.removeFile = function removeFile(file) {
         var promise;
         var parent = service.getParent(file);
@@ -16433,12 +16422,6 @@ var FSResolver = function (homeDirectory, ramlRepository) {
       return child.name === childName;
     });
   };
-  this.getFileContent = function (file) {
-    if (file.loaded && file.doc) {
-      return file.doc.getValue();
-    }
-    return ramlRepository.loadFileSync(file).contents;
-  };
   this.getFileContentAsync = function (file) {
     if (file.loaded && file.doc) {
       return Promise.resolve(file.doc.getValue());
@@ -16447,13 +16430,6 @@ var FSResolver = function (homeDirectory, ramlRepository) {
       return file.contents;
     };
     return ramlRepository.loadFile(file).then(getFileContent);
-  };
-  this.content = function (path) {
-    var element = this.getElement(path);
-    if (!element || element.isDirectory) {
-      return '';
-    }
-    return this.getFileContent(element);
   };
   this.contentAsync = function (path) {
     var element = this.getElement(path);
@@ -16522,7 +16498,7 @@ var EditorStateProvider = function (fsResolver, path, editor) {
     return total + size;
   }
   this.getText = function () {
-    return fsResolver.content(path);
+    return editor.getValue();
   };
   this.getPath = function () {
     return path;
@@ -18392,10 +18368,16 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   'use strict';
   angular.module('ramlEditorApp').factory('applySuggestion', function applySuggestionFactory() {
     return function applySuggestion(editor, suggestion) {
+      var replacementPrefix = suggestion.replacementPrefix || '';
       var cursor = editor.getCursor();
-      editor.replaceRange(suggestion.key, cursor, cursor);
+      var rangeEnd = cursor;
+      var rangeStart = {
+          line: cursor.line,
+          ch: cursor.ch - replacementPrefix.length
+        };
+      editor.replaceRange(suggestion.key, rangeStart, rangeEnd);
       var suggestionLines = suggestion.key.split('\n');
-      var ch = suggestionLines.length > 1 ? suggestionLines[suggestionLines.length - 1].length : cursor.ch + suggestionLines[0].length;
+      var ch = suggestionLines.length > 1 ? suggestionLines[suggestionLines.length - 1].length : cursor.ch + suggestionLines[0].length - replacementPrefix.length;
       var line = cursor.line + suggestionLines.length - 1;
       editor.setCursor({
         line: line,
@@ -18420,7 +18402,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             return {
               category: suggestion.category,
               title: suggestion.displayText || suggestion.text,
-              key: suggestion.text
+              key: suggestion.text,
+              replacementPrefix: suggestion.replacementPrefix || ''
             };
           });
         var categoryMap = items.groupBy('category');

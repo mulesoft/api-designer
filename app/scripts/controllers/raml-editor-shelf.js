@@ -17,7 +17,7 @@
         var suggestionLines = suggestion.key.split('\n');
         var ch = suggestionLines.length > 1 ?
           suggestionLines[suggestionLines.length - 1].length :
-          cursor.ch + suggestionLines[0].length;
+          cursor.ch + suggestionLines[0].length - replacementPrefix.length;
         var line = cursor.line + suggestionLines.length - 1;
         editor.setCursor({ line: line, ch: ch});
 

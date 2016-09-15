@@ -39,23 +39,12 @@ var FSResolver = function (homeDirectory, ramlRepository) {
       .find(function(child) { return child.name === childName; });
   };
 
-  this.getFileContent = function (file) {
-    if (file.loaded && file.doc) { return file.doc.getValue(); }
-    return ramlRepository.loadFileSync(file).contents;
-  };
-
   this.getFileContentAsync = function (file) {
     if (file.loaded && file.doc) { return Promise.resolve(file.doc.getValue()); }
 
     var getFileContent = function (file) { return file.contents; };
     return ramlRepository.loadFile(file)
       .then(getFileContent);
-  };
-
-  this.content = function (path) {
-    var element = this.getElement(path);
-    if (!element || element.isDirectory) { return ''; }
-    return this.getFileContent(element);
   };
 
   this.contentAsync = function (path) {
@@ -113,7 +102,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 var EditorStateProvider = function (fsResolver, path, editor) {
   function sum(total, size){ return total + size; }
 
-  this.getText = function () { return fsResolver.content(path); };
+  this.getText = function () { return editor.getValue(); };
 
   this.getPath = function () { return path; };
 
