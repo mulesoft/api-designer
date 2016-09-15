@@ -330,6 +330,22 @@
         ;
       };
 
+      service.loadFileSync = function loadFileSync(file) {
+        function modifyFile(data) {
+          file.dirty     = false;
+          file.persisted = true;
+          file.loaded    = true;
+          file.contents  = data;
+
+          return file;
+        }
+
+        var loadedFile = fileSystem
+          .loadSync(file.path);
+          return modifyFile(loadedFile);
+
+      };
+
       service.removeFile = function removeFile(file) {
         var promise;
         var parent = service.getParent(file);

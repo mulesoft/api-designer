@@ -16,8 +16,10 @@
   ],
   "license": "CPAL 1.0",
   "dependencies": {
+    "browserify-global-shim": "^1.0.3",
     "express": "~4.12.4",
     "open": "0.0.5",
+    "raml-suggestions": "0.0.18",
     "yargs": "~3.11.0"
   },
   "devDependencies": {
@@ -58,5 +60,13 @@
     "grunt": "grunt",
     "prepublish": "npm run build",
     "test": "grunt test"
+  },
+  "browserify": {
+    "transform": [
+      "browserify-global-shim"
+    ]
+  },
+  "browserify-global-shim": {
+    "raml-1-parser": "RAML.Parser"
   }
 }
