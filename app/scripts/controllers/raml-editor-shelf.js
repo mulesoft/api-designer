@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .factory('applySuggestion', function applySuggestionFactory() {
       return function applySuggestion(editor, suggestion) {
-        var replacementPrefix = suggestion.replacementPrefix || "";
+        var replacementPrefix = suggestion.replacementPrefix || '';
         var cursor = editor.getCursor();
 
         var rangeEnd = cursor;
@@ -42,7 +42,7 @@
             category: suggestion.category,
             title: suggestion.displayText || suggestion.text,
             key: suggestion.text,
-            replacementPrefix: suggestion.replacementPrefix || ""
+            replacementPrefix: suggestion.replacementPrefix || ''
           };
         });
         var categoryMap = items.groupBy('category');
