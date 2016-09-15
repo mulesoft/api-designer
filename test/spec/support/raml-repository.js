@@ -10,6 +10,7 @@
       service.rootDirectory = {
         path: '/',
         children: service.children,
+        isDirectory: true,
         getDirectories: function () {
           return this.children.filter(function(t) { return t.isDirectory; });
         },
@@ -37,6 +38,12 @@
       };
 
       service.loadFile = function (file) {
+        file.contents = file.name + ' content';
+
+        return $q.when(file);
+      };
+
+      service.loadFileSync = function (file) {
         file.contents = file.name + ' content';
 
         return $q.when(file);
