@@ -199,8 +199,12 @@ angular.module('ramlEditorApp')
 
       return ramlSuggestions.suggestAsync(editorStateProvider, contentProvider)
         .then(
-          function (result) { return Array.isArray(result)? result: []; },
-          function () { return []; }
+          function (result) {
+            return Array.isArray(result)? result: [];
+          },
+          function () {
+            return [];
+          git }
         )
         .then(function (suggestions) { return suggestions.map(beautifyCategoryName); });
     };

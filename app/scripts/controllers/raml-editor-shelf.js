@@ -4,9 +4,15 @@
   angular.module('ramlEditorApp')
     .factory('applySuggestion', function applySuggestionFactory() {
       return function applySuggestion(editor, suggestion) {
+        var replacementPrefix = suggestion.replacementPrefix || "";
         var cursor = editor.getCursor();
 
-        editor.replaceRange(suggestion.key, cursor, cursor);
+        var rangeEnd = cursor;
+        var rangeStart = {
+          line: cursor.line,
+          ch: cursor.ch - replacementPrefix.length
+        };
+        editor.replaceRange(suggestion.key, rangeStart, rangeEnd);
 
         var suggestionLines = suggestion.key.split('\n');
         var ch = suggestionLines.length > 1 ?
@@ -35,7 +41,8 @@
           return {
             category: suggestion.category,
             title: suggestion.displayText || suggestion.text,
-            key: suggestion.text
+            key: suggestion.text,
+            replacementPrefix: suggestion.replacementPrefix || ""
           };
         });
         var categoryMap = items.groupBy('category');
