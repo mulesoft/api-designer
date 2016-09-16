@@ -83,6 +83,20 @@
         return $q.when(file);
       };
 
+      service.join = function () {
+        return Array.prototype.reduce.call(arguments, function (path, segment) {
+          if (segment == null) {
+            return path;
+          }
+
+          if (segment.charAt(0) === '/') {
+            return segment;
+          }
+
+          return path.replace(/\/$/, '') + '/' + segment;
+        }, '/');
+      };
+
       return service;
     })
   ;

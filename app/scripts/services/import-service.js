@@ -313,12 +313,13 @@
        *
        * @param  {Object}  directory
        * @param  {String}  contents
+       * @param  {Function}  converter
        * @return {Promise}
        */
-      self.importZip = function (directory, contents) {
+      self.importZip = function (directory, contents, converter) {
         var files = self.parseZip(contents);
 
-        return importZipFiles(directory, files);
+        return importZipFiles(directory, files, converter);
       };
 
       /**
@@ -347,21 +348,43 @@
       }
 
       /**
+       * Create and save file.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @param  {String}  content
+       * @return {Promise}
+       */
+      function createAndSaveFile (directory, name, content) {
+        return self.createFile(directory, name, content)
+          .then(function (file) {
+            return ramlRepository.saveFile(file);
+          });
+      }
+
+      /**
        * Import files from the zip object.
        *
        * @param  {Object}  directory
        * @param  {Object}  files
+       * @param  {Function}  converter
        * @return {Promise}
        */
-      function importZipFiles (directory, files) {
+      function importZipFiles (directory, files, converter) {
         var imports = Object.keys(files)
           .filter(canImport)
           .map(function (name) {
             return function () {
-              return self.createFile(directory, name, files[name])
-                .then(function (file) {
-                  return ramlRepository.saveFile(file);
+              if (!converter) {
+                return createAndSaveFile(directory, name, files[name]);
+              } else {
+                // convert content before importing file
+                var defer = $q.defer();
+                converter(files, name, defer);
+                return defer.promise.then(function (file) {
+                  return createAndSaveFile(directory, file.name, file.content);
                 });
+              }
             };
           });
 
