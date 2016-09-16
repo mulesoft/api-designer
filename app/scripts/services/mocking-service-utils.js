@@ -50,6 +50,8 @@
 
 
       function retreiveType(raml, typeName) {
+        if (!raml.types) return;
+        
         var object = raml.types.filter(function (type) { return type[typeName]; })[0];
         return object ? object[typeName] : object;
       }
