@@ -342,14 +342,8 @@ module.exports = function (grunt) {
         files: {
           '.tmp/js-traverse/js-traverse.js': 'node_modules/traverse/index.js'
         }
-      },    
+      },
       ramlSuggestions: {
-        options: {
-          browserifyOptions: {
-            standalone: 'jsTraverse.traverse'
-          }
-        },
-
         files: {
            '.tmp/raml-suggestions/raml-suggestions.js': 'node_modules/raml-suggestions/dist/browser-main.js'
         }
