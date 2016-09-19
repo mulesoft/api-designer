@@ -160,8 +160,8 @@
           safeApplyWrapper($scope, function success(value) {
             // hack: we have to make a full copy of an object because console modifies
             // it later and makes it unusable for mocking service
-            var raml = angular.copy(ramlParserAdapter.expandApiToJSON(angular.copy(value)));
-            var ramlExpanded = angular.copy(ramlParserAdapter.expandApiToJSON(value, true));
+            var raml = ramlParserAdapter.expandApiToJSON(value);
+            var ramlExpanded = ramlParserAdapter.expandApiToJSON(value, true);
 
             $scope.fileBrowser.selectedFile.raml = raml;
             $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
