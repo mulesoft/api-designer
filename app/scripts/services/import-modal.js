@@ -80,7 +80,7 @@
           .then(function (contents) {
             var filename = extractFileName(mode.value, 'raml');
 
-            return importService.createFile(
+            return importService.createAndSaveFile(
               $scope.rootDirectory, filename, contents
             );
           })
@@ -114,7 +114,7 @@
             .then(function (contents) {
               var filename = extractFileName(mode.value.name, 'raml');
 
-              return importService.createFile(
+              return importService.createAndSaveFile(
                 $scope.rootDirectory, filename, contents
               );
             })

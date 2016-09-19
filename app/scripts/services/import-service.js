@@ -159,6 +159,23 @@
         return promiseChain(imports);
       };
 
+
+
+      /**
+       * Create and save file.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @param  {String}  content
+       * @return {Promise}
+       */
+      self.createAndSaveFile = function (directory, name, content) {
+        return self.createFile(directory, name, content)
+          .then(function (file) {
+            return ramlRepository.saveFile(file);
+          });
+      };
+
       /**
        * Create a file in the filesystem.
        *
@@ -348,21 +365,6 @@
       }
 
       /**
-       * Create and save file.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  name
-       * @param  {String}  content
-       * @return {Promise}
-       */
-      function createAndSaveFile (directory, name, content) {
-        return self.createFile(directory, name, content)
-          .then(function (file) {
-            return ramlRepository.saveFile(file);
-          });
-      }
-
-      /**
        * Import files from the zip object.
        *
        * @param  {Object}  directory
@@ -376,13 +378,13 @@
           .map(function (name) {
             return function () {
               if (!converter) {
-                return createAndSaveFile(directory, name, files[name]);
+                return self.createAndSaveFile(directory, name, files[name]);
               } else {
                 // convert content before importing file
                 var defer = $q.defer();
                 converter(files, name, defer);
                 return defer.promise.then(function (file) {
-                  return createAndSaveFile(directory, file.name, file.content);
+                  return self.createAndSaveFile(directory, file.name, file.content);
                 });
               }
             };
