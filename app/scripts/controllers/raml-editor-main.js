@@ -194,12 +194,16 @@
             errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
               return trace.path === event.currentScope.fileBrowser.selectedFile.name;
             });
-            tracingInfo = { line : error.line, column : error.column, path : error.path };
+            tracingInfo = {
+              line : ((error.range && error.range.start.line) || 0) + 1,
+              column : (error.range && error.range.start.column) || 1,
+              path : error.path
+            };
           }
 
           return {
-            line          : errorInfo.line + 1,
-            column        : errorInfo.column,
+            line          : ((errorInfo.range && errorInfo.range.start.line) || 0) + 1,
+            column        : (errorInfo.range && errorInfo.range.start.column) || 1,
             message       : errorInfo.message,
             severity      : errorInfo.isWarning ? 'warning' : 'error',
             path          : tracingInfo.path,

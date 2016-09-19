@@ -87,7 +87,7 @@
       function groupByLine (annotations) {
         var lines = [];
         for (var i = 0; i < annotations.length; ++i) {
-          var ann = annotations[i], line = ann.line;
+          var ann = annotations[i], line = ann.line || 1;
           (lines[line] || (lines[line] = [])).push(ann);
         }
         return lines;

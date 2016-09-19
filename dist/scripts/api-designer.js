@@ -57629,7 +57629,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function groupByLine(annotations) {
         var lines = [];
         for (var i = 0; i < annotations.length; ++i) {
-          var ann = annotations[i], line = ann.line;
+          var ann = annotations[i], line = ann.line || 1;
           (lines[line] || (lines[line] = [])).push(ann);
         }
         return lines;
@@ -60571,14 +60571,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               return trace.path === event.currentScope.fileBrowser.selectedFile.name;
             });
             tracingInfo = {
-              line: error.line,
-              column: error.column,
+              line: (error.range && error.range.start.line || 0) + 1,
+              column: error.range && error.range.start.column || 1,
               path: error.path
             };
           }
           return {
-            line: errorInfo.line + 1,
-            column: errorInfo.column,
+            line: (errorInfo.range && errorInfo.range.start.line || 0) + 1,
+            column: errorInfo.range && errorInfo.range.start.column || 1,
             message: errorInfo.message,
             severity: errorInfo.isWarning ? 'warning' : 'error',
             path: tracingInfo.path,
