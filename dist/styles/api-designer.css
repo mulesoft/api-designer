@@ -491,9 +491,7 @@ div .noselect {
   font-size: 10pt;
   overflow: hidden;
   padding: 2px 5px;
-  position: absolute;
   white-space: nowrap;
-  z-index: 1000;
   max-width: 600px;
   opacity: 0;
   -webkit-transition: opacity .4s;
@@ -514,7 +512,7 @@ div .noselect {
 .CodeMirror-lint-marker-error,
 .CodeMirror-lint-marker-warning {
   cursor: pointer;
-  display: inline-block;
+  display: block;
   height: 16px;
   width: 16px;
   vertical-align: middle;
@@ -530,6 +528,11 @@ div .noselect {
   text-shadow: #002b36 0 0;
   margin-top: 2px;
   margin-bottom: 4px;
+}
+.CodeMirror-lint-message-error .CodeMirror-message,
+.CodeMirror-lint-message-warning .CodeMirror-message {
+  display: inline;
+  white-space: initial;
 }
 .CodeMirror-lint-marker-error {
   background-image: url("data:image/gif;base64,R0lGODlhEAAQANUAAPVvcvWHiPVucvRuc+ttcfV6f91KVN5LU99PV/FZY/JhaM4oN84pONE4Rd1ATfJLWutVYPRgbdxpcsgWKMgZKs4lNfE/UvE/U+artcpdSc5uXveimslHPuBhW/eJhfV5efaCgO2CgP+/v+PExP///////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAACUALAAAAAAQABAAAAZ+wJJwSCwaScgkySgkjTQZTkYzWhadnE5oE+pwqkSshwQqkzxfa4kkQXxEpA9J9EFI1KQGQQBAigYCBA14ExEWF0gXihETeA0QD3AkD5QQg0NsDnAJmwkOd5gYFSQKpXAFDBhqaxgLBwQBBAapq00YEg0UDRKqTGtKSL7Cw8JBADs=");
@@ -848,6 +851,9 @@ div.CodeMirror {
 }
 .CodeMirror-code .CodeMirror-hint-ghost {
   color: #777777;
+}
+.CodeMirror-code #tooltip-over {
+  z-index: 1000;
 }
 .CodeMirror-hints {
   background-color: #132128;

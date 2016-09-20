@@ -38,6 +38,7 @@
       function showTooltipFor (content, node) {
         var tooltip = showTooltip(content, node);
         node.appendChild(tooltip);
+        node.parentElement.parentElement.id = 'tooltip-over';
 
         var openTrace = function(event){
           var path = event.target.dataset.path;
@@ -110,7 +111,8 @@
             '<a href="#/'+ann.path+'" data-path="/'+ann.path+'">'+ann.path+'</a>';
         }
 
-        tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' + message;
+        tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' +
+                        '<p class="CodeMirror-message">' + message + '</p>';
         return tip;
       }
 

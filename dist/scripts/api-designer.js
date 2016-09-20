@@ -57587,6 +57587,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function showTooltipFor(content, node) {
         var tooltip = showTooltip(content, node);
         node.appendChild(tooltip);
+        node.parentElement.parentElement.id = 'tooltip-over';
         var openTrace = function (event) {
           var path = event.target.dataset.path;
           if (path) {
@@ -57647,7 +57648,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
           var line = ann.tracingLine + 1;
           message += ' at line ' + line + ' col ' + ann.tracingColumn + ' in ' + '<a href="#/' + ann.path + '" data-path="/' + ann.path + '">' + ann.path + '</a>';
         }
-        tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' + message;
+        tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' + '<p class="CodeMirror-message">' + message + '</p>';
         return tip;
       }
       function makeMarker(labels, severity, multiple, tooltips, annotations) {
