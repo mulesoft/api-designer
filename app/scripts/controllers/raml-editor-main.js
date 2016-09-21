@@ -166,7 +166,7 @@
             $scope.fileBrowser.selectedFile.raml = raml;
             $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
 
-            $rootScope.$broadcast('event:raml-parsed', raml);
+            $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
           }),
 
           // failure
@@ -176,8 +176,9 @@
         );
       });
 
-      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml, ramlExpanded) {
         $scope.raml         = raml;
+        $scope.ramlExpanded = ramlExpanded;
         $scope.title        = raml && raml.title;
         $scope.version      = raml && raml.version;
         $scope.currentError = undefined;
