@@ -223,7 +223,7 @@ describe('ramlEditorApp', function () {
       });
 
       it('should detect a word for a simple line', function (done) {
-        getWord(ramlSuggest, [' word'])
+        getWord(ramlSuggest, [' word'], {line: 0, ch: 2})
           .then(function(word) {
             word.should.be.equal('word');
             done();
@@ -231,7 +231,7 @@ describe('ramlEditorApp', function () {
       });
 
       it('should detect an empty word for array element', function (done) {
-        getWord(ramlSuggest, ['- '])
+        getWord(ramlSuggest, ['- '], {line: 0, ch: 1})
           .then(function(word) {
             word.should.be.equal('');
             done();
@@ -239,7 +239,7 @@ describe('ramlEditorApp', function () {
       });
 
       it('should detect a word for array element', function (done) {
-        getWord(ramlSuggest, ['- word'])
+        getWord(ramlSuggest, ['- word'], {line: 0, ch: 5})
           .then(function(word) {
             word.should.be.equal('word');
             done();
