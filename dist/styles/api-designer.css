@@ -492,11 +492,12 @@ div .noselect {
   overflow: hidden;
   padding: 2px 5px;
   white-space: nowrap;
+  position: absolute;
   max-width: 600px;
   opacity: 0;
   -webkit-transition: opacity .4s;
   transition: opacity .4s;
-  margin: -25px 0 0 10px;
+  margin: -6px 0 0 18px;
 }
 .CodeMirror-lint-mark-error,
 .CodeMirror-lint-mark-warning {
@@ -531,8 +532,9 @@ div .noselect {
 }
 .CodeMirror-lint-message-error .CodeMirror-message,
 .CodeMirror-lint-message-warning .CodeMirror-message {
-  display: inline;
-  white-space: initial;
+  display: inline-block;
+  word-wrap: break-word;
+  margin: 0;
 }
 .CodeMirror-lint-marker-error {
   background-image: url("data:image/gif;base64,R0lGODlhEAAQANUAAPVvcvWHiPVucvRuc+ttcfV6f91KVN5LU99PV/FZY/JhaM4oN84pONE4Rd1ATfJLWutVYPRgbdxpcsgWKMgZKs4lNfE/UvE/U+artcpdSc5uXveimslHPuBhW/eJhfV5efaCgO2CgP+/v+PExP///////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAACUALAAAAAAQABAAAAZ+wJJwSCwaScgkySgkjTQZTkYzWhadnE5oE+pwqkSshwQqkzxfa4kkQXxEpA9J9EFI1KQGQQBAigYCBA14ExEWF0gXihETeA0QD3AkD5QQg0NsDnAJmwkOd5gYFSQKpXAFDBhqaxgLBwQBBAapq00YEg0UDRKqTGtKSL7Cw8JBADs=");

@@ -13,11 +13,11 @@
   overflow: hidden;
   padding: 2px 5px;
   white-space:nowrap;
+  position: absolute;
   max-width: 600px;
   opacity: 0;
   transition: opacity .4s;
-
-  margin: -25px 0 0 10px;
+  margin: -6px 0 0 18px;
 }
 
 .CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
@@ -54,8 +54,9 @@
   margin-bottom: 4px;
 
   .CodeMirror-message {
-    display: inline;
-    white-space: initial;
+    display: inline-block;
+    word-wrap: break-word;
+    margin: 0;
   }
 }
 

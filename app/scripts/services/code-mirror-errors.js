@@ -38,6 +38,7 @@
       function showTooltipFor (content, node) {
         var tooltip = showTooltip(content, node);
         node.appendChild(tooltip);
+        node.parentElement.id = 'tooltip-over';
         node.parentElement.parentElement.id = 'tooltip-over';
 
         var openTrace = function(event){
