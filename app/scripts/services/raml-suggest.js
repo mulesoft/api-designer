@@ -129,10 +129,17 @@ angular.module('ramlEditorApp')
   .factory('ramlSuggest', function (ramlRepository) {
 
     function codemirrorHint(editor, suggestions) {
-      var currentWord = function(line){
+      var separator = /:?(:|\s|\.|\[|]|-)+/;
+      var currentPrefix = function(line, ch){
         if (!line) { return ''; }
-        var split = line.split(/:?(:|\s|\[|]|-)+/);
+        var split = line.slice(0, ch).split(separator);
         return split[split.length - 1];
+      };
+
+      var currentSufix = function(line, ch){
+        if (!line) { return ''; }
+        var split = line.slice(ch).split(separator);
+        return split[0];
       };
 
       var render = function (element, self, data) {
@@ -156,16 +163,18 @@ angular.module('ramlEditorApp')
 
       var cursor = editor.getCursor();
       var line = editor.getLine(cursor.line);
-      var word = currentWord(line);
-      var toCh = cursor.ch;
-      var fromCh = toCh - word.length;
+      var ch = cursor.ch;
+      var prefix = currentPrefix(line, ch) || '';
+      var sufix = currentSufix(line, ch) ;
+      var toCh = ch + sufix.length;
+      var fromCh = ch - prefix.length;
 
       var codeMirrorSuggestions = suggestions
-        .filter(function (suggestion) { return isWordPartOfTheSuggestion(word, suggestion); })
+        .filter(function (suggestion) { return isWordPartOfTheSuggestion(prefix, suggestion); })
         .map(codemirrorSuggestion);
 
       return {
-        word: word,
+        word: prefix + sufix,
         list: codeMirrorSuggestions,
         from: CodeMirror.Pos(cursor.line, fromCh),
         to: CodeMirror.Pos(cursor.line, toCh)
