@@ -9,19 +9,11 @@
       };
 
       return {
-        load:     toQ(load),
         loadPath: toQ(loadPath),
         expandApiToJSON: expandApiToJSON
       };
 
       // ---
-
-      function load(text, contentAsyncFn, options) {
-        var virtualPath = '/' + Date.now() + '.raml';
-        return loadApi(virtualPath, function contentAsync(path) {
-          return (path === virtualPath) ? $q.when(text) : (contentAsyncFn ? contentAsyncFn(path) : $q.reject(new Error('ramlParser: load: contentAsync: ' + path + ': no such path')));
-        }, options);
-      }
 
       function loadPath(path, contentAsyncFn, options) {
         return loadApi(path, function contentAsync(path) {

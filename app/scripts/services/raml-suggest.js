@@ -11,6 +11,28 @@ function range(start, stop) {
   return result;
 }
 
+if (!Array.prototype.find) {
+  Array.prototype.find = function (predicate) {
+    for (var i = 0; i < this.length; i++) {
+      var item = this[i];
+      if (predicate(item)) { return item; }
+    }
+    return undefined;
+  };
+}
+
+if (!String.prototype.startsWith) {
+  String.prototype.startsWith = function (text) {
+    return this.indexOf(text) === 0;
+  };
+}
+
+if (!String.prototype.endsWith) {
+  String.prototype.endsWith = function (text) {
+    return this.lastIndexOf(text) === this.length - text.length;
+  };
+}
+
 // end Util Functions
 
 var FSResolver = function (homeDirectory, ramlRepository) {
@@ -63,7 +85,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.listAsync = function(path){ return Promise.resolve(this.list(path)); };
 
-  this.exists = function(path) { return this.getElement(path); };
+  this.exists = function(path) { return this.getElement(path)? true : false; };
 
   this.existsAsync = function(path) { return Promise.resolve(this.exists(path)); };
 
@@ -71,7 +93,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     var element = this.getElement(path);
     if (!element) { return ''; }
     if (element.isDirectory) { return element.path; }
-    var result = path.substring(0, path.lastIndexOf('/'));
+    var result = path.substring(0, path.lastIndexOf('/') + 1);
     return result || '';
   };
 
@@ -84,7 +106,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.extname = function (path) {
     var element = this.getElement(path);
-    if (element.isDirectory) { return ''; }
+    if (!element || element.isDirectory) { return ''; }
 
     var nameParts = element.name.split('.');
     if (nameParts.length <= 1) { return ''; }
@@ -93,7 +115,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.isDirectory = function (path) {
     var element = this.getElement(path);
-    return element && element.isDirectory;
+    return element && element.isDirectory ? true : false;
   };
 
   this.isDirectoryAsync = function (path) { return Promise.resolve(this.isDirectory(path)); };
@@ -127,6 +149,10 @@ var EditorStateProvider = function (fsResolver, path, editor) {
 
 angular.module('ramlEditorApp')
   .factory('ramlSuggest', function (ramlRepository) {
+
+    this.FSResolver = FSResolver;
+
+    this.EditorStateProvider = EditorStateProvider;
 
     function codemirrorHint(editor, suggestions) {
       var separator = /:?(:|\s|\.|\[|]|-)+/;

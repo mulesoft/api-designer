@@ -43,12 +43,6 @@
         return $q.when(file);
       };
 
-      service.loadFileSync = function (file) {
-        file.contents = file.name + ' content';
-
-        return $q.when(file);
-      };
-
       service.rename = function (file, newName) {
         file.name = newName || file.name;
         file.path = file.path.replace(file.name, newName);
