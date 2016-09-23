@@ -493,14 +493,18 @@ div .noselect {
   padding: 2px 5px;
   white-space: nowrap;
   position: absolute;
-  max-width: 600px;
+  max-width: none;
   opacity: 0;
   -webkit-transition: opacity .4s;
   transition: opacity .4s;
   margin: -6px 0 0 18px;
 }
+.CodeMirror-linenumber + .CodeMirror-gutter-elt {
+  z-index: 1000;
+}
 .CodeMirror-lint-mark-error,
 .CodeMirror-lint-mark-warning {
+  z-index: 1000;
   background-position: left bottom;
   background-repeat: repeat-x;
 }
@@ -853,9 +857,6 @@ div.CodeMirror {
 }
 .CodeMirror-code .CodeMirror-hint-ghost {
   color: #777777;
-}
-.CodeMirror-code #tooltip-over {
-  z-index: 1000;
 }
 .CodeMirror-hints {
   background-color: #132128;

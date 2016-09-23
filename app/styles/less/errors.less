@@ -14,13 +14,18 @@
   padding: 2px 5px;
   white-space:nowrap;
   position: absolute;
-  max-width: 600px;
+  max-width: none;
   opacity: 0;
   transition: opacity .4s;
   margin: -6px 0 0 18px;
 }
 
+.CodeMirror-linenumber + .CodeMirror-gutter-elt {
+  z-index: 1000;
+}
+
 .CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
+  z-index: 1000;
   background-position: left bottom;
   background-repeat: repeat-x;
 }
