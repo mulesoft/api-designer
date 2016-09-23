@@ -5360,6 +5360,7 @@
     2: [
       function (require, module, exports) {
         var Importers = require('./importers/index'), Exporters = require('./exporters/index');
+        var _ = require('lodash');
         function Converter(fromFormat, toFormat) {
           this.importer = Importers.factory(fromFormat);
           if (!this.importer) {
@@ -5388,23 +5389,28 @@
         Converter.prototype.convert = function (format, cb) {
           var me = this;
           return new Promise(function (resolve, reject) {
-            me.exporter.loadProject(me.importer.import());
-            me.exporter.export(format).then(function (exportedData) {
-              if (cb)
-                cb(null, exportedData);
-              resolve(exportedData);
-            }).catch(function (err) {
-              if (cb)
-                cb(err, null);
-              reject(err);
-            });
+            try {
+              me.exporter.loadProject(me.importer.import());
+              me.exporter.export(format).then(function (exportedData) {
+                if (cb)
+                  cb(null, exportedData);
+                resolve(exportedData);
+              }).catch(function (err) {
+                if (cb)
+                  cb(err, null);
+                reject(err);
+              });
+            } catch (e) {
+              reject(e);
+            }
           });
         };
         exports.Converter = Converter;
       },
       {
         './exporters/index': 14,
-        './importers/index': 25
+        './importers/index': 25,
+        'lodash': 67
       }
     ],
     3: [
@@ -5421,6 +5427,8 @@
           this.request.bodies = [];
           this.request.headers = '{}';
           this.responses = [];
+          this.produces;
+          this.consumes;
           this.middlewareBefore = '';
           this.middlewareAfter = '';
           this.mock = {
@@ -5470,6 +5478,18 @@
           },
           get Name() {
             return this.name || '';
+          },
+          get Consumes() {
+            return this.consumes;
+          },
+          set Consumes(consumes) {
+            this.consumes = consumes;
+          },
+          get Produces() {
+            return this.produces;
+          },
+          set Produces(produces) {
+            this.produces = produces;
           },
           get Headers() {
             return jsonHelper.parse(this.request.headers);
@@ -5565,6 +5585,9 @@
           get Public() {
             return this.public;
           },
+          set Public(p) {
+            this.public = p;
+          },
           get Deprecated() {
             return this.deprecated;
           },
@@ -5591,10 +5614,10 @@
           this.summary = '';
           this.forwardHost = null;
           this.basePath = '';
-          this.defaultResponseType = '';
-          this.defaultRequestType = '';
           this.protocols = [];
           this.version = '';
+          this.produces = null;
+          this.consumes = null;
           this.middlewareBefore = '';
           this.middlewareAfter = '';
           this.proxy = {};
@@ -5618,17 +5641,17 @@
           get BasePath() {
             return this.basePath || '';
           },
-          get DefaultResponseType() {
-            return this.defaultResponseType;
+          set Consumes(consumes) {
+            this.consumes = consumes;
           },
-          set DefaultResponseType(respType) {
-            this.defaultResponseType = respType;
+          get Consumes() {
+            return this.consumes;
           },
-          get DefaultRequestType() {
-            return this.defaultRequestType;
+          set Produces(produces) {
+            this.produces = produces;
           },
-          set DefaultRequestType(reqType) {
-            this.defaultRequestType = reqType;
+          get Produces() {
+            return this.produces;
           },
           get Protocols() {
             return this.protocols;
@@ -5900,10 +5923,11 @@
             return this.example;
           },
           set SLData(schemaData) {
-            this.name = schemaData.name || '';
-            this.definition = schemaData.definition || {};
-            this.example = schemaData.example || {};
-            this._id = schemaData._id;
+            var sd = schemaData || {};
+            this.name = sd.name || '';
+            this.definition = sd.definition || {};
+            this.example = sd.example || {};
+            this._id = sd._id;
           },
           get Summary() {
             return this.summary || '';
@@ -5920,8 +5944,8 @@
           get Public() {
             return this.public;
           },
-          set Public(public) {
-            this.public = public;
+          set Public(p) {
+            this.public = p;
           }
         };
         module.exports = Schema;
@@ -5932,17 +5956,20 @@
       function (require, module, exports) {
         function SwaggerDefinition(title, description) {
           this.swagger = '2.0';
-          this.schemes = [];
-          this.basePath = '';
-          this.host = '';
           this.info = {
             'version': '',
             'title': title,
             'description': description
           };
+          this.host = '';
+          this.basePath = '';
+          this.schemes = [];
           this.consumes = [];
           this.produces = [];
+          this.securityDefinitions = {};
           this.paths = {};
+          this.parameters = {};
+          this.responses = [];
           this.definitions = {};
         }
         SwaggerDefinition.prototype = {
@@ -6038,11 +6065,11 @@
           get Content() {
             return this.content;
           },
-          set Public(public) {
-            this.public = public;
-          },
           get Public() {
             return this.public;
+          },
+          set Public(p) {
+            this.public = p;
           }
         };
         //used for stoplightx export only
@@ -6103,12 +6130,14 @@
           this.version = env.Version;
           this.baseUri = env.Host + env.BasePath;
           this.mediaType = env.DefaultResponseType || '';
-          this.protocols = mapProtocols(env.Protocols);
+          var protocols = mapProtocols(env.Protocols);
+          if (!_.isEmpty(protocols)) {
+            this.protocols = protocols;
+          }
         }
         RAMLDefinition.prototype.addMethod = function (resource, methodURIs, methodKey, method) {
-          if (!methodURIs) {
+          if (!methodURIs)
             return;
-          }
           if (methodURIs.length <= 0) {
             //reach the leaf of tree
             //TODO optional: check same method existence
@@ -6125,7 +6154,7 @@
               }
             }
             delete method.uriParameters;
-            if (Object.keys(resource.uriParameters).length == 0)
+            if (_.isEmpty(resource.uriParameters))
               delete resource.uriParameters;
             resource[methodKey] = method;
           } else {
@@ -6138,7 +6167,6 @@
           }
         };
         function RAML() {
-          this.metadata = null;
           this.hasTags = false;
           this.hasDeprecated = false;
           this.hasExternalDocs = false;
@@ -6149,7 +6177,7 @@
           var ramlSecuritySchemes = {};
           if (slSecuritySchemes.hasOwnProperty('oauth2')) {
             var name = slSecuritySchemes.oauth2.name || 'oauth2';
-            //missing describedBy, description
+            // missing describedBy, description
             ramlSecuritySchemes[name] = {
               type: 'OAuth 2.0',
               settings: {
@@ -6161,6 +6189,8 @@
             var scopes = [];
             if (slSecuritySchemes.oauth2.scopes && !_.isEmpty(slSecuritySchemes.oauth2.scopes)) {
               for (var index in slSecuritySchemes.oauth2.scopes) {
+                if (!slSecuritySchemes.oauth2.scopes.hasOwnProperty(index))
+                  continue;
                 var scope = slSecuritySchemes.oauth2.scopes[index].name;
                 scopes.push(scope);
               }
@@ -6177,24 +6207,44 @@
             }
           }
           if (slSecuritySchemes.hasOwnProperty('apiKey')) {
-            var externalName = null;
-            var content = null;
+            var name = null;
+            var content = {};
             var description = null;
-            if (slSecuritySchemes.apiKey.headers && !_.isEmpty(slSecuritySchemes.apiKey.headers)) {
-              externalName = slSecuritySchemes.apiKey.headers[0].externalName;
-              var keyName = slSecuritySchemes.apiKey.headers[0].name;
+            // add header auth
+            if (!_.isEmpty(slSecuritySchemes.apiKey.headers)) {
+              name = slSecuritySchemes.apiKey.headers[0].externalName;
               description = slSecuritySchemes.apiKey.headers[0].description;
-              content = { headers: {} };
-              content['headers'][keyName] = { type: 'string' };
-            } else if (slSecuritySchemes.apiKey.queryString) {
+              content.headers = {};
+              for (var i in slSecuritySchemes.apiKey.headers) {
+                if (!slSecuritySchemes.apiKey.headers.hasOwnProperty(i))
+                  continue;
+                var q = slSecuritySchemes.apiKey.headers[i];
+                var keyName = q.name;
+                content.headers[keyName] = { type: 'string' };
+              }
             }
-            ramlSecuritySchemes[externalName] = {
-              type: 'Pass Through',
-              describedBy: content,
-              description: description
-            };
+            // add query auth
+            if (!_.isEmpty(slSecuritySchemes.apiKey.queryString)) {
+              name = slSecuritySchemes.apiKey.queryString[0].externalName;
+              description = slSecuritySchemes.apiKey.queryString[0].description;
+              content.queryParameters = {};
+              for (var i in slSecuritySchemes.apiKey.queryString) {
+                if (!slSecuritySchemes.apiKey.queryString.hasOwnProperty(i))
+                  continue;
+                var q = slSecuritySchemes.apiKey.queryString[i];
+                var keyName = q.name;
+                content.queryParameters[keyName] = { type: 'string' };
+              }
+            }
+            if (!_.isEmpty(content)) {
+              ramlSecuritySchemes[name || 'apiKey'] = {
+                type: this.getApiKeyType(),
+                describedBy: content,
+                description: description
+              };
+            }
           }
-          return ramlSecuritySchemes;
+          return this.mapSecuritySchemes(ramlSecuritySchemes);
         };
         RAML.prototype._validateParam = function (params) {
           var acceptedTypes = [
@@ -6255,33 +6305,29 @@
           }
           return params;
         };
-        RAML.prototype._mapRequestBody = function (bodyData) {
+        RAML.prototype._mapRequestBody = function (bodyData, mimeType) {
           var body = {};
-          if (bodyData.body) {
-            var mimeType = bodyData.mimeType;
-            if (!mimeType) {
-              return body;
-            }
-            switch (mimeType) {
-            case 'application/json':
-              body[mimeType] = this.mapBody(bodyData);
-              break;
-            case 'multipart/form-data':
-            case 'application/x-www-form-urlencoded':
-              var parsedBody = jsonHelper.parse(bodyData.body);
-              body[mimeType] = this.mapRequestBodyForm(parsedBody);
-              break;
-            default:  //unsuported format
-                      //TODO
-            }
-            if (bodyData.description) {
-              body[mimeType].description = bodyData.description;
-            }
+          if (!bodyData.body || mimeType === '')
+            return body;
+          switch (mimeType) {
+          case 'application/json':
+            body[mimeType] = this.mapBody(bodyData);
+            break;
+          case 'multipart/form-data':
+          case 'application/x-www-form-urlencoded':
+            var parsedBody = jsonHelper.parse(bodyData.body);
+            body[mimeType] = this.mapRequestBodyForm(parsedBody);
+            break;
+          default:  //unsuported format
+                    //TODO
+          }
+          if (bodyData.description) {
+            body[mimeType].description = bodyData.description;
           }
           return body;
         };
         RAML.prototype._mapNamedParams = function (params) {
-          if (Object.keys(params.properties).length == 0)
+          if (!params || _.isEmpty(params.properties))
             return;
           var newParams = {};
           for (var key in params.properties) {
@@ -6298,7 +6344,7 @@
           }
           return this._validateParam(newParams);
         };
-        RAML.prototype._mapResponseBody = function (responseData) {
+        RAML.prototype._mapResponseBody = function (responseData, mimeType) {
           var responses = {};
           for (var i in responseData) {
             if (!responseData.hasOwnProperty(i))
@@ -6310,8 +6356,8 @@
                 continue;
               }
               responses[code] = { body: {} };
-              var type = resBody.mimeType;
-              if (resBody.mimeType) {
+              var type = mimeType;
+              if (type) {
                 responses[code]['body'][type] = this.mapBody(resBody);
               } else {
                 responses[code] = {};
@@ -6328,7 +6374,7 @@
         };
         //TODO: Stoplight doesn't support seperate path params completely yet
         RAML.prototype._mapURIParams = function (pathParamData) {
-          if (!pathParamData.properties || Object.keys(pathParamData.properties).length == 0) {
+          if (!pathParamData.properties || _.isEmpty(pathParamData.properties)) {
             return;
           }
           var pathParams = {};
@@ -6360,6 +6406,8 @@
         }
         RAML.prototype._mapTextSections = function (slTexts) {
           var results = [];
+          if (!slTexts)
+            return resilts;
           for (var i in slTexts) {
             if (!slTexts.hasOwnProperty(i))
               continue;
@@ -6375,11 +6423,20 @@
           return results;
         };
         // from ref=type1 to type=type1
+        // from $ref=#/definitions/type1 to type=type1
+        // from $ref=definitions/type1 to !include definitions/type1
         RAML.prototype.convertRefFromModel = function (object) {
           for (var id in object) {
             if (object.hasOwnProperty(id)) {
               var val = object[id];
-              if (id == 'ref') {
+              if (id == '$ref') {
+                if (val.indexOf('#/') == 0) {
+                  object.type = val.replace('#/definitions/', '');
+                } else {
+                  object.type = '!include ' + val;
+                }
+                delete object[id];
+              } else if (id == 'ref') {
                 object.type = val;
                 delete object[id];
               } else if (id == 'include') {
@@ -6401,12 +6458,15 @@
                 } else {
                   object[id] = this.convertRefFromModel(val);
                 }
+              } else if (id === '$ref') {
+                object.type = val.replace('#/definitions/', '');
+                delete object[id];
               }
             }
           }
           return object;
         };
-        RAML.prototype._mapTraits = function (slTraits) {
+        RAML.prototype._mapTraits = function (slTraits, mimeType) {
           var traits = [];
           for (var i in slTraits) {
             if (!slTraits.hasOwnProperty(i))
@@ -6428,7 +6488,7 @@
             }
             try {
               if (slTrait.responses && slTrait.responses.length) {
-                trait.responses = this._mapResponseBody(slTrait.responses);
+                trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
               }
             } catch (e) {
             }
@@ -6454,9 +6514,21 @@
           }
           return is;
         };
+        function getDefaultMimeType(mimeType, defMimeType) {
+          var mt = mimeType && mimeType.length > 0 ? mimeType[0] : null;
+          if (!mt) {
+            if (_.isArray(defMimeType) && defMimeType.length) {
+              mt = defMimeType[0];
+            } else if (_.isString(defMimeType) && defMimeType !== '') {
+              mt = defMimeType;
+            }
+          }
+          return mt;
+        }
         RAML.prototype._export = function () {
           var env = this.project.Environment;
           var ramlDef = new RAMLDefinition(this.project.Name, env);
+          ramlDef.mediaType = this.mapMediaType(env.Consumes, env.Produces);
           this.description(ramlDef, this.project);
           if (this.project.Environment.ExternalDocs) {
             this.hasExternalDocs = true;
@@ -6516,9 +6588,7 @@
               continue;
             var endpoint = endpoints[i];
             var method = {};
-            if (endpoint.operationId || endpoint.Name) {
-              method.displayName = endpoint.operationId || endpoint.Name;
-            }
+            this.setMethodDisplayName(method, endpoint.operationId || endpoint.Name);
             if (endpoint.Description) {
               method.description = endpoint.Description;
             }
@@ -6530,10 +6600,12 @@
               method.is = is;
             }
             if (endpoint.Method.toLowerCase() === 'post' || endpoint.Method.toLowerCase() === 'put' || endpoint.Method.toLowerCase() === 'patch') {
-              method.body = this._mapRequestBody(endpoint.Body);
+              var mimeType = getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
+              method.body = this._mapRequestBody(endpoint.Body, mimeType);
             }
             method.headers = this._mapNamedParams(endpoint.Headers);
-            method.responses = this._mapResponseBody(endpoint.Responses);
+            var mimeType = getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
+            method.responses = this._mapResponseBody(endpoint.Responses, mimeType);
             method.queryParameters = this._mapURIParams(endpoint.QueryString);
             method.uriParameters = this._mapURIParams(endpoint.PathParams);
             if (endpoint.securedBy) {
@@ -6620,10 +6692,12 @@
               };
             }
           }
-          if (this.project.Schemas && this.project.Schemas.length > 0)
+          if (this.project.Schemas && this.project.Schemas.length > 0) {
             this.addSchema(ramlDef, this.mapSchema(this.project.Schemas));
-          if (this.project.Traits && this.project.Traits.length > 0)
+          }
+          if (this.project.Traits && this.project.Traits.length > 0) {
             ramlDef.traits = this._mapTraits(this.project.Traits);
+          }
           // Clean empty field in definition
           for (var field in ramlDef) {
             if (ramlDef.hasOwnProperty(field) && !ramlDef[field]) {
@@ -6670,6 +6744,15 @@
         };
         RAML.prototype.mapSchema = function (schema) {
           throw new Error('mapSchema method not implemented');
+        };
+        RAML.prototype.getApiKeyType = function () {
+          throw new Error('getApiType method not implemented');
+        };
+        RAML.prototype.mapSecuritySchemes = function (securitySchemes) {
+          throw new Error('mapSecuritySchemes method not implemented');
+        };
+        RAML.prototype.setMethodDisplayName = function (method, displayName) {
+          throw new Error('setMethodDisplayName method not implemented');
         };
         module.exports = RAML;
       },
@@ -6811,12 +6894,23 @@
     ],
     15: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), jsonHelper = require('../utils/json');
+        var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML08() {
         }
         RAML08.prototype = new RAML();
         RAML08.prototype.version = function () {
           return '0.8';
+        };
+        RAML08.prototype.mapMediaType = function (consumes, produces) {
+          var mediaTypes = [];
+          if (consumes && consumes.length > 0) {
+            mediaTypes = consumes;
+          }
+          if (_.isArray(produces)) {
+            mediaTypes = mediaTypes.concat(produces);
+          }
+          mediaTypes = _.uniq(mediaTypes);
+          return mediaTypes.length ? mediaTypes[0] : null;
         };
         RAML08.prototype.mapAuthorizationGrants = function (flow) {
           var ag = [];
@@ -6851,10 +6945,12 @@
           return body;
         };
         RAML08.prototype.mapBody = function (bodyData) {
-          return {
-            schema: jsonHelper.format(bodyData.body),
-            example: jsonHelper.format(bodyData.example)
-          };
+          var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body))) };
+          var example = jsonHelper.format(bodyData.example);
+          if (!_.isEmpty(example)) {
+            body.example = example;
+          }
+          return body;
         };
         RAML08.prototype.addSchema = function (ramlDef, schema) {
           ramlDef.schemas = schema;
@@ -6866,7 +6962,7 @@
               continue;
             var schema = slSchemas[i];
             var resultSchema = {};
-            resultSchema[schema.NameSpace] = this.convertRefFromModel(schema.Definition);
+            resultSchema[schema.NameSpace] = jsonHelper.format(schema.Definition);
             results.push(resultSchema);
           }
           return results;
@@ -6877,21 +6973,48 @@
               content: project.Description
             }];
         };
+        RAML08.prototype.getApiKeyType = function () {
+          return 'x-api-key';
+        };
+        RAML08.prototype.mapSecuritySchemes = function (securitySchemes) {
+          return _.map(securitySchemes, function (v, k) {
+            var m = {};
+            m[k] = v;
+            return m;
+          });
+        };
+        RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
+        };
         module.exports = RAML08;
       },
       {
         '../utils/json': 33,
-        './baseraml': 12
+        './baseraml': 12,
+        'lodash': 67
       }
     ],
     16: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), jsonHelper = require('../utils/json');
+        var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML10() {
         }
         RAML10.prototype = new RAML();
         RAML10.prototype.version = function () {
           return '1.0';
+        };
+        RAML10.prototype.mapMediaType = function (consumes, produces) {
+          var mediaTypes = [];
+          if (consumes && consumes.length > 0) {
+            mediaTypes = consumes;
+          }
+          if (_.isArray(produces)) {
+            mediaTypes = mediaTypes.concat(produces);
+          }
+          mediaTypes = _.uniq(mediaTypes);
+          if (mediaTypes.length === 1) {
+            return mediaTypes[0];
+          }
+          return mediaTypes.length ? mediaTypes : null;
         };
         RAML10.prototype.mapAuthorizationGrants = function (flow) {
           var ag = [];
@@ -6953,13 +7076,17 @@
             if (!slSchemas.hasOwnProperty(i))
               continue;
             var schema = slSchemas[i];
-            var definition = this.convertRefFromModel(schema.Definition);
+            var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition));
             for (var i in definition.properties) {
+              if (!definition.properties.hasOwnProperty(i))
+                continue;
               var property = definition.properties[i];
               property.required = false;
             }
             if (definition.required && definition.required.length > 0) {
               for (var j in definition.required) {
+                if (!definition.required.hasOwnProperty(j))
+                  continue;
                 var requiredParam = definition.required[j];
                 if (definition['properties'][requiredParam]) {
                   delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
@@ -6984,11 +7111,21 @@
         RAML10.prototype.description = function (ramlDef, project) {
           ramlDef.description = project.Description;
         };
+        RAML10.prototype.getApiKeyType = function () {
+          return 'Pass Through';
+        };
+        RAML10.prototype.mapSecuritySchemes = function (securitySchemes) {
+          return securitySchemes;
+        };
+        RAML10.prototype.setMethodDisplayName = function (method, displayName) {
+          method.displayName = displayName;
+        };
         module.exports = RAML10;
       },
       {
         '../utils/json': 33,
-        './baseraml': 12
+        './baseraml': 12,
+        'lodash': 67
       }
     ],
     17: [
@@ -7014,13 +7151,18 @@
         StopLightX.prototype._mapSchemas = function () {
           var self = this;
           self.project.Schemas.forEach(function (schema) {
-            self.data.definitions[schema.namespace][prefix] = {
-              id: schema.Id,
-              name: schema.Name,
-              summary: schema.Summary,
-              description: schema.Description,
-              public: schema.Public
-            };
+            var obj = {
+                id: schema.Id,
+                name: schema.Name
+              };
+            if (!_.isEmpty(schema.Summary)) {
+              obj.summary = schema.Summary;
+            }
+            if (!_.isEmpty(schema.Description)) {
+              obj.description = schema.Description;
+            }
+            obj.public = schema.Public;
+            self.data.definitions[schema.namespace][prefix] = obj;
           });
         };
         StopLightX.prototype._mapTests = function (tests, namespace) {
@@ -7107,7 +7249,7 @@
     ],
     18: [
       function (require, module, exports) {
-        var Endpoint = require('../entities/endpoint'), Exporter = require('./exporter'), SwaggerParser = require('swagger-parser'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
+        var Endpoint = require('../entities/endpoint'), Exporter = require('./exporter'), SwaggerParser = require('swagger-parser'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
         function Swagger() {
           this.metadata = null;
         }
@@ -7120,10 +7262,11 @@
           }
         }
         Swagger.prototype = new Exporter();
-        Swagger.prototype._getResponseTypes = function (responses, defaultResponseType) {
-          return responses.reduce(function (result, res) {
-            if ((res.mimeType || _.isNull(res.mimeType)) && result.indexOf(res.mimeType) === -1 && res.mimeType !== defaultResponseType) {
-              result.push(res.mimeType);
+        Swagger.prototype._getResponseTypes = function (endpoint, defaultResponseType) {
+          var defRespType = defaultResponseType || [], produces = endpoint.Produces || [];
+          return produces.reduce(function (result, mimeType) {
+            if (result.indexOf(mimeType) === -1 && defRespType.indexOf(mimeType) === -1) {
+              result.push(mimeType);
             }
             return result;
           }, []);
@@ -7132,15 +7275,20 @@
           var result = [], typesToInclude = [
               'multipart/form-data',
               'application/x-www-form-urlencoded'
-            ], reqBody = endpoint.Body;
+            ], consumes = endpoint.Consumes || [], defReqType = defaultRequestType || [];
           for (var i in parameters) {
             if (parameters[i].type && parameters[i].type === 'file') {
               //consumes must have 'multipart/form-data' or 'application/x-www-form-urlencoded'
-              if (reqBody && typesToInclude.indexOf(reqBody.mimeType) >= 0) {
-                result.push(reqBody.mimeType);
-              } else if (typesToInclude.indexOf(defaultRequestType) >= 0) {
-                result.push(defaultRequestType);
-              } else {
+              typesToInclude.forEach(function (mimeType) {
+                if (!result.length) {
+                  if (consumes.indexOf(mimeType) >= 0) {
+                    result.push(mimeType);
+                  } else if (defReqType.indexOf(mimeType) >= 0) {
+                    result.push(mimeType);
+                  }
+                }
+              });
+              if (!result.length) {
                 //as swagger spec validation must want one of these, add one
                 result.push(typesToInclude[0]);
               }
@@ -7148,10 +7296,10 @@
               break;
             }
           }
-          if (!_.isEmpty(endpoint.request.bodies)) {
-            endpoint.request.bodies.forEach(function (request) {
-              if ((request.mimeType || _.isNull(request.mimeType)) && request.mimeType !== defaultRequestType) {
-                result.push(request.mimeType);
+          if (!_.isEmpty(consumes)) {
+            consumes.forEach(function (mimeType) {
+              if (defReqType.indexOf(mimeType) === -1) {
+                result.push(mimeType);
               }
             });
           }
@@ -7206,32 +7354,33 @@
           return _.uniq(tags);
         };
         Swagger.prototype._constructSwaggerMethod = function (endpoint, parameters, responses, env) {
-          var consumes = this._getRequestTypes(endpoint, parameters, env.DefaultRequestType);
-          var produces = this._getResponseTypes(endpoint.Responses, env.defaultResponseType);
+          var consumes = this._getRequestTypes(endpoint, parameters, env.Consumes);
+          var produces = this._getResponseTypes(endpoint, env.Produces);
           endpoint.SetOperationId(endpoint.operationId, endpoint.Method, endpoint.Path);
-          var resultSwaggerMethod = {
-              tags: this._constructTags(endpoint, env),
-              summary: endpoint.Name,
-              description: endpoint.Description,
-              operationId: endpoint.operationId,
-              responses: responses
-            };
-          if (!_.isEmpty(consumes)) {
-            resultSwaggerMethod.consumes = _.every(consumes, _.isNull) ? [] : consumes.filter(_.isString);
+          var resultSwaggerMethod = {};
+          if (!_.isEmpty(endpoint.operationId)) {
+            resultSwaggerMethod.operationId = endpoint.operationId;
           }
-          if (!_.isEmpty(produces)) {
-            resultSwaggerMethod.produces = _.every(produces, _.isNull) ? [] : produces.filter(_.isString);
+          if (!_.isEmpty(endpoint.Name)) {
+            resultSwaggerMethod.summary = endpoint.Name;
+          }
+          var tags = this._constructTags(endpoint, env);
+          if (!_.isEmpty(tags)) {
+            resultSwaggerMethod.tags = tags;
+          }
+          if (!_.isEmpty(endpoint.Description)) {
+            resultSwaggerMethod.description = endpoint.Description;
+          }
+          if (_.isArray(consumes) && endpoint.Consumes && !_.isEqual(env.Consumes, consumes) && !_.isEmpty(consumes)) {
+            resultSwaggerMethod.consumes = consumes.filter(_.isString);
+          }
+          if (_.isArray(produces) && endpoint.Produces && !_.isEqual(env.Produces, produces) && !_.isEmpty(produces)) {
+            resultSwaggerMethod.produces = produces.filter(_.isString);
           }
           if (!_.isEmpty(parameters)) {
             resultSwaggerMethod.parameters = parameters;
           }
-          if (_.isEmpty(resultSwaggerMethod.tags)) {
-            delete resultSwaggerMethod.tags;
-          }
-          if (resultSwaggerMethod.operationId.length === 0) {
-            //don't keep empty operationId in exported definition
-            delete resultSwaggerMethod.operationId;
-          }
+          resultSwaggerMethod.responses = responses;
           return resultSwaggerMethod;
         };
         Swagger.prototype._mapEndpointSecurity = function (securedByTypes, securityDefinitions) {
@@ -7329,10 +7478,10 @@
               break;
             case 'basic':
               if (sd.name) {
-                result[sd.name] = {
-                  type: type,
-                  description: sd.description || ''
-                };
+                result[sd.name] = { type: type };
+                if (!_.isEmpty(sd.description)) {
+                  result[sd.name].description = sd.description;
+                }
               }
               break;
             }
@@ -7341,7 +7490,7 @@
         };
         Swagger.prototype._mapURIParams = function (pathParams) {
           var parameters = [];
-          if (!pathParams.properties || Object.keys(pathParams).length == 0) {
+          if (!pathParams.properties || _.isEmpty(pathParams)) {
             return parameters;
           }
           for (var paramName in pathParams.properties) {
@@ -7351,7 +7500,7 @@
             param.in = 'path';
             param.required = true;
             param.type = param.type || 'string';
-            if (prop.description) {
+            if (!_.isEmpty(prop.description)) {
               param.description = prop.description;
             }
             parameters.push(param);
@@ -7372,34 +7521,41 @@
           }
           return parameters;
         };
-        function mapResponseBody(res) {
-          var item = { description: res.description || '' };
-          // if response body mimeType is null, do not include schema in swagger export
-          if (!res.mimeType) {
-            return item;
+        function mapResponseBody(res, mimeType) {
+          var item = {};
+          if (!_.isEmpty(res.description)) {
+            item.description = res.description;
           }
+          // if response body mimeType is null, do not include schema in swagger export
+          // TODO: Figure out how to set example for mimeType properly.
+          // if (!mimeType) {
+          //   return item;
+          // }
           var body = jsonHelper.parse(res.body);
-          if (body && Object.keys(body).length !== 0) {
+          if (body && !_.isEmpty(body)) {
             item.schema = convertRefFromModel(body);
           }
-          if (res.example && res.example !== '{}' && res.example.length > 2) {
+          if (mimeType && mimeType !== '' && res.example && res.example !== '{}' && res.example.length > 2) {
             item.examples = {};
-            item.examples[res.mimeType] = jsonHelper.parse(res.example);
+            item.examples[mimeType] = jsonHelper.parse(res.example);
           }
           return item;
         }
-        Swagger.prototype._mapResponseBody = function (slResponses) {
+        Swagger.prototype._mapResponseBody = function (endpoint, env) {
+          var slResponses = endpoint.Responses;
           var result = {};
           for (var i in slResponses) {
-            var res = slResponses[i], item = mapResponseBody(res);
+            var res = slResponses[i];
+            var mimeType = endpoint.Produces && endpoint.Produces.length ? endpoint.Produces[0] : null;
+            // if (!mimeType && env.Produces && env.Produces.length) {
+            //   mimeType = env.Produces[0];
+            // }
+            var item = mapResponseBody(res, mimeType);
             result[res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default'] = item;
           }
-          if (Object.keys(result).length == 0) {
-            //empty schema for swagger spec validation
-            result['default'] = {
-              description: '',
-              schema: {}
-            };
+          if (_.isEmpty(result)) {
+            // empty schema for swagger spec validation
+            result['default'] = { schema: {} };
           }
           return result;
         };
@@ -7409,7 +7565,7 @@
           }
           var result = [], body = jsonHelper.parse(slRequestBody.body) || {};
           var param = {};
-          if (slRequestBody.description) {
+          if (!_.isEmpty(slRequestBody.description)) {
             param.description = slRequestBody.description;
           }
           if (!jsonHelper.isEmptySchema(body)) {
@@ -7444,13 +7600,18 @@
         };
         Swagger.prototype._mapRequestHeaders = function (slHeaders) {
           var result = [];
-          for (var property in slHeaders.properties) {
-            var param = swaggerHelper.setParameterFields(slHeaders.properties[property], {});
-            param.name = property;
-            param.in = 'header';
-            param.required = slHeaders.required && slHeaders.required.indexOf(property) >= 0;
-            param.description = slHeaders.properties[property].description || '';
-            result.push(param);
+          if (slHeaders) {
+            for (var property in slHeaders.properties) {
+              var param = swaggerHelper.setParameterFields(slHeaders.properties[property], {});
+              param.name = property;
+              param.in = 'header';
+              param.required = slHeaders.required && slHeaders.required.indexOf(property) >= 0;
+              var desc = slHeaders.properties[property].description;
+              if (!_.isEmpty(desc)) {
+                param.description = slHeaders.properties[property].description;
+              }
+              result.push(param);
+            }
           }
           return result;
         };
@@ -7496,7 +7657,7 @@
               continue;
             }
             try {
-              var schema = JSON.parse(trait.request.queryString);
+              var schema = jsonHelper.parse(trait.request.queryString);
               for (var p in schema.properties) {
                 // only add it if we didn't already explicitly define it in the operation
                 if (!_.find(existingParams, {
@@ -7509,7 +7670,7 @@
             } catch (e) {
             }
             try {
-              var schema = JSON.parse(trait.request.headers);
+              var schema = jsonHelper.parse(trait.request.headers);
               for (var p in schema.properties) {
                 // only add it if we didn't already explicitly define it in the operation
                 if (!_.find(existingParams, {
@@ -7556,9 +7717,9 @@
           });
           for (var i in endpoints) {
             var endpoint = endpoints[i], parameters = [];
-            var requestTypes = this._getRequestTypes(endpoint, parameters, env.DefaultRequestType);
+            var requestTypes = this._getRequestTypes(endpoint, parameters, env.Consumes);
             // To build parameters we need to grab data from body for supported mimeTypes
-            requestTypes = _.isEmpty(requestTypes) ? [env.DefaultRequestType] : requestTypes;
+            requestTypes = _.isEmpty(requestTypes) ? env.Consumes : requestTypes;
             if (!swaggerDef.paths[endpoint.Path]) {
               var params = this._validateParameters(this._mapURIParams(endpoint.PathParams));
               swaggerDef.paths[endpoint.Path] = params.length ? { parameters: params } : {};
@@ -7570,13 +7731,13 @@
             parameters = parameters.concat(this._mapRequestHeaders(endpoint.Headers));
             parameters = parameters.concat(this._mapEndpointTraitParameters(endpoint, parameters));
             parameters = this._validateParameters(parameters);
-            var responses = _.assign({}, this._mapEndpointTraitResponses(endpoint), this._mapResponseBody(endpoint.Responses));
-            if (_.isEmpty(this._getResponseTypes(endpoint.Responses))) {
-              for (var statusCode in responses) {
-                var response = responses[statusCode];
-                delete response.schema;
-              }
-            }
+            var responses = _.assign({}, this._mapEndpointTraitResponses(endpoint), this._mapResponseBody(endpoint, env));
+            // if (_.isEmpty(endpoint.Produces)) {
+            //   for (var statusCode in responses) {
+            //     var response = responses[statusCode];
+            //     delete response.schema;
+            //   }
+            // }
             swaggerDef.paths[endpoint.Path][endpoint.Method] = this._constructSwaggerMethod(endpoint, parameters, responses, env);
             //Is it OK to include produces/consumes in all cases?
             var security = [];
@@ -7593,14 +7754,14 @@
           for (var i in traits) {
             var trait = traits[i], params = [];
             try {
-              var schema = JSON.parse(trait.request.queryString);
+              var schema = jsonHelper.parse(trait.request.queryString);
               if (!jsonHelper.isEmptySchema(schema)) {
                 params = params.concat(this._validateParameters(this._mapQueryString(schema)));
               }
             } catch (e) {
             }
             try {
-              var schema = JSON.parse(trait.request.headers);
+              var schema = jsonHelper.parse(trait.request.headers);
               if (!jsonHelper.isEmptySchema(schema)) {
                 params = params.concat(this._validateParameters(this._mapRequestHeaders(schema)));
               }
@@ -7637,7 +7798,12 @@
             swaggerHost = swaggerHost + ':' + hostUrl.port;
           }
           swaggerDef.Host = swaggerHost;
-          if (!_.isEmpty(env.Protocols)) {
+          // If host has path on it, prepend to base path
+          swaggerDef.BasePath = env.BasePath;
+          if (hostUrl.path && hostUrl.path !== '/') {
+            swaggerDef.BasePath = urlHelper.join(hostUrl.path, env.BasePath);
+          }
+          if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
             var filteredSchemes = [];
             env.Protocols.map(function (p) {
               if (acceptedSchemes.indexOf(p.toLowerCase()) >= 0) {
@@ -7658,13 +7824,13 @@
           swaggerDef.info.version = env.Version;
           swaggerDef.BasePath = env.BasePath || '';
           this._mapHostAndProtocol(env, swaggerDef);
-          if (env.DefaultResponseType) {
-            swaggerDef.produces = [env.DefaultResponseType];
+          if (env.Produces && env.Produces.length > 0) {
+            swaggerDef.produces = env.Produces;
           } else {
             delete swaggerDef.produces;
           }
-          if (env.DefaultRequestType) {
-            swaggerDef.consumes = [env.DefaultRequestType];
+          if (env.Consumes && env.Consumes.length > 0) {
+            swaggerDef.consumes = env.Consumes;
           } else {
             delete swaggerDef.consumes;
           }
@@ -7672,16 +7838,20 @@
           var parameters = this._mapTraitParameters(this.project.Traits);
           if (!_.isEmpty(parameters)) {
             swaggerDef.parameters = parameters;
+          } else {
+            delete swaggerDef.parameters;
           }
           var responses = this._mapTraitResponses(this.project.Traits);
           if (!_.isEmpty(responses)) {
             swaggerDef.responses = responses;
+          } else {
+            delete swaggerDef.responses;
           }
           swaggerDef.securityDefinitions = this._mapSecurityDefinitions(this.project.Environment.SecuritySchemes);
           this._mapEndpoints(swaggerDef, env);
           //if not security definition added, then don't keep the field anymore
-          if (swaggerDef.securityDefinitions && Object.keys(swaggerDef.securityDefinitions).length <= 0) {
-            delete swaggerDef['securityDefinitions'];
+          if (swaggerDef.securityDefinitions && _.isEmpty(swaggerDef.securityDefinitions)) {
+            delete swaggerDef.securityDefinitions;
           }
           this.data = jsonHelper.toJSON(swaggerDef);
         };
@@ -7693,6 +7863,7 @@
         '../helpers/swagger': 21,
         '../utils/json.js': 33,
         '../utils/strings.js': 34,
+        '../utils/url': 35,
         './exporter': 13,
         'lodash': 67,
         'swagger-parser': 68,
@@ -7737,6 +7908,7 @@
     ],
     20: [
       function (require, module, exports) {
+        var _ = require('lodash');
         module.exports = {
           getScalarTypes: [
             'string',
@@ -7765,6 +7937,8 @@
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
+              if (!source.hasOwnProperty(prop))
+                continue;
               if (this.getSupportedParameterFields.indexOf(prop) >= 0) {
                 target[this.parameterMappings[prop] ? this.parameterMappings[prop] : prop] = typeof source[prop] === 'function' ? source[prop]() : source[prop];
                 // call function if needed
@@ -7781,13 +7955,16 @@
                   } catch (e) {
                   }
                 }
+                if (!target[prop] || _.isArray(target[prop]) && _.isEmpty(target[prop])) {
+                  delete target[prop];
+                }
               }
             }
             return target;
           }
         };
       },
-      {}
+      { 'lodash': 67 }
     ],
     21: [
       function (require, module, exports) {
@@ -7982,15 +8159,19 @@
     23: [
       function (require, module, exports) {
         var parser = window.RAML.Parser, Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
+        var toJSONOptions = { serializeMetadata: false };
+        var parseOptions = { attributeDefaults: false };
         //TODO multi file support isn't justified
         function RAML() {
           this.schemas = [];
         }
         RAML.prototype = new Importer();
         RAML.prototype._getSecuritySchemeSettingsByName = function (schemeName) {
-          var securitySchemes = this.data.securitySchemes();
+          var securitySchemes = this.data.securitySchemes;
           for (var i in securitySchemes) {
-            if (schemeName === securitySchemes[i].name()) {
+            if (!securitySchemes.hasOwnProperty(i))
+              continue;
+            if (schemeName === securitySchemes[i].name) {
               return securitySchemes[i];
             }
           }
@@ -8068,7 +8249,7 @@
               continue;
             var qp = queryParameters[key];
             queryString.properties[key] = ramlHelper.setParameterFields(qp, {});
-            if (qp.required()) {
+            if (qp.required) {
               queryString.required.push(key);
             }
           }
@@ -8087,9 +8268,9 @@
             if (!uriParams.hasOwnProperty(i))
               continue;
             var key = uriParams[i];
-            pathParams.properties[key.name()] = {
-              description: key.displayName() || key.description() || '',
-              type: key.type() || 'string'
+            pathParams.properties[key.name] = {
+              description: key.displayName || key.description || '',
+              type: key.type || 'string'
             };
           }
           return pathParams;
@@ -8100,19 +8281,16 @@
             if (!responses.hasOwnProperty(code))
               continue;
             var response = responses[code];
-            if (!response || !response.body || !response.body()) {
-              continue;
-            }
-            var result = this._mapRequestBody(response.body());
-            result.codes = [response.code().value()];
+            var result = this._mapRequestBody(response.body);
+            result.codes = [response.code];
             if (result.body) {
               result.body = jsonHelper.cleanSchema(result.body);
             }
             if (result.example) {
               result.example = jsonHelper.stringify(result.example, 4);
             }
-            if (response.description() && response.description().value) {
-              result.description = response.description().value();
+            if (response.description) {
+              result.description = response.description;
             }
             data.push(result);
           }
@@ -8125,59 +8303,100 @@
         RAML.prototype.convertRefToModel = function (object) {
           for (var id in object) {
             if (object.hasOwnProperty(id)) {
+              if (id == 'type' && _.isArray(object[id])) {
+                //avoid arrays for type attribute.
+                object[id] = object[id][0];
+              }
               var val = object[id];
-              if (id == 'type' && typeof val === 'string' && ramlHelper.getScalarTypes.indexOf(val) < 0 && val !== 'object') {
+              if (!val)
+                continue;
+              if (id == 'type' && (typeof val === 'string' && ramlHelper.getScalarTypes.indexOf(val) < 0 && val !== 'object')) {
                 object.ref = val;
                 delete object[id];
               } else if (typeof val === 'object') {
-                if (val.type == 'date-only') {
+                if (val.type && val.type == 'date-only') {
                   object[id] = {
                     type: 'string',
                     format: 'date'
                   };
-                } else if (val.type == 'datetime') {
+                } else if (val.type && val.type == 'datetime') {
                   object[id] = {
                     type: 'string',
                     format: 'date-time'
                   };
+                } else if (id == 'structuredExample' || id == 'fixedFacets') {
+                  //delete garbage
+                  delete object[id];
                 } else {
                   object[id] = this.convertRefToModel(val);
                 }
+              } else if (id == 'name') {
+                //delete garbage
+                delete object[id];
               }
             }
           }
           return object;
         };
-        RAML.prototype._mapEndpoint = function (resource, baseURI, pathParams) {
-          if (resource.uriParameters().length > 0) {
-            pathParams = _.merge(pathParams, this._mapURIParams(resource.uriParameters()));
+        RAML.prototype.mapMimeTypes = function (body, skip) {
+          var result = [];
+          var skipMimeTypes = [];
+          for (var i in skip) {
+            if (skip[i].value) {
+              skipMimeTypes.push(skip[i].value);
+            }
           }
-          var methods = resource.methods();
+          for (var i in body) {
+            var b = body[i];
+            if (b.name) {
+              var mimeType = b.name;
+              if (skipMimeTypes.indexOf(mimeType) === -1) {
+                result.push(mimeType);
+              }
+            }
+          }
+          return _.uniq(result);
+        };
+        RAML.prototype._mapEndpoint = function (resource, baseURI, pathParams) {
+          if (resource.uriParameters) {
+            pathParams = _.merge(pathParams, this._mapURIParams(resource.uriParameters));
+          }
+          var methods = resource.methods;
           for (var i in methods) {
             if (!methods.hasOwnProperty(i))
               continue;
             var method = methods[i];
-            var summary = method.name ? method.name() : '';
-            // do we ever have a name or summary?
+            var summary = method.summary ? method.summary : '';
             var endpoint = new Endpoint(summary);
-            endpoint.Method = method.method();
-            endpoint.Path = baseURI + resource.relativeUri().value();
-            endpoint.Description = method.description() ? method.description().value() : '';
-            endpoint.SetOperationId(method.displayName ? method.displayName() : method.displayName, endpoint.Method, endpoint.Path);
-            if (method.body()) {
-              endpoint.Body = this._mapRequestBody(method.body());
+            endpoint.Method = method.method;
+            endpoint.Path = baseURI + resource.relativeUri;
+            endpoint.Description = method.description ? method.description : '';
+            endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
+            if (method.body) {
+              var c = this.mapMimeTypes(method.body, this.data.mediaType);
+              endpoint.Consumes = c.length > 0 ? c : null;
+              endpoint.Body = this._mapRequestBody(method.body);
             }
-            if (method.queryParameters()) {
-              endpoint.QueryString = this._mapQueryString(method.queryParameters());
+            if (method.queryParameters) {
+              endpoint.QueryString = this._mapQueryString(method.queryParameters);
             }
-            if (method.headers()) {
-              endpoint.Headers = this._mapRequestHeaders(method.headers());
+            if (method.headers) {
+              endpoint.Headers = this._mapRequestHeaders(method.headers);
             }
-            if (method.responses()) {
-              endpoint.Responses = this._mapResponseBody(method.responses());
+            if (method.responses) {
+              var produces = [];
+              for (var code in method.responses) {
+                if (!method.responses[code] || !method.responses[code].body) {
+                  continue;
+                }
+                produces = produces.concat(this.mapMimeTypes(method.responses[code].body, this.data.mediaType));
+              }
+              var p = _.uniq(produces);
+              endpoint.Produces = p.length > 0 ? p : null;
+              endpoint.Responses = this._mapResponseBody(method.responses);
             }
             endpoint.traits = [];
-            var isMethod = method.is();
+            var isMethod = method.is;
             if (isMethod) {
               if (isMethod instanceof Array) {
                 endpoint.traits = isMethod;
@@ -8187,14 +8406,14 @@
             }
             endpoint.PathParams = pathParams;
             //endpoint security
-            var securedBy = method.securedBy();
+            var securedBy = method.securedBy;
             if (Array.isArray(securedBy)) {
               endpoint.securedBy = {};
               for (var si in securedBy) {
                 if (!securedBy.hasOwnProperty(si))
                   continue;
-                var schemeSettings = this._getSecuritySchemeSettingsByName(securedBy[si].name());
-                switch (schemeSettings.type()) {
+                var schemeSettings = this._getSecuritySchemeSettingsByName(securedBy[si]);
+                switch (schemeSettings.type) {
                 case 'OAuth 2.0':
                   endpoint.securedBy['oauth2'] = true;
                   break;
@@ -8210,17 +8429,17 @@
             //TODO endpoint security
             this.project.addEndpoint(endpoint);
           }
-          var resources = resource.resources();
+          var resources = resource.resources;
           if (resources && resources.length > 0) {
             for (var j = 0; j < resources.length; j++) {
-              this._mapEndpoint(resources[j], baseURI + resource.relativeUri().value(), pathParams);
+              this._mapEndpoint(resources[j], baseURI + resource.relativeUri, pathParams);
             }
           }
         };
         RAML.prototype.loadFile = function (filePath, cb) {
           var me = this;
-          parser.loadApi(filePath).then(function (api) {
-            me.data = parser.expander.expandTraitsAndResourceTypes(api);
+          parser.loadApi(filePath, parseOptions).then(function (api) {
+            me.data = api.toJSON(toJSONOptions);
             cb();
           }, function (error) {
             cb(error);
@@ -8228,8 +8447,8 @@
         };
         RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
           var me = this;
-          parser.loadApi(filePath, options).then(function (api) {
-            me.data = parser.expander.expandTraitsAndResourceTypes(api);
+          parser.loadApi(filePath, _.merge(parseOptions, options)).then(function (api) {
+            me.data = api.toJSON(toJSONOptions);
             cb();
           }, function (error) {
             cb(error);
@@ -8238,18 +8457,22 @@
         RAML.prototype.loadData = function (data, options) {
           var me = this;
           return new Promise(function (resolve, reject) {
-            var parsedData = parser.parseRAMLSync(data, options);
-            if (parsedData.name === 'Error') {
-              reject(error);
-            } else {
-              me.data = parser.expander.expandTraitsAndResourceTypes(parsedData);
-              //me.data = parsedData.expand(true);
-              resolve();
+            try {
+              var parsedData = parser.parseRAMLSync(data, _.merge(parseOptions, options));
+              if (parsedData.name === 'Error') {
+                reject(error);
+              } else {
+                me.data = parsedData.toJSON(toJSONOptions);
+                resolve();
+              }
+            } catch (e) {
+              console.error('raml#loadData', e, data, options);
+              reject(e);
             }
           });
         };
         RAML.prototype._mapHost = function () {
-          var parsedURL = url.parse(this.data.baseUri ? this.data.baseUri().value() : '');
+          var parsedURL = url.parse(this.data.baseUri || '');
           this.project.Environment.Host = parsedURL.protocol && parsedURL.host ? parsedURL.protocol + '//' + parsedURL.host : null;
           this.project.Environment.BasePath = parsedURL.path;
         };
@@ -8262,12 +8485,19 @@
             for (var k in traitGroup) {
               if (!traitGroup.hasOwnProperty(k))
                 continue;
-              var trait = traitGroup[k], slTrait = {
+              var trait = traitGroup[k];
+              var slTrait = {
                   _id: k,
                   name: k,
+                  description: '',
                   request: {},
                   responses: []
                 };
+              if (!_.isEmpty(trait.usage)) {
+                slTrait.description = trait.usage;
+              } else {
+                delete slTrait.description;
+              }
               if (trait.queryParameters) {
                 slTrait.request.queryString = this._mapQueryString(trait.queryParameters);
               }
@@ -8275,7 +8505,9 @@
                 slTrait.request.headers = this._mapRequestHeaders(trait.headers);
               }
               if (trait.responses) {
-                slTrait.responses = this._mapResponse(trait.responses);
+                slTrait.responses = this._mapResponseBody(trait.responses);
+              } else {
+                delete slTrait.responses;
               }
               slTraits.push(slTrait);
             }
@@ -8283,39 +8515,58 @@
           return slTraits;
         };
         RAML.prototype._import = function () {
-          this.project = new Project(this.data.title());
-          //TODO set project description from documentation
-          //How to know which documentation describes the project briefly?
-          this.description(this.project, this.data);
-          this._mapHost();
-          var mediaType = this.data.mediaType();
-          if (!_.isEmpty(this.data.protocols())) {
-            this.project.Environment.Protocols = this.data.protocols();
-          }
-          this.project.Environment.DefaultResponseType = '';
-          if (mediaType) {
-            if (Array.isArray(mediaType)) {
-              if (mediaType.length > 0) {
-                this.project.Environment.DefaultResponseType = mediaType[0].value();
-              }
-            } else {
-              this.project.Environment.DefaultResponseType = mediaType.value();
+          try {
+            this.project = new Project(this.data.title);
+            this.project.Environment.Version = this.data.version;
+            if (!this.project.Environment.Version) {
+              delete this.project.Environment.Version;
             }
+            // TODO set project description from documentation
+            // How to know which documentation describes the project briefly?
+            this.description(this.project, this.data);
+            this._mapHost();
+            if (!_.isEmpty(this.data.protocols)) {
+              this.project.Environment.Protocols = this.data.protocols;
+              for (var i in this.project.Environment.Protocols) {
+                if (!this.project.Environment.Protocols.hasOwnProperty(i))
+                  continue;
+                this.project.Environment.Protocols[i] = this.project.Environment.Protocols[i].toLowerCase();
+              }
+            }
+            var mimeTypes = [];
+            var mediaType = this.data.mediaType;
+            if (mediaType) {
+              if (!_.isArray(mediaType)) {
+                mediaType = [mediaType];
+              }
+              for (var i in mediaType) {
+                if (!mediaType.hasOwnProperty(i))
+                  continue;
+                if (mediaType[i]) {
+                  mimeTypes.push(mediaType[i]);
+                }
+              }
+            }
+            if (mimeTypes.length) {
+              this.project.Environment.Produces = mimeTypes;
+              this.project.Environment.Consumes = mimeTypes;
+            }
+            this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
+            var resources = this.data.resources;
+            for (var i = 0; i < resources.length; i++) {
+              this._mapEndpoint(resources[i], '', {});
+            }
+            var schemas = this._mapSchema(this.getSchema(this.data));
+            for (var s in schemas) {
+              if (!schemas.hasOwnProperty(s))
+                continue;
+              this.project.addSchema(schemas[s]);
+            }
+            this.project.traits = this._mapTraits(this.data.traits);
+          } catch (e) {
+            console.error('raml#import', e);
+            throw e;
           }
-          this.project.Environment.DefaultRequestType = this.project.Environment.DefaultResponseType;
-          this.project.Environment.Version = this.data.version();
-          this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes());
-          var resources = this.data.resources();
-          for (var i = 0; i < resources.length; i++) {
-            this._mapEndpoint(resources[i], '', {});
-          }
-          var schemas = this._mapSchema(this.getSchema(this.data));
-          for (var s in schemas) {
-            if (!schemas.hasOwnProperty(s))
-              continue;
-            this.project.addSchema(schemas[s]);
-          }
-          this.project.traits = this._mapTraits(this.data.traits());
         };
         RAML.prototype.description = function (project, data) {
           throw new Error('description method not implemented');
@@ -8359,12 +8610,13 @@
         Importer.prototype.loadFile = function (path) {
           throw new Error('loadFile method not implemented');
         };
-        // todo unify api by returning a Promise like the loadData function
+        // TODO unify api by returning a Promise like the loadData function
+        // https://github.com/stoplightio/api-spec-converter/issues/16
         Importer.prototype.loadFileWithOptions = function (path, options) {
           throw new Error('loadFile method not implemented');
         };
         Importer.prototype.loadData = function (data) {
-          //TODO validation of the data
+          // TODO validation of the data
           this.data = data;
           return new Promise(function (resolve) {
             resolve();
@@ -8503,7 +8755,7 @@
           }
           return headerObj;
         };
-        Postman.prototype._mapRequestBody = function (mode, requestData) {
+        Postman.prototype._mapRequestBody = function (requestData) {
           var data = {
               body: {
                 type: 'object',
@@ -8511,19 +8763,6 @@
                 required: []
               }
             };
-          //TODO map Body
-          switch (mode) {
-          case 'urlencoded':
-            data.mimeType = 'application/x-www-form-urlencoded';
-            break;
-          case 'params':
-            //check for best suitability
-            data.mimeType = 'multipart/form-data';
-            break;
-          default:
-            data.mimeType = 'text/plain';
-            break;
-          }
           for (var j in requestData) {
             var type = null;
             switch (requestData[j].type) {
@@ -8540,6 +8779,23 @@
           }
           return data;
         };
+        function mapConsumes(mode) {
+          var consumes = [];
+          switch (mode) {
+          case 'urlencoded':
+            consumes.push('application/x-www-form-urlencoded');
+            break;
+          case 'params':
+            //check for best suitability
+            consumes.push('multipart/form-data');
+            break;
+          default:
+            consumes.push('text/plain');
+            break;
+          }
+          return consumes;
+        }
+        ;
         Postman.prototype._mapEndpoint = function (pmr) {
           var endpoint, headers, v, queryString, urlParts;
           endpoint = new Endpoint(pmr.name);
@@ -8552,7 +8808,9 @@
           endpoint.PathParams = this._mapURIParams(pmr.pathVariables);
           //parse headers
           endpoint.Headers = this._mapRequestHeaders(pmr.headers);
-          endpoint.Body = this._mapRequestBody(pmr.dataMode, pmr.data);
+          //TODO map Body
+          endpoint.Consumes = mapConsumes(pmr.dataMode);
+          endpoint.Body = this._mapRequestBody(pmr.data);
           return endpoint;
         };
         function mapEndpointGroup(folder) {
@@ -8644,8 +8902,9 @@
           savedEntry.Method = pmr.method;
           savedEntry.PathParams = this._mapURIParams(pmr.pathVariables);
           savedEntry.Headers = this._mapRequestHeaders(pmr.headers);
+          savedEntry.Consumes = mapConsumes(pmr.dataMode);
           if (savedEntry.Method.toLowerCase() !== 'get' && savedEntry.Method.toLowerCase() !== 'head') {
-            savedEntry.Body = this._mapRequestBody(pmr.dataMode, pmr.data);
+            savedEntry.Body = this._mapRequestBody(pmr.data);
           }
           return savedEntry;
         };
@@ -8698,7 +8957,7 @@
     ],
     27: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), YAML = require('js-yaml'), Text = require('../entities/text');
+        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), Text = require('../entities/text');
         function RAML08() {
         }
         RAML08.prototype = new RAML();
@@ -8713,35 +8972,31 @@
             if (!methodBody.hasOwnProperty(i))
               continue;
             var mimeType = methodBody[i];
-            data.mimeType = mimeType.name();
-            if (mimeType.example()) {
-              data.example = mimeType.example().value();
+            data.mimeType = mimeType.name;
+            if (mimeType.example) {
+              data.example = mimeType.example;
             }
-            if (mimeType.formParameters()) {
+            if (mimeType.schema) {
+              data.body = this.convertRefToModel(jsonHelper.parse(mimeType.schema));
+            } else if (mimeType.formParameters) {
               data.body = {
                 type: 'object',
                 'properties': {},
                 'required': []
               };
-              var formParams = mimeType.formParameters();
+              var formParams = mimeType.formParameters;
               for (var j in formParams) {
                 if (!formParams.hasOwnProperty(j))
                   continue;
                 var param = formParams[j];
-                var definition = jsonHelper.parse(YAML.load(param.dump()));
-                for (var paramId in definition) {
-                  if (!definition.hasOwnProperty(paramId))
-                    continue;
-                  var paramValue = definition[paramId];
-                  data.body.properties[paramId] = paramValue;
-                  if (paramValue.required && paramValue.required) {
-                    data.body.required.push(paramId);
-                  }
+                data.body.properties[param.name] = { type: param.type };
+                if (param.description) {
+                  data.body.properties[param.name].description = param.description;
+                }
+                if (param.required) {
+                  data.body.required.push(param.name);
                 }
               }
-            }
-            if (mimeType.schema && mimeType.schema()) {
-              data.body = jsonHelper.parse(YAML.load(mimeType.dump())[mimeType.name()].schema);
             }
           }
           return data;
@@ -8751,32 +9006,35 @@
           for (var i in schemData) {
             if (!schemData.hasOwnProperty(i))
               continue;
-            var schema = schemData[i];
-            var schemaName = schema.key();
-            var sd = new Schema(schemaName);
-            sd.Name = schemaName;
-            sd.Definition = this.convertRefToModel(jsonHelper.parse(YAML.load(schema.dump())[schemaName]));
-            schemas.push(sd);
+            for (var schemaName in schemData[i]) {
+              if (!schemData[i].hasOwnProperty(schemaName))
+                continue;
+              var sd = new Schema(schemaName);
+              sd.Name = schemaName;
+              sd.Definition = jsonHelper.cleanSchema(schemData[i][schemaName]);
+              schemas.push(sd);
+            }
           }
           return schemas;
         };
         RAML08.prototype.getSchema = function (data) {
-          return data.schemas();
+          return data.schemas;
         };
         RAML08.prototype.description = function (project, data) {
-          var documentation = data.documentation();
+          var documentation = data.documentation;
           if (documentation && documentation.length > 0) {
-            project.Description = documentation[0].content().value();
-            project.Environment.summary = documentation[0].content().value();
+            project.Description = documentation[0].content;
+            project.Environment.summary = documentation[0].content;
           }
           // text sections
           if (documentation) {
-            for (var d in documentation) {
-              if (!documentation.hasOwnProperty(d))
+            for (var i in documentation) {
+              if (!documentation.hasOwnProperty(i))
                 continue;
-              var txt = new Text(documentation[d].title());
+              var doc = documentation[i];
+              var txt = new Text(doc.title);
               txt.Public = true;
-              txt.Content = documentation[d].content().value();
+              txt.Content = doc.content;
               this.project.addText(txt);
             }
           }
@@ -8787,13 +9045,12 @@
         '../entities/schema': 7,
         '../entities/text': 10,
         '../utils/json': 33,
-        './baseraml': 23,
-        'js-yaml': 36
+        './baseraml': 23
       }
     ],
     28: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), YAML = require('js-yaml'), _ = require('lodash');
+        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), _ = require('lodash');
         function RAML10() {
         }
         RAML10.prototype = new RAML();
@@ -8804,17 +9061,17 @@
             if (!methodBody.hasOwnProperty(i))
               continue;
             var mimeType = methodBody[i];
-            data.mimeType = mimeType.name();
-            if (mimeType.example()) {
-              data.example = mimeType.example().value();
+            data.mimeType = i;
+            if (mimeType.example) {
+              data.example = mimeType.example;
             }
-            if (mimeType.description()) {
-              data.description = mimeType.description().value();
+            if (mimeType.description) {
+              data.description = mimeType.description;
             }
-            if (mimeType.properties && !_.isEmpty(mimeType.properties())) {
+            if (mimeType.properties && !_.isEmpty(mimeType.properties)) {
               switch (data.mimeType) {
               case 'application/json':
-                data.body = YAML.load(mimeType.dump())[data.mimeType];
+                data.body = { 'properties': this.convertRefToModel(mimeType.properties) };
                 break;
               case 'multipart/form-data':
               case 'application/x-www-form-urlencoded':
@@ -8823,30 +9080,30 @@
                   'properties': {},
                   'required': []
                 };
-                var formParams = mimeType.properties();
+                var formParams = mimeType.properties;
                 for (var j in formParams) {
                   if (!formParams.hasOwnProperty(j))
                     continue;
                   var param = formParams[j];
-                  var bodyType = !_.isEmpty(param.type()) ? param.type()[0] : param.type();
-                  data.body.properties[param.name()] = { type: bodyType };
-                  if (param.description()) {
-                    data.body.properties[param.name()].description = param.description().value();
+                  var bodyType = !_.isEmpty(param.type) ? param.type[0] : param.type;
+                  data.body.properties[param.name] = { type: bodyType };
+                  if (param.description) {
+                    data.body.properties[param.name].description = param.description;
                   }
                   if (param.format) {
-                    data.body.properties[param.name()].format = param.format();
+                    data.body.properties[param.name].format = param.format;
                   }
-                  if (param.required() == true) {
-                    data.body.required.push(param.name());
+                  if (param.required == true) {
+                    data.body.required.push(param.name);
                   }
                 }
                 break;
               default:
               }
-            } else if (mimeType.schema && !_.isEmpty(mimeType.schema())) {
-              data.body = this.convertRefToModel({ type: jsonHelper.parse(mimeType.schema()[0]) });
-            } else if (mimeType.type && !_.isEmpty(mimeType.type()) && mimeType.type()[0] !== 'object') {
-              data.body = this.convertRefToModel({ type: jsonHelper.parse(mimeType.type()[0]) });
+            } else if (mimeType.schema && !_.isEmpty(mimeType.schema)) {
+              data.body = this.convertRefToModel({ type: mimeType.schema[0] });
+            } else if (mimeType.type && !_.isEmpty(mimeType.type) && mimeType.type[0] !== 'object') {
+              data.body = this.convertRefToModel({ type: mimeType.type[0] });
             }
           }
           return data;
@@ -8856,56 +9113,56 @@
           for (var i in schemData) {
             if (!schemData.hasOwnProperty(i))
               continue;
-            var schema = schemData[i];
-            var schemaName = schema.name();
-            var sd = new Schema(schemaName);
-            sd.Name = schemaName;
-            var definition;
-            if (jsonHelper.isEmptySchema(schema)) {
-              definition = YAML.load(schema.dump())[schemaName];
-            } else {
-              if (schema.type && !_.isEmpty(schema.type())) {
-                definition = jsonHelper.parse(schema.type()[0]);
-              }
-            }
-            if (definition.properties && !_.isEmpty(definition.properties)) {
-              var data = {
-                  properties: {},
-                  type: 'object',
-                  required: []
-                };
-              if (definition.description) {
-                data.description = definition.description;
-              }
-              for (var paramName in definition.properties) {
-                var param = definition.properties[paramName];
-                data.properties[paramName] = param;
-                if (param.hasOwnProperty('required')) {
-                  if (param.required == true) {
+            for (var schemaName in schemData[i]) {
+              if (!schemData[i].hasOwnProperty(schemaName))
+                continue;
+              var sd = new Schema(schemaName);
+              sd.Name = schemaName;
+              var definition = schemData[i][schemaName];
+              if (definition.properties && !_.isEmpty(definition.properties)) {
+                var data = {
+                    properties: {},
+                    type: 'object',
+                    required: []
+                  };
+                if (definition.description) {
+                  data.description = definition.description;
+                }
+                for (var paramName in definition.properties) {
+                  if (!definition.properties.hasOwnProperty(paramName))
+                    continue;
+                  var param = definition.properties[paramName];
+                  data.properties[paramName] = param;
+                  if (param.hasOwnProperty('required')) {
+                    if (param.required == true) {
+                      data['required'].push(paramName);
+                    }
+                    delete param.required;
+                  } else {
+                    //required true by default.
                     data['required'].push(paramName);
                   }
-                  delete param.required;
-                } else {
-                  //required true by default.
-                  data['required'].push(paramName);
                 }
+                definition = data;
+              } else if (definition.type) {
+                var type = _.isArray(definition.type) ? definition.type[0] : definition.type;
+                definition = jsonHelper.parse(type);
               }
-              definition = data;
+              if (definition.required && definition.required.length == 0) {
+                delete definition.required;
+              }
+              sd.Definition = this.convertRefToModel(definition);
+              schemas.push(sd);
             }
-            if (data.required.length == 0) {
-              delete data.required;
-            }
-            sd.Definition = this.convertRefToModel(definition);
-            schemas.push(sd);
           }
           return schemas;
         };
         RAML10.prototype.getSchema = function (data) {
-          return data.types();
+          return data.types;
         };
         RAML10.prototype.description = function (project, data) {
-          if (data.description && data.description()) {
-            project.Description = data.description().value();
+          if (data.description) {
+            project.Description = data.description;
           }
         };
         module.exports = RAML10;
@@ -8914,7 +9171,6 @@
         '../entities/schema': 7,
         '../utils/json': 33,
         './baseraml': 23,
-        'js-yaml': 36,
         'lodash': 67
       }
     ],
@@ -9083,7 +9339,9 @@
             if (schemaData) {
               schema.Id = schemaData.id;
               schema.Name = schemaData.name;
-              schema.Summary = schemaData.summary;
+              if (!_.isEmpty(schemaData.summary)) {
+                schema.Summary = schemaData.summary;
+              }
               schema.Description = schemaData.description;
               schema.Public = schemaData.public;
             }
@@ -9093,7 +9351,9 @@
               var testData = data[testsPrefix][id];
               var test = new Test(testData.name);
               test.Id = testData.id;
-              test.Summary = testData.summary;
+              if (!_.isEmpty(testData.summary)) {
+                test.Summary = testData.summary;
+              }
               test.InitialVariables = testData.initialVariables;
               test.Steps = testData.steps.map(function (step) {
                 if (step.$ref) {
@@ -9204,7 +9464,7 @@
               continue;
             var sd = new Schema(schemaName);
             sd.Name = schemaName;
-            //create a close to remove extension properties
+            //create a clone to remove extension properties
             var schemaDataClone = _.clone(schemaDefinitions[schemaName]);
             var re = /^x-/;
             //properties to avoid
@@ -9217,30 +9477,11 @@
             if (schemaDataClone['allOf']) {
               schemaDataClone = schemaDataClone['allOf'];
             }
-            sd.Definition = convertRefToModel(schemaDataClone);
+            sd.Definition = schemaDataClone;
             result.push(sd);
           }
           return result;
         };
-        // from $ref=#/definitions/type1 to ref=type1
-        function convertRefToModel(object) {
-          for (var id in object) {
-            if (object.hasOwnProperty(id)) {
-              var val = object[id];
-              if (id == '$ref') {
-                if (val.indexOf('#/') == 0) {
-                  object.ref = val.replace('#/definitions/', '');
-                } else {
-                  object.include = val;
-                }
-                delete object[id];
-              } else if (typeof val === 'object') {
-                object[id] = convertRefToModel(val);
-              }
-            }
-          }
-          return object;
-        }
         Swagger.prototype._mapQueryString = function (params, skipParameterRefs) {
           var queryString = {
               type: 'object',
@@ -9287,12 +9528,11 @@
           }
           return pathParams;
         };
-        Swagger.prototype._mapRequestBody = function (params, reqType, resolvedParams) {
+        Swagger.prototype._mapRequestBody = function (params, resolvedParams) {
           if (_.isEmpty(params) || !_.some(params, { 'in': 'body' }) && !_.some(params, { 'in': 'formData' })) {
             return;
           }
           var data = {
-              mimeType: reqType || null,
               body: {
                 properties: {},
                 required: []
@@ -9311,12 +9551,9 @@
             }
             switch (param.in) {
             case 'body':
-              data.mimeType = data.mimeTypes || 'application/json';
               mapExample(param.schema, data);
-              data.body = convertRefToModel(param.schema);
+              data.body = param.schema;
               break;
-            case 'formData':
-              data.mimeType = data.mimeTypes || 'multipart/form-data';
             default:
               var prop = {};
               prop = swaggerHelper.setParameterFields(param, prop);
@@ -9335,21 +9572,20 @@
           }
           return data;
         };
-        Swagger.prototype._mapResponseBody = function (responseBody, resType, skipParameterRefs, resolvedResponses) {
+        Swagger.prototype._mapResponseBody = function (responseBody, skipParameterRefs, resolvedResponses, $refs) {
           var data = [];
           for (var code in responseBody) {
             if (!responseBody.hasOwnProperty(code))
               continue;
             var res = {
-                mimeType: resType,
                 body: {},
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && responseBody[code].$ref.match(/trait/)) {
+            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || $refs.exists(responseBody[code].$ref))) {
               continue;
             }
-            // TODO: Once we support headers, then support headers from swagger spec in responses.
+            // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
             if (needDeReferenced(responseBody[code]) && resolvedResponses) {
               schema = resolvedResponses[code].schema;
               description = resolvedResponses[code].description || '';
@@ -9362,18 +9598,18 @@
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples')) {
+            if (responseBody[code].hasOwnProperty('examples') && _.isEmpty(responseBody[code].examples)) {
               var examples = responseBody[code].examples;
-              for (var t in examples) {
-                if (!examples.hasOwnProperty(t))
-                  continue;
-                if (t === resType) {
-                  res.example = jsonHelper.stringify(examples[t], 4);
-                }
-              }
+              res.example = jsonHelper.stringify(examples[0], 4);  // TODO: Once stoplight supports multiple examples, support them here.
+                                                                   // for(var t in examples) {
+                                                                   //   if (!examples.hasOwnProperty(t)) continue;
+                                                                   //   if (t === resType) {
+                                                                   //     res.example = jsonHelper.stringify(examples[t], 4);
+                                                                   //   }
+                                                                   // }
             }
             res.description = description || responseBody[code].description || '';
-            res.body = convertRefToModel(res.body);
+            res.body = res.body;
             res.codes.push(String(code));
             data.push(res);
           }
@@ -9424,6 +9660,7 @@
             if (err) {
               cb(err);
             } else {
+              var apiData = JSON.parse(JSON.stringify(api));
               me.data = api;
               if (typeof dataOrPath === 'string') {
                 var parseFn = parser.dereference(dataOrPath, JSON.parse(JSON.stringify(api)), options);
@@ -9508,7 +9745,7 @@
           traits = traits.concat(this._mapEndpointTrait(responses));
           return _.uniq(traits);
         };
-        Swagger.prototype._mapEndpoints = function (defaultReqContentType, defaultResContentType) {
+        Swagger.prototype._mapEndpoints = function (consumes, produces) {
           for (var path in this.data.paths) {
             if (!this.data.paths.hasOwnProperty(path))
               continue;
@@ -9526,7 +9763,7 @@
               if (method === 'parameters') {
                 continue;
               }
-              var endpoint = new Endpoint(currentMethod.summary || ''), reqType = defaultReqContentType, resType = defaultResContentType;
+              var endpoint = new Endpoint(currentMethod.summary || '');
               endpoint.Method = method;
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
@@ -9536,15 +9773,42 @@
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
               //map request body
-              if (_.isArray(currentMethod.consumes)) {
-                if (_.isEmpty(currentMethod.consumes)) {
-                  reqType = null;
-                } else {
-                  reqType = this.findDefaultMimeType(currentMethod.consumes);
+              // if (_.isArray(currentMethod.consumes)) {
+              //   if (_.isEmpty(currentMethod.consumes)) {
+              //     reqType = null;
+              //   } else {
+              //     reqType = this.findDefaultMimeType(currentMethod.consumes);
+              //   }
+              // }
+              var params = currentMethod.parameters;
+              var c = [];
+              if (_.some(params, { 'in': 'body' })) {
+                c.push('application/json');
+              }
+              if (_.some(params, { 'in': 'formData' })) {
+                c.push('multipart/form-data');
+              }
+              if (consumes && _.isArray(consumes) && c.length) {
+                consumes.forEach(function (mimeType) {
+                  c = _.without(c, mimeType);
+                });
+              }
+              if (c.length) {
+                endpoint.Consumes = c;
+              }
+              if (currentMethod.consumes && _.isArray(currentMethod.consumes)) {
+                c = _.uniq(endpoint.Consumes && _.isArray(endpoint.Consumes) ? endpoint.Consumes.concat(currentMethod.consumes) : currentMethod.consumes);
+                if (consumes && _.isArray(consumes) && c.length) {
+                  consumes.forEach(function (mimeType) {
+                    c = _.without(c, mimeType);
+                  });
+                }
+                if (endpoint.Consumes || c.length) {
+                  endpoint.Consumes = c;
                 }
               }
               if (endpoint.Method.toLowerCase() !== 'get' && endpoint.Method.toLowerCase() !== 'head') {
-                var body = this._mapRequestBody(currentMethod.parameters, reqType, currentMethodResolved.parameters);
+                var body = this._mapRequestBody(currentMethod.parameters, currentMethodResolved.parameters);
                 if (body) {
                   endpoint.Body = body;
                 }
@@ -9561,14 +9825,25 @@
               // endpoint.QueryString = this._mapQueryString(currentMethod.parameters, true);
               endpoint.QueryString = this._mapQueryString(currentMethodResolved.parameters, true);
               //map response body
-              if (_.isArray(currentMethod.produces)) {
-                if (_.isEmpty(currentMethod.produces)) {
-                  resType = null;
-                } else {
-                  resType = this.findDefaultMimeType(currentMethod.produces);
+              // if (_.isArray(currentMethod.produces)) {
+              //   if (_.isEmpty(currentMethod.produces)) {
+              //     resType = null;
+              //   } else {
+              //     resType = this.findDefaultMimeType(currentMethod.produces);
+              //   }
+              // }
+              if (currentMethod.produces && _.isArray(currentMethod.produces)) {
+                var p = _.uniq(endpoint.Produces && _.isArray(endpoint.Produces) ? endpoint.Produces.concat(currentMethod.produces) : currentMethod.produces);
+                if (produces && _.isArray(produces) && p.length) {
+                  produces.forEach(function (mimeType) {
+                    p = _.without(p, mimeType);
+                  });
+                }
+                if (endpoint.Produces || p.length) {
+                  endpoint.Produces = p;
                 }
               }
-              var responses = this._mapResponseBody(currentMethod.responses, resType, true, currentMethodResolved.responses);
+              var responses = this._mapResponseBody(currentMethod.responses, true, currentMethodResolved.responses, this.$refs);
               if (responses) {
                 endpoint.Responses = responses;
               }
@@ -9630,19 +9905,20 @@
               break;
             }
           }
-          for (var k in responses) {
-            if (!responses.hasOwnProperty(k))
+          for (var r in responses) {
+            if (!responses.hasOwnProperty(r))
               continue;
-            var response = responses[k], parts = k.split(':'), name = k, code = k;
-            if (parts[0] === 'trait') {
-              isTrait = true;
-              name = parts[1];
-              code = parts[2];
-            } else {
-              continue;
+            var response = responses[r];
+            var resName = r;
+            var resCode = 200;
+            var resNameParts = r.split(':');
+            // Support for StopLight Swagger traits
+            if (resNameParts.length === 3 && resNameParts[0] === 'trait') {
+              resName = resNameParts[1];
+              resCode = resNameParts[2];
             }
-            traitResponses[name] = traitResponses[name] || {};
-            traitResponses[name][code] = response;
+            traitResponses[resName] = traitResponses[resName] || {};
+            traitResponses[resName][resCode] = response;
           }
           for (var k in queryParams) {
             if (!queryParams.hasOwnProperty(k))
@@ -9677,13 +9953,12 @@
                 request: {},
                 responses: []
               };
-            trait.responses = this._mapResponseBody(traitResponses[k], 'application/json');
+            trait.responses = this._mapResponseBody(traitResponses[k]);
             traits[k] = trait;
           }
           return _.values(traits);
         };
         Swagger.prototype._import = function () {
-          var defaultReqContentType = this.findDefaultMimeType(this.data.consumes), defaultResContentType = this.findDefaultMimeType(this.data.produces);
           this.project = new Project(this.data.info.title);
           this.project.Description = this.data.info.description || '';
           var protocol = 'http';
@@ -9691,7 +9966,7 @@
             this.project.Environment.Protocols = this.data.schemes;
             protocol = this.data.schemes[0];
           }
-          this._mapEndpoints(defaultReqContentType, defaultResContentType);
+          this._mapEndpoints(this.data.consumes, this.data.produces);
           this.project.Environment.summary = this.data.info.description || '';
           this.project.Environment.BasePath = this.data.basePath || '';
           this.project.Environment.Host = this.data.host ? protocol + '://' + this.data.host : null;
@@ -9728,11 +10003,11 @@
           }
           if (this.data.produces) {
             //taking the first as default one
-            this.project.Environment.DefaultResponseType = defaultResContentType;
+            this.project.Environment.Produces = this.data.produces;
           }
           if (this.data.consumes) {
             //taking the first as default one
-            this.project.Environment.DefaultRequestType = defaultReqContentType;
+            this.project.Environment.Consumes = this.data.consumes;
           }
           if (this.data.securityDefinitions) {
             this.project.Environment.SecuritySchemes = this._mapSecurityDefinitions(this.data.securityDefinitions);
@@ -9918,6 +10193,7 @@
     35: [
       function (require, module, exports) {
         var request = require('request');
+        var _ = require('lodash');
         module.exports = {
           isURL: function (path) {
             if (!path) {
@@ -9937,10 +10213,16 @@
                 }
               });
             });
+          },
+          join: function (a, b) {
+            return _.trimEnd(a, '/') + '/' + _.trimStart(b, '/');
           }
         };
       },
-      { 'request': 180 }
+      {
+        'lodash': 67,
+        'request': 180
+      }
     ],
     36: [
       function (require, module, exports) {
@@ -28789,7 +29071,7 @@
         /**
  * Regular Expression that matches Swagger path params.
  */
-        exports.swaggerParamRegExp = /\{([^\/}]+)}/g;
+        exports.swaggerParamRegExp = /\{([^/}]+)}/g;
       },
       {
         'debug': 75,
@@ -37958,7 +38240,7 @@
           } else if (isScopeRelative && isRefRelative) {
             joinedScope = '';
           } else {
-            toRemove = joinedScope.match(/[^#\/]+$/);
+            toRemove = joinedScope.match(/[^#/]+$/);
             if (toRemove) {
               joinedScope = joinedScope.slice(0, toRemove.index);
             }
