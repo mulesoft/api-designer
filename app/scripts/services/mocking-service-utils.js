@@ -49,7 +49,7 @@
       }
 
 
-      function retreiveType(raml, typeName) {
+      function retrieveType(raml, typeName) {
         if (!raml.types) { return; }
 
         var object = raml.types.filter(function (type) { return type[typeName]; })[0];
@@ -61,7 +61,7 @@
         jsTraverse.traverse(raml).forEach(function (value) {
           if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
             var type = value.type[0];
-            var expandedTypeIsDefined = retreiveType(raml, type);
+            var expandedTypeIsDefined = retrieveType(raml, type);
             if (expandedTypeIsDefined) {
               for (var key in expandedTypeIsDefined) {
                 if (expandedTypeIsDefined.hasOwnProperty(key)) {

@@ -283,18 +283,6 @@
       };
 
       /**
-       * Loads the content of a file.
-       */
-      service.loadSync = function (path) {
-          var entry = localStorageHelper.get(path);
-          if (entry && entry.type === 'file') {
-            return localStorageHelper.get(path).content;
-          } else {
-            return fileNotFoundMessage(path);
-          }
-      };
-
-      /**
        * Removes a file or directory.
        */
       service.remove = function (path) {

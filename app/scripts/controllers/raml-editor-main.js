@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlParser, ramlParserAdapter, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -157,16 +157,21 @@
 
         $scope.loadRaml(file.contents, file.path).then(
           // success
-          safeApplyWrapper($scope, function success(value) {
+          safeApplyWrapper($scope, function success(api) {
             // hack: we have to make a full copy of an object because console modifies
             // it later and makes it unusable for mocking service
-            var raml = ramlParserAdapter.expandApiToJSON(value);
-            var ramlExpanded = ramlParserAdapter.expandApiToJSON(value, true);
+            var raml = ramlParserAdapter.expandApiToJSON(api);
+            var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
 
             $scope.fileBrowser.selectedFile.raml = raml;
             $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
 
             $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
+
+            // a success, but with warnings
+            if (api.errors().length > 0) {
+              $rootScope.$broadcast('event:raml-parser-error', {parserErrors: api.errors()});
+            }
           }),
 
           // failure

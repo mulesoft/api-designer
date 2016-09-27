@@ -11,28 +11,6 @@ function range(start, stop) {
   return result;
 }
 
-if (!Array.prototype.find) {
-  Array.prototype.find = function (predicate) {
-    for (var i = 0; i < this.length; i++) {
-      var item = this[i];
-      if (predicate(item)) { return item; }
-    }
-    return undefined;
-  };
-}
-
-if (!String.prototype.startsWith) {
-  String.prototype.startsWith = function (text) {
-    return this.indexOf(text) === 0;
-  };
-}
-
-if (!String.prototype.endsWith) {
-  String.prototype.endsWith = function (text) {
-    return this.lastIndexOf(text) === this.length - text.length;
-  };
-}
-
 // end Util Functions
 
 var FSResolver = function (homeDirectory, ramlRepository) {

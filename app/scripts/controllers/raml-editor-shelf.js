@@ -25,7 +25,7 @@
       };
     })
     .factory('newSuggestions', function(ramlSuggest) {
-      Array.prototype.groupBy = function(key) {
+      var groupBy = function (items, key) {
         var addItemToResult = function (result, item) {
           var list = result[item[key]] || [];
           list.push(item);
@@ -33,7 +33,7 @@
           return result;
         };
 
-        return this.reduce(addItemToResult, {});
+        return items.reduce(addItemToResult, {});
       };
 
       var createModel = function (suggestions) {
@@ -45,7 +45,7 @@
             replacementPrefix: suggestion.replacementPrefix || ''
           };
         });
-        var categoryMap = items.groupBy('category');
+        var categoryMap = groupBy(items, 'category');
         var categories = Object.keys(categoryMap)
           .map(function(key) { return {name: key, items: categoryMap[key]}; });
 
