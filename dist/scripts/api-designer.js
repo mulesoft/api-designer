@@ -57989,8 +57989,8 @@ if (!String.prototype.endsWith) {
       function groupByLine(annotations) {
         var lines = [];
         for (var i = 0; i < annotations.length; ++i) {
-          var ann = annotations[i], line = ann.line || 1;
-          (lines[line] || (lines[line] = [])).push(ann);
+          var annotation = annotations[i], line = annotation.line || 1;
+          (lines[line] || (lines[line] = [])).push(annotation);
         }
         return lines;
       }
@@ -59182,9 +59182,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       throw 'Not implemented: FileSystem createFolder invoked with [fullpath=' + fullpath + ']';
     },
     load: function (fullpath) {
-      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
-    },
-    loadSync: function (fullpath) {
       throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
     },
     remove: function (fullpath) {
@@ -61099,7 +61096,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               items: categoryMap[key]
             };
           });
-        // model.path = suggestions.path;
         return { categories: categories };  // model
       };
       return function (homeDirectory, selectedFile, editor) {

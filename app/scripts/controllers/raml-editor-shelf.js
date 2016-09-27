@@ -46,11 +46,11 @@
           };
         });
         var categoryMap = groupBy(items, 'category');
-        var categories = Object.keys(categoryMap)
-          .map(function(key) { return {name: key, items: categoryMap[key]}; });
+        var categories = Object.keys(categoryMap).map(function(key) {
+          return {name: key, items: categoryMap[key]};
+        });
 
-        // model.path = suggestions.path;
-          return {categories: categories}; // model
+        return {categories: categories}; // model
       };
 
       return function (homeDirectory, selectedFile, editor) {
@@ -86,7 +86,9 @@
         return (index === -1) ? index.length : index;
       };
 
-      $scope.itemClick = function itemClick(suggestion) { applySuggestion(editor, suggestion); };
+      $scope.itemClick = function itemClick(suggestion) {
+        applySuggestion(editor, suggestion);
+      };
 
       editor.on('cursorActivity', $scope.cursorMoved);
     });
