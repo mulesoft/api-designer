@@ -18,9 +18,13 @@
   "dependencies": {
     "express": "~4.12.4",
     "open": "0.0.5",
+    "raml-suggestions": "0.0.18",
     "yargs": "~3.11.0"
   },
   "devDependencies": {
+    "api-spec-converter": "git+https://github.com/stoplightio/api-spec-converter.git#3de6ca2ec8d0c26d41e82cf8a91afaab59834b60",
+    "browser-request": "^0.3.3",
+    "browserify-global-shim": "^1.0.3",
     "chai": "~1.10.0",
     "connect-livereload": "~0.3.2",
     "grunt": "~0.4.5",
@@ -58,5 +62,13 @@
     "grunt": "grunt",
     "prepublish": "npm run build",
     "test": "grunt test"
+  },
+  "browserify": {
+    "transform": [
+      "browserify-global-shim"
+    ]
+  },
+  "browserify-global-shim": {
+    "raml-1-parser": "RAML.Parser"
   }
 }

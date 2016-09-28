@@ -15,7 +15,7 @@
       }
 
       function isApiDefinitionLike(raml) {
-        return isApiDefinition(raml) || isOverlay(raml) || isExtension(raml);
+        return isApiDefinition(raml) || isTypedFragment(raml);
       }
 
       // ---
@@ -24,12 +24,8 @@
         return /^#%RAML\s(0\.8|1\.0)\s*$/.test(getFirstLine(raml));
       }
 
-      function isOverlay(raml) {
-        return /^#%RAML\s1\.0\sOverlay\s*$/.test(getFirstLine(raml));
-      }
-
-      function isExtension(raml) {
-        return /^#%RAML\s1\.0\sExtension\s*$/.test(getFirstLine(raml));
+      function isTypedFragment(raml) {
+        return /^#%RAML\s1\.0\s(Trait|ResourceType|Library|Overlay|Extension|DataType|DocumentationItem|NamedExample|AnnotationTypeDeclaration|SecurityScheme)\s*$/.test(getFirstLine(raml));
       }
 
       function getFirstLine(raml) {

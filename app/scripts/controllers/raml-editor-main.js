@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlHint, ramlParser, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -120,7 +120,7 @@
       };
 
       $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParser.loadPath(location, function contentAsync(path) {
+        return ramlParserAdapter.loadPath(location, function contentAsync(path) {
           var file = ramlRepository.getByPath(path);
 
           if (file) {
@@ -157,12 +157,21 @@
 
         $scope.loadRaml(file.contents, file.path).then(
           // success
-          safeApplyWrapper($scope, function success(value) {
+          safeApplyWrapper($scope, function success(api) {
             // hack: we have to make a full copy of an object because console modifies
             // it later and makes it unusable for mocking service
-            $scope.fileBrowser.selectedFile.raml = angular.copy(value);
+            var raml = ramlParserAdapter.expandApiToJSON(api);
+            var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
 
-            $rootScope.$broadcast('event:raml-parsed', value);
+            $scope.fileBrowser.selectedFile.raml = raml;
+            $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
+
+            $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
+
+            // a success, but with warnings
+            if (api.errors().length > 0) {
+              $rootScope.$broadcast('event:raml-parser-error', {parserErrors: api.errors()});
+            }
           }),
 
           // failure
@@ -172,8 +181,9 @@
         );
       });
 
-      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml, ramlExpanded) {
         $scope.raml         = raml;
+        $scope.ramlExpanded = ramlExpanded;
         $scope.title        = raml && raml.title;
         $scope.version      = raml && raml.version;
         $scope.currentError = undefined;
@@ -181,15 +191,30 @@
       }));
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
-        var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message}];
-        parserErrors = parserErrors.filter(function (item) {
-          return !item.isWarning;
-        });
+        var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message, isWarning: error.isWarning}];
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
+          var errorInfo = error;
+          var tracingInfo = { line : undefined, column : undefined, path : undefined };
+          var needErrorPath = error.trace !== undefined;
+          if (needErrorPath) {
+            errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
+              return trace.path === event.currentScope.fileBrowser.selectedFile.name;
+            });
+            tracingInfo = {
+              line : ((error.range && error.range.start.line) || 0) + 1,
+              column : (error.range && error.range.start.column) || 1,
+              path : error.path
+            };
+          }
+
           return {
-            line:    error.line + 1,
-            column:  error.column,
-            message: error.message
+            line          : ((errorInfo.range && errorInfo.range.start.line) || 0) + 1,
+            column        : (errorInfo.range && errorInfo.range.start.column) || 1,
+            message       : errorInfo.message,
+            severity      : errorInfo.isWarning ? 'warning' : 'error',
+            path          : tracingInfo.path,
+            tracingLine   : tracingInfo.line,
+            tracingColumn : tracingInfo.column
           };
         }));
       }));
