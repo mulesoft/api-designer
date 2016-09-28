@@ -56828,6 +56828,29 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
   ]);
   ;
 }());
+'use strict';
+if (!Array.prototype.find) {
+  Array.prototype.find = function (predicate) {
+    for (var i = 0; i < this.length; i++) {
+      var item = this[i];
+      if (predicate(item)) {
+        return item;
+      }
+    }
+    return undefined;
+  };
+}
+'use strict';
+if (!String.prototype.startsWith) {
+  String.prototype.startsWith = function (text) {
+    return this.indexOf(text) === 0;
+  };
+}
+if (!String.prototype.endsWith) {
+  String.prototype.endsWith = function (text) {
+    return this.lastIndexOf(text) === this.length - text.length;
+  };
+}
 (function () {
   'use strict';
   angular.module('utils', []).value('indentUnit', 2).factory('safeApply', [
@@ -57966,8 +57989,8 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
       function groupByLine(annotations) {
         var lines = [];
         for (var i = 0; i < annotations.length; ++i) {
-          var ann = annotations[i], line = ann.line || 1;
-          (lines[line] || (lines[line] = [])).push(ann);
+          var annotation = annotations[i], line = annotation.line || 1;
+          (lines[line] || (lines[line] = [])).push(annotation);
         }
         return lines;
       }
@@ -58918,27 +58941,6 @@ function range(start, stop) {
   }
   return result;
 }
-if (!Array.prototype.find) {
-  Array.prototype.find = function (predicate) {
-    for (var i = 0; i < this.length; i++) {
-      var item = this[i];
-      if (predicate(item)) {
-        return item;
-      }
-    }
-    return undefined;
-  };
-}
-if (!String.prototype.startsWith) {
-  String.prototype.startsWith = function (text) {
-    return this.indexOf(text) === 0;
-  };
-}
-if (!String.prototype.endsWith) {
-  String.prototype.endsWith = function (text) {
-    return this.lastIndexOf(text) === this.length - text.length;
-  };
-}
 // end Util Functions
 var FSResolver = function (homeDirectory, ramlRepository) {
   this.parsePath = function (path) {
@@ -59180,9 +59182,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       throw 'Not implemented: FileSystem createFolder invoked with [fullpath=' + fullpath + ']';
     },
     load: function (fullpath) {
-      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
-    },
-    loadSync: function (fullpath) {
       throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
     },
     remove: function (fullpath) {
@@ -59512,17 +59511,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return deferred.promise;
       };
       /**
-       * Loads the content of a file.
-       */
-      service.loadSync = function (path) {
-        var entry = localStorageHelper.get(path);
-        if (entry && entry.type === 'file') {
-          return localStorageHelper.get(path).content;
-        } else {
-          return fileNotFoundMessage(path);
-        }
-      };
-      /**
        * Removes a file or directory.
        */
       service.remove = function (path) {
@@ -59640,7 +59628,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return $q.all(promises);
         });
       }
-      function retreiveType(raml, typeName) {
+      function retrieveType(raml, typeName) {
         if (!raml.types) {
           return;
         }
@@ -59653,7 +59641,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         jsTraverse.traverse(raml).forEach(function (value) {
           if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
             var type = value.type[0];
-            var expandedTypeIsDefined = retreiveType(raml, type);
+            var expandedTypeIsDefined = retrieveType(raml, type);
             if (expandedTypeIsDefined) {
               for (var key in expandedTypeIsDefined) {
                 if (expandedTypeIsDefined.hasOwnProperty(key)) {
@@ -60770,7 +60758,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApplyWrapper',
     'debounce',
     'throttle',
-    'ramlParser',
     'ramlParserAdapter',
     'ramlRepository',
     'codeMirror',
@@ -60782,7 +60769,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlParser, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -60895,14 +60882,18 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           lineOfCurrentError = undefined;
           return;
         }
-        $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function success(value) {
+        $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function success(api) {
           // hack: we have to make a full copy of an object because console modifies
           // it later and makes it unusable for mocking service
-          var raml = ramlParserAdapter.expandApiToJSON(value);
-          var ramlExpanded = ramlParserAdapter.expandApiToJSON(value, true);
+          var raml = ramlParserAdapter.expandApiToJSON(api);
+          var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
           $scope.fileBrowser.selectedFile.raml = raml;
           $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
           $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
+          // a success, but with warnings
+          if (api.errors().length > 0) {
+            $rootScope.$broadcast('event:raml-parser-error', { parserErrors: api.errors() });
+          }
         }), safeApplyWrapper($scope, function failure(error) {
           $rootScope.$broadcast('event:raml-parser-error', error);
         }));
@@ -61080,14 +61071,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   }).factory('newSuggestions', [
     'ramlSuggest',
     function (ramlSuggest) {
-      Array.prototype.groupBy = function (key) {
+      var groupBy = function (items, key) {
         var addItemToResult = function (result, item) {
           var list = result[item[key]] || [];
           list.push(item);
           result[item[key]] = list;
           return result;
         };
-        return this.reduce(addItemToResult, {});
+        return items.reduce(addItemToResult, {});
       };
       var createModel = function (suggestions) {
         var items = suggestions.map(function (suggestion) {
@@ -61098,14 +61089,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               replacementPrefix: suggestion.replacementPrefix || ''
             };
           });
-        var categoryMap = items.groupBy('category');
+        var categoryMap = groupBy(items, 'category');
         var categories = Object.keys(categoryMap).map(function (key) {
             return {
               name: key,
               items: categoryMap[key]
             };
           });
-        // model.path = suggestions.path;
         return { categories: categories };  // model
       };
       return function (homeDirectory, selectedFile, editor) {
