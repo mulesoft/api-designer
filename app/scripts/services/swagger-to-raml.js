@@ -67,9 +67,9 @@
             },
             read: function (path) {
               var url = path.url.replace(window.location.origin + '/', '');
-              for (var f in files) {
-                if (files.hasOwnProperty(f) && f.indexOf(url) > -1) {
-                  return files[f];
+              for (var filename in files) {
+                if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
+                  return files[filename];
                 }
               }
               return null;
