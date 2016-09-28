@@ -9425,7 +9425,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     '$window',
     function ($window) {
       // Adding proxy settings for api console
-      $window.RAML.Settings.proxy = '/proxy/';
+      $window.RAML.Settings.proxy = '';
     }
   ]);
   ;
