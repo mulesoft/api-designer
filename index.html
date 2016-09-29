@@ -3,12 +3,7 @@ layout: default
 title: {{ site.name }}
 ---
 
-{% capture readme %}{% include_relative README.md %}{% endcapture %}
-{{ readme | markdownify }}
-
 <h2>Branches</h2>
-{% assign branchs = site.branchs | sort: "date" | reverse %}
-
 <table>   
 	<thead>
 		<tr>
@@ -18,6 +13,7 @@ title: {{ site.name }}
 		</tr>
 	</thead>
 	<tbody>
+		{% assign branchs = site.branchs | sort: "date" | reverse %}
 		{% for branch in branchs %}
 		<tr>
 			<td><a href="{{site.repository}}/tree/{{branch.name}}">{{branch.name}}</td>
@@ -27,3 +23,7 @@ title: {{ site.name }}
 		{% endfor %}		
 	</tbody>
 </table>
+
+
+{% capture readme %}{% include_relative README.md %}{% endcapture %}
+{{ readme | markdownify }}
