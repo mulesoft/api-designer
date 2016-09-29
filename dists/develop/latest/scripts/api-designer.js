@@ -57994,18 +57994,18 @@ if (!String.prototype.endsWith) {
         }
         return lines;
       }
-      function annotationTooltip(ann) {
-        var severity = ann.severity;
+      function annotationTooltip(annotation) {
+        var severity = annotation.severity;
         if (!SEVERITIES.test(severity)) {
           severity = 'error';
         }
         var tip = document.createElement('div');
         tip.className = 'CodeMirror-lint-message-' + severity;
-        var message = ann.message;
+        var message = annotation.message;
         // if error belongs to different file, add tracing information to message
-        if (ann.path) {
-          var line = ann.tracingLine + 1;
-          message += ' at line ' + line + ' col ' + ann.tracingColumn + ' in ' + '<a href="#/' + ann.path + '" data-path="/' + ann.path + '">' + ann.path + '</a>';
+        if (annotation.path) {
+          var line = annotation.tracingLine + 1;
+          message += ' at line ' + line + ' col ' + annotation.tracingColumn + ' in ' + '<a href="#/' + annotation.path + '" data-path="/' + annotation.path + '">' + annotation.path + '</a>';
         }
         tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' + '<p class="CodeMirror-message">' + message + '</p>';
         return tip;
@@ -60158,9 +60158,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               },
               read: function (path) {
                 var url = path.url.replace(window.location.origin + '/', '');
-                for (var f in files) {
-                  if (files.hasOwnProperty(f) && f.indexOf(url) > -1) {
-                    return files[f];
+                for (var filename in files) {
+                  if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
+                    return files[filename];
                   }
                 }
                 return null;
