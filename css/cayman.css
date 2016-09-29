@@ -191,7 +191,7 @@ a {
       font-weight: bold; }
     .main-content table th, .main-content table td {
       padding: 0.5rem 1rem;
-      border: 1px solid #0f0f0f; }
+      border: 1px solid #eee; }
   .main-content dl {
     padding: 0; }
     .main-content dl dt {
@@ -206,5 +206,5 @@ a {
     height: 2px;
     padding: 0;
     margin: 1rem 0;
-    background-color: #0f0f0f;
+    background-color: #00a1df;
     border: 0; }

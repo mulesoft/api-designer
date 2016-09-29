@@ -1,4 +1,3 @@
-## Branches
+## Todo
 
-- [master](dists/master/latest)
-- [develop](dists/develop/latest)
+Include README information

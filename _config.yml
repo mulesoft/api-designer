@@ -1,4 +1,9 @@
 # Setup
-title:    Api Designer
-tagline:  Development Preview
-baseurl:  /api-designer
+title: Api Designer
+tagline: Development Preview
+baseurl: /api-designer
+repository: https://github.com/mulesoft/api-designer
+
+collections:
+  branchs:
+    output: false

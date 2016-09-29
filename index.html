@@ -1,0 +1,29 @@
+---
+layout: default
+title: {{ site.name }}
+---
+
+{% capture readme %}{% include_relative README.md %}{% endcapture %}
+{{ readme | markdownify }}
+
+<h2>Branches</h2>
+{% assign branchs = site.branchs | sort: "date" | reverse %}
+
+<table>   
+	<thead>
+		<tr>
+			<th>Branch</th>
+			<th>Last Update</th>
+			<th>Preview</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for branch in branchs %}
+		<tr>
+			<td><a href="{{site.repository}}/tree/{{branch.name}}">{{branch.name}}</td>
+			<td><a href="{{site.repository}}/commit/{{branch.sha}}">{{branch.date | date_to_string}}</a></td>
+			<td><a href="{{site.baseurl}}/dists/{{branch.name}}/latest">Open</a></td>
+		</tr>
+		{% endfor %}		
+	</tbody>
+</table>
