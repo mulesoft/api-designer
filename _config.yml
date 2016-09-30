@@ -1,6 +1,6 @@
 # Setup
 title: Api Designer
-tagline: Development Preview
+tagline: A web-based graphical environment for designing, documenting, and testing APIs.
 baseurl: /api-designer
 repository: https://github.com/mulesoft/api-designer
 
