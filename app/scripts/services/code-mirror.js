@@ -210,7 +210,8 @@
       };
 
       service.initEditor = function () {
-        var el = document.getElementById('code');
+        var rootNode = $rootScope.rootNode || document.body;
+        var el = rootNode.getElementsByClassName('code-editor')[0];
         var cm = service.createEditor(el);
 
         // for testing automation purposes

@@ -157,6 +157,7 @@ module.exports = function (grunt) {
       all: [
         'Gruntfile.js',
         '<%= yeoman.app %>/scripts/{,*/}*.js',
+        '<%= yeoman.app %>/scripts/react-component.js',
         'test/mock/{,*/}*.js',
         'test/spec/{,*/}*.js',
         'scenario/test/e2e/{,*/}*.js',

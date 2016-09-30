@@ -39,7 +39,6 @@
     "getEditor": false,
     "inject": false,
     "it": false,
-    "jasmine": false,
     "mock": false,
     "promise": false,
     "prompt": false,
