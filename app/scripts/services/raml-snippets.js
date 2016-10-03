@@ -20,9 +20,12 @@
     .factory('ramlSnippets', function (snippets) {
       var service = {};
 
-      service.getEmptyRaml = function () {
+      service.getEmptyRaml = function (ramlVersion, typedFragment) {
+        var version = ramlVersion ? ramlVersion : '1.0';
+        var type = typedFragment ? ' ' + typedFragment : '';
+
         return [
-          '#%RAML 1.0',
+          '#%RAML ' + version + type,
           'title:'
         ].join('\n');
       };

@@ -19,5 +19,9 @@
 
         scope[subMenuName] = true;
       };
+
+      this.openSubMenu = function (scope, subMenuName) {
+        scope[subMenuName] = true;
+      };
     });
 })();

@@ -9,7 +9,7 @@
     ) {
       var self = this;
 
-      self.prompt = function prompt (target) {
+      self.prompt = function prompt (target, ramlVersion, typedFragment) {
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
         var title  = 'Add a new file';
 
@@ -33,7 +33,7 @@
           .then(function (name) {
             // Need to catch errors from `generateFile`, otherwise
             // `newNameModel.open` will error random modal close strings.
-            return ramlRepository.generateFile(parent, name)
+            return ramlRepository.generateFile(parent, name, ramlVersion, typedFragment)
               .catch(function (err) {
                 return $rootScope.$broadcast('event:notification', {
                   message: err.message,

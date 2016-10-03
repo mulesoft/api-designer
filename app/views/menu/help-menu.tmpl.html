@@ -1,15 +1,11 @@
-<span role="help-button">
+<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">
   <i class="fa fa-question-circle"></i>&nbsp;Help
+  <i class="menu-icon fa fa-caret-down"></i>
 </span>
-<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">
-  <i class="fa fa-caret-down"></i>
-</span>
-<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">
-  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>
-  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md" target="_blank">Language Spec (0.8)</a></li>
-  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">Language Spec (1.0)</a></li>
-  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>
+<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">
+  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>
+  <li role="context-menu-item"><a href="http://raml.org" target="_blank">raml.org Website</a></li>
   <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>
-  <hr class="line-with-linear-gradient">
-  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>
+  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>
+  <li role="context-menu-item" ng-click="openHelpModal()"><a>About API Designer</a></li>
 </ul>

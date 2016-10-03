@@ -822,7 +822,50 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   background: #1e4f6a;
   color: #DDD;
 }
-[role="context-menu-item"] {
+[role="menu-dropdown"] {
+  z-index: 210;
+  list-style: none;
+  border: 1px solid #AAA;
+  background-color: #EEE;
+  color: #666;
+  padding: 3px 0;
+  min-width: 145px;
+  font-size: 13px;
+  border-radius: 2px;
+  box-shadow: 3px 3px 10px 0 rgba(0, 0, 0, 0.25);
+  opacity: 0.95;
+}
+[role="menu-dropdown"] li {
+  margin: 2px 5px;
+}
+[role="menu-dropdown"] li > a {
+  width: 100%;
+}
+[role="menu-dropdown"] li span {
+  padding: 2px 5px !important;
+  width: 100%;
+}
+[role="menu-dropdown"] li span > i {
+  width: 15px;
+}
+[role="menu-dropdown"] li a:after,
+[role="menu-dropdown"] li span:after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin: 2px;
+  background: #c6c0c0;
+}
+[role="menu-dropdown"] li a:hover,
+[role="menu-dropdown"] li span:hover {
+  color: #1e4f6a !important;
+}
+[role="menu-dropdown"] li:last-child > a:after,
+[role="menu-dropdown"] li:last-child span:after {
+  display: none;
+}
+[role="menu-item"] i,
+[role="menu-item"] span {
   cursor: pointer;
 }
 
@@ -1275,10 +1318,16 @@ div[role=raml-editor] .menubar > li {
 div[role=raml-editor] .menubar > li span {
   float: left;
   padding: 5px 10px;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 div[role=raml-editor] .menubar .menu-item-toggle {
   padding-left: 5px;
+}
+div[role=raml-editor] .menubar .menu-icon {
+  padding-left: 8px;
+}
+div[role=raml-editor] .menubar .submenu-icon {
+  float: right;
+  margin-right: -6px;
 }
 div[role=raml-editor] .menubar hr.line-with-linear-gradient {
   border: 0;
@@ -1288,8 +1337,8 @@ div[role=raml-editor] .menubar hr.line-with-linear-gradient {
 }
 div[role=raml-editor] .menubar .menu-item-context {
   position: absolute;
-  top: 70%;
-  left: 100%;
+  top: 106%;
+  left: 17%;
   margin-left: -15px;
 }
 div[role=raml-editor] .menubar .menu-item-context a {
@@ -1345,24 +1394,24 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field {
   background: #333;
   position: relative;
   border-radius: 50px;
-  box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.5), 0px 1px 0px rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .field:after {
   content: 'OFF';
   color: #000;
   position: absolute;
-  top: 0px;
+  top: 0;
   right: 3px;
   z-index: 0;
   font-size: 0.7em;
   font-weight: bold;
-  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.15);
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.15);
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .field:before {
   content: 'ON';
   color: #00bf00;
   position: absolute;
-  top: 0px;
+  top: 0;
   left: 3px;
   z-index: 0;
   font-size: 0.7em;
@@ -1383,7 +1432,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field label {
   border-radius: 50px;
   -webkit-transition: all .4s ease;
   transition: all .4s ease;
-  box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.3);
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=checkbox] {
   visibility: hidden;
@@ -1391,4 +1440,12 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=checkbox]:checked + label {
   left: -webkit-calc(100% - 2em - 3px);
   left: calc(100% - 2em - 3px);
+}
+div[role=raml-editor] .menubar .submenu-item {
+  top: -1px;
+  left: 161px;
+}
+div[role=raml-editor] .menubar .subsubmenu-item {
+  left: 113%;
+  top: -1px;
 }

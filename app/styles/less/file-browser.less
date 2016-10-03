@@ -207,6 +207,55 @@ div[role=raml-editor].light {
   }
 }
 
-[role="context-menu-item"] {
-  cursor: pointer;
+[role="menu-dropdown"] {
+  z-index: 210;
+  list-style: none;
+  border: 1px solid #AAA;
+  background-color: #EEE;
+  color: #666;
+
+  padding: 3px 0;
+  min-width: 145px;
+  font-size: 13px;
+  border-radius: 2px;
+  box-shadow: 3px 3px 10px 0 rgba(0,0,0,0.25);
+  opacity: 0.95;
+
+  li {
+    margin: 2px 5px;
+
+    > a {
+      width: 100%;
+    }
+
+    span {
+      padding: 2px 5px !important;
+      width: 100%;
+      > i {
+        width: 15px;
+      }
+    }
+
+    a:after, span:after {
+      content: "";
+      display: block;
+      height: 1px;
+      margin: 2px;
+      background: #c6c0c0;
+    }
+
+    a:hover, span:hover {
+      color: @cello_blue !important;
+    }
+  }
+
+  li:last-child > a:after, li:last-child span:after {
+    display: none;
+  }
+}
+
+[role="menu-item"] {
+  i, span {
+    cursor: pointer;
+  }
 }
