@@ -56,27 +56,62 @@
         return object ? object[typeName] : object;
       }
 
-      function dereferenceTypes(raml) {
 
+      function replaceTypeIfExists(raml, type, value) {
+        var expandedTypeIsDefined = retrieveType(raml, type);
+        if (expandedTypeIsDefined) {
+          for (var key in expandedTypeIsDefined) {
+            if (expandedTypeIsDefined.hasOwnProperty(key)) {
+              if (['example', 'examples'].includes(key) && value[key]) { return; }
+              value[key] = expandedTypeIsDefined[key];
+            }
+          }
+        }
+      }
+
+      function dereferenceTypes(raml) {
         jsTraverse.traverse(raml).forEach(function (value) {
           if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
             var type = value.type[0];
-            var expandedTypeIsDefined = retrieveType(raml, type);
-            if (expandedTypeIsDefined) {
-              for (var key in expandedTypeIsDefined) {
-                if (expandedTypeIsDefined.hasOwnProperty(key)) {
-                  value[key] = expandedTypeIsDefined[key];
-                }
-              }
-            }
+            replaceTypeIfExists(raml, type, value);
           }
         });
 
       }
 
+      function dereferenceTypesInArrays(raml) {
+        jsTraverse.traverse(raml).forEach(function (value) {
+          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
+            var type = value.items.type[0];
+            replaceTypeIfExists(raml, type, value.items);
+
+            if (!value.examples && !value.example) { generateArrayExampleIfPosible(value); }
+          }
+        });
+
+      }
+
+      function generateArrayExampleIfPosible(arrayNode) {
+        var examples = getExampleList(arrayNode.items);
+        if (examples.length === 0 ) { return; }
+
+        arrayNode.example = examples;
+      }
+
+      function getExampleList(node) {
+        if(node.examples) {
+          return node.examples.map(function (example) {
+            return example.structuredValue;
+          });
+        }
+        if(node.example) { return [node.example]; }
+
+        return [];
+      }
+
       function dereference(raml) {
         dereferenceTypes(raml);
-
+        dereferenceTypesInArrays(raml);
         return dereferenceJsons(raml);
       }
 
