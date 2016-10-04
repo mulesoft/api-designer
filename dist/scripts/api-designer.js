@@ -5311,7 +5311,7 @@
     } else {
       g = this;
     }
-    g.apiSpecConverter = f();
+    g.apiSpecTransformer = f();
   }
 }(function () {
   var define, module, exports;
@@ -6436,13 +6436,15 @@
                   object.type = '!include ' + val;
                 }
                 delete object[id];
-              } else if (id == 'ref') {
-                object.type = val;
-                delete object[id];
-              } else if (id == 'include') {
-                object.type = '!include ' + val;
-                delete object[id];
-              } else if (typeof val === 'object') {
+              } else if (typeof val === 'string') {
+                if (id == 'ref') {
+                  object.type = val;
+                  delete object[id];
+                } else if (id == 'include') {
+                  object.type = '!include ' + val;
+                  delete object[id];
+                }
+              } else if (val && typeof val === 'object') {
                 if (val.type == 'string') {
                   if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
                     object[id] = { type: 'string' };
@@ -6567,6 +6569,7 @@
           }
           var docs = this._mapTextSections(this.project.Texts);
           if (docs.length) {
+            ramlDef.documentation = ramlDef.documentation || [];
             ramlDef.documentation = ramlDef.documentation.concat(docs);
           }
           var slSecuritySchemes = this.project.Environment.SecuritySchemes;
@@ -6655,7 +6658,7 @@
               };
             }
           }
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo) {
             ramlDef.annotationTypes = {};
             if (this.hasTags) {
               ramlDef.annotationTypes.tags = 'string[]';
@@ -7077,29 +7080,26 @@
               continue;
             var schema = slSchemas[i];
             var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition));
-            for (var i in definition.properties) {
-              if (!definition.properties.hasOwnProperty(i))
-                continue;
-              var property = definition.properties[i];
-              property.required = false;
-            }
-            if (definition.required && definition.required.length > 0) {
-              for (var j in definition.required) {
-                if (!definition.required.hasOwnProperty(j))
+            if (definition.allOf) {
+              var allOfTypes = [];
+              for (var j in definition.allOf) {
+                if (!definition.allOf.hasOwnProperty(j))
                   continue;
-                var requiredParam = definition.required[j];
-                if (definition['properties'][requiredParam]) {
-                  delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
+                var allOf = definition.allOf[j];
+                if (allOf.properties) {
+                  definition = this.mapSchemaProperties(allOf);
+                  break;
+                }
+                if (allOf.type) {
+                  allOfTypes.push(allOf.type);
                 }
               }
-              delete definition.required;
-            }
-            if (definition.additionalProperties) {
-              definition.properties['//'] = definition.additionalProperties;
-              delete definition.additionalProperties;
-            }
-            if (definition.properties && definition.type == 'object') {
-              delete definition.type;
+              definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+              delete definition.allOf;
+            } else {
+              if (definition.properties) {
+                definition = this.mapSchemaProperties(definition);
+              }
             }
             if (schema.example) {
               definition.example = jsonHelper.parse(schema.example);
@@ -7107,6 +7107,33 @@
             results[schema.NameSpace] = definition;
           }
           return results;
+        };
+        RAML10.prototype.mapSchemaProperties = function (definition) {
+          for (var k in definition.properties) {
+            if (!definition.properties.hasOwnProperty(k))
+              continue;
+            var property = definition.properties[k];
+            property.required = false;
+          }
+          if (definition.required && definition.required.length > 0) {
+            for (var j in definition.required) {
+              if (!definition.required.hasOwnProperty(j))
+                continue;
+              var requiredParam = definition.required[j];
+              if (definition['properties'][requiredParam]) {
+                delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
+              }
+            }
+            delete definition.required;
+          }
+          if (definition.additionalProperties) {
+            definition.properties['//'] = definition.additionalProperties;
+            delete definition.additionalProperties;
+          }
+          if (definition.properties && definition.type == 'object') {
+            delete definition.type;
+          }
+          return definition;
         };
         RAML10.prototype.description = function (ramlDef, project) {
           ramlDef.description = project.Description;
@@ -7523,9 +7550,7 @@
         };
         function mapResponseBody(res, mimeType) {
           var item = {};
-          if (!_.isEmpty(res.description)) {
-            item.description = res.description;
-          }
+          item.description = res.description || '';
           // if response body mimeType is null, do not include schema in swagger export
           // TODO: Figure out how to set example for mimeType properly.
           // if (!mimeType) {
@@ -7552,10 +7577,6 @@
             // }
             var item = mapResponseBody(res, mimeType);
             result[res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default'] = item;
-          }
-          if (_.isEmpty(result)) {
-            // empty schema for swagger spec validation
-            result['default'] = { schema: {} };
           }
           return result;
         };
@@ -7630,13 +7651,22 @@
           for (var id in object) {
             if (object.hasOwnProperty(id)) {
               var val = object[id];
-              if (id == 'ref') {
-                object.$ref = '#/definitions/' + val;
-                delete object[id];
-              } else if (id == 'include') {
-                object.$ref = val;
-                delete object[id];
-              } else if (typeof val === 'object') {
+              if (id == 'allOf') {
+                object.allOf = val.map(function (obj) {
+                  if (typeof obj === 'object')
+                    return obj;
+                  else
+                    return { '$ref': '#/definitions/' + obj };
+                });
+              } else if (typeof val === 'string') {
+                if (id == 'ref') {
+                  object.$ref = '#/definitions/' + val;
+                  delete object[id];
+                } else if (id == 'include') {
+                  object.$ref = val;
+                  delete object[id];
+                }
+              } else if (val && typeof val === 'object') {
                 object[id] = convertRefFromModel(val);
               }
             }
@@ -7732,6 +7762,13 @@
             parameters = parameters.concat(this._mapEndpointTraitParameters(endpoint, parameters));
             parameters = this._validateParameters(parameters);
             var responses = _.assign({}, this._mapEndpointTraitResponses(endpoint), this._mapResponseBody(endpoint, env));
+            if (_.isEmpty(responses)) {
+              // empty schema for swagger spec validation
+              responses['default'] = {
+                description: '',
+                schema: {}
+              };
+            }
             // if (_.isEmpty(endpoint.Produces)) {
             //   for (var statusCode in responses) {
             //     var response = responses[statusCode];
@@ -8171,8 +8208,14 @@
           for (var i in securitySchemes) {
             if (!securitySchemes.hasOwnProperty(i))
               continue;
-            if (schemeName === securitySchemes[i].name) {
-              return securitySchemes[i];
+            var entries = _.entries(securitySchemes[i]);
+            for (var index = 0; index < entries.length; index++) {
+              var entry = entries[index];
+              var key = entry[0];
+              var value = entry[1];
+              if (schemeName === key) {
+                return value;
+              }
             }
           }
         };
@@ -8299,41 +8342,53 @@
         RAML.prototype._mapSchema = function (schemData) {
           return this.mapSchema(schemData);
         };
+        RAML.prototype.isValidRefValues = function (values) {
+          if (!_.isArray(values)) {
+            return this.isValidRefValue(values);
+          }
+          var result = true;
+          for (var index = 0; index < values.length && result == true; index++) {
+            result = this.isValidRefValue(values[index]);
+          }
+          return result;
+        };
+        RAML.prototype.isValidRefValue = function (value) {
+          return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
+        };
         // from type=type1 to ref=type1
         RAML.prototype.convertRefToModel = function (object) {
           for (var id in object) {
-            if (object.hasOwnProperty(id)) {
-              if (id == 'type' && _.isArray(object[id])) {
-                //avoid arrays for type attribute.
-                object[id] = object[id][0];
-              }
-              var val = object[id];
-              if (!val)
-                continue;
-              if (id == 'type' && (typeof val === 'string' && ramlHelper.getScalarTypes.indexOf(val) < 0 && val !== 'object')) {
-                object.ref = val;
-                delete object[id];
-              } else if (typeof val === 'object') {
-                if (val.type && val.type == 'date-only') {
-                  object[id] = {
-                    type: 'string',
-                    format: 'date'
-                  };
-                } else if (val.type && val.type == 'datetime') {
-                  object[id] = {
-                    type: 'string',
-                    format: 'date-time'
-                  };
-                } else if (id == 'structuredExample' || id == 'fixedFacets') {
-                  //delete garbage
-                  delete object[id];
-                } else {
-                  object[id] = this.convertRefToModel(val);
-                }
-              } else if (id == 'name') {
+            if (!object.hasOwnProperty(id))
+              continue;
+            if (id == 'type' && _.isArray(object[id]) && object[id].length == 1) {
+              object[id] = object[id][0];
+            }
+            var val = object[id];
+            if (!val)
+              continue;
+            if (id == 'type' && this.isValidRefValues(val)) {
+              object.ref = val;
+              delete object[id];
+            } else if (typeof val === 'object') {
+              if (val.type && val.type == 'date-only') {
+                object[id] = {
+                  type: 'string',
+                  format: 'date'
+                };
+              } else if (val.type && val.type == 'datetime') {
+                object[id] = {
+                  type: 'string',
+                  format: 'date-time'
+                };
+              } else if (id == 'structuredExample' || id == 'fixedFacets') {
                 //delete garbage
                 delete object[id];
+              } else {
+                object[id] = this.convertRefToModel(val);
               }
+            } else if (id == 'name') {
+              //delete garbage
+              delete object[id];
             }
           }
           return object;
@@ -8412,17 +8467,14 @@
               for (var si in securedBy) {
                 if (!securedBy.hasOwnProperty(si))
                   continue;
-                var schemeSettings = this._getSecuritySchemeSettingsByName(securedBy[si]);
-                switch (schemeSettings.type) {
-                case 'OAuth 2.0':
-                  endpoint.securedBy['oauth2'] = true;
-                  break;
-                case 'Basic Authentication':
-                  endpoint.securedBy['basic'] = true;
-                  break;
-                default:
-                  //TODO not supported
-                  break;
+                if (typeof securedBy[si] === 'string') {
+                  this._assignSecuredByToEndpoint(endpoint, securedBy[si]);
+                } else {
+                  var entries = _.entries(securedBy[si]);
+                  for (var index = 0; index < entries.length; index++) {
+                    var entry = entries[index];
+                    this._assignSecuredByToEndpoint(endpoint, entry[0]);
+                  }
                 }
               }
             }
@@ -8434,6 +8486,22 @@
             for (var j = 0; j < resources.length; j++) {
               this._mapEndpoint(resources[j], baseURI + resource.relativeUri, pathParams);
             }
+          }
+        };
+        RAML.prototype._assignSecuredByToEndpoint = function (endpoint, key) {
+          var schemeSettings = this._getSecuritySchemeSettingsByName(key);
+          switch (schemeSettings.type) {
+          case 'OAuth 2.0':
+            endpoint.securedBy['oauth2'] = true;
+            break;
+          case 'Basic Authentication':
+            endpoint.securedBy['basic'] = true;
+            break;
+          case 'Pass Through':
+            endpoint.securedBy['apiKey'] = true;
+          default:
+            //TODO not supported
+            break;
           }
         };
         RAML.prototype.loadFile = function (filePath, cb) {
@@ -9119,12 +9187,13 @@
               var sd = new Schema(schemaName);
               sd.Name = schemaName;
               var definition = schemData[i][schemaName];
+              var data = null;
               if (definition.properties && !_.isEmpty(definition.properties)) {
-                var data = {
-                    properties: {},
-                    type: 'object',
-                    required: []
-                  };
+                data = {
+                  properties: {},
+                  type: 'object',
+                  required: []
+                };
                 if (definition.description) {
                   data.description = definition.description;
                 }
@@ -9143,13 +9212,29 @@
                     data['required'].push(paramName);
                   }
                 }
-                definition = data;
-              } else if (definition.type) {
-                var type = _.isArray(definition.type) ? definition.type[0] : definition.type;
-                definition = jsonHelper.parse(type);
+                if (data.required && data.required.length == 0) {
+                  delete data.required;
+                }
               }
-              if (definition.required && definition.required.length == 0) {
-                delete definition.required;
+              if (definition.type && definition.type !== 'object') {
+                //type
+                if (data) {
+                  //type and properties
+                  definition.allOf = definition.type;
+                  definition.allOf.push(data);
+                  delete definition.type;
+                  delete definition.properties;
+                } else {
+                  if (_.isArray(definition.type) && definition.type.length > 1) {
+                    definition.allOf = definition.type;
+                    delete definition.type;
+                  } else {
+                    definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                  }
+                }
+              } else {
+                //only properties
+                definition = data;
               }
               sd.Definition = this.convertRefToModel(definition);
               schemas.push(sd);
@@ -9474,9 +9559,6 @@
               }
             }
             mapExample(schemaDataClone, sd);
-            if (schemaDataClone['allOf']) {
-              schemaDataClone = schemaDataClone['allOf'];
-            }
             sd.Definition = schemaDataClone;
             result.push(sd);
           }
@@ -13424,7 +13506,7 @@
             /** Used as a safe reference for `undefined` in pre-ES5 environments. */
             var undefined;
             /** Used as the semantic version number. */
-            var VERSION = '4.16.2';
+            var VERSION = '4.16.3';
             /** Used as the size to enable large array optimizations. */
             var LARGE_ARRAY_SIZE = 200;
             /** Error message constants. */
@@ -13489,7 +13571,7 @@
                 ]
               ];
             /** `Object#toString` result references. */
-            var argsTag = '[object Arguments]', arrayTag = '[object Array]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', objectTag = '[object Object]', promiseTag = '[object Promise]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
+            var argsTag = '[object Arguments]', arrayTag = '[object Array]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', objectTag = '[object Object]', promiseTag = '[object Promise]', proxyTag = '[object Proxy]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
             var arrayBufferTag = '[object ArrayBuffer]', dataViewTag = '[object DataView]', float32Tag = '[object Float32Array]', float64Tag = '[object Float64Array]', int8Tag = '[object Int8Array]', int16Tag = '[object Int16Array]', int32Tag = '[object Int32Array]', uint8Tag = '[object Uint8Array]', uint8ClampedTag = '[object Uint8ClampedArray]', uint16Tag = '[object Uint16Array]', uint32Tag = '[object Uint32Array]';
             /** Used to match empty string literals in compiled template source. */
             var reEmptyStringLeading = /\b__p \+= '';/g, reEmptyStringMiddle = /\b(__p \+=) '' \+/g, reEmptyStringTrailing = /(__e\(.*?\)|\b__t\)) \+\n'';/g;
@@ -14774,13 +14856,21 @@
               /** Used to detect if a method is native. */
               var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
               /** Built-in value references. */
-              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined, defineProperty = Object.defineProperty, getPrototype = overArg(Object.getPrototypeOf, Object), iteratorSymbol = Symbol ? Symbol.iterator : undefined, objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined, getPrototype = overArg(Object.getPrototypeOf, Object), iteratorSymbol = Symbol ? Symbol.iterator : undefined, objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+              var defineProperty = function () {
+                  try {
+                    var func = getNative(Object, 'defineProperty');
+                    func({}, '', {});
+                    return func;
+                  } catch (e) {
+                  }
+                }();
               /** Mocked built-ins. */
               var ctxClearTimeout = context.clearTimeout !== root.clearTimeout && context.clearTimeout, ctxNow = Date && Date.now !== root.Date.now && Date.now, ctxSetTimeout = context.setTimeout !== root.setTimeout && context.setTimeout;
               /* Built-in method references for those with the same name as other `lodash` methods. */
               var nativeCeil = Math.ceil, nativeFloor = Math.floor, nativeGetSymbols = Object.getOwnPropertySymbols, nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined, nativeIsFinite = context.isFinite, nativeJoin = arrayProto.join, nativeKeys = overArg(Object.keys, Object), nativeMax = Math.max, nativeMin = Math.min, nativeNow = Date.now, nativeParseInt = context.parseInt, nativeRandom = Math.random, nativeReverse = arrayProto.reverse;
               /* Built-in method references that are verified to be native. */
-              var DataView = getNative(context, 'DataView'), Map = getNative(context, 'Map'), Promise = getNative(context, 'Promise'), Set = getNative(context, 'Set'), WeakMap = getNative(context, 'WeakMap'), nativeCreate = getNative(Object, 'create'), nativeDefineProperty = getNative(Object, 'defineProperty');
+              var DataView = getNative(context, 'DataView'), Map = getNative(context, 'Map'), Promise = getNative(context, 'Promise'), Set = getNative(context, 'Set'), WeakMap = getNative(context, 'WeakMap'), nativeCreate = getNative(Object, 'create');
               /** Used to store function metadata. */
               var metaMap = WeakMap && new WeakMap();
               /** Used to lookup unminified function names. */
@@ -14936,7 +15026,7 @@
                     if (objectCreate) {
                       return objectCreate(proto);
                     }
-                    object.prototype = prototype;
+                    object.prototype = proto;
                     var result = new object();
                     object.prototype = undefined;
                     return result;
@@ -15583,7 +15673,7 @@
      * @param {*} value The value to assign.
      */
               function assignMergeValue(object, key, value) {
-                if (value !== undefined && !eq(object[key], value) || typeof key == 'number' && value === undefined && !(key in object)) {
+                if (value !== undefined && !eq(object[key], value) || value === undefined && !(key in object)) {
                   baseAssignValue(object, key, value);
                 }
               }
@@ -16293,6 +16383,13 @@
                   othTag = othTag == argsTag ? objectTag : othTag;
                 }
                 var objIsObj = objTag == objectTag, othIsObj = othTag == objectTag, isSameTag = objTag == othTag;
+                if (isSameTag && isBuffer(object)) {
+                  if (!isBuffer(other)) {
+                    return false;
+                  }
+                  objIsArr = true;
+                  objIsObj = false;
+                }
                 if (isSameTag && !objIsObj) {
                   stack || (stack = new Stack());
                   return objIsArr || isTypedArray(object) ? equalArrays(object, other, equalFunc, customizer, bitmask, stack) : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
@@ -16585,24 +16682,25 @@
                 var newValue = customizer ? customizer(objValue, srcValue, key + '', object, source, stack) : undefined;
                 var isCommon = newValue === undefined;
                 if (isCommon) {
+                  var isArr = isArray(srcValue), isTyped = !isArr && isTypedArray(srcValue);
                   newValue = srcValue;
-                  if (isArray(srcValue) || isTypedArray(srcValue)) {
+                  if (isArr || isTyped) {
                     if (isArray(objValue)) {
                       newValue = objValue;
                     } else if (isArrayLikeObject(objValue)) {
                       newValue = copyArray(objValue);
-                    } else {
+                    } else if (isTyped) {
                       isCommon = false;
-                      newValue = baseClone(srcValue, true);
+                      newValue = cloneTypedArray(srcValue, true);
+                    } else {
+                      newValue = [];
                     }
                   } else if (isPlainObject(srcValue) || isArguments(srcValue)) {
+                    newValue = objValue;
                     if (isArguments(objValue)) {
                       newValue = toPlainObject(objValue);
                     } else if (!isObject(objValue) || srcIndex && isFunction(objValue)) {
-                      isCommon = false;
-                      newValue = baseClone(srcValue, true);
-                    } else {
-                      newValue = objValue;
+                      newValue = initCloneObject(srcValue);
                     }
                   } else {
                     isCommon = false;
@@ -16902,8 +17000,8 @@
      * @param {Function} string The `toString` result.
      * @returns {Function} Returns `func`.
      */
-              var baseSetToString = !nativeDefineProperty ? identity : function (func, string) {
-                  return nativeDefineProperty(func, 'toString', {
+              var baseSetToString = !defineProperty ? identity : function (func, string) {
+                  return defineProperty(func, 'toString', {
                     'configurable': true,
                     'enumerable': false,
                     'value': constant(string),
@@ -23811,7 +23909,7 @@
                 // The use of `Object#toString` avoids issues with the `typeof` operator
                 // in Safari 8-9 which returns 'object' for typed array and other constructors.
                 var tag = isObject(value) ? objectToString.call(value) : '';
-                return tag == funcTag || tag == genTag;
+                return tag == funcTag || tag == genTag || tag == proxyTag;
               }
               /**
      * Checks if `value` is an integer.
@@ -59897,26 +59995,22 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function importSwaggerZip(mode) {
         $scope.importing = true;
+        var importSwaggerPromise;
         if (importService.isZip(mode.value)) {
-          return swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
-            return $modalInstance.close(true);
-          }).catch(function (err) {
-            broadcastError('Failed to parse Swagger: ' + err.message);
-          }).finally(function () {
-            $scope.importing = false;
-          });
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value);
         } else {
-          return swaggerToRAML.file(mode.value).then(function (contents) {
+          importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
             var filename = extractFileName(mode.value.name, 'raml');
             return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
-          }).then(function () {
-            return $modalInstance.close(true);
-          }).catch(function (err) {
-            broadcastError('Failed to parse Swagger: ' + err.message);
-          }).finally(function () {
-            $scope.importing = false;
           });
         }
+        return importSwaggerPromise.then(function () {
+          return $modalInstance.close(true);
+        }).catch(function (err) {
+          broadcastError('Failed to parse Swagger: ' + err.message);
+        }).finally(function () {
+          $scope.importing = false;
+        });
       }
       $scope.options = [
         {
@@ -60098,8 +60192,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$q',
     '$http',
     'importService',
-    'apiSpecConverter',
-    function swaggerToRAML($window, $q, $http, importService, apiSpecConverter) {
+    'apiSpecTransformer',
+    function swaggerToRAML($window, $q, $http, importService, apiSpecTransformer) {
       var self = this;
       function replaceExtension(path, ext) {
         var index = path.lastIndexOf('.');
@@ -60109,9 +60203,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return path + '.' + ext;
       }
       function ramlConverter() {
-        return new apiSpecConverter.Converter(apiSpecConverter.Formats.SWAGGER, apiSpecConverter.Formats.RAML10);
+        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.SWAGGER, apiSpecTransformer.Formats.RAML10);
       }
-      function doConvert(converter, deferred) {
+      function doConvert(error, converter, deferred) {
+        if (error) {
+          deferred.reject(error);
+        }
         try {
           converter.convert('yaml', function (err, result) {
             if (err) {
@@ -60125,8 +60222,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function convertData(content, deferred, options) {
         var converter = ramlConverter();
-        converter.loadData(content, options).then(function () {
-          doConvert(converter, deferred);
+        converter.loadData(content, options).then(function (error) {
+          doConvert(error, converter, deferred);
         }).catch(deferred.reject);
         return deferred;
       }
@@ -60187,8 +60284,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         var deferred = $q.defer();
         var converter = ramlConverter();
         try {
-          converter.loadFile(url, function () {
-            doConvert(converter, deferred);
+          converter.loadFile(url, function (error) {
+            doConvert(error, converter, deferred);
           });
         } catch (err) {
           deferred.reject(err);
@@ -60232,7 +60329,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       self.mergeFile = function (directory, file) {
         // Import every other file as normal.
         if (!self.isZip(file)) {
-          return self.importFile(directory, file);
+          return self.importFile(directory, file).then(ramlRepository.saveFile);
         }
         return self.readFile(file).then(function (contents) {
           return self.mergeZip(directory, contents);
@@ -60358,9 +60455,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        * @return {Promise}
        */
       self.createAndSaveFile = function (directory, name, content) {
-        return self.createFile(directory, name, content).then(function (file) {
-          return ramlRepository.saveFile(file);
-        });
+        return self.createFile(directory, name, content).then(ramlRepository.saveFile);
       };
       /**
        * Create a file in the filesystem.
@@ -60402,8 +60497,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 }
                 // Mark the file as dirty.
                 file.dirty = true;
-                return file;
               }
+              return file;
             });
             ;
           }
@@ -60709,10 +60804,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('apiSpecConverter', [
+  angular.module('ramlEditorApp').factory('apiSpecTransformer', [
     '$window',
-    function apiSpecConverter($window) {
-      return $window.apiSpecConverter;
+    function apiSpecTransformer($window) {
+      return $window.apiSpecTransformer;
     }
   ]);
   ;
@@ -62624,7 +62719,7 @@ angular.module('ramlEditorApp').run([
   function ($templateCache) {
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'swagger\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently supports Swagger v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'swagger\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently supports Swagger v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '</span>\n' + '<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md" target="_blank">Language Spec (0.8)</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">Language Spec (1.0)</a></li>\n' + '  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <hr class="line-with-linear-gradient">\n' + '  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>\n' + '</ul>\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');

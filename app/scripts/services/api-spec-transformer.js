@@ -2,10 +2,10 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .factory('apiSpecConverter', function apiSpecConverter(
+    .factory('apiSpecTransformer', function apiSpecTransformer(
       $window
     ) {
-      return $window.apiSpecConverter;
+      return $window.apiSpecTransformer;
     })
   ;
 })();

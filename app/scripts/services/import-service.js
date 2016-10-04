@@ -20,7 +20,7 @@
       self.mergeFile = function (directory, file) {
         // Import every other file as normal.
         if (!self.isZip(file)) {
-          return self.importFile(directory, file);
+          return self.importFile(directory, file).then(ramlRepository.saveFile);
         }
 
         return self.readFile(file)
@@ -170,10 +170,7 @@
        * @return {Promise}
        */
       self.createAndSaveFile = function (directory, name, content) {
-        return self.createFile(directory, name, content)
-          .then(function (file) {
-            return ramlRepository.saveFile(file);
-          });
+        return self.createFile(directory, name, content).then(ramlRepository.saveFile);
       };
 
       /**
@@ -224,8 +221,8 @@
 
                     // Mark the file as dirty.
                     file.dirty = true;
-                    return file;
                   }
+                  return file;
                 })
               ;
             }
