@@ -170,15 +170,20 @@ angular.module('ramlEditorApp')
       var ch = cursor.ch;
       var prefix = currentPrefix(line, ch) || '';
       var sufix = currentSufix(line, ch) ;
+      var word = prefix + sufix;
       var toCh = ch + sufix.length;
       var fromCh = ch - prefix.length;
 
+      // if(suggestions.some(function (suggestion) { return suggestion.text === word; })){
+      //   return {word: word, list: [], from: cursor, to: cursor }
+      // }
+
       var codeMirrorSuggestions = suggestions
-        .filter(function (suggestion) { return isWordPartOfTheSuggestion(prefix, suggestion); })
+        .filter(function (suggestion) { return isWordPartOfTheSuggestion(word, suggestion); })
         .map(codemirrorSuggestion);
 
       return {
-        word: prefix + sufix,
+        word: word,
         list: codeMirrorSuggestions,
         from: CodeMirror.Pos(cursor.line, fromCh),
         to: CodeMirror.Pos(cursor.line, toCh)
