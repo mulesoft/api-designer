@@ -5,13 +5,18 @@ then
   exit
 fi
 
-# checkout repo in especified branch
-BRANCH=$1 # "$(git --git-dir $SOURCE_REPO/.git rev-parse --abbrev-ref HEAD)"
+# get updated repo for the especified branch
+BRANCH=$1
 SOURCE_REPO=./_tmp/api-designer-$BRANCH
-echo "> Fetch latest api-designer from branch '$BRANCH' and cache it in '$SOURCE_REPO'"
-rm -rf $SOURCE_REPO
-mkdir -p $SOURCE_REPO
-git clone -b $BRANCH https://github.com/mulesoft/api-designer.git $SOURCE_REPO
+if [ -d "$SOURCE_REPO" ]; then
+	echo "> Updating latest api-designer from branch '$BRANCH' in cache '$SOURCE_REPO'"
+	git --git-dir=$SOURCE_REPO/.git fetch
+	git --git-dir=$SOURCE_REPO/.git --work-tree=$SOURCE_REPO merge origin/$BRANCH
+else	
+	echo "> Fetch latest api-designer from branch '$BRANCH' and cache it in '$SOURCE_REPO'"
+	mkdir -p $SOURCE_REPO
+	git clone -b $BRANCH https://github.com/mulesoft/api-designer.git $SOURCE_REPO
+fi
 
 # copy dist
 SOURCE_FOLDER=$SOURCE_REPO/dist/
@@ -28,12 +33,12 @@ sed -i '' -e "s/RAML\.Settings\.proxy = '\/proxy\/'/RAML\.Settings\.proxy = ''/g
 sed -i '' -e 's/RAML\.Settings\.proxy = "\/proxy\/"/RAML\.Settings\.proxy = ""/g' $VERSIONED_TARGET/scripts/api-designer.min.js
 
 # create md page with branch info
-BRANCH_SHA="$(git --git-dir $SOURCE_REPO/.git rev-parse HEAD)"
-BRANCH_SHA_DATE="$(git --git-dir $SOURCE_REPO/.git show -s --format=%aI $BRANCH_SHA^{commit})"
+BRANCH_SHA="$(git --git-dir=$SOURCE_REPO/.git rev-parse HEAD)"
+BRANCH_SHA_DATE="$(git --git-dir=$SOURCE_REPO/.git show -s --format=%aI $BRANCH_SHA^{commit})"
 BRANCH_INFO_MD=./_branchs/$BRANCH.md
 echo "> generating branch info file in '$BRANCH_INFO_MD'"
 rm $BRANCH_INFO_MD
 echo -e "---\nname: $BRANCH\nsha: $BRANCH_SHA\ndate: $BRANCH_SHA_DATE\n---" >> $BRANCH_INFO_MD
 
 # create commit
-echo "> review and run: git add .;git commit -am 'Update $BRANCH to commit $BRANCH_SHA';git push"
+echo "> review and then run: git add .; git commit -am 'Update $BRANCH to commit $BRANCH_SHA'; git push"
