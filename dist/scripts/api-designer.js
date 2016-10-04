@@ -59708,10 +59708,22 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           }
         });
       }
+      function extractArrayType(arrayNode) {
+        if (arrayNode.items.type) {
+          return arrayNode.items.type[0];
+        }
+        return arrayNode.items;
+      }
+      function isNotObject(value) {
+        return value === null || typeof value !== 'object';
+      }
       function dereferenceTypesInArrays(raml) {
         jsTraverse.traverse(raml).forEach(function (value) {
           if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
-            var type = value.items.type[0];
+            var type = extractArrayType(value);
+            if (isNotObject(value.items)) {
+              value.items = {};
+            }
             replaceTypeIfExists(raml, type, value.items);
             if (!value.examples && !value.example) {
               generateArrayExampleIfPosible(value);
