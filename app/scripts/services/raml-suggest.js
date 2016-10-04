@@ -197,6 +197,11 @@ angular.module('ramlEditorApp')
       return suggestion;
     }
 
+    function asureTextFieldNotUndefined(suggetion) {
+      suggetion.text = suggetion.text || suggetion.displayText || '';
+      return suggetion;
+    }
+
     this.getSuggestions = function(homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
       var fsResolver = new FSResolver(homeDirectory, ramlRepository);
@@ -209,7 +214,8 @@ angular.module('ramlEditorApp')
           function (result) { return Array.isArray(result)? result: []; },
           function () { return []; }
         )
-        .then(function (suggestions) { return suggestions.map(beautifyCategoryName); });
+        .then(function (suggestions) { return suggestions.map(beautifyCategoryName); })
+        .then(function (suggestions) { return suggestions.map(asureTextFieldNotUndefined); });
     };
 
     // class methods
