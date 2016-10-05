@@ -45,4 +45,4 @@ rm $BRANCH_INFO_MD
 echo -e "---\nname: $BRANCH\nsha: $BRANCH_SHA\ndate: $BRANCH_SHA_DATE\n---" >> $BRANCH_INFO_MD
 
 # create commit
-echo "> review and then run: git add .; git commit -am 'Update $BRANCH to commit $BRANCH_SHA'; git push"
+echo "> review and then run: git add .; git commit -am 'Update $BRANCH to commit $BRANCH_SHA'; git push origin gh-pages"
