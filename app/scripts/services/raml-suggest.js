@@ -162,7 +162,8 @@ angular.module('ramlEditorApp')
 
       function isWordPartOfTheSuggestion(word, suggestion) {
         if (!word) { return true; }
-        return suggestion.text.startsWith(word) && suggestion.text !== word;
+        var lowerCaseText = suggestion.text.toLowerCase();
+        return lowerCaseText.startsWith(word) && lowerCaseText !== word;
       }
 
       var cursor = editor.getCursor();
@@ -171,6 +172,7 @@ angular.module('ramlEditorApp')
       var prefix = currentPrefix(line, ch) || '';
       var sufix = currentSufix(line, ch) ;
       var word = prefix + sufix;
+      var lowerCaseWord = word.toLowerCase();
       var toCh = ch + sufix.length;
       var fromCh = ch - prefix.length;
 
@@ -179,7 +181,7 @@ angular.module('ramlEditorApp')
       // }
 
       var codeMirrorSuggestions = suggestions
-        .filter(function (suggestion) { return isWordPartOfTheSuggestion(word, suggestion); })
+        .filter(function (suggestion) { return isWordPartOfTheSuggestion(lowerCaseWord, suggestion); })
         .map(codemirrorSuggestion);
 
       return {
