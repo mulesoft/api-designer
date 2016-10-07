@@ -12,20 +12,14 @@
   font-size: 10pt;
   overflow: hidden;
   padding: 2px 5px;
-  white-space:nowrap;
-  position: absolute;
-  max-width: none;
+  position: fixed;
+  z-index: 1000;
+  max-width: 600px;
   opacity: 0;
   transition: opacity .4s;
-  margin: -6px 0 0 18px;
-}
-
-.CodeMirror-linenumber + .CodeMirror-gutter-elt {
-  z-index: 1000;
 }
 
 .CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
-  z-index: 1000;
   background-position: left bottom;
   background-repeat: repeat-x;
 }
@@ -41,12 +35,12 @@
 
 .CodeMirror-lint-marker-error, .CodeMirror-lint-marker-warning {
   cursor: pointer;
-  display: block;
+  display: inline-block;
   height: 16px;
   width: 16px;
   vertical-align: middle;
   position: relative;
-  margin-left: -2px;
+  margin-left: 3px;
   margin-top: -1px;
 }
 
