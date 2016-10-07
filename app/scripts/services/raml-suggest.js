@@ -170,15 +170,12 @@ angular.module('ramlEditorApp')
       var line = editor.getLine(cursor.line);
       var ch = cursor.ch;
       var prefix = currentPrefix(line, ch) || '';
-      var sufix = currentSufix(line, ch) ;
-      var word = prefix + sufix;
+      var suffix = currentSufix(line, ch) ;
+      var word = prefix + suffix;
       var lowerCaseWord = word.toLowerCase();
-      var toCh = ch + sufix.length;
+      var toCh = editor.getLine(cursor.line).length;
       var fromCh = ch - prefix.length;
 
-      // if(suggestions.some(function (suggestion) { return suggestion.text === word; })){
-      //   return {word: word, list: [], from: cursor, to: cursor }
-      // }
 
       var codeMirrorSuggestions = suggestions
         .filter(function (suggestion) { return isWordPartOfTheSuggestion(lowerCaseWord, suggestion); })

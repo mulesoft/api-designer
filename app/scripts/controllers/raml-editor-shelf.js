@@ -7,7 +7,7 @@
         var replacementPrefix = suggestion.replacementPrefix || '';
         var cursor = editor.getCursor();
 
-        var rangeEnd = cursor;
+        var rangeEnd = editor.getLine(cursor.line);
         var rangeStart = {
           line: cursor.line,
           ch: cursor.ch - replacementPrefix.length

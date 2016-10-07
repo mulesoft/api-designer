@@ -31,9 +31,7 @@ describe('ramlEditorApp', function () {
 
   function getWord(ramlSuggest, lines, cursor) {
     return getAutocompleteHelper(ramlSuggest, lines, cursor)
-            .then(function(hint) {
-              return hint.word;
-            });
+            .then(function(hint) { return hint.word; });
   }
 
   function getSuggestions(ramlSuggest, contentLines, cursor) {
@@ -262,7 +260,7 @@ describe('ramlEditorApp', function () {
             result.from.line.should.equal(2);
             result.from.ch.should.equal(2);
             result.to.line.should.equal(2);
-            result.to.ch.should.equal(2);
+            result.to.ch.should.equal(3);
 
             done();
           });
