@@ -197,13 +197,22 @@
           var tracingInfo = { line : undefined, column : undefined, path : undefined };
           var needErrorPath = error.trace !== undefined;
           if (needErrorPath) {
+            var selectedFile = event.currentScope.fileBrowser.selectedFile;
+
             errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
               return trace.path === event.currentScope.fileBrowser.selectedFile.name;
             });
+            errorInfo.isWarning = error.isWarning;
+
+            var selectedFilePath = selectedFile.path;
+            var directorySeparator = '/';
+            var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
+            var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
+
             tracingInfo = {
               line : ((error.range && error.range.start.line) || 0) + 1,
               column : (error.range && error.range.start.column) || 1,
-              path : error.path
+              path : folderPath + error.path
             };
           }
 
