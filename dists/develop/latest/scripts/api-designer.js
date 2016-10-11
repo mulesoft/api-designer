@@ -58001,7 +58001,8 @@ if (!String.prototype.endsWith) {
         };
         CodeMirror.commands.autocomplete = function (cm) {
           CodeMirror.showHint(cm, CodeMirror.hint.raml, {
-            ghosting: true,
+            completeSingle: false,
+            ghosting: false,
             async: true
           });
         };
@@ -58028,13 +58029,17 @@ if (!String.prototype.endsWith) {
       var GUTTER_ID = 'CodeMirror-lint-markers';
       var SEVERITIES = /^(?:error|warning)$/;
       var service = {};
-      function showTooltip(content) {
+      function showTooltip(content, node) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
+        var offset = $(node).offset();
+        tt.style.top = Math.max(0, offset.top - tt.offsetHeight - 5) + 'px';
+        tt.style.left = offset.left + 20 + 'px';
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
+        document.body.appendChild(tt);
         return tt;
       }
       function rm(elt) {
@@ -58056,20 +58061,30 @@ if (!String.prototype.endsWith) {
       }
       function showTooltipFor(content, node) {
         var tooltip = showTooltip(content, node);
-        node.appendChild(tooltip);
+        var errorNode = node;
         var openTrace = function (event) {
+          hide(tooltip);
           var path = event.target.dataset.path;
           if (path) {
-            var $scope = angular.element(event.target).scope();
+            var $scope = angular.element(errorNode).scope();
             $scope.$emit('event:raml-editor-file-select', path);
           }
         };
-        function hide() {
-          CodeMirror.off(node, 'mouseleave', hide);
-          CodeMirror.off(node, 'mousedown', openTrace);
+        function hide(e) {
           if (tooltip) {
-            hideTooltip(tooltip);
-            tooltip = null;
+            var top = $(tooltip).offset().top;
+            var bottom = top + $(tooltip).outerHeight();
+            var isValidX = top <= e.clientY && e.clientY <= bottom;
+            var left = $(errorNode).offset().left;
+            var right = left + $(tooltip).outerWidth();
+            var isValidY = left - 5 <= e.clientX && e.clientX <= right;
+            var mouseOverTooltip = isValidX && isValidY;
+            if (!mouseOverTooltip) {
+              CodeMirror.off(tooltip, 'mousedown', openTrace);
+              CodeMirror.off(document, 'mousemove', hide);
+              hideTooltip(tooltip);
+              tooltip = null;
+            }
           }
         }
         var poll = setInterval(function () {
@@ -58087,8 +58102,8 @@ if (!String.prototype.endsWith) {
               return clearInterval(poll);
             }
           }, 400);
-        CodeMirror.on(node, 'mouseleave', hide);
-        CodeMirror.on(node, 'mousedown', openTrace);
+        CodeMirror.on(tooltip, 'mousedown', openTrace);
+        CodeMirror.on(document, 'mousemove', hide);
       }
       function clearMarks(cm) {
         cm.clearGutter(GUTTER_ID);
@@ -59227,14 +59242,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       var line = editor.getLine(cursor.line);
       var ch = cursor.ch;
       var prefix = currentPrefix(line, ch) || '';
-      var sufix = currentSufix(line, ch);
-      var word = prefix + sufix;
+      var suffix = currentSufix(line, ch);
+      var word = prefix + suffix;
       var lowerCaseWord = word.toLowerCase();
-      var toCh = ch + sufix.length;
+      var toCh = editor.getLine(cursor.line).length;
       var fromCh = ch - prefix.length;
-      // if(suggestions.some(function (suggestion) { return suggestion.text === word; })){
-      //   return {word: word, list: [], from: cursor, to: cursor }
-      // }
       var codeMirrorSuggestions = suggestions.filter(function (suggestion) {
           return isWordPartOfTheSuggestion(lowerCaseWord, suggestion);
         }).map(codemirrorSuggestion);
@@ -61092,13 +61104,19 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             };
           var needErrorPath = error.trace !== undefined;
           if (needErrorPath) {
+            var selectedFile = event.currentScope.fileBrowser.selectedFile;
             errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
               return trace.path === event.currentScope.fileBrowser.selectedFile.name;
             });
+            errorInfo.isWarning = error.isWarning;
+            var selectedFilePath = selectedFile.path;
+            var directorySeparator = '/';
+            var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
+            var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
             tracingInfo = {
               line: (error.range && error.range.start.line || 0) + 1,
               column: error.range && error.range.start.column || 1,
-              path: error.path
+              path: folderPath + error.path
             };
           }
           return {
@@ -61223,7 +61241,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     return function applySuggestion(editor, suggestion) {
       var replacementPrefix = suggestion.replacementPrefix || '';
       var cursor = editor.getCursor();
-      var rangeEnd = cursor;
+      var rangeEnd = editor.getLine(cursor.line);
       var rangeStart = {
           line: cursor.line,
           ch: cursor.ch - replacementPrefix.length
