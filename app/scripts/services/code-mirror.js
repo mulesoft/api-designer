@@ -238,7 +238,8 @@
 
         CodeMirror.commands.autocomplete = function (cm) {
           CodeMirror.showHint(cm, CodeMirror.hint.raml, {
-            ghosting: true,
+            completeSingle: false,
+            ghosting: false,
             async: true
           });
         };

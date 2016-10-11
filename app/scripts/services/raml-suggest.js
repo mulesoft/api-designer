@@ -133,7 +133,7 @@ angular.module('ramlEditorApp')
     this.EditorStateProvider = EditorStateProvider;
 
     function codemirrorHint(editor, suggestions) {
-      var separator = /:?(:|\s|\.|\[|]|-)+/;
+      var separator = /:?(:|\s|\.|\[|]|-)+|!/;
       var currentPrefix = function(line, ch){
         if (!line) { return ''; }
         var split = line.slice(0, ch).split(separator);
@@ -162,23 +162,27 @@ angular.module('ramlEditorApp')
 
       function isWordPartOfTheSuggestion(word, suggestion) {
         if (!word) { return true; }
-        return suggestion.text.startsWith(word) && suggestion.text !== word;
+        var lowerCaseText = suggestion.text.toLowerCase();
+        return lowerCaseText.startsWith(word) && lowerCaseText !== word;
       }
 
       var cursor = editor.getCursor();
       var line = editor.getLine(cursor.line);
       var ch = cursor.ch;
       var prefix = currentPrefix(line, ch) || '';
-      var sufix = currentSufix(line, ch) ;
-      var toCh = ch + sufix.length;
+      var suffix = currentSufix(line, ch) ;
+      var word = prefix + suffix;
+      var lowerCaseWord = word.toLowerCase();
+      var toCh = editor.getLine(cursor.line).length;
       var fromCh = ch - prefix.length;
 
+
       var codeMirrorSuggestions = suggestions
-        .filter(function (suggestion) { return isWordPartOfTheSuggestion(prefix, suggestion); })
+        .filter(function (suggestion) { return isWordPartOfTheSuggestion(lowerCaseWord, suggestion); })
         .map(codemirrorSuggestion);
 
       return {
-        word: prefix + sufix,
+        word: word,
         list: codeMirrorSuggestions,
         from: CodeMirror.Pos(cursor.line, fromCh),
         to: CodeMirror.Pos(cursor.line, toCh)
@@ -190,6 +194,11 @@ angular.module('ramlEditorApp')
         suggestion.category = 'others';
       }
       return suggestion;
+    }
+
+    function asureTextFieldNotUndefined(suggetion) {
+      suggetion.text = suggetion.text || suggetion.displayText || '';
+      return suggetion;
     }
 
     this.getSuggestions = function(homeDirectory, currentFile, editor) {
@@ -204,7 +213,8 @@ angular.module('ramlEditorApp')
           function (result) { return Array.isArray(result)? result: []; },
           function () { return []; }
         )
-        .then(function (suggestions) { return suggestions.map(beautifyCategoryName); });
+        .then(function (suggestions) { return suggestions.map(beautifyCategoryName); })
+        .then(function (suggestions) { return suggestions.map(asureTextFieldNotUndefined); });
     };
 
     // class methods

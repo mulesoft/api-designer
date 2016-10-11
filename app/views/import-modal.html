@@ -14,7 +14,7 @@
       </div>
 
       <div style="margin-left: 145px;" ng-switch="mode.type">
-        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
+        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
 
         <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">
 
@@ -23,7 +23,7 @@
     </div>
 
     <div ng-if="submittedType === 'swagger'">
-      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>
+      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>
     </div>
 
     <div ng-if="submittedType === 'file'">

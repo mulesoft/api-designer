@@ -2483,7 +2483,9 @@
         if (!mv && !onlyKey) {
           rs = props.map(function (x) {
             var complextionText = x.nameId() + ks;
-            if (!x.range().hasValueTypeInHierarchy() && needColon) {
+            if (x.range().isAssignableFrom(universeModule.Universe10.ExampleSpec.name)) {
+              complextionText = complextionText.trim();
+            } else if (!x.range().hasValueTypeInHierarchy() && needColon) {
               complextionText += '\n' + getIndent(offset, text) + '  ';
             }
             return {
@@ -2704,7 +2706,17 @@
             var typeProperties = parentNode.children() && parentNode.children().filter(function (child) {
                 return child.isAttr() && parserApi.universeHelpers.isTypeProperty(child.property());
               });
+            var visibleScopes = [];
+            var api = parentNode && parentNode.root && parentNode.root();
+            api && api.lowLevel() && api.lowLevel().unit() && visibleScopes.push(api.lowLevel().unit().absolutePath());
+            api && api.wrapperNode && api.wrapperNode() && api.wrapperNode().uses && api.wrapperNode().uses().forEach(function (usesDeclaration) {
+              usesDeclaration && usesDeclaration.value && usesDeclaration.value() && visibleScopes.push(api.lowLevel().unit().resolve(usesDeclaration.value()).absolutePath());
+            });
             var definitionNodes = parserApi.search.globalDeclarations(parentNode).filter(function (node) {
+                var nodeLocation = node.lowLevel().unit().absolutePath();
+                if (visibleScopes.indexOf(nodeLocation) < 0) {
+                  return false;
+                }
                 if (parserApi.universeHelpers.isGlobalSchemaType(node.definition())) {
                   return true;
                 }
@@ -3256,9 +3268,9 @@
       exports.getContentProvider = getContentProvider;
     },
     {
-      '../resources/categories.json': 11,
+      '../resources/categories.json': 12,
       'fuzzaldrin-plus': 2,
-      'underscore': 12
+      'underscore': 11
     }
   ],
   10: [
@@ -3324,491 +3336,6 @@
     { './completionProvider': 9 }
   ],
   11: [
-    function (require, module, exports) {
-      module.exports = {
-        'docs': {
-          'description': {
-            'is': [
-              'Universe10.MarkdownString',
-              'Universe08.MarkdownString'
-            ]
-          },
-          'displayName': {
-            'parentIs': [
-              'Universe10.ExampleSpec',
-              'Universe10.TypeDeclaration',
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.AbstractSecurityScheme',
-              'Universe10.ResourceType',
-              'Universe10.Resource',
-              'Universe08.Parameter',
-              'Universe08.Resource',
-              'Universe08.ResourceType',
-              'Universe08.Trait'
-            ]
-          },
-          'example': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter',
-              'Universe08.BodyLike',
-              'Universe08.XMLBody',
-              'Universe08.JSONBody'
-            ]
-          },
-          'usage': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe10.Trait',
-              'Universe10.ResourceType',
-              'Universe08.ResourceType',
-              'Universe08.Trait'
-            ]
-          },
-          'content': {
-            'parentIs': [
-              'Universe10.DocumentationItem',
-              'Universe08.DocumentationItem'
-            ]
-          },
-          'documentation': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'title': {
-            'parentIs': [
-              'Universe10.DocumentationItem',
-              'Universe08.DocumentationItem'
-            ]
-          }
-        },
-        'parameters': {
-          'default': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'enum': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'maximum': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'minimum': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'maxLength': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'minLength': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'required': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'baseUriParameters': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api',
-              'Universe08.Resource',
-              'Universe08.ResourceType',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'uriParameters': {
-            'parentIs': [
-              'Universe10.ResourceType',
-              'Universe10.ResourceBase',
-              'Universe10.Resource',
-              'Universe08.Api',
-              'Universe08.Resource',
-              'Universe08.ResourceType'
-            ]
-          },
-          'headers': {
-            'parentIs': [
-              'Universe10.Response',
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.Operation',
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.Response',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'queryParameters': {
-            'parentIs': [
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.Operation',
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'type': { 'parentIs': ['Universe08.Parameter'] }
-        },
-        'schemas': {
-          'schema': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike',
-              'Universe08.XMLBody',
-              'Universe08.JSONBody'
-            ]
-          },
-          'schemas': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          }
-        },
-        'root': {
-          'baseUri': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'mediaType': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'protocols': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe08.Api',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'version': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'title': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          }
-        },
-        'responses': {
-          'responses': {
-            'parentIs': [
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.Operation',
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          }
-        },
-        'response': {
-          'body': {
-            'parentIs': [
-              'Universe10.Response',
-              'Universe08.Response'
-            ]
-          }
-        },
-        'security': {
-          'securedBy': {
-            'is': [
-              'Universe10.SecuritySchemeRef',
-              'Universe08.SecuritySchemeRef'
-            ]
-          },
-          'securitySchemes': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'accessTokenUri': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'authorizationGrants': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'authorizationUri': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'requestTokenUri': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'scopes': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'describedBy': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'settings': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'OAuth 1.0': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'OAuth 2.0': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'Basic Authentication': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'Digest Authentication': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'type': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          }
-        },
-        'types and traits': {
-          'type': {
-            'parentIs': [
-              'Universe10.ResourceType',
-              'Universe10.ResourceBase',
-              'Universe10.Resource',
-              'Universe08.Resource',
-              'Universe08.ResourceType'
-            ]
-          },
-          'is': {
-            'is': [
-              'Universe10.TraitRef',
-              'Universe08.TraitRef'
-            ]
-          },
-          'resourceTypes': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'traits': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          }
-        },
-        'methods': {
-          'options': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'get': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'head': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'post': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'put': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'delete': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'trace': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'connect': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'patch': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          }
-        },
-        'protocols': {
-          'HTTP': {
-            'parentIs': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'HTTPS': {
-            'parentIs': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          }
-        },
-        'body': {
-          'application/json': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'application/x-www-form-urlencoded': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'application/xml': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'multipart/form-data': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'body': {
-            'parentIs': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          }
-        }
-      };
-    },
-    {}
-  ],
-  12: [
     function (require, module, exports) {
       //     Underscore.js 1.8.3
       //     http://underscorejs.org
@@ -5293,6 +4820,491 @@
       }.call(this));
     },
     {}
+  ],
+  12: [
+    function (require, module, exports) {
+      module.exports = {
+        'docs': {
+          'description': {
+            'is': [
+              'Universe10.MarkdownString',
+              'Universe08.MarkdownString'
+            ]
+          },
+          'displayName': {
+            'parentIs': [
+              'Universe10.ExampleSpec',
+              'Universe10.TypeDeclaration',
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.AbstractSecurityScheme',
+              'Universe10.ResourceType',
+              'Universe10.Resource',
+              'Universe08.Parameter',
+              'Universe08.Resource',
+              'Universe08.ResourceType',
+              'Universe08.Trait'
+            ]
+          },
+          'example': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter',
+              'Universe08.BodyLike',
+              'Universe08.XMLBody',
+              'Universe08.JSONBody'
+            ]
+          },
+          'usage': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe10.Trait',
+              'Universe10.ResourceType',
+              'Universe08.ResourceType',
+              'Universe08.Trait'
+            ]
+          },
+          'content': {
+            'parentIs': [
+              'Universe10.DocumentationItem',
+              'Universe08.DocumentationItem'
+            ]
+          },
+          'documentation': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'title': {
+            'parentIs': [
+              'Universe10.DocumentationItem',
+              'Universe08.DocumentationItem'
+            ]
+          }
+        },
+        'parameters': {
+          'default': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'enum': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'maximum': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'minimum': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'maxLength': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'minLength': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'required': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'baseUriParameters': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api',
+              'Universe08.Resource',
+              'Universe08.ResourceType',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'uriParameters': {
+            'parentIs': [
+              'Universe10.ResourceType',
+              'Universe10.ResourceBase',
+              'Universe10.Resource',
+              'Universe08.Api',
+              'Universe08.Resource',
+              'Universe08.ResourceType'
+            ]
+          },
+          'headers': {
+            'parentIs': [
+              'Universe10.Response',
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.Operation',
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.Response',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'queryParameters': {
+            'parentIs': [
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.Operation',
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'type': { 'parentIs': ['Universe08.Parameter'] }
+        },
+        'schemas': {
+          'schema': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike',
+              'Universe08.XMLBody',
+              'Universe08.JSONBody'
+            ]
+          },
+          'schemas': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          }
+        },
+        'root': {
+          'baseUri': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'mediaType': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'protocols': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe08.Api',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'version': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'title': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          }
+        },
+        'responses': {
+          'responses': {
+            'parentIs': [
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.Operation',
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          }
+        },
+        'response': {
+          'body': {
+            'parentIs': [
+              'Universe10.Response',
+              'Universe08.Response'
+            ]
+          }
+        },
+        'security': {
+          'securedBy': {
+            'is': [
+              'Universe10.SecuritySchemeRef',
+              'Universe08.SecuritySchemeRef'
+            ]
+          },
+          'securitySchemes': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'accessTokenUri': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'authorizationGrants': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'authorizationUri': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'requestTokenUri': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'scopes': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'describedBy': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'settings': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'OAuth 1.0': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'OAuth 2.0': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'Basic Authentication': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'Digest Authentication': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'type': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          }
+        },
+        'types and traits': {
+          'type': {
+            'parentIs': [
+              'Universe10.ResourceType',
+              'Universe10.ResourceBase',
+              'Universe10.Resource',
+              'Universe08.Resource',
+              'Universe08.ResourceType'
+            ]
+          },
+          'is': {
+            'is': [
+              'Universe10.TraitRef',
+              'Universe08.TraitRef'
+            ]
+          },
+          'resourceTypes': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'traits': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          }
+        },
+        'methods': {
+          'options': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'get': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'head': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'post': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'put': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'delete': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'trace': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'connect': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'patch': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          }
+        },
+        'protocols': {
+          'HTTP': {
+            'parentIs': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'HTTPS': {
+            'parentIs': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          }
+        },
+        'body': {
+          'application/json': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'application/x-www-form-urlencoded': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'application/xml': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'multipart/form-data': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'body': {
+            'parentIs': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          }
+        }
+      };
+    },
+    {}
   ]
 }, {}, [8]));
 (function (f) {
@@ -5311,7 +5323,7 @@
     } else {
       g = this;
     }
-    g.apiSpecConverter = f();
+    g.apiSpecTransformer = f();
   }
 }(function () {
   var define, module, exports;
@@ -5360,6 +5372,7 @@
     2: [
       function (require, module, exports) {
         var Importers = require('./importers/index'), Exporters = require('./exporters/index');
+        var _ = require('lodash');
         function Converter(fromFormat, toFormat) {
           this.importer = Importers.factory(fromFormat);
           if (!this.importer) {
@@ -5388,23 +5401,28 @@
         Converter.prototype.convert = function (format, cb) {
           var me = this;
           return new Promise(function (resolve, reject) {
-            me.exporter.loadProject(me.importer.import());
-            me.exporter.export(format).then(function (exportedData) {
-              if (cb)
-                cb(null, exportedData);
-              resolve(exportedData);
-            }).catch(function (err) {
-              if (cb)
-                cb(err, null);
-              reject(err);
-            });
+            try {
+              me.exporter.loadProject(me.importer.import());
+              me.exporter.export(format).then(function (exportedData) {
+                if (cb)
+                  cb(null, exportedData);
+                resolve(exportedData);
+              }).catch(function (err) {
+                if (cb)
+                  cb(err, null);
+                reject(err);
+              });
+            } catch (e) {
+              reject(e);
+            }
           });
         };
         exports.Converter = Converter;
       },
       {
         './exporters/index': 14,
-        './importers/index': 25
+        './importers/index': 25,
+        'lodash': 66
       }
     ],
     3: [
@@ -5421,6 +5439,8 @@
           this.request.bodies = [];
           this.request.headers = '{}';
           this.responses = [];
+          this.produces;
+          this.consumes;
           this.middlewareBefore = '';
           this.middlewareAfter = '';
           this.mock = {
@@ -5470,6 +5490,18 @@
           },
           get Name() {
             return this.name || '';
+          },
+          get Consumes() {
+            return this.consumes;
+          },
+          set Consumes(consumes) {
+            this.consumes = consumes;
+          },
+          get Produces() {
+            return this.produces;
+          },
+          set Produces(produces) {
+            this.produces = produces;
           },
           get Headers() {
             return jsonHelper.parse(this.request.headers);
@@ -5565,6 +5597,9 @@
           get Public() {
             return this.public;
           },
+          set Public(p) {
+            this.public = p;
+          },
           get Deprecated() {
             return this.deprecated;
           },
@@ -5591,10 +5626,10 @@
           this.summary = '';
           this.forwardHost = null;
           this.basePath = '';
-          this.defaultResponseType = '';
-          this.defaultRequestType = '';
           this.protocols = [];
           this.version = '';
+          this.produces = null;
+          this.consumes = null;
           this.middlewareBefore = '';
           this.middlewareAfter = '';
           this.proxy = {};
@@ -5618,17 +5653,17 @@
           get BasePath() {
             return this.basePath || '';
           },
-          get DefaultResponseType() {
-            return this.defaultResponseType;
+          set Consumes(consumes) {
+            this.consumes = consumes;
           },
-          set DefaultResponseType(respType) {
-            this.defaultResponseType = respType;
+          get Consumes() {
+            return this.consumes;
           },
-          get DefaultRequestType() {
-            return this.defaultRequestType;
+          set Produces(produces) {
+            this.produces = produces;
           },
-          set DefaultRequestType(reqType) {
-            this.defaultRequestType = reqType;
+          get Produces() {
+            return this.produces;
           },
           get Protocols() {
             return this.protocols;
@@ -5900,10 +5935,11 @@
             return this.example;
           },
           set SLData(schemaData) {
-            this.name = schemaData.name || '';
-            this.definition = schemaData.definition || {};
-            this.example = schemaData.example || {};
-            this._id = schemaData._id;
+            var sd = schemaData || {};
+            this.name = sd.name || '';
+            this.definition = sd.definition || {};
+            this.example = sd.example || {};
+            this._id = sd._id;
           },
           get Summary() {
             return this.summary || '';
@@ -5920,8 +5956,8 @@
           get Public() {
             return this.public;
           },
-          set Public(public) {
-            this.public = public;
+          set Public(p) {
+            this.public = p;
           }
         };
         module.exports = Schema;
@@ -5932,17 +5968,20 @@
       function (require, module, exports) {
         function SwaggerDefinition(title, description) {
           this.swagger = '2.0';
-          this.schemes = [];
-          this.basePath = '';
-          this.host = '';
           this.info = {
             'version': '',
             'title': title,
             'description': description
           };
+          this.host = '';
+          this.basePath = '';
+          this.schemes = [];
           this.consumes = [];
           this.produces = [];
+          this.securityDefinitions = {};
           this.paths = {};
+          this.parameters = {};
+          this.responses = [];
           this.definitions = {};
         }
         SwaggerDefinition.prototype = {
@@ -6038,11 +6077,11 @@
           get Content() {
             return this.content;
           },
-          set Public(public) {
-            this.public = public;
-          },
           get Public() {
             return this.public;
+          },
+          set Public(p) {
+            this.public = p;
           }
         };
         //used for stoplightx export only
@@ -6103,12 +6142,14 @@
           this.version = env.Version;
           this.baseUri = env.Host + env.BasePath;
           this.mediaType = env.DefaultResponseType || '';
-          this.protocols = mapProtocols(env.Protocols);
+          var protocols = mapProtocols(env.Protocols);
+          if (!_.isEmpty(protocols)) {
+            this.protocols = protocols;
+          }
         }
         RAMLDefinition.prototype.addMethod = function (resource, methodURIs, methodKey, method) {
-          if (!methodURIs) {
+          if (!methodURIs)
             return;
-          }
           if (methodURIs.length <= 0) {
             //reach the leaf of tree
             //TODO optional: check same method existence
@@ -6125,7 +6166,7 @@
               }
             }
             delete method.uriParameters;
-            if (Object.keys(resource.uriParameters).length == 0)
+            if (_.isEmpty(resource.uriParameters))
               delete resource.uriParameters;
             resource[methodKey] = method;
           } else {
@@ -6138,7 +6179,6 @@
           }
         };
         function RAML() {
-          this.metadata = null;
           this.hasTags = false;
           this.hasDeprecated = false;
           this.hasExternalDocs = false;
@@ -6149,18 +6189,20 @@
           var ramlSecuritySchemes = {};
           if (slSecuritySchemes.hasOwnProperty('oauth2')) {
             var name = slSecuritySchemes.oauth2.name || 'oauth2';
-            //missing describedBy, description
+            // missing describedBy, description
             ramlSecuritySchemes[name] = {
               type: 'OAuth 2.0',
               settings: {
                 authorizationUri: slSecuritySchemes.oauth2.authorizationUrl || undefined,
-                accessTokenUri: slSecuritySchemes.oauth2.tokenUrl || undefined,
+                accessTokenUri: slSecuritySchemes.oauth2.tokenUrl || '',
                 authorizationGrants: this.mapAuthorizationGrants(slSecuritySchemes.oauth2.flow)
               }
             };
             var scopes = [];
             if (slSecuritySchemes.oauth2.scopes && !_.isEmpty(slSecuritySchemes.oauth2.scopes)) {
               for (var index in slSecuritySchemes.oauth2.scopes) {
+                if (!slSecuritySchemes.oauth2.scopes.hasOwnProperty(index))
+                  continue;
                 var scope = slSecuritySchemes.oauth2.scopes[index].name;
                 scopes.push(scope);
               }
@@ -6177,24 +6219,44 @@
             }
           }
           if (slSecuritySchemes.hasOwnProperty('apiKey')) {
-            var externalName = null;
-            var content = null;
+            var name = null;
+            var content = {};
             var description = null;
-            if (slSecuritySchemes.apiKey.headers && !_.isEmpty(slSecuritySchemes.apiKey.headers)) {
-              externalName = slSecuritySchemes.apiKey.headers[0].externalName;
-              var keyName = slSecuritySchemes.apiKey.headers[0].name;
+            // add header auth
+            if (!_.isEmpty(slSecuritySchemes.apiKey.headers)) {
+              name = slSecuritySchemes.apiKey.headers[0].externalName;
               description = slSecuritySchemes.apiKey.headers[0].description;
-              content = { headers: {} };
-              content['headers'][keyName] = { type: 'string' };
-            } else if (slSecuritySchemes.apiKey.queryString) {
+              content.headers = {};
+              for (var i in slSecuritySchemes.apiKey.headers) {
+                if (!slSecuritySchemes.apiKey.headers.hasOwnProperty(i))
+                  continue;
+                var q = slSecuritySchemes.apiKey.headers[i];
+                var keyName = q.name;
+                content.headers[keyName] = { type: 'string' };
+              }
             }
-            ramlSecuritySchemes[externalName] = {
-              type: 'Pass Through',
-              describedBy: content,
-              description: description
-            };
+            // add query auth
+            if (!_.isEmpty(slSecuritySchemes.apiKey.queryString)) {
+              name = slSecuritySchemes.apiKey.queryString[0].externalName;
+              description = slSecuritySchemes.apiKey.queryString[0].description;
+              content.queryParameters = {};
+              for (var i in slSecuritySchemes.apiKey.queryString) {
+                if (!slSecuritySchemes.apiKey.queryString.hasOwnProperty(i))
+                  continue;
+                var q = slSecuritySchemes.apiKey.queryString[i];
+                var keyName = q.name;
+                content.queryParameters[keyName] = { type: 'string' };
+              }
+            }
+            if (!_.isEmpty(content)) {
+              ramlSecuritySchemes[name || 'apiKey'] = {
+                type: this.getApiKeyType(),
+                describedBy: content,
+                description: description
+              };
+            }
           }
-          return ramlSecuritySchemes;
+          return this.mapSecuritySchemes(ramlSecuritySchemes);
         };
         RAML.prototype._validateParam = function (params) {
           var acceptedTypes = [
@@ -6255,33 +6317,29 @@
           }
           return params;
         };
-        RAML.prototype._mapRequestBody = function (bodyData) {
+        RAML.prototype._mapRequestBody = function (bodyData, mimeType) {
           var body = {};
-          if (bodyData.body) {
-            var mimeType = bodyData.mimeType;
-            if (!mimeType) {
-              return body;
-            }
-            switch (mimeType) {
-            case 'application/json':
-              body[mimeType] = this.mapBody(bodyData);
-              break;
-            case 'multipart/form-data':
-            case 'application/x-www-form-urlencoded':
-              var parsedBody = jsonHelper.parse(bodyData.body);
-              body[mimeType] = this.mapRequestBodyForm(parsedBody);
-              break;
-            default:  //unsuported format
-                      //TODO
-            }
-            if (bodyData.description) {
-              body[mimeType].description = bodyData.description;
-            }
+          if (!bodyData.body || mimeType === '')
+            return body;
+          switch (mimeType) {
+          case 'application/json':
+            body[mimeType] = this.mapBody(bodyData);
+            break;
+          case 'multipart/form-data':
+          case 'application/x-www-form-urlencoded':
+            var parsedBody = jsonHelper.parse(bodyData.body);
+            body[mimeType] = this.mapRequestBodyForm(parsedBody);
+            break;
+          default:  //unsuported format
+                    //TODO
+          }
+          if (bodyData.description) {
+            body[mimeType].description = bodyData.description;
           }
           return body;
         };
         RAML.prototype._mapNamedParams = function (params) {
-          if (Object.keys(params.properties).length == 0)
+          if (!params || _.isEmpty(params.properties))
             return;
           var newParams = {};
           for (var key in params.properties) {
@@ -6298,7 +6356,7 @@
           }
           return this._validateParam(newParams);
         };
-        RAML.prototype._mapResponseBody = function (responseData) {
+        RAML.prototype._mapResponseBody = function (responseData, mimeType) {
           var responses = {};
           for (var i in responseData) {
             if (!responseData.hasOwnProperty(i))
@@ -6310,8 +6368,8 @@
                 continue;
               }
               responses[code] = { body: {} };
-              var type = resBody.mimeType;
-              if (resBody.mimeType) {
+              var type = mimeType;
+              if (type) {
                 responses[code]['body'][type] = this.mapBody(resBody);
               } else {
                 responses[code] = {};
@@ -6328,7 +6386,7 @@
         };
         //TODO: Stoplight doesn't support seperate path params completely yet
         RAML.prototype._mapURIParams = function (pathParamData) {
-          if (!pathParamData.properties || Object.keys(pathParamData.properties).length == 0) {
+          if (!pathParamData.properties || _.isEmpty(pathParamData.properties)) {
             return;
           }
           var pathParams = {};
@@ -6360,6 +6418,8 @@
         }
         RAML.prototype._mapTextSections = function (slTexts) {
           var results = [];
+          if (!slTexts)
+            return resilts;
           for (var i in slTexts) {
             if (!slTexts.hasOwnProperty(i))
               continue;
@@ -6375,17 +6435,28 @@
           return results;
         };
         // from ref=type1 to type=type1
+        // from $ref=#/definitions/type1 to type=type1
+        // from $ref=definitions/type1 to !include definitions/type1
         RAML.prototype.convertRefFromModel = function (object) {
           for (var id in object) {
             if (object.hasOwnProperty(id)) {
               var val = object[id];
-              if (id == 'ref') {
-                object.type = val;
+              if (id == '$ref') {
+                if (val.indexOf('#/') == 0) {
+                  object.type = val.replace('#/definitions/', '');
+                } else {
+                  object.type = '!include ' + val;
+                }
                 delete object[id];
-              } else if (id == 'include') {
-                object.type = '!include ' + val;
-                delete object[id];
-              } else if (typeof val === 'object') {
+              } else if (typeof val === 'string') {
+                if (id == 'ref') {
+                  object.type = val;
+                  delete object[id];
+                } else if (id == 'include') {
+                  object.type = '!include ' + val;
+                  delete object[id];
+                }
+              } else if (val && typeof val === 'object') {
                 if (val.type == 'string') {
                   if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
                     object[id] = { type: 'string' };
@@ -6401,12 +6472,15 @@
                 } else {
                   object[id] = this.convertRefFromModel(val);
                 }
+              } else if (id === '$ref') {
+                object.type = val.replace('#/definitions/', '');
+                delete object[id];
               }
             }
           }
           return object;
         };
-        RAML.prototype._mapTraits = function (slTraits) {
+        RAML.prototype._mapTraits = function (slTraits, mimeType) {
           var traits = [];
           for (var i in slTraits) {
             if (!slTraits.hasOwnProperty(i))
@@ -6428,7 +6502,7 @@
             }
             try {
               if (slTrait.responses && slTrait.responses.length) {
-                trait.responses = this._mapResponseBody(slTrait.responses);
+                trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
               }
             } catch (e) {
             }
@@ -6454,9 +6528,21 @@
           }
           return is;
         };
+        function getDefaultMimeType(mimeType, defMimeType) {
+          var mt = mimeType && mimeType.length > 0 ? mimeType[0] : null;
+          if (!mt) {
+            if (_.isArray(defMimeType) && defMimeType.length) {
+              mt = defMimeType[0];
+            } else if (_.isString(defMimeType) && defMimeType !== '') {
+              mt = defMimeType;
+            }
+          }
+          return mt;
+        }
         RAML.prototype._export = function () {
           var env = this.project.Environment;
           var ramlDef = new RAMLDefinition(this.project.Name, env);
+          ramlDef.mediaType = this.mapMediaType(env.Consumes, env.Produces);
           this.description(ramlDef, this.project);
           if (this.project.Environment.ExternalDocs) {
             this.hasExternalDocs = true;
@@ -6495,6 +6581,7 @@
           }
           var docs = this._mapTextSections(this.project.Texts);
           if (docs.length) {
+            ramlDef.documentation = ramlDef.documentation || [];
             ramlDef.documentation = ramlDef.documentation.concat(docs);
           }
           var slSecuritySchemes = this.project.Environment.SecuritySchemes;
@@ -6516,9 +6603,7 @@
               continue;
             var endpoint = endpoints[i];
             var method = {};
-            if (endpoint.operationId || endpoint.Name) {
-              method.displayName = endpoint.operationId || endpoint.Name;
-            }
+            this.setMethodDisplayName(method, endpoint.operationId || endpoint.Name);
             if (endpoint.Description) {
               method.description = endpoint.Description;
             }
@@ -6530,10 +6615,12 @@
               method.is = is;
             }
             if (endpoint.Method.toLowerCase() === 'post' || endpoint.Method.toLowerCase() === 'put' || endpoint.Method.toLowerCase() === 'patch') {
-              method.body = this._mapRequestBody(endpoint.Body);
+              var mimeType = getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
+              method.body = this._mapRequestBody(endpoint.Body, mimeType);
             }
             method.headers = this._mapNamedParams(endpoint.Headers);
-            method.responses = this._mapResponseBody(endpoint.Responses);
+            var mimeType = getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
+            method.responses = this._mapResponseBody(endpoint.Responses, mimeType);
             method.queryParameters = this._mapURIParams(endpoint.QueryString);
             method.uriParameters = this._mapURIParams(endpoint.PathParams);
             if (endpoint.securedBy) {
@@ -6583,7 +6670,7 @@
               };
             }
           }
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo) {
             ramlDef.annotationTypes = {};
             if (this.hasTags) {
               ramlDef.annotationTypes.tags = 'string[]';
@@ -6593,29 +6680,39 @@
             }
             if (this.hasExternalDocs) {
               ramlDef.annotationTypes.externalDocs = {
-                'description': 'string',
-                'url': 'string'
+                properties: {
+                  'description': 'string',
+                  'url': 'string'
+                }
               };
             }
             if (this.hasInfo) {
               ramlDef.annotationTypes.info = {
-                'termsOfService?': 'string',
-                'contact?': {
-                  'name?': 'string',
-                  'url?': 'string',
-                  'email?': 'string'
-                },
-                'license?': {
-                  'name?': 'string',
-                  'url?': 'string'
+                properties: {
+                  'termsOfService?': 'string',
+                  'contact?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string',
+                      'email?': 'string'
+                    }
+                  },
+                  'license?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string'
+                    }
+                  }
                 }
               };
             }
           }
-          if (this.project.Schemas && this.project.Schemas.length > 0)
+          if (this.project.Schemas && this.project.Schemas.length > 0) {
             this.addSchema(ramlDef, this.mapSchema(this.project.Schemas));
-          if (this.project.Traits && this.project.Traits.length > 0)
+          }
+          if (this.project.Traits && this.project.Traits.length > 0) {
             ramlDef.traits = this._mapTraits(this.project.Traits);
+          }
           // Clean empty field in definition
           for (var field in ramlDef) {
             if (ramlDef.hasOwnProperty(field) && !ramlDef[field]) {
@@ -6663,14 +6760,23 @@
         RAML.prototype.mapSchema = function (schema) {
           throw new Error('mapSchema method not implemented');
         };
+        RAML.prototype.getApiKeyType = function () {
+          throw new Error('getApiType method not implemented');
+        };
+        RAML.prototype.mapSecuritySchemes = function (securitySchemes) {
+          throw new Error('mapSecuritySchemes method not implemented');
+        };
+        RAML.prototype.setMethodDisplayName = function (method, displayName) {
+          throw new Error('setMethodDisplayName method not implemented');
+        };
         module.exports = RAML;
       },
       {
         '../helpers/raml': 20,
         '../utils/json': 33,
         './exporter': 13,
-        'js-yaml': 56,
-        'lodash': 109
+        'js-yaml': 36,
+        'lodash': 66
       }
     ],
     13: [
@@ -6767,7 +6873,7 @@
       },
       {
         '../importers/index': 25,
-        'js-yaml': 56
+        'js-yaml': 36
       }
     ],
     14: [
@@ -6803,12 +6909,23 @@
     ],
     15: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), jsonHelper = require('../utils/json');
+        var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML08() {
         }
         RAML08.prototype = new RAML();
         RAML08.prototype.version = function () {
           return '0.8';
+        };
+        RAML08.prototype.mapMediaType = function (consumes, produces) {
+          var mediaTypes = [];
+          if (consumes && consumes.length > 0) {
+            mediaTypes = consumes;
+          }
+          if (_.isArray(produces)) {
+            mediaTypes = mediaTypes.concat(produces);
+          }
+          mediaTypes = _.uniq(mediaTypes);
+          return mediaTypes.length ? mediaTypes[0] : null;
         };
         RAML08.prototype.mapAuthorizationGrants = function (flow) {
           var ag = [];
@@ -6843,10 +6960,12 @@
           return body;
         };
         RAML08.prototype.mapBody = function (bodyData) {
-          return {
-            schema: jsonHelper.format(bodyData.body),
-            example: jsonHelper.format(bodyData.example)
-          };
+          var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body))) };
+          var example = jsonHelper.format(bodyData.example);
+          if (!_.isEmpty(example)) {
+            body.example = example;
+          }
+          return body;
         };
         RAML08.prototype.addSchema = function (ramlDef, schema) {
           ramlDef.schemas = schema;
@@ -6858,7 +6977,7 @@
               continue;
             var schema = slSchemas[i];
             var resultSchema = {};
-            resultSchema[schema.NameSpace] = this.convertRefFromModel(schema.Definition);
+            resultSchema[schema.NameSpace] = jsonHelper.format(schema.Definition);
             results.push(resultSchema);
           }
           return results;
@@ -6869,21 +6988,48 @@
               content: project.Description
             }];
         };
+        RAML08.prototype.getApiKeyType = function () {
+          return 'x-api-key';
+        };
+        RAML08.prototype.mapSecuritySchemes = function (securitySchemes) {
+          return _.map(securitySchemes, function (v, k) {
+            var m = {};
+            m[k] = v;
+            return m;
+          });
+        };
+        RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
+        };
         module.exports = RAML08;
       },
       {
         '../utils/json': 33,
-        './baseraml': 12
+        './baseraml': 12,
+        'lodash': 66
       }
     ],
     16: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), jsonHelper = require('../utils/json');
+        var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML10() {
         }
         RAML10.prototype = new RAML();
         RAML10.prototype.version = function () {
           return '1.0';
+        };
+        RAML10.prototype.mapMediaType = function (consumes, produces) {
+          var mediaTypes = [];
+          if (consumes && consumes.length > 0) {
+            mediaTypes = consumes;
+          }
+          if (_.isArray(produces)) {
+            mediaTypes = mediaTypes.concat(produces);
+          }
+          mediaTypes = _.uniq(mediaTypes);
+          if (mediaTypes.length === 1) {
+            return mediaTypes[0];
+          }
+          return mediaTypes.length ? mediaTypes : null;
         };
         RAML10.prototype.mapAuthorizationGrants = function (flow) {
           var ag = [];
@@ -6945,26 +7091,27 @@
             if (!slSchemas.hasOwnProperty(i))
               continue;
             var schema = slSchemas[i];
-            var definition = this.convertRefFromModel(schema.Definition);
-            for (var i in definition.properties) {
-              var property = definition.properties[i];
-              property.required = false;
-            }
-            if (definition.required && definition.required.length > 0) {
-              for (var j in definition.required) {
-                var requiredParam = definition.required[j];
-                if (definition['properties'][requiredParam]) {
-                  delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
+            var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition));
+            if (definition.allOf) {
+              var allOfTypes = [];
+              for (var j in definition.allOf) {
+                if (!definition.allOf.hasOwnProperty(j))
+                  continue;
+                var allOf = definition.allOf[j];
+                if (allOf.properties) {
+                  definition = this.mapSchemaProperties(allOf);
+                  break;
+                }
+                if (allOf.type) {
+                  allOfTypes.push(allOf.type);
                 }
               }
-              delete definition.required;
-            }
-            if (definition.additionalProperties) {
-              definition.properties['//'] = definition.additionalProperties;
-              delete definition.additionalProperties;
-            }
-            if (definition.properties && definition.type == 'object') {
-              delete definition.type;
+              definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+              delete definition.allOf;
+            } else {
+              if (definition.properties) {
+                definition = this.mapSchemaProperties(definition);
+              }
             }
             if (schema.example) {
               definition.example = jsonHelper.parse(schema.example);
@@ -6973,14 +7120,51 @@
           }
           return results;
         };
+        RAML10.prototype.mapSchemaProperties = function (definition) {
+          for (var k in definition.properties) {
+            if (!definition.properties.hasOwnProperty(k))
+              continue;
+            var property = definition.properties[k];
+            property.required = false;
+          }
+          if (definition.required && definition.required.length > 0) {
+            for (var j in definition.required) {
+              if (!definition.required.hasOwnProperty(j))
+                continue;
+              var requiredParam = definition.required[j];
+              if (definition['properties'][requiredParam]) {
+                delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
+              }
+            }
+            delete definition.required;
+          }
+          if (definition.additionalProperties) {
+            definition.properties['//'] = definition.additionalProperties;
+            delete definition.additionalProperties;
+          }
+          if (definition.properties && definition.type == 'object') {
+            delete definition.type;
+          }
+          return definition;
+        };
         RAML10.prototype.description = function (ramlDef, project) {
           ramlDef.description = project.Description;
+        };
+        RAML10.prototype.getApiKeyType = function () {
+          return 'Pass Through';
+        };
+        RAML10.prototype.mapSecuritySchemes = function (securitySchemes) {
+          return securitySchemes;
+        };
+        RAML10.prototype.setMethodDisplayName = function (method, displayName) {
+          method.displayName = displayName;
         };
         module.exports = RAML10;
       },
       {
         '../utils/json': 33,
-        './baseraml': 12
+        './baseraml': 12,
+        'lodash': 66
       }
     ],
     17: [
@@ -7006,13 +7190,18 @@
         StopLightX.prototype._mapSchemas = function () {
           var self = this;
           self.project.Schemas.forEach(function (schema) {
-            self.data.definitions[schema.namespace][prefix] = {
-              id: schema.Id,
-              name: schema.Name,
-              summary: schema.Summary,
-              description: schema.Description,
-              public: schema.Public
-            };
+            var obj = {
+                id: schema.Id,
+                name: schema.Name
+              };
+            if (!_.isEmpty(schema.Summary)) {
+              obj.summary = schema.Summary;
+            }
+            if (!_.isEmpty(schema.Description)) {
+              obj.description = schema.Description;
+            }
+            obj.public = schema.Public;
+            self.data.definitions[schema.namespace][prefix] = obj;
           });
         };
         StopLightX.prototype._mapTests = function (tests, namespace) {
@@ -7094,12 +7283,12 @@
       {
         './exporter': 13,
         './swagger': 18,
-        'lodash': 109
+        'lodash': 66
       }
     ],
     18: [
       function (require, module, exports) {
-        var Endpoint = require('../entities/endpoint'), Exporter = require('./exporter'), SwaggerParser = require('swagger-parser'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
+        var Endpoint = require('../entities/endpoint'), Exporter = require('./exporter'), SwaggerParser = require('swagger-parser'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
         function Swagger() {
           this.metadata = null;
         }
@@ -7112,10 +7301,11 @@
           }
         }
         Swagger.prototype = new Exporter();
-        Swagger.prototype._getResponseTypes = function (responses, defaultResponseType) {
-          return responses.reduce(function (result, res) {
-            if ((res.mimeType || _.isNull(res.mimeType)) && result.indexOf(res.mimeType) === -1 && res.mimeType !== defaultResponseType) {
-              result.push(res.mimeType);
+        Swagger.prototype._getResponseTypes = function (endpoint, defaultResponseType) {
+          var defRespType = defaultResponseType || [], produces = endpoint.Produces || [];
+          return produces.reduce(function (result, mimeType) {
+            if (result.indexOf(mimeType) === -1 && defRespType.indexOf(mimeType) === -1) {
+              result.push(mimeType);
             }
             return result;
           }, []);
@@ -7124,15 +7314,20 @@
           var result = [], typesToInclude = [
               'multipart/form-data',
               'application/x-www-form-urlencoded'
-            ], reqBody = endpoint.Body;
+            ], consumes = endpoint.Consumes || [], defReqType = defaultRequestType || [];
           for (var i in parameters) {
             if (parameters[i].type && parameters[i].type === 'file') {
               //consumes must have 'multipart/form-data' or 'application/x-www-form-urlencoded'
-              if (reqBody && typesToInclude.indexOf(reqBody.mimeType) >= 0) {
-                result.push(reqBody.mimeType);
-              } else if (typesToInclude.indexOf(defaultRequestType) >= 0) {
-                result.push(defaultRequestType);
-              } else {
+              typesToInclude.forEach(function (mimeType) {
+                if (!result.length) {
+                  if (consumes.indexOf(mimeType) >= 0) {
+                    result.push(mimeType);
+                  } else if (defReqType.indexOf(mimeType) >= 0) {
+                    result.push(mimeType);
+                  }
+                }
+              });
+              if (!result.length) {
                 //as swagger spec validation must want one of these, add one
                 result.push(typesToInclude[0]);
               }
@@ -7140,10 +7335,10 @@
               break;
             }
           }
-          if (!_.isEmpty(endpoint.request.bodies)) {
-            endpoint.request.bodies.forEach(function (request) {
-              if ((request.mimeType || _.isNull(request.mimeType)) && request.mimeType !== defaultRequestType) {
-                result.push(request.mimeType);
+          if (!_.isEmpty(consumes)) {
+            consumes.forEach(function (mimeType) {
+              if (defReqType.indexOf(mimeType) === -1) {
+                result.push(mimeType);
               }
             });
           }
@@ -7198,32 +7393,33 @@
           return _.uniq(tags);
         };
         Swagger.prototype._constructSwaggerMethod = function (endpoint, parameters, responses, env) {
-          var consumes = this._getRequestTypes(endpoint, parameters, env.DefaultRequestType);
-          var produces = this._getResponseTypes(endpoint.Responses, env.defaultResponseType);
+          var consumes = this._getRequestTypes(endpoint, parameters, env.Consumes);
+          var produces = this._getResponseTypes(endpoint, env.Produces);
           endpoint.SetOperationId(endpoint.operationId, endpoint.Method, endpoint.Path);
-          var resultSwaggerMethod = {
-              tags: this._constructTags(endpoint, env),
-              summary: endpoint.Name,
-              description: endpoint.Description,
-              operationId: endpoint.operationId,
-              responses: responses
-            };
-          if (!_.isEmpty(consumes)) {
-            resultSwaggerMethod.consumes = _.every(consumes, _.isNull) ? [] : consumes.filter(_.isString);
+          var resultSwaggerMethod = {};
+          if (!_.isEmpty(endpoint.operationId)) {
+            resultSwaggerMethod.operationId = endpoint.operationId;
           }
-          if (!_.isEmpty(produces)) {
-            resultSwaggerMethod.produces = _.every(produces, _.isNull) ? [] : produces.filter(_.isString);
+          if (!_.isEmpty(endpoint.Name)) {
+            resultSwaggerMethod.summary = endpoint.Name;
+          }
+          var tags = this._constructTags(endpoint, env);
+          if (!_.isEmpty(tags)) {
+            resultSwaggerMethod.tags = tags;
+          }
+          if (!_.isEmpty(endpoint.Description)) {
+            resultSwaggerMethod.description = endpoint.Description;
+          }
+          if (_.isArray(consumes) && endpoint.Consumes && !_.isEqual(env.Consumes, consumes) && !_.isEmpty(consumes)) {
+            resultSwaggerMethod.consumes = consumes.filter(_.isString);
+          }
+          if (_.isArray(produces) && endpoint.Produces && !_.isEqual(env.Produces, produces) && !_.isEmpty(produces)) {
+            resultSwaggerMethod.produces = produces.filter(_.isString);
           }
           if (!_.isEmpty(parameters)) {
             resultSwaggerMethod.parameters = parameters;
           }
-          if (_.isEmpty(resultSwaggerMethod.tags)) {
-            delete resultSwaggerMethod.tags;
-          }
-          if (resultSwaggerMethod.operationId.length === 0) {
-            //don't keep empty operationId in exported definition
-            delete resultSwaggerMethod.operationId;
-          }
+          resultSwaggerMethod.responses = responses;
           return resultSwaggerMethod;
         };
         Swagger.prototype._mapEndpointSecurity = function (securedByTypes, securityDefinitions) {
@@ -7321,10 +7517,10 @@
               break;
             case 'basic':
               if (sd.name) {
-                result[sd.name] = {
-                  type: type,
-                  description: sd.description || ''
-                };
+                result[sd.name] = { type: type };
+                if (!_.isEmpty(sd.description)) {
+                  result[sd.name].description = sd.description;
+                }
               }
               break;
             }
@@ -7333,7 +7529,7 @@
         };
         Swagger.prototype._mapURIParams = function (pathParams) {
           var parameters = [];
-          if (!pathParams.properties || Object.keys(pathParams).length == 0) {
+          if (!pathParams.properties || _.isEmpty(pathParams)) {
             return parameters;
           }
           for (var paramName in pathParams.properties) {
@@ -7343,7 +7539,7 @@
             param.in = 'path';
             param.required = true;
             param.type = param.type || 'string';
-            if (prop.description) {
+            if (!_.isEmpty(prop.description)) {
               param.description = prop.description;
             }
             parameters.push(param);
@@ -7364,34 +7560,35 @@
           }
           return parameters;
         };
-        function mapResponseBody(res) {
-          var item = { description: res.description || '' };
+        function mapResponseBody(res, mimeType) {
+          var item = {};
+          item.description = res.description || '';
           // if response body mimeType is null, do not include schema in swagger export
-          if (!res.mimeType) {
-            return item;
-          }
+          // TODO: Figure out how to set example for mimeType properly.
+          // if (!mimeType) {
+          //   return item;
+          // }
           var body = jsonHelper.parse(res.body);
-          if (body && Object.keys(body).length !== 0) {
+          if (body && !_.isEmpty(body)) {
             item.schema = convertRefFromModel(body);
           }
-          if (res.example && res.example !== '{}' && res.example.length > 2) {
+          if (mimeType && mimeType !== '' && res.example && res.example !== '{}' && res.example.length > 2) {
             item.examples = {};
-            item.examples[res.mimeType] = jsonHelper.parse(res.example);
+            item.examples[mimeType] = jsonHelper.parse(res.example);
           }
           return item;
         }
-        Swagger.prototype._mapResponseBody = function (slResponses) {
+        Swagger.prototype._mapResponseBody = function (endpoint, env) {
+          var slResponses = endpoint.Responses;
           var result = {};
           for (var i in slResponses) {
-            var res = slResponses[i], item = mapResponseBody(res);
+            var res = slResponses[i];
+            var mimeType = endpoint.Produces && endpoint.Produces.length ? endpoint.Produces[0] : null;
+            // if (!mimeType && env.Produces && env.Produces.length) {
+            //   mimeType = env.Produces[0];
+            // }
+            var item = mapResponseBody(res, mimeType);
             result[res.codes && res.codes.length > 0 && parseInt(res.codes[0]) ? res.codes[0] : 'default'] = item;
-          }
-          if (Object.keys(result).length == 0) {
-            //empty schema for swagger spec validation
-            result['default'] = {
-              description: '',
-              schema: {}
-            };
           }
           return result;
         };
@@ -7401,7 +7598,7 @@
           }
           var result = [], body = jsonHelper.parse(slRequestBody.body) || {};
           var param = {};
-          if (slRequestBody.description) {
+          if (!_.isEmpty(slRequestBody.description)) {
             param.description = slRequestBody.description;
           }
           if (!jsonHelper.isEmptySchema(body)) {
@@ -7436,13 +7633,18 @@
         };
         Swagger.prototype._mapRequestHeaders = function (slHeaders) {
           var result = [];
-          for (var property in slHeaders.properties) {
-            var param = swaggerHelper.setParameterFields(slHeaders.properties[property], {});
-            param.name = property;
-            param.in = 'header';
-            param.required = slHeaders.required && slHeaders.required.indexOf(property) >= 0;
-            param.description = slHeaders.properties[property].description || '';
-            result.push(param);
+          if (slHeaders) {
+            for (var property in slHeaders.properties) {
+              var param = swaggerHelper.setParameterFields(slHeaders.properties[property], {});
+              param.name = property;
+              param.in = 'header';
+              param.required = slHeaders.required && slHeaders.required.indexOf(property) >= 0;
+              var desc = slHeaders.properties[property].description;
+              if (!_.isEmpty(desc)) {
+                param.description = slHeaders.properties[property].description;
+              }
+              result.push(param);
+            }
           }
           return result;
         };
@@ -7461,13 +7663,22 @@
           for (var id in object) {
             if (object.hasOwnProperty(id)) {
               var val = object[id];
-              if (id == 'ref') {
-                object.$ref = '#/definitions/' + val;
-                delete object[id];
-              } else if (id == 'include') {
-                object.$ref = val;
-                delete object[id];
-              } else if (typeof val === 'object') {
+              if (id == 'allOf') {
+                object.allOf = val.map(function (obj) {
+                  if (typeof obj === 'object')
+                    return obj;
+                  else
+                    return { '$ref': '#/definitions/' + obj };
+                });
+              } else if (typeof val === 'string') {
+                if (id == 'ref') {
+                  object.$ref = '#/definitions/' + val;
+                  delete object[id];
+                } else if (id == 'include') {
+                  object.$ref = val;
+                  delete object[id];
+                }
+              } else if (val && typeof val === 'object') {
                 object[id] = convertRefFromModel(val);
               }
             }
@@ -7488,7 +7699,7 @@
               continue;
             }
             try {
-              var schema = JSON.parse(trait.request.queryString);
+              var schema = jsonHelper.parse(trait.request.queryString);
               for (var p in schema.properties) {
                 // only add it if we didn't already explicitly define it in the operation
                 if (!_.find(existingParams, {
@@ -7501,7 +7712,7 @@
             } catch (e) {
             }
             try {
-              var schema = JSON.parse(trait.request.headers);
+              var schema = jsonHelper.parse(trait.request.headers);
               for (var p in schema.properties) {
                 // only add it if we didn't already explicitly define it in the operation
                 if (!_.find(existingParams, {
@@ -7548,9 +7759,9 @@
           });
           for (var i in endpoints) {
             var endpoint = endpoints[i], parameters = [];
-            var requestTypes = this._getRequestTypes(endpoint, parameters, env.DefaultRequestType);
+            var requestTypes = this._getRequestTypes(endpoint, parameters, env.Consumes);
             // To build parameters we need to grab data from body for supported mimeTypes
-            requestTypes = _.isEmpty(requestTypes) ? [env.DefaultRequestType] : requestTypes;
+            requestTypes = _.isEmpty(requestTypes) ? env.Consumes : requestTypes;
             if (!swaggerDef.paths[endpoint.Path]) {
               var params = this._validateParameters(this._mapURIParams(endpoint.PathParams));
               swaggerDef.paths[endpoint.Path] = params.length ? { parameters: params } : {};
@@ -7562,13 +7773,20 @@
             parameters = parameters.concat(this._mapRequestHeaders(endpoint.Headers));
             parameters = parameters.concat(this._mapEndpointTraitParameters(endpoint, parameters));
             parameters = this._validateParameters(parameters);
-            var responses = _.assign({}, this._mapEndpointTraitResponses(endpoint), this._mapResponseBody(endpoint.Responses));
-            if (_.isEmpty(this._getResponseTypes(endpoint.Responses))) {
-              for (var statusCode in responses) {
-                var response = responses[statusCode];
-                delete response.schema;
-              }
+            var responses = _.assign({}, this._mapEndpointTraitResponses(endpoint), this._mapResponseBody(endpoint, env));
+            if (_.isEmpty(responses)) {
+              // empty schema for swagger spec validation
+              responses['default'] = {
+                description: '',
+                schema: {}
+              };
             }
+            // if (_.isEmpty(endpoint.Produces)) {
+            //   for (var statusCode in responses) {
+            //     var response = responses[statusCode];
+            //     delete response.schema;
+            //   }
+            // }
             swaggerDef.paths[endpoint.Path][endpoint.Method] = this._constructSwaggerMethod(endpoint, parameters, responses, env);
             //Is it OK to include produces/consumes in all cases?
             var security = [];
@@ -7585,14 +7803,14 @@
           for (var i in traits) {
             var trait = traits[i], params = [];
             try {
-              var schema = JSON.parse(trait.request.queryString);
+              var schema = jsonHelper.parse(trait.request.queryString);
               if (!jsonHelper.isEmptySchema(schema)) {
                 params = params.concat(this._validateParameters(this._mapQueryString(schema)));
               }
             } catch (e) {
             }
             try {
-              var schema = JSON.parse(trait.request.headers);
+              var schema = jsonHelper.parse(trait.request.headers);
               if (!jsonHelper.isEmptySchema(schema)) {
                 params = params.concat(this._validateParameters(this._mapRequestHeaders(schema)));
               }
@@ -7629,7 +7847,12 @@
             swaggerHost = swaggerHost + ':' + hostUrl.port;
           }
           swaggerDef.Host = swaggerHost;
-          if (!_.isEmpty(env.Protocols)) {
+          // If host has path on it, prepend to base path
+          swaggerDef.BasePath = env.BasePath;
+          if (hostUrl.path && hostUrl.path !== '/') {
+            swaggerDef.BasePath = urlHelper.join(hostUrl.path, env.BasePath);
+          }
+          if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
             var filteredSchemes = [];
             env.Protocols.map(function (p) {
               if (acceptedSchemes.indexOf(p.toLowerCase()) >= 0) {
@@ -7650,13 +7873,13 @@
           swaggerDef.info.version = env.Version;
           swaggerDef.BasePath = env.BasePath || '';
           this._mapHostAndProtocol(env, swaggerDef);
-          if (env.DefaultResponseType) {
-            swaggerDef.produces = [env.DefaultResponseType];
+          if (env.Produces && env.Produces.length > 0) {
+            swaggerDef.produces = env.Produces;
           } else {
             delete swaggerDef.produces;
           }
-          if (env.DefaultRequestType) {
-            swaggerDef.consumes = [env.DefaultRequestType];
+          if (env.Consumes && env.Consumes.length > 0) {
+            swaggerDef.consumes = env.Consumes;
           } else {
             delete swaggerDef.consumes;
           }
@@ -7664,16 +7887,20 @@
           var parameters = this._mapTraitParameters(this.project.Traits);
           if (!_.isEmpty(parameters)) {
             swaggerDef.parameters = parameters;
+          } else {
+            delete swaggerDef.parameters;
           }
           var responses = this._mapTraitResponses(this.project.Traits);
           if (!_.isEmpty(responses)) {
             swaggerDef.responses = responses;
+          } else {
+            delete swaggerDef.responses;
           }
           swaggerDef.securityDefinitions = this._mapSecurityDefinitions(this.project.Environment.SecuritySchemes);
           this._mapEndpoints(swaggerDef, env);
           //if not security definition added, then don't keep the field anymore
-          if (swaggerDef.securityDefinitions && Object.keys(swaggerDef.securityDefinitions).length <= 0) {
-            delete swaggerDef['securityDefinitions'];
+          if (swaggerDef.securityDefinitions && _.isEmpty(swaggerDef.securityDefinitions)) {
+            delete swaggerDef.securityDefinitions;
           }
           this.data = jsonHelper.toJSON(swaggerDef);
         };
@@ -7685,10 +7912,11 @@
         '../helpers/swagger': 21,
         '../utils/json.js': 33,
         '../utils/strings.js': 34,
+        '../utils/url': 35,
         './exporter': 13,
-        'lodash': 109,
-        'swagger-parser': 139,
-        'url': 146
+        'lodash': 66,
+        'swagger-parser': 169,
+        'url': 176
       }
     ],
     19: [
@@ -7729,6 +7957,7 @@
     ],
     20: [
       function (require, module, exports) {
+        var _ = require('lodash');
         module.exports = {
           getScalarTypes: [
             'string',
@@ -7757,6 +7986,8 @@
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
+              if (!source.hasOwnProperty(prop))
+                continue;
               if (this.getSupportedParameterFields.indexOf(prop) >= 0) {
                 target[this.parameterMappings[prop] ? this.parameterMappings[prop] : prop] = typeof source[prop] === 'function' ? source[prop]() : source[prop];
                 // call function if needed
@@ -7773,13 +8004,16 @@
                   } catch (e) {
                   }
                 }
+                if (!target[prop] || _.isArray(target[prop]) && _.isEmpty(target[prop])) {
+                  delete target[prop];
+                }
               }
             }
             return target;
           }
         };
       },
-      {}
+      { 'lodash': 66 }
     ],
     21: [
       function (require, module, exports) {
@@ -7967,23 +8201,33 @@
         './raml10': 28,
         './stoplightx': 30,
         './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        'fs': 70,
+        'lodash': 66
       }
     ],
     23: [
       function (require, module, exports) {
         var parser = window.RAML.Parser, Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
+        var toJSONOptions = { serializeMetadata: false };
+        var parseOptions = { attributeDefaults: false };
         //TODO multi file support isn't justified
         function RAML() {
           this.schemas = [];
         }
         RAML.prototype = new Importer();
         RAML.prototype._getSecuritySchemeSettingsByName = function (schemeName) {
-          var securitySchemes = this.data.securitySchemes();
+          var securitySchemes = this.data.securitySchemes;
           for (var i in securitySchemes) {
-            if (schemeName === securitySchemes[i].name()) {
-              return securitySchemes[i];
+            if (!securitySchemes.hasOwnProperty(i))
+              continue;
+            var entries = _.entries(securitySchemes[i]);
+            for (var index = 0; index < entries.length; index++) {
+              var entry = entries[index];
+              var key = entry[0];
+              var value = entry[1];
+              if (schemeName === key) {
+                return value;
+              }
             }
           }
         };
@@ -8060,7 +8304,7 @@
               continue;
             var qp = queryParameters[key];
             queryString.properties[key] = ramlHelper.setParameterFields(qp, {});
-            if (qp.required()) {
+            if (qp.required) {
               queryString.required.push(key);
             }
           }
@@ -8079,9 +8323,9 @@
             if (!uriParams.hasOwnProperty(i))
               continue;
             var key = uriParams[i];
-            pathParams.properties[key.name()] = {
-              description: key.displayName() || key.description() || '',
-              type: key.type() || 'string'
+            pathParams.properties[key.name] = {
+              description: key.displayName || key.description || '',
+              type: key.type || 'string'
             };
           }
           return pathParams;
@@ -8092,19 +8336,16 @@
             if (!responses.hasOwnProperty(code))
               continue;
             var response = responses[code];
-            if (!response || !response.body || !response.body()) {
-              continue;
-            }
-            var result = this._mapRequestBody(response.body());
-            result.codes = [response.code().value()];
+            var result = this._mapRequestBody(response.body);
+            result.codes = [response.code];
             if (result.body) {
               result.body = jsonHelper.cleanSchema(result.body);
             }
             if (result.example) {
               result.example = jsonHelper.stringify(result.example, 4);
             }
-            if (response.description() && response.description().value) {
-              result.description = response.description().value();
+            if (response.description) {
+              result.description = response.description;
             }
             data.push(result);
           }
@@ -8113,63 +8354,116 @@
         RAML.prototype._mapSchema = function (schemData) {
           return this.mapSchema(schemData);
         };
+        RAML.prototype.isValidRefValues = function (values) {
+          if (!_.isArray(values)) {
+            return this.isValidRefValue(values);
+          }
+          var result = true;
+          for (var index = 0; index < values.length && result == true; index++) {
+            result = this.isValidRefValue(values[index]);
+          }
+          return result;
+        };
+        RAML.prototype.isValidRefValue = function (value) {
+          return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
+        };
         // from type=type1 to ref=type1
         RAML.prototype.convertRefToModel = function (object) {
           for (var id in object) {
-            if (object.hasOwnProperty(id)) {
-              var val = object[id];
-              if (id == 'type' && typeof val === 'string' && ramlHelper.getScalarTypes.indexOf(val) < 0 && val !== 'object') {
-                object.ref = val;
+            if (!object.hasOwnProperty(id))
+              continue;
+            if (id == 'type' && _.isArray(object[id]) && object[id].length == 1) {
+              object[id] = object[id][0];
+            }
+            var val = object[id];
+            if (!val)
+              continue;
+            if (id == 'type' && this.isValidRefValues(val)) {
+              object.ref = val;
+              delete object[id];
+            } else if (typeof val === 'object') {
+              if (val.type && val.type == 'date-only') {
+                object[id] = {
+                  type: 'string',
+                  format: 'date'
+                };
+              } else if (val.type && val.type == 'datetime') {
+                object[id] = {
+                  type: 'string',
+                  format: 'date-time'
+                };
+              } else if (id == 'structuredExample' || id == 'fixedFacets') {
+                //delete garbage
                 delete object[id];
-              } else if (typeof val === 'object') {
-                if (val.type == 'date-only') {
-                  object[id] = {
-                    type: 'string',
-                    format: 'date'
-                  };
-                } else if (val.type == 'datetime') {
-                  object[id] = {
-                    type: 'string',
-                    format: 'date-time'
-                  };
-                } else {
-                  object[id] = this.convertRefToModel(val);
-                }
+              } else {
+                object[id] = this.convertRefToModel(val);
               }
+            } else if (id == 'name') {
+              //delete garbage
+              delete object[id];
             }
           }
           return object;
         };
-        RAML.prototype._mapEndpoint = function (resource, baseURI, pathParams) {
-          if (resource.uriParameters().length > 0) {
-            pathParams = _.merge(pathParams, this._mapURIParams(resource.uriParameters()));
+        RAML.prototype.mapMimeTypes = function (body, skip) {
+          var result = [];
+          var skipMimeTypes = [];
+          for (var i in skip) {
+            if (skip[i].value) {
+              skipMimeTypes.push(skip[i].value);
+            }
           }
-          var methods = resource.methods();
+          for (var i in body) {
+            var b = body[i];
+            if (b.name) {
+              var mimeType = b.name;
+              if (skipMimeTypes.indexOf(mimeType) === -1) {
+                result.push(mimeType);
+              }
+            }
+          }
+          return _.uniq(result);
+        };
+        RAML.prototype._mapEndpoint = function (resource, baseURI, pathParams) {
+          if (resource.uriParameters) {
+            pathParams = _.merge(pathParams, this._mapURIParams(resource.uriParameters));
+          }
+          var methods = resource.methods;
           for (var i in methods) {
             if (!methods.hasOwnProperty(i))
               continue;
             var method = methods[i];
-            var summary = method.name ? method.name() : '';
-            // do we ever have a name or summary?
+            var summary = method.summary ? method.summary : '';
             var endpoint = new Endpoint(summary);
-            endpoint.Method = method.method();
-            endpoint.Path = baseURI + resource.relativeUri().value();
-            endpoint.Description = method.description() ? method.description().value() : '';
-            endpoint.SetOperationId(method.displayName ? method.displayName() : method.displayName, endpoint.Method, endpoint.Path);
-            if (method.body()) {
-              endpoint.Body = this._mapRequestBody(method.body());
+            endpoint.Method = method.method;
+            endpoint.Path = baseURI + resource.relativeUri;
+            endpoint.Description = method.description ? method.description : '';
+            endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
+            if (method.body) {
+              var c = this.mapMimeTypes(method.body, this.data.mediaType);
+              endpoint.Consumes = c.length > 0 ? c : null;
+              endpoint.Body = this._mapRequestBody(method.body);
             }
-            if (method.queryParameters()) {
-              endpoint.QueryString = this._mapQueryString(method.queryParameters());
+            if (method.queryParameters) {
+              endpoint.QueryString = this._mapQueryString(method.queryParameters);
             }
-            if (method.headers()) {
-              endpoint.Headers = this._mapRequestHeaders(method.headers());
+            if (method.headers) {
+              endpoint.Headers = this._mapRequestHeaders(method.headers);
             }
-            if (method.responses()) {
-              endpoint.Responses = this._mapResponseBody(method.responses());
+            if (method.responses) {
+              var produces = [];
+              for (var code in method.responses) {
+                if (!method.responses[code] || !method.responses[code].body) {
+                  continue;
+                }
+                produces = produces.concat(this.mapMimeTypes(method.responses[code].body, this.data.mediaType));
+              }
+              var p = _.uniq(produces);
+              endpoint.Produces = p.length > 0 ? p : null;
+              endpoint.Responses = this._mapResponseBody(method.responses);
             }
             endpoint.traits = [];
-            var isMethod = method.is();
+            var isMethod = method.is;
             if (isMethod) {
               if (isMethod instanceof Array) {
                 endpoint.traits = isMethod;
@@ -8179,40 +8473,53 @@
             }
             endpoint.PathParams = pathParams;
             //endpoint security
-            var securedBy = method.securedBy();
+            var securedBy = method.securedBy;
             if (Array.isArray(securedBy)) {
               endpoint.securedBy = {};
               for (var si in securedBy) {
                 if (!securedBy.hasOwnProperty(si))
                   continue;
-                var schemeSettings = this._getSecuritySchemeSettingsByName(securedBy[si].name());
-                switch (schemeSettings.type()) {
-                case 'OAuth 2.0':
-                  endpoint.securedBy['oauth2'] = true;
-                  break;
-                case 'Basic Authentication':
-                  endpoint.securedBy['basic'] = true;
-                  break;
-                default:
-                  //TODO not supported
-                  break;
+                if (typeof securedBy[si] === 'string') {
+                  this._assignSecuredByToEndpoint(endpoint, securedBy[si]);
+                } else {
+                  var entries = _.entries(securedBy[si]);
+                  for (var index = 0; index < entries.length; index++) {
+                    var entry = entries[index];
+                    this._assignSecuredByToEndpoint(endpoint, entry[0]);
+                  }
                 }
               }
             }
             //TODO endpoint security
             this.project.addEndpoint(endpoint);
           }
-          var resources = resource.resources();
+          var resources = resource.resources;
           if (resources && resources.length > 0) {
             for (var j = 0; j < resources.length; j++) {
-              this._mapEndpoint(resources[j], baseURI + resource.relativeUri().value(), pathParams);
+              this._mapEndpoint(resources[j], baseURI + resource.relativeUri, pathParams);
             }
+          }
+        };
+        RAML.prototype._assignSecuredByToEndpoint = function (endpoint, key) {
+          var schemeSettings = this._getSecuritySchemeSettingsByName(key);
+          switch (schemeSettings.type) {
+          case 'OAuth 2.0':
+            endpoint.securedBy['oauth2'] = true;
+            break;
+          case 'Basic Authentication':
+            endpoint.securedBy['basic'] = true;
+            break;
+          case 'Pass Through':
+            endpoint.securedBy['apiKey'] = true;
+          default:
+            //TODO not supported
+            break;
           }
         };
         RAML.prototype.loadFile = function (filePath, cb) {
           var me = this;
-          parser.loadApi(filePath).then(function (api) {
-            me.data = parser.expander.expandTraitsAndResourceTypes(api);
+          parser.loadApi(filePath, parseOptions).then(function (api) {
+            me.data = api.toJSON(toJSONOptions);
             cb();
           }, function (error) {
             cb(error);
@@ -8220,8 +8527,8 @@
         };
         RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
           var me = this;
-          parser.loadApi(filePath, options).then(function (api) {
-            me.data = parser.expander.expandTraitsAndResourceTypes(api);
+          parser.loadApi(filePath, _.merge(parseOptions, options)).then(function (api) {
+            me.data = api.toJSON(toJSONOptions);
             cb();
           }, function (error) {
             cb(error);
@@ -8230,18 +8537,22 @@
         RAML.prototype.loadData = function (data, options) {
           var me = this;
           return new Promise(function (resolve, reject) {
-            var parsedData = parser.parseRAMLSync(data, options);
-            if (parsedData.name === 'Error') {
-              reject(error);
-            } else {
-              me.data = parser.expander.expandTraitsAndResourceTypes(parsedData);
-              //me.data = parsedData.expand(true);
-              resolve();
+            try {
+              var parsedData = parser.parseRAMLSync(data, _.merge(parseOptions, options));
+              if (parsedData.name === 'Error') {
+                reject(error);
+              } else {
+                me.data = parsedData.toJSON(toJSONOptions);
+                resolve();
+              }
+            } catch (e) {
+              console.error('raml#loadData', e, data, options);
+              reject(e);
             }
           });
         };
         RAML.prototype._mapHost = function () {
-          var parsedURL = url.parse(this.data.baseUri ? this.data.baseUri().value() : '');
+          var parsedURL = url.parse(this.data.baseUri || '');
           this.project.Environment.Host = parsedURL.protocol && parsedURL.host ? parsedURL.protocol + '//' + parsedURL.host : null;
           this.project.Environment.BasePath = parsedURL.path;
         };
@@ -8254,12 +8565,19 @@
             for (var k in traitGroup) {
               if (!traitGroup.hasOwnProperty(k))
                 continue;
-              var trait = traitGroup[k], slTrait = {
+              var trait = traitGroup[k];
+              var slTrait = {
                   _id: k,
                   name: k,
+                  description: '',
                   request: {},
                   responses: []
                 };
+              if (!_.isEmpty(trait.usage)) {
+                slTrait.description = trait.usage;
+              } else {
+                delete slTrait.description;
+              }
               if (trait.queryParameters) {
                 slTrait.request.queryString = this._mapQueryString(trait.queryParameters);
               }
@@ -8267,7 +8585,9 @@
                 slTrait.request.headers = this._mapRequestHeaders(trait.headers);
               }
               if (trait.responses) {
-                slTrait.responses = this._mapResponse(trait.responses);
+                slTrait.responses = this._mapResponseBody(trait.responses);
+              } else {
+                delete slTrait.responses;
               }
               slTraits.push(slTrait);
             }
@@ -8275,39 +8595,58 @@
           return slTraits;
         };
         RAML.prototype._import = function () {
-          this.project = new Project(this.data.title());
-          //TODO set project description from documentation
-          //How to know which documentation describes the project briefly?
-          this.description(this.project, this.data);
-          this._mapHost();
-          var mediaType = this.data.mediaType();
-          if (!_.isEmpty(this.data.protocols())) {
-            this.project.Environment.Protocols = this.data.protocols();
-          }
-          this.project.Environment.DefaultResponseType = '';
-          if (mediaType) {
-            if (Array.isArray(mediaType)) {
-              if (mediaType.length > 0) {
-                this.project.Environment.DefaultResponseType = mediaType[0].value();
-              }
-            } else {
-              this.project.Environment.DefaultResponseType = mediaType.value();
+          try {
+            this.project = new Project(this.data.title);
+            this.project.Environment.Version = this.data.version;
+            if (!this.project.Environment.Version) {
+              delete this.project.Environment.Version;
             }
+            // TODO set project description from documentation
+            // How to know which documentation describes the project briefly?
+            this.description(this.project, this.data);
+            this._mapHost();
+            if (!_.isEmpty(this.data.protocols)) {
+              this.project.Environment.Protocols = this.data.protocols;
+              for (var i in this.project.Environment.Protocols) {
+                if (!this.project.Environment.Protocols.hasOwnProperty(i))
+                  continue;
+                this.project.Environment.Protocols[i] = this.project.Environment.Protocols[i].toLowerCase();
+              }
+            }
+            var mimeTypes = [];
+            var mediaType = this.data.mediaType;
+            if (mediaType) {
+              if (!_.isArray(mediaType)) {
+                mediaType = [mediaType];
+              }
+              for (var i in mediaType) {
+                if (!mediaType.hasOwnProperty(i))
+                  continue;
+                if (mediaType[i]) {
+                  mimeTypes.push(mediaType[i]);
+                }
+              }
+            }
+            if (mimeTypes.length) {
+              this.project.Environment.Produces = mimeTypes;
+              this.project.Environment.Consumes = mimeTypes;
+            }
+            this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
+            var resources = this.data.resources;
+            for (var i = 0; i < resources.length; i++) {
+              this._mapEndpoint(resources[i], '', {});
+            }
+            var schemas = this._mapSchema(this.getSchema(this.data));
+            for (var s in schemas) {
+              if (!schemas.hasOwnProperty(s))
+                continue;
+              this.project.addSchema(schemas[s]);
+            }
+            this.project.traits = this._mapTraits(this.data.traits);
+          } catch (e) {
+            console.error('raml#import', e);
+            throw e;
           }
-          this.project.Environment.DefaultRequestType = this.project.Environment.DefaultResponseType;
-          this.project.Environment.Version = this.data.version();
-          this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes());
-          var resources = this.data.resources();
-          for (var i = 0; i < resources.length; i++) {
-            this._mapEndpoint(resources[i], '', {});
-          }
-          var schemas = this._mapSchema(this.getSchema(this.data));
-          for (var s in schemas) {
-            if (!schemas.hasOwnProperty(s))
-              continue;
-            this.project.addSchema(schemas[s]);
-          }
-          this.project.traits = this._mapTraits(this.data.traits());
         };
         RAML.prototype.description = function (project, data) {
           throw new Error('description method not implemented');
@@ -8329,8 +8668,8 @@
         '../helpers/raml': 20,
         '../utils/json': 33,
         './importer': 24,
-        'lodash': 109,
-        'url': 146
+        'lodash': 66,
+        'url': 176
       }
     ],
     24: [
@@ -8351,12 +8690,13 @@
         Importer.prototype.loadFile = function (path) {
           throw new Error('loadFile method not implemented');
         };
-        // todo unify api by returning a Promise like the loadData function
+        // TODO unify api by returning a Promise like the loadData function
+        // https://github.com/stoplightio/api-spec-converter/issues/16
         Importer.prototype.loadFileWithOptions = function (path, options) {
           throw new Error('loadFile method not implemented');
         };
         Importer.prototype.loadData = function (data) {
-          //TODO validation of the data
+          // TODO validation of the data
           this.data = data;
           return new Promise(function (resolve) {
             resolve();
@@ -8495,7 +8835,7 @@
           }
           return headerObj;
         };
-        Postman.prototype._mapRequestBody = function (mode, requestData) {
+        Postman.prototype._mapRequestBody = function (requestData) {
           var data = {
               body: {
                 type: 'object',
@@ -8503,19 +8843,6 @@
                 required: []
               }
             };
-          //TODO map Body
-          switch (mode) {
-          case 'urlencoded':
-            data.mimeType = 'application/x-www-form-urlencoded';
-            break;
-          case 'params':
-            //check for best suitability
-            data.mimeType = 'multipart/form-data';
-            break;
-          default:
-            data.mimeType = 'text/plain';
-            break;
-          }
           for (var j in requestData) {
             var type = null;
             switch (requestData[j].type) {
@@ -8532,6 +8859,23 @@
           }
           return data;
         };
+        function mapConsumes(mode) {
+          var consumes = [];
+          switch (mode) {
+          case 'urlencoded':
+            consumes.push('application/x-www-form-urlencoded');
+            break;
+          case 'params':
+            //check for best suitability
+            consumes.push('multipart/form-data');
+            break;
+          default:
+            consumes.push('text/plain');
+            break;
+          }
+          return consumes;
+        }
+        ;
         Postman.prototype._mapEndpoint = function (pmr) {
           var endpoint, headers, v, queryString, urlParts;
           endpoint = new Endpoint(pmr.name);
@@ -8544,7 +8888,9 @@
           endpoint.PathParams = this._mapURIParams(pmr.pathVariables);
           //parse headers
           endpoint.Headers = this._mapRequestHeaders(pmr.headers);
-          endpoint.Body = this._mapRequestBody(pmr.dataMode, pmr.data);
+          //TODO map Body
+          endpoint.Consumes = mapConsumes(pmr.dataMode);
+          endpoint.Body = this._mapRequestBody(pmr.data);
           return endpoint;
         };
         function mapEndpointGroup(folder) {
@@ -8636,8 +8982,9 @@
           savedEntry.Method = pmr.method;
           savedEntry.PathParams = this._mapURIParams(pmr.pathVariables);
           savedEntry.Headers = this._mapRequestHeaders(pmr.headers);
+          savedEntry.Consumes = mapConsumes(pmr.dataMode);
           if (savedEntry.Method.toLowerCase() !== 'get' && savedEntry.Method.toLowerCase() !== 'head') {
-            savedEntry.Body = this._mapRequestBody(pmr.dataMode, pmr.data);
+            savedEntry.Body = this._mapRequestBody(pmr.data);
           }
           return savedEntry;
         };
@@ -8684,13 +9031,13 @@
         '../utils/json': 33,
         '../utils/url': 35,
         './importer': 24,
-        'fs': 39,
-        'lodash': 109
+        'fs': 70,
+        'lodash': 66
       }
     ],
     27: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), YAML = require('js-yaml'), Text = require('../entities/text');
+        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), Text = require('../entities/text');
         function RAML08() {
         }
         RAML08.prototype = new RAML();
@@ -8705,35 +9052,31 @@
             if (!methodBody.hasOwnProperty(i))
               continue;
             var mimeType = methodBody[i];
-            data.mimeType = mimeType.name();
-            if (mimeType.example()) {
-              data.example = mimeType.example().value();
+            data.mimeType = mimeType.name;
+            if (mimeType.example) {
+              data.example = mimeType.example;
             }
-            if (mimeType.formParameters()) {
+            if (mimeType.schema) {
+              data.body = this.convertRefToModel(jsonHelper.parse(mimeType.schema));
+            } else if (mimeType.formParameters) {
               data.body = {
                 type: 'object',
                 'properties': {},
                 'required': []
               };
-              var formParams = mimeType.formParameters();
+              var formParams = mimeType.formParameters;
               for (var j in formParams) {
                 if (!formParams.hasOwnProperty(j))
                   continue;
                 var param = formParams[j];
-                var definition = jsonHelper.parse(YAML.load(param.dump()));
-                for (var paramId in definition) {
-                  if (!definition.hasOwnProperty(paramId))
-                    continue;
-                  var paramValue = definition[paramId];
-                  data.body.properties[paramId] = paramValue;
-                  if (paramValue.required && paramValue.required) {
-                    data.body.required.push(paramId);
-                  }
+                data.body.properties[param.name] = { type: param.type };
+                if (param.description) {
+                  data.body.properties[param.name].description = param.description;
+                }
+                if (param.required) {
+                  data.body.required.push(param.name);
                 }
               }
-            }
-            if (mimeType.schema && mimeType.schema()) {
-              data.body = jsonHelper.parse(YAML.load(mimeType.dump())[mimeType.name()].schema);
             }
           }
           return data;
@@ -8743,32 +9086,35 @@
           for (var i in schemData) {
             if (!schemData.hasOwnProperty(i))
               continue;
-            var schema = schemData[i];
-            var schemaName = schema.key();
-            var sd = new Schema(schemaName);
-            sd.Name = schemaName;
-            sd.Definition = this.convertRefToModel(jsonHelper.parse(YAML.load(schema.dump())[schemaName]));
-            schemas.push(sd);
+            for (var schemaName in schemData[i]) {
+              if (!schemData[i].hasOwnProperty(schemaName))
+                continue;
+              var sd = new Schema(schemaName);
+              sd.Name = schemaName;
+              sd.Definition = jsonHelper.cleanSchema(schemData[i][schemaName]);
+              schemas.push(sd);
+            }
           }
           return schemas;
         };
         RAML08.prototype.getSchema = function (data) {
-          return data.schemas();
+          return data.schemas;
         };
         RAML08.prototype.description = function (project, data) {
-          var documentation = data.documentation();
+          var documentation = data.documentation;
           if (documentation && documentation.length > 0) {
-            project.Description = documentation[0].content().value();
-            project.Environment.summary = documentation[0].content().value();
+            project.Description = documentation[0].content;
+            project.Environment.summary = documentation[0].content;
           }
           // text sections
           if (documentation) {
-            for (var d in documentation) {
-              if (!documentation.hasOwnProperty(d))
+            for (var i in documentation) {
+              if (!documentation.hasOwnProperty(i))
                 continue;
-              var txt = new Text(documentation[d].title());
+              var doc = documentation[i];
+              var txt = new Text(doc.title);
               txt.Public = true;
-              txt.Content = documentation[d].content().value();
+              txt.Content = doc.content;
               this.project.addText(txt);
             }
           }
@@ -8779,13 +9125,12 @@
         '../entities/schema': 7,
         '../entities/text': 10,
         '../utils/json': 33,
-        './baseraml': 23,
-        'js-yaml': 56
+        './baseraml': 23
       }
     ],
     28: [
       function (require, module, exports) {
-        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), YAML = require('js-yaml'), _ = require('lodash');
+        var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), _ = require('lodash');
         function RAML10() {
         }
         RAML10.prototype = new RAML();
@@ -8796,17 +9141,17 @@
             if (!methodBody.hasOwnProperty(i))
               continue;
             var mimeType = methodBody[i];
-            data.mimeType = mimeType.name();
-            if (mimeType.example()) {
-              data.example = mimeType.example().value();
+            data.mimeType = i;
+            if (mimeType.example) {
+              data.example = mimeType.example;
             }
-            if (mimeType.description()) {
-              data.description = mimeType.description().value();
+            if (mimeType.description) {
+              data.description = mimeType.description;
             }
-            if (mimeType.properties && !_.isEmpty(mimeType.properties())) {
+            if (mimeType.properties && !_.isEmpty(mimeType.properties)) {
               switch (data.mimeType) {
               case 'application/json':
-                data.body = YAML.load(mimeType.dump())[data.mimeType];
+                data.body = { 'properties': this.convertRefToModel(mimeType.properties) };
                 break;
               case 'multipart/form-data':
               case 'application/x-www-form-urlencoded':
@@ -8815,30 +9160,30 @@
                   'properties': {},
                   'required': []
                 };
-                var formParams = mimeType.properties();
+                var formParams = mimeType.properties;
                 for (var j in formParams) {
                   if (!formParams.hasOwnProperty(j))
                     continue;
                   var param = formParams[j];
-                  var bodyType = !_.isEmpty(param.type()) ? param.type()[0] : param.type();
-                  data.body.properties[param.name()] = { type: bodyType };
-                  if (param.description()) {
-                    data.body.properties[param.name()].description = param.description().value();
+                  var bodyType = !_.isEmpty(param.type) ? param.type[0] : param.type;
+                  data.body.properties[param.name] = { type: bodyType };
+                  if (param.description) {
+                    data.body.properties[param.name].description = param.description;
                   }
                   if (param.format) {
-                    data.body.properties[param.name()].format = param.format();
+                    data.body.properties[param.name].format = param.format;
                   }
-                  if (param.required() == true) {
-                    data.body.required.push(param.name());
+                  if (param.required == true) {
+                    data.body.required.push(param.name);
                   }
                 }
                 break;
               default:
               }
-            } else if (mimeType.schema && !_.isEmpty(mimeType.schema())) {
-              data.body = this.convertRefToModel({ type: jsonHelper.parse(mimeType.schema()[0]) });
-            } else if (mimeType.type && !_.isEmpty(mimeType.type()) && mimeType.type()[0] !== 'object') {
-              data.body = this.convertRefToModel({ type: jsonHelper.parse(mimeType.type()[0]) });
+            } else if (mimeType.schema && !_.isEmpty(mimeType.schema)) {
+              data.body = this.convertRefToModel({ type: mimeType.schema[0] });
+            } else if (mimeType.type && !_.isEmpty(mimeType.type) && mimeType.type[0] !== 'object') {
+              data.body = this.convertRefToModel({ type: mimeType.type[0] });
             }
           }
           return data;
@@ -8848,56 +9193,73 @@
           for (var i in schemData) {
             if (!schemData.hasOwnProperty(i))
               continue;
-            var schema = schemData[i];
-            var schemaName = schema.name();
-            var sd = new Schema(schemaName);
-            sd.Name = schemaName;
-            var definition;
-            if (jsonHelper.isEmptySchema(schema)) {
-              definition = YAML.load(schema.dump())[schemaName];
-            } else {
-              if (schema.type && !_.isEmpty(schema.type())) {
-                definition = jsonHelper.parse(schema.type()[0]);
-              }
-            }
-            if (definition.properties && !_.isEmpty(definition.properties)) {
-              var data = {
+            for (var schemaName in schemData[i]) {
+              if (!schemData[i].hasOwnProperty(schemaName))
+                continue;
+              var sd = new Schema(schemaName);
+              sd.Name = schemaName;
+              var definition = schemData[i][schemaName];
+              var data = null;
+              if (definition.properties && !_.isEmpty(definition.properties)) {
+                data = {
                   properties: {},
                   type: 'object',
                   required: []
                 };
-              if (definition.description) {
-                data.description = definition.description;
-              }
-              for (var paramName in definition.properties) {
-                var param = definition.properties[paramName];
-                data.properties[paramName] = param;
-                if (param.hasOwnProperty('required')) {
-                  if (param.required == true) {
+                if (definition.description) {
+                  data.description = definition.description;
+                }
+                for (var paramName in definition.properties) {
+                  if (!definition.properties.hasOwnProperty(paramName))
+                    continue;
+                  var param = definition.properties[paramName];
+                  data.properties[paramName] = param;
+                  if (param.hasOwnProperty('required')) {
+                    if (param.required == true) {
+                      data['required'].push(paramName);
+                    }
+                    delete param.required;
+                  } else {
+                    //required true by default.
                     data['required'].push(paramName);
                   }
-                  delete param.required;
-                } else {
-                  //required true by default.
-                  data['required'].push(paramName);
+                }
+                if (data.required && data.required.length == 0) {
+                  delete data.required;
                 }
               }
-              definition = data;
+              if (definition.type && definition.type !== 'object') {
+                //type
+                if (data) {
+                  //type and properties
+                  definition.allOf = definition.type;
+                  definition.allOf.push(data);
+                  delete definition.type;
+                  delete definition.properties;
+                } else {
+                  if (_.isArray(definition.type) && definition.type.length > 1) {
+                    definition.allOf = definition.type;
+                    delete definition.type;
+                  } else {
+                    definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                  }
+                }
+              } else {
+                //only properties
+                definition = data;
+              }
+              sd.Definition = this.convertRefToModel(definition);
+              schemas.push(sd);
             }
-            if (data.required.length == 0) {
-              delete data.required;
-            }
-            sd.Definition = this.convertRefToModel(definition);
-            schemas.push(sd);
           }
           return schemas;
         };
         RAML10.prototype.getSchema = function (data) {
-          return data.types();
+          return data.types;
         };
         RAML10.prototype.description = function (project, data) {
-          if (data.description && data.description()) {
-            project.Description = data.description().value();
+          if (data.description) {
+            project.Description = data.description;
           }
         };
         module.exports = RAML10;
@@ -8906,8 +9268,7 @@
         '../entities/schema': 7,
         '../utils/json': 33,
         './baseraml': 23,
-        'js-yaml': 56,
-        'lodash': 109
+        'lodash': 66
       }
     ],
     29: [
@@ -8997,7 +9358,7 @@
         '../entities/utilityFunction': 11,
         '../utils/json': 33,
         './importer': 24,
-        'fs': 39
+        'fs': 70
       }
     ],
     30: [
@@ -9075,7 +9436,9 @@
             if (schemaData) {
               schema.Id = schemaData.id;
               schema.Name = schemaData.name;
-              schema.Summary = schemaData.summary;
+              if (!_.isEmpty(schemaData.summary)) {
+                schema.Summary = schemaData.summary;
+              }
               schema.Description = schemaData.description;
               schema.Public = schemaData.public;
             }
@@ -9085,7 +9448,9 @@
               var testData = data[testsPrefix][id];
               var test = new Test(testData.name);
               test.Id = testData.id;
-              test.Summary = testData.summary;
+              if (!_.isEmpty(testData.summary)) {
+                test.Summary = testData.summary;
+              }
               test.InitialVariables = testData.initialVariables;
               test.Steps = testData.steps.map(function (step) {
                 if (step.$ref) {
@@ -9107,8 +9472,8 @@
         '../entities/utilityFunction': 11,
         './importer': 24,
         './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        'fs': 70,
+        'lodash': 66
       }
     ],
     31: [
@@ -9196,7 +9561,7 @@
               continue;
             var sd = new Schema(schemaName);
             sd.Name = schemaName;
-            //create a close to remove extension properties
+            //create a clone to remove extension properties
             var schemaDataClone = _.clone(schemaDefinitions[schemaName]);
             var re = /^x-/;
             //properties to avoid
@@ -9206,33 +9571,11 @@
               }
             }
             mapExample(schemaDataClone, sd);
-            if (schemaDataClone['allOf']) {
-              schemaDataClone = schemaDataClone['allOf'];
-            }
-            sd.Definition = convertRefToModel(schemaDataClone);
+            sd.Definition = schemaDataClone;
             result.push(sd);
           }
           return result;
         };
-        // from $ref=#/definitions/type1 to ref=type1
-        function convertRefToModel(object) {
-          for (var id in object) {
-            if (object.hasOwnProperty(id)) {
-              var val = object[id];
-              if (id == '$ref') {
-                if (val.indexOf('#/') == 0) {
-                  object.ref = val.replace('#/definitions/', '');
-                } else {
-                  object.include = val;
-                }
-                delete object[id];
-              } else if (typeof val === 'object') {
-                object[id] = convertRefToModel(val);
-              }
-            }
-          }
-          return object;
-        }
         Swagger.prototype._mapQueryString = function (params, skipParameterRefs) {
           var queryString = {
               type: 'object',
@@ -9279,12 +9622,11 @@
           }
           return pathParams;
         };
-        Swagger.prototype._mapRequestBody = function (params, reqType, resolvedParams) {
+        Swagger.prototype._mapRequestBody = function (params, resolvedParams) {
           if (_.isEmpty(params) || !_.some(params, { 'in': 'body' }) && !_.some(params, { 'in': 'formData' })) {
             return;
           }
           var data = {
-              mimeType: reqType || null,
               body: {
                 properties: {},
                 required: []
@@ -9303,12 +9645,9 @@
             }
             switch (param.in) {
             case 'body':
-              data.mimeType = data.mimeTypes || 'application/json';
               mapExample(param.schema, data);
-              data.body = convertRefToModel(param.schema);
+              data.body = param.schema;
               break;
-            case 'formData':
-              data.mimeType = data.mimeTypes || 'multipart/form-data';
             default:
               var prop = {};
               prop = swaggerHelper.setParameterFields(param, prop);
@@ -9327,21 +9666,20 @@
           }
           return data;
         };
-        Swagger.prototype._mapResponseBody = function (responseBody, resType, skipParameterRefs, resolvedResponses) {
+        Swagger.prototype._mapResponseBody = function (responseBody, skipParameterRefs, resolvedResponses, $refs) {
           var data = [];
           for (var code in responseBody) {
             if (!responseBody.hasOwnProperty(code))
               continue;
             var res = {
-                mimeType: resType,
                 body: {},
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && responseBody[code].$ref.match(/trait/)) {
+            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || $refs.exists(responseBody[code].$ref))) {
               continue;
             }
-            // TODO: Once we support headers, then support headers from swagger spec in responses.
+            // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
             if (needDeReferenced(responseBody[code]) && resolvedResponses) {
               schema = resolvedResponses[code].schema;
               description = resolvedResponses[code].description || '';
@@ -9354,18 +9692,18 @@
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples')) {
+            if (responseBody[code].hasOwnProperty('examples') && _.isEmpty(responseBody[code].examples)) {
               var examples = responseBody[code].examples;
-              for (var t in examples) {
-                if (!examples.hasOwnProperty(t))
-                  continue;
-                if (t === resType) {
-                  res.example = jsonHelper.stringify(examples[t], 4);
-                }
-              }
+              res.example = jsonHelper.stringify(examples[0], 4);  // TODO: Once stoplight supports multiple examples, support them here.
+                                                                   // for(var t in examples) {
+                                                                   //   if (!examples.hasOwnProperty(t)) continue;
+                                                                   //   if (t === resType) {
+                                                                   //     res.example = jsonHelper.stringify(examples[t], 4);
+                                                                   //   }
+                                                                   // }
             }
             res.description = description || responseBody[code].description || '';
-            res.body = convertRefToModel(res.body);
+            res.body = res.body;
             res.codes.push(String(code));
             data.push(res);
           }
@@ -9416,6 +9754,7 @@
             if (err) {
               cb(err);
             } else {
+              var apiData = JSON.parse(JSON.stringify(api));
               me.data = api;
               if (typeof dataOrPath === 'string') {
                 var parseFn = parser.dereference(dataOrPath, JSON.parse(JSON.stringify(api)), options);
@@ -9500,7 +9839,7 @@
           traits = traits.concat(this._mapEndpointTrait(responses));
           return _.uniq(traits);
         };
-        Swagger.prototype._mapEndpoints = function (defaultReqContentType, defaultResContentType) {
+        Swagger.prototype._mapEndpoints = function (consumes, produces) {
           for (var path in this.data.paths) {
             if (!this.data.paths.hasOwnProperty(path))
               continue;
@@ -9518,7 +9857,7 @@
               if (method === 'parameters') {
                 continue;
               }
-              var endpoint = new Endpoint(currentMethod.summary || ''), reqType = defaultReqContentType, resType = defaultResContentType;
+              var endpoint = new Endpoint(currentMethod.summary || '');
               endpoint.Method = method;
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
@@ -9528,15 +9867,42 @@
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
               //map request body
-              if (_.isArray(currentMethod.consumes)) {
-                if (_.isEmpty(currentMethod.consumes)) {
-                  reqType = null;
-                } else {
-                  reqType = this.findDefaultMimeType(currentMethod.consumes);
+              // if (_.isArray(currentMethod.consumes)) {
+              //   if (_.isEmpty(currentMethod.consumes)) {
+              //     reqType = null;
+              //   } else {
+              //     reqType = this.findDefaultMimeType(currentMethod.consumes);
+              //   }
+              // }
+              var params = currentMethod.parameters;
+              var c = [];
+              if (_.some(params, { 'in': 'body' })) {
+                c.push('application/json');
+              }
+              if (_.some(params, { 'in': 'formData' })) {
+                c.push('multipart/form-data');
+              }
+              if (consumes && _.isArray(consumes) && c.length) {
+                consumes.forEach(function (mimeType) {
+                  c = _.without(c, mimeType);
+                });
+              }
+              if (c.length) {
+                endpoint.Consumes = c;
+              }
+              if (currentMethod.consumes && _.isArray(currentMethod.consumes)) {
+                c = _.uniq(endpoint.Consumes && _.isArray(endpoint.Consumes) ? endpoint.Consumes.concat(currentMethod.consumes) : currentMethod.consumes);
+                if (consumes && _.isArray(consumes) && c.length) {
+                  consumes.forEach(function (mimeType) {
+                    c = _.without(c, mimeType);
+                  });
+                }
+                if (endpoint.Consumes || c.length) {
+                  endpoint.Consumes = c;
                 }
               }
               if (endpoint.Method.toLowerCase() !== 'get' && endpoint.Method.toLowerCase() !== 'head') {
-                var body = this._mapRequestBody(currentMethod.parameters, reqType, currentMethodResolved.parameters);
+                var body = this._mapRequestBody(currentMethod.parameters, currentMethodResolved.parameters);
                 if (body) {
                   endpoint.Body = body;
                 }
@@ -9553,14 +9919,25 @@
               // endpoint.QueryString = this._mapQueryString(currentMethod.parameters, true);
               endpoint.QueryString = this._mapQueryString(currentMethodResolved.parameters, true);
               //map response body
-              if (_.isArray(currentMethod.produces)) {
-                if (_.isEmpty(currentMethod.produces)) {
-                  resType = null;
-                } else {
-                  resType = this.findDefaultMimeType(currentMethod.produces);
+              // if (_.isArray(currentMethod.produces)) {
+              //   if (_.isEmpty(currentMethod.produces)) {
+              //     resType = null;
+              //   } else {
+              //     resType = this.findDefaultMimeType(currentMethod.produces);
+              //   }
+              // }
+              if (currentMethod.produces && _.isArray(currentMethod.produces)) {
+                var p = _.uniq(endpoint.Produces && _.isArray(endpoint.Produces) ? endpoint.Produces.concat(currentMethod.produces) : currentMethod.produces);
+                if (produces && _.isArray(produces) && p.length) {
+                  produces.forEach(function (mimeType) {
+                    p = _.without(p, mimeType);
+                  });
+                }
+                if (endpoint.Produces || p.length) {
+                  endpoint.Produces = p;
                 }
               }
-              var responses = this._mapResponseBody(currentMethod.responses, resType, true, currentMethodResolved.responses);
+              var responses = this._mapResponseBody(currentMethod.responses, true, currentMethodResolved.responses, this.$refs);
               if (responses) {
                 endpoint.Responses = responses;
               }
@@ -9622,19 +9999,20 @@
               break;
             }
           }
-          for (var k in responses) {
-            if (!responses.hasOwnProperty(k))
+          for (var r in responses) {
+            if (!responses.hasOwnProperty(r))
               continue;
-            var response = responses[k], parts = k.split(':'), name = k, code = k;
-            if (parts[0] === 'trait') {
-              isTrait = true;
-              name = parts[1];
-              code = parts[2];
-            } else {
-              continue;
+            var response = responses[r];
+            var resName = r;
+            var resCode = 200;
+            var resNameParts = r.split(':');
+            // Support for StopLight Swagger traits
+            if (resNameParts.length === 3 && resNameParts[0] === 'trait') {
+              resName = resNameParts[1];
+              resCode = resNameParts[2];
             }
-            traitResponses[name] = traitResponses[name] || {};
-            traitResponses[name][code] = response;
+            traitResponses[resName] = traitResponses[resName] || {};
+            traitResponses[resName][resCode] = response;
           }
           for (var k in queryParams) {
             if (!queryParams.hasOwnProperty(k))
@@ -9669,13 +10047,12 @@
                 request: {},
                 responses: []
               };
-            trait.responses = this._mapResponseBody(traitResponses[k], 'application/json');
+            trait.responses = this._mapResponseBody(traitResponses[k]);
             traits[k] = trait;
           }
           return _.values(traits);
         };
         Swagger.prototype._import = function () {
-          var defaultReqContentType = this.findDefaultMimeType(this.data.consumes), defaultResContentType = this.findDefaultMimeType(this.data.produces);
           this.project = new Project(this.data.info.title);
           this.project.Description = this.data.info.description || '';
           var protocol = 'http';
@@ -9683,7 +10060,7 @@
             this.project.Environment.Protocols = this.data.schemes;
             protocol = this.data.schemes[0];
           }
-          this._mapEndpoints(defaultReqContentType, defaultResContentType);
+          this._mapEndpoints(this.data.consumes, this.data.produces);
           this.project.Environment.summary = this.data.info.description || '';
           this.project.Environment.BasePath = this.data.basePath || '';
           this.project.Environment.Host = this.data.host ? protocol + '://' + this.data.host : null;
@@ -9720,11 +10097,11 @@
           }
           if (this.data.produces) {
             //taking the first as default one
-            this.project.Environment.DefaultResponseType = defaultResContentType;
+            this.project.Environment.Produces = this.data.produces;
           }
           if (this.data.consumes) {
             //taking the first as default one
-            this.project.Environment.DefaultRequestType = defaultReqContentType;
+            this.project.Environment.Consumes = this.data.consumes;
           }
           if (this.data.securityDefinitions) {
             this.project.Environment.SecuritySchemes = this._mapSecurityDefinitions(this.data.securityDefinitions);
@@ -9746,9 +10123,9 @@
         '../helpers/swagger': 21,
         '../utils/json': 33,
         './importer': 24,
-        'js-yaml': 56,
-        'lodash': 109,
-        'swagger-parser': 139
+        'js-yaml': 36,
+        'lodash': 66,
+        'swagger-parser': 169
       }
     ],
     32: [
@@ -9880,8 +10257,8 @@
         };
       },
       {
-        'json-schema-compatibility': 86,
-        'lodash': 109
+        'json-schema-compatibility': 87,
+        'lodash': 66
       }
     ],
     34: [
@@ -9905,11 +10282,12 @@
           }
         };
       },
-      { 'lodash': 109 }
+      { 'lodash': 66 }
     ],
     35: [
       function (require, module, exports) {
         var request = require('request');
+        var _ = require('lodash');
         module.exports = {
           isURL: function (path) {
             if (!path) {
@@ -9929,3882 +10307,26 @@
                 }
               });
             });
+          },
+          join: function (a, b) {
+            return _.trimEnd(a, '/') + '/' + _.trimStart(b, '/');
           }
         };
-      },
-      { 'request': 37 }
-    ],
-    36: [
-      function (require, module, exports) {
-        var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-        ;
-        (function (exports) {
-          'use strict';
-          var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
-          var PLUS = '+'.charCodeAt(0);
-          var SLASH = '/'.charCodeAt(0);
-          var NUMBER = '0'.charCodeAt(0);
-          var LOWER = 'a'.charCodeAt(0);
-          var UPPER = 'A'.charCodeAt(0);
-          var PLUS_URL_SAFE = '-'.charCodeAt(0);
-          var SLASH_URL_SAFE = '_'.charCodeAt(0);
-          function decode(elt) {
-            var code = elt.charCodeAt(0);
-            if (code === PLUS || code === PLUS_URL_SAFE)
-              return 62;
-            // '+'
-            if (code === SLASH || code === SLASH_URL_SAFE)
-              return 63;
-            // '/'
-            if (code < NUMBER)
-              return -1;
-            //no match
-            if (code < NUMBER + 10)
-              return code - NUMBER + 26 + 26;
-            if (code < UPPER + 26)
-              return code - UPPER;
-            if (code < LOWER + 26)
-              return code - LOWER + 26;
-          }
-          function b64ToByteArray(b64) {
-            var i, j, l, tmp, placeHolders, arr;
-            if (b64.length % 4 > 0) {
-              throw new Error('Invalid string. Length must be a multiple of 4');
-            }
-            // the number of equal signs (place holders)
-            // if there are two placeholders, than the two characters before it
-            // represent one byte
-            // if there is only one, then the three characters before it represent 2 bytes
-            // this is just a cheap hack to not do indexOf twice
-            var len = b64.length;
-            placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0;
-            // base64 is 4/3 + up to two characters of the original data
-            arr = new Arr(b64.length * 3 / 4 - placeHolders);
-            // if there are placeholders, only get up to the last complete 4 chars
-            l = placeHolders > 0 ? b64.length - 4 : b64.length;
-            var L = 0;
-            function push(v) {
-              arr[L++] = v;
-            }
-            for (i = 0, j = 0; i < l; i += 4, j += 3) {
-              tmp = decode(b64.charAt(i)) << 18 | decode(b64.charAt(i + 1)) << 12 | decode(b64.charAt(i + 2)) << 6 | decode(b64.charAt(i + 3));
-              push((tmp & 16711680) >> 16);
-              push((tmp & 65280) >> 8);
-              push(tmp & 255);
-            }
-            if (placeHolders === 2) {
-              tmp = decode(b64.charAt(i)) << 2 | decode(b64.charAt(i + 1)) >> 4;
-              push(tmp & 255);
-            } else if (placeHolders === 1) {
-              tmp = decode(b64.charAt(i)) << 10 | decode(b64.charAt(i + 1)) << 4 | decode(b64.charAt(i + 2)) >> 2;
-              push(tmp >> 8 & 255);
-              push(tmp & 255);
-            }
-            return arr;
-          }
-          function uint8ToBase64(uint8) {
-            var i, extraBytes = uint8.length % 3,
-              // if we have 1 byte left, pad 2 bytes
-              output = '', temp, length;
-            function encode(num) {
-              return lookup.charAt(num);
-            }
-            function tripletToBase64(num) {
-              return encode(num >> 18 & 63) + encode(num >> 12 & 63) + encode(num >> 6 & 63) + encode(num & 63);
-            }
-            // go through the array every three bytes, we'll deal with trailing stuff later
-            for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
-              temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + uint8[i + 2];
-              output += tripletToBase64(temp);
-            }
-            // pad the end with zeros, but make sure to not forget the extra bytes
-            switch (extraBytes) {
-            case 1:
-              temp = uint8[uint8.length - 1];
-              output += encode(temp >> 2);
-              output += encode(temp << 4 & 63);
-              output += '==';
-              break;
-            case 2:
-              temp = (uint8[uint8.length - 2] << 8) + uint8[uint8.length - 1];
-              output += encode(temp >> 10);
-              output += encode(temp >> 4 & 63);
-              output += encode(temp << 2 & 63);
-              output += '=';
-              break;
-            }
-            return output;
-          }
-          exports.toByteArray = b64ToByteArray;
-          exports.fromByteArray = uint8ToBase64;
-        }(typeof exports === 'undefined' ? this.base64js = {} : exports));
-      },
-      {}
-    ],
-    37: [
-      function (require, module, exports) {
-        // Browser Request
-        //
-        // Licensed under the Apache License, Version 2.0 (the "License");
-        // you may not use this file except in compliance with the License.
-        // You may obtain a copy of the License at
-        //
-        //     http://www.apache.org/licenses/LICENSE-2.0
-        //
-        // Unless required by applicable law or agreed to in writing, software
-        // distributed under the License is distributed on an "AS IS" BASIS,
-        // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-        // See the License for the specific language governing permissions and
-        // limitations under the License.
-        // UMD HEADER START 
-        (function (root, factory) {
-          if (typeof define === 'function' && define.amd) {
-            // AMD. Register as an anonymous module.
-            define([], factory);
-          } else if (typeof exports === 'object') {
-            // Node. Does not work with strict CommonJS, but
-            // only CommonJS-like enviroments that support module.exports,
-            // like Node.
-            module.exports = factory();
-          } else {
-            // Browser globals (root is window)
-            root.returnExports = factory();
-          }
-        }(this, function () {
-          // UMD HEADER END
-          var XHR = XMLHttpRequest;
-          if (!XHR)
-            throw new Error('missing XMLHttpRequest');
-          request.log = {
-            'trace': noop,
-            'debug': noop,
-            'info': noop,
-            'warn': noop,
-            'error': noop
-          };
-          var DEFAULT_TIMEOUT = 3 * 60 * 1000;
-          // 3 minutes
-          //
-          // request
-          //
-          function request(options, callback) {
-            // The entry-point to the API: prep the options object and pass the real work to run_xhr.
-            if (typeof callback !== 'function')
-              throw new Error('Bad callback given: ' + callback);
-            if (!options)
-              throw new Error('No options given');
-            var options_onResponse = options.onResponse;
-            // Save this for later.
-            if (typeof options === 'string')
-              options = { 'uri': options };
-            else
-              options = JSON.parse(JSON.stringify(options));
-            // Use a duplicate for mutating.
-            options.onResponse = options_onResponse;
-            // And put it back.
-            if (options.verbose)
-              request.log = getLogger();
-            if (options.url) {
-              options.uri = options.url;
-              delete options.url;
-            }
-            if (!options.uri && options.uri !== '')
-              throw new Error('options.uri is a required argument');
-            if (typeof options.uri != 'string')
-              throw new Error('options.uri must be a string');
-            var unsupported_options = [
-                'proxy',
-                '_redirectsFollowed',
-                'maxRedirects',
-                'followRedirect'
-              ];
-            for (var i = 0; i < unsupported_options.length; i++)
-              if (options[unsupported_options[i]])
-                throw new Error('options.' + unsupported_options[i] + ' is not supported');
-            options.callback = callback;
-            options.method = options.method || 'GET';
-            options.headers = options.headers || {};
-            options.body = options.body || null;
-            options.timeout = options.timeout || request.DEFAULT_TIMEOUT;
-            if (options.headers.host)
-              throw new Error('Options.headers.host is not supported');
-            if (options.json) {
-              options.headers.accept = options.headers.accept || 'application/json';
-              if (options.method !== 'GET')
-                options.headers['content-type'] = 'application/json';
-              if (typeof options.json !== 'boolean')
-                options.body = JSON.stringify(options.json);
-              else if (typeof options.body !== 'string')
-                options.body = JSON.stringify(options.body);
-            }
-            //BEGIN QS Hack
-            var serialize = function (obj) {
-              var str = [];
-              for (var p in obj)
-                if (obj.hasOwnProperty(p)) {
-                  str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]));
-                }
-              return str.join('&');
-            };
-            if (options.qs) {
-              var qs = typeof options.qs == 'string' ? options.qs : serialize(options.qs);
-              if (options.uri.indexOf('?') !== -1) {
-                //no get params
-                options.uri = options.uri + '&' + qs;
-              } else {
-                //existing get params
-                options.uri = options.uri + '?' + qs;
-              }
-            }
-            //END QS Hack
-            //BEGIN FORM Hack
-            var multipart = function (obj) {
-              //todo: support file type (useful?)
-              var result = {};
-              result.boundry = '-------------------------------' + Math.floor(Math.random() * 1000000000);
-              var lines = [];
-              for (var p in obj) {
-                if (obj.hasOwnProperty(p)) {
-                  lines.push('--' + result.boundry + '\n' + 'Content-Disposition: form-data; name="' + p + '"' + '\n' + '\n' + obj[p] + '\n');
-                }
-              }
-              lines.push('--' + result.boundry + '--');
-              result.body = lines.join('');
-              result.length = result.body.length;
-              result.type = 'multipart/form-data; boundary=' + result.boundry;
-              return result;
-            };
-            if (options.form) {
-              if (typeof options.form == 'string')
-                throw 'form name unsupported';
-              if (options.method === 'POST') {
-                var encoding = (options.encoding || 'application/x-www-form-urlencoded').toLowerCase();
-                options.headers['content-type'] = encoding;
-                switch (encoding) {
-                case 'application/x-www-form-urlencoded':
-                  options.body = serialize(options.form).replace(/%20/g, '+');
-                  break;
-                case 'multipart/form-data':
-                  var multi = multipart(options.form);
-                  //options.headers['content-length'] = multi.length;
-                  options.body = multi.body;
-                  options.headers['content-type'] = multi.type;
-                  break;
-                default:
-                  throw new Error('unsupported encoding:' + encoding);
-                }
-              }
-            }
-            //END FORM Hack
-            // If onResponse is boolean true, call back immediately when the response is known,
-            // not when the full request is complete.
-            options.onResponse = options.onResponse || noop;
-            if (options.onResponse === true) {
-              options.onResponse = callback;
-              options.callback = noop;
-            }
-            // XXX Browsers do not like this.
-            //if(options.body)
-            //  options.headers['content-length'] = options.body.length;
-            // HTTP basic authentication
-            if (!options.headers.authorization && options.auth)
-              options.headers.authorization = 'Basic ' + b64_enc(options.auth.username + ':' + options.auth.password);
-            return run_xhr(options);
-          }
-          var req_seq = 0;
-          function run_xhr(options) {
-            var xhr = new XHR(), timed_out = false, is_cors = is_crossDomain(options.uri), supports_cors = 'withCredentials' in xhr;
-            req_seq += 1;
-            xhr.seq_id = req_seq;
-            xhr.id = req_seq + ': ' + options.method + ' ' + options.uri;
-            xhr._id = xhr.id;
-            // I know I will type "_id" from habit all the time.
-            if (is_cors && !supports_cors) {
-              var cors_err = new Error('Browser does not support cross-origin request: ' + options.uri);
-              cors_err.cors = 'unsupported';
-              return options.callback(cors_err, xhr);
-            }
-            xhr.timeoutTimer = setTimeout(too_late, options.timeout);
-            function too_late() {
-              timed_out = true;
-              var er = new Error('ETIMEDOUT');
-              er.code = 'ETIMEDOUT';
-              er.duration = options.timeout;
-              request.log.error('Timeout', {
-                'id': xhr._id,
-                'milliseconds': options.timeout
-              });
-              return options.callback(er, xhr);
-            }
-            // Some states can be skipped over, so remember what is still incomplete.
-            var did = {
-                'response': false,
-                'loading': false,
-                'end': false
-              };
-            xhr.onreadystatechange = on_state_change;
-            xhr.open(options.method, options.uri, true);
-            // asynchronous
-            if (is_cors)
-              xhr.withCredentials = !!options.withCredentials;
-            xhr.send(options.body);
-            return xhr;
-            function on_state_change(event) {
-              if (timed_out)
-                return request.log.debug('Ignoring timed out state change', {
-                  'state': xhr.readyState,
-                  'id': xhr.id
-                });
-              request.log.debug('State change', {
-                'state': xhr.readyState,
-                'id': xhr.id,
-                'timed_out': timed_out
-              });
-              if (xhr.readyState === XHR.OPENED) {
-                request.log.debug('Request started', { 'id': xhr.id });
-                for (var key in options.headers)
-                  xhr.setRequestHeader(key, options.headers[key]);
-              } else if (xhr.readyState === XHR.HEADERS_RECEIVED)
-                on_response();
-              else if (xhr.readyState === XHR.LOADING) {
-                on_response();
-                on_loading();
-              } else if (xhr.readyState === XHR.DONE) {
-                on_response();
-                on_loading();
-                on_end();
-              }
-            }
-            function on_response() {
-              if (did.response)
-                return;
-              did.response = true;
-              request.log.debug('Got response', {
-                'id': xhr.id,
-                'status': xhr.status
-              });
-              clearTimeout(xhr.timeoutTimer);
-              xhr.statusCode = xhr.status;
-              // Node request compatibility
-              // Detect failed CORS requests.
-              if (is_cors && xhr.statusCode == 0) {
-                var cors_err = new Error('CORS request rejected: ' + options.uri);
-                cors_err.cors = 'rejected';
-                // Do not process this request further.
-                did.loading = true;
-                did.end = true;
-                return options.callback(cors_err, xhr);
-              }
-              options.onResponse(null, xhr);
-            }
-            function on_loading() {
-              if (did.loading)
-                return;
-              did.loading = true;
-              request.log.debug('Response body loading', { 'id': xhr.id });
-            }
-            function on_end() {
-              if (did.end)
-                return;
-              did.end = true;
-              request.log.debug('Request done', { 'id': xhr.id });
-              xhr.body = xhr.responseText;
-              if (options.json) {
-                try {
-                  xhr.body = JSON.parse(xhr.responseText);
-                } catch (er) {
-                  return options.callback(er, xhr);
-                }
-              }
-              options.callback(null, xhr, xhr.body);
-            }
-          }
-          // request
-          request.withCredentials = false;
-          request.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT;
-          //
-          // defaults
-          //
-          request.defaults = function (options, requester) {
-            var def = function (method) {
-              var d = function (params, callback) {
-                if (typeof params === 'string')
-                  params = { 'uri': params };
-                else {
-                  params = JSON.parse(JSON.stringify(params));
-                }
-                for (var i in options) {
-                  if (params[i] === undefined)
-                    params[i] = options[i];
-                }
-                return method(params, callback);
-              };
-              return d;
-            };
-            var de = def(request);
-            de.get = def(request.get);
-            de.post = def(request.post);
-            de.put = def(request.put);
-            de.head = def(request.head);
-            return de;
-          };
-          //
-          // HTTP method shortcuts
-          //
-          var shortcuts = [
-              'get',
-              'put',
-              'post',
-              'head'
-            ];
-          shortcuts.forEach(function (shortcut) {
-            var method = shortcut.toUpperCase();
-            var func = shortcut.toLowerCase();
-            request[func] = function (opts) {
-              if (typeof opts === 'string')
-                opts = {
-                  'method': method,
-                  'uri': opts
-                };
-              else {
-                opts = JSON.parse(JSON.stringify(opts));
-                opts.method = method;
-              }
-              var args = [opts].concat(Array.prototype.slice.apply(arguments, [1]));
-              return request.apply(this, args);
-            };
-          });
-          //
-          // CouchDB shortcut
-          //
-          request.couch = function (options, callback) {
-            if (typeof options === 'string')
-              options = { 'uri': options };
-            // Just use the request API to do JSON.
-            options.json = true;
-            if (options.body)
-              options.json = options.body;
-            delete options.body;
-            callback = callback || noop;
-            var xhr = request(options, couch_handler);
-            return xhr;
-            function couch_handler(er, resp, body) {
-              if (er)
-                return callback(er, resp, body);
-              if ((resp.statusCode < 200 || resp.statusCode > 299) && body.error) {
-                // The body is a Couch JSON object indicating the error.
-                er = new Error('CouchDB error: ' + (body.error.reason || body.error.error));
-                for (var key in body)
-                  er[key] = body[key];
-                return callback(er, resp, body);
-              }
-              return callback(er, resp, body);
-            }
-          };
-          //
-          // Utility
-          //
-          function noop() {
-          }
-          function getLogger() {
-            var logger = {}, levels = [
-                'trace',
-                'debug',
-                'info',
-                'warn',
-                'error'
-              ], level, i;
-            for (i = 0; i < levels.length; i++) {
-              level = levels[i];
-              logger[level] = noop;
-              if (typeof console !== 'undefined' && console && console[level])
-                logger[level] = formatted(console, level);
-            }
-            return logger;
-          }
-          function formatted(obj, method) {
-            return formatted_logger;
-            function formatted_logger(str, context) {
-              if (typeof context === 'object')
-                str += ' ' + JSON.stringify(context);
-              return obj[method].call(obj, str);
-            }
-          }
-          // Return whether a URL is a cross-domain request.
-          function is_crossDomain(url) {
-            var rurl = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/;
-            // jQuery #8138, IE may throw an exception when accessing
-            // a field from window.location if document.domain has been set
-            var ajaxLocation;
-            try {
-              ajaxLocation = location.href;
-            } catch (e) {
-              // Use the href attribute of an A element since IE will modify it given document.location
-              ajaxLocation = document.createElement('a');
-              ajaxLocation.href = '';
-              ajaxLocation = ajaxLocation.href;
-            }
-            var ajaxLocParts = rurl.exec(ajaxLocation.toLowerCase()) || [], parts = rurl.exec(url.toLowerCase());
-            var result = !!(parts && (parts[1] != ajaxLocParts[1] || parts[2] != ajaxLocParts[2] || (parts[3] || (parts[1] === 'http:' ? 80 : 443)) != (ajaxLocParts[3] || (ajaxLocParts[1] === 'http:' ? 80 : 443))));
-            //console.debug('is_crossDomain('+url+') -> ' + result)
-            return result;
-          }
-          // MIT License from http://phpjs.org/functions/base64_encode:358
-          function b64_enc(data) {
-            // Encodes string using MIME base64 algorithm
-            var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-            var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc = '', tmp_arr = [];
-            if (!data) {
-              return data;
-            }
-            // assume utf8 data
-            // data = this.utf8_encode(data+'');
-            do {
-              // pack three octets into four hexets
-              o1 = data.charCodeAt(i++);
-              o2 = data.charCodeAt(i++);
-              o3 = data.charCodeAt(i++);
-              bits = o1 << 16 | o2 << 8 | o3;
-              h1 = bits >> 18 & 63;
-              h2 = bits >> 12 & 63;
-              h3 = bits >> 6 & 63;
-              h4 = bits & 63;
-              // use hexets to index into b64, and append result to encoded string
-              tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
-            } while (i < data.length);
-            enc = tmp_arr.join('');
-            switch (data.length % 3) {
-            case 1:
-              enc = enc.slice(0, -2) + '==';
-              break;
-            case 2:
-              enc = enc.slice(0, -1) + '=';
-              break;
-            }
-            return enc;
-          }
-          return request;  //UMD FOOTER START
-        }));  //UMD FOOTER END
-      },
-      {}
-    ],
-    38: [
-      function (require, module, exports) {
-      },
-      {}
-    ],
-    39: [
-      function (require, module, exports) {
-        arguments[4][38][0].apply(exports, arguments);
-      },
-      { 'dup': 38 }
-    ],
-    40: [
-      function (require, module, exports) {
-        (function (global) {
-          'use strict';
-          var buffer = require('buffer');
-          var Buffer = buffer.Buffer;
-          var SlowBuffer = buffer.SlowBuffer;
-          var MAX_LEN = buffer.kMaxLength || 2147483647;
-          exports.alloc = function alloc(size, fill, encoding) {
-            if (typeof Buffer.alloc === 'function') {
-              return Buffer.alloc(size, fill, encoding);
-            }
-            if (typeof encoding === 'number') {
-              throw new TypeError('encoding must not be number');
-            }
-            if (typeof size !== 'number') {
-              throw new TypeError('size must be a number');
-            }
-            if (size > MAX_LEN) {
-              throw new RangeError('size is too large');
-            }
-            var enc = encoding;
-            var _fill = fill;
-            if (_fill === undefined) {
-              enc = undefined;
-              _fill = 0;
-            }
-            var buf = new Buffer(size);
-            if (typeof _fill === 'string') {
-              var fillBuf = new Buffer(_fill, enc);
-              var flen = fillBuf.length;
-              var i = -1;
-              while (++i < size) {
-                buf[i] = fillBuf[i % flen];
-              }
-            } else {
-              buf.fill(_fill);
-            }
-            return buf;
-          };
-          exports.allocUnsafe = function allocUnsafe(size) {
-            if (typeof Buffer.allocUnsafe === 'function') {
-              return Buffer.allocUnsafe(size);
-            }
-            if (typeof size !== 'number') {
-              throw new TypeError('size must be a number');
-            }
-            if (size > MAX_LEN) {
-              throw new RangeError('size is too large');
-            }
-            return new Buffer(size);
-          };
-          exports.from = function from(value, encodingOrOffset, length) {
-            if (typeof Buffer.from === 'function' && (!global.Uint8Array || Uint8Array.from !== Buffer.from)) {
-              return Buffer.from(value, encodingOrOffset, length);
-            }
-            if (typeof value === 'number') {
-              throw new TypeError('"value" argument must not be a number');
-            }
-            if (typeof value === 'string') {
-              return new Buffer(value, encodingOrOffset);
-            }
-            if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
-              var offset = encodingOrOffset;
-              if (arguments.length === 1) {
-                return new Buffer(value);
-              }
-              if (typeof offset === 'undefined') {
-                offset = 0;
-              }
-              var len = length;
-              if (typeof len === 'undefined') {
-                len = value.byteLength - offset;
-              }
-              if (offset >= value.byteLength) {
-                throw new RangeError('\'offset\' is out of bounds');
-              }
-              if (len > value.byteLength - offset) {
-                throw new RangeError('\'length\' is out of bounds');
-              }
-              return new Buffer(value.slice(offset, offset + len));
-            }
-            if (Buffer.isBuffer(value)) {
-              var out = new Buffer(value.length);
-              value.copy(out, 0, 0, value.length);
-              return out;
-            }
-            if (value) {
-              if (Array.isArray(value) || typeof ArrayBuffer !== 'undefined' && value.buffer instanceof ArrayBuffer || 'length' in value) {
-                return new Buffer(value);
-              }
-              if (value.type === 'Buffer' && Array.isArray(value.data)) {
-                return new Buffer(value.data);
-              }
-            }
-            throw new TypeError('First argument must be a string, Buffer, ' + 'ArrayBuffer, Array, or array-like object.');
-          };
-          exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
-            if (typeof Buffer.allocUnsafeSlow === 'function') {
-              return Buffer.allocUnsafeSlow(size);
-            }
-            if (typeof size !== 'number') {
-              throw new TypeError('size must be a number');
-            }
-            if (size >= MAX_LEN) {
-              throw new RangeError('size is too large');
-            }
-            return new SlowBuffer(size);
-          };
-        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
-      },
-      { 'buffer': 41 }
-    ],
-    41: [
-      function (require, module, exports) {
-        (function (global) {
-          /*!
- * The buffer module from node.js, for the browser.
- *
- * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
- * @license  MIT
- */
-          /* eslint-disable no-proto */
-          'use strict';
-          var base64 = require('base64-js');
-          var ieee754 = require('ieee754');
-          var isArray = require('isarray');
-          exports.Buffer = Buffer;
-          exports.SlowBuffer = SlowBuffer;
-          exports.INSPECT_MAX_BYTES = 50;
-          Buffer.poolSize = 8192;
-          // not used by this implementation
-          var rootParent = {};
-          /**
- * If `Buffer.TYPED_ARRAY_SUPPORT`:
- *   === true    Use Uint8Array implementation (fastest)
- *   === false   Use Object implementation (most compatible, even IE6)
- *
- * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
- * Opera 11.6+, iOS 4.2+.
- *
- * Due to various browser bugs, sometimes the Object implementation will be used even
- * when the browser supports typed arrays.
- *
- * Note:
- *
- *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
- *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
- *
- *   - Safari 5-7 lacks support for changing the `Object.prototype.constructor` property
- *     on objects.
- *
- *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
- *
- *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
- *     incorrect length in some situations.
-
- * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
- * get the Object implementation, which is slower but behaves correctly.
- */
-          Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined ? global.TYPED_ARRAY_SUPPORT : typedArraySupport();
-          function typedArraySupport() {
-            function Bar() {
-            }
-            try {
-              var arr = new Uint8Array(1);
-              arr.foo = function () {
-                return 42;
-              };
-              arr.constructor = Bar;
-              return arr.foo() === 42 && arr.constructor === Bar && typeof arr.subarray === 'function' && arr.subarray(1, 1).byteLength === 0;
-            } catch (e) {
-              return false;
-            }
-          }
-          function kMaxLength() {
-            return Buffer.TYPED_ARRAY_SUPPORT ? 2147483647 : 1073741823;
-          }
-          /**
- * Class: Buffer
- * =============
- *
- * The Buffer constructor returns instances of `Uint8Array` that are augmented
- * with function properties for all the node `Buffer` API functions. We use
- * `Uint8Array` so that square bracket notation works as expected -- it returns
- * a single octet.
- *
- * By augmenting the instances, we can avoid modifying the `Uint8Array`
- * prototype.
- */
-          function Buffer(arg) {
-            if (!(this instanceof Buffer)) {
-              // Avoid going through an ArgumentsAdaptorTrampoline in the common case.
-              if (arguments.length > 1)
-                return new Buffer(arg, arguments[1]);
-              return new Buffer(arg);
-            }
-            if (!Buffer.TYPED_ARRAY_SUPPORT) {
-              this.length = 0;
-              this.parent = undefined;
-            }
-            // Common case.
-            if (typeof arg === 'number') {
-              return fromNumber(this, arg);
-            }
-            // Slightly less common case.
-            if (typeof arg === 'string') {
-              return fromString(this, arg, arguments.length > 1 ? arguments[1] : 'utf8');
-            }
-            // Unusual.
-            return fromObject(this, arg);
-          }
-          function fromNumber(that, length) {
-            that = allocate(that, length < 0 ? 0 : checked(length) | 0);
-            if (!Buffer.TYPED_ARRAY_SUPPORT) {
-              for (var i = 0; i < length; i++) {
-                that[i] = 0;
-              }
-            }
-            return that;
-          }
-          function fromString(that, string, encoding) {
-            if (typeof encoding !== 'string' || encoding === '')
-              encoding = 'utf8';
-            // Assumption: byteLength() return value is always < kMaxLength.
-            var length = byteLength(string, encoding) | 0;
-            that = allocate(that, length);
-            that.write(string, encoding);
-            return that;
-          }
-          function fromObject(that, object) {
-            if (Buffer.isBuffer(object))
-              return fromBuffer(that, object);
-            if (isArray(object))
-              return fromArray(that, object);
-            if (object == null) {
-              throw new TypeError('must start with number, buffer, array or string');
-            }
-            if (typeof ArrayBuffer !== 'undefined') {
-              if (object.buffer instanceof ArrayBuffer) {
-                return fromTypedArray(that, object);
-              }
-              if (object instanceof ArrayBuffer) {
-                return fromArrayBuffer(that, object);
-              }
-            }
-            if (object.length)
-              return fromArrayLike(that, object);
-            return fromJsonObject(that, object);
-          }
-          function fromBuffer(that, buffer) {
-            var length = checked(buffer.length) | 0;
-            that = allocate(that, length);
-            buffer.copy(that, 0, 0, length);
-            return that;
-          }
-          function fromArray(that, array) {
-            var length = checked(array.length) | 0;
-            that = allocate(that, length);
-            for (var i = 0; i < length; i += 1) {
-              that[i] = array[i] & 255;
-            }
-            return that;
-          }
-          // Duplicate of fromArray() to keep fromArray() monomorphic.
-          function fromTypedArray(that, array) {
-            var length = checked(array.length) | 0;
-            that = allocate(that, length);
-            // Truncating the elements is probably not what people expect from typed
-            // arrays with BYTES_PER_ELEMENT > 1 but it's compatible with the behavior
-            // of the old Buffer constructor.
-            for (var i = 0; i < length; i += 1) {
-              that[i] = array[i] & 255;
-            }
-            return that;
-          }
-          function fromArrayBuffer(that, array) {
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              // Return an augmented `Uint8Array` instance, for best performance
-              array.byteLength;
-              that = Buffer._augment(new Uint8Array(array));
-            } else {
-              // Fallback: Return an object instance of the Buffer class
-              that = fromTypedArray(that, new Uint8Array(array));
-            }
-            return that;
-          }
-          function fromArrayLike(that, array) {
-            var length = checked(array.length) | 0;
-            that = allocate(that, length);
-            for (var i = 0; i < length; i += 1) {
-              that[i] = array[i] & 255;
-            }
-            return that;
-          }
-          // Deserialize { type: 'Buffer', data: [1,2,3,...] } into a Buffer object.
-          // Returns a zero-length buffer for inputs that don't conform to the spec.
-          function fromJsonObject(that, object) {
-            var array;
-            var length = 0;
-            if (object.type === 'Buffer' && isArray(object.data)) {
-              array = object.data;
-              length = checked(array.length) | 0;
-            }
-            that = allocate(that, length);
-            for (var i = 0; i < length; i += 1) {
-              that[i] = array[i] & 255;
-            }
-            return that;
-          }
-          if (Buffer.TYPED_ARRAY_SUPPORT) {
-            Buffer.prototype.__proto__ = Uint8Array.prototype;
-            Buffer.__proto__ = Uint8Array;
-          } else {
-            // pre-set for values that may exist in the future
-            Buffer.prototype.length = undefined;
-            Buffer.prototype.parent = undefined;
-          }
-          function allocate(that, length) {
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              // Return an augmented `Uint8Array` instance, for best performance
-              that = Buffer._augment(new Uint8Array(length));
-              that.__proto__ = Buffer.prototype;
-            } else {
-              // Fallback: Return an object instance of the Buffer class
-              that.length = length;
-              that._isBuffer = true;
-            }
-            var fromPool = length !== 0 && length <= Buffer.poolSize >>> 1;
-            if (fromPool)
-              that.parent = rootParent;
-            return that;
-          }
-          function checked(length) {
-            // Note: cannot use `length < kMaxLength` here because that fails when
-            // length is NaN (which is otherwise coerced to zero.)
-            if (length >= kMaxLength()) {
-              throw new RangeError('Attempt to allocate Buffer larger than maximum ' + 'size: 0x' + kMaxLength().toString(16) + ' bytes');
-            }
-            return length | 0;
-          }
-          function SlowBuffer(subject, encoding) {
-            if (!(this instanceof SlowBuffer))
-              return new SlowBuffer(subject, encoding);
-            var buf = new Buffer(subject, encoding);
-            delete buf.parent;
-            return buf;
-          }
-          Buffer.isBuffer = function isBuffer(b) {
-            return !!(b != null && b._isBuffer);
-          };
-          Buffer.compare = function compare(a, b) {
-            if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
-              throw new TypeError('Arguments must be Buffers');
-            }
-            if (a === b)
-              return 0;
-            var x = a.length;
-            var y = b.length;
-            var i = 0;
-            var len = Math.min(x, y);
-            while (i < len) {
-              if (a[i] !== b[i])
-                break;
-              ++i;
-            }
-            if (i !== len) {
-              x = a[i];
-              y = b[i];
-            }
-            if (x < y)
-              return -1;
-            if (y < x)
-              return 1;
-            return 0;
-          };
-          Buffer.isEncoding = function isEncoding(encoding) {
-            switch (String(encoding).toLowerCase()) {
-            case 'hex':
-            case 'utf8':
-            case 'utf-8':
-            case 'ascii':
-            case 'binary':
-            case 'base64':
-            case 'raw':
-            case 'ucs2':
-            case 'ucs-2':
-            case 'utf16le':
-            case 'utf-16le':
-              return true;
-            default:
-              return false;
-            }
-          };
-          Buffer.concat = function concat(list, length) {
-            if (!isArray(list))
-              throw new TypeError('list argument must be an Array of Buffers.');
-            if (list.length === 0) {
-              return new Buffer(0);
-            }
-            var i;
-            if (length === undefined) {
-              length = 0;
-              for (i = 0; i < list.length; i++) {
-                length += list[i].length;
-              }
-            }
-            var buf = new Buffer(length);
-            var pos = 0;
-            for (i = 0; i < list.length; i++) {
-              var item = list[i];
-              item.copy(buf, pos);
-              pos += item.length;
-            }
-            return buf;
-          };
-          function byteLength(string, encoding) {
-            if (typeof string !== 'string')
-              string = '' + string;
-            var len = string.length;
-            if (len === 0)
-              return 0;
-            // Use a for loop to avoid recursion
-            var loweredCase = false;
-            for (;;) {
-              switch (encoding) {
-              case 'ascii':
-              case 'binary':
-              // Deprecated
-              case 'raw':
-              case 'raws':
-                return len;
-              case 'utf8':
-              case 'utf-8':
-                return utf8ToBytes(string).length;
-              case 'ucs2':
-              case 'ucs-2':
-              case 'utf16le':
-              case 'utf-16le':
-                return len * 2;
-              case 'hex':
-                return len >>> 1;
-              case 'base64':
-                return base64ToBytes(string).length;
-              default:
-                if (loweredCase)
-                  return utf8ToBytes(string).length;
-                // assume utf8
-                encoding = ('' + encoding).toLowerCase();
-                loweredCase = true;
-              }
-            }
-          }
-          Buffer.byteLength = byteLength;
-          function slowToString(encoding, start, end) {
-            var loweredCase = false;
-            start = start | 0;
-            end = end === undefined || end === Infinity ? this.length : end | 0;
-            if (!encoding)
-              encoding = 'utf8';
-            if (start < 0)
-              start = 0;
-            if (end > this.length)
-              end = this.length;
-            if (end <= start)
-              return '';
-            while (true) {
-              switch (encoding) {
-              case 'hex':
-                return hexSlice(this, start, end);
-              case 'utf8':
-              case 'utf-8':
-                return utf8Slice(this, start, end);
-              case 'ascii':
-                return asciiSlice(this, start, end);
-              case 'binary':
-                return binarySlice(this, start, end);
-              case 'base64':
-                return base64Slice(this, start, end);
-              case 'ucs2':
-              case 'ucs-2':
-              case 'utf16le':
-              case 'utf-16le':
-                return utf16leSlice(this, start, end);
-              default:
-                if (loweredCase)
-                  throw new TypeError('Unknown encoding: ' + encoding);
-                encoding = (encoding + '').toLowerCase();
-                loweredCase = true;
-              }
-            }
-          }
-          Buffer.prototype.toString = function toString() {
-            var length = this.length | 0;
-            if (length === 0)
-              return '';
-            if (arguments.length === 0)
-              return utf8Slice(this, 0, length);
-            return slowToString.apply(this, arguments);
-          };
-          Buffer.prototype.equals = function equals(b) {
-            if (!Buffer.isBuffer(b))
-              throw new TypeError('Argument must be a Buffer');
-            if (this === b)
-              return true;
-            return Buffer.compare(this, b) === 0;
-          };
-          Buffer.prototype.inspect = function inspect() {
-            var str = '';
-            var max = exports.INSPECT_MAX_BYTES;
-            if (this.length > 0) {
-              str = this.toString('hex', 0, max).match(/.{2}/g).join(' ');
-              if (this.length > max)
-                str += ' ... ';
-            }
-            return '<Buffer ' + str + '>';
-          };
-          Buffer.prototype.compare = function compare(b) {
-            if (!Buffer.isBuffer(b))
-              throw new TypeError('Argument must be a Buffer');
-            if (this === b)
-              return 0;
-            return Buffer.compare(this, b);
-          };
-          Buffer.prototype.indexOf = function indexOf(val, byteOffset) {
-            if (byteOffset > 2147483647)
-              byteOffset = 2147483647;
-            else if (byteOffset < -2147483648)
-              byteOffset = -2147483648;
-            byteOffset >>= 0;
-            if (this.length === 0)
-              return -1;
-            if (byteOffset >= this.length)
-              return -1;
-            // Negative offsets start from the end of the buffer
-            if (byteOffset < 0)
-              byteOffset = Math.max(this.length + byteOffset, 0);
-            if (typeof val === 'string') {
-              if (val.length === 0)
-                return -1;
-              // special case: looking for empty string always fails
-              return String.prototype.indexOf.call(this, val, byteOffset);
-            }
-            if (Buffer.isBuffer(val)) {
-              return arrayIndexOf(this, val, byteOffset);
-            }
-            if (typeof val === 'number') {
-              if (Buffer.TYPED_ARRAY_SUPPORT && Uint8Array.prototype.indexOf === 'function') {
-                return Uint8Array.prototype.indexOf.call(this, val, byteOffset);
-              }
-              return arrayIndexOf(this, [val], byteOffset);
-            }
-            function arrayIndexOf(arr, val, byteOffset) {
-              var foundIndex = -1;
-              for (var i = 0; byteOffset + i < arr.length; i++) {
-                if (arr[byteOffset + i] === val[foundIndex === -1 ? 0 : i - foundIndex]) {
-                  if (foundIndex === -1)
-                    foundIndex = i;
-                  if (i - foundIndex + 1 === val.length)
-                    return byteOffset + foundIndex;
-                } else {
-                  foundIndex = -1;
-                }
-              }
-              return -1;
-            }
-            throw new TypeError('val must be string, number or Buffer');
-          };
-          // `get` is deprecated
-          Buffer.prototype.get = function get(offset) {
-            console.log('.get() is deprecated. Access using array indexes instead.');
-            return this.readUInt8(offset);
-          };
-          // `set` is deprecated
-          Buffer.prototype.set = function set(v, offset) {
-            console.log('.set() is deprecated. Access using array indexes instead.');
-            return this.writeUInt8(v, offset);
-          };
-          function hexWrite(buf, string, offset, length) {
-            offset = Number(offset) || 0;
-            var remaining = buf.length - offset;
-            if (!length) {
-              length = remaining;
-            } else {
-              length = Number(length);
-              if (length > remaining) {
-                length = remaining;
-              }
-            }
-            // must be an even number of digits
-            var strLen = string.length;
-            if (strLen % 2 !== 0)
-              throw new Error('Invalid hex string');
-            if (length > strLen / 2) {
-              length = strLen / 2;
-            }
-            for (var i = 0; i < length; i++) {
-              var parsed = parseInt(string.substr(i * 2, 2), 16);
-              if (isNaN(parsed))
-                throw new Error('Invalid hex string');
-              buf[offset + i] = parsed;
-            }
-            return i;
-          }
-          function utf8Write(buf, string, offset, length) {
-            return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length);
-          }
-          function asciiWrite(buf, string, offset, length) {
-            return blitBuffer(asciiToBytes(string), buf, offset, length);
-          }
-          function binaryWrite(buf, string, offset, length) {
-            return asciiWrite(buf, string, offset, length);
-          }
-          function base64Write(buf, string, offset, length) {
-            return blitBuffer(base64ToBytes(string), buf, offset, length);
-          }
-          function ucs2Write(buf, string, offset, length) {
-            return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length);
-          }
-          Buffer.prototype.write = function write(string, offset, length, encoding) {
-            // Buffer#write(string)
-            if (offset === undefined) {
-              encoding = 'utf8';
-              length = this.length;
-              offset = 0;
-            } else if (length === undefined && typeof offset === 'string') {
-              encoding = offset;
-              length = this.length;
-              offset = 0;
-            } else if (isFinite(offset)) {
-              offset = offset | 0;
-              if (isFinite(length)) {
-                length = length | 0;
-                if (encoding === undefined)
-                  encoding = 'utf8';
-              } else {
-                encoding = length;
-                length = undefined;
-              }  // legacy write(string, encoding, offset, length) - remove in v0.13
-            } else {
-              var swap = encoding;
-              encoding = offset;
-              offset = length | 0;
-              length = swap;
-            }
-            var remaining = this.length - offset;
-            if (length === undefined || length > remaining)
-              length = remaining;
-            if (string.length > 0 && (length < 0 || offset < 0) || offset > this.length) {
-              throw new RangeError('attempt to write outside buffer bounds');
-            }
-            if (!encoding)
-              encoding = 'utf8';
-            var loweredCase = false;
-            for (;;) {
-              switch (encoding) {
-              case 'hex':
-                return hexWrite(this, string, offset, length);
-              case 'utf8':
-              case 'utf-8':
-                return utf8Write(this, string, offset, length);
-              case 'ascii':
-                return asciiWrite(this, string, offset, length);
-              case 'binary':
-                return binaryWrite(this, string, offset, length);
-              case 'base64':
-                // Warning: maxLength not taken into account in base64Write
-                return base64Write(this, string, offset, length);
-              case 'ucs2':
-              case 'ucs-2':
-              case 'utf16le':
-              case 'utf-16le':
-                return ucs2Write(this, string, offset, length);
-              default:
-                if (loweredCase)
-                  throw new TypeError('Unknown encoding: ' + encoding);
-                encoding = ('' + encoding).toLowerCase();
-                loweredCase = true;
-              }
-            }
-          };
-          Buffer.prototype.toJSON = function toJSON() {
-            return {
-              type: 'Buffer',
-              data: Array.prototype.slice.call(this._arr || this, 0)
-            };
-          };
-          function base64Slice(buf, start, end) {
-            if (start === 0 && end === buf.length) {
-              return base64.fromByteArray(buf);
-            } else {
-              return base64.fromByteArray(buf.slice(start, end));
-            }
-          }
-          function utf8Slice(buf, start, end) {
-            end = Math.min(buf.length, end);
-            var res = [];
-            var i = start;
-            while (i < end) {
-              var firstByte = buf[i];
-              var codePoint = null;
-              var bytesPerSequence = firstByte > 239 ? 4 : firstByte > 223 ? 3 : firstByte > 191 ? 2 : 1;
-              if (i + bytesPerSequence <= end) {
-                var secondByte, thirdByte, fourthByte, tempCodePoint;
-                switch (bytesPerSequence) {
-                case 1:
-                  if (firstByte < 128) {
-                    codePoint = firstByte;
-                  }
-                  break;
-                case 2:
-                  secondByte = buf[i + 1];
-                  if ((secondByte & 192) === 128) {
-                    tempCodePoint = (firstByte & 31) << 6 | secondByte & 63;
-                    if (tempCodePoint > 127) {
-                      codePoint = tempCodePoint;
-                    }
-                  }
-                  break;
-                case 3:
-                  secondByte = buf[i + 1];
-                  thirdByte = buf[i + 2];
-                  if ((secondByte & 192) === 128 && (thirdByte & 192) === 128) {
-                    tempCodePoint = (firstByte & 15) << 12 | (secondByte & 63) << 6 | thirdByte & 63;
-                    if (tempCodePoint > 2047 && (tempCodePoint < 55296 || tempCodePoint > 57343)) {
-                      codePoint = tempCodePoint;
-                    }
-                  }
-                  break;
-                case 4:
-                  secondByte = buf[i + 1];
-                  thirdByte = buf[i + 2];
-                  fourthByte = buf[i + 3];
-                  if ((secondByte & 192) === 128 && (thirdByte & 192) === 128 && (fourthByte & 192) === 128) {
-                    tempCodePoint = (firstByte & 15) << 18 | (secondByte & 63) << 12 | (thirdByte & 63) << 6 | fourthByte & 63;
-                    if (tempCodePoint > 65535 && tempCodePoint < 1114112) {
-                      codePoint = tempCodePoint;
-                    }
-                  }
-                }
-              }
-              if (codePoint === null) {
-                // we did not generate a valid codePoint so insert a
-                // replacement char (U+FFFD) and advance only 1 byte
-                codePoint = 65533;
-                bytesPerSequence = 1;
-              } else if (codePoint > 65535) {
-                // encode to utf16 (surrogate pair dance)
-                codePoint -= 65536;
-                res.push(codePoint >>> 10 & 1023 | 55296);
-                codePoint = 56320 | codePoint & 1023;
-              }
-              res.push(codePoint);
-              i += bytesPerSequence;
-            }
-            return decodeCodePointsArray(res);
-          }
-          // Based on http://stackoverflow.com/a/22747272/680742, the browser with
-          // the lowest limit is Chrome, with 0x10000 args.
-          // We go 1 magnitude less, for safety
-          var MAX_ARGUMENTS_LENGTH = 4096;
-          function decodeCodePointsArray(codePoints) {
-            var len = codePoints.length;
-            if (len <= MAX_ARGUMENTS_LENGTH) {
-              return String.fromCharCode.apply(String, codePoints);
-            }
-            // Decode in chunks to avoid "call stack size exceeded".
-            var res = '';
-            var i = 0;
-            while (i < len) {
-              res += String.fromCharCode.apply(String, codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH));
-            }
-            return res;
-          }
-          function asciiSlice(buf, start, end) {
-            var ret = '';
-            end = Math.min(buf.length, end);
-            for (var i = start; i < end; i++) {
-              ret += String.fromCharCode(buf[i] & 127);
-            }
-            return ret;
-          }
-          function binarySlice(buf, start, end) {
-            var ret = '';
-            end = Math.min(buf.length, end);
-            for (var i = start; i < end; i++) {
-              ret += String.fromCharCode(buf[i]);
-            }
-            return ret;
-          }
-          function hexSlice(buf, start, end) {
-            var len = buf.length;
-            if (!start || start < 0)
-              start = 0;
-            if (!end || end < 0 || end > len)
-              end = len;
-            var out = '';
-            for (var i = start; i < end; i++) {
-              out += toHex(buf[i]);
-            }
-            return out;
-          }
-          function utf16leSlice(buf, start, end) {
-            var bytes = buf.slice(start, end);
-            var res = '';
-            for (var i = 0; i < bytes.length; i += 2) {
-              res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256);
-            }
-            return res;
-          }
-          Buffer.prototype.slice = function slice(start, end) {
-            var len = this.length;
-            start = ~~start;
-            end = end === undefined ? len : ~~end;
-            if (start < 0) {
-              start += len;
-              if (start < 0)
-                start = 0;
-            } else if (start > len) {
-              start = len;
-            }
-            if (end < 0) {
-              end += len;
-              if (end < 0)
-                end = 0;
-            } else if (end > len) {
-              end = len;
-            }
-            if (end < start)
-              end = start;
-            var newBuf;
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              newBuf = Buffer._augment(this.subarray(start, end));
-            } else {
-              var sliceLen = end - start;
-              newBuf = new Buffer(sliceLen, undefined);
-              for (var i = 0; i < sliceLen; i++) {
-                newBuf[i] = this[i + start];
-              }
-            }
-            if (newBuf.length)
-              newBuf.parent = this.parent || this;
-            return newBuf;
-          };
-          /*
- * Need to make sure that buffer isn't trying to write out of bounds.
- */
-          function checkOffset(offset, ext, length) {
-            if (offset % 1 !== 0 || offset < 0)
-              throw new RangeError('offset is not uint');
-            if (offset + ext > length)
-              throw new RangeError('Trying to access beyond buffer length');
-          }
-          Buffer.prototype.readUIntLE = function readUIntLE(offset, byteLength, noAssert) {
-            offset = offset | 0;
-            byteLength = byteLength | 0;
-            if (!noAssert)
-              checkOffset(offset, byteLength, this.length);
-            var val = this[offset];
-            var mul = 1;
-            var i = 0;
-            while (++i < byteLength && (mul *= 256)) {
-              val += this[offset + i] * mul;
-            }
-            return val;
-          };
-          Buffer.prototype.readUIntBE = function readUIntBE(offset, byteLength, noAssert) {
-            offset = offset | 0;
-            byteLength = byteLength | 0;
-            if (!noAssert) {
-              checkOffset(offset, byteLength, this.length);
-            }
-            var val = this[offset + --byteLength];
-            var mul = 1;
-            while (byteLength > 0 && (mul *= 256)) {
-              val += this[offset + --byteLength] * mul;
-            }
-            return val;
-          };
-          Buffer.prototype.readUInt8 = function readUInt8(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 1, this.length);
-            return this[offset];
-          };
-          Buffer.prototype.readUInt16LE = function readUInt16LE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 2, this.length);
-            return this[offset] | this[offset + 1] << 8;
-          };
-          Buffer.prototype.readUInt16BE = function readUInt16BE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 2, this.length);
-            return this[offset] << 8 | this[offset + 1];
-          };
-          Buffer.prototype.readUInt32LE = function readUInt32LE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 4, this.length);
-            return (this[offset] | this[offset + 1] << 8 | this[offset + 2] << 16) + this[offset + 3] * 16777216;
-          };
-          Buffer.prototype.readUInt32BE = function readUInt32BE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 4, this.length);
-            return this[offset] * 16777216 + (this[offset + 1] << 16 | this[offset + 2] << 8 | this[offset + 3]);
-          };
-          Buffer.prototype.readIntLE = function readIntLE(offset, byteLength, noAssert) {
-            offset = offset | 0;
-            byteLength = byteLength | 0;
-            if (!noAssert)
-              checkOffset(offset, byteLength, this.length);
-            var val = this[offset];
-            var mul = 1;
-            var i = 0;
-            while (++i < byteLength && (mul *= 256)) {
-              val += this[offset + i] * mul;
-            }
-            mul *= 128;
-            if (val >= mul)
-              val -= Math.pow(2, 8 * byteLength);
-            return val;
-          };
-          Buffer.prototype.readIntBE = function readIntBE(offset, byteLength, noAssert) {
-            offset = offset | 0;
-            byteLength = byteLength | 0;
-            if (!noAssert)
-              checkOffset(offset, byteLength, this.length);
-            var i = byteLength;
-            var mul = 1;
-            var val = this[offset + --i];
-            while (i > 0 && (mul *= 256)) {
-              val += this[offset + --i] * mul;
-            }
-            mul *= 128;
-            if (val >= mul)
-              val -= Math.pow(2, 8 * byteLength);
-            return val;
-          };
-          Buffer.prototype.readInt8 = function readInt8(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 1, this.length);
-            if (!(this[offset] & 128))
-              return this[offset];
-            return (255 - this[offset] + 1) * -1;
-          };
-          Buffer.prototype.readInt16LE = function readInt16LE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 2, this.length);
-            var val = this[offset] | this[offset + 1] << 8;
-            return val & 32768 ? val | 4294901760 : val;
-          };
-          Buffer.prototype.readInt16BE = function readInt16BE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 2, this.length);
-            var val = this[offset + 1] | this[offset] << 8;
-            return val & 32768 ? val | 4294901760 : val;
-          };
-          Buffer.prototype.readInt32LE = function readInt32LE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 4, this.length);
-            return this[offset] | this[offset + 1] << 8 | this[offset + 2] << 16 | this[offset + 3] << 24;
-          };
-          Buffer.prototype.readInt32BE = function readInt32BE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 4, this.length);
-            return this[offset] << 24 | this[offset + 1] << 16 | this[offset + 2] << 8 | this[offset + 3];
-          };
-          Buffer.prototype.readFloatLE = function readFloatLE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 4, this.length);
-            return ieee754.read(this, offset, true, 23, 4);
-          };
-          Buffer.prototype.readFloatBE = function readFloatBE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 4, this.length);
-            return ieee754.read(this, offset, false, 23, 4);
-          };
-          Buffer.prototype.readDoubleLE = function readDoubleLE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 8, this.length);
-            return ieee754.read(this, offset, true, 52, 8);
-          };
-          Buffer.prototype.readDoubleBE = function readDoubleBE(offset, noAssert) {
-            if (!noAssert)
-              checkOffset(offset, 8, this.length);
-            return ieee754.read(this, offset, false, 52, 8);
-          };
-          function checkInt(buf, value, offset, ext, max, min) {
-            if (!Buffer.isBuffer(buf))
-              throw new TypeError('buffer must be a Buffer instance');
-            if (value > max || value < min)
-              throw new RangeError('value is out of bounds');
-            if (offset + ext > buf.length)
-              throw new RangeError('index out of range');
-          }
-          Buffer.prototype.writeUIntLE = function writeUIntLE(value, offset, byteLength, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            byteLength = byteLength | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, byteLength, Math.pow(2, 8 * byteLength), 0);
-            var mul = 1;
-            var i = 0;
-            this[offset] = value & 255;
-            while (++i < byteLength && (mul *= 256)) {
-              this[offset + i] = value / mul & 255;
-            }
-            return offset + byteLength;
-          };
-          Buffer.prototype.writeUIntBE = function writeUIntBE(value, offset, byteLength, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            byteLength = byteLength | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, byteLength, Math.pow(2, 8 * byteLength), 0);
-            var i = byteLength - 1;
-            var mul = 1;
-            this[offset + i] = value & 255;
-            while (--i >= 0 && (mul *= 256)) {
-              this[offset + i] = value / mul & 255;
-            }
-            return offset + byteLength;
-          };
-          Buffer.prototype.writeUInt8 = function writeUInt8(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 1, 255, 0);
-            if (!Buffer.TYPED_ARRAY_SUPPORT)
-              value = Math.floor(value);
-            this[offset] = value & 255;
-            return offset + 1;
-          };
-          function objectWriteUInt16(buf, value, offset, littleEndian) {
-            if (value < 0)
-              value = 65535 + value + 1;
-            for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; i++) {
-              buf[offset + i] = (value & 255 << 8 * (littleEndian ? i : 1 - i)) >>> (littleEndian ? i : 1 - i) * 8;
-            }
-          }
-          Buffer.prototype.writeUInt16LE = function writeUInt16LE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 2, 65535, 0);
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset] = value & 255;
-              this[offset + 1] = value >>> 8;
-            } else {
-              objectWriteUInt16(this, value, offset, true);
-            }
-            return offset + 2;
-          };
-          Buffer.prototype.writeUInt16BE = function writeUInt16BE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 2, 65535, 0);
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset] = value >>> 8;
-              this[offset + 1] = value & 255;
-            } else {
-              objectWriteUInt16(this, value, offset, false);
-            }
-            return offset + 2;
-          };
-          function objectWriteUInt32(buf, value, offset, littleEndian) {
-            if (value < 0)
-              value = 4294967295 + value + 1;
-            for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; i++) {
-              buf[offset + i] = value >>> (littleEndian ? i : 3 - i) * 8 & 255;
-            }
-          }
-          Buffer.prototype.writeUInt32LE = function writeUInt32LE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 4, 4294967295, 0);
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset + 3] = value >>> 24;
-              this[offset + 2] = value >>> 16;
-              this[offset + 1] = value >>> 8;
-              this[offset] = value & 255;
-            } else {
-              objectWriteUInt32(this, value, offset, true);
-            }
-            return offset + 4;
-          };
-          Buffer.prototype.writeUInt32BE = function writeUInt32BE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 4, 4294967295, 0);
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset] = value >>> 24;
-              this[offset + 1] = value >>> 16;
-              this[offset + 2] = value >>> 8;
-              this[offset + 3] = value & 255;
-            } else {
-              objectWriteUInt32(this, value, offset, false);
-            }
-            return offset + 4;
-          };
-          Buffer.prototype.writeIntLE = function writeIntLE(value, offset, byteLength, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert) {
-              var limit = Math.pow(2, 8 * byteLength - 1);
-              checkInt(this, value, offset, byteLength, limit - 1, -limit);
-            }
-            var i = 0;
-            var mul = 1;
-            var sub = value < 0 ? 1 : 0;
-            this[offset] = value & 255;
-            while (++i < byteLength && (mul *= 256)) {
-              this[offset + i] = (value / mul >> 0) - sub & 255;
-            }
-            return offset + byteLength;
-          };
-          Buffer.prototype.writeIntBE = function writeIntBE(value, offset, byteLength, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert) {
-              var limit = Math.pow(2, 8 * byteLength - 1);
-              checkInt(this, value, offset, byteLength, limit - 1, -limit);
-            }
-            var i = byteLength - 1;
-            var mul = 1;
-            var sub = value < 0 ? 1 : 0;
-            this[offset + i] = value & 255;
-            while (--i >= 0 && (mul *= 256)) {
-              this[offset + i] = (value / mul >> 0) - sub & 255;
-            }
-            return offset + byteLength;
-          };
-          Buffer.prototype.writeInt8 = function writeInt8(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 1, 127, -128);
-            if (!Buffer.TYPED_ARRAY_SUPPORT)
-              value = Math.floor(value);
-            if (value < 0)
-              value = 255 + value + 1;
-            this[offset] = value & 255;
-            return offset + 1;
-          };
-          Buffer.prototype.writeInt16LE = function writeInt16LE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 2, 32767, -32768);
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset] = value & 255;
-              this[offset + 1] = value >>> 8;
-            } else {
-              objectWriteUInt16(this, value, offset, true);
-            }
-            return offset + 2;
-          };
-          Buffer.prototype.writeInt16BE = function writeInt16BE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 2, 32767, -32768);
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset] = value >>> 8;
-              this[offset + 1] = value & 255;
-            } else {
-              objectWriteUInt16(this, value, offset, false);
-            }
-            return offset + 2;
-          };
-          Buffer.prototype.writeInt32LE = function writeInt32LE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 4, 2147483647, -2147483648);
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset] = value & 255;
-              this[offset + 1] = value >>> 8;
-              this[offset + 2] = value >>> 16;
-              this[offset + 3] = value >>> 24;
-            } else {
-              objectWriteUInt32(this, value, offset, true);
-            }
-            return offset + 4;
-          };
-          Buffer.prototype.writeInt32BE = function writeInt32BE(value, offset, noAssert) {
-            value = +value;
-            offset = offset | 0;
-            if (!noAssert)
-              checkInt(this, value, offset, 4, 2147483647, -2147483648);
-            if (value < 0)
-              value = 4294967295 + value + 1;
-            if (Buffer.TYPED_ARRAY_SUPPORT) {
-              this[offset] = value >>> 24;
-              this[offset + 1] = value >>> 16;
-              this[offset + 2] = value >>> 8;
-              this[offset + 3] = value & 255;
-            } else {
-              objectWriteUInt32(this, value, offset, false);
-            }
-            return offset + 4;
-          };
-          function checkIEEE754(buf, value, offset, ext, max, min) {
-            if (value > max || value < min)
-              throw new RangeError('value is out of bounds');
-            if (offset + ext > buf.length)
-              throw new RangeError('index out of range');
-            if (offset < 0)
-              throw new RangeError('index out of range');
-          }
-          function writeFloat(buf, value, offset, littleEndian, noAssert) {
-            if (!noAssert) {
-              checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38);
-            }
-            ieee754.write(buf, value, offset, littleEndian, 23, 4);
-            return offset + 4;
-          }
-          Buffer.prototype.writeFloatLE = function writeFloatLE(value, offset, noAssert) {
-            return writeFloat(this, value, offset, true, noAssert);
-          };
-          Buffer.prototype.writeFloatBE = function writeFloatBE(value, offset, noAssert) {
-            return writeFloat(this, value, offset, false, noAssert);
-          };
-          function writeDouble(buf, value, offset, littleEndian, noAssert) {
-            if (!noAssert) {
-              checkIEEE754(buf, value, offset, 8, 1.7976931348623157e+308, -1.7976931348623157e+308);
-            }
-            ieee754.write(buf, value, offset, littleEndian, 52, 8);
-            return offset + 8;
-          }
-          Buffer.prototype.writeDoubleLE = function writeDoubleLE(value, offset, noAssert) {
-            return writeDouble(this, value, offset, true, noAssert);
-          };
-          Buffer.prototype.writeDoubleBE = function writeDoubleBE(value, offset, noAssert) {
-            return writeDouble(this, value, offset, false, noAssert);
-          };
-          // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
-          Buffer.prototype.copy = function copy(target, targetStart, start, end) {
-            if (!start)
-              start = 0;
-            if (!end && end !== 0)
-              end = this.length;
-            if (targetStart >= target.length)
-              targetStart = target.length;
-            if (!targetStart)
-              targetStart = 0;
-            if (end > 0 && end < start)
-              end = start;
-            // Copy 0 bytes; we're done
-            if (end === start)
-              return 0;
-            if (target.length === 0 || this.length === 0)
-              return 0;
-            // Fatal error conditions
-            if (targetStart < 0) {
-              throw new RangeError('targetStart out of bounds');
-            }
-            if (start < 0 || start >= this.length)
-              throw new RangeError('sourceStart out of bounds');
-            if (end < 0)
-              throw new RangeError('sourceEnd out of bounds');
-            // Are we oob?
-            if (end > this.length)
-              end = this.length;
-            if (target.length - targetStart < end - start) {
-              end = target.length - targetStart + start;
-            }
-            var len = end - start;
-            var i;
-            if (this === target && start < targetStart && targetStart < end) {
-              // descending copy from end
-              for (i = len - 1; i >= 0; i--) {
-                target[i + targetStart] = this[i + start];
-              }
-            } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
-              // ascending copy from start
-              for (i = 0; i < len; i++) {
-                target[i + targetStart] = this[i + start];
-              }
-            } else {
-              target._set(this.subarray(start, start + len), targetStart);
-            }
-            return len;
-          };
-          // fill(value, start=0, end=buffer.length)
-          Buffer.prototype.fill = function fill(value, start, end) {
-            if (!value)
-              value = 0;
-            if (!start)
-              start = 0;
-            if (!end)
-              end = this.length;
-            if (end < start)
-              throw new RangeError('end < start');
-            // Fill 0 bytes; we're done
-            if (end === start)
-              return;
-            if (this.length === 0)
-              return;
-            if (start < 0 || start >= this.length)
-              throw new RangeError('start out of bounds');
-            if (end < 0 || end > this.length)
-              throw new RangeError('end out of bounds');
-            var i;
-            if (typeof value === 'number') {
-              for (i = start; i < end; i++) {
-                this[i] = value;
-              }
-            } else {
-              var bytes = utf8ToBytes(value.toString());
-              var len = bytes.length;
-              for (i = start; i < end; i++) {
-                this[i] = bytes[i % len];
-              }
-            }
-            return this;
-          };
-          /**
- * Creates a new `ArrayBuffer` with the *copied* memory of the buffer instance.
- * Added in Node 0.12. Only available in browsers that support ArrayBuffer.
- */
-          Buffer.prototype.toArrayBuffer = function toArrayBuffer() {
-            if (typeof Uint8Array !== 'undefined') {
-              if (Buffer.TYPED_ARRAY_SUPPORT) {
-                return new Buffer(this).buffer;
-              } else {
-                var buf = new Uint8Array(this.length);
-                for (var i = 0, len = buf.length; i < len; i += 1) {
-                  buf[i] = this[i];
-                }
-                return buf.buffer;
-              }
-            } else {
-              throw new TypeError('Buffer.toArrayBuffer not supported in this browser');
-            }
-          };
-          // HELPER FUNCTIONS
-          // ================
-          var BP = Buffer.prototype;
-          /**
- * Augment a Uint8Array *instance* (not the Uint8Array class!) with Buffer methods
- */
-          Buffer._augment = function _augment(arr) {
-            arr.constructor = Buffer;
-            arr._isBuffer = true;
-            // save reference to original Uint8Array set method before overwriting
-            arr._set = arr.set;
-            // deprecated
-            arr.get = BP.get;
-            arr.set = BP.set;
-            arr.write = BP.write;
-            arr.toString = BP.toString;
-            arr.toLocaleString = BP.toString;
-            arr.toJSON = BP.toJSON;
-            arr.equals = BP.equals;
-            arr.compare = BP.compare;
-            arr.indexOf = BP.indexOf;
-            arr.copy = BP.copy;
-            arr.slice = BP.slice;
-            arr.readUIntLE = BP.readUIntLE;
-            arr.readUIntBE = BP.readUIntBE;
-            arr.readUInt8 = BP.readUInt8;
-            arr.readUInt16LE = BP.readUInt16LE;
-            arr.readUInt16BE = BP.readUInt16BE;
-            arr.readUInt32LE = BP.readUInt32LE;
-            arr.readUInt32BE = BP.readUInt32BE;
-            arr.readIntLE = BP.readIntLE;
-            arr.readIntBE = BP.readIntBE;
-            arr.readInt8 = BP.readInt8;
-            arr.readInt16LE = BP.readInt16LE;
-            arr.readInt16BE = BP.readInt16BE;
-            arr.readInt32LE = BP.readInt32LE;
-            arr.readInt32BE = BP.readInt32BE;
-            arr.readFloatLE = BP.readFloatLE;
-            arr.readFloatBE = BP.readFloatBE;
-            arr.readDoubleLE = BP.readDoubleLE;
-            arr.readDoubleBE = BP.readDoubleBE;
-            arr.writeUInt8 = BP.writeUInt8;
-            arr.writeUIntLE = BP.writeUIntLE;
-            arr.writeUIntBE = BP.writeUIntBE;
-            arr.writeUInt16LE = BP.writeUInt16LE;
-            arr.writeUInt16BE = BP.writeUInt16BE;
-            arr.writeUInt32LE = BP.writeUInt32LE;
-            arr.writeUInt32BE = BP.writeUInt32BE;
-            arr.writeIntLE = BP.writeIntLE;
-            arr.writeIntBE = BP.writeIntBE;
-            arr.writeInt8 = BP.writeInt8;
-            arr.writeInt16LE = BP.writeInt16LE;
-            arr.writeInt16BE = BP.writeInt16BE;
-            arr.writeInt32LE = BP.writeInt32LE;
-            arr.writeInt32BE = BP.writeInt32BE;
-            arr.writeFloatLE = BP.writeFloatLE;
-            arr.writeFloatBE = BP.writeFloatBE;
-            arr.writeDoubleLE = BP.writeDoubleLE;
-            arr.writeDoubleBE = BP.writeDoubleBE;
-            arr.fill = BP.fill;
-            arr.inspect = BP.inspect;
-            arr.toArrayBuffer = BP.toArrayBuffer;
-            return arr;
-          };
-          var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g;
-          function base64clean(str) {
-            // Node strips out invalid characters like \n and \t from the string, base64-js does not
-            str = stringtrim(str).replace(INVALID_BASE64_RE, '');
-            // Node converts strings with length < 2 to ''
-            if (str.length < 2)
-              return '';
-            // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
-            while (str.length % 4 !== 0) {
-              str = str + '=';
-            }
-            return str;
-          }
-          function stringtrim(str) {
-            if (str.trim)
-              return str.trim();
-            return str.replace(/^\s+|\s+$/g, '');
-          }
-          function toHex(n) {
-            if (n < 16)
-              return '0' + n.toString(16);
-            return n.toString(16);
-          }
-          function utf8ToBytes(string, units) {
-            units = units || Infinity;
-            var codePoint;
-            var length = string.length;
-            var leadSurrogate = null;
-            var bytes = [];
-            for (var i = 0; i < length; i++) {
-              codePoint = string.charCodeAt(i);
-              // is surrogate component
-              if (codePoint > 55295 && codePoint < 57344) {
-                // last char was a lead
-                if (!leadSurrogate) {
-                  // no lead yet
-                  if (codePoint > 56319) {
-                    // unexpected trail
-                    if ((units -= 3) > -1)
-                      bytes.push(239, 191, 189);
-                    continue;
-                  } else if (i + 1 === length) {
-                    // unpaired lead
-                    if ((units -= 3) > -1)
-                      bytes.push(239, 191, 189);
-                    continue;
-                  }
-                  // valid lead
-                  leadSurrogate = codePoint;
-                  continue;
-                }
-                // 2 leads in a row
-                if (codePoint < 56320) {
-                  if ((units -= 3) > -1)
-                    bytes.push(239, 191, 189);
-                  leadSurrogate = codePoint;
-                  continue;
-                }
-                // valid surrogate pair
-                codePoint = (leadSurrogate - 55296 << 10 | codePoint - 56320) + 65536;
-              } else if (leadSurrogate) {
-                // valid bmp char, but last char was a lead
-                if ((units -= 3) > -1)
-                  bytes.push(239, 191, 189);
-              }
-              leadSurrogate = null;
-              // encode utf8
-              if (codePoint < 128) {
-                if ((units -= 1) < 0)
-                  break;
-                bytes.push(codePoint);
-              } else if (codePoint < 2048) {
-                if ((units -= 2) < 0)
-                  break;
-                bytes.push(codePoint >> 6 | 192, codePoint & 63 | 128);
-              } else if (codePoint < 65536) {
-                if ((units -= 3) < 0)
-                  break;
-                bytes.push(codePoint >> 12 | 224, codePoint >> 6 & 63 | 128, codePoint & 63 | 128);
-              } else if (codePoint < 1114112) {
-                if ((units -= 4) < 0)
-                  break;
-                bytes.push(codePoint >> 18 | 240, codePoint >> 12 & 63 | 128, codePoint >> 6 & 63 | 128, codePoint & 63 | 128);
-              } else {
-                throw new Error('Invalid code point');
-              }
-            }
-            return bytes;
-          }
-          function asciiToBytes(str) {
-            var byteArray = [];
-            for (var i = 0; i < str.length; i++) {
-              // Node's code seems to be doing this and not & 0x7F..
-              byteArray.push(str.charCodeAt(i) & 255);
-            }
-            return byteArray;
-          }
-          function utf16leToBytes(str, units) {
-            var c, hi, lo;
-            var byteArray = [];
-            for (var i = 0; i < str.length; i++) {
-              if ((units -= 2) < 0)
-                break;
-              c = str.charCodeAt(i);
-              hi = c >> 8;
-              lo = c % 256;
-              byteArray.push(lo);
-              byteArray.push(hi);
-            }
-            return byteArray;
-          }
-          function base64ToBytes(str) {
-            return base64.toByteArray(base64clean(str));
-          }
-          function blitBuffer(src, dst, offset, length) {
-            for (var i = 0; i < length; i++) {
-              if (i + offset >= dst.length || i >= src.length)
-                break;
-              dst[i + offset] = src[i];
-            }
-            return i;
-          }
-        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        'base64-js': 36,
-        'ieee754': 52,
-        'isarray': 42
+        'lodash': 66,
+        'request': 68
       }
     ],
-    42: [
-      function (require, module, exports) {
-        var toString = {}.toString;
-        module.exports = Array.isArray || function (arr) {
-          return toString.call(arr) == '[object Array]';
-        };
-      },
-      {}
-    ],
-    43: [
-      function (require, module, exports) {
-        module.exports = {
-          '100': 'Continue',
-          '101': 'Switching Protocols',
-          '102': 'Processing',
-          '200': 'OK',
-          '201': 'Created',
-          '202': 'Accepted',
-          '203': 'Non-Authoritative Information',
-          '204': 'No Content',
-          '205': 'Reset Content',
-          '206': 'Partial Content',
-          '207': 'Multi-Status',
-          '300': 'Multiple Choices',
-          '301': 'Moved Permanently',
-          '302': 'Moved Temporarily',
-          '303': 'See Other',
-          '304': 'Not Modified',
-          '305': 'Use Proxy',
-          '307': 'Temporary Redirect',
-          '308': 'Permanent Redirect',
-          '400': 'Bad Request',
-          '401': 'Unauthorized',
-          '402': 'Payment Required',
-          '403': 'Forbidden',
-          '404': 'Not Found',
-          '405': 'Method Not Allowed',
-          '406': 'Not Acceptable',
-          '407': 'Proxy Authentication Required',
-          '408': 'Request Time-out',
-          '409': 'Conflict',
-          '410': 'Gone',
-          '411': 'Length Required',
-          '412': 'Precondition Failed',
-          '413': 'Request Entity Too Large',
-          '414': 'Request-URI Too Large',
-          '415': 'Unsupported Media Type',
-          '416': 'Requested Range Not Satisfiable',
-          '417': 'Expectation Failed',
-          '418': 'I\'m a teapot',
-          '422': 'Unprocessable Entity',
-          '423': 'Locked',
-          '424': 'Failed Dependency',
-          '425': 'Unordered Collection',
-          '426': 'Upgrade Required',
-          '428': 'Precondition Required',
-          '429': 'Too Many Requests',
-          '431': 'Request Header Fields Too Large',
-          '500': 'Internal Server Error',
-          '501': 'Not Implemented',
-          '502': 'Bad Gateway',
-          '503': 'Service Unavailable',
-          '504': 'Gateway Time-out',
-          '505': 'HTTP Version Not Supported',
-          '506': 'Variant Also Negotiates',
-          '507': 'Insufficient Storage',
-          '509': 'Bandwidth Limit Exceeded',
-          '510': 'Not Extended',
-          '511': 'Network Authentication Required'
-        };
-      },
-      {}
-    ],
-    44: [
-      function (require, module, exports) {
-        (function (process, global) {
-          'use strict';
-          var next = global.process && process.nextTick || global.setImmediate || function (f) {
-              setTimeout(f, 0);
-            };
-          module.exports = function maybe(cb, promise) {
-            if (cb) {
-              promise.then(function (result) {
-                next(function () {
-                  cb(null, result);
-                });
-              }, function (err) {
-                next(function () {
-                  cb(err);
-                });
-              });
-              return undefined;
-            } else {
-              return promise;
-            }
-          };
-        }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
-      },
-      { '_process': 115 }
-    ],
-    45: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          // Copyright Joyent, Inc. and other Node contributors.
-          //
-          // Permission is hereby granted, free of charge, to any person obtaining a
-          // copy of this software and associated documentation files (the
-          // "Software"), to deal in the Software without restriction, including
-          // without limitation the rights to use, copy, modify, merge, publish,
-          // distribute, sublicense, and/or sell copies of the Software, and to permit
-          // persons to whom the Software is furnished to do so, subject to the
-          // following conditions:
-          //
-          // The above copyright notice and this permission notice shall be included
-          // in all copies or substantial portions of the Software.
-          //
-          // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-          // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-          // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-          // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-          // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-          // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-          // USE OR OTHER DEALINGS IN THE SOFTWARE.
-          // NOTE: These type checking functions intentionally don't use `instanceof`
-          // because it is fragile and can be easily faked with `Object.create()`.
-          function isArray(arg) {
-            if (Array.isArray) {
-              return Array.isArray(arg);
-            }
-            return objectToString(arg) === '[object Array]';
-          }
-          exports.isArray = isArray;
-          function isBoolean(arg) {
-            return typeof arg === 'boolean';
-          }
-          exports.isBoolean = isBoolean;
-          function isNull(arg) {
-            return arg === null;
-          }
-          exports.isNull = isNull;
-          function isNullOrUndefined(arg) {
-            return arg == null;
-          }
-          exports.isNullOrUndefined = isNullOrUndefined;
-          function isNumber(arg) {
-            return typeof arg === 'number';
-          }
-          exports.isNumber = isNumber;
-          function isString(arg) {
-            return typeof arg === 'string';
-          }
-          exports.isString = isString;
-          function isSymbol(arg) {
-            return typeof arg === 'symbol';
-          }
-          exports.isSymbol = isSymbol;
-          function isUndefined(arg) {
-            return arg === void 0;
-          }
-          exports.isUndefined = isUndefined;
-          function isRegExp(re) {
-            return objectToString(re) === '[object RegExp]';
-          }
-          exports.isRegExp = isRegExp;
-          function isObject(arg) {
-            return typeof arg === 'object' && arg !== null;
-          }
-          exports.isObject = isObject;
-          function isDate(d) {
-            return objectToString(d) === '[object Date]';
-          }
-          exports.isDate = isDate;
-          function isError(e) {
-            return objectToString(e) === '[object Error]' || e instanceof Error;
-          }
-          exports.isError = isError;
-          function isFunction(arg) {
-            return typeof arg === 'function';
-          }
-          exports.isFunction = isFunction;
-          function isPrimitive(arg) {
-            return arg === null || typeof arg === 'boolean' || typeof arg === 'number' || typeof arg === 'string' || typeof arg === 'symbol' || typeof arg === 'undefined';
-          }
-          exports.isPrimitive = isPrimitive;
-          exports.isBuffer = Buffer.isBuffer;
-          function objectToString(o) {
-            return Object.prototype.toString.call(o);
-          }
-        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
-      },
-      { '../../is-buffer/index.js': 55 }
-    ],
-    46: [
-      function (require, module, exports) {
-        /**
- * This is the web browser implementation of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-        exports = module.exports = require('./debug');
-        exports.log = log;
-        exports.formatArgs = formatArgs;
-        exports.save = save;
-        exports.load = load;
-        exports.useColors = useColors;
-        exports.storage = 'undefined' != typeof chrome && 'undefined' != typeof chrome.storage ? chrome.storage.local : localstorage();
-        /**
- * Colors.
- */
-        exports.colors = [
-          'lightseagreen',
-          'forestgreen',
-          'goldenrod',
-          'dodgerblue',
-          'darkorchid',
-          'crimson'
-        ];
-        /**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-        function useColors() {
-          // is webkit? http://stackoverflow.com/a/16459606/376773
-          return 'WebkitAppearance' in document.documentElement.style || window.console && (console.firebug || console.exception && console.table) || navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31;
-        }
-        /**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-        exports.formatters.j = function (v) {
-          return JSON.stringify(v);
-        };
-        /**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-        function formatArgs() {
-          var args = arguments;
-          var useColors = this.useColors;
-          args[0] = (useColors ? '%c' : '') + this.namespace + (useColors ? ' %c' : ' ') + args[0] + (useColors ? '%c ' : ' ') + '+' + exports.humanize(this.diff);
-          if (!useColors)
-            return args;
-          var c = 'color: ' + this.color;
-          args = [
-            args[0],
-            c,
-            'color: inherit'
-          ].concat(Array.prototype.slice.call(args, 1));
-          // the final "%c" is somewhat tricky, because there could be other
-          // arguments passed either before or after the %c, so we need to
-          // figure out the correct index to insert the CSS into
-          var index = 0;
-          var lastC = 0;
-          args[0].replace(/%[a-z%]/g, function (match) {
-            if ('%%' === match)
-              return;
-            index++;
-            if ('%c' === match) {
-              // we only are interested in the *last* %c
-              // (the user may have provided their own)
-              lastC = index;
-            }
-          });
-          args.splice(lastC, 0, c);
-          return args;
-        }
-        /**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-        function log() {
-          // this hackery is required for IE8/9, where
-          // the `console.log` function doesn't have 'apply'
-          return 'object' === typeof console && console.log && Function.prototype.apply.call(console.log, console, arguments);
-        }
-        /**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-        function save(namespaces) {
-          try {
-            if (null == namespaces) {
-              exports.storage.removeItem('debug');
-            } else {
-              exports.storage.debug = namespaces;
-            }
-          } catch (e) {
-          }
-        }
-        /**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-        function load() {
-          var r;
-          try {
-            r = exports.storage.debug;
-          } catch (e) {
-          }
-          return r;
-        }
-        /**
- * Enable namespaces listed in `localStorage.debug` initially.
- */
-        exports.enable(load());
-        /**
- * Localstorage attempts to return the localstorage.
- *
- * This is necessary because safari throws
- * when a user disables cookies/localstorage
- * and you attempt to access it.
- *
- * @return {LocalStorage}
- * @api private
- */
-        function localstorage() {
-          try {
-            return window.localStorage;
-          } catch (e) {
-          }
-        }
-      },
-      { './debug': 47 }
-    ],
-    47: [
-      function (require, module, exports) {
-        /**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-        exports = module.exports = debug;
-        exports.coerce = coerce;
-        exports.disable = disable;
-        exports.enable = enable;
-        exports.enabled = enabled;
-        exports.humanize = require('ms');
-        /**
- * The currently active debug mode names, and names to skip.
- */
-        exports.names = [];
-        exports.skips = [];
-        /**
- * Map of special "%n" handling functions, for the debug "format" argument.
- *
- * Valid key names are a single, lowercased letter, i.e. "n".
- */
-        exports.formatters = {};
-        /**
- * Previously assigned color.
- */
-        var prevColor = 0;
-        /**
- * Previous log timestamp.
- */
-        var prevTime;
-        /**
- * Select a color.
- *
- * @return {Number}
- * @api private
- */
-        function selectColor() {
-          return exports.colors[prevColor++ % exports.colors.length];
-        }
-        /**
- * Create a debugger with the given `namespace`.
- *
- * @param {String} namespace
- * @return {Function}
- * @api public
- */
-        function debug(namespace) {
-          // define the `disabled` version
-          function disabled() {
-          }
-          disabled.enabled = false;
-          // define the `enabled` version
-          function enabled() {
-            var self = enabled;
-            // set `diff` timestamp
-            var curr = +new Date();
-            var ms = curr - (prevTime || curr);
-            self.diff = ms;
-            self.prev = prevTime;
-            self.curr = curr;
-            prevTime = curr;
-            // add the `color` if not set
-            if (null == self.useColors)
-              self.useColors = exports.useColors();
-            if (null == self.color && self.useColors)
-              self.color = selectColor();
-            var args = Array.prototype.slice.call(arguments);
-            args[0] = exports.coerce(args[0]);
-            if ('string' !== typeof args[0]) {
-              // anything else let's inspect with %o
-              args = ['%o'].concat(args);
-            }
-            // apply any `formatters` transformations
-            var index = 0;
-            args[0] = args[0].replace(/%([a-z%])/g, function (match, format) {
-              // if we encounter an escaped % then don't increase the array index
-              if (match === '%%')
-                return match;
-              index++;
-              var formatter = exports.formatters[format];
-              if ('function' === typeof formatter) {
-                var val = args[index];
-                match = formatter.call(self, val);
-                // now we need to remove `args[index]` since it's inlined in the `format`
-                args.splice(index, 1);
-                index--;
-              }
-              return match;
-            });
-            if ('function' === typeof exports.formatArgs) {
-              args = exports.formatArgs.apply(self, args);
-            }
-            var logFn = enabled.log || exports.log || console.log.bind(console);
-            logFn.apply(self, args);
-          }
-          enabled.enabled = true;
-          var fn = exports.enabled(namespace) ? enabled : disabled;
-          fn.namespace = namespace;
-          return fn;
-        }
-        /**
- * Enables a debug mode by namespaces. This can include modes
- * separated by a colon and wildcards.
- *
- * @param {String} namespaces
- * @api public
- */
-        function enable(namespaces) {
-          exports.save(namespaces);
-          var split = (namespaces || '').split(/[\s,]+/);
-          var len = split.length;
-          for (var i = 0; i < len; i++) {
-            if (!split[i])
-              continue;
-            // ignore empty strings
-            namespaces = split[i].replace(/\*/g, '.*?');
-            if (namespaces[0] === '-') {
-              exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-            } else {
-              exports.names.push(new RegExp('^' + namespaces + '$'));
-            }
-          }
-        }
-        /**
- * Disable debug output.
- *
- * @api public
- */
-        function disable() {
-          exports.enable('');
-        }
-        /**
- * Returns true if the given mode name is enabled, false otherwise.
- *
- * @param {String} name
- * @return {Boolean}
- * @api public
- */
-        function enabled(name) {
-          var i, len;
-          for (i = 0, len = exports.skips.length; i < len; i++) {
-            if (exports.skips[i].test(name)) {
-              return false;
-            }
-          }
-          for (i = 0, len = exports.names.length; i < len; i++) {
-            if (exports.names[i].test(name)) {
-              return true;
-            }
-          }
-          return false;
-        }
-        /**
- * Coerce `val`.
- *
- * @param {Mixed} val
- * @return {Mixed}
- * @api private
- */
-        function coerce(val) {
-          if (val instanceof Error)
-            return val.stack || val.message;
-          return val;
-        }
-      },
-      { 'ms': 110 }
-    ],
-    48: [
-      function (require, module, exports) {
-        (function (process, global) {
-          /*!
- * @overview es6-promise - a tiny implementation of Promises/A+.
- * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
- * @license   Licensed under MIT license
- *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
- * @version   3.3.1
- */
-          (function (global, factory) {
-            typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() : typeof define === 'function' && define.amd ? define(factory) : global.ES6Promise = factory();
-          }(this, function () {
-            'use strict';
-            function objectOrFunction(x) {
-              return typeof x === 'function' || typeof x === 'object' && x !== null;
-            }
-            function isFunction(x) {
-              return typeof x === 'function';
-            }
-            var _isArray = undefined;
-            if (!Array.isArray) {
-              _isArray = function (x) {
-                return Object.prototype.toString.call(x) === '[object Array]';
-              };
-            } else {
-              _isArray = Array.isArray;
-            }
-            var isArray = _isArray;
-            var len = 0;
-            var vertxNext = undefined;
-            var customSchedulerFn = undefined;
-            var asap = function asap(callback, arg) {
-              queue[len] = callback;
-              queue[len + 1] = arg;
-              len += 2;
-              if (len === 2) {
-                // If len is 2, that means that we need to schedule an async flush.
-                // If additional callbacks are queued before the queue is flushed, they
-                // will be processed by this flush that we are scheduling.
-                if (customSchedulerFn) {
-                  customSchedulerFn(flush);
-                } else {
-                  scheduleFlush();
-                }
-              }
-            };
-            function setScheduler(scheduleFn) {
-              customSchedulerFn = scheduleFn;
-            }
-            function setAsap(asapFn) {
-              asap = asapFn;
-            }
-            var browserWindow = typeof window !== 'undefined' ? window : undefined;
-            var browserGlobal = browserWindow || {};
-            var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-            var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
-            // test for web worker but not in IE10
-            var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
-            // node
-            function useNextTick() {
-              // node version 0.10.x displays a deprecation warning when nextTick is used recursively
-              // see https://github.com/cujojs/when/issues/410 for details
-              return function () {
-                return process.nextTick(flush);
-              };
-            }
-            // vertx
-            function useVertxTimer() {
-              return function () {
-                vertxNext(flush);
-              };
-            }
-            function useMutationObserver() {
-              var iterations = 0;
-              var observer = new BrowserMutationObserver(flush);
-              var node = document.createTextNode('');
-              observer.observe(node, { characterData: true });
-              return function () {
-                node.data = iterations = ++iterations % 2;
-              };
-            }
-            // web worker
-            function useMessageChannel() {
-              var channel = new MessageChannel();
-              channel.port1.onmessage = flush;
-              return function () {
-                return channel.port2.postMessage(0);
-              };
-            }
-            function useSetTimeout() {
-              // Store setTimeout reference so es6-promise will be unaffected by
-              // other code modifying setTimeout (like sinon.useFakeTimers())
-              var globalSetTimeout = setTimeout;
-              return function () {
-                return globalSetTimeout(flush, 1);
-              };
-            }
-            var queue = new Array(1000);
-            function flush() {
-              for (var i = 0; i < len; i += 2) {
-                var callback = queue[i];
-                var arg = queue[i + 1];
-                callback(arg);
-                queue[i] = undefined;
-                queue[i + 1] = undefined;
-              }
-              len = 0;
-            }
-            function attemptVertx() {
-              try {
-                var r = require;
-                var vertx = r('vertx');
-                vertxNext = vertx.runOnLoop || vertx.runOnContext;
-                return useVertxTimer();
-              } catch (e) {
-                return useSetTimeout();
-              }
-            }
-            var scheduleFlush = undefined;
-            // Decide what async method to use to triggering processing of queued callbacks:
-            if (isNode) {
-              scheduleFlush = useNextTick();
-            } else if (BrowserMutationObserver) {
-              scheduleFlush = useMutationObserver();
-            } else if (isWorker) {
-              scheduleFlush = useMessageChannel();
-            } else if (browserWindow === undefined && typeof require === 'function') {
-              scheduleFlush = attemptVertx();
-            } else {
-              scheduleFlush = useSetTimeout();
-            }
-            function then(onFulfillment, onRejection) {
-              var _arguments = arguments;
-              var parent = this;
-              var child = new this.constructor(noop);
-              if (child[PROMISE_ID] === undefined) {
-                makePromise(child);
-              }
-              var _state = parent._state;
-              if (_state) {
-                (function () {
-                  var callback = _arguments[_state - 1];
-                  asap(function () {
-                    return invokeCallback(_state, child, callback, parent._result);
-                  });
-                }());
-              } else {
-                subscribe(parent, child, onFulfillment, onRejection);
-              }
-              return child;
-            }
-            /**
-  `Promise.resolve` returns a promise that will become resolved with the
-  passed `value`. It is shorthand for the following:
-
-  ```javascript
-  let promise = new Promise(function(resolve, reject){
-    resolve(1);
-  });
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  let promise = Promise.resolve(1);
-
-  promise.then(function(value){
-    // value === 1
-  });
-  ```
-
-  @method resolve
-  @static
-  @param {Any} value value that the returned promise will be resolved with
-  Useful for tooling.
-  @return {Promise} a promise that will become fulfilled with the given
-  `value`
-*/
-            function resolve(object) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              if (object && typeof object === 'object' && object.constructor === Constructor) {
-                return object;
-              }
-              var promise = new Constructor(noop);
-              _resolve(promise, object);
-              return promise;
-            }
-            var PROMISE_ID = Math.random().toString(36).substring(16);
-            function noop() {
-            }
-            var PENDING = void 0;
-            var FULFILLED = 1;
-            var REJECTED = 2;
-            var GET_THEN_ERROR = new ErrorObject();
-            function selfFulfillment() {
-              return new TypeError('You cannot resolve a promise with itself');
-            }
-            function cannotReturnOwn() {
-              return new TypeError('A promises callback cannot return that same promise.');
-            }
-            function getThen(promise) {
-              try {
-                return promise.then;
-              } catch (error) {
-                GET_THEN_ERROR.error = error;
-                return GET_THEN_ERROR;
-              }
-            }
-            function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
-              try {
-                then.call(value, fulfillmentHandler, rejectionHandler);
-              } catch (e) {
-                return e;
-              }
-            }
-            function handleForeignThenable(promise, thenable, then) {
-              asap(function (promise) {
-                var sealed = false;
-                var error = tryThen(then, thenable, function (value) {
-                    if (sealed) {
-                      return;
-                    }
-                    sealed = true;
-                    if (thenable !== value) {
-                      _resolve(promise, value);
-                    } else {
-                      fulfill(promise, value);
-                    }
-                  }, function (reason) {
-                    if (sealed) {
-                      return;
-                    }
-                    sealed = true;
-                    _reject(promise, reason);
-                  }, 'Settle: ' + (promise._label || ' unknown promise'));
-                if (!sealed && error) {
-                  sealed = true;
-                  _reject(promise, error);
-                }
-              }, promise);
-            }
-            function handleOwnThenable(promise, thenable) {
-              if (thenable._state === FULFILLED) {
-                fulfill(promise, thenable._result);
-              } else if (thenable._state === REJECTED) {
-                _reject(promise, thenable._result);
-              } else {
-                subscribe(thenable, undefined, function (value) {
-                  return _resolve(promise, value);
-                }, function (reason) {
-                  return _reject(promise, reason);
-                });
-              }
-            }
-            function handleMaybeThenable(promise, maybeThenable, then$$) {
-              if (maybeThenable.constructor === promise.constructor && then$$ === then && maybeThenable.constructor.resolve === resolve) {
-                handleOwnThenable(promise, maybeThenable);
-              } else {
-                if (then$$ === GET_THEN_ERROR) {
-                  _reject(promise, GET_THEN_ERROR.error);
-                } else if (then$$ === undefined) {
-                  fulfill(promise, maybeThenable);
-                } else if (isFunction(then$$)) {
-                  handleForeignThenable(promise, maybeThenable, then$$);
-                } else {
-                  fulfill(promise, maybeThenable);
-                }
-              }
-            }
-            function _resolve(promise, value) {
-              if (promise === value) {
-                _reject(promise, selfFulfillment());
-              } else if (objectOrFunction(value)) {
-                handleMaybeThenable(promise, value, getThen(value));
-              } else {
-                fulfill(promise, value);
-              }
-            }
-            function publishRejection(promise) {
-              if (promise._onerror) {
-                promise._onerror(promise._result);
-              }
-              publish(promise);
-            }
-            function fulfill(promise, value) {
-              if (promise._state !== PENDING) {
-                return;
-              }
-              promise._result = value;
-              promise._state = FULFILLED;
-              if (promise._subscribers.length !== 0) {
-                asap(publish, promise);
-              }
-            }
-            function _reject(promise, reason) {
-              if (promise._state !== PENDING) {
-                return;
-              }
-              promise._state = REJECTED;
-              promise._result = reason;
-              asap(publishRejection, promise);
-            }
-            function subscribe(parent, child, onFulfillment, onRejection) {
-              var _subscribers = parent._subscribers;
-              var length = _subscribers.length;
-              parent._onerror = null;
-              _subscribers[length] = child;
-              _subscribers[length + FULFILLED] = onFulfillment;
-              _subscribers[length + REJECTED] = onRejection;
-              if (length === 0 && parent._state) {
-                asap(publish, parent);
-              }
-            }
-            function publish(promise) {
-              var subscribers = promise._subscribers;
-              var settled = promise._state;
-              if (subscribers.length === 0) {
-                return;
-              }
-              var child = undefined, callback = undefined, detail = promise._result;
-              for (var i = 0; i < subscribers.length; i += 3) {
-                child = subscribers[i];
-                callback = subscribers[i + settled];
-                if (child) {
-                  invokeCallback(settled, child, callback, detail);
-                } else {
-                  callback(detail);
-                }
-              }
-              promise._subscribers.length = 0;
-            }
-            function ErrorObject() {
-              this.error = null;
-            }
-            var TRY_CATCH_ERROR = new ErrorObject();
-            function tryCatch(callback, detail) {
-              try {
-                return callback(detail);
-              } catch (e) {
-                TRY_CATCH_ERROR.error = e;
-                return TRY_CATCH_ERROR;
-              }
-            }
-            function invokeCallback(settled, promise, callback, detail) {
-              var hasCallback = isFunction(callback), value = undefined, error = undefined, succeeded = undefined, failed = undefined;
-              if (hasCallback) {
-                value = tryCatch(callback, detail);
-                if (value === TRY_CATCH_ERROR) {
-                  failed = true;
-                  error = value.error;
-                  value = null;
-                } else {
-                  succeeded = true;
-                }
-                if (promise === value) {
-                  _reject(promise, cannotReturnOwn());
-                  return;
-                }
-              } else {
-                value = detail;
-                succeeded = true;
-              }
-              if (promise._state !== PENDING) {
-              } else if (hasCallback && succeeded) {
-                _resolve(promise, value);
-              } else if (failed) {
-                _reject(promise, error);
-              } else if (settled === FULFILLED) {
-                fulfill(promise, value);
-              } else if (settled === REJECTED) {
-                _reject(promise, value);
-              }
-            }
-            function initializePromise(promise, resolver) {
-              try {
-                resolver(function resolvePromise(value) {
-                  _resolve(promise, value);
-                }, function rejectPromise(reason) {
-                  _reject(promise, reason);
-                });
-              } catch (e) {
-                _reject(promise, e);
-              }
-            }
-            var id = 0;
-            function nextId() {
-              return id++;
-            }
-            function makePromise(promise) {
-              promise[PROMISE_ID] = id++;
-              promise._state = undefined;
-              promise._result = undefined;
-              promise._subscribers = [];
-            }
-            function Enumerator(Constructor, input) {
-              this._instanceConstructor = Constructor;
-              this.promise = new Constructor(noop);
-              if (!this.promise[PROMISE_ID]) {
-                makePromise(this.promise);
-              }
-              if (isArray(input)) {
-                this._input = input;
-                this.length = input.length;
-                this._remaining = input.length;
-                this._result = new Array(this.length);
-                if (this.length === 0) {
-                  fulfill(this.promise, this._result);
-                } else {
-                  this.length = this.length || 0;
-                  this._enumerate();
-                  if (this._remaining === 0) {
-                    fulfill(this.promise, this._result);
-                  }
-                }
-              } else {
-                _reject(this.promise, validationError());
-              }
-            }
-            function validationError() {
-              return new Error('Array Methods must be provided an Array');
-            }
-            ;
-            Enumerator.prototype._enumerate = function () {
-              var length = this.length;
-              var _input = this._input;
-              for (var i = 0; this._state === PENDING && i < length; i++) {
-                this._eachEntry(_input[i], i);
-              }
-            };
-            Enumerator.prototype._eachEntry = function (entry, i) {
-              var c = this._instanceConstructor;
-              var resolve$$ = c.resolve;
-              if (resolve$$ === resolve) {
-                var _then = getThen(entry);
-                if (_then === then && entry._state !== PENDING) {
-                  this._settledAt(entry._state, i, entry._result);
-                } else if (typeof _then !== 'function') {
-                  this._remaining--;
-                  this._result[i] = entry;
-                } else if (c === Promise) {
-                  var promise = new c(noop);
-                  handleMaybeThenable(promise, entry, _then);
-                  this._willSettleAt(promise, i);
-                } else {
-                  this._willSettleAt(new c(function (resolve$$) {
-                    return resolve$$(entry);
-                  }), i);
-                }
-              } else {
-                this._willSettleAt(resolve$$(entry), i);
-              }
-            };
-            Enumerator.prototype._settledAt = function (state, i, value) {
-              var promise = this.promise;
-              if (promise._state === PENDING) {
-                this._remaining--;
-                if (state === REJECTED) {
-                  _reject(promise, value);
-                } else {
-                  this._result[i] = value;
-                }
-              }
-              if (this._remaining === 0) {
-                fulfill(promise, this._result);
-              }
-            };
-            Enumerator.prototype._willSettleAt = function (promise, i) {
-              var enumerator = this;
-              subscribe(promise, undefined, function (value) {
-                return enumerator._settledAt(FULFILLED, i, value);
-              }, function (reason) {
-                return enumerator._settledAt(REJECTED, i, reason);
-              });
-            };
-            /**
-  `Promise.all` accepts an array of promises, and returns a new promise which
-  is fulfilled with an array of fulfillment values for the passed promises, or
-  rejected with the reason of the first passed promise to be rejected. It casts all
-  elements of the passed iterable to promises as it runs this algorithm.
-
-  Example:
-
-  ```javascript
-  let promise1 = resolve(1);
-  let promise2 = resolve(2);
-  let promise3 = resolve(3);
-  let promises = [ promise1, promise2, promise3 ];
-
-  Promise.all(promises).then(function(array){
-    // The array here would be [ 1, 2, 3 ];
-  });
-  ```
-
-  If any of the `promises` given to `all` are rejected, the first promise
-  that is rejected will be given as an argument to the returned promises's
-  rejection handler. For example:
-
-  Example:
-
-  ```javascript
-  let promise1 = resolve(1);
-  let promise2 = reject(new Error("2"));
-  let promise3 = reject(new Error("3"));
-  let promises = [ promise1, promise2, promise3 ];
-
-  Promise.all(promises).then(function(array){
-    // Code here never runs because there are rejected promises!
-  }, function(error) {
-    // error.message === "2"
-  });
-  ```
-
-  @method all
-  @static
-  @param {Array} entries array of promises
-  @param {String} label optional string for labeling the promise.
-  Useful for tooling.
-  @return {Promise} promise that is fulfilled when all `promises` have been
-  fulfilled, or rejected if any of them become rejected.
-  @static
-*/
-            function all(entries) {
-              return new Enumerator(this, entries).promise;
-            }
-            /**
-  `Promise.race` returns a new promise which is settled in the same way as the
-  first passed promise to settle.
-
-  Example:
-
-  ```javascript
-  let promise1 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 1');
-    }, 200);
-  });
-
-  let promise2 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 2');
-    }, 100);
-  });
-
-  Promise.race([promise1, promise2]).then(function(result){
-    // result === 'promise 2' because it was resolved before promise1
-    // was resolved.
-  });
-  ```
-
-  `Promise.race` is deterministic in that only the state of the first
-  settled promise matters. For example, even if other promises given to the
-  `promises` array argument are resolved, but the first settled promise has
-  become rejected before the other promises became fulfilled, the returned
-  promise will become rejected:
-
-  ```javascript
-  let promise1 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      resolve('promise 1');
-    }, 200);
-  });
-
-  let promise2 = new Promise(function(resolve, reject){
-    setTimeout(function(){
-      reject(new Error('promise 2'));
-    }, 100);
-  });
-
-  Promise.race([promise1, promise2]).then(function(result){
-    // Code here never runs
-  }, function(reason){
-    // reason.message === 'promise 2' because promise 2 became rejected before
-    // promise 1 became fulfilled
-  });
-  ```
-
-  An example real-world use case is implementing timeouts:
-
-  ```javascript
-  Promise.race([ajax('foo.json'), timeout(5000)])
-  ```
-
-  @method race
-  @static
-  @param {Array} promises array of promises to observe
-  Useful for tooling.
-  @return {Promise} a promise which settles in the same way as the first passed
-  promise to settle.
-*/
-            function race(entries) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              if (!isArray(entries)) {
-                return new Constructor(function (_, reject) {
-                  return reject(new TypeError('You must pass an array to race.'));
-                });
-              } else {
-                return new Constructor(function (resolve, reject) {
-                  var length = entries.length;
-                  for (var i = 0; i < length; i++) {
-                    Constructor.resolve(entries[i]).then(resolve, reject);
-                  }
-                });
-              }
-            }
-            /**
-  `Promise.reject` returns a promise rejected with the passed `reason`.
-  It is shorthand for the following:
-
-  ```javascript
-  let promise = new Promise(function(resolve, reject){
-    reject(new Error('WHOOPS'));
-  });
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  Instead of writing the above, your code now simply becomes the following:
-
-  ```javascript
-  let promise = Promise.reject(new Error('WHOOPS'));
-
-  promise.then(function(value){
-    // Code here doesn't run because the promise is rejected!
-  }, function(reason){
-    // reason.message === 'WHOOPS'
-  });
-  ```
-
-  @method reject
-  @static
-  @param {Any} reason value that the returned promise will be rejected with.
-  Useful for tooling.
-  @return {Promise} a promise rejected with the given `reason`.
-*/
-            function reject(reason) {
-              /*jshint validthis:true */
-              var Constructor = this;
-              var promise = new Constructor(noop);
-              _reject(promise, reason);
-              return promise;
-            }
-            function needsResolver() {
-              throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
-            }
-            function needsNew() {
-              throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
-            }
-            /**
-  Promise objects represent the eventual result of an asynchronous operation. The
-  primary way of interacting with a promise is through its `then` method, which
-  registers callbacks to receive either a promise's eventual value or the reason
-  why the promise cannot be fulfilled.
-
-  Terminology
-  -----------
-
-  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
-  - `thenable` is an object or function that defines a `then` method.
-  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
-  - `exception` is a value that is thrown using the throw statement.
-  - `reason` is a value that indicates why a promise was rejected.
-  - `settled` the final resting state of a promise, fulfilled or rejected.
-
-  A promise can be in one of three states: pending, fulfilled, or rejected.
-
-  Promises that are fulfilled have a fulfillment value and are in the fulfilled
-  state.  Promises that are rejected have a rejection reason and are in the
-  rejected state.  A fulfillment value is never a thenable.
-
-  Promises can also be said to *resolve* a value.  If this value is also a
-  promise, then the original promise's settled state will match the value's
-  settled state.  So a promise that *resolves* a promise that rejects will
-  itself reject, and a promise that *resolves* a promise that fulfills will
-  itself fulfill.
-
-
-  Basic Usage:
-  ------------
-
-  ```js
-  let promise = new Promise(function(resolve, reject) {
-    // on success
-    resolve(value);
-
-    // on failure
-    reject(reason);
-  });
-
-  promise.then(function(value) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Advanced Usage:
-  ---------------
-
-  Promises shine when abstracting away asynchronous interactions such as
-  `XMLHttpRequest`s.
-
-  ```js
-  function getJSON(url) {
-    return new Promise(function(resolve, reject){
-      let xhr = new XMLHttpRequest();
-
-      xhr.open('GET', url);
-      xhr.onreadystatechange = handler;
-      xhr.responseType = 'json';
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.send();
-
-      function handler() {
-        if (this.readyState === this.DONE) {
-          if (this.status === 200) {
-            resolve(this.response);
-          } else {
-            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
-          }
-        }
-      };
-    });
-  }
-
-  getJSON('/posts.json').then(function(json) {
-    // on fulfillment
-  }, function(reason) {
-    // on rejection
-  });
-  ```
-
-  Unlike callbacks, promises are great composable primitives.
-
-  ```js
-  Promise.all([
-    getJSON('/posts'),
-    getJSON('/comments')
-  ]).then(function(values){
-    values[0] // => postsJSON
-    values[1] // => commentsJSON
-
-    return values;
-  });
-  ```
-
-  @class Promise
-  @param {function} resolver
-  Useful for tooling.
-  @constructor
-*/
-            function Promise(resolver) {
-              this[PROMISE_ID] = nextId();
-              this._result = this._state = undefined;
-              this._subscribers = [];
-              if (noop !== resolver) {
-                typeof resolver !== 'function' && needsResolver();
-                this instanceof Promise ? initializePromise(this, resolver) : needsNew();
-              }
-            }
-            Promise.all = all;
-            Promise.race = race;
-            Promise.resolve = resolve;
-            Promise.reject = reject;
-            Promise._setScheduler = setScheduler;
-            Promise._setAsap = setAsap;
-            Promise._asap = asap;
-            Promise.prototype = {
-              constructor: Promise,
-              then: then,
-              'catch': function _catch(onRejection) {
-                return this.then(null, onRejection);
-              }
-            };
-            function polyfill() {
-              var local = undefined;
-              if (typeof global !== 'undefined') {
-                local = global;
-              } else if (typeof self !== 'undefined') {
-                local = self;
-              } else {
-                try {
-                  local = Function('return this')();
-                } catch (e) {
-                  throw new Error('polyfill failed because global object is unavailable in this environment');
-                }
-              }
-              var P = local.Promise;
-              if (P) {
-                var promiseToString = null;
-                try {
-                  promiseToString = Object.prototype.toString.call(P.resolve());
-                } catch (e) {
-                }
-                if (promiseToString === '[object Promise]' && !P.cast) {
-                  return;
-                }
-              }
-              local.Promise = Promise;
-            }
-            polyfill();
-            // Strange compat..
-            Promise.polyfill = polyfill;
-            Promise.Promise = Promise;
-            return Promise;
-          }));
-        }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
-      },
-      { '_process': 115 }
-    ],
-    49: [
-      function (require, module, exports) {
-        // Copyright Joyent, Inc. and other Node contributors.
-        //
-        // Permission is hereby granted, free of charge, to any person obtaining a
-        // copy of this software and associated documentation files (the
-        // "Software"), to deal in the Software without restriction, including
-        // without limitation the rights to use, copy, modify, merge, publish,
-        // distribute, sublicense, and/or sell copies of the Software, and to permit
-        // persons to whom the Software is furnished to do so, subject to the
-        // following conditions:
-        //
-        // The above copyright notice and this permission notice shall be included
-        // in all copies or substantial portions of the Software.
-        //
-        // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-        // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-        // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-        // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-        // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-        // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-        // USE OR OTHER DEALINGS IN THE SOFTWARE.
-        function EventEmitter() {
-          this._events = this._events || {};
-          this._maxListeners = this._maxListeners || undefined;
-        }
-        module.exports = EventEmitter;
-        // Backwards-compat with node 0.10.x
-        EventEmitter.EventEmitter = EventEmitter;
-        EventEmitter.prototype._events = undefined;
-        EventEmitter.prototype._maxListeners = undefined;
-        // By default EventEmitters will print a warning if more than 10 listeners are
-        // added to it. This is a useful default which helps finding memory leaks.
-        EventEmitter.defaultMaxListeners = 10;
-        // Obviously not all Emitters should be limited to 10. This function allows
-        // that to be increased. Set to zero for unlimited.
-        EventEmitter.prototype.setMaxListeners = function (n) {
-          if (!isNumber(n) || n < 0 || isNaN(n))
-            throw TypeError('n must be a positive number');
-          this._maxListeners = n;
-          return this;
-        };
-        EventEmitter.prototype.emit = function (type) {
-          var er, handler, len, args, i, listeners;
-          if (!this._events)
-            this._events = {};
-          // If there is no 'error' event listener then throw.
-          if (type === 'error') {
-            if (!this._events.error || isObject(this._events.error) && !this._events.error.length) {
-              er = arguments[1];
-              if (er instanceof Error) {
-                throw er;  // Unhandled 'error' event
-              }
-              throw TypeError('Uncaught, unspecified "error" event.');
-            }
-          }
-          handler = this._events[type];
-          if (isUndefined(handler))
-            return false;
-          if (isFunction(handler)) {
-            switch (arguments.length) {
-            // fast cases
-            case 1:
-              handler.call(this);
-              break;
-            case 2:
-              handler.call(this, arguments[1]);
-              break;
-            case 3:
-              handler.call(this, arguments[1], arguments[2]);
-              break;
-            // slower
-            default:
-              len = arguments.length;
-              args = new Array(len - 1);
-              for (i = 1; i < len; i++)
-                args[i - 1] = arguments[i];
-              handler.apply(this, args);
-            }
-          } else if (isObject(handler)) {
-            len = arguments.length;
-            args = new Array(len - 1);
-            for (i = 1; i < len; i++)
-              args[i - 1] = arguments[i];
-            listeners = handler.slice();
-            len = listeners.length;
-            for (i = 0; i < len; i++)
-              listeners[i].apply(this, args);
-          }
-          return true;
-        };
-        EventEmitter.prototype.addListener = function (type, listener) {
-          var m;
-          if (!isFunction(listener))
-            throw TypeError('listener must be a function');
-          if (!this._events)
-            this._events = {};
-          // To avoid recursion in the case that type === "newListener"! Before
-          // adding it to the listeners, first emit "newListener".
-          if (this._events.newListener)
-            this.emit('newListener', type, isFunction(listener.listener) ? listener.listener : listener);
-          if (!this._events[type])
-            // Optimize the case of one listener. Don't need the extra array object.
-            this._events[type] = listener;
-          else if (isObject(this._events[type]))
-            // If we've already got an array, just append.
-            this._events[type].push(listener);
-          else
-            // Adding the second element, need to change to array.
-            this._events[type] = [
-              this._events[type],
-              listener
-            ];
-          // Check for listener leak
-          if (isObject(this._events[type]) && !this._events[type].warned) {
-            var m;
-            if (!isUndefined(this._maxListeners)) {
-              m = this._maxListeners;
-            } else {
-              m = EventEmitter.defaultMaxListeners;
-            }
-            if (m && m > 0 && this._events[type].length > m) {
-              this._events[type].warned = true;
-              console.error('(node) warning: possible EventEmitter memory ' + 'leak detected. %d listeners added. ' + 'Use emitter.setMaxListeners() to increase limit.', this._events[type].length);
-              if (typeof console.trace === 'function') {
-                // not supported in IE 10
-                console.trace();
-              }
-            }
-          }
-          return this;
-        };
-        EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-        EventEmitter.prototype.once = function (type, listener) {
-          if (!isFunction(listener))
-            throw TypeError('listener must be a function');
-          var fired = false;
-          function g() {
-            this.removeListener(type, g);
-            if (!fired) {
-              fired = true;
-              listener.apply(this, arguments);
-            }
-          }
-          g.listener = listener;
-          this.on(type, g);
-          return this;
-        };
-        // emits a 'removeListener' event iff the listener was removed
-        EventEmitter.prototype.removeListener = function (type, listener) {
-          var list, position, length, i;
-          if (!isFunction(listener))
-            throw TypeError('listener must be a function');
-          if (!this._events || !this._events[type])
-            return this;
-          list = this._events[type];
-          length = list.length;
-          position = -1;
-          if (list === listener || isFunction(list.listener) && list.listener === listener) {
-            delete this._events[type];
-            if (this._events.removeListener)
-              this.emit('removeListener', type, listener);
-          } else if (isObject(list)) {
-            for (i = length; i-- > 0;) {
-              if (list[i] === listener || list[i].listener && list[i].listener === listener) {
-                position = i;
-                break;
-              }
-            }
-            if (position < 0)
-              return this;
-            if (list.length === 1) {
-              list.length = 0;
-              delete this._events[type];
-            } else {
-              list.splice(position, 1);
-            }
-            if (this._events.removeListener)
-              this.emit('removeListener', type, listener);
-          }
-          return this;
-        };
-        EventEmitter.prototype.removeAllListeners = function (type) {
-          var key, listeners;
-          if (!this._events)
-            return this;
-          // not listening for removeListener, no need to emit
-          if (!this._events.removeListener) {
-            if (arguments.length === 0)
-              this._events = {};
-            else if (this._events[type])
-              delete this._events[type];
-            return this;
-          }
-          // emit removeListener for all listeners on all events
-          if (arguments.length === 0) {
-            for (key in this._events) {
-              if (key === 'removeListener')
-                continue;
-              this.removeAllListeners(key);
-            }
-            this.removeAllListeners('removeListener');
-            this._events = {};
-            return this;
-          }
-          listeners = this._events[type];
-          if (isFunction(listeners)) {
-            this.removeListener(type, listeners);
-          } else {
-            // LIFO order
-            while (listeners.length)
-              this.removeListener(type, listeners[listeners.length - 1]);
-          }
-          delete this._events[type];
-          return this;
-        };
-        EventEmitter.prototype.listeners = function (type) {
-          var ret;
-          if (!this._events || !this._events[type])
-            ret = [];
-          else if (isFunction(this._events[type]))
-            ret = [this._events[type]];
-          else
-            ret = this._events[type].slice();
-          return ret;
-        };
-        EventEmitter.listenerCount = function (emitter, type) {
-          var ret;
-          if (!emitter._events || !emitter._events[type])
-            ret = 0;
-          else if (isFunction(emitter._events[type]))
-            ret = 1;
-          else
-            ret = emitter._events[type].length;
-          return ret;
-        };
-        function isFunction(arg) {
-          return typeof arg === 'function';
-        }
-        function isNumber(arg) {
-          return typeof arg === 'number';
-        }
-        function isObject(arg) {
-          return typeof arg === 'object' && arg !== null;
-        }
-        function isUndefined(arg) {
-          return arg === void 0;
-        }
-      },
-      {}
-    ],
-    50: [
-      function (require, module, exports) {
-        var hasOwn = Object.prototype.hasOwnProperty;
-        var toString = Object.prototype.toString;
-        module.exports = function forEach(obj, fn, ctx) {
-          if (toString.call(fn) !== '[object Function]') {
-            throw new TypeError('iterator must be a function');
-          }
-          var l = obj.length;
-          if (l === +l) {
-            for (var i = 0; i < l; i++) {
-              fn.call(ctx, obj[i], i, obj);
-            }
-          } else {
-            for (var k in obj) {
-              if (hasOwn.call(obj, k)) {
-                fn.call(ctx, obj[k], k, obj);
-              }
-            }
-          }
-        };
-      },
-      {}
-    ],
-    51: [
-      function (require, module, exports) {
-        var http = require('http');
-        var https = module.exports;
-        for (var key in http) {
-          if (http.hasOwnProperty(key))
-            https[key] = http[key];
-        }
-        ;
-        https.request = function (params, cb) {
-          if (!params)
-            params = {};
-          params.scheme = 'https';
-          params.protocol = 'https:';
-          return http.request.call(this, params, cb);
-        };
-      },
-      { 'http': 133 }
-    ],
-    52: [
-      function (require, module, exports) {
-        exports.read = function (buffer, offset, isLE, mLen, nBytes) {
-          var e, m;
-          var eLen = nBytes * 8 - mLen - 1;
-          var eMax = (1 << eLen) - 1;
-          var eBias = eMax >> 1;
-          var nBits = -7;
-          var i = isLE ? nBytes - 1 : 0;
-          var d = isLE ? -1 : 1;
-          var s = buffer[offset + i];
-          i += d;
-          e = s & (1 << -nBits) - 1;
-          s >>= -nBits;
-          nBits += eLen;
-          for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {
-          }
-          m = e & (1 << -nBits) - 1;
-          e >>= -nBits;
-          nBits += mLen;
-          for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {
-          }
-          if (e === 0) {
-            e = 1 - eBias;
-          } else if (e === eMax) {
-            return m ? NaN : (s ? -1 : 1) * Infinity;
-          } else {
-            m = m + Math.pow(2, mLen);
-            e = e - eBias;
-          }
-          return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
-        };
-        exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
-          var e, m, c;
-          var eLen = nBytes * 8 - mLen - 1;
-          var eMax = (1 << eLen) - 1;
-          var eBias = eMax >> 1;
-          var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
-          var i = isLE ? 0 : nBytes - 1;
-          var d = isLE ? 1 : -1;
-          var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
-          value = Math.abs(value);
-          if (isNaN(value) || value === Infinity) {
-            m = isNaN(value) ? 1 : 0;
-            e = eMax;
-          } else {
-            e = Math.floor(Math.log(value) / Math.LN2);
-            if (value * (c = Math.pow(2, -e)) < 1) {
-              e--;
-              c *= 2;
-            }
-            if (e + eBias >= 1) {
-              value += rt / c;
-            } else {
-              value += rt * Math.pow(2, 1 - eBias);
-            }
-            if (value * c >= 2) {
-              e++;
-              c /= 2;
-            }
-            if (e + eBias >= eMax) {
-              m = 0;
-              e = eMax;
-            } else if (e + eBias >= 1) {
-              m = (value * c - 1) * Math.pow(2, mLen);
-              e = e + eBias;
-            } else {
-              m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
-              e = 0;
-            }
-          }
-          for (; mLen >= 8; buffer[offset + i] = m & 255, i += d, m /= 256, mLen -= 8) {
-          }
-          e = e << mLen | m;
-          eLen += mLen;
-          for (; eLen > 0; buffer[offset + i] = e & 255, i += d, e /= 256, eLen -= 8) {
-          }
-          buffer[offset + i - d] |= s * 128;
-        };
-      },
-      {}
-    ],
-    53: [
-      function (require, module, exports) {
-        var indexOf = [].indexOf;
-        module.exports = function (arr, obj) {
-          if (indexOf)
-            return arr.indexOf(obj);
-          for (var i = 0; i < arr.length; ++i) {
-            if (arr[i] === obj)
-              return i;
-          }
-          return -1;
-        };
-      },
-      {}
-    ],
-    54: [
-      function (require, module, exports) {
-        if (typeof Object.create === 'function') {
-          // implementation from standard node.js 'util' module
-          module.exports = function inherits(ctor, superCtor) {
-            ctor.super_ = superCtor;
-            ctor.prototype = Object.create(superCtor.prototype, {
-              constructor: {
-                value: ctor,
-                enumerable: false,
-                writable: true,
-                configurable: true
-              }
-            });
-          };
-        } else {
-          // old school shim for old browsers
-          module.exports = function inherits(ctor, superCtor) {
-            ctor.super_ = superCtor;
-            var TempCtor = function () {
-            };
-            TempCtor.prototype = superCtor.prototype;
-            ctor.prototype = new TempCtor();
-            ctor.prototype.constructor = ctor;
-          };
-        }
-      },
-      {}
-    ],
-    55: [
-      function (require, module, exports) {
-        /*!
- * Determine if an object is a Buffer
- *
- * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
- * @license  MIT
- */
-        // The _isBuffer check is for Safari 5-7 support, because it's missing
-        // Object.prototype.constructor. Remove this eventually
-        module.exports = function (obj) {
-          return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer);
-        };
-        function isBuffer(obj) {
-          return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj);
-        }
-        // For Node v0.10 support. Remove this eventually.
-        function isSlowBuffer(obj) {
-          return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0));
-        }
-      },
-      {}
-    ],
-    56: [
+    36: [
       function (require, module, exports) {
         'use strict';
         var yaml = require('./lib/js-yaml.js');
         module.exports = yaml;
       },
-      { './lib/js-yaml.js': 57 }
+      { './lib/js-yaml.js': 37 }
     ],
-    57: [
+    37: [
       function (require, module, exports) {
         'use strict';
         var loader = require('./js-yaml/loader');
@@ -13839,19 +10361,19 @@
         module.exports.addConstructor = deprecated('addConstructor');
       },
       {
-        './js-yaml/dumper': 59,
-        './js-yaml/exception': 60,
-        './js-yaml/loader': 61,
-        './js-yaml/schema': 63,
-        './js-yaml/schema/core': 64,
-        './js-yaml/schema/default_full': 65,
-        './js-yaml/schema/default_safe': 66,
-        './js-yaml/schema/failsafe': 67,
-        './js-yaml/schema/json': 68,
-        './js-yaml/type': 69
+        './js-yaml/dumper': 39,
+        './js-yaml/exception': 40,
+        './js-yaml/loader': 41,
+        './js-yaml/schema': 43,
+        './js-yaml/schema/core': 44,
+        './js-yaml/schema/default_full': 45,
+        './js-yaml/schema/default_safe': 46,
+        './js-yaml/schema/failsafe': 47,
+        './js-yaml/schema/json': 48,
+        './js-yaml/type': 49
       }
     ],
-    58: [
+    38: [
       function (require, module, exports) {
         'use strict';
         function isNothing(subject) {
@@ -13897,7 +10419,7 @@
       },
       {}
     ],
-    59: [
+    39: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-use-before-define*/
@@ -14532,13 +11054,13 @@
         module.exports.safeDump = safeDump;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 38,
+        './exception': 40,
+        './schema/default_full': 45,
+        './schema/default_safe': 46
       }
     ],
-    60: [
+    40: [
       function (require, module, exports) {
         // YAML error class. http://stackoverflow.com/questions/8458984
         //
@@ -14574,7 +11096,7 @@
       },
       {}
     ],
-    61: [
+    41: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len,no-use-before-define*/
@@ -15692,14 +12214,14 @@
         module.exports.safeLoad = safeLoad;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './mark': 62,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 38,
+        './exception': 40,
+        './mark': 42,
+        './schema/default_full': 45,
+        './schema/default_safe': 46
       }
     ],
-    62: [
+    42: [
       function (require, module, exports) {
         'use strict';
         var common = require('./common');
@@ -15755,9 +12277,9 @@
         };
         module.exports = Mark;
       },
-      { './common': 58 }
+      { './common': 38 }
     ],
-    63: [
+    43: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len*/
@@ -15839,12 +12361,12 @@
         module.exports = Schema;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './type': 69
+        './common': 38,
+        './exception': 40,
+        './type': 49
       }
     ],
-    64: [
+    44: [
       function (require, module, exports) {
         // Standard YAML's Core schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2804923
@@ -15856,11 +12378,11 @@
         module.exports = new Schema({ include: [require('./json')] });
       },
       {
-        '../schema': 63,
-        './json': 68
+        '../schema': 43,
+        './json': 48
       }
     ],
-    65: [
+    45: [
       function (require, module, exports) {
         // JS-YAML's default schema for `load` function.
         // It is not described in the YAML specification.
@@ -15881,14 +12403,14 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/js/function': 74,
-        '../type/js/regexp': 75,
-        '../type/js/undefined': 76,
-        './default_safe': 66
+        '../schema': 43,
+        '../type/js/function': 54,
+        '../type/js/regexp': 55,
+        '../type/js/undefined': 56,
+        './default_safe': 46
       }
     ],
-    66: [
+    46: [
       function (require, module, exports) {
         // JS-YAML's default schema for `safeLoad` function.
         // It is not described in the YAML specification.
@@ -15912,17 +12434,17 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/binary': 70,
-        '../type/merge': 78,
-        '../type/omap': 80,
-        '../type/pairs': 81,
-        '../type/set': 83,
-        '../type/timestamp': 85,
-        './core': 64
+        '../schema': 43,
+        '../type/binary': 50,
+        '../type/merge': 58,
+        '../type/omap': 60,
+        '../type/pairs': 61,
+        '../type/set': 63,
+        '../type/timestamp': 65,
+        './core': 44
       }
     ],
-    67: [
+    47: [
       function (require, module, exports) {
         // Standard YAML's Failsafe schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2802346
@@ -15937,13 +12459,13 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/map': 77,
-        '../type/seq': 82,
-        '../type/str': 84
+        '../schema': 43,
+        '../type/map': 57,
+        '../type/seq': 62,
+        '../type/str': 64
       }
     ],
-    68: [
+    48: [
       function (require, module, exports) {
         // Standard YAML's JSON schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2803231
@@ -15964,15 +12486,15 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/bool': 71,
-        '../type/float': 72,
-        '../type/int': 73,
-        '../type/null': 79,
-        './failsafe': 67
+        '../schema': 43,
+        '../type/bool': 51,
+        '../type/float': 52,
+        '../type/int': 53,
+        '../type/null': 59,
+        './failsafe': 47
       }
     ],
-    69: [
+    49: [
       function (require, module, exports) {
         'use strict';
         var YAMLException = require('./exception');
@@ -16029,9 +12551,9 @@
         }
         module.exports = Type;
       },
-      { './exception': 60 }
+      { './exception': 40 }
     ],
-    70: [
+    50: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-bitwise*/
@@ -16136,9 +12658,9 @@
           represent: representYamlBinary
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    71: [
+    51: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16173,9 +12695,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    72: [
+    52: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -16265,11 +12787,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 38,
+        '../type': 49
       }
     ],
-    73: [
+    53: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -16436,11 +12958,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 38,
+        '../type': 49
       }
     ],
-    74: [
+    54: [
       function (require, module, exports) {
         'use strict';
         var esprima;
@@ -16503,9 +13025,9 @@
           represent: representJavascriptFunction
         });
       },
-      { '../../type': 69 }
+      { '../../type': 49 }
     ],
-    75: [
+    55: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -16559,9 +13081,9 @@
           represent: representJavascriptRegExp
         });
       },
-      { '../../type': 69 }
+      { '../../type': 49 }
     ],
-    76: [
+    56: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -16586,9 +13108,9 @@
           represent: representJavascriptUndefined
         });
       },
-      { '../../type': 69 }
+      { '../../type': 49 }
     ],
-    77: [
+    57: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16599,9 +13121,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    78: [
+    58: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16613,9 +13135,9 @@
           resolve: resolveYamlMerge
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    79: [
+    59: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16653,9 +13175,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    80: [
+    60: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16696,9 +13218,9 @@
           construct: constructYamlOmap
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    81: [
+    61: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16743,9 +13265,9 @@
           construct: constructYamlPairs
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    82: [
+    62: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16756,9 +13278,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    83: [
+    63: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16784,9 +13306,9 @@
           construct: constructYamlSet
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    84: [
+    64: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16797,9 +13319,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    85: [
+    65: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16869,3171 +13391,9 @@
           represent: representYamlTimestamp
         });
       },
-      { '../type': 69 }
+      { '../type': 49 }
     ],
-    86: [
-      function (require, module, exports) {
-        var JsonSchemaCompatability = function () {
-            function convert3to4Type(types, always) {
-              if (!Array.isArray(types)) {
-                types = [types];
-              }
-              var needsReplacement = !!always;
-              var result = [];
-              for (var i = 0; i < types.length; i++) {
-                var entry = types[i];
-                if (typeof entry === 'object') {
-                  result.push(entry);
-                  needsReplacement = true;
-                } else {
-                  result.push({ 'type': entry });
-                }
-              }
-              return needsReplacement && result;
-            }
-            function convert3to4(obj) {
-              // Old-style "type"
-              if (obj.type) {
-                if (typeof obj.type !== 'string') {
-                  var anyOf = convert3to4Type(obj.type);
-                  if (anyOf) {
-                    obj.anyOf = anyOf;
-                    delete obj.type;
-                  }
-                } else if (obj.type == 'any') {
-                  delete obj.type;
-                }
-              }
-              if (obj['extends']) {
-                var allOf = obj['extends'];
-                if (!Array.isArray(allOf)) {
-                  allOf = [allOf];
-                }
-                obj.allOf = allOf;
-                delete obj['extends'];
-              }
-              if (obj.disallow) {
-                if (typeof obj.disallow === 'string') {
-                  obj.not = { 'type': obj.disallow };
-                } else {
-                  obj.not = { 'anyOf': convert3to4Type(obj.disallow, true) };
-                }
-                delete obj.disallow;
-              }
-              // Object concerns
-              if (obj.properties) {
-                var required = Array.isArray(obj.required) ? obj.required : [];
-                for (var key in obj.properties) {
-                  var subSchema = obj.properties[key];
-                  if (subSchema && typeof subSchema.required === 'boolean') {
-                    if (subSchema.required) {
-                      required.push(key);
-                    }
-                    delete subSchema.required;
-                  }
-                }
-                if (required.length) {
-                  obj.required = required;
-                }
-              }
-              if (obj.dependencies) {
-                for (var key in obj.dependencies) {
-                  if (typeof obj.dependencies[key] === 'string') {
-                    obj.dependencies[key] = [obj.dependencies[key]];
-                  }
-                }
-              }
-              // This is safe as long as we process our children *after* we collect their "required" properties
-              // - otherwise, they'd delete their "required" booleans before we got a chance to see them
-              if (typeof obj.required === 'boolean') {
-                delete obj.required;
-              }
-              // Numeric concerns
-              if (typeof obj.divisibleBy !== 'undefined') {
-                obj.multipleOf = obj.divisibleBy;
-                delete obj.divisibleBy;
-              }
-              // This MUST happen at the end of the function, otherwise it'll screw up "required" collection
-              for (var key in obj) {
-                if (key === 'properties' || key === 'patternProperties' || key === 'dependencies') {
-                  for (var subKey in obj[key]) {
-                    obj[key][subKey] = convert3to4(obj[key][subKey]);
-                  }
-                } else if (key !== 'enum') {
-                  if (Array.isArray(obj[key])) {
-                    for (var i = 0; i < obj[key].length; i++) {
-                      obj[key][i] = convert3to4(obj[key][i]);
-                    }
-                  } else if (typeof obj[key] === 'object') {
-                    obj[key] = convert3to4(obj[key]);
-                  }
-                }
-              }
-              return obj;
-            }
-            var api = { v4: convert3to4 };
-            if (typeof module !== 'undefined') {
-              module.exports = api;
-            }
-            return api;
-          }();
-      },
-      {}
-    ],
-    87: [
-      function (require, module, exports) {
-        /** !
- * JSON Schema $Ref Parser v3.1.2
- *
- * @link https://github.com/BigstickCarpet/json-schema-ref-parser
- * @license MIT
- */
-        'use strict';
-        var $Ref = require('./ref'), Pointer = require('./pointer'), debug = require('./util/debug'), url = require('./util/url');
-        module.exports = bundle;
-        /**
- * Bundles all external JSON references into the main JSON schema, thus resulting in a schema that
- * only has *internal* references, not any *external* references.
- * This method mutates the JSON schema object, adding new references and re-mapping existing ones.
- *
- * @param {$RefParser} parser
- * @param {$RefParserOptions} options
- */
-        function bundle(parser, options) {
-          debug('Bundling $ref pointers in %s', parser.$refs._root$Ref.path);
-          // Build an inventory of all $ref pointers in the JSON Schema
-          var inventory = [];
-          crawl(parser, 'schema', parser.$refs._root$Ref.path + '#', '#', inventory, parser.$refs, options);
-          // Remap all $ref pointers
-          remap(inventory);
-        }
-        /**
- * Recursively crawls the given value, and inventories all JSON references.
- *
- * @param {object} parent - The object containing the value to crawl. If the value is not an object or array, it will be ignored.
- * @param {string} key - The property key of `parent` to be crawled
- * @param {string} path - The full path of the property being crawled, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of the property being crawled, from the schema root
- * @param {object[]} inventory - An array of already-inventoried $ref pointers
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- */
-        function crawl(parent, key, path, pathFromRoot, inventory, $refs, options) {
-          var obj = key === null ? parent : parent[key];
-          if (obj && typeof obj === 'object') {
-            if ($Ref.is$Ref(obj)) {
-              inventory$Ref(parent, key, path, pathFromRoot, inventory, $refs, options);
-            } else {
-              var keys = Object.keys(obj);
-              // Most people will expect references to be bundled into the the "definitions" property,
-              // so we always crawl that property first, if it exists.
-              var defs = keys.indexOf('definitions');
-              if (defs > 0) {
-                keys.splice(0, 0, keys.splice(defs, 1)[0]);
-              }
-              keys.forEach(function (key) {
-                var keyPath = Pointer.join(path, key);
-                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
-                var value = obj[key];
-                if ($Ref.is$Ref(value)) {
-                  inventory$Ref(obj, key, path, keyPathFromRoot, inventory, $refs, options);
-                } else {
-                  crawl(obj, key, keyPath, keyPathFromRoot, inventory, $refs, options);
-                }
-              });
-            }
-          }
-        }
-        /**
- * Inventories the given JSON Reference (i.e. records detailed information about it so we can
- * optimize all $refs in the schema), and then crawls the resolved value.
- *
- * @param {object} $refParent - The object that contains a JSON Reference as one of its keys
- * @param {string} $refKey - The key in `$refParent` that is a JSON Reference
- * @param {string} path - The full path of the JSON Reference at `$refKey`, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of the JSON Reference at `$refKey`, from the schema root
- * @param {object[]} inventory - An array of already-inventoried $ref pointers
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- */
-        function inventory$Ref($refParent, $refKey, path, pathFromRoot, inventory, $refs, options) {
-          if (inventory.some(function (i) {
-              return i.parent === $refParent && i.key === $refKey;
-            })) {
-            // This $Ref has already been inventoried, so we don't need to process it again
-            return;
-          }
-          var $ref = $refKey === null ? $refParent : $refParent[$refKey];
-          var $refPath = url.resolve(path, $ref.$ref);
-          var pointer = $refs._resolve($refPath, options);
-          var depth = Pointer.parse(pathFromRoot).length;
-          var file = url.stripHash(pointer.path);
-          var hash = url.getHash(pointer.path);
-          var external = file !== $refs._root$Ref.path;
-          var extended = $Ref.isExtended$Ref($ref);
-          inventory.push({
-            $ref: $ref,
-            parent: $refParent,
-            key: $refKey,
-            pathFromRoot: pathFromRoot,
-            depth: depth,
-            file: file,
-            hash: hash,
-            value: pointer.value,
-            circular: pointer.circular,
-            extended: extended,
-            external: external
-          });
-          // Recursively crawl the resolved value
-          crawl(pointer.value, null, pointer.path, pathFromRoot, inventory, $refs, options);
-        }
-        /**
- * Re-maps every $ref pointer, so that they're all relative to the root of the JSON Schema.
- * Each referenced value is dereferenced EXACTLY ONCE.  All subsequent references to the same
- * value are re-mapped to point to the first reference.
- *
- * @example:
- *  {
- *    first: { $ref: somefile.json#/some/part },
- *    second: { $ref: somefile.json#/another/part },
- *    third: { $ref: somefile.json },
- *    fourth: { $ref: somefile.json#/some/part/sub/part }
- *  }
- *
- * In this example, there are four references to the same file, but since the third reference points
- * to the ENTIRE file, that's the only one we need to dereference.  The other three can just be
- * remapped to point inside the third one.
- *
- * On the other hand, if the third reference DIDN'T exist, then the first and second would both need
- * to be dereferenced, since they point to different parts of the file. The fourth reference does NOT
- * need to be dereferenced, because it can be remapped to point inside the first one.
- *
- * @param {object[]} inventory
- */
-        function remap(inventory) {
-          // Group & sort all the $ref pointers, so they're in the order that we need to dereference/remap them
-          inventory.sort(function (a, b) {
-            if (a.file !== b.file) {
-              return a.file < b.file ? -1 : +1;  // Group all the $refs that point to the same file
-            } else if (a.hash !== b.hash) {
-              return a.hash < b.hash ? -1 : +1;  // Group all the $refs that point to the same part of the file
-            } else if (a.circular !== b.circular) {
-              return a.circular ? -1 : +1;  // If the $ref points to itself, then sort it higher than other $refs that point to this $ref
-            } else if (a.extended !== b.extended) {
-              return a.extended ? +1 : -1;  // If the $ref extends the resolved value, then sort it lower than other $refs that don't extend the value
-            } else if (a.depth !== b.depth) {
-              return a.depth - b.depth;  // Sort $refs by how close they are to the JSON Schema root
-            } else {
-              // If all else is equal, use the $ref that's in the "definitions" property
-              return b.pathFromRoot.lastIndexOf('/definitions') - a.pathFromRoot.lastIndexOf('/definitions');
-            }
-          });
-          var file, hash, pathFromRoot;
-          inventory.forEach(function (i) {
-            debug('Re-mapping $ref pointer "%s" at %s', i.$ref.$ref, i.pathFromRoot);
-            if (!i.external) {
-              // This $ref already resolves to the main JSON Schema file
-              i.$ref.$ref = i.hash;
-            } else if (i.file === file && i.hash === hash) {
-              // This $ref points to the same value as the prevous $ref, so remap it to the same path
-              i.$ref.$ref = pathFromRoot;
-            } else if (i.file === file && i.hash.indexOf(hash + '/') === 0) {
-              // This $ref points to the a sub-value as the prevous $ref, so remap it beneath that path
-              i.$ref.$ref = Pointer.join(pathFromRoot, Pointer.parse(i.hash));
-            } else {
-              // We've moved to a new file or new hash
-              file = i.file;
-              hash = i.hash;
-              pathFromRoot = i.pathFromRoot;
-              // This is the first $ref to point to this value, so dereference the value.
-              // Any other $refs that point to the same value will point to this $ref instead
-              i.$ref = i.parent[i.key] = $Ref.dereference(i.$ref, i.value);
-              if (i.circular) {
-                // This $ref points to itself
-                i.$ref.$ref = i.pathFromRoot;
-              }
-            }
-            debug('    new value: %s', i.$ref && i.$ref.$ref ? i.$ref.$ref : '[object Object]');
-          });
-        }
-      },
-      {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105
-      }
-    ],
-    88: [
-      function (require, module, exports) {
-        'use strict';
-        var $Ref = require('./ref'), Pointer = require('./pointer'), ono = require('ono'), debug = require('./util/debug'), url = require('./util/url');
-        module.exports = dereference;
-        /**
- * Crawls the JSON schema, finds all JSON references, and dereferences them.
- * This method mutates the JSON schema object, replacing JSON references with their resolved value.
- *
- * @param {$RefParser} parser
- * @param {$RefParserOptions} options
- */
-        function dereference(parser, options) {
-          debug('Dereferencing $ref pointers in %s', parser.$refs._root$Ref.path);
-          var dereferenced = crawl(parser.schema, parser.$refs._root$Ref.path, '#', [], parser.$refs, options);
-          parser.$refs.circular = dereferenced.circular;
-          parser.schema = dereferenced.value;
-        }
-        /**
- * Recursively crawls the given value, and dereferences any JSON references.
- *
- * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
- * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of `obj` from the schema root
- * @param {object[]} parents - An array of the parent objects that have already been dereferenced
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- * @returns {{value: object, circular: boolean}}
- */
-        function crawl(obj, path, pathFromRoot, parents, $refs, options) {
-          var dereferenced;
-          var result = {
-              value: obj,
-              circular: false
-            };
-          if (obj && typeof obj === 'object') {
-            parents.push(obj);
-            if ($Ref.isAllowed$Ref(obj, options)) {
-              dereferenced = dereference$Ref(obj, path, pathFromRoot, parents, $refs, options);
-              result.circular = dereferenced.circular;
-              result.value = dereferenced.value;
-            } else {
-              Object.keys(obj).forEach(function (key) {
-                var keyPath = Pointer.join(path, key);
-                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
-                var value = obj[key];
-                var circular = false;
-                if ($Ref.isAllowed$Ref(value, options)) {
-                  dereferenced = dereference$Ref(value, keyPath, keyPathFromRoot, parents, $refs, options);
-                  circular = dereferenced.circular;
-                  obj[key] = dereferenced.value;
-                } else {
-                  if (parents.indexOf(value) === -1) {
-                    dereferenced = crawl(value, keyPath, keyPathFromRoot, parents, $refs, options);
-                    circular = dereferenced.circular;
-                    obj[key] = dereferenced.value;
-                  } else {
-                    circular = foundCircularReference(keyPath, $refs, options);
-                  }
-                }
-                // Set the "isCircular" flag if this or any other property is circular
-                result.circular = result.circular || circular;
-              });
-            }
-            parents.pop();
-          }
-          return result;
-        }
-        /**
- * Dereferences the given JSON Reference, and then crawls the resulting value.
- *
- * @param {{$ref: string}} $ref - The JSON Reference to resolve
- * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
- * @param {string} pathFromRoot - The path of `$ref` from the schema root
- * @param {object[]} parents - An array of the parent objects that have already been dereferenced
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- * @returns {{value: object, circular: boolean}}
- */
-        function dereference$Ref($ref, path, pathFromRoot, parents, $refs, options) {
-          debug('Dereferencing $ref pointer "%s" at %s', $ref.$ref, path);
-          var $refPath = url.resolve(path, $ref.$ref);
-          var pointer = $refs._resolve($refPath, options);
-          // Check for circular references
-          var directCircular = pointer.circular;
-          var circular = directCircular || parents.indexOf(pointer.value) !== -1;
-          circular && foundCircularReference(path, $refs, options);
-          // Dereference the JSON reference
-          var dereferencedValue = $Ref.dereference($ref, pointer.value);
-          // Crawl the dereferenced value (unless it's circular)
-          if (!circular) {
-            // Determine if the dereferenced value is circular
-            var dereferenced = crawl(dereferencedValue, pointer.path, pathFromRoot, parents, $refs, options);
-            circular = dereferenced.circular;
-            dereferencedValue = dereferenced.value;
-          }
-          if (circular && !directCircular && options.dereference.circular === 'ignore') {
-            // The user has chosen to "ignore" circular references, so don't change the value
-            dereferencedValue = $ref;
-          }
-          if (directCircular) {
-            // The pointer is a DIRECT circular reference (i.e. it references itself).
-            // So replace the $ref path with the absolute path from the JSON Schema root
-            dereferencedValue.$ref = pathFromRoot;
-          }
-          return {
-            circular: circular,
-            value: dereferencedValue
-          };
-        }
-        /**
- * Called when a circular reference is found.
- * It sets the {@link $Refs#circular} flag, and throws an error if options.dereference.circular is false.
- *
- * @param {string} keyPath - The JSON Reference path of the circular reference
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- * @returns {boolean} - always returns true, to indicate that a circular reference was found
- */
-        function foundCircularReference(keyPath, $refs, options) {
-          $refs.circular = true;
-          if (!options.dereference.circular) {
-            throw ono.reference('Circular $ref pointer found at %s', keyPath);
-          }
-          return true;
-        }
-      },
-      {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105,
-        'ono': 113
-      }
-    ],
-    89: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var Promise = require('./util/promise'), Options = require('./options'), $Refs = require('./refs'), parse = require('./parse'), resolveExternal = require('./resolve-external'), bundle = require('./bundle'), dereference = require('./dereference'), url = require('./util/url'), maybe = require('call-me-maybe'), ono = require('ono');
-          module.exports = $RefParser;
-          module.exports.YAML = require('./util/yaml');
-          /**
- * This class parses a JSON schema, builds a map of its JSON references and their resolved values,
- * and provides methods for traversing, manipulating, and dereferencing those references.
- *
- * @constructor
- */
-          function $RefParser() {
-            /**
-   * The parsed (and possibly dereferenced) JSON schema object
-   *
-   * @type {object}
-   * @readonly
-   */
-            this.schema = null;
-            /**
-   * The resolved JSON references
-   *
-   * @type {$Refs}
-   * @readonly
-   */
-            this.$refs = new $Refs();
-          }
-          /**
- * Parses the given JSON schema.
- * This method does not resolve any JSON references.
- * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
- * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
- * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
- */
-          $RefParser.parse = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.parse.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema.
- * This method does not resolve any JSON references.
- * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
- * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
- * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
- */
-          $RefParser.prototype.parse = function (schema, options, callback) {
-            var args = normalizeArgs(arguments);
-            var promise;
-            if (!args.path && !args.schema) {
-              var err = ono('Expected a file path, URL, or object. Got %s', args.path || args.schema);
-              return maybe(args.callback, Promise.reject(err));
-            }
-            // Reset everything
-            this.schema = null;
-            this.$refs = new $Refs();
-            // If the path is a filesystem path, then convert it to a URL.
-            // NOTE: According to the JSON Reference spec, these should already be URLs,
-            // but, in practice, many people use local filesystem paths instead.
-            // So we're being generous here and doing the conversion automatically.
-            // This is not intended to be a 100% bulletproof solution.
-            // If it doesn't work for your use-case, then use a URL instead.
-            if (url.isFileSystemPath(args.path)) {
-              args.path = url.fromFileSystemPath(args.path);
-            }
-            // Resolve the absolute path of the schema
-            args.path = url.resolve(url.cwd(), args.path);
-            if (args.schema && typeof args.schema === 'object') {
-              // A schema object was passed-in.
-              // So immediately add a new $Ref with the schema object as its value
-              this.$refs._add(args.path, args.schema);
-              promise = Promise.resolve(args.schema);
-            } else {
-              // Parse the schema file/url
-              promise = parse(args.path, this.$refs, args.options);
-            }
-            var me = this;
-            return promise.then(function (result) {
-              if (!result || typeof result !== 'object' || Buffer.isBuffer(result)) {
-                throw ono.syntax('"%s" is not a valid JSON Schema', me.$refs._root$Ref.path || result);
-              } else {
-                me.schema = result;
-                return maybe(args.callback, Promise.resolve(me.schema));
-              }
-            }).catch(function (e) {
-              return maybe(args.callback, Promise.reject(e));
-            });
-          };
-          /**
- * Parses the given JSON schema and resolves any JSON references, including references in
- * externally-referenced files.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
- * @param {function} [callback]
- * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
- *
- * @returns {Promise}
- * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
- */
-          $RefParser.resolve = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.resolve.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema and resolves any JSON references, including references in
- * externally-referenced files.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
- * @param {function} [callback]
- * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
- *
- * @returns {Promise}
- * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
- */
-          $RefParser.prototype.resolve = function (schema, options, callback) {
-            var me = this;
-            var args = normalizeArgs(arguments);
-            return this.parse(args.path, args.schema, args.options).then(function () {
-              return resolveExternal(me, args.options);
-            }).then(function () {
-              return maybe(args.callback, Promise.resolve(me.$refs));
-            }).catch(function (err) {
-              return maybe(args.callback, Promise.reject(err));
-            });
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and bundles all external references
- * into the main JSON schema. This produces a JSON schema that only has *internal* references,
- * not any *external* references.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
- * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
- */
-          $RefParser.bundle = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.bundle.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and bundles all external references
- * into the main JSON schema. This produces a JSON schema that only has *internal* references,
- * not any *external* references.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
- * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
- */
-          $RefParser.prototype.bundle = function (schema, options, callback) {
-            var me = this;
-            var args = normalizeArgs(arguments);
-            return this.resolve(args.path, args.schema, args.options).then(function () {
-              bundle(me, args.options);
-              return maybe(args.callback, Promise.resolve(me.schema));
-            }).catch(function (err) {
-              return maybe(args.callback, Promise.reject(err));
-            });
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
- * That is, all JSON references are replaced with their resolved values.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
- * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
- */
-          $RefParser.dereference = function (schema, options, callback) {
-            var Class = this;
-            // eslint-disable-line consistent-this
-            var instance = new Class();
-            return instance.dereference.apply(instance, arguments);
-          };
-          /**
- * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
- * That is, all JSON references are replaced with their resolved values.
- *
- * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
- * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
- * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
- * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
- */
-          $RefParser.prototype.dereference = function (schema, options, callback) {
-            var me = this;
-            var args = normalizeArgs(arguments);
-            return this.resolve(args.path, args.schema, args.options).then(function () {
-              dereference(me, args.options);
-              return maybe(args.callback, Promise.resolve(me.schema));
-            }).catch(function (err) {
-              return maybe(args.callback, Promise.reject(err));
-            });
-          };
-          /**
- * Normalizes the given arguments, accounting for optional args.
- *
- * @param {Arguments} args
- * @returns {object}
- */
-          function normalizeArgs(args) {
-            var path, schema, options, callback;
-            args = Array.prototype.slice.call(args);
-            if (typeof args[args.length - 1] === 'function') {
-              // The last parameter is a callback function
-              callback = args.pop();
-            }
-            if (typeof args[0] === 'string') {
-              // The first parameter is the path
-              path = args[0];
-              if (typeof args[2] === 'object') {
-                // The second parameter is the schema, and the third parameter is the options
-                schema = args[1];
-                options = args[2];
-              } else {
-                // The second parameter is the options
-                schema = undefined;
-                options = args[1];
-              }
-            } else {
-              // The first parameter is the schema
-              path = '';
-              schema = args[0];
-              options = args[1];
-            }
-            if (!(options instanceof Options)) {
-              options = new Options(options);
-            }
-            return {
-              path: path,
-              schema: schema,
-              options: options,
-              callback: callback
-            };
-          }
-        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
-      },
-      {
-        '../../is-buffer/index.js': 55,
-        './bundle': 87,
-        './dereference': 88,
-        './options': 90,
-        './parse': 91,
-        './refs': 98,
-        './resolve-external': 99,
-        './util/promise': 104,
-        './util/url': 105,
-        './util/yaml': 106,
-        'call-me-maybe': 44,
-        'ono': 113
-      }
-    ],
-    90: [
-      function (require, module, exports) {
-        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
-        'use strict';
-        var jsonParser = require('./parsers/json'), yamlParser = require('./parsers/yaml'), textParser = require('./parsers/text'), binaryParser = require('./parsers/binary'), fileResolver = require('./resolvers/file'), httpResolver = require('./resolvers/http'), zschemaValidator = require('./validators/z-schema');
-        module.exports = $RefParserOptions;
-        /**
- * Options that determine how JSON schemas are parsed, resolved, dereferenced, and validated.
- *
- * @param {object|$RefParserOptions} [options] - Overridden options
- * @constructor
- */
-        function $RefParserOptions(options) {
-          merge(this, $RefParserOptions.defaults);
-          merge(this, options);
-        }
-        $RefParserOptions.defaults = {
-          parse: {
-            json: jsonParser,
-            yaml: yamlParser,
-            text: textParser,
-            binary: binaryParser
-          },
-          resolve: {
-            file: fileResolver,
-            http: httpResolver,
-            external: true
-          },
-          dereference: { circular: true },
-          validate: { zschema: zschemaValidator }
-        };
-        /**
- * Merges the properties of the source object into the target object.
- *
- * @param {object} target - The object that we're populating
- * @param {?object} source - The options that are being merged
- * @returns {object}
- */
-        function merge(target, source) {
-          if (isMergeable(source)) {
-            var keys = Object.keys(source);
-            for (var i = 0; i < keys.length; i++) {
-              var key = keys[i];
-              var sourceSetting = source[key];
-              var targetSetting = target[key];
-              if (isMergeable(sourceSetting)) {
-                // It's a nested object, so merge it recursively
-                target[key] = merge(targetSetting || {}, sourceSetting);
-              } else if (sourceSetting !== undefined) {
-                // It's a scalar value, function, or array. No merging necessary. Just overwrite the target value.
-                target[key] = sourceSetting;
-              }
-            }
-          }
-          return target;
-        }
-        /**
- * Determines whether the given value can be merged,
- * or if it is a scalar value that should just override the target value.
- *
- * @param   {*}  val
- * @returns {Boolean}
- */
-        function isMergeable(val) {
-          return val && typeof val === 'object' && !Array.isArray(val) && !(val instanceof RegExp) && !(val instanceof Date);
-        }
-      },
-      {
-        './parsers/binary': 92,
-        './parsers/json': 93,
-        './parsers/text': 94,
-        './parsers/yaml': 95,
-        './resolvers/file': 100,
-        './resolvers/http': 101,
-        './validators/z-schema': 107
-      }
-    ],
-    91: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var ono = require('ono'), debug = require('./util/debug'), url = require('./util/url'), plugins = require('./util/plugins'), Promise = require('./util/promise');
-          module.exports = parse;
-          /**
- * Reads and parses the specified file path or URL.
- *
- * @param {string} path - This path MUST already be resolved, since `read` doesn't know the resolution context
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves with the parsed file contents, NOT the raw (Buffer) contents.
- */
-          function parse(path, $refs, options) {
-            try {
-              // Remove the URL fragment, if any
-              path = url.stripHash(path);
-              // Add a new $Ref for this file, even though we don't have the value yet.
-              // This ensures that we don't simultaneously read & parse the same file multiple times
-              var $ref = $refs._add(path);
-              // This "file object" will be passed to all resolvers and parsers.
-              var file = {
-                  url: path,
-                  extension: url.getExtension(path)
-                };
-              // Read the file and then parse the data
-              return readFile(file, options).then(function (resolver) {
-                $ref.pathType = resolver.plugin.name;
-                file.data = resolver.result;
-                return parseFile(file, options);
-              }).then(function (parser) {
-                $ref.value = parser.result;
-                return parser.result;
-              });
-            } catch (e) {
-              return Promise.reject(e);
-            }
-          }
-          /**
- * Reads the given file, using the configured resolver plugins
- *
- * @param {object} file           - An object containing information about the referenced file
- * @param {string} file.url       - The full URL of the referenced file
- * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves with the raw file contents and the resolver that was used.
- */
-          function readFile(file, options) {
-            return new Promise(function (resolve, reject) {
-              debug('Reading %s', file.url);
-              // Find the resolvers that can read this file
-              var resolvers = plugins.all(options.resolve);
-              resolvers = plugins.filter(resolvers, 'canRead', file);
-              // Run the resolvers, in order, until one of them succeeds
-              plugins.sort(resolvers);
-              plugins.run(resolvers, 'read', file).then(resolve, onError);
-              function onError(err) {
-                // Throw the original error, if it's one of our own (user-friendly) errors.
-                // Otherwise, throw a generic, friendly error.
-                if (err && !(err instanceof SyntaxError)) {
-                  reject(err);
-                } else {
-                  reject(ono.syntax('Unable to resolve $ref pointer "%s"', file.url));
-                }
-              }
-            });
-          }
-          /**
- * Parses the given file's contents, using the configured parser plugins.
- *
- * @param {object} file           - An object containing information about the referenced file
- * @param {string} file.url       - The full URL of the referenced file
- * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
- * @param {*}      file.data      - The file contents. This will be whatever data type was returned by the resolver
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves with the parsed file contents and the parser that was used.
- */
-          function parseFile(file, options) {
-            return new Promise(function (resolve, reject) {
-              debug('Parsing %s', file.url);
-              // Find the parsers that can read this file type.
-              // If none of the parsers are an exact match for this file, then we'll try ALL of them.
-              // This handles situations where the file IS a supported type, just with an unknown extension.
-              var allParsers = plugins.all(options.parse);
-              var filteredParsers = plugins.filter(allParsers, 'canParse', file);
-              var parsers = filteredParsers.length > 0 ? filteredParsers : allParsers;
-              // Run the parsers, in order, until one of them succeeds
-              plugins.sort(parsers);
-              plugins.run(parsers, 'parse', file).then(onParsed, onError);
-              function onParsed(parser) {
-                if (!parser.plugin.allowEmpty && isEmpty(parser.result)) {
-                  reject(ono.syntax('Error parsing "%s" as %s. \nParsed value is empty', file.url, parser.plugin.name));
-                } else {
-                  resolve(parser);
-                }
-              }
-              function onError(err) {
-                if (err) {
-                  err = err instanceof Error ? err : new Error(err);
-                  reject(ono.syntax(err, 'Error parsing %s', file.url));
-                } else {
-                  reject(ono.syntax('Unable to parse %s', file.url));
-                }
-              }
-            });
-          }
-          /**
- * Determines whether the parsed value is "empty".
- *
- * @param {*} value
- * @returns {boolean}
- */
-          function isEmpty(value) {
-            return value === undefined || typeof value === 'object' && Object.keys(value).length === 0 || typeof value === 'string' && value.trim().length === 0 || Buffer.isBuffer(value) && value.length === 0;
-          }
-        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
-      },
-      {
-        '../../is-buffer/index.js': 55,
-        './util/debug': 102,
-        './util/plugins': 103,
-        './util/promise': 104,
-        './util/url': 105,
-        'ono': 113
-      }
-    ],
-    92: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var BINARY_REGEXP = /\.(jpeg|jpg|gif|png|bmp|ico)$/i;
-          module.exports = {
-            order: 400,
-            allowEmpty: true,
-            canParse: function isBinary(file) {
-              // Use this parser if the file is a Buffer, and has a known binary extension
-              return Buffer.isBuffer(file.data) && BINARY_REGEXP.test(file.url);
-            },
-            parse: function parseBinary(file) {
-              if (Buffer.isBuffer(file.data)) {
-                return file.data;
-              } else {
-                // This will reject if data is anything other than a string or typed array
-                return new Buffer(file.data);
-              }
-            }
-          };
-        }.call(this, require('buffer').Buffer));
-      },
-      { 'buffer': 41 }
-    ],
-    93: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var Promise = require('../util/promise');
-          module.exports = {
-            order: 100,
-            allowEmpty: true,
-            canParse: '.json',
-            parse: function parseJSON(file) {
-              return new Promise(function (resolve, reject) {
-                var data = file.data;
-                if (Buffer.isBuffer(data)) {
-                  data = data.toString();
-                }
-                if (typeof data === 'string') {
-                  if (data.trim().length === 0) {
-                    resolve(undefined);  // This mirrors the YAML behavior
-                  } else {
-                    resolve(JSON.parse(data));
-                  }
-                } else {
-                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
-                  resolve(data);
-                }
-              });
-            }
-          };
-        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
-      },
-      {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104
-      }
-    ],
-    94: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var TEXT_REGEXP = /\.(txt|htm|html|md|xml|js|min|map|css|scss|less|svg)$/i;
-          module.exports = {
-            order: 300,
-            allowEmpty: true,
-            encoding: 'utf8',
-            canParse: function isText(file) {
-              // Use this parser if the file is a string or Buffer, and has a known text-based extension
-              return (typeof file.data === 'string' || Buffer.isBuffer(file.data)) && TEXT_REGEXP.test(file.url);
-            },
-            parse: function parseText(file) {
-              if (typeof file.data === 'string') {
-                return file.data;
-              } else if (Buffer.isBuffer(file.data)) {
-                return file.data.toString(this.encoding);
-              } else {
-                throw new Error('data is not text');
-              }
-            }
-          };
-        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
-      },
-      { '../../../is-buffer/index.js': 55 }
-    ],
-    95: [
-      function (require, module, exports) {
-        (function (Buffer) {
-          'use strict';
-          var Promise = require('../util/promise'), YAML = require('../util/yaml');
-          module.exports = {
-            order: 200,
-            allowEmpty: true,
-            canParse: [
-              '.yaml',
-              '.yml',
-              '.json'
-            ],
-            parse: function parseYAML(file) {
-              return new Promise(function (resolve, reject) {
-                var data = file.data;
-                if (Buffer.isBuffer(data)) {
-                  data = data.toString();
-                }
-                if (typeof data === 'string') {
-                  resolve(YAML.parse(data));
-                } else {
-                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
-                  resolve(data);
-                }
-              });
-            }
-          };
-        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
-      },
-      {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104,
-        '../util/yaml': 106
-      }
-    ],
-    96: [
-      function (require, module, exports) {
-        'use strict';
-        module.exports = Pointer;
-        var $Ref = require('./ref'), url = require('./util/url'), ono = require('ono'), slashes = /\//g, tildes = /~/g, escapedSlash = /~1/g, escapedTilde = /~0/g;
-        /**
- * This class represents a single JSON pointer and its resolved value.
- *
- * @param {$Ref} $ref
- * @param {string} path
- * @constructor
- */
-        function Pointer($ref, path) {
-          /**
-   * The {@link $Ref} object that contains this {@link Pointer} object.
-   * @type {$Ref}
-   */
-          this.$ref = $ref;
-          /**
-   * The file path or URL, containing the JSON pointer in the hash.
-   * This path is relative to the path of the main JSON schema file.
-   * @type {string}
-   */
-          this.path = path;
-          /**
-   * The value of the JSON pointer.
-   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
-   * @type {?*}
-   */
-          this.value = undefined;
-          /**
-   * Indicates whether the pointer references itself.
-   * @type {boolean}
-   */
-          this.circular = false;
-        }
-        /**
- * Resolves the value of a nested property within the given object.
- *
- * @param {*} obj - The object that will be crawled
- * @param {$RefParserOptions} options
- *
- * @returns {Pointer}
- * Returns a JSON pointer whose {@link Pointer#value} is the resolved value.
- * If resolving this value required resolving other JSON references, then
- * the {@link Pointer#$ref} and {@link Pointer#path} will reflect the resolution path
- * of the resolved value.
- */
-        Pointer.prototype.resolve = function (obj, options) {
-          var tokens = Pointer.parse(this.path);
-          // Crawl the object, one token at a time
-          this.value = obj;
-          for (var i = 0; i < tokens.length; i++) {
-            if (resolveIf$Ref(this, options)) {
-              // The $ref path has changed, so append the remaining tokens to the path
-              this.path = Pointer.join(this.path, tokens.slice(i));
-            }
-            var token = tokens[i];
-            if (this.value[token] === undefined) {
-              throw ono.syntax('Error resolving $ref pointer "%s". \nToken "%s" does not exist.', this.path, token);
-            } else {
-              this.value = this.value[token];
-            }
-          }
-          // Resolve the final value
-          resolveIf$Ref(this, options);
-          return this;
-        };
-        /**
- * Sets the value of a nested property within the given object.
- *
- * @param {*} obj - The object that will be crawled
- * @param {*} value - the value to assign
- * @param {$RefParserOptions} options
- *
- * @returns {*}
- * Returns the modified object, or an entirely new object if the entire object is overwritten.
- */
-        Pointer.prototype.set = function (obj, value, options) {
-          var tokens = Pointer.parse(this.path);
-          var token;
-          if (tokens.length === 0) {
-            // There are no tokens, replace the entire object with the new value
-            this.value = value;
-            return value;
-          }
-          // Crawl the object, one token at a time
-          this.value = obj;
-          for (var i = 0; i < tokens.length - 1; i++) {
-            resolveIf$Ref(this, options);
-            token = tokens[i];
-            if (this.value && this.value[token] !== undefined) {
-              // The token exists
-              this.value = this.value[token];
-            } else {
-              // The token doesn't exist, so create it
-              this.value = setValue(this, token, {});
-            }
-          }
-          // Set the value of the final token
-          resolveIf$Ref(this, options);
-          token = tokens[tokens.length - 1];
-          setValue(this, token, value);
-          // Return the updated object
-          return obj;
-        };
-        /**
- * Parses a JSON pointer (or a path containing a JSON pointer in the hash)
- * and returns an array of the pointer's tokens.
- * (e.g. "schema.json#/definitions/person/name" => ["definitions", "person", "name"])
- *
- * The pointer is parsed according to RFC 6901
- * {@link https://tools.ietf.org/html/rfc6901#section-3}
- *
- * @param {string} path
- * @returns {string[]}
- */
-        Pointer.parse = function (path) {
-          // Get the JSON pointer from the path's hash
-          var pointer = url.getHash(path).substr(1);
-          // If there's no pointer, then there are no tokens,
-          // so return an empty array
-          if (!pointer) {
-            return [];
-          }
-          // Split into an array
-          pointer = pointer.split('/');
-          // Decode each part, according to RFC 6901
-          for (var i = 0; i < pointer.length; i++) {
-            pointer[i] = decodeURI(pointer[i].replace(escapedSlash, '/').replace(escapedTilde, '~'));
-          }
-          if (pointer[0] !== '') {
-            throw ono.syntax('Invalid $ref pointer "%s". Pointers must begin with "#/"', pointer);
-          }
-          return pointer.slice(1);
-        };
-        /**
- * Creates a JSON pointer path, by joining one or more tokens to a base path.
- *
- * @param {string} base - The base path (e.g. "schema.json#/definitions/person")
- * @param {string|string[]} tokens - The token(s) to append (e.g. ["name", "first"])
- * @returns {string}
- */
-        Pointer.join = function (base, tokens) {
-          // Ensure that the base path contains a hash
-          if (base.indexOf('#') === -1) {
-            base += '#';
-          }
-          // Append each token to the base path
-          tokens = Array.isArray(tokens) ? tokens : [tokens];
-          for (var i = 0; i < tokens.length; i++) {
-            var token = tokens[i];
-            // Encode the token, according to RFC 6901
-            base += '/' + encodeURI(token.replace(tildes, '~0').replace(slashes, '~1'));
-          }
-          return base;
-        };
-        /**
- * If the given pointer's {@link Pointer#value} is a JSON reference,
- * then the reference is resolved and {@link Pointer#value} is replaced with the resolved value.
- * In addition, {@link Pointer#path} and {@link Pointer#$ref} are updated to reflect the
- * resolution path of the new value.
- *
- * @param {Pointer} pointer
- * @param {$RefParserOptions} options
- * @returns {boolean} - Returns `true` if the resolution path changed
- */
-        function resolveIf$Ref(pointer, options) {
-          // Is the value a JSON reference? (and allowed?)
-          if ($Ref.isAllowed$Ref(pointer.value, options)) {
-            var $refPath = url.resolve(pointer.path, pointer.value.$ref);
-            if ($refPath === pointer.path) {
-              // The value is a reference to itself, so there's nothing to do.
-              pointer.circular = true;
-            } else {
-              var resolved = pointer.$ref.$refs._resolve($refPath, options);
-              if ($Ref.isExtended$Ref(pointer.value)) {
-                // This JSON reference "extends" the resolved value, rather than simply pointing to it.
-                // So the resolved path does NOT change.  Just the value does.
-                pointer.value = $Ref.dereference(pointer.value, resolved.value);
-              } else {
-                // Resolve the reference
-                pointer.$ref = resolved.$ref;
-                pointer.path = resolved.path;
-                pointer.value = resolved.value;
-              }
-              return true;
-            }
-          }
-        }
-        /**
- * Sets the specified token value of the {@link Pointer#value}.
- *
- * The token is evaluated according to RFC 6901.
- * {@link https://tools.ietf.org/html/rfc6901#section-4}
- *
- * @param {Pointer} pointer - The JSON Pointer whose value will be modified
- * @param {string} token - A JSON Pointer token that indicates how to modify `obj`
- * @param {*} value - The value to assign
- * @returns {*} - Returns the assigned value
- */
-        function setValue(pointer, token, value) {
-          if (pointer.value && typeof pointer.value === 'object') {
-            if (token === '-' && Array.isArray(pointer.value)) {
-              pointer.value.push(value);
-            } else {
-              pointer.value[token] = value;
-            }
-          } else {
-            throw ono.syntax('Error assigning $ref pointer "%s". \nCannot set "%s" of a non-object.', pointer.path, token);
-          }
-          return value;
-        }
-      },
-      {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
-      }
-    ],
-    97: [
-      function (require, module, exports) {
-        'use strict';
-        module.exports = $Ref;
-        var Pointer = require('./pointer');
-        /**
- * This class represents a single JSON reference and its resolved value.
- *
- * @constructor
- */
-        function $Ref() {
-          /**
-   * The file path or URL of the referenced file.
-   * This path is relative to the path of the main JSON schema file.
-   *
-   * This path does NOT contain document fragments (JSON pointers). It always references an ENTIRE file.
-   * Use methods such as {@link $Ref#get}, {@link $Ref#resolve}, and {@link $Ref#exists} to get
-   * specific JSON pointers within the file.
-   *
-   * @type {string}
-   */
-          this.path = undefined;
-          /**
-   * The resolved value of the JSON reference.
-   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
-   * @type {?*}
-   */
-          this.value = undefined;
-          /**
-   * The {@link $Refs} object that contains this {@link $Ref} object.
-   * @type {$Refs}
-   */
-          this.$refs = undefined;
-          /**
-   * Indicates the type of {@link $Ref#path} (e.g. "file", "http", etc.)
-   * @type {?string}
-   */
-          this.pathType = undefined;
-        }
-        /**
- * Determines whether the given JSON reference exists within this {@link $Ref#value}.
- *
- * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} options
- * @returns {boolean}
- */
-        $Ref.prototype.exists = function (path, options) {
-          try {
-            this.resolve(path, options);
-            return true;
-          } catch (e) {
-            return false;
-          }
-        };
-        /**
- * Resolves the given JSON reference within this {@link $Ref#value} and returns the resolved value.
- *
- * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} options
- * @returns {*} - Returns the resolved value
- */
-        $Ref.prototype.get = function (path, options) {
-          return this.resolve(path, options).value;
-        };
-        /**
- * Resolves the given JSON reference within this {@link $Ref#value}.
- *
- * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} options
- * @returns {Pointer}
- */
-        $Ref.prototype.resolve = function (path, options) {
-          var pointer = new Pointer(this, path);
-          return pointer.resolve(this.value, options);
-        };
-        /**
- * Sets the value of a nested property within this {@link $Ref#value}.
- * If the property, or any of its parents don't exist, they will be created.
- *
- * @param {string} path - The full path of the property to set, optionally with a JSON pointer in the hash
- * @param {*} value - The value to assign
- */
-        $Ref.prototype.set = function (path, value) {
-          var pointer = new Pointer(this, path);
-          this.value = pointer.set(this.value, value);
-        };
-        /**
- * Determines whether the given value is a JSON reference.
- *
- * @param {*} value - The value to inspect
- * @returns {boolean}
- */
-        $Ref.is$Ref = function (value) {
-          return value && typeof value === 'object' && typeof value.$ref === 'string' && value.$ref.length > 0;
-        };
-        /**
- * Determines whether the given value is an external JSON reference.
- *
- * @param {*} value - The value to inspect
- * @returns {boolean}
- */
-        $Ref.isExternal$Ref = function (value) {
-          return $Ref.is$Ref(value) && value.$ref[0] !== '#';
-        };
-        /**
- * Determines whether the given value is a JSON reference, and whether it is allowed by the options.
- * For example, if it references an external file, then options.resolve.external must be true.
- *
- * @param {*} value - The value to inspect
- * @param {$RefParserOptions} options
- * @returns {boolean}
- */
-        $Ref.isAllowed$Ref = function (value, options) {
-          if ($Ref.is$Ref(value)) {
-            if (value.$ref[0] === '#' || !options || options.resolve.external) {
-              return true;
-            }
-          }
-        };
-        /**
- * Determines whether the given value is a JSON reference that "extends" its resolved value.
- * That is, it has extra properties (in addition to "$ref"), so rather than simply pointing to
- * an existing value, this $ref actually creates a NEW value that is a shallow copy of the resolved
- * value, plus the extra properties.
- *
- * @example:
- *  {
- *    person: {
- *      properties: {
- *        firstName: { type: string }
- *        lastName: { type: string }
- *      }
- *    }
- *    employee: {
- *      properties: {
- *        $ref: #/person/properties
- *        salary: { type: number }
- *      }
- *    }
- *  }
- *
- *  In this example, "employee" is an extended $ref, since it extends "person" with an additional
- *  property (salary).  The result is a NEW value that looks like this:
- *
- *  {
- *    properties: {
- *      firstName: { type: string }
- *      lastName: { type: string }
- *      salary: { type: number }
- *    }
- *  }
- *
- * @param {*} value - The value to inspect
- * @returns {boolean}
- */
-        $Ref.isExtended$Ref = function (value) {
-          return $Ref.is$Ref(value) && Object.keys(value).length > 1;
-        };
-        /**
- * Returns the resolved value of a JSON Reference.
- * If necessary, the resolved value is merged with the JSON Reference to create a new object
- *
- * @example:
- *  {
- *    person: {
- *      properties: {
- *        firstName: { type: string }
- *        lastName: { type: string }
- *      }
- *    }
- *    employee: {
- *      properties: {
- *        $ref: #/person/properties
- *        salary: { type: number }
- *      }
- *    }
- *  }
- *
- *  When "person" and "employee" are merged, you end up with the following object:
- *
- *  {
- *    properties: {
- *      firstName: { type: string }
- *      lastName: { type: string }
- *      salary: { type: number }
- *    }
- *  }
- *
- * @param {object} $ref - The JSON reference object (the one with the "$ref" property)
- * @param {*} resolvedValue - The resolved value, which can be any type
- * @returns {*} - Returns the dereferenced value
- */
-        $Ref.dereference = function ($ref, resolvedValue) {
-          if (resolvedValue && typeof resolvedValue === 'object' && $Ref.isExtended$Ref($ref)) {
-            var merged = {};
-            Object.keys($ref).forEach(function (key) {
-              if (key !== '$ref') {
-                merged[key] = $ref[key];
-              }
-            });
-            Object.keys(resolvedValue).forEach(function (key) {
-              if (!(key in merged)) {
-                merged[key] = resolvedValue[key];
-              }
-            });
-            return merged;
-          } else {
-            // Completely replace the original reference with the resolved value
-            return resolvedValue;
-          }
-        };
-      },
-      { './pointer': 96 }
-    ],
-    98: [
-      function (require, module, exports) {
-        'use strict';
-        var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
-        module.exports = $Refs;
-        /**
- * This class is a map of JSON references and their resolved values.
- */
-        function $Refs() {
-          /**
-   * Indicates whether the schema contains any circular references.
-   *
-   * @type {boolean}
-   */
-          this.circular = false;
-          /**
-   * A map of paths/urls to {@link $Ref} objects
-   *
-   * @type {object}
-   * @protected
-   */
-          this._$refs = {};
-          /**
-   * The {@link $Ref} object that is the root of the JSON schema.
-   *
-   * @type {$Ref}
-   * @protected
-   */
-          this._root$Ref = null;
-        }
-        /**
- * Returns the paths of all the files/URLs that are referenced by the JSON schema,
- * including the schema itself.
- *
- * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
- * @returns {string[]}
- */
-        $Refs.prototype.paths = function (types) {
-          var paths = getPaths(this._$refs, arguments);
-          return paths.map(function (path) {
-            return path.decoded;
-          });
-        };
-        /**
- * Returns the map of JSON references and their resolved values.
- *
- * @param {...string|string[]} [types] - Only return references of the given types ("file", "http", etc.)
- * @returns {object}
- */
-        $Refs.prototype.values = function (types) {
-          var $refs = this._$refs;
-          var paths = getPaths($refs, arguments);
-          return paths.reduce(function (obj, path) {
-            obj[path.decoded] = $refs[path.encoded].value;
-            return obj;
-          }, {});
-        };
-        /**
- * Returns a POJO (plain old JavaScript object) for serialization as JSON.
- *
- * @returns {object}
- */
-        $Refs.prototype.toJSON = $Refs.prototype.values;
-        /**
- * Determines whether the given JSON reference exists.
- *
- * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} [options]
- * @returns {boolean}
- */
-        $Refs.prototype.exists = function (path, options) {
-          try {
-            this._resolve(path, options);
-            return true;
-          } catch (e) {
-            return false;
-          }
-        };
-        /**
- * Resolves the given JSON reference and returns the resolved value.
- *
- * @param {string} path - The path being resolved, with a JSON pointer in the hash
- * @param {$RefParserOptions} [options]
- * @returns {*} - Returns the resolved value
- */
-        $Refs.prototype.get = function (path, options) {
-          return this._resolve(path, options).value;
-        };
-        /**
- * Sets the value of a nested property within this {@link $Ref#value}.
- * If the property, or any of its parents don't exist, they will be created.
- *
- * @param {string} path - The path of the property to set, optionally with a JSON pointer in the hash
- * @param {*} value - The value to assign
- */
-        $Refs.prototype.set = function (path, value) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
-          var $ref = this._$refs[withoutHash];
-          if (!$ref) {
-            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
-          }
-          $ref.set(path, value);
-        };
-        /**
- * Creates a new {@link $Ref} object and adds it to this {@link $Refs} object.
- *
- * @param {string} path  - The file path or URL of the referenced file
- * @param {*} [value] - Optional. The value of the $ref.
- */
-        $Refs.prototype._add = function (path, value) {
-          var withoutHash = url.stripHash(path);
-          var $ref = new $Ref();
-          $ref.path = withoutHash;
-          $ref.value = value;
-          $ref.$refs = this;
-          this._$refs[withoutHash] = $ref;
-          this._root$Ref = this._root$Ref || $ref;
-          return $ref;
-        };
-        /**
- * Resolves the given JSON reference.
- *
- * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
- * @param {$RefParserOptions} [options]
- * @returns {Pointer}
- * @protected
- */
-        $Refs.prototype._resolve = function (path, options) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
-          var $ref = this._$refs[withoutHash];
-          if (!$ref) {
-            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
-          }
-          return $ref.resolve(path, options);
-        };
-        /**
- * Returns the specified {@link $Ref} object, or undefined.
- *
- * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
- * @returns {$Ref|undefined}
- * @protected
- */
-        $Refs.prototype._get$Ref = function (path) {
-          path = url.resolve(this._root$Ref.path, path);
-          var withoutHash = url.stripHash(path);
-          return this._$refs[withoutHash];
-        };
-        /**
- * Returns the encoded and decoded paths keys of the given object.
- *
- * @param {object} $refs - The object whose keys are URL-encoded paths
- * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
- * @returns {object[]}
- */
-        function getPaths($refs, types) {
-          var paths = Object.keys($refs);
-          // Filter the paths by type
-          types = Array.isArray(types[0]) ? types[0] : Array.prototype.slice.call(types);
-          if (types.length > 0 && types[0]) {
-            paths = paths.filter(function (key) {
-              return types.indexOf($refs[key].pathType) !== -1;
-            });
-          }
-          // Decode local filesystem paths
-          return paths.map(function (path) {
-            return {
-              encoded: path,
-              decoded: $refs[path].pathType === 'file' ? url.toFileSystemPath(path, true) : path
-            };
-          });
-        }
-      },
-      {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
-      }
-    ],
-    99: [
-      function (require, module, exports) {
-        'use strict';
-        var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
-        module.exports = resolveExternal;
-        /**
- * Crawls the JSON schema, finds all external JSON references, and resolves their values.
- * This method does not mutate the JSON schema. The resolved values are added to {@link $RefParser#$refs}.
- *
- * NOTE: We only care about EXTERNAL references here. INTERNAL references are only relevant when dereferencing.
- *
- * @param {$RefParser} parser
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves once all JSON references in the schema have been resolved,
- * including nested references that are contained in externally-referenced files.
- */
-        function resolveExternal(parser, options) {
-          if (!options.resolve.external) {
-            // Nothing to resolve, so exit early
-            return Promise.resolve();
-          }
-          try {
-            debug('Resolving $ref pointers in %s', parser.$refs._root$Ref.path);
-            var promises = crawl(parser.schema, parser.$refs._root$Ref.path + '#', parser.$refs, options);
-            return Promise.all(promises);
-          } catch (e) {
-            return Promise.reject(e);
-          }
-        }
-        /**
- * Recursively crawls the given value, and resolves any external JSON references.
- *
- * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
- * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- *
- * @returns {Promise[]}
- * Returns an array of promises. There will be one promise for each JSON reference in `obj`.
- * If `obj` does not contain any JSON references, then the array will be empty.
- * If any of the JSON references point to files that contain additional JSON references,
- * then the corresponding promise will internally reference an array of promises.
- */
-        function crawl(obj, path, $refs, options) {
-          var promises = [];
-          if (obj && typeof obj === 'object') {
-            if ($Ref.isExternal$Ref(obj)) {
-              promises.push(resolve$Ref(obj, path, $refs, options));
-            } else {
-              Object.keys(obj).forEach(function (key) {
-                var keyPath = Pointer.join(path, key);
-                var value = obj[key];
-                if ($Ref.isExternal$Ref(value)) {
-                  promises.push(resolve$Ref(value, keyPath, $refs, options));
-                } else {
-                  promises = promises.concat(crawl(value, keyPath, $refs, options));
-                }
-              });
-            }
-          }
-          return promises;
-        }
-        /**
- * Resolves the given JSON Reference, and then crawls the resulting value.
- *
- * @param {{$ref: string}} $ref - The JSON Reference to resolve
- * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
- * @param {$Refs} $refs
- * @param {$RefParserOptions} options
- *
- * @returns {Promise}
- * The promise resolves once all JSON references in the object have been resolved,
- * including nested references that are contained in externally-referenced files.
- */
-        function resolve$Ref($ref, path, $refs, options) {
-          debug('Resolving $ref pointer "%s" at %s', $ref.$ref, path);
-          var resolvedPath = url.resolve(path, $ref.$ref);
-          var withoutHash = url.stripHash(resolvedPath);
-          // Do we already have this $ref?
-          $ref = $refs._$refs[withoutHash];
-          if ($ref) {
-            // We've already parsed this $ref, so use the existing value
-            return Promise.resolve($ref.value);
-          }
-          // Parse the $referenced file/url
-          return parse(resolvedPath, $refs, options).then(function (result) {
-            // Crawl the parsed value
-            debug('Resolving $ref pointers in %s', withoutHash);
-            var promises = crawl(result, withoutHash + '#', $refs, options);
-            return Promise.all(promises);
-          });
-        }
-      },
-      {
-        './parse': 91,
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/promise': 104,
-        './util/url': 105
-      }
-    ],
-    100: [
-      function (require, module, exports) {
-        'use strict';
-        var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
-        module.exports = {
-          order: 100,
-          canRead: function isFile(file) {
-            return url.isFileSystemPath(file.url);
-          },
-          read: function readFile(file) {
-            return new Promise(function (resolve, reject) {
-              var path;
-              try {
-                path = url.toFileSystemPath(file.url);
-              } catch (err) {
-                reject(ono.uri(err, 'Malformed URI: %s', file.url));
-              }
-              debug('Opening file: %s', path);
-              try {
-                fs.readFile(path, function (err, data) {
-                  if (err) {
-                    reject(ono(err, 'Error opening file "%s"', path));
-                  } else {
-                    resolve(data);
-                  }
-                });
-              } catch (err) {
-                reject(ono(err, 'Error opening file "%s"', path));
-              }
-            });
-          }
-        };
-      },
-      {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        'fs': 39,
-        'ono': 113
-      }
-    ],
-    101: [
-      function (require, module, exports) {
-        (function (process, Buffer) {
-          'use strict';
-          var http = require('http'), https = require('https'), ono = require('ono'), url = require('../util/url'), debug = require('../util/debug'), Promise = require('../util/promise');
-          module.exports = {
-            order: 200,
-            headers: null,
-            timeout: 5000,
-            redirects: 5,
-            withCredentials: false,
-            canRead: function isHttp(file) {
-              return url.isHttp(file.url);
-            },
-            read: function readHttp(file) {
-              var u = url.parse(file.url);
-              if (process.browser && !u.protocol) {
-                // Use the protocol of the current page
-                u.protocol = url.parse(location.href).protocol;
-              }
-              return download(u, this);
-            }
-          };
-          /**
- * Downloads the given file.
- *
- * @param {Url|string} u        - The url to download (can be a parsed {@link Url} object)
- * @param {object} httpOptions  - The `options.resolve.http` object
- * @param {number} [redirects]  - The redirect URLs that have already been followed
- *
- * @returns {Promise<Buffer>}
- * The promise resolves with the raw downloaded data, or rejects if there is an HTTP error.
- */
-          function download(u, httpOptions, redirects) {
-            return new Promise(function (resolve, reject) {
-              u = url.parse(u);
-              redirects = redirects || [];
-              redirects.push(u.href);
-              get(u, httpOptions).then(function (res) {
-                if (res.statusCode >= 400) {
-                  throw ono({ status: res.statusCode }, 'HTTP ERROR %d', res.statusCode);
-                } else if (res.statusCode >= 300) {
-                  if (redirects.length > httpOptions.redirects) {
-                    reject(ono({ status: res.statusCode }, 'Error downloading %s. \nToo many redirects: \n  %s', redirects[0], redirects.join(' \n  ')));
-                  } else if (!res.headers.location) {
-                    throw ono({ status: res.statusCode }, 'HTTP %d redirect with no location header', res.statusCode);
-                  } else {
-                    debug('HTTP %d redirect %s -> %s', res.statusCode, u.href, res.headers.location);
-                    var redirectTo = url.resolve(u, res.headers.location);
-                    download(redirectTo, httpOptions, redirects).then(resolve, reject);
-                  }
-                } else {
-                  resolve(res.body || new Buffer(0));
-                }
-              }).catch(function (err) {
-                reject(ono(err, 'Error downloading', u.href));
-              });
-            });
-          }
-          /**
- * Sends an HTTP GET request.
- *
- * @param {Url} u - A parsed {@link Url} object
- * @param {object} httpOptions - The `options.resolve.http` object
- *
- * @returns {Promise<Response>}
- * The promise resolves with the HTTP Response object.
- */
-          function get(u, httpOptions) {
-            return new Promise(function (resolve, reject) {
-              debug('GET', u.href);
-              var protocol = u.protocol === 'https:' ? https : http;
-              var req = protocol.get({
-                  hostname: u.hostname,
-                  port: u.port,
-                  path: u.path,
-                  auth: u.auth,
-                  headers: httpOptions.headers || {},
-                  withCredentials: httpOptions.withCredentials
-                });
-              if (typeof req.setTimeout === 'function') {
-                req.setTimeout(httpOptions.timeout);
-              }
-              req.on('timeout', function () {
-                req.abort();
-              });
-              req.on('error', reject);
-              req.once('response', function (res) {
-                res.body = new Buffer(0);
-                res.on('data', function (data) {
-                  res.body = Buffer.concat([
-                    res.body,
-                    new Buffer(data)
-                  ]);
-                });
-                res.on('error', reject);
-                res.on('end', function () {
-                  resolve(res);
-                });
-              });
-            });
-          }
-        }.call(this, require('_process'), require('buffer').Buffer));
-      },
-      {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        '_process': 115,
-        'buffer': 41,
-        'http': 133,
-        'https': 51,
-        'ono': 113
-      }
-    ],
-    102: [
-      function (require, module, exports) {
-        'use strict';
-        var debug = require('debug');
-        /**
- * Writes messages to stdout.
- * Log messages are suppressed by default, but can be enabled by setting the DEBUG variable.
- * @type {function}
- */
-        module.exports = debug('json-schema-ref-parser');
-      },
-      { 'debug': 46 }
-    ],
-    103: [
-      function (require, module, exports) {
-        'use strict';
-        var Promise = require('./promise'), debug = require('./debug');
-        /**
- * Returns the given plugins as an array, rather than an object map.
- * All other methods in this module expect an array of plugins rather than an object map.
- *
- * @param  {object} plugins - A map of plugin objects
- * @return {object[]}
- */
-        exports.all = function (plugins) {
-          return Object.keys(plugins).filter(function (key) {
-            return typeof plugins[key] === 'object';
-          }).map(function (key) {
-            plugins[key].name = key;
-            return plugins[key];
-          });
-        };
-        /**
- * Filters the given plugins, returning only the ones return `true` for the given method.
- *
- * @param  {object[]} plugins - An array of plugin objects
- * @param  {string}   method  - The name of the filter method to invoke for each plugin
- * @param  {object}   file    - A file info object, which will be passed to each method
- * @return {object[]}
- */
-        exports.filter = function (plugins, method, file) {
-          return plugins.filter(function (plugin) {
-            return !!getResult(plugin, method, file);
-          });
-        };
-        /**
- * Sorts the given plugins, in place, by their `order` property.
- *
- * @param {object[]} plugins - An array of plugin objects
- * @returns {object[]}
- */
-        exports.sort = function (plugins) {
-          plugins.forEach(function (plugin) {
-            plugin.order = plugin.order || Number.MAX_SAFE_INTEGER;
-          });
-          return plugins.sort(function (a, b) {
-            return a.order - b.order;
-          });
-        };
-        /**
- * Runs the specified method of the given plugins, in order, until one of them returns a successful result.
- * Each method can return a synchronous value, a Promise, or call an error-first callback.
- * If the promise resolves successfully, or the callback is called without an error, then the result
- * is immediately returned and no further plugins are called.
- * If the promise rejects, or the callback is called with an error, then the next plugin is called.
- * If ALL plugins fail, then the last error is thrown.
- *
- * @param {object[]}  plugins - An array of plugin objects
- * @param {string}    method  - The name of the method to invoke for each plugin
- * @param {object}    file    - A file info object, which will be passed to each method
- * @returns {Promise}
- */
-        exports.run = function (plugins, method, file) {
-          var plugin, lastError, index = 0;
-          return new Promise(function (resolve, reject) {
-            runNextPlugin();
-            function runNextPlugin() {
-              plugin = plugins[index++];
-              if (!plugin) {
-                // There are no more functions, so re-throw the last error
-                return reject(lastError);
-              }
-              try {
-                debug('  %s', plugin.name);
-                var result = getResult(plugin, method, file, callback);
-                if (result && typeof result.then === 'function') {
-                  // A promise was returned
-                  result.then(onSuccess, onError);
-                } else if (result !== undefined) {
-                  // A synchronous result was returned
-                  onSuccess(result);
-                }  // else { the callback will be called }
-              } catch (e) {
-                onError(e);
-              }
-            }
-            function callback(err, result) {
-              if (err) {
-                onError(err);
-              } else {
-                onSuccess(result);
-              }
-            }
-            function onSuccess(result) {
-              debug('    success');
-              resolve({
-                plugin: plugin,
-                result: result
-              });
-            }
-            function onError(err) {
-              debug('    %s', err.message || err);
-              lastError = err;
-              runNextPlugin();
-            }
-          });
-        };
-        /**
- * Returns the value of the given property.
- * If the property is a function, then the result of the function is returned.
- * If the value is a RegExp, then it will be tested against the file URL.
- * If the value is an aray, then it will be compared against the file extension.
- *
- * @param   {object}   obj        - The object whose property/method is called
- * @param   {string}   prop       - The name of the property/method to invoke
- * @param   {object}   file       - A file info object, which will be passed to the method
- * @param   {function} [callback] - A callback function, which will be passed to the method
- * @returns {*}
- */
-        function getResult(obj, prop, file, callback) {
-          var value = obj[prop];
-          if (typeof value === 'function') {
-            return value.apply(obj, [
-              file,
-              callback
-            ]);
-          }
-          if (!callback) {
-            // The synchronous plugin functions (canParse and canRead)
-            // allow a "shorthand" syntax, where the user can match
-            // files by RegExp or by file extension.
-            if (value instanceof RegExp) {
-              return value.test(file.url);
-            } else if (typeof value === 'string') {
-              return value === file.extension;
-            } else if (Array.isArray(value)) {
-              return value.indexOf(file.extension) !== -1;
-            }
-          }
-          return value;
-        }
-      },
-      {
-        './debug': 102,
-        './promise': 104
-      }
-    ],
-    104: [
-      function (require, module, exports) {
-        'use strict';
-        /** @type {Promise} **/
-        module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
-      },
-      { 'es6-promise': 48 }
-    ],
-    105: [
-      function (require, module, exports) {
-        (function (process) {
-          'use strict';
-          var isWindows = /^win/.test(process.platform), forwardSlashPattern = /\//g, protocolPattern = /^([a-z0-9.+-]+):\/\//i, url = module.exports;
-          // RegExp patterns to URL-encode special characters in local filesystem paths
-          var urlEncodePatterns = [
-              /\?/g,
-              '%3F',
-              /\#/g,
-              '%23',
-              isWindows ? /\\/g : /\//,
-              '/'
-            ];
-          // RegExp patterns to URL-decode special characters for local filesystem paths
-          var urlDecodePatterns = [
-              /\%23/g,
-              '#',
-              /\%24/g,
-              '$',
-              /\%26/g,
-              '&',
-              /\%2C/g,
-              ',',
-              /\%40/g,
-              '@'
-            ];
-          exports.parse = require('url').parse;
-          exports.resolve = require('url').resolve;
-          /**
- * Returns the current working directory (in Node) or the current page URL (in browsers).
- *
- * @returns {string}
- */
-          exports.cwd = function cwd() {
-            return process.browser ? location.href : process.cwd() + '/';
-          };
-          /**
- * Returns the protocol of the given URL, or `undefined` if it has no protocol.
- *
- * @param   {string} path
- * @returns {?string}
- */
-          exports.getProtocol = function getProtocol(path) {
-            var match = protocolPattern.exec(path);
-            if (match) {
-              return match[1].toLowerCase();
-            }
-          };
-          /**
- * Returns the lowercased file extension of the given URL,
- * or an empty string if it has no extension.
- *
- * @param   {string} path
- * @returns {string}
- */
-          exports.getExtension = function getExtension(path) {
-            var lastDot = path.lastIndexOf('.');
-            if (lastDot >= 0) {
-              return path.substr(lastDot).toLowerCase();
-            }
-            return '';
-          };
-          /**
- * Returns the hash (URL fragment), of the given path.
- * If there is no hash, then the root hash ("#") is returned.
- *
- * @param   {string} path
- * @returns {string}
- */
-          exports.getHash = function getHash(path) {
-            var hashIndex = path.indexOf('#');
-            if (hashIndex >= 0) {
-              return path.substr(hashIndex);
-            }
-            return '#';
-          };
-          /**
- * Removes the hash (URL fragment), if any, from the given path.
- *
- * @param   {string} path
- * @returns {string}
- */
-          exports.stripHash = function stripHash(path) {
-            var hashIndex = path.indexOf('#');
-            if (hashIndex >= 0) {
-              path = path.substr(0, hashIndex);
-            }
-            return path;
-          };
-          /**
- * Determines whether the given path is an HTTP(S) URL.
- *
- * @param   {string} path
- * @returns {boolean}
- */
-          exports.isHttp = function isHttp(path) {
-            var protocol = url.getProtocol(path);
-            if (protocol === 'http' || protocol === 'https') {
-              return true;
-            } else if (protocol === undefined) {
-              // There is no protocol.  If we're running in a browser, then assume it's HTTP.
-              return process.browser;
-            } else {
-              // It's some other protocol, such as "ftp://", "mongodb://", etc.
-              return false;
-            }
-          };
-          /**
- * Determines whether the given path is a filesystem path.
- * This includes "file://" URLs.
- *
- * @param   {string} path
- * @returns {boolean}
- */
-          exports.isFileSystemPath = function isFileSystemPath(path) {
-            if (process.browser) {
-              // We're running in a browser, so assume that all paths are URLs.
-              // This way, even relative paths will be treated as URLs rather than as filesystem paths
-              return false;
-            }
-            var protocol = url.getProtocol(path);
-            return protocol === undefined || protocol === 'file';
-          };
-          /**
- * Converts a filesystem path to a properly-encoded URL.
- *
- * This is intended to handle situations where JSON Schema $Ref Parser is called
- * with a filesystem path that contains characters which are not allowed in URLs.
- *
- * @example
- * The following filesystem paths would be converted to the following URLs:
- *
- *    <"!@#$%^&*+=?'>.json              ==>   %3C%22!@%23$%25%5E&*+=%3F\'%3E.json
- *    C:\\My Documents\\File (1).json   ==>   C:/My%20Documents/File%20(1).json
- *    file://Project #42/file.json      ==>   file://Project%20%2342/file.json
- *
- * @param {string} path
- * @returns {string}
- */
-          exports.fromFileSystemPath = function fromFileSystemPath(path) {
-            // Step 1: Manually encode characters that are not encoded by `encodeURI`.
-            // This includes characters such as "#" and "?", which have special meaning in URLs,
-            // but are just normal characters in a filesystem path.
-            // On Windows, this will also replace backslashes with forward slashes,
-            // rather than encoding them as special characters.
-            for (var i = 0; i < urlEncodePatterns.length; i += 2) {
-              path = path.replace(urlEncodePatterns[i], urlEncodePatterns[i + 1]);
-            }
-            // Step 2: `encodeURI` will take care of all other characters
-            return encodeURI(path);
-          };
-          /**
- * Converts a URL to a local filesystem path.
- *
- * @param {string}  path
- * @param {boolean} [keepFileProtocol] - If true, then "file://" will NOT be stripped
- * @returns {string}
- */
-          exports.toFileSystemPath = function toFileSystemPath(path, keepFileProtocol) {
-            // Step 1: `decodeURI` will decode characters such as Cyrillic characters, spaces, etc.
-            path = decodeURI(path);
-            // Step 2: Manually decode characters that are not decoded by `decodeURI`.
-            // This includes characters such as "#" and "?", which have special meaning in URLs,
-            // but are just normal characters in a filesystem path.
-            for (var i = 0; i < urlDecodePatterns.length; i += 2) {
-              path = path.replace(urlDecodePatterns[i], urlDecodePatterns[i + 1]);
-            }
-            // Step 3: If it's a "file://" URL, then format it consistently
-            // or convert it to a local filesystem path
-            var isFileUrl = path.substr(0, 7).toLowerCase() === 'file://';
-            if (isFileUrl) {
-              // Strip-off the protocol, and the initial "/", if there is one
-              path = path[7] === '/' ? path.substr(8) : path.substr(7);
-              // insert a colon (":") after the drive letter on Windows
-              if (isWindows && path[1] === '/') {
-                path = path[0] + ':' + path.substr(1);
-              }
-              if (keepFileProtocol) {
-                // Return the consistently-formatted "file://" URL
-                path = 'file:///' + path;
-              } else {
-                // Convert the "file://" URL to a local filesystem path.
-                // On Windows, it will start with something like "C:/".
-                // On Posix, it will start with "/"
-                isFileUrl = false;
-                path = isWindows ? path : '/' + path;
-              }
-            }
-            // Step 4: On Windows, convert backslashes to forward slashes,
-            // unless it's a "file://" URL
-            if (isWindows && !isFileUrl) {
-              path = path.replace(forwardSlashPattern, '\\');
-            }
-            return path;
-          };
-        }.call(this, require('_process')));
-      },
-      {
-        '_process': 115,
-        'url': 146
-      }
-    ],
-    106: [
-      function (require, module, exports) {
-        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
-        'use strict';
-        var yaml = require('js-yaml'), ono = require('ono');
-        /**
- * Simple YAML parsing functions, similar to {@link JSON.parse} and {@link JSON.stringify}
- */
-        module.exports = {
-          parse: function yamlParse(text, reviver) {
-            try {
-              return yaml.safeLoad(text);
-            } catch (e) {
-              if (e instanceof Error) {
-                throw e;
-              } else {
-                // https://github.com/nodeca/js-yaml/issues/153
-                throw ono(e, e.message);
-              }
-            }
-          },
-          stringify: function yamlStringify(value, replacer, space) {
-            try {
-              var indent = (typeof space === 'string' ? space.length : space) || 2;
-              return yaml.safeDump(value, { indent: indent });
-            } catch (e) {
-              if (e instanceof Error) {
-                throw e;
-              } else {
-                // https://github.com/nodeca/js-yaml/issues/153
-                throw ono(e, e.message);
-              }
-            }
-          }
-        };
-      },
-      {
-        'js-yaml': 56,
-        'ono': 113
-      }
-    ],
-    107: [
-      function (require, module, exports) {
-        'use strict';
-        module.exports = {
-          order: 100,
-          canValidate: function canValidate(file) {
-            // Z-Schema requires JSON References to already be resolved (but not dereferenced)
-            return !!file.resolved;
-          },
-          validate: function validate(file) {
-          }
-        };
-      },
-      {}
-    ],
-    108: [
-      function (require, module, exports) {
-        (function (global) {
-          /**
- * lodash (Custom Build) <https://lodash.com/>
- * Build: `lodash modularize exports="npm" -o ./`
- * Copyright jQuery Foundation and other contributors <https://jquery.org/>
- * Released under MIT license <https://lodash.com/license>
- * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
- * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
- */
-          /** Used as the `TypeError` message for "Functions" methods. */
-          var FUNC_ERROR_TEXT = 'Expected a function';
-          /** Used to stand-in for `undefined` hash values. */
-          var HASH_UNDEFINED = '__lodash_hash_undefined__';
-          /** Used as references for various `Number` constants. */
-          var INFINITY = 1 / 0;
-          /** `Object#toString` result references. */
-          var funcTag = '[object Function]', genTag = '[object GeneratorFunction]', symbolTag = '[object Symbol]';
-          /** Used to match property names within property paths. */
-          var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/, reIsPlainProp = /^\w*$/, reLeadingDot = /^\./, rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
-          /**
- * Used to match `RegExp`
- * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
- */
-          var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
-          /** Used to match backslashes in property paths. */
-          var reEscapeChar = /\\(\\)?/g;
-          /** Used to detect host constructors (Safari). */
-          var reIsHostCtor = /^\[object .+?Constructor\]$/;
-          /** Detect free variable `global` from Node.js. */
-          var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-          /** Detect free variable `self`. */
-          var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-          /** Used as a reference to the global object. */
-          var root = freeGlobal || freeSelf || Function('return this')();
-          /**
- * Gets the value at `key` of `object`.
- *
- * @private
- * @param {Object} [object] The object to query.
- * @param {string} key The key of the property to get.
- * @returns {*} Returns the property value.
- */
-          function getValue(object, key) {
-            return object == null ? undefined : object[key];
-          }
-          /**
- * Checks if `value` is a host object in IE < 9.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
- */
-          function isHostObject(value) {
-            // Many host objects are `Object` objects that can coerce to strings
-            // despite having improperly defined `toString` methods.
-            var result = false;
-            if (value != null && typeof value.toString != 'function') {
-              try {
-                result = !!(value + '');
-              } catch (e) {
-              }
-            }
-            return result;
-          }
-          /** Used for built-in method references. */
-          var arrayProto = Array.prototype, funcProto = Function.prototype, objectProto = Object.prototype;
-          /** Used to detect overreaching core-js shims. */
-          var coreJsData = root['__core-js_shared__'];
-          /** Used to detect methods masquerading as native. */
-          var maskSrcKey = function () {
-              var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-              return uid ? 'Symbol(src)_1.' + uid : '';
-            }();
-          /** Used to resolve the decompiled source of functions. */
-          var funcToString = funcProto.toString;
-          /** Used to check objects for own properties. */
-          var hasOwnProperty = objectProto.hasOwnProperty;
-          /**
- * Used to resolve the
- * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
- * of values.
- */
-          var objectToString = objectProto.toString;
-          /** Used to detect if a method is native. */
-          var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
-          /** Built-in value references. */
-          var Symbol = root.Symbol, splice = arrayProto.splice;
-          /* Built-in method references that are verified to be native. */
-          var Map = getNative(root, 'Map'), nativeCreate = getNative(Object, 'create');
-          /** Used to convert symbols to primitives and strings. */
-          var symbolProto = Symbol ? Symbol.prototype : undefined, symbolToString = symbolProto ? symbolProto.toString : undefined;
-          /**
- * Creates a hash object.
- *
- * @private
- * @constructor
- * @param {Array} [entries] The key-value pairs to cache.
- */
-          function Hash(entries) {
-            var index = -1, length = entries ? entries.length : 0;
-            this.clear();
-            while (++index < length) {
-              var entry = entries[index];
-              this.set(entry[0], entry[1]);
-            }
-          }
-          /**
- * Removes all key-value entries from the hash.
- *
- * @private
- * @name clear
- * @memberOf Hash
- */
-          function hashClear() {
-            this.__data__ = nativeCreate ? nativeCreate(null) : {};
-          }
-          /**
- * Removes `key` and its value from the hash.
- *
- * @private
- * @name delete
- * @memberOf Hash
- * @param {Object} hash The hash to modify.
- * @param {string} key The key of the value to remove.
- * @returns {boolean} Returns `true` if the entry was removed, else `false`.
- */
-          function hashDelete(key) {
-            return this.has(key) && delete this.__data__[key];
-          }
-          /**
- * Gets the hash value for `key`.
- *
- * @private
- * @name get
- * @memberOf Hash
- * @param {string} key The key of the value to get.
- * @returns {*} Returns the entry value.
- */
-          function hashGet(key) {
-            var data = this.__data__;
-            if (nativeCreate) {
-              var result = data[key];
-              return result === HASH_UNDEFINED ? undefined : result;
-            }
-            return hasOwnProperty.call(data, key) ? data[key] : undefined;
-          }
-          /**
- * Checks if a hash value for `key` exists.
- *
- * @private
- * @name has
- * @memberOf Hash
- * @param {string} key The key of the entry to check.
- * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
- */
-          function hashHas(key) {
-            var data = this.__data__;
-            return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
-          }
-          /**
- * Sets the hash `key` to `value`.
- *
- * @private
- * @name set
- * @memberOf Hash
- * @param {string} key The key of the value to set.
- * @param {*} value The value to set.
- * @returns {Object} Returns the hash instance.
- */
-          function hashSet(key, value) {
-            var data = this.__data__;
-            data[key] = nativeCreate && value === undefined ? HASH_UNDEFINED : value;
-            return this;
-          }
-          // Add methods to `Hash`.
-          Hash.prototype.clear = hashClear;
-          Hash.prototype['delete'] = hashDelete;
-          Hash.prototype.get = hashGet;
-          Hash.prototype.has = hashHas;
-          Hash.prototype.set = hashSet;
-          /**
- * Creates an list cache object.
- *
- * @private
- * @constructor
- * @param {Array} [entries] The key-value pairs to cache.
- */
-          function ListCache(entries) {
-            var index = -1, length = entries ? entries.length : 0;
-            this.clear();
-            while (++index < length) {
-              var entry = entries[index];
-              this.set(entry[0], entry[1]);
-            }
-          }
-          /**
- * Removes all key-value entries from the list cache.
- *
- * @private
- * @name clear
- * @memberOf ListCache
- */
-          function listCacheClear() {
-            this.__data__ = [];
-          }
-          /**
- * Removes `key` and its value from the list cache.
- *
- * @private
- * @name delete
- * @memberOf ListCache
- * @param {string} key The key of the value to remove.
- * @returns {boolean} Returns `true` if the entry was removed, else `false`.
- */
-          function listCacheDelete(key) {
-            var data = this.__data__, index = assocIndexOf(data, key);
-            if (index < 0) {
-              return false;
-            }
-            var lastIndex = data.length - 1;
-            if (index == lastIndex) {
-              data.pop();
-            } else {
-              splice.call(data, index, 1);
-            }
-            return true;
-          }
-          /**
- * Gets the list cache value for `key`.
- *
- * @private
- * @name get
- * @memberOf ListCache
- * @param {string} key The key of the value to get.
- * @returns {*} Returns the entry value.
- */
-          function listCacheGet(key) {
-            var data = this.__data__, index = assocIndexOf(data, key);
-            return index < 0 ? undefined : data[index][1];
-          }
-          /**
- * Checks if a list cache value for `key` exists.
- *
- * @private
- * @name has
- * @memberOf ListCache
- * @param {string} key The key of the entry to check.
- * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
- */
-          function listCacheHas(key) {
-            return assocIndexOf(this.__data__, key) > -1;
-          }
-          /**
- * Sets the list cache `key` to `value`.
- *
- * @private
- * @name set
- * @memberOf ListCache
- * @param {string} key The key of the value to set.
- * @param {*} value The value to set.
- * @returns {Object} Returns the list cache instance.
- */
-          function listCacheSet(key, value) {
-            var data = this.__data__, index = assocIndexOf(data, key);
-            if (index < 0) {
-              data.push([
-                key,
-                value
-              ]);
-            } else {
-              data[index][1] = value;
-            }
-            return this;
-          }
-          // Add methods to `ListCache`.
-          ListCache.prototype.clear = listCacheClear;
-          ListCache.prototype['delete'] = listCacheDelete;
-          ListCache.prototype.get = listCacheGet;
-          ListCache.prototype.has = listCacheHas;
-          ListCache.prototype.set = listCacheSet;
-          /**
- * Creates a map cache object to store key-value pairs.
- *
- * @private
- * @constructor
- * @param {Array} [entries] The key-value pairs to cache.
- */
-          function MapCache(entries) {
-            var index = -1, length = entries ? entries.length : 0;
-            this.clear();
-            while (++index < length) {
-              var entry = entries[index];
-              this.set(entry[0], entry[1]);
-            }
-          }
-          /**
- * Removes all key-value entries from the map.
- *
- * @private
- * @name clear
- * @memberOf MapCache
- */
-          function mapCacheClear() {
-            this.__data__ = {
-              'hash': new Hash(),
-              'map': new (Map || ListCache)(),
-              'string': new Hash()
-            };
-          }
-          /**
- * Removes `key` and its value from the map.
- *
- * @private
- * @name delete
- * @memberOf MapCache
- * @param {string} key The key of the value to remove.
- * @returns {boolean} Returns `true` if the entry was removed, else `false`.
- */
-          function mapCacheDelete(key) {
-            return getMapData(this, key)['delete'](key);
-          }
-          /**
- * Gets the map value for `key`.
- *
- * @private
- * @name get
- * @memberOf MapCache
- * @param {string} key The key of the value to get.
- * @returns {*} Returns the entry value.
- */
-          function mapCacheGet(key) {
-            return getMapData(this, key).get(key);
-          }
-          /**
- * Checks if a map value for `key` exists.
- *
- * @private
- * @name has
- * @memberOf MapCache
- * @param {string} key The key of the entry to check.
- * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
- */
-          function mapCacheHas(key) {
-            return getMapData(this, key).has(key);
-          }
-          /**
- * Sets the map `key` to `value`.
- *
- * @private
- * @name set
- * @memberOf MapCache
- * @param {string} key The key of the value to set.
- * @param {*} value The value to set.
- * @returns {Object} Returns the map cache instance.
- */
-          function mapCacheSet(key, value) {
-            getMapData(this, key).set(key, value);
-            return this;
-          }
-          // Add methods to `MapCache`.
-          MapCache.prototype.clear = mapCacheClear;
-          MapCache.prototype['delete'] = mapCacheDelete;
-          MapCache.prototype.get = mapCacheGet;
-          MapCache.prototype.has = mapCacheHas;
-          MapCache.prototype.set = mapCacheSet;
-          /**
- * Gets the index at which the `key` is found in `array` of key-value pairs.
- *
- * @private
- * @param {Array} array The array to inspect.
- * @param {*} key The key to search for.
- * @returns {number} Returns the index of the matched value, else `-1`.
- */
-          function assocIndexOf(array, key) {
-            var length = array.length;
-            while (length--) {
-              if (eq(array[length][0], key)) {
-                return length;
-              }
-            }
-            return -1;
-          }
-          /**
- * The base implementation of `_.get` without support for default values.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @returns {*} Returns the resolved value.
- */
-          function baseGet(object, path) {
-            path = isKey(path, object) ? [path] : castPath(path);
-            var index = 0, length = path.length;
-            while (object != null && index < length) {
-              object = object[toKey(path[index++])];
-            }
-            return index && index == length ? object : undefined;
-          }
-          /**
- * The base implementation of `_.isNative` without bad shim checks.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a native function,
- *  else `false`.
- */
-          function baseIsNative(value) {
-            if (!isObject(value) || isMasked(value)) {
-              return false;
-            }
-            var pattern = isFunction(value) || isHostObject(value) ? reIsNative : reIsHostCtor;
-            return pattern.test(toSource(value));
-          }
-          /**
- * The base implementation of `_.toString` which doesn't convert nullish
- * values to empty strings.
- *
- * @private
- * @param {*} value The value to process.
- * @returns {string} Returns the string.
- */
-          function baseToString(value) {
-            // Exit early for strings to avoid a performance hit in some environments.
-            if (typeof value == 'string') {
-              return value;
-            }
-            if (isSymbol(value)) {
-              return symbolToString ? symbolToString.call(value) : '';
-            }
-            var result = value + '';
-            return result == '0' && 1 / value == -INFINITY ? '-0' : result;
-          }
-          /**
- * Casts `value` to a path array if it's not one.
- *
- * @private
- * @param {*} value The value to inspect.
- * @returns {Array} Returns the cast property path array.
- */
-          function castPath(value) {
-            return isArray(value) ? value : stringToPath(value);
-          }
-          /**
- * Gets the data for `map`.
- *
- * @private
- * @param {Object} map The map to query.
- * @param {string} key The reference key.
- * @returns {*} Returns the map data.
- */
-          function getMapData(map, key) {
-            var data = map.__data__;
-            return isKeyable(key) ? data[typeof key == 'string' ? 'string' : 'hash'] : data.map;
-          }
-          /**
- * Gets the native function at `key` of `object`.
- *
- * @private
- * @param {Object} object The object to query.
- * @param {string} key The key of the method to get.
- * @returns {*} Returns the function if it's native, else `undefined`.
- */
-          function getNative(object, key) {
-            var value = getValue(object, key);
-            return baseIsNative(value) ? value : undefined;
-          }
-          /**
- * Checks if `value` is a property name and not a property path.
- *
- * @private
- * @param {*} value The value to check.
- * @param {Object} [object] The object to query keys on.
- * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
- */
-          function isKey(value, object) {
-            if (isArray(value)) {
-              return false;
-            }
-            var type = typeof value;
-            if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null || isSymbol(value)) {
-              return true;
-            }
-            return reIsPlainProp.test(value) || !reIsDeepProp.test(value) || object != null && value in Object(object);
-          }
-          /**
- * Checks if `value` is suitable for use as unique object key.
- *
- * @private
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
- */
-          function isKeyable(value) {
-            var type = typeof value;
-            return type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean' ? value !== '__proto__' : value === null;
-          }
-          /**
- * Checks if `func` has its source masked.
- *
- * @private
- * @param {Function} func The function to check.
- * @returns {boolean} Returns `true` if `func` is masked, else `false`.
- */
-          function isMasked(func) {
-            return !!maskSrcKey && maskSrcKey in func;
-          }
-          /**
- * Converts `string` to a property path array.
- *
- * @private
- * @param {string} string The string to convert.
- * @returns {Array} Returns the property path array.
- */
-          var stringToPath = memoize(function (string) {
-              string = toString(string);
-              var result = [];
-              if (reLeadingDot.test(string)) {
-                result.push('');
-              }
-              string.replace(rePropName, function (match, number, quote, string) {
-                result.push(quote ? string.replace(reEscapeChar, '$1') : number || match);
-              });
-              return result;
-            });
-          /**
- * Converts `value` to a string key if it's not a string or symbol.
- *
- * @private
- * @param {*} value The value to inspect.
- * @returns {string|symbol} Returns the key.
- */
-          function toKey(value) {
-            if (typeof value == 'string' || isSymbol(value)) {
-              return value;
-            }
-            var result = value + '';
-            return result == '0' && 1 / value == -INFINITY ? '-0' : result;
-          }
-          /**
- * Converts `func` to its source code.
- *
- * @private
- * @param {Function} func The function to process.
- * @returns {string} Returns the source code.
- */
-          function toSource(func) {
-            if (func != null) {
-              try {
-                return funcToString.call(func);
-              } catch (e) {
-              }
-              try {
-                return func + '';
-              } catch (e) {
-              }
-            }
-            return '';
-          }
-          /**
- * Creates a function that memoizes the result of `func`. If `resolver` is
- * provided, it determines the cache key for storing the result based on the
- * arguments provided to the memoized function. By default, the first argument
- * provided to the memoized function is used as the map cache key. The `func`
- * is invoked with the `this` binding of the memoized function.
- *
- * **Note:** The cache is exposed as the `cache` property on the memoized
- * function. Its creation may be customized by replacing the `_.memoize.Cache`
- * constructor with one whose instances implement the
- * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
- * method interface of `delete`, `get`, `has`, and `set`.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Function
- * @param {Function} func The function to have its output memoized.
- * @param {Function} [resolver] The function to resolve the cache key.
- * @returns {Function} Returns the new memoized function.
- * @example
- *
- * var object = { 'a': 1, 'b': 2 };
- * var other = { 'c': 3, 'd': 4 };
- *
- * var values = _.memoize(_.values);
- * values(object);
- * // => [1, 2]
- *
- * values(other);
- * // => [3, 4]
- *
- * object.a = 2;
- * values(object);
- * // => [1, 2]
- *
- * // Modify the result cache.
- * values.cache.set(object, ['a', 'b']);
- * values(object);
- * // => ['a', 'b']
- *
- * // Replace `_.memoize.Cache`.
- * _.memoize.Cache = WeakMap;
- */
-          function memoize(func, resolver) {
-            if (typeof func != 'function' || resolver && typeof resolver != 'function') {
-              throw new TypeError(FUNC_ERROR_TEXT);
-            }
-            var memoized = function () {
-              var args = arguments, key = resolver ? resolver.apply(this, args) : args[0], cache = memoized.cache;
-              if (cache.has(key)) {
-                return cache.get(key);
-              }
-              var result = func.apply(this, args);
-              memoized.cache = cache.set(key, result);
-              return result;
-            };
-            memoized.cache = new (memoize.Cache || MapCache)();
-            return memoized;
-          }
-          // Assign cache to `_.memoize`.
-          memoize.Cache = MapCache;
-          /**
- * Performs a
- * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
- * comparison between two values to determine if they are equivalent.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to compare.
- * @param {*} other The other value to compare.
- * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
- * @example
- *
- * var object = { 'a': 1 };
- * var other = { 'a': 1 };
- *
- * _.eq(object, object);
- * // => true
- *
- * _.eq(object, other);
- * // => false
- *
- * _.eq('a', 'a');
- * // => true
- *
- * _.eq('a', Object('a'));
- * // => false
- *
- * _.eq(NaN, NaN);
- * // => true
- */
-          function eq(value, other) {
-            return value === other || value !== value && other !== other;
-          }
-          /**
- * Checks if `value` is classified as an `Array` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an array, else `false`.
- * @example
- *
- * _.isArray([1, 2, 3]);
- * // => true
- *
- * _.isArray(document.body.children);
- * // => false
- *
- * _.isArray('abc');
- * // => false
- *
- * _.isArray(_.noop);
- * // => false
- */
-          var isArray = Array.isArray;
-          /**
- * Checks if `value` is classified as a `Function` object.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a function, else `false`.
- * @example
- *
- * _.isFunction(_);
- * // => true
- *
- * _.isFunction(/abc/);
- * // => false
- */
-          function isFunction(value) {
-            // The use of `Object#toString` avoids issues with the `typeof` operator
-            // in Safari 8-9 which returns 'object' for typed array and other constructors.
-            var tag = isObject(value) ? objectToString.call(value) : '';
-            return tag == funcTag || tag == genTag;
-          }
-          /**
- * Checks if `value` is the
- * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
- * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is an object, else `false`.
- * @example
- *
- * _.isObject({});
- * // => true
- *
- * _.isObject([1, 2, 3]);
- * // => true
- *
- * _.isObject(_.noop);
- * // => true
- *
- * _.isObject(null);
- * // => false
- */
-          function isObject(value) {
-            var type = typeof value;
-            return !!value && (type == 'object' || type == 'function');
-          }
-          /**
- * Checks if `value` is object-like. A value is object-like if it's not `null`
- * and has a `typeof` result of "object".
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
- * @example
- *
- * _.isObjectLike({});
- * // => true
- *
- * _.isObjectLike([1, 2, 3]);
- * // => true
- *
- * _.isObjectLike(_.noop);
- * // => false
- *
- * _.isObjectLike(null);
- * // => false
- */
-          function isObjectLike(value) {
-            return !!value && typeof value == 'object';
-          }
-          /**
- * Checks if `value` is classified as a `Symbol` primitive or object.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to check.
- * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
- * @example
- *
- * _.isSymbol(Symbol.iterator);
- * // => true
- *
- * _.isSymbol('abc');
- * // => false
- */
-          function isSymbol(value) {
-            return typeof value == 'symbol' || isObjectLike(value) && objectToString.call(value) == symbolTag;
-          }
-          /**
- * Converts `value` to a string. An empty string is returned for `null`
- * and `undefined` values. The sign of `-0` is preserved.
- *
- * @static
- * @memberOf _
- * @since 4.0.0
- * @category Lang
- * @param {*} value The value to process.
- * @returns {string} Returns the string.
- * @example
- *
- * _.toString(null);
- * // => ''
- *
- * _.toString(-0);
- * // => '-0'
- *
- * _.toString([1, 2, 3]);
- * // => '1,2,3'
- */
-          function toString(value) {
-            return value == null ? '' : baseToString(value);
-          }
-          /**
- * Gets the value at `path` of `object`. If the resolved value is
- * `undefined`, the `defaultValue` is returned in its place.
- *
- * @static
- * @memberOf _
- * @since 3.7.0
- * @category Object
- * @param {Object} object The object to query.
- * @param {Array|string} path The path of the property to get.
- * @param {*} [defaultValue] The value returned for `undefined` resolved values.
- * @returns {*} Returns the resolved value.
- * @example
- *
- * var object = { 'a': [{ 'b': { 'c': 3 } }] };
- *
- * _.get(object, 'a[0].b.c');
- * // => 3
- *
- * _.get(object, ['a', '0', 'b', 'c']);
- * // => 3
- *
- * _.get(object, 'a.b.c', 'default');
- * // => 'default'
- */
-          function get(object, path, defaultValue) {
-            var result = object == null ? undefined : baseGet(object, path);
-            return result === undefined ? defaultValue : result;
-          }
-          module.exports = get;
-        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
-      },
-      {}
-    ],
-    109: [
+    66: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -20049,11 +13409,11 @@
             /** Used as a safe reference for `undefined` in pre-ES5 environments. */
             var undefined;
             /** Used as the semantic version number. */
-            var VERSION = '4.16.0';
+            var VERSION = '4.16.4';
             /** Used as the size to enable large array optimizations. */
             var LARGE_ARRAY_SIZE = 200;
-            /** Used as the `TypeError` message for "Functions" methods. */
-            var FUNC_ERROR_TEXT = 'Expected a function';
+            /** Error message constants. */
+            var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://github.com/es-shims.', FUNC_ERROR_TEXT = 'Expected a function';
             /** Used to stand-in for `undefined` hash values. */
             var HASH_UNDEFINED = '__lodash_hash_undefined__';
             /** Used as the maximum memoize cache size. */
@@ -20114,12 +13474,12 @@
                 ]
               ];
             /** `Object#toString` result references. */
-            var argsTag = '[object Arguments]', arrayTag = '[object Array]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', objectTag = '[object Object]', promiseTag = '[object Promise]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
+            var argsTag = '[object Arguments]', arrayTag = '[object Array]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', objectTag = '[object Object]', promiseTag = '[object Promise]', proxyTag = '[object Proxy]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
             var arrayBufferTag = '[object ArrayBuffer]', dataViewTag = '[object DataView]', float32Tag = '[object Float32Array]', float64Tag = '[object Float64Array]', int8Tag = '[object Int8Array]', int16Tag = '[object Int16Array]', int32Tag = '[object Int32Array]', uint8Tag = '[object Uint8Array]', uint8ClampedTag = '[object Uint8ClampedArray]', uint16Tag = '[object Uint16Array]', uint32Tag = '[object Uint32Array]';
             /** Used to match empty string literals in compiled template source. */
             var reEmptyStringLeading = /\b__p \+= '';/g, reEmptyStringMiddle = /\b(__p \+=) '' \+/g, reEmptyStringTrailing = /(__e\(.*?\)|\b__t\)) \+\n'';/g;
             /** Used to match HTML entities and HTML characters. */
-            var reEscapedHtml = /&(?:amp|lt|gt|quot|#39|#96);/g, reUnescapedHtml = /[&<>"'`]/g, reHasEscapedHtml = RegExp(reEscapedHtml.source), reHasUnescapedHtml = RegExp(reUnescapedHtml.source);
+            var reEscapedHtml = /&(?:amp|lt|gt|quot|#39);/g, reUnescapedHtml = /[&<>"']/g, reHasEscapedHtml = RegExp(reEscapedHtml.source), reHasUnescapedHtml = RegExp(reUnescapedHtml.source);
             /** Used to match template delimiters. */
             var reEscape = /<%-([\s\S]+?)%>/g, reEvaluate = /<%([\s\S]+?)%>/g, reInterpolate = /<%=([\s\S]+?)%>/g;
             /** Used to match property names within property paths. */
@@ -21367,7 +14727,7 @@
    * // Create a suped-up `defer` in Node.js.
    * var defer = _.runInContext({ 'setTimeout': setImmediate }).defer;
    */
-            function runInContext(context) {
+            var runInContext = function runInContext(context) {
               context = context ? _.defaults(root.Object(), context, _.pick(root, contextProps)) : root;
               /** Built-in constructor references. */
               var Array = context.Array, Date = context.Date, Error = context.Error, Function = context.Function, Math = context.Math, Object = context.Object, RegExp = context.RegExp, String = context.String, TypeError = context.TypeError;
@@ -21399,13 +14759,21 @@
               /** Used to detect if a method is native. */
               var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
               /** Built-in value references. */
-              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, defineProperty = Object.defineProperty, getPrototype = overArg(Object.getPrototypeOf, Object), iteratorSymbol = Symbol ? Symbol.iterator : undefined, objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined, getPrototype = overArg(Object.getPrototypeOf, Object), iteratorSymbol = Symbol ? Symbol.iterator : undefined, objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+              var defineProperty = function () {
+                  try {
+                    var func = getNative(Object, 'defineProperty');
+                    func({}, '', {});
+                    return func;
+                  } catch (e) {
+                  }
+                }();
               /** Mocked built-ins. */
               var ctxClearTimeout = context.clearTimeout !== root.clearTimeout && context.clearTimeout, ctxNow = Date && Date.now !== root.Date.now && Date.now, ctxSetTimeout = context.setTimeout !== root.setTimeout && context.setTimeout;
               /* Built-in method references for those with the same name as other `lodash` methods. */
               var nativeCeil = Math.ceil, nativeFloor = Math.floor, nativeGetSymbols = Object.getOwnPropertySymbols, nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined, nativeIsFinite = context.isFinite, nativeJoin = arrayProto.join, nativeKeys = overArg(Object.keys, Object), nativeMax = Math.max, nativeMin = Math.min, nativeNow = Date.now, nativeParseInt = context.parseInt, nativeRandom = Math.random, nativeReverse = arrayProto.reverse;
               /* Built-in method references that are verified to be native. */
-              var DataView = getNative(context, 'DataView'), Map = getNative(context, 'Map'), Promise = getNative(context, 'Promise'), Set = getNative(context, 'Set'), WeakMap = getNative(context, 'WeakMap'), nativeCreate = getNative(Object, 'create'), nativeDefineProperty = getNative(Object, 'defineProperty');
+              var DataView = getNative(context, 'DataView'), Map = getNative(context, 'Map'), Promise = getNative(context, 'Promise'), Set = getNative(context, 'Set'), WeakMap = getNative(context, 'WeakMap'), nativeCreate = getNative(Object, 'create');
               /** Used to store function metadata. */
               var metaMap = WeakMap && new WeakMap();
               /** Used to lookup unminified function names. */
@@ -21543,6 +14911,30 @@
                 }
                 return new LodashWrapper(value);
               }
+              /**
+     * The base implementation of `_.create` without support for assigning
+     * properties to the created object.
+     *
+     * @private
+     * @param {Object} proto The object to inherit from.
+     * @returns {Object} Returns the new object.
+     */
+              var baseCreate = function () {
+                  function object() {
+                  }
+                  return function (proto) {
+                    if (!isObject(proto)) {
+                      return {};
+                    }
+                    if (objectCreate) {
+                      return objectCreate(proto);
+                    }
+                    object.prototype = proto;
+                    var result = new object();
+                    object.prototype = undefined;
+                    return result;
+                  };
+                }();
               /**
      * The function whose prototype chain sequence wrappers inherit from.
      *
@@ -22115,20 +15507,16 @@
      * @returns {Array} Returns the array of property names.
      */
               function arrayLikeKeys(value, inherited) {
-                // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-                // Safari 9 makes `arguments.length` enumerable in strict mode.
-                var result = isArray(value) || isArguments(value) ? baseTimes(value.length, String) : [];
-                var length = result.length, skipIndexes = !!length;
+                var isArr = isArray(value), isArg = !isArr && isArguments(value), isBuff = !isArr && !isArg && isBuffer(value), isType = !isArr && !isArg && !isBuff && isTypedArray(value), skipIndexes = isArr || isArg || isBuff || isType, result = skipIndexes ? baseTimes(value.length, String) : [], length = result.length;
                 for (var key in value) {
-                  if ((inherited || hasOwnProperty.call(value, key)) && !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+                  if ((inherited || hasOwnProperty.call(value, key)) && !(skipIndexes && (key == 'length' || isBuff && (key == 'offset' || key == 'parent') || isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset') || isIndex(key, length)))) {
                     result.push(key);
                   }
                 }
                 return result;
               }
               /**
-     * A specialized version of `_.sample` for arrays without support for iteratee
-     * shorthands.
+     * A specialized version of `_.sample` for arrays.
      *
      * @private
      * @param {Array} array The array to sample.
@@ -22147,9 +15535,7 @@
      * @returns {Array} Returns the random elements.
      */
               function arraySampleSize(array, n) {
-                var result = arrayShuffle(array);
-                result.length = baseClamp(n, 0, result.length);
-                return result;
+                return shuffleSelf(copyArray(array), baseClamp(n, 0, array.length));
               }
               /**
      * A specialized version of `_.shuffle` for arrays.
@@ -22187,7 +15573,7 @@
      * @param {*} value The value to assign.
      */
               function assignMergeValue(object, key, value) {
-                if (value !== undefined && !eq(object[key], value) || typeof key == 'number' && value === undefined && !(key in object)) {
+                if (value !== undefined && !eq(object[key], value) || value === undefined && !(key in object)) {
                   baseAssignValue(object, key, value);
                 }
               }
@@ -22364,9 +15750,7 @@
                   return stacked;
                 }
                 stack.set(value, result);
-                if (!isArr) {
-                  var props = isFull ? getAllKeys(value) : keys(value);
-                }
+                var props = isArr ? undefined : (isFull ? getAllKeys : keys)(value);
                 arrayEach(props || value, function (subValue, key) {
                   if (props) {
                     key = subValue;
@@ -22411,17 +15795,6 @@
                   }
                 }
                 return true;
-              }
-              /**
-     * The base implementation of `_.create` without support for assigning
-     * properties to the created object.
-     *
-     * @private
-     * @param {Object} prototype The object to inherit from.
-     * @returns {Object} Returns the new object.
-     */
-              function baseCreate(proto) {
-                return isObject(proto) ? objectCreate(proto) : {};
               }
               /**
      * The base implementation of `_.delay` and `_.defer` which accepts `args`
@@ -22839,6 +16212,16 @@
                 return func == null ? undefined : apply(func, object, args);
               }
               /**
+     * The base implementation of `_.isArguments`.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+     */
+              function baseIsArguments(value) {
+                return isObjectLike(value) && objectToString.call(value) == argsTag;
+              }
+              /**
      * The base implementation of `_.isArrayBuffer` without Node.js optimizations.
      *
      * @private
@@ -22908,6 +16291,13 @@
                   othTag = othTag == argsTag ? objectTag : othTag;
                 }
                 var objIsObj = objTag == objectTag, othIsObj = othTag == objectTag, isSameTag = objTag == othTag;
+                if (isSameTag && isBuffer(object)) {
+                  if (!isBuffer(other)) {
+                    return false;
+                  }
+                  objIsArr = true;
+                  objIsObj = false;
+                }
                 if (isSameTag && !objIsObj) {
                   stack || (stack = new Stack());
                   return objIsArr || isTypedArray(object) ? equalArrays(object, other, equalFunc, customizer, bitmask, stack) : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
@@ -23156,14 +16546,7 @@
                 if (object === source) {
                   return;
                 }
-                if (!(isArray(source) || isTypedArray(source))) {
-                  var props = baseKeysIn(source);
-                }
-                arrayEach(props || source, function (srcValue, key) {
-                  if (props) {
-                    key = srcValue;
-                    srcValue = source[key];
-                  }
+                baseFor(source, function (srcValue, key) {
                   if (isObject(srcValue)) {
                     stack || (stack = new Stack());
                     baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
@@ -23174,7 +16557,7 @@
                     }
                     assignMergeValue(object, key, newValue);
                   }
-                });
+                }, keysIn);
               }
               /**
      * A specialized version of `baseMerge` for arrays and objects which performs
@@ -23200,24 +16583,28 @@
                 var newValue = customizer ? customizer(objValue, srcValue, key + '', object, source, stack) : undefined;
                 var isCommon = newValue === undefined;
                 if (isCommon) {
+                  var isArr = isArray(srcValue), isBuff = !isArr && isBuffer(srcValue), isTyped = !isArr && !isBuff && isTypedArray(srcValue);
                   newValue = srcValue;
-                  if (isArray(srcValue) || isTypedArray(srcValue)) {
+                  if (isArr || isBuff || isTyped) {
                     if (isArray(objValue)) {
                       newValue = objValue;
                     } else if (isArrayLikeObject(objValue)) {
                       newValue = copyArray(objValue);
-                    } else {
+                    } else if (isBuff) {
                       isCommon = false;
-                      newValue = baseClone(srcValue, true);
+                      newValue = cloneBuffer(srcValue, true);
+                    } else if (isTyped) {
+                      isCommon = false;
+                      newValue = cloneTypedArray(srcValue, true);
+                    } else {
+                      newValue = [];
                     }
                   } else if (isPlainObject(srcValue) || isArguments(srcValue)) {
+                    newValue = objValue;
                     if (isArguments(objValue)) {
                       newValue = toPlainObject(objValue);
                     } else if (!isObject(objValue) || srcIndex && isFunction(objValue)) {
-                      isCommon = false;
-                      newValue = baseClone(srcValue, true);
-                    } else {
-                      newValue = objValue;
+                      newValue = initCloneObject(srcValue);
                     }
                   } else {
                     isCommon = false;
@@ -23447,6 +16834,28 @@
                 return setToString(overRest(func, start, identity), func + '');
               }
               /**
+     * The base implementation of `_.sample`.
+     *
+     * @private
+     * @param {Array|Object} collection The collection to sample.
+     * @returns {*} Returns the random element.
+     */
+              function baseSample(collection) {
+                return arraySample(values(collection));
+              }
+              /**
+     * The base implementation of `_.sampleSize` without param guards.
+     *
+     * @private
+     * @param {Array|Object} collection The collection to sample.
+     * @param {number} n The number of elements to sample.
+     * @returns {Array} Returns the random elements.
+     */
+              function baseSampleSize(collection, n) {
+                var array = values(collection);
+                return shuffleSelf(array, baseClamp(n, 0, array.length));
+              }
+              /**
      * The base implementation of `_.set`.
      *
      * @private
@@ -23496,14 +16905,24 @@
      * @param {Function} string The `toString` result.
      * @returns {Function} Returns `func`.
      */
-              var baseSetToString = !nativeDefineProperty ? identity : function (func, string) {
-                  return nativeDefineProperty(func, 'toString', {
+              var baseSetToString = !defineProperty ? identity : function (func, string) {
+                  return defineProperty(func, 'toString', {
                     'configurable': true,
                     'enumerable': false,
                     'value': constant(string),
                     'writable': true
                   });
                 };
+              /**
+     * The base implementation of `_.shuffle`.
+     *
+     * @private
+     * @param {Array|Object} collection The collection to shuffle.
+     * @returns {Array} Returns the new shuffled array.
+     */
+              function baseShuffle(collection) {
+                return shuffleSelf(values(collection));
+              }
               /**
      * The base implementation of `_.slice` without an iteratee call guard.
      *
@@ -23662,6 +17081,10 @@
                 // Exit early for strings to avoid a performance hit in some environments.
                 if (typeof value == 'string') {
                   return value;
+                }
+                if (isArray(value)) {
+                  // Recursively convert values (susceptible to call stack limits).
+                  return arrayMap(value, baseToString) + '';
                 }
                 if (isSymbol(value)) {
                   return symbolToString ? symbolToString.call(value) : '';
@@ -23890,7 +17313,7 @@
                 if (isDeep) {
                   return buffer.slice();
                 }
-                var result = new buffer.constructor(buffer.length);
+                var length = buffer.length, result = allocUnsafe ? allocUnsafe(length) : new buffer.constructor(length);
                 buffer.copy(result);
                 return result;
               }
@@ -25707,19 +19130,22 @@
                 };
               }
               /**
-     * A specialized version of `arrayShuffle` which mutates `array`.
+     * A specialized version of `_.shuffle` which mutates and sets the size of `array`.
      *
      * @private
      * @param {Array} array The array to shuffle.
+     * @param {number} [size=array.length] The size of `array`.
      * @returns {Array} Returns `array`.
      */
-              function shuffleSelf(array) {
+              function shuffleSelf(array, size) {
                 var index = -1, length = array.length, lastIndex = length - 1;
-                while (++index < length) {
+                size = size === undefined ? length : size;
+                while (++index < size) {
                   var rand = baseRandom(index, lastIndex), value = array[rand];
                   array[rand] = array[index];
                   array[index] = value;
                 }
+                array.length = size;
                 return array;
               }
               /**
@@ -28616,7 +22042,8 @@
      * // => 2
      */
               function sample(collection) {
-                return arraySample(isArrayLike(collection) ? collection : values(collection));
+                var func = isArray(collection) ? arraySample : baseSample;
+                return func(collection);
               }
               /**
      * Gets `n` random elements at unique keys from `collection` up to the
@@ -28644,7 +22071,8 @@
                 } else {
                   n = toInteger(n);
                 }
-                return arraySampleSize(isArrayLike(collection) ? collection : values(collection), n);
+                var func = isArray(collection) ? arraySampleSize : baseSampleSize;
+                return func(collection, n);
               }
               /**
      * Creates an array of shuffled values, using a version of the
@@ -28662,7 +22090,8 @@
      * // => [4, 1, 3, 2]
      */
               function shuffle(collection) {
-                return shuffleSelf(isArrayLike(collection) ? copyArray(collection) : values(collection));
+                var func = isArray(collection) ? arrayShuffle : baseShuffle;
+                return func(collection);
               }
               /**
      * Gets the size of `collection` by returning its length for array-like
@@ -30018,10 +23447,11 @@
      * _.isArguments([1, 2, 3]);
      * // => false
      */
-              function isArguments(value) {
-                // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-                return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') && (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-              }
+              var isArguments = baseIsArguments(function () {
+                  return arguments;
+                }()) ? baseIsArguments : function (value) {
+                  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') && !propertyIsEnumerable.call(value, 'callee');
+                };
               /**
      * Checks if `value` is classified as an `Array` object.
      *
@@ -30230,7 +23660,7 @@
      * // => false
      */
               function isEmpty(value) {
-                if (isArrayLike(value) && (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' || isBuffer(value) || isArguments(value))) {
+                if (isArrayLike(value) && (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' || isBuffer(value) || isTypedArray(value) || isArguments(value))) {
                   return !value.length;
                 }
                 var tag = getTag(value);
@@ -30238,7 +23668,7 @@
                   return !value.size;
                 }
                 if (isPrototype(value)) {
-                  return !nativeKeys(value).length;
+                  return !baseKeys(value).length;
                 }
                 for (var key in value) {
                   if (hasOwnProperty.call(value, key)) {
@@ -30387,9 +23817,9 @@
      */
               function isFunction(value) {
                 // The use of `Object#toString` avoids issues with the `typeof` operator
-                // in Safari 8-9 which returns 'object' for typed array and other constructors.
+                // in Safari 9 which returns 'object' for typed array and other constructors.
                 var tag = isObject(value) ? objectToString.call(value) : '';
-                return tag == funcTag || tag == genTag;
+                return tag == funcTag || tag == genTag || tag == proxyTag;
               }
               /**
      * Checks if `value` is an integer.
@@ -30652,7 +24082,7 @@
      */
               function isNative(value) {
                 if (isMaskable(value)) {
-                  throw new Error('This method is not supported with core-js. Try https://github.com/es-shims.');
+                  throw new Error(CORE_ERROR_TEXT);
                 }
                 return baseIsNative(value);
               }
@@ -31234,8 +24664,8 @@
      * @memberOf _
      * @since 4.0.0
      * @category Lang
-     * @param {*} value The value to process.
-     * @returns {string} Returns the string.
+     * @param {*} value The value to convert.
+     * @returns {string} Returns the converted string.
      * @example
      *
      * _.toString(null);
@@ -32371,21 +25801,19 @@
      * // => { '1': ['a', 'c'], '2': ['b'] }
      */
               function transform(object, iteratee, accumulator) {
-                var isArr = isArray(object) || isTypedArray(object);
+                var isArr = isArray(object), isArrLike = isArr || isBuffer(object) || isTypedArray(object);
                 iteratee = getIteratee(iteratee, 4);
                 if (accumulator == null) {
-                  if (isArr || isObject(object)) {
-                    var Ctor = object.constructor;
-                    if (isArr) {
-                      accumulator = isArray(object) ? new Ctor() : [];
-                    } else {
-                      accumulator = isFunction(Ctor) ? baseCreate(getPrototype(object)) : {};
-                    }
+                  var Ctor = object && object.constructor;
+                  if (isArrLike) {
+                    accumulator = isArr ? new Ctor() : [];
+                  } else if (isObject(object)) {
+                    accumulator = isFunction(Ctor) ? baseCreate(getPrototype(object)) : {};
                   } else {
                     accumulator = {};
                   }
                 }
-                (isArr ? arrayEach : baseForOwn)(object, function (value, index, object) {
+                (isArrLike ? arrayEach : baseForOwn)(object, function (value, index, object) {
                   return iteratee(accumulator, value, index, object);
                 });
                 return accumulator;
@@ -33019,7 +26447,7 @@
                 } else if (radix) {
                   radix = +radix;
                 }
-                return nativeParseInt(toString(string), radix || 0);
+                return nativeParseInt(toString(string).replace(reTrimStart, ''), radix || 0);
               }
               /**
      * Repeats the given string `n` times.
@@ -35426,7 +28854,7 @@
                 lodash.prototype[iteratorSymbol] = wrapperToIterator;
               }
               return lodash;
-            }
+            };
             /*--------------------------------------------------------------------------*/
             // Export lodash.
             var _ = runInContext();
@@ -35457,7 +28885,7335 @@
       },
       {}
     ],
+    67: [
+      function (require, module, exports) {
+        var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+        ;
+        (function (exports) {
+          'use strict';
+          var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array;
+          var PLUS = '+'.charCodeAt(0);
+          var SLASH = '/'.charCodeAt(0);
+          var NUMBER = '0'.charCodeAt(0);
+          var LOWER = 'a'.charCodeAt(0);
+          var UPPER = 'A'.charCodeAt(0);
+          var PLUS_URL_SAFE = '-'.charCodeAt(0);
+          var SLASH_URL_SAFE = '_'.charCodeAt(0);
+          function decode(elt) {
+            var code = elt.charCodeAt(0);
+            if (code === PLUS || code === PLUS_URL_SAFE)
+              return 62;
+            // '+'
+            if (code === SLASH || code === SLASH_URL_SAFE)
+              return 63;
+            // '/'
+            if (code < NUMBER)
+              return -1;
+            //no match
+            if (code < NUMBER + 10)
+              return code - NUMBER + 26 + 26;
+            if (code < UPPER + 26)
+              return code - UPPER;
+            if (code < LOWER + 26)
+              return code - LOWER + 26;
+          }
+          function b64ToByteArray(b64) {
+            var i, j, l, tmp, placeHolders, arr;
+            if (b64.length % 4 > 0) {
+              throw new Error('Invalid string. Length must be a multiple of 4');
+            }
+            // the number of equal signs (place holders)
+            // if there are two placeholders, than the two characters before it
+            // represent one byte
+            // if there is only one, then the three characters before it represent 2 bytes
+            // this is just a cheap hack to not do indexOf twice
+            var len = b64.length;
+            placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0;
+            // base64 is 4/3 + up to two characters of the original data
+            arr = new Arr(b64.length * 3 / 4 - placeHolders);
+            // if there are placeholders, only get up to the last complete 4 chars
+            l = placeHolders > 0 ? b64.length - 4 : b64.length;
+            var L = 0;
+            function push(v) {
+              arr[L++] = v;
+            }
+            for (i = 0, j = 0; i < l; i += 4, j += 3) {
+              tmp = decode(b64.charAt(i)) << 18 | decode(b64.charAt(i + 1)) << 12 | decode(b64.charAt(i + 2)) << 6 | decode(b64.charAt(i + 3));
+              push((tmp & 16711680) >> 16);
+              push((tmp & 65280) >> 8);
+              push(tmp & 255);
+            }
+            if (placeHolders === 2) {
+              tmp = decode(b64.charAt(i)) << 2 | decode(b64.charAt(i + 1)) >> 4;
+              push(tmp & 255);
+            } else if (placeHolders === 1) {
+              tmp = decode(b64.charAt(i)) << 10 | decode(b64.charAt(i + 1)) << 4 | decode(b64.charAt(i + 2)) >> 2;
+              push(tmp >> 8 & 255);
+              push(tmp & 255);
+            }
+            return arr;
+          }
+          function uint8ToBase64(uint8) {
+            var i, extraBytes = uint8.length % 3,
+              // if we have 1 byte left, pad 2 bytes
+              output = '', temp, length;
+            function encode(num) {
+              return lookup.charAt(num);
+            }
+            function tripletToBase64(num) {
+              return encode(num >> 18 & 63) + encode(num >> 12 & 63) + encode(num >> 6 & 63) + encode(num & 63);
+            }
+            // go through the array every three bytes, we'll deal with trailing stuff later
+            for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
+              temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + uint8[i + 2];
+              output += tripletToBase64(temp);
+            }
+            // pad the end with zeros, but make sure to not forget the extra bytes
+            switch (extraBytes) {
+            case 1:
+              temp = uint8[uint8.length - 1];
+              output += encode(temp >> 2);
+              output += encode(temp << 4 & 63);
+              output += '==';
+              break;
+            case 2:
+              temp = (uint8[uint8.length - 2] << 8) + uint8[uint8.length - 1];
+              output += encode(temp >> 10);
+              output += encode(temp >> 4 & 63);
+              output += encode(temp << 2 & 63);
+              output += '=';
+              break;
+            }
+            return output;
+          }
+          exports.toByteArray = b64ToByteArray;
+          exports.fromByteArray = uint8ToBase64;
+        }(typeof exports === 'undefined' ? this.base64js = {} : exports));
+      },
+      {}
+    ],
+    68: [
+      function (require, module, exports) {
+        // Browser Request
+        //
+        // Licensed under the Apache License, Version 2.0 (the "License");
+        // you may not use this file except in compliance with the License.
+        // You may obtain a copy of the License at
+        //
+        //     http://www.apache.org/licenses/LICENSE-2.0
+        //
+        // Unless required by applicable law or agreed to in writing, software
+        // distributed under the License is distributed on an "AS IS" BASIS,
+        // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        // See the License for the specific language governing permissions and
+        // limitations under the License.
+        // UMD HEADER START 
+        (function (root, factory) {
+          if (typeof define === 'function' && define.amd) {
+            // AMD. Register as an anonymous module.
+            define([], factory);
+          } else if (typeof exports === 'object') {
+            // Node. Does not work with strict CommonJS, but
+            // only CommonJS-like enviroments that support module.exports,
+            // like Node.
+            module.exports = factory();
+          } else {
+            // Browser globals (root is window)
+            root.returnExports = factory();
+          }
+        }(this, function () {
+          // UMD HEADER END
+          var XHR = XMLHttpRequest;
+          if (!XHR)
+            throw new Error('missing XMLHttpRequest');
+          request.log = {
+            'trace': noop,
+            'debug': noop,
+            'info': noop,
+            'warn': noop,
+            'error': noop
+          };
+          var DEFAULT_TIMEOUT = 3 * 60 * 1000;
+          // 3 minutes
+          //
+          // request
+          //
+          function request(options, callback) {
+            // The entry-point to the API: prep the options object and pass the real work to run_xhr.
+            if (typeof callback !== 'function')
+              throw new Error('Bad callback given: ' + callback);
+            if (!options)
+              throw new Error('No options given');
+            var options_onResponse = options.onResponse;
+            // Save this for later.
+            if (typeof options === 'string')
+              options = { 'uri': options };
+            else
+              options = JSON.parse(JSON.stringify(options));
+            // Use a duplicate for mutating.
+            options.onResponse = options_onResponse;
+            // And put it back.
+            if (options.verbose)
+              request.log = getLogger();
+            if (options.url) {
+              options.uri = options.url;
+              delete options.url;
+            }
+            if (!options.uri && options.uri !== '')
+              throw new Error('options.uri is a required argument');
+            if (typeof options.uri != 'string')
+              throw new Error('options.uri must be a string');
+            var unsupported_options = [
+                'proxy',
+                '_redirectsFollowed',
+                'maxRedirects',
+                'followRedirect'
+              ];
+            for (var i = 0; i < unsupported_options.length; i++)
+              if (options[unsupported_options[i]])
+                throw new Error('options.' + unsupported_options[i] + ' is not supported');
+            options.callback = callback;
+            options.method = options.method || 'GET';
+            options.headers = options.headers || {};
+            options.body = options.body || null;
+            options.timeout = options.timeout || request.DEFAULT_TIMEOUT;
+            if (options.headers.host)
+              throw new Error('Options.headers.host is not supported');
+            if (options.json) {
+              options.headers.accept = options.headers.accept || 'application/json';
+              if (options.method !== 'GET')
+                options.headers['content-type'] = 'application/json';
+              if (typeof options.json !== 'boolean')
+                options.body = JSON.stringify(options.json);
+              else if (typeof options.body !== 'string')
+                options.body = JSON.stringify(options.body);
+            }
+            //BEGIN QS Hack
+            var serialize = function (obj) {
+              var str = [];
+              for (var p in obj)
+                if (obj.hasOwnProperty(p)) {
+                  str.push(encodeURIComponent(p) + '=' + encodeURIComponent(obj[p]));
+                }
+              return str.join('&');
+            };
+            if (options.qs) {
+              var qs = typeof options.qs == 'string' ? options.qs : serialize(options.qs);
+              if (options.uri.indexOf('?') !== -1) {
+                //no get params
+                options.uri = options.uri + '&' + qs;
+              } else {
+                //existing get params
+                options.uri = options.uri + '?' + qs;
+              }
+            }
+            //END QS Hack
+            //BEGIN FORM Hack
+            var multipart = function (obj) {
+              //todo: support file type (useful?)
+              var result = {};
+              result.boundry = '-------------------------------' + Math.floor(Math.random() * 1000000000);
+              var lines = [];
+              for (var p in obj) {
+                if (obj.hasOwnProperty(p)) {
+                  lines.push('--' + result.boundry + '\n' + 'Content-Disposition: form-data; name="' + p + '"' + '\n' + '\n' + obj[p] + '\n');
+                }
+              }
+              lines.push('--' + result.boundry + '--');
+              result.body = lines.join('');
+              result.length = result.body.length;
+              result.type = 'multipart/form-data; boundary=' + result.boundry;
+              return result;
+            };
+            if (options.form) {
+              if (typeof options.form == 'string')
+                throw 'form name unsupported';
+              if (options.method === 'POST') {
+                var encoding = (options.encoding || 'application/x-www-form-urlencoded').toLowerCase();
+                options.headers['content-type'] = encoding;
+                switch (encoding) {
+                case 'application/x-www-form-urlencoded':
+                  options.body = serialize(options.form).replace(/%20/g, '+');
+                  break;
+                case 'multipart/form-data':
+                  var multi = multipart(options.form);
+                  //options.headers['content-length'] = multi.length;
+                  options.body = multi.body;
+                  options.headers['content-type'] = multi.type;
+                  break;
+                default:
+                  throw new Error('unsupported encoding:' + encoding);
+                }
+              }
+            }
+            //END FORM Hack
+            // If onResponse is boolean true, call back immediately when the response is known,
+            // not when the full request is complete.
+            options.onResponse = options.onResponse || noop;
+            if (options.onResponse === true) {
+              options.onResponse = callback;
+              options.callback = noop;
+            }
+            // XXX Browsers do not like this.
+            //if(options.body)
+            //  options.headers['content-length'] = options.body.length;
+            // HTTP basic authentication
+            if (!options.headers.authorization && options.auth)
+              options.headers.authorization = 'Basic ' + b64_enc(options.auth.username + ':' + options.auth.password);
+            return run_xhr(options);
+          }
+          var req_seq = 0;
+          function run_xhr(options) {
+            var xhr = new XHR(), timed_out = false, is_cors = is_crossDomain(options.uri), supports_cors = 'withCredentials' in xhr;
+            req_seq += 1;
+            xhr.seq_id = req_seq;
+            xhr.id = req_seq + ': ' + options.method + ' ' + options.uri;
+            xhr._id = xhr.id;
+            // I know I will type "_id" from habit all the time.
+            if (is_cors && !supports_cors) {
+              var cors_err = new Error('Browser does not support cross-origin request: ' + options.uri);
+              cors_err.cors = 'unsupported';
+              return options.callback(cors_err, xhr);
+            }
+            xhr.timeoutTimer = setTimeout(too_late, options.timeout);
+            function too_late() {
+              timed_out = true;
+              var er = new Error('ETIMEDOUT');
+              er.code = 'ETIMEDOUT';
+              er.duration = options.timeout;
+              request.log.error('Timeout', {
+                'id': xhr._id,
+                'milliseconds': options.timeout
+              });
+              return options.callback(er, xhr);
+            }
+            // Some states can be skipped over, so remember what is still incomplete.
+            var did = {
+                'response': false,
+                'loading': false,
+                'end': false
+              };
+            xhr.onreadystatechange = on_state_change;
+            xhr.open(options.method, options.uri, true);
+            // asynchronous
+            if (is_cors)
+              xhr.withCredentials = !!options.withCredentials;
+            xhr.send(options.body);
+            return xhr;
+            function on_state_change(event) {
+              if (timed_out)
+                return request.log.debug('Ignoring timed out state change', {
+                  'state': xhr.readyState,
+                  'id': xhr.id
+                });
+              request.log.debug('State change', {
+                'state': xhr.readyState,
+                'id': xhr.id,
+                'timed_out': timed_out
+              });
+              if (xhr.readyState === XHR.OPENED) {
+                request.log.debug('Request started', { 'id': xhr.id });
+                for (var key in options.headers)
+                  xhr.setRequestHeader(key, options.headers[key]);
+              } else if (xhr.readyState === XHR.HEADERS_RECEIVED)
+                on_response();
+              else if (xhr.readyState === XHR.LOADING) {
+                on_response();
+                on_loading();
+              } else if (xhr.readyState === XHR.DONE) {
+                on_response();
+                on_loading();
+                on_end();
+              }
+            }
+            function on_response() {
+              if (did.response)
+                return;
+              did.response = true;
+              request.log.debug('Got response', {
+                'id': xhr.id,
+                'status': xhr.status
+              });
+              clearTimeout(xhr.timeoutTimer);
+              xhr.statusCode = xhr.status;
+              // Node request compatibility
+              // Detect failed CORS requests.
+              if (is_cors && xhr.statusCode == 0) {
+                var cors_err = new Error('CORS request rejected: ' + options.uri);
+                cors_err.cors = 'rejected';
+                // Do not process this request further.
+                did.loading = true;
+                did.end = true;
+                return options.callback(cors_err, xhr);
+              }
+              options.onResponse(null, xhr);
+            }
+            function on_loading() {
+              if (did.loading)
+                return;
+              did.loading = true;
+              request.log.debug('Response body loading', { 'id': xhr.id });
+            }
+            function on_end() {
+              if (did.end)
+                return;
+              did.end = true;
+              request.log.debug('Request done', { 'id': xhr.id });
+              xhr.body = xhr.responseText;
+              if (options.json) {
+                try {
+                  xhr.body = JSON.parse(xhr.responseText);
+                } catch (er) {
+                  return options.callback(er, xhr);
+                }
+              }
+              options.callback(null, xhr, xhr.body);
+            }
+          }
+          // request
+          request.withCredentials = false;
+          request.DEFAULT_TIMEOUT = DEFAULT_TIMEOUT;
+          //
+          // defaults
+          //
+          request.defaults = function (options, requester) {
+            var def = function (method) {
+              var d = function (params, callback) {
+                if (typeof params === 'string')
+                  params = { 'uri': params };
+                else {
+                  params = JSON.parse(JSON.stringify(params));
+                }
+                for (var i in options) {
+                  if (params[i] === undefined)
+                    params[i] = options[i];
+                }
+                return method(params, callback);
+              };
+              return d;
+            };
+            var de = def(request);
+            de.get = def(request.get);
+            de.post = def(request.post);
+            de.put = def(request.put);
+            de.head = def(request.head);
+            return de;
+          };
+          //
+          // HTTP method shortcuts
+          //
+          var shortcuts = [
+              'get',
+              'put',
+              'post',
+              'head'
+            ];
+          shortcuts.forEach(function (shortcut) {
+            var method = shortcut.toUpperCase();
+            var func = shortcut.toLowerCase();
+            request[func] = function (opts) {
+              if (typeof opts === 'string')
+                opts = {
+                  'method': method,
+                  'uri': opts
+                };
+              else {
+                opts = JSON.parse(JSON.stringify(opts));
+                opts.method = method;
+              }
+              var args = [opts].concat(Array.prototype.slice.apply(arguments, [1]));
+              return request.apply(this, args);
+            };
+          });
+          //
+          // CouchDB shortcut
+          //
+          request.couch = function (options, callback) {
+            if (typeof options === 'string')
+              options = { 'uri': options };
+            // Just use the request API to do JSON.
+            options.json = true;
+            if (options.body)
+              options.json = options.body;
+            delete options.body;
+            callback = callback || noop;
+            var xhr = request(options, couch_handler);
+            return xhr;
+            function couch_handler(er, resp, body) {
+              if (er)
+                return callback(er, resp, body);
+              if ((resp.statusCode < 200 || resp.statusCode > 299) && body.error) {
+                // The body is a Couch JSON object indicating the error.
+                er = new Error('CouchDB error: ' + (body.error.reason || body.error.error));
+                for (var key in body)
+                  er[key] = body[key];
+                return callback(er, resp, body);
+              }
+              return callback(er, resp, body);
+            }
+          };
+          //
+          // Utility
+          //
+          function noop() {
+          }
+          function getLogger() {
+            var logger = {}, levels = [
+                'trace',
+                'debug',
+                'info',
+                'warn',
+                'error'
+              ], level, i;
+            for (i = 0; i < levels.length; i++) {
+              level = levels[i];
+              logger[level] = noop;
+              if (typeof console !== 'undefined' && console && console[level])
+                logger[level] = formatted(console, level);
+            }
+            return logger;
+          }
+          function formatted(obj, method) {
+            return formatted_logger;
+            function formatted_logger(str, context) {
+              if (typeof context === 'object')
+                str += ' ' + JSON.stringify(context);
+              return obj[method].call(obj, str);
+            }
+          }
+          // Return whether a URL is a cross-domain request.
+          function is_crossDomain(url) {
+            var rurl = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/;
+            // jQuery #8138, IE may throw an exception when accessing
+            // a field from window.location if document.domain has been set
+            var ajaxLocation;
+            try {
+              ajaxLocation = location.href;
+            } catch (e) {
+              // Use the href attribute of an A element since IE will modify it given document.location
+              ajaxLocation = document.createElement('a');
+              ajaxLocation.href = '';
+              ajaxLocation = ajaxLocation.href;
+            }
+            var ajaxLocParts = rurl.exec(ajaxLocation.toLowerCase()) || [], parts = rurl.exec(url.toLowerCase());
+            var result = !!(parts && (parts[1] != ajaxLocParts[1] || parts[2] != ajaxLocParts[2] || (parts[3] || (parts[1] === 'http:' ? 80 : 443)) != (ajaxLocParts[3] || (ajaxLocParts[1] === 'http:' ? 80 : 443))));
+            //console.debug('is_crossDomain('+url+') -> ' + result)
+            return result;
+          }
+          // MIT License from http://phpjs.org/functions/base64_encode:358
+          function b64_enc(data) {
+            // Encodes string using MIME base64 algorithm
+            var b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+            var o1, o2, o3, h1, h2, h3, h4, bits, i = 0, ac = 0, enc = '', tmp_arr = [];
+            if (!data) {
+              return data;
+            }
+            // assume utf8 data
+            // data = this.utf8_encode(data+'');
+            do {
+              // pack three octets into four hexets
+              o1 = data.charCodeAt(i++);
+              o2 = data.charCodeAt(i++);
+              o3 = data.charCodeAt(i++);
+              bits = o1 << 16 | o2 << 8 | o3;
+              h1 = bits >> 18 & 63;
+              h2 = bits >> 12 & 63;
+              h3 = bits >> 6 & 63;
+              h4 = bits & 63;
+              // use hexets to index into b64, and append result to encoded string
+              tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+            } while (i < data.length);
+            enc = tmp_arr.join('');
+            switch (data.length % 3) {
+            case 1:
+              enc = enc.slice(0, -2) + '==';
+              break;
+            case 2:
+              enc = enc.slice(0, -1) + '=';
+              break;
+            }
+            return enc;
+          }
+          return request;  //UMD FOOTER START
+        }));  //UMD FOOTER END
+      },
+      {}
+    ],
+    69: [
+      function (require, module, exports) {
+      },
+      {}
+    ],
+    70: [
+      function (require, module, exports) {
+        arguments[4][69][0].apply(exports, arguments);
+      },
+      { 'dup': 69 }
+    ],
+    71: [
+      function (require, module, exports) {
+        (function (global) {
+          'use strict';
+          var buffer = require('buffer');
+          var Buffer = buffer.Buffer;
+          var SlowBuffer = buffer.SlowBuffer;
+          var MAX_LEN = buffer.kMaxLength || 2147483647;
+          exports.alloc = function alloc(size, fill, encoding) {
+            if (typeof Buffer.alloc === 'function') {
+              return Buffer.alloc(size, fill, encoding);
+            }
+            if (typeof encoding === 'number') {
+              throw new TypeError('encoding must not be number');
+            }
+            if (typeof size !== 'number') {
+              throw new TypeError('size must be a number');
+            }
+            if (size > MAX_LEN) {
+              throw new RangeError('size is too large');
+            }
+            var enc = encoding;
+            var _fill = fill;
+            if (_fill === undefined) {
+              enc = undefined;
+              _fill = 0;
+            }
+            var buf = new Buffer(size);
+            if (typeof _fill === 'string') {
+              var fillBuf = new Buffer(_fill, enc);
+              var flen = fillBuf.length;
+              var i = -1;
+              while (++i < size) {
+                buf[i] = fillBuf[i % flen];
+              }
+            } else {
+              buf.fill(_fill);
+            }
+            return buf;
+          };
+          exports.allocUnsafe = function allocUnsafe(size) {
+            if (typeof Buffer.allocUnsafe === 'function') {
+              return Buffer.allocUnsafe(size);
+            }
+            if (typeof size !== 'number') {
+              throw new TypeError('size must be a number');
+            }
+            if (size > MAX_LEN) {
+              throw new RangeError('size is too large');
+            }
+            return new Buffer(size);
+          };
+          exports.from = function from(value, encodingOrOffset, length) {
+            if (typeof Buffer.from === 'function' && (!global.Uint8Array || Uint8Array.from !== Buffer.from)) {
+              return Buffer.from(value, encodingOrOffset, length);
+            }
+            if (typeof value === 'number') {
+              throw new TypeError('"value" argument must not be a number');
+            }
+            if (typeof value === 'string') {
+              return new Buffer(value, encodingOrOffset);
+            }
+            if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
+              var offset = encodingOrOffset;
+              if (arguments.length === 1) {
+                return new Buffer(value);
+              }
+              if (typeof offset === 'undefined') {
+                offset = 0;
+              }
+              var len = length;
+              if (typeof len === 'undefined') {
+                len = value.byteLength - offset;
+              }
+              if (offset >= value.byteLength) {
+                throw new RangeError('\'offset\' is out of bounds');
+              }
+              if (len > value.byteLength - offset) {
+                throw new RangeError('\'length\' is out of bounds');
+              }
+              return new Buffer(value.slice(offset, offset + len));
+            }
+            if (Buffer.isBuffer(value)) {
+              var out = new Buffer(value.length);
+              value.copy(out, 0, 0, value.length);
+              return out;
+            }
+            if (value) {
+              if (Array.isArray(value) || typeof ArrayBuffer !== 'undefined' && value.buffer instanceof ArrayBuffer || 'length' in value) {
+                return new Buffer(value);
+              }
+              if (value.type === 'Buffer' && Array.isArray(value.data)) {
+                return new Buffer(value.data);
+              }
+            }
+            throw new TypeError('First argument must be a string, Buffer, ' + 'ArrayBuffer, Array, or array-like object.');
+          };
+          exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
+            if (typeof Buffer.allocUnsafeSlow === 'function') {
+              return Buffer.allocUnsafeSlow(size);
+            }
+            if (typeof size !== 'number') {
+              throw new TypeError('size must be a number');
+            }
+            if (size >= MAX_LEN) {
+              throw new RangeError('size is too large');
+            }
+            return new SlowBuffer(size);
+          };
+        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
+      },
+      { 'buffer': 72 }
+    ],
+    72: [
+      function (require, module, exports) {
+        (function (global) {
+          /*!
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
+ * @license  MIT
+ */
+          /* eslint-disable no-proto */
+          'use strict';
+          var base64 = require('base64-js');
+          var ieee754 = require('ieee754');
+          var isArray = require('isarray');
+          exports.Buffer = Buffer;
+          exports.SlowBuffer = SlowBuffer;
+          exports.INSPECT_MAX_BYTES = 50;
+          Buffer.poolSize = 8192;
+          // not used by this implementation
+          var rootParent = {};
+          /**
+ * If `Buffer.TYPED_ARRAY_SUPPORT`:
+ *   === true    Use Uint8Array implementation (fastest)
+ *   === false   Use Object implementation (most compatible, even IE6)
+ *
+ * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+ * Opera 11.6+, iOS 4.2+.
+ *
+ * Due to various browser bugs, sometimes the Object implementation will be used even
+ * when the browser supports typed arrays.
+ *
+ * Note:
+ *
+ *   - Firefox 4-29 lacks support for adding new properties to `Uint8Array` instances,
+ *     See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *
+ *   - Safari 5-7 lacks support for changing the `Object.prototype.constructor` property
+ *     on objects.
+ *
+ *   - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *
+ *   - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *     incorrect length in some situations.
+
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they
+ * get the Object implementation, which is slower but behaves correctly.
+ */
+          Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined ? global.TYPED_ARRAY_SUPPORT : typedArraySupport();
+          function typedArraySupport() {
+            function Bar() {
+            }
+            try {
+              var arr = new Uint8Array(1);
+              arr.foo = function () {
+                return 42;
+              };
+              arr.constructor = Bar;
+              return arr.foo() === 42 && arr.constructor === Bar && typeof arr.subarray === 'function' && arr.subarray(1, 1).byteLength === 0;
+            } catch (e) {
+              return false;
+            }
+          }
+          function kMaxLength() {
+            return Buffer.TYPED_ARRAY_SUPPORT ? 2147483647 : 1073741823;
+          }
+          /**
+ * Class: Buffer
+ * =============
+ *
+ * The Buffer constructor returns instances of `Uint8Array` that are augmented
+ * with function properties for all the node `Buffer` API functions. We use
+ * `Uint8Array` so that square bracket notation works as expected -- it returns
+ * a single octet.
+ *
+ * By augmenting the instances, we can avoid modifying the `Uint8Array`
+ * prototype.
+ */
+          function Buffer(arg) {
+            if (!(this instanceof Buffer)) {
+              // Avoid going through an ArgumentsAdaptorTrampoline in the common case.
+              if (arguments.length > 1)
+                return new Buffer(arg, arguments[1]);
+              return new Buffer(arg);
+            }
+            if (!Buffer.TYPED_ARRAY_SUPPORT) {
+              this.length = 0;
+              this.parent = undefined;
+            }
+            // Common case.
+            if (typeof arg === 'number') {
+              return fromNumber(this, arg);
+            }
+            // Slightly less common case.
+            if (typeof arg === 'string') {
+              return fromString(this, arg, arguments.length > 1 ? arguments[1] : 'utf8');
+            }
+            // Unusual.
+            return fromObject(this, arg);
+          }
+          function fromNumber(that, length) {
+            that = allocate(that, length < 0 ? 0 : checked(length) | 0);
+            if (!Buffer.TYPED_ARRAY_SUPPORT) {
+              for (var i = 0; i < length; i++) {
+                that[i] = 0;
+              }
+            }
+            return that;
+          }
+          function fromString(that, string, encoding) {
+            if (typeof encoding !== 'string' || encoding === '')
+              encoding = 'utf8';
+            // Assumption: byteLength() return value is always < kMaxLength.
+            var length = byteLength(string, encoding) | 0;
+            that = allocate(that, length);
+            that.write(string, encoding);
+            return that;
+          }
+          function fromObject(that, object) {
+            if (Buffer.isBuffer(object))
+              return fromBuffer(that, object);
+            if (isArray(object))
+              return fromArray(that, object);
+            if (object == null) {
+              throw new TypeError('must start with number, buffer, array or string');
+            }
+            if (typeof ArrayBuffer !== 'undefined') {
+              if (object.buffer instanceof ArrayBuffer) {
+                return fromTypedArray(that, object);
+              }
+              if (object instanceof ArrayBuffer) {
+                return fromArrayBuffer(that, object);
+              }
+            }
+            if (object.length)
+              return fromArrayLike(that, object);
+            return fromJsonObject(that, object);
+          }
+          function fromBuffer(that, buffer) {
+            var length = checked(buffer.length) | 0;
+            that = allocate(that, length);
+            buffer.copy(that, 0, 0, length);
+            return that;
+          }
+          function fromArray(that, array) {
+            var length = checked(array.length) | 0;
+            that = allocate(that, length);
+            for (var i = 0; i < length; i += 1) {
+              that[i] = array[i] & 255;
+            }
+            return that;
+          }
+          // Duplicate of fromArray() to keep fromArray() monomorphic.
+          function fromTypedArray(that, array) {
+            var length = checked(array.length) | 0;
+            that = allocate(that, length);
+            // Truncating the elements is probably not what people expect from typed
+            // arrays with BYTES_PER_ELEMENT > 1 but it's compatible with the behavior
+            // of the old Buffer constructor.
+            for (var i = 0; i < length; i += 1) {
+              that[i] = array[i] & 255;
+            }
+            return that;
+          }
+          function fromArrayBuffer(that, array) {
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              // Return an augmented `Uint8Array` instance, for best performance
+              array.byteLength;
+              that = Buffer._augment(new Uint8Array(array));
+            } else {
+              // Fallback: Return an object instance of the Buffer class
+              that = fromTypedArray(that, new Uint8Array(array));
+            }
+            return that;
+          }
+          function fromArrayLike(that, array) {
+            var length = checked(array.length) | 0;
+            that = allocate(that, length);
+            for (var i = 0; i < length; i += 1) {
+              that[i] = array[i] & 255;
+            }
+            return that;
+          }
+          // Deserialize { type: 'Buffer', data: [1,2,3,...] } into a Buffer object.
+          // Returns a zero-length buffer for inputs that don't conform to the spec.
+          function fromJsonObject(that, object) {
+            var array;
+            var length = 0;
+            if (object.type === 'Buffer' && isArray(object.data)) {
+              array = object.data;
+              length = checked(array.length) | 0;
+            }
+            that = allocate(that, length);
+            for (var i = 0; i < length; i += 1) {
+              that[i] = array[i] & 255;
+            }
+            return that;
+          }
+          if (Buffer.TYPED_ARRAY_SUPPORT) {
+            Buffer.prototype.__proto__ = Uint8Array.prototype;
+            Buffer.__proto__ = Uint8Array;
+          } else {
+            // pre-set for values that may exist in the future
+            Buffer.prototype.length = undefined;
+            Buffer.prototype.parent = undefined;
+          }
+          function allocate(that, length) {
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              // Return an augmented `Uint8Array` instance, for best performance
+              that = Buffer._augment(new Uint8Array(length));
+              that.__proto__ = Buffer.prototype;
+            } else {
+              // Fallback: Return an object instance of the Buffer class
+              that.length = length;
+              that._isBuffer = true;
+            }
+            var fromPool = length !== 0 && length <= Buffer.poolSize >>> 1;
+            if (fromPool)
+              that.parent = rootParent;
+            return that;
+          }
+          function checked(length) {
+            // Note: cannot use `length < kMaxLength` here because that fails when
+            // length is NaN (which is otherwise coerced to zero.)
+            if (length >= kMaxLength()) {
+              throw new RangeError('Attempt to allocate Buffer larger than maximum ' + 'size: 0x' + kMaxLength().toString(16) + ' bytes');
+            }
+            return length | 0;
+          }
+          function SlowBuffer(subject, encoding) {
+            if (!(this instanceof SlowBuffer))
+              return new SlowBuffer(subject, encoding);
+            var buf = new Buffer(subject, encoding);
+            delete buf.parent;
+            return buf;
+          }
+          Buffer.isBuffer = function isBuffer(b) {
+            return !!(b != null && b._isBuffer);
+          };
+          Buffer.compare = function compare(a, b) {
+            if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
+              throw new TypeError('Arguments must be Buffers');
+            }
+            if (a === b)
+              return 0;
+            var x = a.length;
+            var y = b.length;
+            var i = 0;
+            var len = Math.min(x, y);
+            while (i < len) {
+              if (a[i] !== b[i])
+                break;
+              ++i;
+            }
+            if (i !== len) {
+              x = a[i];
+              y = b[i];
+            }
+            if (x < y)
+              return -1;
+            if (y < x)
+              return 1;
+            return 0;
+          };
+          Buffer.isEncoding = function isEncoding(encoding) {
+            switch (String(encoding).toLowerCase()) {
+            case 'hex':
+            case 'utf8':
+            case 'utf-8':
+            case 'ascii':
+            case 'binary':
+            case 'base64':
+            case 'raw':
+            case 'ucs2':
+            case 'ucs-2':
+            case 'utf16le':
+            case 'utf-16le':
+              return true;
+            default:
+              return false;
+            }
+          };
+          Buffer.concat = function concat(list, length) {
+            if (!isArray(list))
+              throw new TypeError('list argument must be an Array of Buffers.');
+            if (list.length === 0) {
+              return new Buffer(0);
+            }
+            var i;
+            if (length === undefined) {
+              length = 0;
+              for (i = 0; i < list.length; i++) {
+                length += list[i].length;
+              }
+            }
+            var buf = new Buffer(length);
+            var pos = 0;
+            for (i = 0; i < list.length; i++) {
+              var item = list[i];
+              item.copy(buf, pos);
+              pos += item.length;
+            }
+            return buf;
+          };
+          function byteLength(string, encoding) {
+            if (typeof string !== 'string')
+              string = '' + string;
+            var len = string.length;
+            if (len === 0)
+              return 0;
+            // Use a for loop to avoid recursion
+            var loweredCase = false;
+            for (;;) {
+              switch (encoding) {
+              case 'ascii':
+              case 'binary':
+              // Deprecated
+              case 'raw':
+              case 'raws':
+                return len;
+              case 'utf8':
+              case 'utf-8':
+                return utf8ToBytes(string).length;
+              case 'ucs2':
+              case 'ucs-2':
+              case 'utf16le':
+              case 'utf-16le':
+                return len * 2;
+              case 'hex':
+                return len >>> 1;
+              case 'base64':
+                return base64ToBytes(string).length;
+              default:
+                if (loweredCase)
+                  return utf8ToBytes(string).length;
+                // assume utf8
+                encoding = ('' + encoding).toLowerCase();
+                loweredCase = true;
+              }
+            }
+          }
+          Buffer.byteLength = byteLength;
+          function slowToString(encoding, start, end) {
+            var loweredCase = false;
+            start = start | 0;
+            end = end === undefined || end === Infinity ? this.length : end | 0;
+            if (!encoding)
+              encoding = 'utf8';
+            if (start < 0)
+              start = 0;
+            if (end > this.length)
+              end = this.length;
+            if (end <= start)
+              return '';
+            while (true) {
+              switch (encoding) {
+              case 'hex':
+                return hexSlice(this, start, end);
+              case 'utf8':
+              case 'utf-8':
+                return utf8Slice(this, start, end);
+              case 'ascii':
+                return asciiSlice(this, start, end);
+              case 'binary':
+                return binarySlice(this, start, end);
+              case 'base64':
+                return base64Slice(this, start, end);
+              case 'ucs2':
+              case 'ucs-2':
+              case 'utf16le':
+              case 'utf-16le':
+                return utf16leSlice(this, start, end);
+              default:
+                if (loweredCase)
+                  throw new TypeError('Unknown encoding: ' + encoding);
+                encoding = (encoding + '').toLowerCase();
+                loweredCase = true;
+              }
+            }
+          }
+          Buffer.prototype.toString = function toString() {
+            var length = this.length | 0;
+            if (length === 0)
+              return '';
+            if (arguments.length === 0)
+              return utf8Slice(this, 0, length);
+            return slowToString.apply(this, arguments);
+          };
+          Buffer.prototype.equals = function equals(b) {
+            if (!Buffer.isBuffer(b))
+              throw new TypeError('Argument must be a Buffer');
+            if (this === b)
+              return true;
+            return Buffer.compare(this, b) === 0;
+          };
+          Buffer.prototype.inspect = function inspect() {
+            var str = '';
+            var max = exports.INSPECT_MAX_BYTES;
+            if (this.length > 0) {
+              str = this.toString('hex', 0, max).match(/.{2}/g).join(' ');
+              if (this.length > max)
+                str += ' ... ';
+            }
+            return '<Buffer ' + str + '>';
+          };
+          Buffer.prototype.compare = function compare(b) {
+            if (!Buffer.isBuffer(b))
+              throw new TypeError('Argument must be a Buffer');
+            if (this === b)
+              return 0;
+            return Buffer.compare(this, b);
+          };
+          Buffer.prototype.indexOf = function indexOf(val, byteOffset) {
+            if (byteOffset > 2147483647)
+              byteOffset = 2147483647;
+            else if (byteOffset < -2147483648)
+              byteOffset = -2147483648;
+            byteOffset >>= 0;
+            if (this.length === 0)
+              return -1;
+            if (byteOffset >= this.length)
+              return -1;
+            // Negative offsets start from the end of the buffer
+            if (byteOffset < 0)
+              byteOffset = Math.max(this.length + byteOffset, 0);
+            if (typeof val === 'string') {
+              if (val.length === 0)
+                return -1;
+              // special case: looking for empty string always fails
+              return String.prototype.indexOf.call(this, val, byteOffset);
+            }
+            if (Buffer.isBuffer(val)) {
+              return arrayIndexOf(this, val, byteOffset);
+            }
+            if (typeof val === 'number') {
+              if (Buffer.TYPED_ARRAY_SUPPORT && Uint8Array.prototype.indexOf === 'function') {
+                return Uint8Array.prototype.indexOf.call(this, val, byteOffset);
+              }
+              return arrayIndexOf(this, [val], byteOffset);
+            }
+            function arrayIndexOf(arr, val, byteOffset) {
+              var foundIndex = -1;
+              for (var i = 0; byteOffset + i < arr.length; i++) {
+                if (arr[byteOffset + i] === val[foundIndex === -1 ? 0 : i - foundIndex]) {
+                  if (foundIndex === -1)
+                    foundIndex = i;
+                  if (i - foundIndex + 1 === val.length)
+                    return byteOffset + foundIndex;
+                } else {
+                  foundIndex = -1;
+                }
+              }
+              return -1;
+            }
+            throw new TypeError('val must be string, number or Buffer');
+          };
+          // `get` is deprecated
+          Buffer.prototype.get = function get(offset) {
+            console.log('.get() is deprecated. Access using array indexes instead.');
+            return this.readUInt8(offset);
+          };
+          // `set` is deprecated
+          Buffer.prototype.set = function set(v, offset) {
+            console.log('.set() is deprecated. Access using array indexes instead.');
+            return this.writeUInt8(v, offset);
+          };
+          function hexWrite(buf, string, offset, length) {
+            offset = Number(offset) || 0;
+            var remaining = buf.length - offset;
+            if (!length) {
+              length = remaining;
+            } else {
+              length = Number(length);
+              if (length > remaining) {
+                length = remaining;
+              }
+            }
+            // must be an even number of digits
+            var strLen = string.length;
+            if (strLen % 2 !== 0)
+              throw new Error('Invalid hex string');
+            if (length > strLen / 2) {
+              length = strLen / 2;
+            }
+            for (var i = 0; i < length; i++) {
+              var parsed = parseInt(string.substr(i * 2, 2), 16);
+              if (isNaN(parsed))
+                throw new Error('Invalid hex string');
+              buf[offset + i] = parsed;
+            }
+            return i;
+          }
+          function utf8Write(buf, string, offset, length) {
+            return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length);
+          }
+          function asciiWrite(buf, string, offset, length) {
+            return blitBuffer(asciiToBytes(string), buf, offset, length);
+          }
+          function binaryWrite(buf, string, offset, length) {
+            return asciiWrite(buf, string, offset, length);
+          }
+          function base64Write(buf, string, offset, length) {
+            return blitBuffer(base64ToBytes(string), buf, offset, length);
+          }
+          function ucs2Write(buf, string, offset, length) {
+            return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length);
+          }
+          Buffer.prototype.write = function write(string, offset, length, encoding) {
+            // Buffer#write(string)
+            if (offset === undefined) {
+              encoding = 'utf8';
+              length = this.length;
+              offset = 0;
+            } else if (length === undefined && typeof offset === 'string') {
+              encoding = offset;
+              length = this.length;
+              offset = 0;
+            } else if (isFinite(offset)) {
+              offset = offset | 0;
+              if (isFinite(length)) {
+                length = length | 0;
+                if (encoding === undefined)
+                  encoding = 'utf8';
+              } else {
+                encoding = length;
+                length = undefined;
+              }  // legacy write(string, encoding, offset, length) - remove in v0.13
+            } else {
+              var swap = encoding;
+              encoding = offset;
+              offset = length | 0;
+              length = swap;
+            }
+            var remaining = this.length - offset;
+            if (length === undefined || length > remaining)
+              length = remaining;
+            if (string.length > 0 && (length < 0 || offset < 0) || offset > this.length) {
+              throw new RangeError('attempt to write outside buffer bounds');
+            }
+            if (!encoding)
+              encoding = 'utf8';
+            var loweredCase = false;
+            for (;;) {
+              switch (encoding) {
+              case 'hex':
+                return hexWrite(this, string, offset, length);
+              case 'utf8':
+              case 'utf-8':
+                return utf8Write(this, string, offset, length);
+              case 'ascii':
+                return asciiWrite(this, string, offset, length);
+              case 'binary':
+                return binaryWrite(this, string, offset, length);
+              case 'base64':
+                // Warning: maxLength not taken into account in base64Write
+                return base64Write(this, string, offset, length);
+              case 'ucs2':
+              case 'ucs-2':
+              case 'utf16le':
+              case 'utf-16le':
+                return ucs2Write(this, string, offset, length);
+              default:
+                if (loweredCase)
+                  throw new TypeError('Unknown encoding: ' + encoding);
+                encoding = ('' + encoding).toLowerCase();
+                loweredCase = true;
+              }
+            }
+          };
+          Buffer.prototype.toJSON = function toJSON() {
+            return {
+              type: 'Buffer',
+              data: Array.prototype.slice.call(this._arr || this, 0)
+            };
+          };
+          function base64Slice(buf, start, end) {
+            if (start === 0 && end === buf.length) {
+              return base64.fromByteArray(buf);
+            } else {
+              return base64.fromByteArray(buf.slice(start, end));
+            }
+          }
+          function utf8Slice(buf, start, end) {
+            end = Math.min(buf.length, end);
+            var res = [];
+            var i = start;
+            while (i < end) {
+              var firstByte = buf[i];
+              var codePoint = null;
+              var bytesPerSequence = firstByte > 239 ? 4 : firstByte > 223 ? 3 : firstByte > 191 ? 2 : 1;
+              if (i + bytesPerSequence <= end) {
+                var secondByte, thirdByte, fourthByte, tempCodePoint;
+                switch (bytesPerSequence) {
+                case 1:
+                  if (firstByte < 128) {
+                    codePoint = firstByte;
+                  }
+                  break;
+                case 2:
+                  secondByte = buf[i + 1];
+                  if ((secondByte & 192) === 128) {
+                    tempCodePoint = (firstByte & 31) << 6 | secondByte & 63;
+                    if (tempCodePoint > 127) {
+                      codePoint = tempCodePoint;
+                    }
+                  }
+                  break;
+                case 3:
+                  secondByte = buf[i + 1];
+                  thirdByte = buf[i + 2];
+                  if ((secondByte & 192) === 128 && (thirdByte & 192) === 128) {
+                    tempCodePoint = (firstByte & 15) << 12 | (secondByte & 63) << 6 | thirdByte & 63;
+                    if (tempCodePoint > 2047 && (tempCodePoint < 55296 || tempCodePoint > 57343)) {
+                      codePoint = tempCodePoint;
+                    }
+                  }
+                  break;
+                case 4:
+                  secondByte = buf[i + 1];
+                  thirdByte = buf[i + 2];
+                  fourthByte = buf[i + 3];
+                  if ((secondByte & 192) === 128 && (thirdByte & 192) === 128 && (fourthByte & 192) === 128) {
+                    tempCodePoint = (firstByte & 15) << 18 | (secondByte & 63) << 12 | (thirdByte & 63) << 6 | fourthByte & 63;
+                    if (tempCodePoint > 65535 && tempCodePoint < 1114112) {
+                      codePoint = tempCodePoint;
+                    }
+                  }
+                }
+              }
+              if (codePoint === null) {
+                // we did not generate a valid codePoint so insert a
+                // replacement char (U+FFFD) and advance only 1 byte
+                codePoint = 65533;
+                bytesPerSequence = 1;
+              } else if (codePoint > 65535) {
+                // encode to utf16 (surrogate pair dance)
+                codePoint -= 65536;
+                res.push(codePoint >>> 10 & 1023 | 55296);
+                codePoint = 56320 | codePoint & 1023;
+              }
+              res.push(codePoint);
+              i += bytesPerSequence;
+            }
+            return decodeCodePointsArray(res);
+          }
+          // Based on http://stackoverflow.com/a/22747272/680742, the browser with
+          // the lowest limit is Chrome, with 0x10000 args.
+          // We go 1 magnitude less, for safety
+          var MAX_ARGUMENTS_LENGTH = 4096;
+          function decodeCodePointsArray(codePoints) {
+            var len = codePoints.length;
+            if (len <= MAX_ARGUMENTS_LENGTH) {
+              return String.fromCharCode.apply(String, codePoints);
+            }
+            // Decode in chunks to avoid "call stack size exceeded".
+            var res = '';
+            var i = 0;
+            while (i < len) {
+              res += String.fromCharCode.apply(String, codePoints.slice(i, i += MAX_ARGUMENTS_LENGTH));
+            }
+            return res;
+          }
+          function asciiSlice(buf, start, end) {
+            var ret = '';
+            end = Math.min(buf.length, end);
+            for (var i = start; i < end; i++) {
+              ret += String.fromCharCode(buf[i] & 127);
+            }
+            return ret;
+          }
+          function binarySlice(buf, start, end) {
+            var ret = '';
+            end = Math.min(buf.length, end);
+            for (var i = start; i < end; i++) {
+              ret += String.fromCharCode(buf[i]);
+            }
+            return ret;
+          }
+          function hexSlice(buf, start, end) {
+            var len = buf.length;
+            if (!start || start < 0)
+              start = 0;
+            if (!end || end < 0 || end > len)
+              end = len;
+            var out = '';
+            for (var i = start; i < end; i++) {
+              out += toHex(buf[i]);
+            }
+            return out;
+          }
+          function utf16leSlice(buf, start, end) {
+            var bytes = buf.slice(start, end);
+            var res = '';
+            for (var i = 0; i < bytes.length; i += 2) {
+              res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256);
+            }
+            return res;
+          }
+          Buffer.prototype.slice = function slice(start, end) {
+            var len = this.length;
+            start = ~~start;
+            end = end === undefined ? len : ~~end;
+            if (start < 0) {
+              start += len;
+              if (start < 0)
+                start = 0;
+            } else if (start > len) {
+              start = len;
+            }
+            if (end < 0) {
+              end += len;
+              if (end < 0)
+                end = 0;
+            } else if (end > len) {
+              end = len;
+            }
+            if (end < start)
+              end = start;
+            var newBuf;
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              newBuf = Buffer._augment(this.subarray(start, end));
+            } else {
+              var sliceLen = end - start;
+              newBuf = new Buffer(sliceLen, undefined);
+              for (var i = 0; i < sliceLen; i++) {
+                newBuf[i] = this[i + start];
+              }
+            }
+            if (newBuf.length)
+              newBuf.parent = this.parent || this;
+            return newBuf;
+          };
+          /*
+ * Need to make sure that buffer isn't trying to write out of bounds.
+ */
+          function checkOffset(offset, ext, length) {
+            if (offset % 1 !== 0 || offset < 0)
+              throw new RangeError('offset is not uint');
+            if (offset + ext > length)
+              throw new RangeError('Trying to access beyond buffer length');
+          }
+          Buffer.prototype.readUIntLE = function readUIntLE(offset, byteLength, noAssert) {
+            offset = offset | 0;
+            byteLength = byteLength | 0;
+            if (!noAssert)
+              checkOffset(offset, byteLength, this.length);
+            var val = this[offset];
+            var mul = 1;
+            var i = 0;
+            while (++i < byteLength && (mul *= 256)) {
+              val += this[offset + i] * mul;
+            }
+            return val;
+          };
+          Buffer.prototype.readUIntBE = function readUIntBE(offset, byteLength, noAssert) {
+            offset = offset | 0;
+            byteLength = byteLength | 0;
+            if (!noAssert) {
+              checkOffset(offset, byteLength, this.length);
+            }
+            var val = this[offset + --byteLength];
+            var mul = 1;
+            while (byteLength > 0 && (mul *= 256)) {
+              val += this[offset + --byteLength] * mul;
+            }
+            return val;
+          };
+          Buffer.prototype.readUInt8 = function readUInt8(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 1, this.length);
+            return this[offset];
+          };
+          Buffer.prototype.readUInt16LE = function readUInt16LE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 2, this.length);
+            return this[offset] | this[offset + 1] << 8;
+          };
+          Buffer.prototype.readUInt16BE = function readUInt16BE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 2, this.length);
+            return this[offset] << 8 | this[offset + 1];
+          };
+          Buffer.prototype.readUInt32LE = function readUInt32LE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 4, this.length);
+            return (this[offset] | this[offset + 1] << 8 | this[offset + 2] << 16) + this[offset + 3] * 16777216;
+          };
+          Buffer.prototype.readUInt32BE = function readUInt32BE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 4, this.length);
+            return this[offset] * 16777216 + (this[offset + 1] << 16 | this[offset + 2] << 8 | this[offset + 3]);
+          };
+          Buffer.prototype.readIntLE = function readIntLE(offset, byteLength, noAssert) {
+            offset = offset | 0;
+            byteLength = byteLength | 0;
+            if (!noAssert)
+              checkOffset(offset, byteLength, this.length);
+            var val = this[offset];
+            var mul = 1;
+            var i = 0;
+            while (++i < byteLength && (mul *= 256)) {
+              val += this[offset + i] * mul;
+            }
+            mul *= 128;
+            if (val >= mul)
+              val -= Math.pow(2, 8 * byteLength);
+            return val;
+          };
+          Buffer.prototype.readIntBE = function readIntBE(offset, byteLength, noAssert) {
+            offset = offset | 0;
+            byteLength = byteLength | 0;
+            if (!noAssert)
+              checkOffset(offset, byteLength, this.length);
+            var i = byteLength;
+            var mul = 1;
+            var val = this[offset + --i];
+            while (i > 0 && (mul *= 256)) {
+              val += this[offset + --i] * mul;
+            }
+            mul *= 128;
+            if (val >= mul)
+              val -= Math.pow(2, 8 * byteLength);
+            return val;
+          };
+          Buffer.prototype.readInt8 = function readInt8(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 1, this.length);
+            if (!(this[offset] & 128))
+              return this[offset];
+            return (255 - this[offset] + 1) * -1;
+          };
+          Buffer.prototype.readInt16LE = function readInt16LE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 2, this.length);
+            var val = this[offset] | this[offset + 1] << 8;
+            return val & 32768 ? val | 4294901760 : val;
+          };
+          Buffer.prototype.readInt16BE = function readInt16BE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 2, this.length);
+            var val = this[offset + 1] | this[offset] << 8;
+            return val & 32768 ? val | 4294901760 : val;
+          };
+          Buffer.prototype.readInt32LE = function readInt32LE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 4, this.length);
+            return this[offset] | this[offset + 1] << 8 | this[offset + 2] << 16 | this[offset + 3] << 24;
+          };
+          Buffer.prototype.readInt32BE = function readInt32BE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 4, this.length);
+            return this[offset] << 24 | this[offset + 1] << 16 | this[offset + 2] << 8 | this[offset + 3];
+          };
+          Buffer.prototype.readFloatLE = function readFloatLE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 4, this.length);
+            return ieee754.read(this, offset, true, 23, 4);
+          };
+          Buffer.prototype.readFloatBE = function readFloatBE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 4, this.length);
+            return ieee754.read(this, offset, false, 23, 4);
+          };
+          Buffer.prototype.readDoubleLE = function readDoubleLE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 8, this.length);
+            return ieee754.read(this, offset, true, 52, 8);
+          };
+          Buffer.prototype.readDoubleBE = function readDoubleBE(offset, noAssert) {
+            if (!noAssert)
+              checkOffset(offset, 8, this.length);
+            return ieee754.read(this, offset, false, 52, 8);
+          };
+          function checkInt(buf, value, offset, ext, max, min) {
+            if (!Buffer.isBuffer(buf))
+              throw new TypeError('buffer must be a Buffer instance');
+            if (value > max || value < min)
+              throw new RangeError('value is out of bounds');
+            if (offset + ext > buf.length)
+              throw new RangeError('index out of range');
+          }
+          Buffer.prototype.writeUIntLE = function writeUIntLE(value, offset, byteLength, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            byteLength = byteLength | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, byteLength, Math.pow(2, 8 * byteLength), 0);
+            var mul = 1;
+            var i = 0;
+            this[offset] = value & 255;
+            while (++i < byteLength && (mul *= 256)) {
+              this[offset + i] = value / mul & 255;
+            }
+            return offset + byteLength;
+          };
+          Buffer.prototype.writeUIntBE = function writeUIntBE(value, offset, byteLength, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            byteLength = byteLength | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, byteLength, Math.pow(2, 8 * byteLength), 0);
+            var i = byteLength - 1;
+            var mul = 1;
+            this[offset + i] = value & 255;
+            while (--i >= 0 && (mul *= 256)) {
+              this[offset + i] = value / mul & 255;
+            }
+            return offset + byteLength;
+          };
+          Buffer.prototype.writeUInt8 = function writeUInt8(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 1, 255, 0);
+            if (!Buffer.TYPED_ARRAY_SUPPORT)
+              value = Math.floor(value);
+            this[offset] = value & 255;
+            return offset + 1;
+          };
+          function objectWriteUInt16(buf, value, offset, littleEndian) {
+            if (value < 0)
+              value = 65535 + value + 1;
+            for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; i++) {
+              buf[offset + i] = (value & 255 << 8 * (littleEndian ? i : 1 - i)) >>> (littleEndian ? i : 1 - i) * 8;
+            }
+          }
+          Buffer.prototype.writeUInt16LE = function writeUInt16LE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 2, 65535, 0);
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset] = value & 255;
+              this[offset + 1] = value >>> 8;
+            } else {
+              objectWriteUInt16(this, value, offset, true);
+            }
+            return offset + 2;
+          };
+          Buffer.prototype.writeUInt16BE = function writeUInt16BE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 2, 65535, 0);
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset] = value >>> 8;
+              this[offset + 1] = value & 255;
+            } else {
+              objectWriteUInt16(this, value, offset, false);
+            }
+            return offset + 2;
+          };
+          function objectWriteUInt32(buf, value, offset, littleEndian) {
+            if (value < 0)
+              value = 4294967295 + value + 1;
+            for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; i++) {
+              buf[offset + i] = value >>> (littleEndian ? i : 3 - i) * 8 & 255;
+            }
+          }
+          Buffer.prototype.writeUInt32LE = function writeUInt32LE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 4, 4294967295, 0);
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset + 3] = value >>> 24;
+              this[offset + 2] = value >>> 16;
+              this[offset + 1] = value >>> 8;
+              this[offset] = value & 255;
+            } else {
+              objectWriteUInt32(this, value, offset, true);
+            }
+            return offset + 4;
+          };
+          Buffer.prototype.writeUInt32BE = function writeUInt32BE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 4, 4294967295, 0);
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset] = value >>> 24;
+              this[offset + 1] = value >>> 16;
+              this[offset + 2] = value >>> 8;
+              this[offset + 3] = value & 255;
+            } else {
+              objectWriteUInt32(this, value, offset, false);
+            }
+            return offset + 4;
+          };
+          Buffer.prototype.writeIntLE = function writeIntLE(value, offset, byteLength, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert) {
+              var limit = Math.pow(2, 8 * byteLength - 1);
+              checkInt(this, value, offset, byteLength, limit - 1, -limit);
+            }
+            var i = 0;
+            var mul = 1;
+            var sub = value < 0 ? 1 : 0;
+            this[offset] = value & 255;
+            while (++i < byteLength && (mul *= 256)) {
+              this[offset + i] = (value / mul >> 0) - sub & 255;
+            }
+            return offset + byteLength;
+          };
+          Buffer.prototype.writeIntBE = function writeIntBE(value, offset, byteLength, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert) {
+              var limit = Math.pow(2, 8 * byteLength - 1);
+              checkInt(this, value, offset, byteLength, limit - 1, -limit);
+            }
+            var i = byteLength - 1;
+            var mul = 1;
+            var sub = value < 0 ? 1 : 0;
+            this[offset + i] = value & 255;
+            while (--i >= 0 && (mul *= 256)) {
+              this[offset + i] = (value / mul >> 0) - sub & 255;
+            }
+            return offset + byteLength;
+          };
+          Buffer.prototype.writeInt8 = function writeInt8(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 1, 127, -128);
+            if (!Buffer.TYPED_ARRAY_SUPPORT)
+              value = Math.floor(value);
+            if (value < 0)
+              value = 255 + value + 1;
+            this[offset] = value & 255;
+            return offset + 1;
+          };
+          Buffer.prototype.writeInt16LE = function writeInt16LE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 2, 32767, -32768);
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset] = value & 255;
+              this[offset + 1] = value >>> 8;
+            } else {
+              objectWriteUInt16(this, value, offset, true);
+            }
+            return offset + 2;
+          };
+          Buffer.prototype.writeInt16BE = function writeInt16BE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 2, 32767, -32768);
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset] = value >>> 8;
+              this[offset + 1] = value & 255;
+            } else {
+              objectWriteUInt16(this, value, offset, false);
+            }
+            return offset + 2;
+          };
+          Buffer.prototype.writeInt32LE = function writeInt32LE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 4, 2147483647, -2147483648);
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset] = value & 255;
+              this[offset + 1] = value >>> 8;
+              this[offset + 2] = value >>> 16;
+              this[offset + 3] = value >>> 24;
+            } else {
+              objectWriteUInt32(this, value, offset, true);
+            }
+            return offset + 4;
+          };
+          Buffer.prototype.writeInt32BE = function writeInt32BE(value, offset, noAssert) {
+            value = +value;
+            offset = offset | 0;
+            if (!noAssert)
+              checkInt(this, value, offset, 4, 2147483647, -2147483648);
+            if (value < 0)
+              value = 4294967295 + value + 1;
+            if (Buffer.TYPED_ARRAY_SUPPORT) {
+              this[offset] = value >>> 24;
+              this[offset + 1] = value >>> 16;
+              this[offset + 2] = value >>> 8;
+              this[offset + 3] = value & 255;
+            } else {
+              objectWriteUInt32(this, value, offset, false);
+            }
+            return offset + 4;
+          };
+          function checkIEEE754(buf, value, offset, ext, max, min) {
+            if (value > max || value < min)
+              throw new RangeError('value is out of bounds');
+            if (offset + ext > buf.length)
+              throw new RangeError('index out of range');
+            if (offset < 0)
+              throw new RangeError('index out of range');
+          }
+          function writeFloat(buf, value, offset, littleEndian, noAssert) {
+            if (!noAssert) {
+              checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38);
+            }
+            ieee754.write(buf, value, offset, littleEndian, 23, 4);
+            return offset + 4;
+          }
+          Buffer.prototype.writeFloatLE = function writeFloatLE(value, offset, noAssert) {
+            return writeFloat(this, value, offset, true, noAssert);
+          };
+          Buffer.prototype.writeFloatBE = function writeFloatBE(value, offset, noAssert) {
+            return writeFloat(this, value, offset, false, noAssert);
+          };
+          function writeDouble(buf, value, offset, littleEndian, noAssert) {
+            if (!noAssert) {
+              checkIEEE754(buf, value, offset, 8, 1.7976931348623157e+308, -1.7976931348623157e+308);
+            }
+            ieee754.write(buf, value, offset, littleEndian, 52, 8);
+            return offset + 8;
+          }
+          Buffer.prototype.writeDoubleLE = function writeDoubleLE(value, offset, noAssert) {
+            return writeDouble(this, value, offset, true, noAssert);
+          };
+          Buffer.prototype.writeDoubleBE = function writeDoubleBE(value, offset, noAssert) {
+            return writeDouble(this, value, offset, false, noAssert);
+          };
+          // copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+          Buffer.prototype.copy = function copy(target, targetStart, start, end) {
+            if (!start)
+              start = 0;
+            if (!end && end !== 0)
+              end = this.length;
+            if (targetStart >= target.length)
+              targetStart = target.length;
+            if (!targetStart)
+              targetStart = 0;
+            if (end > 0 && end < start)
+              end = start;
+            // Copy 0 bytes; we're done
+            if (end === start)
+              return 0;
+            if (target.length === 0 || this.length === 0)
+              return 0;
+            // Fatal error conditions
+            if (targetStart < 0) {
+              throw new RangeError('targetStart out of bounds');
+            }
+            if (start < 0 || start >= this.length)
+              throw new RangeError('sourceStart out of bounds');
+            if (end < 0)
+              throw new RangeError('sourceEnd out of bounds');
+            // Are we oob?
+            if (end > this.length)
+              end = this.length;
+            if (target.length - targetStart < end - start) {
+              end = target.length - targetStart + start;
+            }
+            var len = end - start;
+            var i;
+            if (this === target && start < targetStart && targetStart < end) {
+              // descending copy from end
+              for (i = len - 1; i >= 0; i--) {
+                target[i + targetStart] = this[i + start];
+              }
+            } else if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+              // ascending copy from start
+              for (i = 0; i < len; i++) {
+                target[i + targetStart] = this[i + start];
+              }
+            } else {
+              target._set(this.subarray(start, start + len), targetStart);
+            }
+            return len;
+          };
+          // fill(value, start=0, end=buffer.length)
+          Buffer.prototype.fill = function fill(value, start, end) {
+            if (!value)
+              value = 0;
+            if (!start)
+              start = 0;
+            if (!end)
+              end = this.length;
+            if (end < start)
+              throw new RangeError('end < start');
+            // Fill 0 bytes; we're done
+            if (end === start)
+              return;
+            if (this.length === 0)
+              return;
+            if (start < 0 || start >= this.length)
+              throw new RangeError('start out of bounds');
+            if (end < 0 || end > this.length)
+              throw new RangeError('end out of bounds');
+            var i;
+            if (typeof value === 'number') {
+              for (i = start; i < end; i++) {
+                this[i] = value;
+              }
+            } else {
+              var bytes = utf8ToBytes(value.toString());
+              var len = bytes.length;
+              for (i = start; i < end; i++) {
+                this[i] = bytes[i % len];
+              }
+            }
+            return this;
+          };
+          /**
+ * Creates a new `ArrayBuffer` with the *copied* memory of the buffer instance.
+ * Added in Node 0.12. Only available in browsers that support ArrayBuffer.
+ */
+          Buffer.prototype.toArrayBuffer = function toArrayBuffer() {
+            if (typeof Uint8Array !== 'undefined') {
+              if (Buffer.TYPED_ARRAY_SUPPORT) {
+                return new Buffer(this).buffer;
+              } else {
+                var buf = new Uint8Array(this.length);
+                for (var i = 0, len = buf.length; i < len; i += 1) {
+                  buf[i] = this[i];
+                }
+                return buf.buffer;
+              }
+            } else {
+              throw new TypeError('Buffer.toArrayBuffer not supported in this browser');
+            }
+          };
+          // HELPER FUNCTIONS
+          // ================
+          var BP = Buffer.prototype;
+          /**
+ * Augment a Uint8Array *instance* (not the Uint8Array class!) with Buffer methods
+ */
+          Buffer._augment = function _augment(arr) {
+            arr.constructor = Buffer;
+            arr._isBuffer = true;
+            // save reference to original Uint8Array set method before overwriting
+            arr._set = arr.set;
+            // deprecated
+            arr.get = BP.get;
+            arr.set = BP.set;
+            arr.write = BP.write;
+            arr.toString = BP.toString;
+            arr.toLocaleString = BP.toString;
+            arr.toJSON = BP.toJSON;
+            arr.equals = BP.equals;
+            arr.compare = BP.compare;
+            arr.indexOf = BP.indexOf;
+            arr.copy = BP.copy;
+            arr.slice = BP.slice;
+            arr.readUIntLE = BP.readUIntLE;
+            arr.readUIntBE = BP.readUIntBE;
+            arr.readUInt8 = BP.readUInt8;
+            arr.readUInt16LE = BP.readUInt16LE;
+            arr.readUInt16BE = BP.readUInt16BE;
+            arr.readUInt32LE = BP.readUInt32LE;
+            arr.readUInt32BE = BP.readUInt32BE;
+            arr.readIntLE = BP.readIntLE;
+            arr.readIntBE = BP.readIntBE;
+            arr.readInt8 = BP.readInt8;
+            arr.readInt16LE = BP.readInt16LE;
+            arr.readInt16BE = BP.readInt16BE;
+            arr.readInt32LE = BP.readInt32LE;
+            arr.readInt32BE = BP.readInt32BE;
+            arr.readFloatLE = BP.readFloatLE;
+            arr.readFloatBE = BP.readFloatBE;
+            arr.readDoubleLE = BP.readDoubleLE;
+            arr.readDoubleBE = BP.readDoubleBE;
+            arr.writeUInt8 = BP.writeUInt8;
+            arr.writeUIntLE = BP.writeUIntLE;
+            arr.writeUIntBE = BP.writeUIntBE;
+            arr.writeUInt16LE = BP.writeUInt16LE;
+            arr.writeUInt16BE = BP.writeUInt16BE;
+            arr.writeUInt32LE = BP.writeUInt32LE;
+            arr.writeUInt32BE = BP.writeUInt32BE;
+            arr.writeIntLE = BP.writeIntLE;
+            arr.writeIntBE = BP.writeIntBE;
+            arr.writeInt8 = BP.writeInt8;
+            arr.writeInt16LE = BP.writeInt16LE;
+            arr.writeInt16BE = BP.writeInt16BE;
+            arr.writeInt32LE = BP.writeInt32LE;
+            arr.writeInt32BE = BP.writeInt32BE;
+            arr.writeFloatLE = BP.writeFloatLE;
+            arr.writeFloatBE = BP.writeFloatBE;
+            arr.writeDoubleLE = BP.writeDoubleLE;
+            arr.writeDoubleBE = BP.writeDoubleBE;
+            arr.fill = BP.fill;
+            arr.inspect = BP.inspect;
+            arr.toArrayBuffer = BP.toArrayBuffer;
+            return arr;
+          };
+          var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g;
+          function base64clean(str) {
+            // Node strips out invalid characters like \n and \t from the string, base64-js does not
+            str = stringtrim(str).replace(INVALID_BASE64_RE, '');
+            // Node converts strings with length < 2 to ''
+            if (str.length < 2)
+              return '';
+            // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+            while (str.length % 4 !== 0) {
+              str = str + '=';
+            }
+            return str;
+          }
+          function stringtrim(str) {
+            if (str.trim)
+              return str.trim();
+            return str.replace(/^\s+|\s+$/g, '');
+          }
+          function toHex(n) {
+            if (n < 16)
+              return '0' + n.toString(16);
+            return n.toString(16);
+          }
+          function utf8ToBytes(string, units) {
+            units = units || Infinity;
+            var codePoint;
+            var length = string.length;
+            var leadSurrogate = null;
+            var bytes = [];
+            for (var i = 0; i < length; i++) {
+              codePoint = string.charCodeAt(i);
+              // is surrogate component
+              if (codePoint > 55295 && codePoint < 57344) {
+                // last char was a lead
+                if (!leadSurrogate) {
+                  // no lead yet
+                  if (codePoint > 56319) {
+                    // unexpected trail
+                    if ((units -= 3) > -1)
+                      bytes.push(239, 191, 189);
+                    continue;
+                  } else if (i + 1 === length) {
+                    // unpaired lead
+                    if ((units -= 3) > -1)
+                      bytes.push(239, 191, 189);
+                    continue;
+                  }
+                  // valid lead
+                  leadSurrogate = codePoint;
+                  continue;
+                }
+                // 2 leads in a row
+                if (codePoint < 56320) {
+                  if ((units -= 3) > -1)
+                    bytes.push(239, 191, 189);
+                  leadSurrogate = codePoint;
+                  continue;
+                }
+                // valid surrogate pair
+                codePoint = (leadSurrogate - 55296 << 10 | codePoint - 56320) + 65536;
+              } else if (leadSurrogate) {
+                // valid bmp char, but last char was a lead
+                if ((units -= 3) > -1)
+                  bytes.push(239, 191, 189);
+              }
+              leadSurrogate = null;
+              // encode utf8
+              if (codePoint < 128) {
+                if ((units -= 1) < 0)
+                  break;
+                bytes.push(codePoint);
+              } else if (codePoint < 2048) {
+                if ((units -= 2) < 0)
+                  break;
+                bytes.push(codePoint >> 6 | 192, codePoint & 63 | 128);
+              } else if (codePoint < 65536) {
+                if ((units -= 3) < 0)
+                  break;
+                bytes.push(codePoint >> 12 | 224, codePoint >> 6 & 63 | 128, codePoint & 63 | 128);
+              } else if (codePoint < 1114112) {
+                if ((units -= 4) < 0)
+                  break;
+                bytes.push(codePoint >> 18 | 240, codePoint >> 12 & 63 | 128, codePoint >> 6 & 63 | 128, codePoint & 63 | 128);
+              } else {
+                throw new Error('Invalid code point');
+              }
+            }
+            return bytes;
+          }
+          function asciiToBytes(str) {
+            var byteArray = [];
+            for (var i = 0; i < str.length; i++) {
+              // Node's code seems to be doing this and not & 0x7F..
+              byteArray.push(str.charCodeAt(i) & 255);
+            }
+            return byteArray;
+          }
+          function utf16leToBytes(str, units) {
+            var c, hi, lo;
+            var byteArray = [];
+            for (var i = 0; i < str.length; i++) {
+              if ((units -= 2) < 0)
+                break;
+              c = str.charCodeAt(i);
+              hi = c >> 8;
+              lo = c % 256;
+              byteArray.push(lo);
+              byteArray.push(hi);
+            }
+            return byteArray;
+          }
+          function base64ToBytes(str) {
+            return base64.toByteArray(base64clean(str));
+          }
+          function blitBuffer(src, dst, offset, length) {
+            for (var i = 0; i < length; i++) {
+              if (i + offset >= dst.length || i >= src.length)
+                break;
+              dst[i + offset] = src[i];
+            }
+            return i;
+          }
+        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
+      },
+      {
+        'base64-js': 67,
+        'ieee754': 83,
+        'isarray': 73
+      }
+    ],
+    73: [
+      function (require, module, exports) {
+        var toString = {}.toString;
+        module.exports = Array.isArray || function (arr) {
+          return toString.call(arr) == '[object Array]';
+        };
+      },
+      {}
+    ],
+    74: [
+      function (require, module, exports) {
+        module.exports = {
+          '100': 'Continue',
+          '101': 'Switching Protocols',
+          '102': 'Processing',
+          '200': 'OK',
+          '201': 'Created',
+          '202': 'Accepted',
+          '203': 'Non-Authoritative Information',
+          '204': 'No Content',
+          '205': 'Reset Content',
+          '206': 'Partial Content',
+          '207': 'Multi-Status',
+          '300': 'Multiple Choices',
+          '301': 'Moved Permanently',
+          '302': 'Moved Temporarily',
+          '303': 'See Other',
+          '304': 'Not Modified',
+          '305': 'Use Proxy',
+          '307': 'Temporary Redirect',
+          '308': 'Permanent Redirect',
+          '400': 'Bad Request',
+          '401': 'Unauthorized',
+          '402': 'Payment Required',
+          '403': 'Forbidden',
+          '404': 'Not Found',
+          '405': 'Method Not Allowed',
+          '406': 'Not Acceptable',
+          '407': 'Proxy Authentication Required',
+          '408': 'Request Time-out',
+          '409': 'Conflict',
+          '410': 'Gone',
+          '411': 'Length Required',
+          '412': 'Precondition Failed',
+          '413': 'Request Entity Too Large',
+          '414': 'Request-URI Too Large',
+          '415': 'Unsupported Media Type',
+          '416': 'Requested Range Not Satisfiable',
+          '417': 'Expectation Failed',
+          '418': 'I\'m a teapot',
+          '422': 'Unprocessable Entity',
+          '423': 'Locked',
+          '424': 'Failed Dependency',
+          '425': 'Unordered Collection',
+          '426': 'Upgrade Required',
+          '428': 'Precondition Required',
+          '429': 'Too Many Requests',
+          '431': 'Request Header Fields Too Large',
+          '500': 'Internal Server Error',
+          '501': 'Not Implemented',
+          '502': 'Bad Gateway',
+          '503': 'Service Unavailable',
+          '504': 'Gateway Time-out',
+          '505': 'HTTP Version Not Supported',
+          '506': 'Variant Also Negotiates',
+          '507': 'Insufficient Storage',
+          '509': 'Bandwidth Limit Exceeded',
+          '510': 'Not Extended',
+          '511': 'Network Authentication Required'
+        };
+      },
+      {}
+    ],
+    75: [
+      function (require, module, exports) {
+        (function (process, global) {
+          'use strict';
+          var next = global.process && process.nextTick || global.setImmediate || function (f) {
+              setTimeout(f, 0);
+            };
+          module.exports = function maybe(cb, promise) {
+            if (cb) {
+              promise.then(function (result) {
+                next(function () {
+                  cb(null, result);
+                });
+              }, function (err) {
+                next(function () {
+                  cb(err);
+                });
+              });
+              return undefined;
+            } else {
+              return promise;
+            }
+          };
+        }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
+      },
+      { '_process': 145 }
+    ],
+    76: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          // Copyright Joyent, Inc. and other Node contributors.
+          //
+          // Permission is hereby granted, free of charge, to any person obtaining a
+          // copy of this software and associated documentation files (the
+          // "Software"), to deal in the Software without restriction, including
+          // without limitation the rights to use, copy, modify, merge, publish,
+          // distribute, sublicense, and/or sell copies of the Software, and to permit
+          // persons to whom the Software is furnished to do so, subject to the
+          // following conditions:
+          //
+          // The above copyright notice and this permission notice shall be included
+          // in all copies or substantial portions of the Software.
+          //
+          // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+          // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+          // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+          // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+          // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+          // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+          // USE OR OTHER DEALINGS IN THE SOFTWARE.
+          // NOTE: These type checking functions intentionally don't use `instanceof`
+          // because it is fragile and can be easily faked with `Object.create()`.
+          function isArray(arg) {
+            if (Array.isArray) {
+              return Array.isArray(arg);
+            }
+            return objectToString(arg) === '[object Array]';
+          }
+          exports.isArray = isArray;
+          function isBoolean(arg) {
+            return typeof arg === 'boolean';
+          }
+          exports.isBoolean = isBoolean;
+          function isNull(arg) {
+            return arg === null;
+          }
+          exports.isNull = isNull;
+          function isNullOrUndefined(arg) {
+            return arg == null;
+          }
+          exports.isNullOrUndefined = isNullOrUndefined;
+          function isNumber(arg) {
+            return typeof arg === 'number';
+          }
+          exports.isNumber = isNumber;
+          function isString(arg) {
+            return typeof arg === 'string';
+          }
+          exports.isString = isString;
+          function isSymbol(arg) {
+            return typeof arg === 'symbol';
+          }
+          exports.isSymbol = isSymbol;
+          function isUndefined(arg) {
+            return arg === void 0;
+          }
+          exports.isUndefined = isUndefined;
+          function isRegExp(re) {
+            return objectToString(re) === '[object RegExp]';
+          }
+          exports.isRegExp = isRegExp;
+          function isObject(arg) {
+            return typeof arg === 'object' && arg !== null;
+          }
+          exports.isObject = isObject;
+          function isDate(d) {
+            return objectToString(d) === '[object Date]';
+          }
+          exports.isDate = isDate;
+          function isError(e) {
+            return objectToString(e) === '[object Error]' || e instanceof Error;
+          }
+          exports.isError = isError;
+          function isFunction(arg) {
+            return typeof arg === 'function';
+          }
+          exports.isFunction = isFunction;
+          function isPrimitive(arg) {
+            return arg === null || typeof arg === 'boolean' || typeof arg === 'number' || typeof arg === 'string' || typeof arg === 'symbol' || typeof arg === 'undefined';
+          }
+          exports.isPrimitive = isPrimitive;
+          exports.isBuffer = Buffer.isBuffer;
+          function objectToString(o) {
+            return Object.prototype.toString.call(o);
+          }
+        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
+      },
+      { '../../is-buffer/index.js': 86 }
+    ],
+    77: [
+      function (require, module, exports) {
+        /**
+ * This is the web browser implementation of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+        exports = module.exports = require('./debug');
+        exports.log = log;
+        exports.formatArgs = formatArgs;
+        exports.save = save;
+        exports.load = load;
+        exports.useColors = useColors;
+        exports.storage = 'undefined' != typeof chrome && 'undefined' != typeof chrome.storage ? chrome.storage.local : localstorage();
+        /**
+ * Colors.
+ */
+        exports.colors = [
+          'lightseagreen',
+          'forestgreen',
+          'goldenrod',
+          'dodgerblue',
+          'darkorchid',
+          'crimson'
+        ];
+        /**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
+        function useColors() {
+          // is webkit? http://stackoverflow.com/a/16459606/376773
+          return 'WebkitAppearance' in document.documentElement.style || window.console && (console.firebug || console.exception && console.table) || navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31;
+        }
+        /**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+        exports.formatters.j = function (v) {
+          return JSON.stringify(v);
+        };
+        /**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+        function formatArgs() {
+          var args = arguments;
+          var useColors = this.useColors;
+          args[0] = (useColors ? '%c' : '') + this.namespace + (useColors ? ' %c' : ' ') + args[0] + (useColors ? '%c ' : ' ') + '+' + exports.humanize(this.diff);
+          if (!useColors)
+            return args;
+          var c = 'color: ' + this.color;
+          args = [
+            args[0],
+            c,
+            'color: inherit'
+          ].concat(Array.prototype.slice.call(args, 1));
+          // the final "%c" is somewhat tricky, because there could be other
+          // arguments passed either before or after the %c, so we need to
+          // figure out the correct index to insert the CSS into
+          var index = 0;
+          var lastC = 0;
+          args[0].replace(/%[a-z%]/g, function (match) {
+            if ('%%' === match)
+              return;
+            index++;
+            if ('%c' === match) {
+              // we only are interested in the *last* %c
+              // (the user may have provided their own)
+              lastC = index;
+            }
+          });
+          args.splice(lastC, 0, c);
+          return args;
+        }
+        /**
+ * Invokes `console.log()` when available.
+ * No-op when `console.log` is not a "function".
+ *
+ * @api public
+ */
+        function log() {
+          // this hackery is required for IE8/9, where
+          // the `console.log` function doesn't have 'apply'
+          return 'object' === typeof console && console.log && Function.prototype.apply.call(console.log, console, arguments);
+        }
+        /**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+        function save(namespaces) {
+          try {
+            if (null == namespaces) {
+              exports.storage.removeItem('debug');
+            } else {
+              exports.storage.debug = namespaces;
+            }
+          } catch (e) {
+          }
+        }
+        /**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+        function load() {
+          var r;
+          try {
+            r = exports.storage.debug;
+          } catch (e) {
+          }
+          return r;
+        }
+        /**
+ * Enable namespaces listed in `localStorage.debug` initially.
+ */
+        exports.enable(load());
+        /**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+        function localstorage() {
+          try {
+            return window.localStorage;
+          } catch (e) {
+          }
+        }
+      },
+      { './debug': 78 }
+    ],
+    78: [
+      function (require, module, exports) {
+        /**
+ * This is the common logic for both the Node.js and web browser
+ * implementations of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+        exports = module.exports = debug;
+        exports.coerce = coerce;
+        exports.disable = disable;
+        exports.enable = enable;
+        exports.enabled = enabled;
+        exports.humanize = require('ms');
+        /**
+ * The currently active debug mode names, and names to skip.
+ */
+        exports.names = [];
+        exports.skips = [];
+        /**
+ * Map of special "%n" handling functions, for the debug "format" argument.
+ *
+ * Valid key names are a single, lowercased letter, i.e. "n".
+ */
+        exports.formatters = {};
+        /**
+ * Previously assigned color.
+ */
+        var prevColor = 0;
+        /**
+ * Previous log timestamp.
+ */
+        var prevTime;
+        /**
+ * Select a color.
+ *
+ * @return {Number}
+ * @api private
+ */
+        function selectColor() {
+          return exports.colors[prevColor++ % exports.colors.length];
+        }
+        /**
+ * Create a debugger with the given `namespace`.
+ *
+ * @param {String} namespace
+ * @return {Function}
+ * @api public
+ */
+        function debug(namespace) {
+          // define the `disabled` version
+          function disabled() {
+          }
+          disabled.enabled = false;
+          // define the `enabled` version
+          function enabled() {
+            var self = enabled;
+            // set `diff` timestamp
+            var curr = +new Date();
+            var ms = curr - (prevTime || curr);
+            self.diff = ms;
+            self.prev = prevTime;
+            self.curr = curr;
+            prevTime = curr;
+            // add the `color` if not set
+            if (null == self.useColors)
+              self.useColors = exports.useColors();
+            if (null == self.color && self.useColors)
+              self.color = selectColor();
+            var args = Array.prototype.slice.call(arguments);
+            args[0] = exports.coerce(args[0]);
+            if ('string' !== typeof args[0]) {
+              // anything else let's inspect with %o
+              args = ['%o'].concat(args);
+            }
+            // apply any `formatters` transformations
+            var index = 0;
+            args[0] = args[0].replace(/%([a-z%])/g, function (match, format) {
+              // if we encounter an escaped % then don't increase the array index
+              if (match === '%%')
+                return match;
+              index++;
+              var formatter = exports.formatters[format];
+              if ('function' === typeof formatter) {
+                var val = args[index];
+                match = formatter.call(self, val);
+                // now we need to remove `args[index]` since it's inlined in the `format`
+                args.splice(index, 1);
+                index--;
+              }
+              return match;
+            });
+            if ('function' === typeof exports.formatArgs) {
+              args = exports.formatArgs.apply(self, args);
+            }
+            var logFn = enabled.log || exports.log || console.log.bind(console);
+            logFn.apply(self, args);
+          }
+          enabled.enabled = true;
+          var fn = exports.enabled(namespace) ? enabled : disabled;
+          fn.namespace = namespace;
+          return fn;
+        }
+        /**
+ * Enables a debug mode by namespaces. This can include modes
+ * separated by a colon and wildcards.
+ *
+ * @param {String} namespaces
+ * @api public
+ */
+        function enable(namespaces) {
+          exports.save(namespaces);
+          var split = (namespaces || '').split(/[\s,]+/);
+          var len = split.length;
+          for (var i = 0; i < len; i++) {
+            if (!split[i])
+              continue;
+            // ignore empty strings
+            namespaces = split[i].replace(/\*/g, '.*?');
+            if (namespaces[0] === '-') {
+              exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+            } else {
+              exports.names.push(new RegExp('^' + namespaces + '$'));
+            }
+          }
+        }
+        /**
+ * Disable debug output.
+ *
+ * @api public
+ */
+        function disable() {
+          exports.enable('');
+        }
+        /**
+ * Returns true if the given mode name is enabled, false otherwise.
+ *
+ * @param {String} name
+ * @return {Boolean}
+ * @api public
+ */
+        function enabled(name) {
+          var i, len;
+          for (i = 0, len = exports.skips.length; i < len; i++) {
+            if (exports.skips[i].test(name)) {
+              return false;
+            }
+          }
+          for (i = 0, len = exports.names.length; i < len; i++) {
+            if (exports.names[i].test(name)) {
+              return true;
+            }
+          }
+          return false;
+        }
+        /**
+ * Coerce `val`.
+ *
+ * @param {Mixed} val
+ * @return {Mixed}
+ * @api private
+ */
+        function coerce(val) {
+          if (val instanceof Error)
+            return val.stack || val.message;
+          return val;
+        }
+      },
+      { 'ms': 140 }
+    ],
+    79: [
+      function (require, module, exports) {
+        (function (process, global) {
+          /*!
+ * @overview es6-promise - a tiny implementation of Promises/A+.
+ * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
+ * @license   Licensed under MIT license
+ *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
+ * @version   3.3.1
+ */
+          (function (global, factory) {
+            typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() : typeof define === 'function' && define.amd ? define(factory) : global.ES6Promise = factory();
+          }(this, function () {
+            'use strict';
+            function objectOrFunction(x) {
+              return typeof x === 'function' || typeof x === 'object' && x !== null;
+            }
+            function isFunction(x) {
+              return typeof x === 'function';
+            }
+            var _isArray = undefined;
+            if (!Array.isArray) {
+              _isArray = function (x) {
+                return Object.prototype.toString.call(x) === '[object Array]';
+              };
+            } else {
+              _isArray = Array.isArray;
+            }
+            var isArray = _isArray;
+            var len = 0;
+            var vertxNext = undefined;
+            var customSchedulerFn = undefined;
+            var asap = function asap(callback, arg) {
+              queue[len] = callback;
+              queue[len + 1] = arg;
+              len += 2;
+              if (len === 2) {
+                // If len is 2, that means that we need to schedule an async flush.
+                // If additional callbacks are queued before the queue is flushed, they
+                // will be processed by this flush that we are scheduling.
+                if (customSchedulerFn) {
+                  customSchedulerFn(flush);
+                } else {
+                  scheduleFlush();
+                }
+              }
+            };
+            function setScheduler(scheduleFn) {
+              customSchedulerFn = scheduleFn;
+            }
+            function setAsap(asapFn) {
+              asap = asapFn;
+            }
+            var browserWindow = typeof window !== 'undefined' ? window : undefined;
+            var browserGlobal = browserWindow || {};
+            var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
+            var isNode = typeof self === 'undefined' && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]';
+            // test for web worker but not in IE10
+            var isWorker = typeof Uint8ClampedArray !== 'undefined' && typeof importScripts !== 'undefined' && typeof MessageChannel !== 'undefined';
+            // node
+            function useNextTick() {
+              // node version 0.10.x displays a deprecation warning when nextTick is used recursively
+              // see https://github.com/cujojs/when/issues/410 for details
+              return function () {
+                return process.nextTick(flush);
+              };
+            }
+            // vertx
+            function useVertxTimer() {
+              return function () {
+                vertxNext(flush);
+              };
+            }
+            function useMutationObserver() {
+              var iterations = 0;
+              var observer = new BrowserMutationObserver(flush);
+              var node = document.createTextNode('');
+              observer.observe(node, { characterData: true });
+              return function () {
+                node.data = iterations = ++iterations % 2;
+              };
+            }
+            // web worker
+            function useMessageChannel() {
+              var channel = new MessageChannel();
+              channel.port1.onmessage = flush;
+              return function () {
+                return channel.port2.postMessage(0);
+              };
+            }
+            function useSetTimeout() {
+              // Store setTimeout reference so es6-promise will be unaffected by
+              // other code modifying setTimeout (like sinon.useFakeTimers())
+              var globalSetTimeout = setTimeout;
+              return function () {
+                return globalSetTimeout(flush, 1);
+              };
+            }
+            var queue = new Array(1000);
+            function flush() {
+              for (var i = 0; i < len; i += 2) {
+                var callback = queue[i];
+                var arg = queue[i + 1];
+                callback(arg);
+                queue[i] = undefined;
+                queue[i + 1] = undefined;
+              }
+              len = 0;
+            }
+            function attemptVertx() {
+              try {
+                var r = require;
+                var vertx = r('vertx');
+                vertxNext = vertx.runOnLoop || vertx.runOnContext;
+                return useVertxTimer();
+              } catch (e) {
+                return useSetTimeout();
+              }
+            }
+            var scheduleFlush = undefined;
+            // Decide what async method to use to triggering processing of queued callbacks:
+            if (isNode) {
+              scheduleFlush = useNextTick();
+            } else if (BrowserMutationObserver) {
+              scheduleFlush = useMutationObserver();
+            } else if (isWorker) {
+              scheduleFlush = useMessageChannel();
+            } else if (browserWindow === undefined && typeof require === 'function') {
+              scheduleFlush = attemptVertx();
+            } else {
+              scheduleFlush = useSetTimeout();
+            }
+            function then(onFulfillment, onRejection) {
+              var _arguments = arguments;
+              var parent = this;
+              var child = new this.constructor(noop);
+              if (child[PROMISE_ID] === undefined) {
+                makePromise(child);
+              }
+              var _state = parent._state;
+              if (_state) {
+                (function () {
+                  var callback = _arguments[_state - 1];
+                  asap(function () {
+                    return invokeCallback(_state, child, callback, parent._result);
+                  });
+                }());
+              } else {
+                subscribe(parent, child, onFulfillment, onRejection);
+              }
+              return child;
+            }
+            /**
+  `Promise.resolve` returns a promise that will become resolved with the
+  passed `value`. It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    resolve(1);
+  });
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.resolve(1);
+
+  promise.then(function(value){
+    // value === 1
+  });
+  ```
+
+  @method resolve
+  @static
+  @param {Any} value value that the returned promise will be resolved with
+  Useful for tooling.
+  @return {Promise} a promise that will become fulfilled with the given
+  `value`
+*/
+            function resolve(object) {
+              /*jshint validthis:true */
+              var Constructor = this;
+              if (object && typeof object === 'object' && object.constructor === Constructor) {
+                return object;
+              }
+              var promise = new Constructor(noop);
+              _resolve(promise, object);
+              return promise;
+            }
+            var PROMISE_ID = Math.random().toString(36).substring(16);
+            function noop() {
+            }
+            var PENDING = void 0;
+            var FULFILLED = 1;
+            var REJECTED = 2;
+            var GET_THEN_ERROR = new ErrorObject();
+            function selfFulfillment() {
+              return new TypeError('You cannot resolve a promise with itself');
+            }
+            function cannotReturnOwn() {
+              return new TypeError('A promises callback cannot return that same promise.');
+            }
+            function getThen(promise) {
+              try {
+                return promise.then;
+              } catch (error) {
+                GET_THEN_ERROR.error = error;
+                return GET_THEN_ERROR;
+              }
+            }
+            function tryThen(then, value, fulfillmentHandler, rejectionHandler) {
+              try {
+                then.call(value, fulfillmentHandler, rejectionHandler);
+              } catch (e) {
+                return e;
+              }
+            }
+            function handleForeignThenable(promise, thenable, then) {
+              asap(function (promise) {
+                var sealed = false;
+                var error = tryThen(then, thenable, function (value) {
+                    if (sealed) {
+                      return;
+                    }
+                    sealed = true;
+                    if (thenable !== value) {
+                      _resolve(promise, value);
+                    } else {
+                      fulfill(promise, value);
+                    }
+                  }, function (reason) {
+                    if (sealed) {
+                      return;
+                    }
+                    sealed = true;
+                    _reject(promise, reason);
+                  }, 'Settle: ' + (promise._label || ' unknown promise'));
+                if (!sealed && error) {
+                  sealed = true;
+                  _reject(promise, error);
+                }
+              }, promise);
+            }
+            function handleOwnThenable(promise, thenable) {
+              if (thenable._state === FULFILLED) {
+                fulfill(promise, thenable._result);
+              } else if (thenable._state === REJECTED) {
+                _reject(promise, thenable._result);
+              } else {
+                subscribe(thenable, undefined, function (value) {
+                  return _resolve(promise, value);
+                }, function (reason) {
+                  return _reject(promise, reason);
+                });
+              }
+            }
+            function handleMaybeThenable(promise, maybeThenable, then$$) {
+              if (maybeThenable.constructor === promise.constructor && then$$ === then && maybeThenable.constructor.resolve === resolve) {
+                handleOwnThenable(promise, maybeThenable);
+              } else {
+                if (then$$ === GET_THEN_ERROR) {
+                  _reject(promise, GET_THEN_ERROR.error);
+                } else if (then$$ === undefined) {
+                  fulfill(promise, maybeThenable);
+                } else if (isFunction(then$$)) {
+                  handleForeignThenable(promise, maybeThenable, then$$);
+                } else {
+                  fulfill(promise, maybeThenable);
+                }
+              }
+            }
+            function _resolve(promise, value) {
+              if (promise === value) {
+                _reject(promise, selfFulfillment());
+              } else if (objectOrFunction(value)) {
+                handleMaybeThenable(promise, value, getThen(value));
+              } else {
+                fulfill(promise, value);
+              }
+            }
+            function publishRejection(promise) {
+              if (promise._onerror) {
+                promise._onerror(promise._result);
+              }
+              publish(promise);
+            }
+            function fulfill(promise, value) {
+              if (promise._state !== PENDING) {
+                return;
+              }
+              promise._result = value;
+              promise._state = FULFILLED;
+              if (promise._subscribers.length !== 0) {
+                asap(publish, promise);
+              }
+            }
+            function _reject(promise, reason) {
+              if (promise._state !== PENDING) {
+                return;
+              }
+              promise._state = REJECTED;
+              promise._result = reason;
+              asap(publishRejection, promise);
+            }
+            function subscribe(parent, child, onFulfillment, onRejection) {
+              var _subscribers = parent._subscribers;
+              var length = _subscribers.length;
+              parent._onerror = null;
+              _subscribers[length] = child;
+              _subscribers[length + FULFILLED] = onFulfillment;
+              _subscribers[length + REJECTED] = onRejection;
+              if (length === 0 && parent._state) {
+                asap(publish, parent);
+              }
+            }
+            function publish(promise) {
+              var subscribers = promise._subscribers;
+              var settled = promise._state;
+              if (subscribers.length === 0) {
+                return;
+              }
+              var child = undefined, callback = undefined, detail = promise._result;
+              for (var i = 0; i < subscribers.length; i += 3) {
+                child = subscribers[i];
+                callback = subscribers[i + settled];
+                if (child) {
+                  invokeCallback(settled, child, callback, detail);
+                } else {
+                  callback(detail);
+                }
+              }
+              promise._subscribers.length = 0;
+            }
+            function ErrorObject() {
+              this.error = null;
+            }
+            var TRY_CATCH_ERROR = new ErrorObject();
+            function tryCatch(callback, detail) {
+              try {
+                return callback(detail);
+              } catch (e) {
+                TRY_CATCH_ERROR.error = e;
+                return TRY_CATCH_ERROR;
+              }
+            }
+            function invokeCallback(settled, promise, callback, detail) {
+              var hasCallback = isFunction(callback), value = undefined, error = undefined, succeeded = undefined, failed = undefined;
+              if (hasCallback) {
+                value = tryCatch(callback, detail);
+                if (value === TRY_CATCH_ERROR) {
+                  failed = true;
+                  error = value.error;
+                  value = null;
+                } else {
+                  succeeded = true;
+                }
+                if (promise === value) {
+                  _reject(promise, cannotReturnOwn());
+                  return;
+                }
+              } else {
+                value = detail;
+                succeeded = true;
+              }
+              if (promise._state !== PENDING) {
+              } else if (hasCallback && succeeded) {
+                _resolve(promise, value);
+              } else if (failed) {
+                _reject(promise, error);
+              } else if (settled === FULFILLED) {
+                fulfill(promise, value);
+              } else if (settled === REJECTED) {
+                _reject(promise, value);
+              }
+            }
+            function initializePromise(promise, resolver) {
+              try {
+                resolver(function resolvePromise(value) {
+                  _resolve(promise, value);
+                }, function rejectPromise(reason) {
+                  _reject(promise, reason);
+                });
+              } catch (e) {
+                _reject(promise, e);
+              }
+            }
+            var id = 0;
+            function nextId() {
+              return id++;
+            }
+            function makePromise(promise) {
+              promise[PROMISE_ID] = id++;
+              promise._state = undefined;
+              promise._result = undefined;
+              promise._subscribers = [];
+            }
+            function Enumerator(Constructor, input) {
+              this._instanceConstructor = Constructor;
+              this.promise = new Constructor(noop);
+              if (!this.promise[PROMISE_ID]) {
+                makePromise(this.promise);
+              }
+              if (isArray(input)) {
+                this._input = input;
+                this.length = input.length;
+                this._remaining = input.length;
+                this._result = new Array(this.length);
+                if (this.length === 0) {
+                  fulfill(this.promise, this._result);
+                } else {
+                  this.length = this.length || 0;
+                  this._enumerate();
+                  if (this._remaining === 0) {
+                    fulfill(this.promise, this._result);
+                  }
+                }
+              } else {
+                _reject(this.promise, validationError());
+              }
+            }
+            function validationError() {
+              return new Error('Array Methods must be provided an Array');
+            }
+            ;
+            Enumerator.prototype._enumerate = function () {
+              var length = this.length;
+              var _input = this._input;
+              for (var i = 0; this._state === PENDING && i < length; i++) {
+                this._eachEntry(_input[i], i);
+              }
+            };
+            Enumerator.prototype._eachEntry = function (entry, i) {
+              var c = this._instanceConstructor;
+              var resolve$$ = c.resolve;
+              if (resolve$$ === resolve) {
+                var _then = getThen(entry);
+                if (_then === then && entry._state !== PENDING) {
+                  this._settledAt(entry._state, i, entry._result);
+                } else if (typeof _then !== 'function') {
+                  this._remaining--;
+                  this._result[i] = entry;
+                } else if (c === Promise) {
+                  var promise = new c(noop);
+                  handleMaybeThenable(promise, entry, _then);
+                  this._willSettleAt(promise, i);
+                } else {
+                  this._willSettleAt(new c(function (resolve$$) {
+                    return resolve$$(entry);
+                  }), i);
+                }
+              } else {
+                this._willSettleAt(resolve$$(entry), i);
+              }
+            };
+            Enumerator.prototype._settledAt = function (state, i, value) {
+              var promise = this.promise;
+              if (promise._state === PENDING) {
+                this._remaining--;
+                if (state === REJECTED) {
+                  _reject(promise, value);
+                } else {
+                  this._result[i] = value;
+                }
+              }
+              if (this._remaining === 0) {
+                fulfill(promise, this._result);
+              }
+            };
+            Enumerator.prototype._willSettleAt = function (promise, i) {
+              var enumerator = this;
+              subscribe(promise, undefined, function (value) {
+                return enumerator._settledAt(FULFILLED, i, value);
+              }, function (reason) {
+                return enumerator._settledAt(REJECTED, i, reason);
+              });
+            };
+            /**
+  `Promise.all` accepts an array of promises, and returns a new promise which
+  is fulfilled with an array of fulfillment values for the passed promises, or
+  rejected with the reason of the first passed promise to be rejected. It casts all
+  elements of the passed iterable to promises as it runs this algorithm.
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = resolve(2);
+  let promise3 = resolve(3);
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // The array here would be [ 1, 2, 3 ];
+  });
+  ```
+
+  If any of the `promises` given to `all` are rejected, the first promise
+  that is rejected will be given as an argument to the returned promises's
+  rejection handler. For example:
+
+  Example:
+
+  ```javascript
+  let promise1 = resolve(1);
+  let promise2 = reject(new Error("2"));
+  let promise3 = reject(new Error("3"));
+  let promises = [ promise1, promise2, promise3 ];
+
+  Promise.all(promises).then(function(array){
+    // Code here never runs because there are rejected promises!
+  }, function(error) {
+    // error.message === "2"
+  });
+  ```
+
+  @method all
+  @static
+  @param {Array} entries array of promises
+  @param {String} label optional string for labeling the promise.
+  Useful for tooling.
+  @return {Promise} promise that is fulfilled when all `promises` have been
+  fulfilled, or rejected if any of them become rejected.
+  @static
+*/
+            function all(entries) {
+              return new Enumerator(this, entries).promise;
+            }
+            /**
+  `Promise.race` returns a new promise which is settled in the same way as the
+  first passed promise to settle.
+
+  Example:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 2');
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // result === 'promise 2' because it was resolved before promise1
+    // was resolved.
+  });
+  ```
+
+  `Promise.race` is deterministic in that only the state of the first
+  settled promise matters. For example, even if other promises given to the
+  `promises` array argument are resolved, but the first settled promise has
+  become rejected before the other promises became fulfilled, the returned
+  promise will become rejected:
+
+  ```javascript
+  let promise1 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      resolve('promise 1');
+    }, 200);
+  });
+
+  let promise2 = new Promise(function(resolve, reject){
+    setTimeout(function(){
+      reject(new Error('promise 2'));
+    }, 100);
+  });
+
+  Promise.race([promise1, promise2]).then(function(result){
+    // Code here never runs
+  }, function(reason){
+    // reason.message === 'promise 2' because promise 2 became rejected before
+    // promise 1 became fulfilled
+  });
+  ```
+
+  An example real-world use case is implementing timeouts:
+
+  ```javascript
+  Promise.race([ajax('foo.json'), timeout(5000)])
+  ```
+
+  @method race
+  @static
+  @param {Array} promises array of promises to observe
+  Useful for tooling.
+  @return {Promise} a promise which settles in the same way as the first passed
+  promise to settle.
+*/
+            function race(entries) {
+              /*jshint validthis:true */
+              var Constructor = this;
+              if (!isArray(entries)) {
+                return new Constructor(function (_, reject) {
+                  return reject(new TypeError('You must pass an array to race.'));
+                });
+              } else {
+                return new Constructor(function (resolve, reject) {
+                  var length = entries.length;
+                  for (var i = 0; i < length; i++) {
+                    Constructor.resolve(entries[i]).then(resolve, reject);
+                  }
+                });
+              }
+            }
+            /**
+  `Promise.reject` returns a promise rejected with the passed `reason`.
+  It is shorthand for the following:
+
+  ```javascript
+  let promise = new Promise(function(resolve, reject){
+    reject(new Error('WHOOPS'));
+  });
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  Instead of writing the above, your code now simply becomes the following:
+
+  ```javascript
+  let promise = Promise.reject(new Error('WHOOPS'));
+
+  promise.then(function(value){
+    // Code here doesn't run because the promise is rejected!
+  }, function(reason){
+    // reason.message === 'WHOOPS'
+  });
+  ```
+
+  @method reject
+  @static
+  @param {Any} reason value that the returned promise will be rejected with.
+  Useful for tooling.
+  @return {Promise} a promise rejected with the given `reason`.
+*/
+            function reject(reason) {
+              /*jshint validthis:true */
+              var Constructor = this;
+              var promise = new Constructor(noop);
+              _reject(promise, reason);
+              return promise;
+            }
+            function needsResolver() {
+              throw new TypeError('You must pass a resolver function as the first argument to the promise constructor');
+            }
+            function needsNew() {
+              throw new TypeError('Failed to construct \'Promise\': Please use the \'new\' operator, this object constructor cannot be called as a function.');
+            }
+            /**
+  Promise objects represent the eventual result of an asynchronous operation. The
+  primary way of interacting with a promise is through its `then` method, which
+  registers callbacks to receive either a promise's eventual value or the reason
+  why the promise cannot be fulfilled.
+
+  Terminology
+  -----------
+
+  - `promise` is an object or function with a `then` method whose behavior conforms to this specification.
+  - `thenable` is an object or function that defines a `then` method.
+  - `value` is any legal JavaScript value (including undefined, a thenable, or a promise).
+  - `exception` is a value that is thrown using the throw statement.
+  - `reason` is a value that indicates why a promise was rejected.
+  - `settled` the final resting state of a promise, fulfilled or rejected.
+
+  A promise can be in one of three states: pending, fulfilled, or rejected.
+
+  Promises that are fulfilled have a fulfillment value and are in the fulfilled
+  state.  Promises that are rejected have a rejection reason and are in the
+  rejected state.  A fulfillment value is never a thenable.
+
+  Promises can also be said to *resolve* a value.  If this value is also a
+  promise, then the original promise's settled state will match the value's
+  settled state.  So a promise that *resolves* a promise that rejects will
+  itself reject, and a promise that *resolves* a promise that fulfills will
+  itself fulfill.
+
+
+  Basic Usage:
+  ------------
+
+  ```js
+  let promise = new Promise(function(resolve, reject) {
+    // on success
+    resolve(value);
+
+    // on failure
+    reject(reason);
+  });
+
+  promise.then(function(value) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Advanced Usage:
+  ---------------
+
+  Promises shine when abstracting away asynchronous interactions such as
+  `XMLHttpRequest`s.
+
+  ```js
+  function getJSON(url) {
+    return new Promise(function(resolve, reject){
+      let xhr = new XMLHttpRequest();
+
+      xhr.open('GET', url);
+      xhr.onreadystatechange = handler;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Accept', 'application/json');
+      xhr.send();
+
+      function handler() {
+        if (this.readyState === this.DONE) {
+          if (this.status === 200) {
+            resolve(this.response);
+          } else {
+            reject(new Error('getJSON: `' + url + '` failed with status: [' + this.status + ']'));
+          }
+        }
+      };
+    });
+  }
+
+  getJSON('/posts.json').then(function(json) {
+    // on fulfillment
+  }, function(reason) {
+    // on rejection
+  });
+  ```
+
+  Unlike callbacks, promises are great composable primitives.
+
+  ```js
+  Promise.all([
+    getJSON('/posts'),
+    getJSON('/comments')
+  ]).then(function(values){
+    values[0] // => postsJSON
+    values[1] // => commentsJSON
+
+    return values;
+  });
+  ```
+
+  @class Promise
+  @param {function} resolver
+  Useful for tooling.
+  @constructor
+*/
+            function Promise(resolver) {
+              this[PROMISE_ID] = nextId();
+              this._result = this._state = undefined;
+              this._subscribers = [];
+              if (noop !== resolver) {
+                typeof resolver !== 'function' && needsResolver();
+                this instanceof Promise ? initializePromise(this, resolver) : needsNew();
+              }
+            }
+            Promise.all = all;
+            Promise.race = race;
+            Promise.resolve = resolve;
+            Promise.reject = reject;
+            Promise._setScheduler = setScheduler;
+            Promise._setAsap = setAsap;
+            Promise._asap = asap;
+            Promise.prototype = {
+              constructor: Promise,
+              then: then,
+              'catch': function _catch(onRejection) {
+                return this.then(null, onRejection);
+              }
+            };
+            function polyfill() {
+              var local = undefined;
+              if (typeof global !== 'undefined') {
+                local = global;
+              } else if (typeof self !== 'undefined') {
+                local = self;
+              } else {
+                try {
+                  local = Function('return this')();
+                } catch (e) {
+                  throw new Error('polyfill failed because global object is unavailable in this environment');
+                }
+              }
+              var P = local.Promise;
+              if (P) {
+                var promiseToString = null;
+                try {
+                  promiseToString = Object.prototype.toString.call(P.resolve());
+                } catch (e) {
+                }
+                if (promiseToString === '[object Promise]' && !P.cast) {
+                  return;
+                }
+              }
+              local.Promise = Promise;
+            }
+            polyfill();
+            // Strange compat..
+            Promise.polyfill = polyfill;
+            Promise.Promise = Promise;
+            return Promise;
+          }));
+        }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
+      },
+      { '_process': 145 }
+    ],
+    80: [
+      function (require, module, exports) {
+        // Copyright Joyent, Inc. and other Node contributors.
+        //
+        // Permission is hereby granted, free of charge, to any person obtaining a
+        // copy of this software and associated documentation files (the
+        // "Software"), to deal in the Software without restriction, including
+        // without limitation the rights to use, copy, modify, merge, publish,
+        // distribute, sublicense, and/or sell copies of the Software, and to permit
+        // persons to whom the Software is furnished to do so, subject to the
+        // following conditions:
+        //
+        // The above copyright notice and this permission notice shall be included
+        // in all copies or substantial portions of the Software.
+        //
+        // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+        // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+        // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+        // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+        // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+        // USE OR OTHER DEALINGS IN THE SOFTWARE.
+        function EventEmitter() {
+          this._events = this._events || {};
+          this._maxListeners = this._maxListeners || undefined;
+        }
+        module.exports = EventEmitter;
+        // Backwards-compat with node 0.10.x
+        EventEmitter.EventEmitter = EventEmitter;
+        EventEmitter.prototype._events = undefined;
+        EventEmitter.prototype._maxListeners = undefined;
+        // By default EventEmitters will print a warning if more than 10 listeners are
+        // added to it. This is a useful default which helps finding memory leaks.
+        EventEmitter.defaultMaxListeners = 10;
+        // Obviously not all Emitters should be limited to 10. This function allows
+        // that to be increased. Set to zero for unlimited.
+        EventEmitter.prototype.setMaxListeners = function (n) {
+          if (!isNumber(n) || n < 0 || isNaN(n))
+            throw TypeError('n must be a positive number');
+          this._maxListeners = n;
+          return this;
+        };
+        EventEmitter.prototype.emit = function (type) {
+          var er, handler, len, args, i, listeners;
+          if (!this._events)
+            this._events = {};
+          // If there is no 'error' event listener then throw.
+          if (type === 'error') {
+            if (!this._events.error || isObject(this._events.error) && !this._events.error.length) {
+              er = arguments[1];
+              if (er instanceof Error) {
+                throw er;  // Unhandled 'error' event
+              }
+              throw TypeError('Uncaught, unspecified "error" event.');
+            }
+          }
+          handler = this._events[type];
+          if (isUndefined(handler))
+            return false;
+          if (isFunction(handler)) {
+            switch (arguments.length) {
+            // fast cases
+            case 1:
+              handler.call(this);
+              break;
+            case 2:
+              handler.call(this, arguments[1]);
+              break;
+            case 3:
+              handler.call(this, arguments[1], arguments[2]);
+              break;
+            // slower
+            default:
+              len = arguments.length;
+              args = new Array(len - 1);
+              for (i = 1; i < len; i++)
+                args[i - 1] = arguments[i];
+              handler.apply(this, args);
+            }
+          } else if (isObject(handler)) {
+            len = arguments.length;
+            args = new Array(len - 1);
+            for (i = 1; i < len; i++)
+              args[i - 1] = arguments[i];
+            listeners = handler.slice();
+            len = listeners.length;
+            for (i = 0; i < len; i++)
+              listeners[i].apply(this, args);
+          }
+          return true;
+        };
+        EventEmitter.prototype.addListener = function (type, listener) {
+          var m;
+          if (!isFunction(listener))
+            throw TypeError('listener must be a function');
+          if (!this._events)
+            this._events = {};
+          // To avoid recursion in the case that type === "newListener"! Before
+          // adding it to the listeners, first emit "newListener".
+          if (this._events.newListener)
+            this.emit('newListener', type, isFunction(listener.listener) ? listener.listener : listener);
+          if (!this._events[type])
+            // Optimize the case of one listener. Don't need the extra array object.
+            this._events[type] = listener;
+          else if (isObject(this._events[type]))
+            // If we've already got an array, just append.
+            this._events[type].push(listener);
+          else
+            // Adding the second element, need to change to array.
+            this._events[type] = [
+              this._events[type],
+              listener
+            ];
+          // Check for listener leak
+          if (isObject(this._events[type]) && !this._events[type].warned) {
+            var m;
+            if (!isUndefined(this._maxListeners)) {
+              m = this._maxListeners;
+            } else {
+              m = EventEmitter.defaultMaxListeners;
+            }
+            if (m && m > 0 && this._events[type].length > m) {
+              this._events[type].warned = true;
+              console.error('(node) warning: possible EventEmitter memory ' + 'leak detected. %d listeners added. ' + 'Use emitter.setMaxListeners() to increase limit.', this._events[type].length);
+              if (typeof console.trace === 'function') {
+                // not supported in IE 10
+                console.trace();
+              }
+            }
+          }
+          return this;
+        };
+        EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+        EventEmitter.prototype.once = function (type, listener) {
+          if (!isFunction(listener))
+            throw TypeError('listener must be a function');
+          var fired = false;
+          function g() {
+            this.removeListener(type, g);
+            if (!fired) {
+              fired = true;
+              listener.apply(this, arguments);
+            }
+          }
+          g.listener = listener;
+          this.on(type, g);
+          return this;
+        };
+        // emits a 'removeListener' event iff the listener was removed
+        EventEmitter.prototype.removeListener = function (type, listener) {
+          var list, position, length, i;
+          if (!isFunction(listener))
+            throw TypeError('listener must be a function');
+          if (!this._events || !this._events[type])
+            return this;
+          list = this._events[type];
+          length = list.length;
+          position = -1;
+          if (list === listener || isFunction(list.listener) && list.listener === listener) {
+            delete this._events[type];
+            if (this._events.removeListener)
+              this.emit('removeListener', type, listener);
+          } else if (isObject(list)) {
+            for (i = length; i-- > 0;) {
+              if (list[i] === listener || list[i].listener && list[i].listener === listener) {
+                position = i;
+                break;
+              }
+            }
+            if (position < 0)
+              return this;
+            if (list.length === 1) {
+              list.length = 0;
+              delete this._events[type];
+            } else {
+              list.splice(position, 1);
+            }
+            if (this._events.removeListener)
+              this.emit('removeListener', type, listener);
+          }
+          return this;
+        };
+        EventEmitter.prototype.removeAllListeners = function (type) {
+          var key, listeners;
+          if (!this._events)
+            return this;
+          // not listening for removeListener, no need to emit
+          if (!this._events.removeListener) {
+            if (arguments.length === 0)
+              this._events = {};
+            else if (this._events[type])
+              delete this._events[type];
+            return this;
+          }
+          // emit removeListener for all listeners on all events
+          if (arguments.length === 0) {
+            for (key in this._events) {
+              if (key === 'removeListener')
+                continue;
+              this.removeAllListeners(key);
+            }
+            this.removeAllListeners('removeListener');
+            this._events = {};
+            return this;
+          }
+          listeners = this._events[type];
+          if (isFunction(listeners)) {
+            this.removeListener(type, listeners);
+          } else {
+            // LIFO order
+            while (listeners.length)
+              this.removeListener(type, listeners[listeners.length - 1]);
+          }
+          delete this._events[type];
+          return this;
+        };
+        EventEmitter.prototype.listeners = function (type) {
+          var ret;
+          if (!this._events || !this._events[type])
+            ret = [];
+          else if (isFunction(this._events[type]))
+            ret = [this._events[type]];
+          else
+            ret = this._events[type].slice();
+          return ret;
+        };
+        EventEmitter.listenerCount = function (emitter, type) {
+          var ret;
+          if (!emitter._events || !emitter._events[type])
+            ret = 0;
+          else if (isFunction(emitter._events[type]))
+            ret = 1;
+          else
+            ret = emitter._events[type].length;
+          return ret;
+        };
+        function isFunction(arg) {
+          return typeof arg === 'function';
+        }
+        function isNumber(arg) {
+          return typeof arg === 'number';
+        }
+        function isObject(arg) {
+          return typeof arg === 'object' && arg !== null;
+        }
+        function isUndefined(arg) {
+          return arg === void 0;
+        }
+      },
+      {}
+    ],
+    81: [
+      function (require, module, exports) {
+        var hasOwn = Object.prototype.hasOwnProperty;
+        var toString = Object.prototype.toString;
+        module.exports = function forEach(obj, fn, ctx) {
+          if (toString.call(fn) !== '[object Function]') {
+            throw new TypeError('iterator must be a function');
+          }
+          var l = obj.length;
+          if (l === +l) {
+            for (var i = 0; i < l; i++) {
+              fn.call(ctx, obj[i], i, obj);
+            }
+          } else {
+            for (var k in obj) {
+              if (hasOwn.call(obj, k)) {
+                fn.call(ctx, obj[k], k, obj);
+              }
+            }
+          }
+        };
+      },
+      {}
+    ],
+    82: [
+      function (require, module, exports) {
+        var http = require('http');
+        var https = module.exports;
+        for (var key in http) {
+          if (http.hasOwnProperty(key))
+            https[key] = http[key];
+        }
+        ;
+        https.request = function (params, cb) {
+          if (!params)
+            params = {};
+          params.scheme = 'https';
+          params.protocol = 'https:';
+          return http.request.call(this, params, cb);
+        };
+      },
+      { 'http': 163 }
+    ],
+    83: [
+      function (require, module, exports) {
+        exports.read = function (buffer, offset, isLE, mLen, nBytes) {
+          var e, m;
+          var eLen = nBytes * 8 - mLen - 1;
+          var eMax = (1 << eLen) - 1;
+          var eBias = eMax >> 1;
+          var nBits = -7;
+          var i = isLE ? nBytes - 1 : 0;
+          var d = isLE ? -1 : 1;
+          var s = buffer[offset + i];
+          i += d;
+          e = s & (1 << -nBits) - 1;
+          s >>= -nBits;
+          nBits += eLen;
+          for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {
+          }
+          m = e & (1 << -nBits) - 1;
+          e >>= -nBits;
+          nBits += mLen;
+          for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {
+          }
+          if (e === 0) {
+            e = 1 - eBias;
+          } else if (e === eMax) {
+            return m ? NaN : (s ? -1 : 1) * Infinity;
+          } else {
+            m = m + Math.pow(2, mLen);
+            e = e - eBias;
+          }
+          return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
+        };
+        exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
+          var e, m, c;
+          var eLen = nBytes * 8 - mLen - 1;
+          var eMax = (1 << eLen) - 1;
+          var eBias = eMax >> 1;
+          var rt = mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0;
+          var i = isLE ? 0 : nBytes - 1;
+          var d = isLE ? 1 : -1;
+          var s = value < 0 || value === 0 && 1 / value < 0 ? 1 : 0;
+          value = Math.abs(value);
+          if (isNaN(value) || value === Infinity) {
+            m = isNaN(value) ? 1 : 0;
+            e = eMax;
+          } else {
+            e = Math.floor(Math.log(value) / Math.LN2);
+            if (value * (c = Math.pow(2, -e)) < 1) {
+              e--;
+              c *= 2;
+            }
+            if (e + eBias >= 1) {
+              value += rt / c;
+            } else {
+              value += rt * Math.pow(2, 1 - eBias);
+            }
+            if (value * c >= 2) {
+              e++;
+              c /= 2;
+            }
+            if (e + eBias >= eMax) {
+              m = 0;
+              e = eMax;
+            } else if (e + eBias >= 1) {
+              m = (value * c - 1) * Math.pow(2, mLen);
+              e = e + eBias;
+            } else {
+              m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
+              e = 0;
+            }
+          }
+          for (; mLen >= 8; buffer[offset + i] = m & 255, i += d, m /= 256, mLen -= 8) {
+          }
+          e = e << mLen | m;
+          eLen += mLen;
+          for (; eLen > 0; buffer[offset + i] = e & 255, i += d, e /= 256, eLen -= 8) {
+          }
+          buffer[offset + i - d] |= s * 128;
+        };
+      },
+      {}
+    ],
+    84: [
+      function (require, module, exports) {
+        var indexOf = [].indexOf;
+        module.exports = function (arr, obj) {
+          if (indexOf)
+            return arr.indexOf(obj);
+          for (var i = 0; i < arr.length; ++i) {
+            if (arr[i] === obj)
+              return i;
+          }
+          return -1;
+        };
+      },
+      {}
+    ],
+    85: [
+      function (require, module, exports) {
+        if (typeof Object.create === 'function') {
+          // implementation from standard node.js 'util' module
+          module.exports = function inherits(ctor, superCtor) {
+            ctor.super_ = superCtor;
+            ctor.prototype = Object.create(superCtor.prototype, {
+              constructor: {
+                value: ctor,
+                enumerable: false,
+                writable: true,
+                configurable: true
+              }
+            });
+          };
+        } else {
+          // old school shim for old browsers
+          module.exports = function inherits(ctor, superCtor) {
+            ctor.super_ = superCtor;
+            var TempCtor = function () {
+            };
+            TempCtor.prototype = superCtor.prototype;
+            ctor.prototype = new TempCtor();
+            ctor.prototype.constructor = ctor;
+          };
+        }
+      },
+      {}
+    ],
+    86: [
+      function (require, module, exports) {
+        /*!
+ * Determine if an object is a Buffer
+ *
+ * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
+ * @license  MIT
+ */
+        // The _isBuffer check is for Safari 5-7 support, because it's missing
+        // Object.prototype.constructor. Remove this eventually
+        module.exports = function (obj) {
+          return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer);
+        };
+        function isBuffer(obj) {
+          return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj);
+        }
+        // For Node v0.10 support. Remove this eventually.
+        function isSlowBuffer(obj) {
+          return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0));
+        }
+      },
+      {}
+    ],
+    87: [
+      function (require, module, exports) {
+        var JsonSchemaCompatability = function () {
+            function convert3to4Type(types, always) {
+              if (!Array.isArray(types)) {
+                types = [types];
+              }
+              var needsReplacement = !!always;
+              var result = [];
+              for (var i = 0; i < types.length; i++) {
+                var entry = types[i];
+                if (typeof entry === 'object') {
+                  result.push(entry);
+                  needsReplacement = true;
+                } else {
+                  result.push({ 'type': entry });
+                }
+              }
+              return needsReplacement && result;
+            }
+            function convert3to4(obj) {
+              // Old-style "type"
+              if (obj.type) {
+                if (typeof obj.type !== 'string') {
+                  var anyOf = convert3to4Type(obj.type);
+                  if (anyOf) {
+                    obj.anyOf = anyOf;
+                    delete obj.type;
+                  }
+                } else if (obj.type == 'any') {
+                  delete obj.type;
+                }
+              }
+              if (obj['extends']) {
+                var allOf = obj['extends'];
+                if (!Array.isArray(allOf)) {
+                  allOf = [allOf];
+                }
+                obj.allOf = allOf;
+                delete obj['extends'];
+              }
+              if (obj.disallow) {
+                if (typeof obj.disallow === 'string') {
+                  obj.not = { 'type': obj.disallow };
+                } else {
+                  obj.not = { 'anyOf': convert3to4Type(obj.disallow, true) };
+                }
+                delete obj.disallow;
+              }
+              // Object concerns
+              if (obj.properties) {
+                var required = Array.isArray(obj.required) ? obj.required : [];
+                for (var key in obj.properties) {
+                  var subSchema = obj.properties[key];
+                  if (subSchema && typeof subSchema.required === 'boolean') {
+                    if (subSchema.required) {
+                      required.push(key);
+                    }
+                    delete subSchema.required;
+                  }
+                }
+                if (required.length) {
+                  obj.required = required;
+                }
+              }
+              if (obj.dependencies) {
+                for (var key in obj.dependencies) {
+                  if (typeof obj.dependencies[key] === 'string') {
+                    obj.dependencies[key] = [obj.dependencies[key]];
+                  }
+                }
+              }
+              // This is safe as long as we process our children *after* we collect their "required" properties
+              // - otherwise, they'd delete their "required" booleans before we got a chance to see them
+              if (typeof obj.required === 'boolean') {
+                delete obj.required;
+              }
+              // Numeric concerns
+              if (typeof obj.divisibleBy !== 'undefined') {
+                obj.multipleOf = obj.divisibleBy;
+                delete obj.divisibleBy;
+              }
+              // This MUST happen at the end of the function, otherwise it'll screw up "required" collection
+              for (var key in obj) {
+                if (key === 'properties' || key === 'patternProperties' || key === 'dependencies') {
+                  for (var subKey in obj[key]) {
+                    obj[key][subKey] = convert3to4(obj[key][subKey]);
+                  }
+                } else if (key !== 'enum') {
+                  if (Array.isArray(obj[key])) {
+                    for (var i = 0; i < obj[key].length; i++) {
+                      obj[key][i] = convert3to4(obj[key][i]);
+                    }
+                  } else if (typeof obj[key] === 'object') {
+                    obj[key] = convert3to4(obj[key]);
+                  }
+                }
+              }
+              return obj;
+            }
+            var api = { v4: convert3to4 };
+            if (typeof module !== 'undefined') {
+              module.exports = api;
+            }
+            return api;
+          }();
+      },
+      {}
+    ],
+    88: [
+      function (require, module, exports) {
+        /** !
+ * JSON Schema $Ref Parser v3.1.2
+ *
+ * @link https://github.com/BigstickCarpet/json-schema-ref-parser
+ * @license MIT
+ */
+        'use strict';
+        var $Ref = require('./ref'), Pointer = require('./pointer'), debug = require('./util/debug'), url = require('./util/url');
+        module.exports = bundle;
+        /**
+ * Bundles all external JSON references into the main JSON schema, thus resulting in a schema that
+ * only has *internal* references, not any *external* references.
+ * This method mutates the JSON schema object, adding new references and re-mapping existing ones.
+ *
+ * @param {$RefParser} parser
+ * @param {$RefParserOptions} options
+ */
+        function bundle(parser, options) {
+          debug('Bundling $ref pointers in %s', parser.$refs._root$Ref.path);
+          // Build an inventory of all $ref pointers in the JSON Schema
+          var inventory = [];
+          crawl(parser, 'schema', parser.$refs._root$Ref.path + '#', '#', inventory, parser.$refs, options);
+          // Remap all $ref pointers
+          remap(inventory);
+        }
+        /**
+ * Recursively crawls the given value, and inventories all JSON references.
+ *
+ * @param {object} parent - The object containing the value to crawl. If the value is not an object or array, it will be ignored.
+ * @param {string} key - The property key of `parent` to be crawled
+ * @param {string} path - The full path of the property being crawled, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of the property being crawled, from the schema root
+ * @param {object[]} inventory - An array of already-inventoried $ref pointers
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ */
+        function crawl(parent, key, path, pathFromRoot, inventory, $refs, options) {
+          var obj = key === null ? parent : parent[key];
+          if (obj && typeof obj === 'object') {
+            if ($Ref.is$Ref(obj)) {
+              inventory$Ref(parent, key, path, pathFromRoot, inventory, $refs, options);
+            } else {
+              var keys = Object.keys(obj);
+              // Most people will expect references to be bundled into the the "definitions" property,
+              // so we always crawl that property first, if it exists.
+              var defs = keys.indexOf('definitions');
+              if (defs > 0) {
+                keys.splice(0, 0, keys.splice(defs, 1)[0]);
+              }
+              keys.forEach(function (key) {
+                var keyPath = Pointer.join(path, key);
+                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
+                var value = obj[key];
+                if ($Ref.is$Ref(value)) {
+                  inventory$Ref(obj, key, path, keyPathFromRoot, inventory, $refs, options);
+                } else {
+                  crawl(obj, key, keyPath, keyPathFromRoot, inventory, $refs, options);
+                }
+              });
+            }
+          }
+        }
+        /**
+ * Inventories the given JSON Reference (i.e. records detailed information about it so we can
+ * optimize all $refs in the schema), and then crawls the resolved value.
+ *
+ * @param {object} $refParent - The object that contains a JSON Reference as one of its keys
+ * @param {string} $refKey - The key in `$refParent` that is a JSON Reference
+ * @param {string} path - The full path of the JSON Reference at `$refKey`, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of the JSON Reference at `$refKey`, from the schema root
+ * @param {object[]} inventory - An array of already-inventoried $ref pointers
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ */
+        function inventory$Ref($refParent, $refKey, path, pathFromRoot, inventory, $refs, options) {
+          if (inventory.some(function (i) {
+              return i.parent === $refParent && i.key === $refKey;
+            })) {
+            // This $Ref has already been inventoried, so we don't need to process it again
+            return;
+          }
+          var $ref = $refKey === null ? $refParent : $refParent[$refKey];
+          var $refPath = url.resolve(path, $ref.$ref);
+          var pointer = $refs._resolve($refPath, options);
+          var depth = Pointer.parse(pathFromRoot).length;
+          var file = url.stripHash(pointer.path);
+          var hash = url.getHash(pointer.path);
+          var external = file !== $refs._root$Ref.path;
+          var extended = $Ref.isExtended$Ref($ref);
+          inventory.push({
+            $ref: $ref,
+            parent: $refParent,
+            key: $refKey,
+            pathFromRoot: pathFromRoot,
+            depth: depth,
+            file: file,
+            hash: hash,
+            value: pointer.value,
+            circular: pointer.circular,
+            extended: extended,
+            external: external
+          });
+          // Recursively crawl the resolved value
+          crawl(pointer.value, null, pointer.path, pathFromRoot, inventory, $refs, options);
+        }
+        /**
+ * Re-maps every $ref pointer, so that they're all relative to the root of the JSON Schema.
+ * Each referenced value is dereferenced EXACTLY ONCE.  All subsequent references to the same
+ * value are re-mapped to point to the first reference.
+ *
+ * @example:
+ *  {
+ *    first: { $ref: somefile.json#/some/part },
+ *    second: { $ref: somefile.json#/another/part },
+ *    third: { $ref: somefile.json },
+ *    fourth: { $ref: somefile.json#/some/part/sub/part }
+ *  }
+ *
+ * In this example, there are four references to the same file, but since the third reference points
+ * to the ENTIRE file, that's the only one we need to dereference.  The other three can just be
+ * remapped to point inside the third one.
+ *
+ * On the other hand, if the third reference DIDN'T exist, then the first and second would both need
+ * to be dereferenced, since they point to different parts of the file. The fourth reference does NOT
+ * need to be dereferenced, because it can be remapped to point inside the first one.
+ *
+ * @param {object[]} inventory
+ */
+        function remap(inventory) {
+          // Group & sort all the $ref pointers, so they're in the order that we need to dereference/remap them
+          inventory.sort(function (a, b) {
+            if (a.file !== b.file) {
+              return a.file < b.file ? -1 : +1;  // Group all the $refs that point to the same file
+            } else if (a.hash !== b.hash) {
+              return a.hash < b.hash ? -1 : +1;  // Group all the $refs that point to the same part of the file
+            } else if (a.circular !== b.circular) {
+              return a.circular ? -1 : +1;  // If the $ref points to itself, then sort it higher than other $refs that point to this $ref
+            } else if (a.extended !== b.extended) {
+              return a.extended ? +1 : -1;  // If the $ref extends the resolved value, then sort it lower than other $refs that don't extend the value
+            } else if (a.depth !== b.depth) {
+              return a.depth - b.depth;  // Sort $refs by how close they are to the JSON Schema root
+            } else {
+              // If all else is equal, use the $ref that's in the "definitions" property
+              return b.pathFromRoot.lastIndexOf('/definitions') - a.pathFromRoot.lastIndexOf('/definitions');
+            }
+          });
+          var file, hash, pathFromRoot;
+          inventory.forEach(function (i) {
+            debug('Re-mapping $ref pointer "%s" at %s', i.$ref.$ref, i.pathFromRoot);
+            if (!i.external) {
+              // This $ref already resolves to the main JSON Schema file
+              i.$ref.$ref = i.hash;
+            } else if (i.file === file && i.hash === hash) {
+              // This $ref points to the same value as the prevous $ref, so remap it to the same path
+              i.$ref.$ref = pathFromRoot;
+            } else if (i.file === file && i.hash.indexOf(hash + '/') === 0) {
+              // This $ref points to the a sub-value as the prevous $ref, so remap it beneath that path
+              i.$ref.$ref = Pointer.join(pathFromRoot, Pointer.parse(i.hash));
+            } else {
+              // We've moved to a new file or new hash
+              file = i.file;
+              hash = i.hash;
+              pathFromRoot = i.pathFromRoot;
+              // This is the first $ref to point to this value, so dereference the value.
+              // Any other $refs that point to the same value will point to this $ref instead
+              i.$ref = i.parent[i.key] = $Ref.dereference(i.$ref, i.value);
+              if (i.circular) {
+                // This $ref points to itself
+                i.$ref.$ref = i.pathFromRoot;
+              }
+            }
+            debug('    new value: %s', i.$ref && i.$ref.$ref ? i.$ref.$ref : '[object Object]');
+          });
+        }
+      },
+      {
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106
+      }
+    ],
+    89: [
+      function (require, module, exports) {
+        'use strict';
+        var $Ref = require('./ref'), Pointer = require('./pointer'), ono = require('ono'), debug = require('./util/debug'), url = require('./util/url');
+        module.exports = dereference;
+        /**
+ * Crawls the JSON schema, finds all JSON references, and dereferences them.
+ * This method mutates the JSON schema object, replacing JSON references with their resolved value.
+ *
+ * @param {$RefParser} parser
+ * @param {$RefParserOptions} options
+ */
+        function dereference(parser, options) {
+          debug('Dereferencing $ref pointers in %s', parser.$refs._root$Ref.path);
+          var dereferenced = crawl(parser.schema, parser.$refs._root$Ref.path, '#', [], parser.$refs, options);
+          parser.$refs.circular = dereferenced.circular;
+          parser.schema = dereferenced.value;
+        }
+        /**
+ * Recursively crawls the given value, and dereferences any JSON references.
+ *
+ * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
+ * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of `obj` from the schema root
+ * @param {object[]} parents - An array of the parent objects that have already been dereferenced
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ * @returns {{value: object, circular: boolean}}
+ */
+        function crawl(obj, path, pathFromRoot, parents, $refs, options) {
+          var dereferenced;
+          var result = {
+              value: obj,
+              circular: false
+            };
+          if (obj && typeof obj === 'object') {
+            parents.push(obj);
+            if ($Ref.isAllowed$Ref(obj, options)) {
+              dereferenced = dereference$Ref(obj, path, pathFromRoot, parents, $refs, options);
+              result.circular = dereferenced.circular;
+              result.value = dereferenced.value;
+            } else {
+              Object.keys(obj).forEach(function (key) {
+                var keyPath = Pointer.join(path, key);
+                var keyPathFromRoot = Pointer.join(pathFromRoot, key);
+                var value = obj[key];
+                var circular = false;
+                if ($Ref.isAllowed$Ref(value, options)) {
+                  dereferenced = dereference$Ref(value, keyPath, keyPathFromRoot, parents, $refs, options);
+                  circular = dereferenced.circular;
+                  obj[key] = dereferenced.value;
+                } else {
+                  if (parents.indexOf(value) === -1) {
+                    dereferenced = crawl(value, keyPath, keyPathFromRoot, parents, $refs, options);
+                    circular = dereferenced.circular;
+                    obj[key] = dereferenced.value;
+                  } else {
+                    circular = foundCircularReference(keyPath, $refs, options);
+                  }
+                }
+                // Set the "isCircular" flag if this or any other property is circular
+                result.circular = result.circular || circular;
+              });
+            }
+            parents.pop();
+          }
+          return result;
+        }
+        /**
+ * Dereferences the given JSON Reference, and then crawls the resulting value.
+ *
+ * @param {{$ref: string}} $ref - The JSON Reference to resolve
+ * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
+ * @param {string} pathFromRoot - The path of `$ref` from the schema root
+ * @param {object[]} parents - An array of the parent objects that have already been dereferenced
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ * @returns {{value: object, circular: boolean}}
+ */
+        function dereference$Ref($ref, path, pathFromRoot, parents, $refs, options) {
+          debug('Dereferencing $ref pointer "%s" at %s', $ref.$ref, path);
+          var $refPath = url.resolve(path, $ref.$ref);
+          var pointer = $refs._resolve($refPath, options);
+          // Check for circular references
+          var directCircular = pointer.circular;
+          var circular = directCircular || parents.indexOf(pointer.value) !== -1;
+          circular && foundCircularReference(path, $refs, options);
+          // Dereference the JSON reference
+          var dereferencedValue = $Ref.dereference($ref, pointer.value);
+          // Crawl the dereferenced value (unless it's circular)
+          if (!circular) {
+            // Determine if the dereferenced value is circular
+            var dereferenced = crawl(dereferencedValue, pointer.path, pathFromRoot, parents, $refs, options);
+            circular = dereferenced.circular;
+            dereferencedValue = dereferenced.value;
+          }
+          if (circular && !directCircular && options.dereference.circular === 'ignore') {
+            // The user has chosen to "ignore" circular references, so don't change the value
+            dereferencedValue = $ref;
+          }
+          if (directCircular) {
+            // The pointer is a DIRECT circular reference (i.e. it references itself).
+            // So replace the $ref path with the absolute path from the JSON Schema root
+            dereferencedValue.$ref = pathFromRoot;
+          }
+          return {
+            circular: circular,
+            value: dereferencedValue
+          };
+        }
+        /**
+ * Called when a circular reference is found.
+ * It sets the {@link $Refs#circular} flag, and throws an error if options.dereference.circular is false.
+ *
+ * @param {string} keyPath - The JSON Reference path of the circular reference
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ * @returns {boolean} - always returns true, to indicate that a circular reference was found
+ */
+        function foundCircularReference(keyPath, $refs, options) {
+          $refs.circular = true;
+          if (!options.dereference.circular) {
+            throw ono.reference('Circular $ref pointer found at %s', keyPath);
+          }
+          return true;
+        }
+      },
+      {
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106,
+        'ono': 143
+      }
+    ],
+    90: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var Promise = require('./util/promise'), Options = require('./options'), $Refs = require('./refs'), parse = require('./parse'), resolveExternal = require('./resolve-external'), bundle = require('./bundle'), dereference = require('./dereference'), url = require('./util/url'), maybe = require('call-me-maybe'), ono = require('ono');
+          module.exports = $RefParser;
+          module.exports.YAML = require('./util/yaml');
+          /**
+ * This class parses a JSON schema, builds a map of its JSON references and their resolved values,
+ * and provides methods for traversing, manipulating, and dereferencing those references.
+ *
+ * @constructor
+ */
+          function $RefParser() {
+            /**
+   * The parsed (and possibly dereferenced) JSON schema object
+   *
+   * @type {object}
+   * @readonly
+   */
+            this.schema = null;
+            /**
+   * The resolved JSON references
+   *
+   * @type {$Refs}
+   * @readonly
+   */
+            this.$refs = new $Refs();
+          }
+          /**
+ * Parses the given JSON schema.
+ * This method does not resolve any JSON references.
+ * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
+ * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
+ * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
+ */
+          $RefParser.parse = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.parse.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema.
+ * This method does not resolve any JSON references.
+ * It just reads a single file in JSON or YAML format, and parse it as a JavaScript object.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed
+ * @param {function} [callback] - An error-first callback. The second parameter is the parsed JSON schema object.
+ * @returns {Promise} - The returned promise resolves with the parsed JSON schema object.
+ */
+          $RefParser.prototype.parse = function (schema, options, callback) {
+            var args = normalizeArgs(arguments);
+            var promise;
+            if (!args.path && !args.schema) {
+              var err = ono('Expected a file path, URL, or object. Got %s', args.path || args.schema);
+              return maybe(args.callback, Promise.reject(err));
+            }
+            // Reset everything
+            this.schema = null;
+            this.$refs = new $Refs();
+            // If the path is a filesystem path, then convert it to a URL.
+            // NOTE: According to the JSON Reference spec, these should already be URLs,
+            // but, in practice, many people use local filesystem paths instead.
+            // So we're being generous here and doing the conversion automatically.
+            // This is not intended to be a 100% bulletproof solution.
+            // If it doesn't work for your use-case, then use a URL instead.
+            if (url.isFileSystemPath(args.path)) {
+              args.path = url.fromFileSystemPath(args.path);
+            }
+            // Resolve the absolute path of the schema
+            args.path = url.resolve(url.cwd(), args.path);
+            if (args.schema && typeof args.schema === 'object') {
+              // A schema object was passed-in.
+              // So immediately add a new $Ref with the schema object as its value
+              this.$refs._add(args.path, args.schema);
+              promise = Promise.resolve(args.schema);
+            } else {
+              // Parse the schema file/url
+              promise = parse(args.path, this.$refs, args.options);
+            }
+            var me = this;
+            return promise.then(function (result) {
+              if (!result || typeof result !== 'object' || Buffer.isBuffer(result)) {
+                throw ono.syntax('"%s" is not a valid JSON Schema', me.$refs._root$Ref.path || result);
+              } else {
+                me.schema = result;
+                return maybe(args.callback, Promise.resolve(me.schema));
+              }
+            }).catch(function (e) {
+              return maybe(args.callback, Promise.reject(e));
+            });
+          };
+          /**
+ * Parses the given JSON schema and resolves any JSON references, including references in
+ * externally-referenced files.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
+ * @param {function} [callback]
+ * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
+ *
+ * @returns {Promise}
+ * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
+ */
+          $RefParser.resolve = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.resolve.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema and resolves any JSON references, including references in
+ * externally-referenced files.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed and resolved
+ * @param {function} [callback]
+ * - An error-first callback. The second parameter is a {@link $Refs} object containing the resolved JSON references
+ *
+ * @returns {Promise}
+ * The returned promise resolves with a {@link $Refs} object containing the resolved JSON references
+ */
+          $RefParser.prototype.resolve = function (schema, options, callback) {
+            var me = this;
+            var args = normalizeArgs(arguments);
+            return this.parse(args.path, args.schema, args.options).then(function () {
+              return resolveExternal(me, args.options);
+            }).then(function () {
+              return maybe(args.callback, Promise.resolve(me.$refs));
+            }).catch(function (err) {
+              return maybe(args.callback, Promise.reject(err));
+            });
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and bundles all external references
+ * into the main JSON schema. This produces a JSON schema that only has *internal* references,
+ * not any *external* references.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
+ * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
+ */
+          $RefParser.bundle = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.bundle.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and bundles all external references
+ * into the main JSON schema. This produces a JSON schema that only has *internal* references,
+ * not any *external* references.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the bundled JSON schema object
+ * @returns {Promise} - The returned promise resolves with the bundled JSON schema object.
+ */
+          $RefParser.prototype.bundle = function (schema, options, callback) {
+            var me = this;
+            var args = normalizeArgs(arguments);
+            return this.resolve(args.path, args.schema, args.options).then(function () {
+              bundle(me, args.options);
+              return maybe(args.callback, Promise.resolve(me.schema));
+            }).catch(function (err) {
+              return maybe(args.callback, Promise.reject(err));
+            });
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
+ * That is, all JSON references are replaced with their resolved values.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
+ * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
+ */
+          $RefParser.dereference = function (schema, options, callback) {
+            var Class = this;
+            // eslint-disable-line consistent-this
+            var instance = new Class();
+            return instance.dereference.apply(instance, arguments);
+          };
+          /**
+ * Parses the given JSON schema, resolves any JSON references, and dereferences the JSON schema.
+ * That is, all JSON references are replaced with their resolved values.
+ *
+ * @param {string|object} schema - The file path or URL of the JSON schema. Or a JSON schema object.
+ * @param {$RefParserOptions} [options] - Options that determine how the schema is parsed, resolved, and dereferenced
+ * @param {function} [callback] - An error-first callback. The second parameter is the dereferenced JSON schema object
+ * @returns {Promise} - The returned promise resolves with the dereferenced JSON schema object.
+ */
+          $RefParser.prototype.dereference = function (schema, options, callback) {
+            var me = this;
+            var args = normalizeArgs(arguments);
+            return this.resolve(args.path, args.schema, args.options).then(function () {
+              dereference(me, args.options);
+              return maybe(args.callback, Promise.resolve(me.schema));
+            }).catch(function (err) {
+              return maybe(args.callback, Promise.reject(err));
+            });
+          };
+          /**
+ * Normalizes the given arguments, accounting for optional args.
+ *
+ * @param {Arguments} args
+ * @returns {object}
+ */
+          function normalizeArgs(args) {
+            var path, schema, options, callback;
+            args = Array.prototype.slice.call(args);
+            if (typeof args[args.length - 1] === 'function') {
+              // The last parameter is a callback function
+              callback = args.pop();
+            }
+            if (typeof args[0] === 'string') {
+              // The first parameter is the path
+              path = args[0];
+              if (typeof args[2] === 'object') {
+                // The second parameter is the schema, and the third parameter is the options
+                schema = args[1];
+                options = args[2];
+              } else {
+                // The second parameter is the options
+                schema = undefined;
+                options = args[1];
+              }
+            } else {
+              // The first parameter is the schema
+              path = '';
+              schema = args[0];
+              options = args[1];
+            }
+            if (!(options instanceof Options)) {
+              options = new Options(options);
+            }
+            return {
+              path: path,
+              schema: schema,
+              options: options,
+              callback: callback
+            };
+          }
+        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
+      },
+      {
+        '../../is-buffer/index.js': 86,
+        './bundle': 88,
+        './dereference': 89,
+        './options': 91,
+        './parse': 92,
+        './refs': 99,
+        './resolve-external': 100,
+        './util/promise': 105,
+        './util/url': 106,
+        './util/yaml': 107,
+        'call-me-maybe': 75,
+        'ono': 143
+      }
+    ],
+    91: [
+      function (require, module, exports) {
+        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
+        'use strict';
+        var jsonParser = require('./parsers/json'), yamlParser = require('./parsers/yaml'), textParser = require('./parsers/text'), binaryParser = require('./parsers/binary'), fileResolver = require('./resolvers/file'), httpResolver = require('./resolvers/http'), zschemaValidator = require('./validators/z-schema');
+        module.exports = $RefParserOptions;
+        /**
+ * Options that determine how JSON schemas are parsed, resolved, dereferenced, and validated.
+ *
+ * @param {object|$RefParserOptions} [options] - Overridden options
+ * @constructor
+ */
+        function $RefParserOptions(options) {
+          merge(this, $RefParserOptions.defaults);
+          merge(this, options);
+        }
+        $RefParserOptions.defaults = {
+          parse: {
+            json: jsonParser,
+            yaml: yamlParser,
+            text: textParser,
+            binary: binaryParser
+          },
+          resolve: {
+            file: fileResolver,
+            http: httpResolver,
+            external: true
+          },
+          dereference: { circular: true },
+          validate: { zschema: zschemaValidator }
+        };
+        /**
+ * Merges the properties of the source object into the target object.
+ *
+ * @param {object} target - The object that we're populating
+ * @param {?object} source - The options that are being merged
+ * @returns {object}
+ */
+        function merge(target, source) {
+          if (isMergeable(source)) {
+            var keys = Object.keys(source);
+            for (var i = 0; i < keys.length; i++) {
+              var key = keys[i];
+              var sourceSetting = source[key];
+              var targetSetting = target[key];
+              if (isMergeable(sourceSetting)) {
+                // It's a nested object, so merge it recursively
+                target[key] = merge(targetSetting || {}, sourceSetting);
+              } else if (sourceSetting !== undefined) {
+                // It's a scalar value, function, or array. No merging necessary. Just overwrite the target value.
+                target[key] = sourceSetting;
+              }
+            }
+          }
+          return target;
+        }
+        /**
+ * Determines whether the given value can be merged,
+ * or if it is a scalar value that should just override the target value.
+ *
+ * @param   {*}  val
+ * @returns {Boolean}
+ */
+        function isMergeable(val) {
+          return val && typeof val === 'object' && !Array.isArray(val) && !(val instanceof RegExp) && !(val instanceof Date);
+        }
+      },
+      {
+        './parsers/binary': 93,
+        './parsers/json': 94,
+        './parsers/text': 95,
+        './parsers/yaml': 96,
+        './resolvers/file': 101,
+        './resolvers/http': 102,
+        './validators/z-schema': 108
+      }
+    ],
+    92: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var ono = require('ono'), debug = require('./util/debug'), url = require('./util/url'), plugins = require('./util/plugins'), Promise = require('./util/promise');
+          module.exports = parse;
+          /**
+ * Reads and parses the specified file path or URL.
+ *
+ * @param {string} path - This path MUST already be resolved, since `read` doesn't know the resolution context
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves with the parsed file contents, NOT the raw (Buffer) contents.
+ */
+          function parse(path, $refs, options) {
+            try {
+              // Remove the URL fragment, if any
+              path = url.stripHash(path);
+              // Add a new $Ref for this file, even though we don't have the value yet.
+              // This ensures that we don't simultaneously read & parse the same file multiple times
+              var $ref = $refs._add(path);
+              // This "file object" will be passed to all resolvers and parsers.
+              var file = {
+                  url: path,
+                  extension: url.getExtension(path)
+                };
+              // Read the file and then parse the data
+              return readFile(file, options).then(function (resolver) {
+                $ref.pathType = resolver.plugin.name;
+                file.data = resolver.result;
+                return parseFile(file, options);
+              }).then(function (parser) {
+                $ref.value = parser.result;
+                return parser.result;
+              });
+            } catch (e) {
+              return Promise.reject(e);
+            }
+          }
+          /**
+ * Reads the given file, using the configured resolver plugins
+ *
+ * @param {object} file           - An object containing information about the referenced file
+ * @param {string} file.url       - The full URL of the referenced file
+ * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves with the raw file contents and the resolver that was used.
+ */
+          function readFile(file, options) {
+            return new Promise(function (resolve, reject) {
+              debug('Reading %s', file.url);
+              // Find the resolvers that can read this file
+              var resolvers = plugins.all(options.resolve);
+              resolvers = plugins.filter(resolvers, 'canRead', file);
+              // Run the resolvers, in order, until one of them succeeds
+              plugins.sort(resolvers);
+              plugins.run(resolvers, 'read', file).then(resolve, onError);
+              function onError(err) {
+                // Throw the original error, if it's one of our own (user-friendly) errors.
+                // Otherwise, throw a generic, friendly error.
+                if (err && !(err instanceof SyntaxError)) {
+                  reject(err);
+                } else {
+                  reject(ono.syntax('Unable to resolve $ref pointer "%s"', file.url));
+                }
+              }
+            });
+          }
+          /**
+ * Parses the given file's contents, using the configured parser plugins.
+ *
+ * @param {object} file           - An object containing information about the referenced file
+ * @param {string} file.url       - The full URL of the referenced file
+ * @param {string} file.extension - The lowercased file extension (e.g. ".txt", ".html", etc.)
+ * @param {*}      file.data      - The file contents. This will be whatever data type was returned by the resolver
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves with the parsed file contents and the parser that was used.
+ */
+          function parseFile(file, options) {
+            return new Promise(function (resolve, reject) {
+              debug('Parsing %s', file.url);
+              // Find the parsers that can read this file type.
+              // If none of the parsers are an exact match for this file, then we'll try ALL of them.
+              // This handles situations where the file IS a supported type, just with an unknown extension.
+              var allParsers = plugins.all(options.parse);
+              var filteredParsers = plugins.filter(allParsers, 'canParse', file);
+              var parsers = filteredParsers.length > 0 ? filteredParsers : allParsers;
+              // Run the parsers, in order, until one of them succeeds
+              plugins.sort(parsers);
+              plugins.run(parsers, 'parse', file).then(onParsed, onError);
+              function onParsed(parser) {
+                if (!parser.plugin.allowEmpty && isEmpty(parser.result)) {
+                  reject(ono.syntax('Error parsing "%s" as %s. \nParsed value is empty', file.url, parser.plugin.name));
+                } else {
+                  resolve(parser);
+                }
+              }
+              function onError(err) {
+                if (err) {
+                  err = err instanceof Error ? err : new Error(err);
+                  reject(ono.syntax(err, 'Error parsing %s', file.url));
+                } else {
+                  reject(ono.syntax('Unable to parse %s', file.url));
+                }
+              }
+            });
+          }
+          /**
+ * Determines whether the parsed value is "empty".
+ *
+ * @param {*} value
+ * @returns {boolean}
+ */
+          function isEmpty(value) {
+            return value === undefined || typeof value === 'object' && Object.keys(value).length === 0 || typeof value === 'string' && value.trim().length === 0 || Buffer.isBuffer(value) && value.length === 0;
+          }
+        }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
+      },
+      {
+        '../../is-buffer/index.js': 86,
+        './util/debug': 103,
+        './util/plugins': 104,
+        './util/promise': 105,
+        './util/url': 106,
+        'ono': 143
+      }
+    ],
+    93: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var BINARY_REGEXP = /\.(jpeg|jpg|gif|png|bmp|ico)$/i;
+          module.exports = {
+            order: 400,
+            allowEmpty: true,
+            canParse: function isBinary(file) {
+              // Use this parser if the file is a Buffer, and has a known binary extension
+              return Buffer.isBuffer(file.data) && BINARY_REGEXP.test(file.url);
+            },
+            parse: function parseBinary(file) {
+              if (Buffer.isBuffer(file.data)) {
+                return file.data;
+              } else {
+                // This will reject if data is anything other than a string or typed array
+                return new Buffer(file.data);
+              }
+            }
+          };
+        }.call(this, require('buffer').Buffer));
+      },
+      { 'buffer': 72 }
+    ],
+    94: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var Promise = require('../util/promise');
+          module.exports = {
+            order: 100,
+            allowEmpty: true,
+            canParse: '.json',
+            parse: function parseJSON(file) {
+              return new Promise(function (resolve, reject) {
+                var data = file.data;
+                if (Buffer.isBuffer(data)) {
+                  data = data.toString();
+                }
+                if (typeof data === 'string') {
+                  if (data.trim().length === 0) {
+                    resolve(undefined);  // This mirrors the YAML behavior
+                  } else {
+                    resolve(JSON.parse(data));
+                  }
+                } else {
+                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
+                  resolve(data);
+                }
+              });
+            }
+          };
+        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
+      },
+      {
+        '../../../is-buffer/index.js': 86,
+        '../util/promise': 105
+      }
+    ],
+    95: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var TEXT_REGEXP = /\.(txt|htm|html|md|xml|js|min|map|css|scss|less|svg)$/i;
+          module.exports = {
+            order: 300,
+            allowEmpty: true,
+            encoding: 'utf8',
+            canParse: function isText(file) {
+              // Use this parser if the file is a string or Buffer, and has a known text-based extension
+              return (typeof file.data === 'string' || Buffer.isBuffer(file.data)) && TEXT_REGEXP.test(file.url);
+            },
+            parse: function parseText(file) {
+              if (typeof file.data === 'string') {
+                return file.data;
+              } else if (Buffer.isBuffer(file.data)) {
+                return file.data.toString(this.encoding);
+              } else {
+                throw new Error('data is not text');
+              }
+            }
+          };
+        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
+      },
+      { '../../../is-buffer/index.js': 86 }
+    ],
+    96: [
+      function (require, module, exports) {
+        (function (Buffer) {
+          'use strict';
+          var Promise = require('../util/promise'), YAML = require('../util/yaml');
+          module.exports = {
+            order: 200,
+            allowEmpty: true,
+            canParse: [
+              '.yaml',
+              '.yml',
+              '.json'
+            ],
+            parse: function parseYAML(file) {
+              return new Promise(function (resolve, reject) {
+                var data = file.data;
+                if (Buffer.isBuffer(data)) {
+                  data = data.toString();
+                }
+                if (typeof data === 'string') {
+                  resolve(YAML.parse(data));
+                } else {
+                  // data is already a JavaScript value (object, array, number, null, NaN, etc.)
+                  resolve(data);
+                }
+              });
+            }
+          };
+        }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
+      },
+      {
+        '../../../is-buffer/index.js': 86,
+        '../util/promise': 105,
+        '../util/yaml': 107
+      }
+    ],
+    97: [
+      function (require, module, exports) {
+        'use strict';
+        module.exports = Pointer;
+        var $Ref = require('./ref'), url = require('./util/url'), ono = require('ono'), slashes = /\//g, tildes = /~/g, escapedSlash = /~1/g, escapedTilde = /~0/g;
+        /**
+ * This class represents a single JSON pointer and its resolved value.
+ *
+ * @param {$Ref} $ref
+ * @param {string} path
+ * @constructor
+ */
+        function Pointer($ref, path) {
+          /**
+   * The {@link $Ref} object that contains this {@link Pointer} object.
+   * @type {$Ref}
+   */
+          this.$ref = $ref;
+          /**
+   * The file path or URL, containing the JSON pointer in the hash.
+   * This path is relative to the path of the main JSON schema file.
+   * @type {string}
+   */
+          this.path = path;
+          /**
+   * The value of the JSON pointer.
+   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
+   * @type {?*}
+   */
+          this.value = undefined;
+          /**
+   * Indicates whether the pointer references itself.
+   * @type {boolean}
+   */
+          this.circular = false;
+        }
+        /**
+ * Resolves the value of a nested property within the given object.
+ *
+ * @param {*} obj - The object that will be crawled
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Pointer}
+ * Returns a JSON pointer whose {@link Pointer#value} is the resolved value.
+ * If resolving this value required resolving other JSON references, then
+ * the {@link Pointer#$ref} and {@link Pointer#path} will reflect the resolution path
+ * of the resolved value.
+ */
+        Pointer.prototype.resolve = function (obj, options) {
+          var tokens = Pointer.parse(this.path);
+          // Crawl the object, one token at a time
+          this.value = obj;
+          for (var i = 0; i < tokens.length; i++) {
+            if (resolveIf$Ref(this, options)) {
+              // The $ref path has changed, so append the remaining tokens to the path
+              this.path = Pointer.join(this.path, tokens.slice(i));
+            }
+            var token = tokens[i];
+            if (this.value[token] === undefined) {
+              throw ono.syntax('Error resolving $ref pointer "%s". \nToken "%s" does not exist.', this.path, token);
+            } else {
+              this.value = this.value[token];
+            }
+          }
+          // Resolve the final value
+          resolveIf$Ref(this, options);
+          return this;
+        };
+        /**
+ * Sets the value of a nested property within the given object.
+ *
+ * @param {*} obj - The object that will be crawled
+ * @param {*} value - the value to assign
+ * @param {$RefParserOptions} options
+ *
+ * @returns {*}
+ * Returns the modified object, or an entirely new object if the entire object is overwritten.
+ */
+        Pointer.prototype.set = function (obj, value, options) {
+          var tokens = Pointer.parse(this.path);
+          var token;
+          if (tokens.length === 0) {
+            // There are no tokens, replace the entire object with the new value
+            this.value = value;
+            return value;
+          }
+          // Crawl the object, one token at a time
+          this.value = obj;
+          for (var i = 0; i < tokens.length - 1; i++) {
+            resolveIf$Ref(this, options);
+            token = tokens[i];
+            if (this.value && this.value[token] !== undefined) {
+              // The token exists
+              this.value = this.value[token];
+            } else {
+              // The token doesn't exist, so create it
+              this.value = setValue(this, token, {});
+            }
+          }
+          // Set the value of the final token
+          resolveIf$Ref(this, options);
+          token = tokens[tokens.length - 1];
+          setValue(this, token, value);
+          // Return the updated object
+          return obj;
+        };
+        /**
+ * Parses a JSON pointer (or a path containing a JSON pointer in the hash)
+ * and returns an array of the pointer's tokens.
+ * (e.g. "schema.json#/definitions/person/name" => ["definitions", "person", "name"])
+ *
+ * The pointer is parsed according to RFC 6901
+ * {@link https://tools.ietf.org/html/rfc6901#section-3}
+ *
+ * @param {string} path
+ * @returns {string[]}
+ */
+        Pointer.parse = function (path) {
+          // Get the JSON pointer from the path's hash
+          var pointer = url.getHash(path).substr(1);
+          // If there's no pointer, then there are no tokens,
+          // so return an empty array
+          if (!pointer) {
+            return [];
+          }
+          // Split into an array
+          pointer = pointer.split('/');
+          // Decode each part, according to RFC 6901
+          for (var i = 0; i < pointer.length; i++) {
+            pointer[i] = decodeURI(pointer[i].replace(escapedSlash, '/').replace(escapedTilde, '~'));
+          }
+          if (pointer[0] !== '') {
+            throw ono.syntax('Invalid $ref pointer "%s". Pointers must begin with "#/"', pointer);
+          }
+          return pointer.slice(1);
+        };
+        /**
+ * Creates a JSON pointer path, by joining one or more tokens to a base path.
+ *
+ * @param {string} base - The base path (e.g. "schema.json#/definitions/person")
+ * @param {string|string[]} tokens - The token(s) to append (e.g. ["name", "first"])
+ * @returns {string}
+ */
+        Pointer.join = function (base, tokens) {
+          // Ensure that the base path contains a hash
+          if (base.indexOf('#') === -1) {
+            base += '#';
+          }
+          // Append each token to the base path
+          tokens = Array.isArray(tokens) ? tokens : [tokens];
+          for (var i = 0; i < tokens.length; i++) {
+            var token = tokens[i];
+            // Encode the token, according to RFC 6901
+            base += '/' + encodeURI(token.replace(tildes, '~0').replace(slashes, '~1'));
+          }
+          return base;
+        };
+        /**
+ * If the given pointer's {@link Pointer#value} is a JSON reference,
+ * then the reference is resolved and {@link Pointer#value} is replaced with the resolved value.
+ * In addition, {@link Pointer#path} and {@link Pointer#$ref} are updated to reflect the
+ * resolution path of the new value.
+ *
+ * @param {Pointer} pointer
+ * @param {$RefParserOptions} options
+ * @returns {boolean} - Returns `true` if the resolution path changed
+ */
+        function resolveIf$Ref(pointer, options) {
+          // Is the value a JSON reference? (and allowed?)
+          if ($Ref.isAllowed$Ref(pointer.value, options)) {
+            var $refPath = url.resolve(pointer.path, pointer.value.$ref);
+            if ($refPath === pointer.path) {
+              // The value is a reference to itself, so there's nothing to do.
+              pointer.circular = true;
+            } else {
+              var resolved = pointer.$ref.$refs._resolve($refPath, options);
+              if ($Ref.isExtended$Ref(pointer.value)) {
+                // This JSON reference "extends" the resolved value, rather than simply pointing to it.
+                // So the resolved path does NOT change.  Just the value does.
+                pointer.value = $Ref.dereference(pointer.value, resolved.value);
+              } else {
+                // Resolve the reference
+                pointer.$ref = resolved.$ref;
+                pointer.path = resolved.path;
+                pointer.value = resolved.value;
+              }
+              return true;
+            }
+          }
+        }
+        /**
+ * Sets the specified token value of the {@link Pointer#value}.
+ *
+ * The token is evaluated according to RFC 6901.
+ * {@link https://tools.ietf.org/html/rfc6901#section-4}
+ *
+ * @param {Pointer} pointer - The JSON Pointer whose value will be modified
+ * @param {string} token - A JSON Pointer token that indicates how to modify `obj`
+ * @param {*} value - The value to assign
+ * @returns {*} - Returns the assigned value
+ */
+        function setValue(pointer, token, value) {
+          if (pointer.value && typeof pointer.value === 'object') {
+            if (token === '-' && Array.isArray(pointer.value)) {
+              pointer.value.push(value);
+            } else {
+              pointer.value[token] = value;
+            }
+          } else {
+            throw ono.syntax('Error assigning $ref pointer "%s". \nCannot set "%s" of a non-object.', pointer.path, token);
+          }
+          return value;
+        }
+      },
+      {
+        './ref': 98,
+        './util/url': 106,
+        'ono': 143
+      }
+    ],
+    98: [
+      function (require, module, exports) {
+        'use strict';
+        module.exports = $Ref;
+        var Pointer = require('./pointer');
+        /**
+ * This class represents a single JSON reference and its resolved value.
+ *
+ * @constructor
+ */
+        function $Ref() {
+          /**
+   * The file path or URL of the referenced file.
+   * This path is relative to the path of the main JSON schema file.
+   *
+   * This path does NOT contain document fragments (JSON pointers). It always references an ENTIRE file.
+   * Use methods such as {@link $Ref#get}, {@link $Ref#resolve}, and {@link $Ref#exists} to get
+   * specific JSON pointers within the file.
+   *
+   * @type {string}
+   */
+          this.path = undefined;
+          /**
+   * The resolved value of the JSON reference.
+   * Can be any JSON type, not just objects. Unknown file types are represented as Buffers (byte arrays).
+   * @type {?*}
+   */
+          this.value = undefined;
+          /**
+   * The {@link $Refs} object that contains this {@link $Ref} object.
+   * @type {$Refs}
+   */
+          this.$refs = undefined;
+          /**
+   * Indicates the type of {@link $Ref#path} (e.g. "file", "http", etc.)
+   * @type {?string}
+   */
+          this.pathType = undefined;
+        }
+        /**
+ * Determines whether the given JSON reference exists within this {@link $Ref#value}.
+ *
+ * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} options
+ * @returns {boolean}
+ */
+        $Ref.prototype.exists = function (path, options) {
+          try {
+            this.resolve(path, options);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        };
+        /**
+ * Resolves the given JSON reference within this {@link $Ref#value} and returns the resolved value.
+ *
+ * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} options
+ * @returns {*} - Returns the resolved value
+ */
+        $Ref.prototype.get = function (path, options) {
+          return this.resolve(path, options).value;
+        };
+        /**
+ * Resolves the given JSON reference within this {@link $Ref#value}.
+ *
+ * @param {string} path - The full path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} options
+ * @returns {Pointer}
+ */
+        $Ref.prototype.resolve = function (path, options) {
+          var pointer = new Pointer(this, path);
+          return pointer.resolve(this.value, options);
+        };
+        /**
+ * Sets the value of a nested property within this {@link $Ref#value}.
+ * If the property, or any of its parents don't exist, they will be created.
+ *
+ * @param {string} path - The full path of the property to set, optionally with a JSON pointer in the hash
+ * @param {*} value - The value to assign
+ */
+        $Ref.prototype.set = function (path, value) {
+          var pointer = new Pointer(this, path);
+          this.value = pointer.set(this.value, value);
+        };
+        /**
+ * Determines whether the given value is a JSON reference.
+ *
+ * @param {*} value - The value to inspect
+ * @returns {boolean}
+ */
+        $Ref.is$Ref = function (value) {
+          return value && typeof value === 'object' && typeof value.$ref === 'string' && value.$ref.length > 0;
+        };
+        /**
+ * Determines whether the given value is an external JSON reference.
+ *
+ * @param {*} value - The value to inspect
+ * @returns {boolean}
+ */
+        $Ref.isExternal$Ref = function (value) {
+          return $Ref.is$Ref(value) && value.$ref[0] !== '#';
+        };
+        /**
+ * Determines whether the given value is a JSON reference, and whether it is allowed by the options.
+ * For example, if it references an external file, then options.resolve.external must be true.
+ *
+ * @param {*} value - The value to inspect
+ * @param {$RefParserOptions} options
+ * @returns {boolean}
+ */
+        $Ref.isAllowed$Ref = function (value, options) {
+          if ($Ref.is$Ref(value)) {
+            if (value.$ref[0] === '#' || !options || options.resolve.external) {
+              return true;
+            }
+          }
+        };
+        /**
+ * Determines whether the given value is a JSON reference that "extends" its resolved value.
+ * That is, it has extra properties (in addition to "$ref"), so rather than simply pointing to
+ * an existing value, this $ref actually creates a NEW value that is a shallow copy of the resolved
+ * value, plus the extra properties.
+ *
+ * @example:
+ *  {
+ *    person: {
+ *      properties: {
+ *        firstName: { type: string }
+ *        lastName: { type: string }
+ *      }
+ *    }
+ *    employee: {
+ *      properties: {
+ *        $ref: #/person/properties
+ *        salary: { type: number }
+ *      }
+ *    }
+ *  }
+ *
+ *  In this example, "employee" is an extended $ref, since it extends "person" with an additional
+ *  property (salary).  The result is a NEW value that looks like this:
+ *
+ *  {
+ *    properties: {
+ *      firstName: { type: string }
+ *      lastName: { type: string }
+ *      salary: { type: number }
+ *    }
+ *  }
+ *
+ * @param {*} value - The value to inspect
+ * @returns {boolean}
+ */
+        $Ref.isExtended$Ref = function (value) {
+          return $Ref.is$Ref(value) && Object.keys(value).length > 1;
+        };
+        /**
+ * Returns the resolved value of a JSON Reference.
+ * If necessary, the resolved value is merged with the JSON Reference to create a new object
+ *
+ * @example:
+ *  {
+ *    person: {
+ *      properties: {
+ *        firstName: { type: string }
+ *        lastName: { type: string }
+ *      }
+ *    }
+ *    employee: {
+ *      properties: {
+ *        $ref: #/person/properties
+ *        salary: { type: number }
+ *      }
+ *    }
+ *  }
+ *
+ *  When "person" and "employee" are merged, you end up with the following object:
+ *
+ *  {
+ *    properties: {
+ *      firstName: { type: string }
+ *      lastName: { type: string }
+ *      salary: { type: number }
+ *    }
+ *  }
+ *
+ * @param {object} $ref - The JSON reference object (the one with the "$ref" property)
+ * @param {*} resolvedValue - The resolved value, which can be any type
+ * @returns {*} - Returns the dereferenced value
+ */
+        $Ref.dereference = function ($ref, resolvedValue) {
+          if (resolvedValue && typeof resolvedValue === 'object' && $Ref.isExtended$Ref($ref)) {
+            var merged = {};
+            Object.keys($ref).forEach(function (key) {
+              if (key !== '$ref') {
+                merged[key] = $ref[key];
+              }
+            });
+            Object.keys(resolvedValue).forEach(function (key) {
+              if (!(key in merged)) {
+                merged[key] = resolvedValue[key];
+              }
+            });
+            return merged;
+          } else {
+            // Completely replace the original reference with the resolved value
+            return resolvedValue;
+          }
+        };
+      },
+      { './pointer': 97 }
+    ],
+    99: [
+      function (require, module, exports) {
+        'use strict';
+        var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
+        module.exports = $Refs;
+        /**
+ * This class is a map of JSON references and their resolved values.
+ */
+        function $Refs() {
+          /**
+   * Indicates whether the schema contains any circular references.
+   *
+   * @type {boolean}
+   */
+          this.circular = false;
+          /**
+   * A map of paths/urls to {@link $Ref} objects
+   *
+   * @type {object}
+   * @protected
+   */
+          this._$refs = {};
+          /**
+   * The {@link $Ref} object that is the root of the JSON schema.
+   *
+   * @type {$Ref}
+   * @protected
+   */
+          this._root$Ref = null;
+        }
+        /**
+ * Returns the paths of all the files/URLs that are referenced by the JSON schema,
+ * including the schema itself.
+ *
+ * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
+ * @returns {string[]}
+ */
+        $Refs.prototype.paths = function (types) {
+          var paths = getPaths(this._$refs, arguments);
+          return paths.map(function (path) {
+            return path.decoded;
+          });
+        };
+        /**
+ * Returns the map of JSON references and their resolved values.
+ *
+ * @param {...string|string[]} [types] - Only return references of the given types ("file", "http", etc.)
+ * @returns {object}
+ */
+        $Refs.prototype.values = function (types) {
+          var $refs = this._$refs;
+          var paths = getPaths($refs, arguments);
+          return paths.reduce(function (obj, path) {
+            obj[path.decoded] = $refs[path.encoded].value;
+            return obj;
+          }, {});
+        };
+        /**
+ * Returns a POJO (plain old JavaScript object) for serialization as JSON.
+ *
+ * @returns {object}
+ */
+        $Refs.prototype.toJSON = $Refs.prototype.values;
+        /**
+ * Determines whether the given JSON reference exists.
+ *
+ * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} [options]
+ * @returns {boolean}
+ */
+        $Refs.prototype.exists = function (path, options) {
+          try {
+            this._resolve(path, options);
+            return true;
+          } catch (e) {
+            return false;
+          }
+        };
+        /**
+ * Resolves the given JSON reference and returns the resolved value.
+ *
+ * @param {string} path - The path being resolved, with a JSON pointer in the hash
+ * @param {$RefParserOptions} [options]
+ * @returns {*} - Returns the resolved value
+ */
+        $Refs.prototype.get = function (path, options) {
+          return this._resolve(path, options).value;
+        };
+        /**
+ * Sets the value of a nested property within this {@link $Ref#value}.
+ * If the property, or any of its parents don't exist, they will be created.
+ *
+ * @param {string} path - The path of the property to set, optionally with a JSON pointer in the hash
+ * @param {*} value - The value to assign
+ */
+        $Refs.prototype.set = function (path, value) {
+          path = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(path);
+          var $ref = this._$refs[withoutHash];
+          if (!$ref) {
+            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
+          }
+          $ref.set(path, value);
+        };
+        /**
+ * Creates a new {@link $Ref} object and adds it to this {@link $Refs} object.
+ *
+ * @param {string} path  - The file path or URL of the referenced file
+ * @param {*} [value] - Optional. The value of the $ref.
+ */
+        $Refs.prototype._add = function (path, value) {
+          var withoutHash = url.stripHash(path);
+          var $ref = new $Ref();
+          $ref.path = withoutHash;
+          $ref.value = value;
+          $ref.$refs = this;
+          this._$refs[withoutHash] = $ref;
+          this._root$Ref = this._root$Ref || $ref;
+          return $ref;
+        };
+        /**
+ * Resolves the given JSON reference.
+ *
+ * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
+ * @param {$RefParserOptions} [options]
+ * @returns {Pointer}
+ * @protected
+ */
+        $Refs.prototype._resolve = function (path, options) {
+          path = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(path);
+          var $ref = this._$refs[withoutHash];
+          if (!$ref) {
+            throw ono('Error resolving $ref pointer "%s". \n"%s" not found.', path, withoutHash);
+          }
+          return $ref.resolve(path, options);
+        };
+        /**
+ * Returns the specified {@link $Ref} object, or undefined.
+ *
+ * @param {string} path - The path being resolved, optionally with a JSON pointer in the hash
+ * @returns {$Ref|undefined}
+ * @protected
+ */
+        $Refs.prototype._get$Ref = function (path) {
+          path = url.resolve(this._root$Ref.path, path);
+          var withoutHash = url.stripHash(path);
+          return this._$refs[withoutHash];
+        };
+        /**
+ * Returns the encoded and decoded paths keys of the given object.
+ *
+ * @param {object} $refs - The object whose keys are URL-encoded paths
+ * @param {...string|string[]} [types] - Only return paths of the given types ("file", "http", etc.)
+ * @returns {object[]}
+ */
+        function getPaths($refs, types) {
+          var paths = Object.keys($refs);
+          // Filter the paths by type
+          types = Array.isArray(types[0]) ? types[0] : Array.prototype.slice.call(types);
+          if (types.length > 0 && types[0]) {
+            paths = paths.filter(function (key) {
+              return types.indexOf($refs[key].pathType) !== -1;
+            });
+          }
+          // Decode local filesystem paths
+          return paths.map(function (path) {
+            return {
+              encoded: path,
+              decoded: $refs[path].pathType === 'file' ? url.toFileSystemPath(path, true) : path
+            };
+          });
+        }
+      },
+      {
+        './ref': 98,
+        './util/url': 106,
+        'ono': 143
+      }
+    ],
+    100: [
+      function (require, module, exports) {
+        'use strict';
+        var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
+        module.exports = resolveExternal;
+        /**
+ * Crawls the JSON schema, finds all external JSON references, and resolves their values.
+ * This method does not mutate the JSON schema. The resolved values are added to {@link $RefParser#$refs}.
+ *
+ * NOTE: We only care about EXTERNAL references here. INTERNAL references are only relevant when dereferencing.
+ *
+ * @param {$RefParser} parser
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves once all JSON references in the schema have been resolved,
+ * including nested references that are contained in externally-referenced files.
+ */
+        function resolveExternal(parser, options) {
+          if (!options.resolve.external) {
+            // Nothing to resolve, so exit early
+            return Promise.resolve();
+          }
+          try {
+            debug('Resolving $ref pointers in %s', parser.$refs._root$Ref.path);
+            var promises = crawl(parser.schema, parser.$refs._root$Ref.path + '#', parser.$refs, options);
+            return Promise.all(promises);
+          } catch (e) {
+            return Promise.reject(e);
+          }
+        }
+        /**
+ * Recursively crawls the given value, and resolves any external JSON references.
+ *
+ * @param {*} obj - The value to crawl. If it's not an object or array, it will be ignored.
+ * @param {string} path - The full path of `obj`, possibly with a JSON Pointer in the hash
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise[]}
+ * Returns an array of promises. There will be one promise for each JSON reference in `obj`.
+ * If `obj` does not contain any JSON references, then the array will be empty.
+ * If any of the JSON references point to files that contain additional JSON references,
+ * then the corresponding promise will internally reference an array of promises.
+ */
+        function crawl(obj, path, $refs, options) {
+          var promises = [];
+          if (obj && typeof obj === 'object') {
+            if ($Ref.isExternal$Ref(obj)) {
+              promises.push(resolve$Ref(obj, path, $refs, options));
+            } else {
+              Object.keys(obj).forEach(function (key) {
+                var keyPath = Pointer.join(path, key);
+                var value = obj[key];
+                if ($Ref.isExternal$Ref(value)) {
+                  promises.push(resolve$Ref(value, keyPath, $refs, options));
+                } else {
+                  promises = promises.concat(crawl(value, keyPath, $refs, options));
+                }
+              });
+            }
+          }
+          return promises;
+        }
+        /**
+ * Resolves the given JSON Reference, and then crawls the resulting value.
+ *
+ * @param {{$ref: string}} $ref - The JSON Reference to resolve
+ * @param {string} path - The full path of `$ref`, possibly with a JSON Pointer in the hash
+ * @param {$Refs} $refs
+ * @param {$RefParserOptions} options
+ *
+ * @returns {Promise}
+ * The promise resolves once all JSON references in the object have been resolved,
+ * including nested references that are contained in externally-referenced files.
+ */
+        function resolve$Ref($ref, path, $refs, options) {
+          debug('Resolving $ref pointer "%s" at %s', $ref.$ref, path);
+          var resolvedPath = url.resolve(path, $ref.$ref);
+          var withoutHash = url.stripHash(resolvedPath);
+          // Do we already have this $ref?
+          $ref = $refs._$refs[withoutHash];
+          if ($ref) {
+            // We've already parsed this $ref, so use the existing value
+            return Promise.resolve($ref.value);
+          }
+          // Parse the $referenced file/url
+          return parse(resolvedPath, $refs, options).then(function (result) {
+            // Crawl the parsed value
+            debug('Resolving $ref pointers in %s', withoutHash);
+            var promises = crawl(result, withoutHash + '#', $refs, options);
+            return Promise.all(promises);
+          });
+        }
+      },
+      {
+        './parse': 92,
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/promise': 105,
+        './util/url': 106
+      }
+    ],
+    101: [
+      function (require, module, exports) {
+        'use strict';
+        var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
+        module.exports = {
+          order: 100,
+          canRead: function isFile(file) {
+            return url.isFileSystemPath(file.url);
+          },
+          read: function readFile(file) {
+            return new Promise(function (resolve, reject) {
+              var path;
+              try {
+                path = url.toFileSystemPath(file.url);
+              } catch (err) {
+                reject(ono.uri(err, 'Malformed URI: %s', file.url));
+              }
+              debug('Opening file: %s', path);
+              try {
+                fs.readFile(path, function (err, data) {
+                  if (err) {
+                    reject(ono(err, 'Error opening file "%s"', path));
+                  } else {
+                    resolve(data);
+                  }
+                });
+              } catch (err) {
+                reject(ono(err, 'Error opening file "%s"', path));
+              }
+            });
+          }
+        };
+      },
+      {
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        'fs': 70,
+        'ono': 143
+      }
+    ],
+    102: [
+      function (require, module, exports) {
+        (function (process, Buffer) {
+          'use strict';
+          var http = require('http'), https = require('https'), ono = require('ono'), url = require('../util/url'), debug = require('../util/debug'), Promise = require('../util/promise');
+          module.exports = {
+            order: 200,
+            headers: null,
+            timeout: 5000,
+            redirects: 5,
+            withCredentials: false,
+            canRead: function isHttp(file) {
+              return url.isHttp(file.url);
+            },
+            read: function readHttp(file) {
+              var u = url.parse(file.url);
+              if (process.browser && !u.protocol) {
+                // Use the protocol of the current page
+                u.protocol = url.parse(location.href).protocol;
+              }
+              return download(u, this);
+            }
+          };
+          /**
+ * Downloads the given file.
+ *
+ * @param {Url|string} u        - The url to download (can be a parsed {@link Url} object)
+ * @param {object} httpOptions  - The `options.resolve.http` object
+ * @param {number} [redirects]  - The redirect URLs that have already been followed
+ *
+ * @returns {Promise<Buffer>}
+ * The promise resolves with the raw downloaded data, or rejects if there is an HTTP error.
+ */
+          function download(u, httpOptions, redirects) {
+            return new Promise(function (resolve, reject) {
+              u = url.parse(u);
+              redirects = redirects || [];
+              redirects.push(u.href);
+              get(u, httpOptions).then(function (res) {
+                if (res.statusCode >= 400) {
+                  throw ono({ status: res.statusCode }, 'HTTP ERROR %d', res.statusCode);
+                } else if (res.statusCode >= 300) {
+                  if (redirects.length > httpOptions.redirects) {
+                    reject(ono({ status: res.statusCode }, 'Error downloading %s. \nToo many redirects: \n  %s', redirects[0], redirects.join(' \n  ')));
+                  } else if (!res.headers.location) {
+                    throw ono({ status: res.statusCode }, 'HTTP %d redirect with no location header', res.statusCode);
+                  } else {
+                    debug('HTTP %d redirect %s -> %s', res.statusCode, u.href, res.headers.location);
+                    var redirectTo = url.resolve(u, res.headers.location);
+                    download(redirectTo, httpOptions, redirects).then(resolve, reject);
+                  }
+                } else {
+                  resolve(res.body || new Buffer(0));
+                }
+              }).catch(function (err) {
+                reject(ono(err, 'Error downloading', u.href));
+              });
+            });
+          }
+          /**
+ * Sends an HTTP GET request.
+ *
+ * @param {Url} u - A parsed {@link Url} object
+ * @param {object} httpOptions - The `options.resolve.http` object
+ *
+ * @returns {Promise<Response>}
+ * The promise resolves with the HTTP Response object.
+ */
+          function get(u, httpOptions) {
+            return new Promise(function (resolve, reject) {
+              debug('GET', u.href);
+              var protocol = u.protocol === 'https:' ? https : http;
+              var req = protocol.get({
+                  hostname: u.hostname,
+                  port: u.port,
+                  path: u.path,
+                  auth: u.auth,
+                  headers: httpOptions.headers || {},
+                  withCredentials: httpOptions.withCredentials
+                });
+              if (typeof req.setTimeout === 'function') {
+                req.setTimeout(httpOptions.timeout);
+              }
+              req.on('timeout', function () {
+                req.abort();
+              });
+              req.on('error', reject);
+              req.once('response', function (res) {
+                res.body = new Buffer(0);
+                res.on('data', function (data) {
+                  res.body = Buffer.concat([
+                    res.body,
+                    new Buffer(data)
+                  ]);
+                });
+                res.on('error', reject);
+                res.on('end', function () {
+                  resolve(res);
+                });
+              });
+            });
+          }
+        }.call(this, require('_process'), require('buffer').Buffer));
+      },
+      {
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        '_process': 145,
+        'buffer': 72,
+        'http': 163,
+        'https': 82,
+        'ono': 143
+      }
+    ],
+    103: [
+      function (require, module, exports) {
+        'use strict';
+        var debug = require('debug');
+        /**
+ * Writes messages to stdout.
+ * Log messages are suppressed by default, but can be enabled by setting the DEBUG variable.
+ * @type {function}
+ */
+        module.exports = debug('json-schema-ref-parser');
+      },
+      { 'debug': 77 }
+    ],
+    104: [
+      function (require, module, exports) {
+        'use strict';
+        var Promise = require('./promise'), debug = require('./debug');
+        /**
+ * Returns the given plugins as an array, rather than an object map.
+ * All other methods in this module expect an array of plugins rather than an object map.
+ *
+ * @param  {object} plugins - A map of plugin objects
+ * @return {object[]}
+ */
+        exports.all = function (plugins) {
+          return Object.keys(plugins).filter(function (key) {
+            return typeof plugins[key] === 'object';
+          }).map(function (key) {
+            plugins[key].name = key;
+            return plugins[key];
+          });
+        };
+        /**
+ * Filters the given plugins, returning only the ones return `true` for the given method.
+ *
+ * @param  {object[]} plugins - An array of plugin objects
+ * @param  {string}   method  - The name of the filter method to invoke for each plugin
+ * @param  {object}   file    - A file info object, which will be passed to each method
+ * @return {object[]}
+ */
+        exports.filter = function (plugins, method, file) {
+          return plugins.filter(function (plugin) {
+            return !!getResult(plugin, method, file);
+          });
+        };
+        /**
+ * Sorts the given plugins, in place, by their `order` property.
+ *
+ * @param {object[]} plugins - An array of plugin objects
+ * @returns {object[]}
+ */
+        exports.sort = function (plugins) {
+          plugins.forEach(function (plugin) {
+            plugin.order = plugin.order || Number.MAX_SAFE_INTEGER;
+          });
+          return plugins.sort(function (a, b) {
+            return a.order - b.order;
+          });
+        };
+        /**
+ * Runs the specified method of the given plugins, in order, until one of them returns a successful result.
+ * Each method can return a synchronous value, a Promise, or call an error-first callback.
+ * If the promise resolves successfully, or the callback is called without an error, then the result
+ * is immediately returned and no further plugins are called.
+ * If the promise rejects, or the callback is called with an error, then the next plugin is called.
+ * If ALL plugins fail, then the last error is thrown.
+ *
+ * @param {object[]}  plugins - An array of plugin objects
+ * @param {string}    method  - The name of the method to invoke for each plugin
+ * @param {object}    file    - A file info object, which will be passed to each method
+ * @returns {Promise}
+ */
+        exports.run = function (plugins, method, file) {
+          var plugin, lastError, index = 0;
+          return new Promise(function (resolve, reject) {
+            runNextPlugin();
+            function runNextPlugin() {
+              plugin = plugins[index++];
+              if (!plugin) {
+                // There are no more functions, so re-throw the last error
+                return reject(lastError);
+              }
+              try {
+                debug('  %s', plugin.name);
+                var result = getResult(plugin, method, file, callback);
+                if (result && typeof result.then === 'function') {
+                  // A promise was returned
+                  result.then(onSuccess, onError);
+                } else if (result !== undefined) {
+                  // A synchronous result was returned
+                  onSuccess(result);
+                }  // else { the callback will be called }
+              } catch (e) {
+                onError(e);
+              }
+            }
+            function callback(err, result) {
+              if (err) {
+                onError(err);
+              } else {
+                onSuccess(result);
+              }
+            }
+            function onSuccess(result) {
+              debug('    success');
+              resolve({
+                plugin: plugin,
+                result: result
+              });
+            }
+            function onError(err) {
+              debug('    %s', err.message || err);
+              lastError = err;
+              runNextPlugin();
+            }
+          });
+        };
+        /**
+ * Returns the value of the given property.
+ * If the property is a function, then the result of the function is returned.
+ * If the value is a RegExp, then it will be tested against the file URL.
+ * If the value is an aray, then it will be compared against the file extension.
+ *
+ * @param   {object}   obj        - The object whose property/method is called
+ * @param   {string}   prop       - The name of the property/method to invoke
+ * @param   {object}   file       - A file info object, which will be passed to the method
+ * @param   {function} [callback] - A callback function, which will be passed to the method
+ * @returns {*}
+ */
+        function getResult(obj, prop, file, callback) {
+          var value = obj[prop];
+          if (typeof value === 'function') {
+            return value.apply(obj, [
+              file,
+              callback
+            ]);
+          }
+          if (!callback) {
+            // The synchronous plugin functions (canParse and canRead)
+            // allow a "shorthand" syntax, where the user can match
+            // files by RegExp or by file extension.
+            if (value instanceof RegExp) {
+              return value.test(file.url);
+            } else if (typeof value === 'string') {
+              return value === file.extension;
+            } else if (Array.isArray(value)) {
+              return value.indexOf(file.extension) !== -1;
+            }
+          }
+          return value;
+        }
+      },
+      {
+        './debug': 103,
+        './promise': 105
+      }
+    ],
+    105: [
+      function (require, module, exports) {
+        'use strict';
+        /** @type {Promise} **/
+        module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
+      },
+      { 'es6-promise': 79 }
+    ],
+    106: [
+      function (require, module, exports) {
+        (function (process) {
+          'use strict';
+          var isWindows = /^win/.test(process.platform), forwardSlashPattern = /\//g, protocolPattern = /^([a-z0-9.+-]+):\/\//i, url = module.exports;
+          // RegExp patterns to URL-encode special characters in local filesystem paths
+          var urlEncodePatterns = [
+              /\?/g,
+              '%3F',
+              /\#/g,
+              '%23',
+              isWindows ? /\\/g : /\//,
+              '/'
+            ];
+          // RegExp patterns to URL-decode special characters for local filesystem paths
+          var urlDecodePatterns = [
+              /\%23/g,
+              '#',
+              /\%24/g,
+              '$',
+              /\%26/g,
+              '&',
+              /\%2C/g,
+              ',',
+              /\%40/g,
+              '@'
+            ];
+          exports.parse = require('url').parse;
+          exports.resolve = require('url').resolve;
+          /**
+ * Returns the current working directory (in Node) or the current page URL (in browsers).
+ *
+ * @returns {string}
+ */
+          exports.cwd = function cwd() {
+            return process.browser ? location.href : process.cwd() + '/';
+          };
+          /**
+ * Returns the protocol of the given URL, or `undefined` if it has no protocol.
+ *
+ * @param   {string} path
+ * @returns {?string}
+ */
+          exports.getProtocol = function getProtocol(path) {
+            var match = protocolPattern.exec(path);
+            if (match) {
+              return match[1].toLowerCase();
+            }
+          };
+          /**
+ * Returns the lowercased file extension of the given URL,
+ * or an empty string if it has no extension.
+ *
+ * @param   {string} path
+ * @returns {string}
+ */
+          exports.getExtension = function getExtension(path) {
+            var lastDot = path.lastIndexOf('.');
+            if (lastDot >= 0) {
+              return path.substr(lastDot).toLowerCase();
+            }
+            return '';
+          };
+          /**
+ * Returns the hash (URL fragment), of the given path.
+ * If there is no hash, then the root hash ("#") is returned.
+ *
+ * @param   {string} path
+ * @returns {string}
+ */
+          exports.getHash = function getHash(path) {
+            var hashIndex = path.indexOf('#');
+            if (hashIndex >= 0) {
+              return path.substr(hashIndex);
+            }
+            return '#';
+          };
+          /**
+ * Removes the hash (URL fragment), if any, from the given path.
+ *
+ * @param   {string} path
+ * @returns {string}
+ */
+          exports.stripHash = function stripHash(path) {
+            var hashIndex = path.indexOf('#');
+            if (hashIndex >= 0) {
+              path = path.substr(0, hashIndex);
+            }
+            return path;
+          };
+          /**
+ * Determines whether the given path is an HTTP(S) URL.
+ *
+ * @param   {string} path
+ * @returns {boolean}
+ */
+          exports.isHttp = function isHttp(path) {
+            var protocol = url.getProtocol(path);
+            if (protocol === 'http' || protocol === 'https') {
+              return true;
+            } else if (protocol === undefined) {
+              // There is no protocol.  If we're running in a browser, then assume it's HTTP.
+              return process.browser;
+            } else {
+              // It's some other protocol, such as "ftp://", "mongodb://", etc.
+              return false;
+            }
+          };
+          /**
+ * Determines whether the given path is a filesystem path.
+ * This includes "file://" URLs.
+ *
+ * @param   {string} path
+ * @returns {boolean}
+ */
+          exports.isFileSystemPath = function isFileSystemPath(path) {
+            if (process.browser) {
+              // We're running in a browser, so assume that all paths are URLs.
+              // This way, even relative paths will be treated as URLs rather than as filesystem paths
+              return false;
+            }
+            var protocol = url.getProtocol(path);
+            return protocol === undefined || protocol === 'file';
+          };
+          /**
+ * Converts a filesystem path to a properly-encoded URL.
+ *
+ * This is intended to handle situations where JSON Schema $Ref Parser is called
+ * with a filesystem path that contains characters which are not allowed in URLs.
+ *
+ * @example
+ * The following filesystem paths would be converted to the following URLs:
+ *
+ *    <"!@#$%^&*+=?'>.json              ==>   %3C%22!@%23$%25%5E&*+=%3F\'%3E.json
+ *    C:\\My Documents\\File (1).json   ==>   C:/My%20Documents/File%20(1).json
+ *    file://Project #42/file.json      ==>   file://Project%20%2342/file.json
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+          exports.fromFileSystemPath = function fromFileSystemPath(path) {
+            // Step 1: Manually encode characters that are not encoded by `encodeURI`.
+            // This includes characters such as "#" and "?", which have special meaning in URLs,
+            // but are just normal characters in a filesystem path.
+            // On Windows, this will also replace backslashes with forward slashes,
+            // rather than encoding them as special characters.
+            for (var i = 0; i < urlEncodePatterns.length; i += 2) {
+              path = path.replace(urlEncodePatterns[i], urlEncodePatterns[i + 1]);
+            }
+            // Step 2: `encodeURI` will take care of all other characters
+            return encodeURI(path);
+          };
+          /**
+ * Converts a URL to a local filesystem path.
+ *
+ * @param {string}  path
+ * @param {boolean} [keepFileProtocol] - If true, then "file://" will NOT be stripped
+ * @returns {string}
+ */
+          exports.toFileSystemPath = function toFileSystemPath(path, keepFileProtocol) {
+            // Step 1: `decodeURI` will decode characters such as Cyrillic characters, spaces, etc.
+            path = decodeURI(path);
+            // Step 2: Manually decode characters that are not decoded by `decodeURI`.
+            // This includes characters such as "#" and "?", which have special meaning in URLs,
+            // but are just normal characters in a filesystem path.
+            for (var i = 0; i < urlDecodePatterns.length; i += 2) {
+              path = path.replace(urlDecodePatterns[i], urlDecodePatterns[i + 1]);
+            }
+            // Step 3: If it's a "file://" URL, then format it consistently
+            // or convert it to a local filesystem path
+            var isFileUrl = path.substr(0, 7).toLowerCase() === 'file://';
+            if (isFileUrl) {
+              // Strip-off the protocol, and the initial "/", if there is one
+              path = path[7] === '/' ? path.substr(8) : path.substr(7);
+              // insert a colon (":") after the drive letter on Windows
+              if (isWindows && path[1] === '/') {
+                path = path[0] + ':' + path.substr(1);
+              }
+              if (keepFileProtocol) {
+                // Return the consistently-formatted "file://" URL
+                path = 'file:///' + path;
+              } else {
+                // Convert the "file://" URL to a local filesystem path.
+                // On Windows, it will start with something like "C:/".
+                // On Posix, it will start with "/"
+                isFileUrl = false;
+                path = isWindows ? path : '/' + path;
+              }
+            }
+            // Step 4: On Windows, convert backslashes to forward slashes,
+            // unless it's a "file://" URL
+            if (isWindows && !isFileUrl) {
+              path = path.replace(forwardSlashPattern, '\\');
+            }
+            return path;
+          };
+        }.call(this, require('_process')));
+      },
+      {
+        '_process': 145,
+        'url': 176
+      }
+    ],
+    107: [
+      function (require, module, exports) {
+        /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
+        'use strict';
+        var yaml = require('js-yaml'), ono = require('ono');
+        /**
+ * Simple YAML parsing functions, similar to {@link JSON.parse} and {@link JSON.stringify}
+ */
+        module.exports = {
+          parse: function yamlParse(text, reviver) {
+            try {
+              return yaml.safeLoad(text);
+            } catch (e) {
+              if (e instanceof Error) {
+                throw e;
+              } else {
+                // https://github.com/nodeca/js-yaml/issues/153
+                throw ono(e, e.message);
+              }
+            }
+          },
+          stringify: function yamlStringify(value, replacer, space) {
+            try {
+              var indent = (typeof space === 'string' ? space.length : space) || 2;
+              return yaml.safeDump(value, { indent: indent });
+            } catch (e) {
+              if (e instanceof Error) {
+                throw e;
+              } else {
+                // https://github.com/nodeca/js-yaml/issues/153
+                throw ono(e, e.message);
+              }
+            }
+          }
+        };
+      },
+      {
+        'js-yaml': 109,
+        'ono': 143
+      }
+    ],
+    108: [
+      function (require, module, exports) {
+        'use strict';
+        module.exports = {
+          order: 100,
+          canValidate: function canValidate(file) {
+            // Z-Schema requires JSON References to already be resolved (but not dereferenced)
+            return !!file.resolved;
+          },
+          validate: function validate(file) {
+          }
+        };
+      },
+      {}
+    ],
+    109: [
+      function (require, module, exports) {
+        arguments[4][36][0].apply(exports, arguments);
+      },
+      {
+        './lib/js-yaml.js': 110,
+        'dup': 36
+      }
+    ],
     110: [
+      function (require, module, exports) {
+        arguments[4][37][0].apply(exports, arguments);
+      },
+      {
+        './js-yaml/dumper': 112,
+        './js-yaml/exception': 113,
+        './js-yaml/loader': 114,
+        './js-yaml/schema': 116,
+        './js-yaml/schema/core': 117,
+        './js-yaml/schema/default_full': 118,
+        './js-yaml/schema/default_safe': 119,
+        './js-yaml/schema/failsafe': 120,
+        './js-yaml/schema/json': 121,
+        './js-yaml/type': 122,
+        'dup': 37
+      }
+    ],
+    111: [
+      function (require, module, exports) {
+        arguments[4][38][0].apply(exports, arguments);
+      },
+      { 'dup': 38 }
+    ],
+    112: [
+      function (require, module, exports) {
+        arguments[4][39][0].apply(exports, arguments);
+      },
+      {
+        './common': 111,
+        './exception': 113,
+        './schema/default_full': 118,
+        './schema/default_safe': 119,
+        'dup': 39
+      }
+    ],
+    113: [
+      function (require, module, exports) {
+        arguments[4][40][0].apply(exports, arguments);
+      },
+      { 'dup': 40 }
+    ],
+    114: [
+      function (require, module, exports) {
+        arguments[4][41][0].apply(exports, arguments);
+      },
+      {
+        './common': 111,
+        './exception': 113,
+        './mark': 115,
+        './schema/default_full': 118,
+        './schema/default_safe': 119,
+        'dup': 41
+      }
+    ],
+    115: [
+      function (require, module, exports) {
+        arguments[4][42][0].apply(exports, arguments);
+      },
+      {
+        './common': 111,
+        'dup': 42
+      }
+    ],
+    116: [
+      function (require, module, exports) {
+        arguments[4][43][0].apply(exports, arguments);
+      },
+      {
+        './common': 111,
+        './exception': 113,
+        './type': 122,
+        'dup': 43
+      }
+    ],
+    117: [
+      function (require, module, exports) {
+        arguments[4][44][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 116,
+        './json': 121,
+        'dup': 44
+      }
+    ],
+    118: [
+      function (require, module, exports) {
+        arguments[4][45][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 116,
+        '../type/js/function': 127,
+        '../type/js/regexp': 128,
+        '../type/js/undefined': 129,
+        './default_safe': 119,
+        'dup': 45
+      }
+    ],
+    119: [
+      function (require, module, exports) {
+        arguments[4][46][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 116,
+        '../type/binary': 123,
+        '../type/merge': 131,
+        '../type/omap': 133,
+        '../type/pairs': 134,
+        '../type/set': 136,
+        '../type/timestamp': 138,
+        './core': 117,
+        'dup': 46
+      }
+    ],
+    120: [
+      function (require, module, exports) {
+        arguments[4][47][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 116,
+        '../type/map': 130,
+        '../type/seq': 135,
+        '../type/str': 137,
+        'dup': 47
+      }
+    ],
+    121: [
+      function (require, module, exports) {
+        arguments[4][48][0].apply(exports, arguments);
+      },
+      {
+        '../schema': 116,
+        '../type/bool': 124,
+        '../type/float': 125,
+        '../type/int': 126,
+        '../type/null': 132,
+        './failsafe': 120,
+        'dup': 48
+      }
+    ],
+    122: [
+      function (require, module, exports) {
+        arguments[4][49][0].apply(exports, arguments);
+      },
+      {
+        './exception': 113,
+        'dup': 49
+      }
+    ],
+    123: [
+      function (require, module, exports) {
+        arguments[4][50][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 50
+      }
+    ],
+    124: [
+      function (require, module, exports) {
+        arguments[4][51][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 51
+      }
+    ],
+    125: [
+      function (require, module, exports) {
+        arguments[4][52][0].apply(exports, arguments);
+      },
+      {
+        '../common': 111,
+        '../type': 122,
+        'dup': 52
+      }
+    ],
+    126: [
+      function (require, module, exports) {
+        arguments[4][53][0].apply(exports, arguments);
+      },
+      {
+        '../common': 111,
+        '../type': 122,
+        'dup': 53
+      }
+    ],
+    127: [
+      function (require, module, exports) {
+        arguments[4][54][0].apply(exports, arguments);
+      },
+      {
+        '../../type': 122,
+        'dup': 54
+      }
+    ],
+    128: [
+      function (require, module, exports) {
+        arguments[4][55][0].apply(exports, arguments);
+      },
+      {
+        '../../type': 122,
+        'dup': 55
+      }
+    ],
+    129: [
+      function (require, module, exports) {
+        arguments[4][56][0].apply(exports, arguments);
+      },
+      {
+        '../../type': 122,
+        'dup': 56
+      }
+    ],
+    130: [
+      function (require, module, exports) {
+        arguments[4][57][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 57
+      }
+    ],
+    131: [
+      function (require, module, exports) {
+        arguments[4][58][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 58
+      }
+    ],
+    132: [
+      function (require, module, exports) {
+        arguments[4][59][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 59
+      }
+    ],
+    133: [
+      function (require, module, exports) {
+        arguments[4][60][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 60
+      }
+    ],
+    134: [
+      function (require, module, exports) {
+        arguments[4][61][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 61
+      }
+    ],
+    135: [
+      function (require, module, exports) {
+        arguments[4][62][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 62
+      }
+    ],
+    136: [
+      function (require, module, exports) {
+        arguments[4][63][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 63
+      }
+    ],
+    137: [
+      function (require, module, exports) {
+        arguments[4][64][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 64
+      }
+    ],
+    138: [
+      function (require, module, exports) {
+        arguments[4][65][0].apply(exports, arguments);
+      },
+      {
+        '../type': 122,
+        'dup': 65
+      }
+    ],
+    139: [
+      function (require, module, exports) {
+        (function (global) {
+          /**
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+          /** Used as the `TypeError` message for "Functions" methods. */
+          var FUNC_ERROR_TEXT = 'Expected a function';
+          /** Used to stand-in for `undefined` hash values. */
+          var HASH_UNDEFINED = '__lodash_hash_undefined__';
+          /** Used as references for various `Number` constants. */
+          var INFINITY = 1 / 0;
+          /** `Object#toString` result references. */
+          var funcTag = '[object Function]', genTag = '[object GeneratorFunction]', symbolTag = '[object Symbol]';
+          /** Used to match property names within property paths. */
+          var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/, reIsPlainProp = /^\w*$/, reLeadingDot = /^\./, rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
+          /**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+          var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+          /** Used to match backslashes in property paths. */
+          var reEscapeChar = /\\(\\)?/g;
+          /** Used to detect host constructors (Safari). */
+          var reIsHostCtor = /^\[object .+?Constructor\]$/;
+          /** Detect free variable `global` from Node.js. */
+          var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+          /** Detect free variable `self`. */
+          var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+          /** Used as a reference to the global object. */
+          var root = freeGlobal || freeSelf || Function('return this')();
+          /**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+          function getValue(object, key) {
+            return object == null ? undefined : object[key];
+          }
+          /**
+ * Checks if `value` is a host object in IE < 9.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
+ */
+          function isHostObject(value) {
+            // Many host objects are `Object` objects that can coerce to strings
+            // despite having improperly defined `toString` methods.
+            var result = false;
+            if (value != null && typeof value.toString != 'function') {
+              try {
+                result = !!(value + '');
+              } catch (e) {
+              }
+            }
+            return result;
+          }
+          /** Used for built-in method references. */
+          var arrayProto = Array.prototype, funcProto = Function.prototype, objectProto = Object.prototype;
+          /** Used to detect overreaching core-js shims. */
+          var coreJsData = root['__core-js_shared__'];
+          /** Used to detect methods masquerading as native. */
+          var maskSrcKey = function () {
+              var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+              return uid ? 'Symbol(src)_1.' + uid : '';
+            }();
+          /** Used to resolve the decompiled source of functions. */
+          var funcToString = funcProto.toString;
+          /** Used to check objects for own properties. */
+          var hasOwnProperty = objectProto.hasOwnProperty;
+          /**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+          var objectToString = objectProto.toString;
+          /** Used to detect if a method is native. */
+          var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
+          /** Built-in value references. */
+          var Symbol = root.Symbol, splice = arrayProto.splice;
+          /* Built-in method references that are verified to be native. */
+          var Map = getNative(root, 'Map'), nativeCreate = getNative(Object, 'create');
+          /** Used to convert symbols to primitives and strings. */
+          var symbolProto = Symbol ? Symbol.prototype : undefined, symbolToString = symbolProto ? symbolProto.toString : undefined;
+          /**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function Hash(entries) {
+            var index = -1, length = entries ? entries.length : 0;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+          function hashClear() {
+            this.__data__ = nativeCreate ? nativeCreate(null) : {};
+          }
+          /**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function hashDelete(key) {
+            return this.has(key) && delete this.__data__[key];
+          }
+          /**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function hashGet(key) {
+            var data = this.__data__;
+            if (nativeCreate) {
+              var result = data[key];
+              return result === HASH_UNDEFINED ? undefined : result;
+            }
+            return hasOwnProperty.call(data, key) ? data[key] : undefined;
+          }
+          /**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function hashHas(key) {
+            var data = this.__data__;
+            return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+          }
+          /**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+          function hashSet(key, value) {
+            var data = this.__data__;
+            data[key] = nativeCreate && value === undefined ? HASH_UNDEFINED : value;
+            return this;
+          }
+          // Add methods to `Hash`.
+          Hash.prototype.clear = hashClear;
+          Hash.prototype['delete'] = hashDelete;
+          Hash.prototype.get = hashGet;
+          Hash.prototype.has = hashHas;
+          Hash.prototype.set = hashSet;
+          /**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function ListCache(entries) {
+            var index = -1, length = entries ? entries.length : 0;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+          function listCacheClear() {
+            this.__data__ = [];
+          }
+          /**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function listCacheDelete(key) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            if (index < 0) {
+              return false;
+            }
+            var lastIndex = data.length - 1;
+            if (index == lastIndex) {
+              data.pop();
+            } else {
+              splice.call(data, index, 1);
+            }
+            return true;
+          }
+          /**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function listCacheGet(key) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            return index < 0 ? undefined : data[index][1];
+          }
+          /**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function listCacheHas(key) {
+            return assocIndexOf(this.__data__, key) > -1;
+          }
+          /**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+          function listCacheSet(key, value) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            if (index < 0) {
+              data.push([
+                key,
+                value
+              ]);
+            } else {
+              data[index][1] = value;
+            }
+            return this;
+          }
+          // Add methods to `ListCache`.
+          ListCache.prototype.clear = listCacheClear;
+          ListCache.prototype['delete'] = listCacheDelete;
+          ListCache.prototype.get = listCacheGet;
+          ListCache.prototype.has = listCacheHas;
+          ListCache.prototype.set = listCacheSet;
+          /**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function MapCache(entries) {
+            var index = -1, length = entries ? entries.length : 0;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+          function mapCacheClear() {
+            this.__data__ = {
+              'hash': new Hash(),
+              'map': new (Map || ListCache)(),
+              'string': new Hash()
+            };
+          }
+          /**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function mapCacheDelete(key) {
+            return getMapData(this, key)['delete'](key);
+          }
+          /**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function mapCacheGet(key) {
+            return getMapData(this, key).get(key);
+          }
+          /**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function mapCacheHas(key) {
+            return getMapData(this, key).has(key);
+          }
+          /**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+          function mapCacheSet(key, value) {
+            getMapData(this, key).set(key, value);
+            return this;
+          }
+          // Add methods to `MapCache`.
+          MapCache.prototype.clear = mapCacheClear;
+          MapCache.prototype['delete'] = mapCacheDelete;
+          MapCache.prototype.get = mapCacheGet;
+          MapCache.prototype.has = mapCacheHas;
+          MapCache.prototype.set = mapCacheSet;
+          /**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+          function assocIndexOf(array, key) {
+            var length = array.length;
+            while (length--) {
+              if (eq(array[length][0], key)) {
+                return length;
+              }
+            }
+            return -1;
+          }
+          /**
+ * The base implementation of `_.get` without support for default values.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @returns {*} Returns the resolved value.
+ */
+          function baseGet(object, path) {
+            path = isKey(path, object) ? [path] : castPath(path);
+            var index = 0, length = path.length;
+            while (object != null && index < length) {
+              object = object[toKey(path[index++])];
+            }
+            return index && index == length ? object : undefined;
+          }
+          /**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+          function baseIsNative(value) {
+            if (!isObject(value) || isMasked(value)) {
+              return false;
+            }
+            var pattern = isFunction(value) || isHostObject(value) ? reIsNative : reIsHostCtor;
+            return pattern.test(toSource(value));
+          }
+          /**
+ * The base implementation of `_.toString` which doesn't convert nullish
+ * values to empty strings.
+ *
+ * @private
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ */
+          function baseToString(value) {
+            // Exit early for strings to avoid a performance hit in some environments.
+            if (typeof value == 'string') {
+              return value;
+            }
+            if (isSymbol(value)) {
+              return symbolToString ? symbolToString.call(value) : '';
+            }
+            var result = value + '';
+            return result == '0' && 1 / value == -INFINITY ? '-0' : result;
+          }
+          /**
+ * Casts `value` to a path array if it's not one.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {Array} Returns the cast property path array.
+ */
+          function castPath(value) {
+            return isArray(value) ? value : stringToPath(value);
+          }
+          /**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+          function getMapData(map, key) {
+            var data = map.__data__;
+            return isKeyable(key) ? data[typeof key == 'string' ? 'string' : 'hash'] : data.map;
+          }
+          /**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+          function getNative(object, key) {
+            var value = getValue(object, key);
+            return baseIsNative(value) ? value : undefined;
+          }
+          /**
+ * Checks if `value` is a property name and not a property path.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {Object} [object] The object to query keys on.
+ * @returns {boolean} Returns `true` if `value` is a property name, else `false`.
+ */
+          function isKey(value, object) {
+            if (isArray(value)) {
+              return false;
+            }
+            var type = typeof value;
+            if (type == 'number' || type == 'symbol' || type == 'boolean' || value == null || isSymbol(value)) {
+              return true;
+            }
+            return reIsPlainProp.test(value) || !reIsDeepProp.test(value) || object != null && value in Object(object);
+          }
+          /**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+          function isKeyable(value) {
+            var type = typeof value;
+            return type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean' ? value !== '__proto__' : value === null;
+          }
+          /**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+          function isMasked(func) {
+            return !!maskSrcKey && maskSrcKey in func;
+          }
+          /**
+ * Converts `string` to a property path array.
+ *
+ * @private
+ * @param {string} string The string to convert.
+ * @returns {Array} Returns the property path array.
+ */
+          var stringToPath = memoize(function (string) {
+              string = toString(string);
+              var result = [];
+              if (reLeadingDot.test(string)) {
+                result.push('');
+              }
+              string.replace(rePropName, function (match, number, quote, string) {
+                result.push(quote ? string.replace(reEscapeChar, '$1') : number || match);
+              });
+              return result;
+            });
+          /**
+ * Converts `value` to a string key if it's not a string or symbol.
+ *
+ * @private
+ * @param {*} value The value to inspect.
+ * @returns {string|symbol} Returns the key.
+ */
+          function toKey(value) {
+            if (typeof value == 'string' || isSymbol(value)) {
+              return value;
+            }
+            var result = value + '';
+            return result == '0' && 1 / value == -INFINITY ? '-0' : result;
+          }
+          /**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to process.
+ * @returns {string} Returns the source code.
+ */
+          function toSource(func) {
+            if (func != null) {
+              try {
+                return funcToString.call(func);
+              } catch (e) {
+              }
+              try {
+                return func + '';
+              } catch (e) {
+              }
+            }
+            return '';
+          }
+          /**
+ * Creates a function that memoizes the result of `func`. If `resolver` is
+ * provided, it determines the cache key for storing the result based on the
+ * arguments provided to the memoized function. By default, the first argument
+ * provided to the memoized function is used as the map cache key. The `func`
+ * is invoked with the `this` binding of the memoized function.
+ *
+ * **Note:** The cache is exposed as the `cache` property on the memoized
+ * function. Its creation may be customized by replacing the `_.memoize.Cache`
+ * constructor with one whose instances implement the
+ * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
+ * method interface of `delete`, `get`, `has`, and `set`.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Function
+ * @param {Function} func The function to have its output memoized.
+ * @param {Function} [resolver] The function to resolve the cache key.
+ * @returns {Function} Returns the new memoized function.
+ * @example
+ *
+ * var object = { 'a': 1, 'b': 2 };
+ * var other = { 'c': 3, 'd': 4 };
+ *
+ * var values = _.memoize(_.values);
+ * values(object);
+ * // => [1, 2]
+ *
+ * values(other);
+ * // => [3, 4]
+ *
+ * object.a = 2;
+ * values(object);
+ * // => [1, 2]
+ *
+ * // Modify the result cache.
+ * values.cache.set(object, ['a', 'b']);
+ * values(object);
+ * // => ['a', 'b']
+ *
+ * // Replace `_.memoize.Cache`.
+ * _.memoize.Cache = WeakMap;
+ */
+          function memoize(func, resolver) {
+            if (typeof func != 'function' || resolver && typeof resolver != 'function') {
+              throw new TypeError(FUNC_ERROR_TEXT);
+            }
+            var memoized = function () {
+              var args = arguments, key = resolver ? resolver.apply(this, args) : args[0], cache = memoized.cache;
+              if (cache.has(key)) {
+                return cache.get(key);
+              }
+              var result = func.apply(this, args);
+              memoized.cache = cache.set(key, result);
+              return result;
+            };
+            memoized.cache = new (memoize.Cache || MapCache)();
+            return memoized;
+          }
+          // Assign cache to `_.memoize`.
+          memoize.Cache = MapCache;
+          /**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+          function eq(value, other) {
+            return value === other || value !== value && other !== other;
+          }
+          /**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
+          var isArray = Array.isArray;
+          /**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+          function isFunction(value) {
+            // The use of `Object#toString` avoids issues with the `typeof` operator
+            // in Safari 8-9 which returns 'object' for typed array and other constructors.
+            var tag = isObject(value) ? objectToString.call(value) : '';
+            return tag == funcTag || tag == genTag;
+          }
+          /**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+          function isObject(value) {
+            var type = typeof value;
+            return !!value && (type == 'object' || type == 'function');
+          }
+          /**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+          function isObjectLike(value) {
+            return !!value && typeof value == 'object';
+          }
+          /**
+ * Checks if `value` is classified as a `Symbol` primitive or object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a symbol, else `false`.
+ * @example
+ *
+ * _.isSymbol(Symbol.iterator);
+ * // => true
+ *
+ * _.isSymbol('abc');
+ * // => false
+ */
+          function isSymbol(value) {
+            return typeof value == 'symbol' || isObjectLike(value) && objectToString.call(value) == symbolTag;
+          }
+          /**
+ * Converts `value` to a string. An empty string is returned for `null`
+ * and `undefined` values. The sign of `-0` is preserved.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to process.
+ * @returns {string} Returns the string.
+ * @example
+ *
+ * _.toString(null);
+ * // => ''
+ *
+ * _.toString(-0);
+ * // => '-0'
+ *
+ * _.toString([1, 2, 3]);
+ * // => '1,2,3'
+ */
+          function toString(value) {
+            return value == null ? '' : baseToString(value);
+          }
+          /**
+ * Gets the value at `path` of `object`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.7.0
+ * @category Object
+ * @param {Object} object The object to query.
+ * @param {Array|string} path The path of the property to get.
+ * @param {*} [defaultValue] The value returned for `undefined` resolved values.
+ * @returns {*} Returns the resolved value.
+ * @example
+ *
+ * var object = { 'a': [{ 'b': { 'c': 3 } }] };
+ *
+ * _.get(object, 'a[0].b.c');
+ * // => 3
+ *
+ * _.get(object, ['a', '0', 'b', 'c']);
+ * // => 3
+ *
+ * _.get(object, 'a.b.c', 'default');
+ * // => 'default'
+ */
+          function get(object, path, defaultValue) {
+            var result = object == null ? undefined : baseGet(object, path);
+            return result === undefined ? defaultValue : result;
+          }
+          module.exports = get;
+        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
+      },
+      {}
+    ],
+    140: [
       function (require, module, exports) {
         /**
  * Helpers.
@@ -35579,7 +36335,7 @@
       },
       {}
     ],
-    111: [
+    141: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -35716,9 +36472,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 112 }
+      { './isArguments': 142 }
     ],
-    112: [
+    142: [
       function (require, module, exports) {
         'use strict';
         var toStr = Object.prototype.toString;
@@ -35733,7 +36489,7 @@
       },
       {}
     ],
-    113: [
+    143: [
       function (require, module, exports) {
         /**!
  * Ono v2.2.1
@@ -35939,9 +36695,9 @@
           }
         }
       },
-      { 'util': 150 }
+      { 'util': 180 }
     ],
-    114: [
+    144: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -35985,9 +36741,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 115 }
+      { '_process': 145 }
     ],
-    115: [
+    145: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -36161,7 +36917,7 @@
       },
       {}
     ],
-    116: [
+    146: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -36579,7 +37335,7 @@
       },
       {}
     ],
-    117: [
+    147: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -36656,7 +37412,7 @@
       },
       {}
     ],
-    118: [
+    148: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -36736,143 +37492,24 @@
       },
       {}
     ],
-    119: [
+    149: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 117,
-        './encode': 118
+        './decode': 147,
+        './encode': 148
       }
     ],
-    120: [
-      function (require, module, exports) {
-        // Copyright Joyent, Inc. and other Node contributors.
-        //
-        // Permission is hereby granted, free of charge, to any person obtaining a
-        // copy of this software and associated documentation files (the
-        // "Software"), to deal in the Software without restriction, including
-        // without limitation the rights to use, copy, modify, merge, publish,
-        // distribute, sublicense, and/or sell copies of the Software, and to permit
-        // persons to whom the Software is furnished to do so, subject to the
-        // following conditions:
-        //
-        // The above copyright notice and this permission notice shall be included
-        // in all copies or substantial portions of the Software.
-        //
-        // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-        // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-        // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-        // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-        // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-        // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-        // USE OR OTHER DEALINGS IN THE SOFTWARE.
-        module.exports = Stream;
-        var EE = require('events').EventEmitter;
-        var inherits = require('inherits');
-        inherits(Stream, EE);
-        Stream.Readable = require('readable-stream/readable.js');
-        Stream.Writable = require('readable-stream/writable.js');
-        Stream.Duplex = require('readable-stream/duplex.js');
-        Stream.Transform = require('readable-stream/transform.js');
-        Stream.PassThrough = require('readable-stream/passthrough.js');
-        // Backwards-compat with node 0.4.x
-        Stream.Stream = Stream;
-        // old-style streams.  Note that the pipe method (the only relevant
-        // part of this class) is overridden in the Readable class.
-        function Stream() {
-          EE.call(this);
-        }
-        Stream.prototype.pipe = function (dest, options) {
-          var source = this;
-          function ondata(chunk) {
-            if (dest.writable) {
-              if (false === dest.write(chunk) && source.pause) {
-                source.pause();
-              }
-            }
-          }
-          source.on('data', ondata);
-          function ondrain() {
-            if (source.readable && source.resume) {
-              source.resume();
-            }
-          }
-          dest.on('drain', ondrain);
-          // If the 'end' option is not supplied, dest.end() will be called when
-          // source gets the 'end' or 'close' events.  Only dest.end() once.
-          if (!dest._isStdio && (!options || options.end !== false)) {
-            source.on('end', onend);
-            source.on('close', onclose);
-          }
-          var didOnEnd = false;
-          function onend() {
-            if (didOnEnd)
-              return;
-            didOnEnd = true;
-            dest.end();
-          }
-          function onclose() {
-            if (didOnEnd)
-              return;
-            didOnEnd = true;
-            if (typeof dest.destroy === 'function')
-              dest.destroy();
-          }
-          // don't leave dangling pipes when there are errors.
-          function onerror(er) {
-            cleanup();
-            if (EE.listenerCount(this, 'error') === 0) {
-              throw er;  // Unhandled stream error in pipe.
-            }
-          }
-          source.on('error', onerror);
-          dest.on('error', onerror);
-          // remove all the event listeners that were added.
-          function cleanup() {
-            source.removeListener('data', ondata);
-            dest.removeListener('drain', ondrain);
-            source.removeListener('end', onend);
-            source.removeListener('close', onclose);
-            source.removeListener('error', onerror);
-            dest.removeListener('error', onerror);
-            source.removeListener('end', cleanup);
-            source.removeListener('close', cleanup);
-            dest.removeListener('close', cleanup);
-          }
-          source.on('end', cleanup);
-          source.on('close', cleanup);
-          dest.on('close', cleanup);
-          dest.emit('pipe', source);
-          // Allow for unix-like usage: A.pipe(B).pipe(C)
-          return dest;
-        };
-      },
-      {
-        'events': 49,
-        'inherits': 54,
-        'readable-stream/duplex.js': 122,
-        'readable-stream/passthrough.js': 129,
-        'readable-stream/readable.js': 130,
-        'readable-stream/transform.js': 131,
-        'readable-stream/writable.js': 132
-      }
-    ],
-    121: [
-      function (require, module, exports) {
-        arguments[4][42][0].apply(exports, arguments);
-      },
-      { 'dup': 42 }
-    ],
-    122: [
+    150: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_duplex.js');
       },
-      { './lib/_stream_duplex.js': 123 }
+      { './lib/_stream_duplex.js': 151 }
     ],
-    123: [
+    151: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -36939,14 +37576,14 @@
         }
       },
       {
-        './_stream_readable': 125,
-        './_stream_writable': 127,
-        'core-util-is': 45,
-        'inherits': 54,
-        'process-nextick-args': 114
+        './_stream_readable': 153,
+        './_stream_writable': 155,
+        'core-util-is': 76,
+        'inherits': 85,
+        'process-nextick-args': 144
       }
     ],
-    124: [
+    152: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -36969,12 +37606,12 @@
         };
       },
       {
-        './_stream_transform': 126,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_transform': 154,
+        'core-util-is': 76,
+        'inherits': 85
       }
     ],
-    125: [
+    153: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -37878,21 +38515,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        './internal/streams/BufferList': 128,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'isarray': 121,
-        'process-nextick-args': 114,
-        'string_decoder/': 137,
-        'util': 38
+        './_stream_duplex': 151,
+        './internal/streams/BufferList': 156,
+        '_process': 145,
+        'buffer': 72,
+        'buffer-shims': 71,
+        'core-util-is': 76,
+        'events': 80,
+        'inherits': 85,
+        'isarray': 157,
+        'process-nextick-args': 144,
+        'string_decoder/': 167,
+        'util': 69
       }
     ],
-    126: [
+    154: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -38055,12 +38692,12 @@
         }
       },
       {
-        './_stream_duplex': 123,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_duplex': 151,
+        'core-util-is': 76,
+        'inherits': 85
       }
     ],
-    127: [
+    155: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -38539,18 +39176,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'process-nextick-args': 114,
-        'util-deprecate': 147
+        './_stream_duplex': 151,
+        '_process': 145,
+        'buffer': 72,
+        'buffer-shims': 71,
+        'core-util-is': 76,
+        'events': 80,
+        'inherits': 85,
+        'process-nextick-args': 144,
+        'util-deprecate': 177
       }
     ],
-    128: [
+    156: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -38627,17 +39264,23 @@
         };
       },
       {
-        'buffer': 41,
-        'buffer-shims': 40
+        'buffer': 72,
+        'buffer-shims': 71
       }
     ],
-    129: [
+    157: [
+      function (require, module, exports) {
+        arguments[4][73][0].apply(exports, arguments);
+      },
+      { 'dup': 73 }
+    ],
+    158: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 124 }
+      { './lib/_stream_passthrough.js': 152 }
     ],
-    130: [
+    159: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -38659,27 +39302,140 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 123,
-        './lib/_stream_passthrough.js': 124,
-        './lib/_stream_readable.js': 125,
-        './lib/_stream_transform.js': 126,
-        './lib/_stream_writable.js': 127,
-        '_process': 115
+        './lib/_stream_duplex.js': 151,
+        './lib/_stream_passthrough.js': 152,
+        './lib/_stream_readable.js': 153,
+        './lib/_stream_transform.js': 154,
+        './lib/_stream_writable.js': 155,
+        '_process': 145
       }
     ],
-    131: [
+    160: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_transform.js': 126 }
+      { './lib/_stream_transform.js': 154 }
     ],
-    132: [
+    161: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_writable.js');
       },
-      { './lib/_stream_writable.js': 127 }
+      { './lib/_stream_writable.js': 155 }
     ],
-    133: [
+    162: [
+      function (require, module, exports) {
+        // Copyright Joyent, Inc. and other Node contributors.
+        //
+        // Permission is hereby granted, free of charge, to any person obtaining a
+        // copy of this software and associated documentation files (the
+        // "Software"), to deal in the Software without restriction, including
+        // without limitation the rights to use, copy, modify, merge, publish,
+        // distribute, sublicense, and/or sell copies of the Software, and to permit
+        // persons to whom the Software is furnished to do so, subject to the
+        // following conditions:
+        //
+        // The above copyright notice and this permission notice shall be included
+        // in all copies or substantial portions of the Software.
+        //
+        // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+        // OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+        // NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+        // DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+        // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+        // USE OR OTHER DEALINGS IN THE SOFTWARE.
+        module.exports = Stream;
+        var EE = require('events').EventEmitter;
+        var inherits = require('inherits');
+        inherits(Stream, EE);
+        Stream.Readable = require('readable-stream/readable.js');
+        Stream.Writable = require('readable-stream/writable.js');
+        Stream.Duplex = require('readable-stream/duplex.js');
+        Stream.Transform = require('readable-stream/transform.js');
+        Stream.PassThrough = require('readable-stream/passthrough.js');
+        // Backwards-compat with node 0.4.x
+        Stream.Stream = Stream;
+        // old-style streams.  Note that the pipe method (the only relevant
+        // part of this class) is overridden in the Readable class.
+        function Stream() {
+          EE.call(this);
+        }
+        Stream.prototype.pipe = function (dest, options) {
+          var source = this;
+          function ondata(chunk) {
+            if (dest.writable) {
+              if (false === dest.write(chunk) && source.pause) {
+                source.pause();
+              }
+            }
+          }
+          source.on('data', ondata);
+          function ondrain() {
+            if (source.readable && source.resume) {
+              source.resume();
+            }
+          }
+          dest.on('drain', ondrain);
+          // If the 'end' option is not supplied, dest.end() will be called when
+          // source gets the 'end' or 'close' events.  Only dest.end() once.
+          if (!dest._isStdio && (!options || options.end !== false)) {
+            source.on('end', onend);
+            source.on('close', onclose);
+          }
+          var didOnEnd = false;
+          function onend() {
+            if (didOnEnd)
+              return;
+            didOnEnd = true;
+            dest.end();
+          }
+          function onclose() {
+            if (didOnEnd)
+              return;
+            didOnEnd = true;
+            if (typeof dest.destroy === 'function')
+              dest.destroy();
+          }
+          // don't leave dangling pipes when there are errors.
+          function onerror(er) {
+            cleanup();
+            if (EE.listenerCount(this, 'error') === 0) {
+              throw er;  // Unhandled stream error in pipe.
+            }
+          }
+          source.on('error', onerror);
+          dest.on('error', onerror);
+          // remove all the event listeners that were added.
+          function cleanup() {
+            source.removeListener('data', ondata);
+            dest.removeListener('drain', ondrain);
+            source.removeListener('end', onend);
+            source.removeListener('close', onclose);
+            source.removeListener('error', onerror);
+            dest.removeListener('error', onerror);
+            source.removeListener('end', cleanup);
+            source.removeListener('close', cleanup);
+            dest.removeListener('close', cleanup);
+          }
+          source.on('end', cleanup);
+          source.on('close', cleanup);
+          dest.on('close', cleanup);
+          dest.emit('pipe', source);
+          // Allow for unix-like usage: A.pipe(B).pipe(C)
+          return dest;
+        };
+      },
+      {
+        'events': 80,
+        'inherits': 85,
+        'readable-stream/duplex.js': 150,
+        'readable-stream/passthrough.js': 158,
+        'readable-stream/readable.js': 159,
+        'readable-stream/transform.js': 160,
+        'readable-stream/writable.js': 161
+      }
+    ],
+    163: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -38747,13 +39503,13 @@
         ];
       },
       {
-        './lib/request': 135,
-        'builtin-status-codes': 43,
-        'url': 146,
-        'xtend': 215
+        './lib/request': 165,
+        'builtin-status-codes': 74,
+        'url': 176,
+        'xtend': 245
       }
     ],
-    134: [
+    164: [
       function (require, module, exports) {
         (function (global) {
           exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableByteStream);
@@ -38794,7 +39550,7 @@
       },
       {}
     ],
-    135: [
+    165: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           // var Base64 = require('Base64')
@@ -39043,18 +39799,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        './response': 136,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'indexof': 53,
-        'inherits': 54,
-        'object-keys': 111,
-        'stream': 120
+        './capability': 164,
+        './response': 166,
+        '_process': 145,
+        'buffer': 72,
+        'foreach': 81,
+        'indexof': 84,
+        'inherits': 85,
+        'object-keys': 141,
+        'stream': 162
       }
     ],
-    136: [
+    166: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           var capability = require('./capability');
@@ -39221,15 +39977,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'inherits': 54,
-        'stream': 120
+        './capability': 164,
+        '_process': 145,
+        'buffer': 72,
+        'foreach': 81,
+        'inherits': 85,
+        'stream': 162
       }
     ],
-    137: [
+    167: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -39431,9 +40187,9 @@
           this.charLength = this.charReceived ? 3 : 0;
         }
       },
-      { 'buffer': 41 }
+      { 'buffer': 72 }
     ],
-    138: [
+    168: [
       function (require, module, exports) {
         module.exports = [
           'get',
@@ -39447,7 +40203,7 @@
       },
       {}
     ],
-    139: [
+    169: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -39623,18 +40379,18 @@
         }
       },
       {
-        './options': 140,
-        './promise': 141,
-        './util': 142,
-        './validate-schema': 143,
-        './validate-spec': 144,
-        'call-me-maybe': 44,
-        'json-schema-ref-parser': 89,
-        'json-schema-ref-parser/lib/dereference': 88,
-        'ono': 113
+        './options': 170,
+        './promise': 171,
+        './util': 172,
+        './validate-schema': 173,
+        './validate-spec': 174,
+        'call-me-maybe': 75,
+        'json-schema-ref-parser': 90,
+        'json-schema-ref-parser/lib/dereference': 89,
+        'ono': 143
       }
     ],
-    140: [
+    170: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -39659,20 +40415,20 @@
         util.inherits(ParserOptions, $RefParserOptions);
       },
       {
-        'json-schema-ref-parser/lib/options': 90,
-        'util': 150
+        'json-schema-ref-parser/lib/options': 91,
+        'util': 180
       }
     ],
-    141: [
+    171: [
       function (require, module, exports) {
-        arguments[4][104][0].apply(exports, arguments);
+        arguments[4][105][0].apply(exports, arguments);
       },
       {
-        'dup': 104,
-        'es6-promise': 48
+        'dup': 105,
+        'es6-promise': 79
       }
     ],
-    142: [
+    172: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -39690,11 +40446,11 @@
         exports.swaggerParamRegExp = /\{([^\/}]+)}/g;
       },
       {
-        'debug': 46,
-        'util': 150
+        'debug': 77,
+        'util': 180
       }
     ],
-    143: [
+    173: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -39749,13 +40505,13 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-schema-official/schema': 145,
-        'z-schema': 225
+        './util': 172,
+        'ono': 143,
+        'swagger-schema-official/schema': 175,
+        'z-schema': 255
       }
     ],
-    144: [
+    174: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -40000,12 +40756,12 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-methods': 138
+        './util': 172,
+        'ono': 143,
+        'swagger-methods': 168
       }
     ],
-    145: [
+    175: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -40983,7 +41739,7 @@
       },
       {}
     ],
-    146: [
+    176: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -41618,11 +42374,11 @@
         }
       },
       {
-        'punycode': 116,
-        'querystring': 119
+        'punycode': 146,
+        'querystring': 149
       }
     ],
-    147: [
+    177: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -41690,13 +42446,13 @@
       },
       {}
     ],
-    148: [
+    178: [
       function (require, module, exports) {
-        arguments[4][54][0].apply(exports, arguments);
+        arguments[4][85][0].apply(exports, arguments);
       },
-      { 'dup': 54 }
+      { 'dup': 85 }
     ],
-    149: [
+    179: [
       function (require, module, exports) {
         module.exports = function isBuffer(arg) {
           return arg && typeof arg === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
@@ -41704,7 +42460,7 @@
       },
       {}
     ],
-    150: [
+    180: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -42263,12 +43019,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 149,
-        '_process': 115,
-        'inherits': 148
+        './support/isBuffer': 179,
+        '_process': 145,
+        'inherits': 178
       }
     ],
-    151: [
+    181: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42463,69 +43219,69 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 153,
-        './lib/contains': 154,
-        './lib/equals': 155,
-        './lib/escape': 156,
-        './lib/isAfter': 157,
-        './lib/isAlpha': 158,
-        './lib/isAlphanumeric': 159,
-        './lib/isAscii': 160,
-        './lib/isBase64': 161,
-        './lib/isBefore': 162,
-        './lib/isBoolean': 163,
-        './lib/isByteLength': 164,
-        './lib/isCreditCard': 165,
-        './lib/isCurrency': 166,
-        './lib/isDataURI': 167,
-        './lib/isDate': 168,
-        './lib/isDecimal': 169,
-        './lib/isDivisibleBy': 170,
-        './lib/isEmail': 171,
-        './lib/isFQDN': 172,
-        './lib/isFloat': 173,
-        './lib/isFullWidth': 174,
-        './lib/isHalfWidth': 175,
-        './lib/isHexColor': 176,
-        './lib/isHexadecimal': 177,
-        './lib/isIP': 178,
-        './lib/isISBN': 179,
-        './lib/isISIN': 180,
-        './lib/isISO8601': 181,
-        './lib/isIn': 182,
-        './lib/isInt': 183,
-        './lib/isJSON': 184,
-        './lib/isLength': 185,
-        './lib/isLowercase': 186,
-        './lib/isMACAddress': 187,
-        './lib/isMD5': 188,
-        './lib/isMobilePhone': 189,
-        './lib/isMongoId': 190,
-        './lib/isMultibyte': 191,
-        './lib/isNull': 192,
-        './lib/isNumeric': 193,
-        './lib/isSurrogatePair': 194,
-        './lib/isURL': 195,
-        './lib/isUUID': 196,
-        './lib/isUppercase': 197,
-        './lib/isVariableWidth': 198,
-        './lib/isWhitelisted': 199,
-        './lib/ltrim': 200,
-        './lib/matches': 201,
-        './lib/normalizeEmail': 202,
-        './lib/rtrim': 203,
-        './lib/stripLow': 204,
-        './lib/toBoolean': 205,
-        './lib/toDate': 206,
-        './lib/toFloat': 207,
-        './lib/toInt': 208,
-        './lib/trim': 209,
-        './lib/unescape': 210,
-        './lib/util/toString': 213,
-        './lib/whitelist': 214
+        './lib/blacklist': 183,
+        './lib/contains': 184,
+        './lib/equals': 185,
+        './lib/escape': 186,
+        './lib/isAfter': 187,
+        './lib/isAlpha': 188,
+        './lib/isAlphanumeric': 189,
+        './lib/isAscii': 190,
+        './lib/isBase64': 191,
+        './lib/isBefore': 192,
+        './lib/isBoolean': 193,
+        './lib/isByteLength': 194,
+        './lib/isCreditCard': 195,
+        './lib/isCurrency': 196,
+        './lib/isDataURI': 197,
+        './lib/isDate': 198,
+        './lib/isDecimal': 199,
+        './lib/isDivisibleBy': 200,
+        './lib/isEmail': 201,
+        './lib/isFQDN': 202,
+        './lib/isFloat': 203,
+        './lib/isFullWidth': 204,
+        './lib/isHalfWidth': 205,
+        './lib/isHexColor': 206,
+        './lib/isHexadecimal': 207,
+        './lib/isIP': 208,
+        './lib/isISBN': 209,
+        './lib/isISIN': 210,
+        './lib/isISO8601': 211,
+        './lib/isIn': 212,
+        './lib/isInt': 213,
+        './lib/isJSON': 214,
+        './lib/isLength': 215,
+        './lib/isLowercase': 216,
+        './lib/isMACAddress': 217,
+        './lib/isMD5': 218,
+        './lib/isMobilePhone': 219,
+        './lib/isMongoId': 220,
+        './lib/isMultibyte': 221,
+        './lib/isNull': 222,
+        './lib/isNumeric': 223,
+        './lib/isSurrogatePair': 224,
+        './lib/isURL': 225,
+        './lib/isUUID': 226,
+        './lib/isUppercase': 227,
+        './lib/isVariableWidth': 228,
+        './lib/isWhitelisted': 229,
+        './lib/ltrim': 230,
+        './lib/matches': 231,
+        './lib/normalizeEmail': 232,
+        './lib/rtrim': 233,
+        './lib/stripLow': 234,
+        './lib/toBoolean': 235,
+        './lib/toDate': 236,
+        './lib/toFloat': 237,
+        './lib/toInt': 238,
+        './lib/trim': 239,
+        './lib/unescape': 240,
+        './lib/util/toString': 243,
+        './lib/whitelist': 244
       }
     ],
-    152: [
+    182: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42605,7 +43361,7 @@
       },
       {}
     ],
-    153: [
+    183: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42621,9 +43377,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    154: [
+    184: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42642,11 +43398,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 241,
+        './util/toString': 243
       }
     ],
-    155: [
+    185: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42662,9 +43418,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    156: [
+    186: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42680,9 +43436,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    157: [
+    187: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42704,11 +43460,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 236,
+        './util/assertString': 241
       }
     ],
-    158: [
+    188: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42730,11 +43486,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 182,
+        './util/assertString': 241
       }
     ],
-    159: [
+    189: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42756,11 +43512,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 182,
+        './util/assertString': 241
       }
     ],
-    160: [
+    190: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42779,9 +43535,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    161: [
+    191: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42803,9 +43559,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    162: [
+    192: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42827,11 +43583,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 236,
+        './util/assertString': 241
       }
     ],
-    163: [
+    193: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42852,9 +43608,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    164: [
+    194: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42887,9 +43643,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    165: [
+    195: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -42931,9 +43687,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    166: [
+    196: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43005,11 +43761,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 241,
+        './util/merge': 242
       }
     ],
-    167: [
+    197: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43027,9 +43783,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    168: [
+    198: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43118,11 +43874,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 181,
-        './util/assertString': 211
+        './isISO8601': 211,
+        './util/assertString': 241
       }
     ],
-    169: [
+    199: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43139,9 +43895,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    170: [
+    200: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43160,11 +43916,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 207,
-        './util/assertString': 211
+        './toFloat': 237,
+        './util/assertString': 241
       }
     ],
-    171: [
+    201: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43232,13 +43988,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 164,
-        './isFQDN': 172,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isByteLength': 194,
+        './isFQDN': 202,
+        './util/assertString': 241,
+        './util/merge': 242
       }
     ],
-    172: [
+    202: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43290,11 +44046,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 241,
+        './util/merge': 242
       }
     ],
-    173: [
+    203: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43315,9 +44071,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    174: [
+    204: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43334,9 +44090,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    175: [
+    205: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43353,9 +44109,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    176: [
+    206: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43372,9 +44128,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    177: [
+    207: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43391,9 +44147,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    178: [
+    208: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43466,9 +44222,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    179: [
+    209: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43524,9 +44280,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    180: [
+    210: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43568,9 +44324,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    181: [
+    211: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43588,9 +44344,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    182: [
+    212: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43628,11 +44384,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 241,
+        './util/toString': 243
       }
     ],
-    183: [
+    213: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43657,9 +44413,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    184: [
+    214: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43685,9 +44441,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    185: [
+    215: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43721,9 +44477,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    186: [
+    216: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43739,9 +44495,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    187: [
+    217: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43758,9 +44514,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    188: [
+    218: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43777,9 +44533,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    189: [
+    219: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43839,9 +44595,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    190: [
+    220: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43860,11 +44616,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 177,
-        './util/assertString': 211
+        './isHexadecimal': 207,
+        './util/assertString': 241
       }
     ],
-    191: [
+    221: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43883,9 +44639,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    192: [
+    222: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43901,9 +44657,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    193: [
+    223: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43920,9 +44676,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    194: [
+    224: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43939,9 +44695,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    195: [
+    225: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44057,13 +44813,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 172,
-        './isIP': 178,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isFQDN': 202,
+        './isIP': 208,
+        './util/assertString': 241,
+        './util/merge': 242
       }
     ],
-    196: [
+    226: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44087,9 +44843,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    197: [
+    227: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44105,9 +44861,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    198: [
+    228: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44126,12 +44882,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 174,
-        './isHalfWidth': 175,
-        './util/assertString': 211
+        './isFullWidth': 204,
+        './isHalfWidth': 205,
+        './util/assertString': 241
       }
     ],
-    199: [
+    229: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44152,9 +44908,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    200: [
+    230: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44171,9 +44927,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    201: [
+    231: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44192,9 +44948,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    202: [
+    232: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44238,11 +44994,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 171,
-        './util/merge': 212
+        './isEmail': 201,
+        './util/merge': 242
       }
     ],
-    203: [
+    233: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44263,9 +45019,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    204: [
+    234: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44285,11 +45041,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 153,
-        './util/assertString': 211
+        './blacklist': 183,
+        './util/assertString': 241
       }
     ],
-    205: [
+    235: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44308,9 +45064,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    206: [
+    236: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44327,9 +45083,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    207: [
+    237: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44345,9 +45101,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    208: [
+    238: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44363,9 +45119,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    209: [
+    239: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44383,11 +45139,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 200,
-        './rtrim': 203
+        './ltrim': 230,
+        './rtrim': 233
       }
     ],
-    210: [
+    240: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44403,9 +45159,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    211: [
+    241: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44419,7 +45175,7 @@
       },
       {}
     ],
-    212: [
+    242: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44438,7 +45194,7 @@
       },
       {}
     ],
-    213: [
+    243: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44464,7 +45220,7 @@
       },
       {}
     ],
-    214: [
+    244: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44480,9 +45236,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 241 }
     ],
-    215: [
+    245: [
       function (require, module, exports) {
         module.exports = extend;
         var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -44501,7 +45257,7 @@
       },
       {}
     ],
-    216: [
+    246: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -44550,7 +45306,7 @@
       },
       {}
     ],
-    217: [
+    247: [
       function (require, module, exports) {
         /*jshint maxlen: false*/
         var validator = require('validator');
@@ -44689,9 +45445,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 151 }
+      { 'validator': 181 }
     ],
-    218: [
+    248: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), Report = require('./Report'), Utils = require('./Utils');
@@ -45228,12 +45984,12 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 247,
+        './Report': 250,
+        './Utils': 254
       }
     ],
-    219: [
+    249: [
       function (require, module, exports) {
         // Number.isFinite polyfill
         // http://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.isfinite
@@ -45254,7 +46010,7 @@
       },
       {}
     ],
-    220: [
+    250: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -45431,13 +46187,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 216,
-        './Utils': 224,
-        '_process': 115,
-        'lodash.get': 108
+        './Errors': 246,
+        './Utils': 254,
+        '_process': 145,
+        'lodash.get': 139
       }
     ],
-    221: [
+    251: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -45579,13 +46335,13 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 220,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224
+        './Report': 250,
+        './SchemaCompilation': 252,
+        './SchemaValidation': 253,
+        './Utils': 254
       }
     ],
-    222: [
+    252: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -45832,12 +46588,12 @@
         };
       },
       {
-        './Report': 220,
-        './SchemaCache': 221,
-        './Utils': 224
+        './Report': 250,
+        './SchemaCache': 251,
+        './Utils': 254
       }
     ],
-    223: [
+    253: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -46601,13 +47357,13 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 247,
+        './JsonValidation': 248,
+        './Report': 250,
+        './Utils': 254
       }
     ],
-    224: [
+    254: [
       function (require, module, exports) {
         'use strict';
         exports.isAbsoluteUri = function (uri) {
@@ -46813,7 +47569,7 @@
       },
       {}
     ],
-    225: [
+    255: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -47110,21 +47866,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Polyfills': 219,
-        './Report': 220,
-        './SchemaCache': 221,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224,
-        './schemas/hyper-schema.json': 226,
-        './schemas/schema.json': 227,
-        '_process': 115,
-        'lodash.get': 108
+        './FormatValidators': 247,
+        './JsonValidation': 248,
+        './Polyfills': 249,
+        './Report': 250,
+        './SchemaCache': 251,
+        './SchemaCompilation': 252,
+        './SchemaValidation': 253,
+        './Utils': 254,
+        './schemas/hyper-schema.json': 256,
+        './schemas/schema.json': 257,
+        '_process': 145,
+        'lodash.get': 139
       }
     ],
-    226: [
+    256: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -47242,7 +47998,7 @@
       },
       {}
     ],
-    227: [
+    257: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -57555,7 +58311,8 @@ if (!String.prototype.endsWith) {
         };
         CodeMirror.commands.autocomplete = function (cm) {
           CodeMirror.showHint(cm, CodeMirror.hint.raml, {
-            ghosting: true,
+            completeSingle: false,
+            ghosting: false,
             async: true
           });
         };
@@ -57582,13 +58339,17 @@ if (!String.prototype.endsWith) {
       var GUTTER_ID = 'CodeMirror-lint-markers';
       var SEVERITIES = /^(?:error|warning)$/;
       var service = {};
-      function showTooltip(content) {
+      function showTooltip(content, node) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
+        var offset = $(node).offset();
+        tt.style.top = Math.max(0, offset.top - tt.offsetHeight - 5) + 'px';
+        tt.style.left = offset.left + 20 + 'px';
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
+        document.body.appendChild(tt);
         return tt;
       }
       function rm(elt) {
@@ -57610,20 +58371,30 @@ if (!String.prototype.endsWith) {
       }
       function showTooltipFor(content, node) {
         var tooltip = showTooltip(content, node);
-        node.appendChild(tooltip);
+        var errorNode = node;
         var openTrace = function (event) {
+          hide(tooltip);
           var path = event.target.dataset.path;
           if (path) {
-            var $scope = angular.element(event.target).scope();
+            var $scope = angular.element(errorNode).scope();
             $scope.$emit('event:raml-editor-file-select', path);
           }
         };
-        function hide() {
-          CodeMirror.off(node, 'mouseleave', hide);
-          CodeMirror.off(node, 'mousedown', openTrace);
+        function hide(e) {
           if (tooltip) {
-            hideTooltip(tooltip);
-            tooltip = null;
+            var top = $(tooltip).offset().top;
+            var bottom = top + $(tooltip).outerHeight();
+            var isValidX = top <= e.clientY && e.clientY <= bottom;
+            var left = $(errorNode).offset().left;
+            var right = left + $(tooltip).outerWidth();
+            var isValidY = left - 5 <= e.clientX && e.clientX <= right;
+            var mouseOverTooltip = isValidX && isValidY;
+            if (!mouseOverTooltip) {
+              CodeMirror.off(tooltip, 'mousedown', openTrace);
+              CodeMirror.off(document, 'mousemove', hide);
+              hideTooltip(tooltip);
+              tooltip = null;
+            }
           }
         }
         var poll = setInterval(function () {
@@ -57641,8 +58412,8 @@ if (!String.prototype.endsWith) {
               return clearInterval(poll);
             }
           }, 400);
-        CodeMirror.on(node, 'mouseleave', hide);
-        CodeMirror.on(node, 'mousedown', openTrace);
+        CodeMirror.on(tooltip, 'mousedown', openTrace);
+        CodeMirror.on(document, 'mousemove', hide);
       }
       function clearMarks(cm) {
         cm.clearGutter(GUTTER_ID);
@@ -57658,18 +58429,18 @@ if (!String.prototype.endsWith) {
         }
         return lines;
       }
-      function annotationTooltip(ann) {
-        var severity = ann.severity;
+      function annotationTooltip(annotation) {
+        var severity = annotation.severity;
         if (!SEVERITIES.test(severity)) {
           severity = 'error';
         }
         var tip = document.createElement('div');
         tip.className = 'CodeMirror-lint-message-' + severity;
-        var message = ann.message;
+        var message = annotation.message;
         // if error belongs to different file, add tracing information to message
-        if (ann.path) {
-          var line = ann.tracingLine + 1;
-          message += ' at line ' + line + ' col ' + ann.tracingColumn + ' in ' + '<a href="#/' + ann.path + '" data-path="/' + ann.path + '">' + ann.path + '</a>';
+        if (annotation.path) {
+          var line = annotation.tracingLine + 1;
+          message += ' at line ' + line + ' col ' + annotation.tracingColumn + ' in ' + '<a href="#/' + annotation.path + '" data-path="/' + annotation.path + '">' + annotation.path + '</a>';
         }
         tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' + '<p class="CodeMirror-message">' + message + '</p>';
         return tip;
@@ -58737,7 +59508,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     this.FSResolver = FSResolver;
     this.EditorStateProvider = EditorStateProvider;
     function codemirrorHint(editor, suggestions) {
-      var separator = /:?(:|\s|\.|\[|]|-)+/;
+      var separator = /:?(:|\s|\.|\[|]|-)+|!/;
       var currentPrefix = function (line, ch) {
         if (!line) {
           return '';
@@ -58774,20 +59545,23 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         if (!word) {
           return true;
         }
-        return suggestion.text.startsWith(word) && suggestion.text !== word;
+        var lowerCaseText = suggestion.text.toLowerCase();
+        return lowerCaseText.startsWith(word) && lowerCaseText !== word;
       }
       var cursor = editor.getCursor();
       var line = editor.getLine(cursor.line);
       var ch = cursor.ch;
       var prefix = currentPrefix(line, ch) || '';
-      var sufix = currentSufix(line, ch);
-      var toCh = ch + sufix.length;
+      var suffix = currentSufix(line, ch);
+      var word = prefix + suffix;
+      var lowerCaseWord = word.toLowerCase();
+      var toCh = editor.getLine(cursor.line).length;
       var fromCh = ch - prefix.length;
       var codeMirrorSuggestions = suggestions.filter(function (suggestion) {
-          return isWordPartOfTheSuggestion(prefix, suggestion);
+          return isWordPartOfTheSuggestion(lowerCaseWord, suggestion);
         }).map(codemirrorSuggestion);
       return {
-        word: prefix + sufix,
+        word: word,
         list: codeMirrorSuggestions,
         from: CodeMirror.Pos(cursor.line, fromCh),
         to: CodeMirror.Pos(cursor.line, toCh)
@@ -58798,6 +59572,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         suggestion.category = 'others';
       }
       return suggestion;
+    }
+    function asureTextFieldNotUndefined(suggetion) {
+      suggetion.text = suggetion.text || suggetion.displayText || '';
+      return suggetion;
     }
     this.getSuggestions = function (homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
@@ -58810,6 +59588,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return [];
       }).then(function (suggestions) {
         return suggestions.map(beautifyCategoryName);
+      }).then(function (suggestions) {
+        return suggestions.map(asureTextFieldNotUndefined);
       });
     };
     // class methods
@@ -59301,23 +60081,74 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           })[0];
         return object ? object[typeName] : object;
       }
+      function replaceTypeIfExists(raml, type, value) {
+        var expandedTypeIsDefined = retrieveType(raml, type);
+        if (expandedTypeIsDefined) {
+          for (var key in expandedTypeIsDefined) {
+            if (expandedTypeIsDefined.hasOwnProperty(key)) {
+              if ([
+                  'example',
+                  'examples'
+                ].includes(key) && value[key]) {
+                return;
+              }
+              value[key] = expandedTypeIsDefined[key];
+            }
+          }
+        }
+      }
       function dereferenceTypes(raml) {
         jsTraverse.traverse(raml).forEach(function (value) {
           if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
             var type = value.type[0];
-            var expandedTypeIsDefined = retrieveType(raml, type);
-            if (expandedTypeIsDefined) {
-              for (var key in expandedTypeIsDefined) {
-                if (expandedTypeIsDefined.hasOwnProperty(key)) {
-                  value[key] = expandedTypeIsDefined[key];
-                }
-              }
+            replaceTypeIfExists(raml, type, value);
+          }
+        });
+      }
+      function extractArrayType(arrayNode) {
+        if (arrayNode.items.type) {
+          return arrayNode.items.type[0];
+        }
+        return arrayNode.items;
+      }
+      function isNotObject(value) {
+        return value === null || typeof value !== 'object';
+      }
+      function dereferenceTypesInArrays(raml) {
+        jsTraverse.traverse(raml).forEach(function (value) {
+          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
+            var type = extractArrayType(value);
+            if (isNotObject(value.items)) {
+              value.items = {};
+            }
+            replaceTypeIfExists(raml, type, value.items);
+            if (!value.examples && !value.example) {
+              generateArrayExampleIfPosible(value);
             }
           }
         });
       }
+      function generateArrayExampleIfPosible(arrayNode) {
+        var examples = getExampleList(arrayNode.items);
+        if (examples.length === 0) {
+          return;
+        }
+        arrayNode.example = examples;
+      }
+      function getExampleList(node) {
+        if (node.examples) {
+          return node.examples.map(function (example) {
+            return example.structuredValue;
+          });
+        }
+        if (node.example) {
+          return [node.example];
+        }
+        return [];
+      }
       function dereference(raml) {
         dereferenceTypes(raml);
+        dereferenceTypesInArrays(raml);
         return dereferenceJsons(raml);
       }
       // ---
@@ -59561,26 +60392,22 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function importSwaggerZip(mode) {
         $scope.importing = true;
+        var importSwaggerPromise;
         if (importService.isZip(mode.value)) {
-          return swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
-            return $modalInstance.close(true);
-          }).catch(function (err) {
-            broadcastError('Failed to parse Swagger: ' + err.message);
-          }).finally(function () {
-            $scope.importing = false;
-          });
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value);
         } else {
-          return swaggerToRAML.file(mode.value).then(function (contents) {
+          importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
             var filename = extractFileName(mode.value.name, 'raml');
             return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
-          }).then(function () {
-            return $modalInstance.close(true);
-          }).catch(function (err) {
-            broadcastError('Failed to parse Swagger: ' + err.message);
-          }).finally(function () {
-            $scope.importing = false;
           });
         }
+        return importSwaggerPromise.then(function () {
+          return $modalInstance.close(true);
+        }).catch(function (err) {
+          broadcastError('Failed to parse Swagger: ' + err.message);
+        }).finally(function () {
+          $scope.importing = false;
+        });
       }
       $scope.options = [
         {
@@ -59762,8 +60589,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$q',
     '$http',
     'importService',
-    'apiSpecConverter',
-    function swaggerToRAML($window, $q, $http, importService, apiSpecConverter) {
+    'apiSpecTransformer',
+    function swaggerToRAML($window, $q, $http, importService, apiSpecTransformer) {
       var self = this;
       function replaceExtension(path, ext) {
         var index = path.lastIndexOf('.');
@@ -59773,9 +60600,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return path + '.' + ext;
       }
       function ramlConverter() {
-        return new apiSpecConverter.Converter(apiSpecConverter.Formats.SWAGGER, apiSpecConverter.Formats.RAML10);
+        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.SWAGGER, apiSpecTransformer.Formats.RAML10);
       }
-      function doConvert(converter, deferred) {
+      function doConvert(error, converter, deferred) {
+        if (error) {
+          deferred.reject(error);
+        }
         try {
           converter.convert('yaml', function (err, result) {
             if (err) {
@@ -59789,8 +60619,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function convertData(content, deferred, options) {
         var converter = ramlConverter();
-        converter.loadData(content, options).then(function () {
-          doConvert(converter, deferred);
+        converter.loadData(content, options).then(function (error) {
+          doConvert(error, converter, deferred);
         }).catch(deferred.reject);
         return deferred;
       }
@@ -59822,9 +60652,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               },
               read: function (path) {
                 var url = path.url.replace(window.location.origin + '/', '');
-                for (var f in files) {
-                  if (files.hasOwnProperty(f) && f.indexOf(url) > -1) {
-                    return files[f];
+                for (var filename in files) {
+                  if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
+                    return files[filename];
                   }
                 }
                 return null;
@@ -59851,8 +60681,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         var deferred = $q.defer();
         var converter = ramlConverter();
         try {
-          converter.loadFile(url, function () {
-            doConvert(converter, deferred);
+          converter.loadFile(url, function (error) {
+            doConvert(error, converter, deferred);
           });
         } catch (err) {
           deferred.reject(err);
@@ -59896,7 +60726,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       self.mergeFile = function (directory, file) {
         // Import every other file as normal.
         if (!self.isZip(file)) {
-          return self.importFile(directory, file);
+          return self.importFile(directory, file).then(ramlRepository.saveFile);
         }
         return self.readFile(file).then(function (contents) {
           return self.mergeZip(directory, contents);
@@ -60022,9 +60852,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        * @return {Promise}
        */
       self.createAndSaveFile = function (directory, name, content) {
-        return self.createFile(directory, name, content).then(function (file) {
-          return ramlRepository.saveFile(file);
-        });
+        return self.createFile(directory, name, content).then(ramlRepository.saveFile);
       };
       /**
        * Create a file in the filesystem.
@@ -60066,8 +60894,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 }
                 // Mark the file as dirty.
                 file.dirty = true;
-                return file;
               }
+              return file;
             });
             ;
           }
@@ -60373,10 +61201,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('apiSpecConverter', [
+  angular.module('ramlEditorApp').factory('apiSpecTransformer', [
     '$window',
-    function apiSpecConverter($window) {
-      return $window.apiSpecConverter;
+    function apiSpecTransformer($window) {
+      return $window.apiSpecTransformer;
     }
   ]);
   ;
@@ -60586,13 +61414,19 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             };
           var needErrorPath = error.trace !== undefined;
           if (needErrorPath) {
+            var selectedFile = event.currentScope.fileBrowser.selectedFile;
             errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
               return trace.path === event.currentScope.fileBrowser.selectedFile.name;
             });
+            errorInfo.isWarning = error.isWarning;
+            var selectedFilePath = selectedFile.path;
+            var directorySeparator = '/';
+            var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
+            var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
             tracingInfo = {
               line: (error.range && error.range.start.line || 0) + 1,
               column: error.range && error.range.start.column || 1,
-              path: error.path
+              path: folderPath + error.path
             };
           }
           return {
@@ -60717,7 +61551,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     return function applySuggestion(editor, suggestion) {
       var replacementPrefix = suggestion.replacementPrefix || '';
       var cursor = editor.getCursor();
-      var rangeEnd = cursor;
+      var rangeEnd = {
+          line: cursor.line,
+          ch: editor.getLine(cursor.line).length
+        };
       var rangeStart = {
           line: cursor.line,
           ch: cursor.ch - replacementPrefix.length
@@ -62303,6 +63140,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       angular.bootstrap($this, ['ramlEditorApp']);
       angular.element($this).scope().$root.rootNode = $this.get(0);  // set el height and width etc.
     },
+    shouldComponentUpdate: function () {
+      return false;
+    },
     render: function render() {
       return React.createElement('div', null, React.createElement('raml-editor', null));
     }
@@ -62313,7 +63153,7 @@ angular.module('ramlEditorApp').run([
   function ($templateCache) {
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'swagger\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently supports Swagger v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'swagger\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently supports Swagger v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '</span>\n' + '<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md" target="_blank">Language Spec (0.8)</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">Language Spec (1.0)</a></li>\n' + '  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <hr class="line-with-linear-gradient">\n' + '  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>\n' + '</ul>\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');

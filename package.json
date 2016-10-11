@@ -18,11 +18,11 @@
   "dependencies": {
     "express": "~4.12.4",
     "open": "0.0.5",
-    "raml-suggestions": "0.0.18",
+    "raml-suggestions": "0.0.20",
     "yargs": "~3.11.0"
   },
   "devDependencies": {
-    "api-spec-converter": "git+https://github.com/stoplightio/api-spec-converter.git#3de6ca2ec8d0c26d41e82cf8a91afaab59834b60",
+    "api-spec-transformer": "^0.1.6",
     "browser-request": "^0.3.3",
     "browserify-global-shim": "^1.0.3",
     "chai": "~1.10.0",
