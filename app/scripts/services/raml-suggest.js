@@ -196,9 +196,9 @@ angular.module('ramlEditorApp')
       return suggestion;
     }
 
-    function asureTextFieldNotUndefined(suggetion) {
-      suggetion.text = suggetion.text || suggetion.displayText || '';
-      return suggetion;
+    function ensureTextFieldNotUndefined(suggestion) {
+      suggestion.text = suggestion.text || suggestion.displayText || '';
+      return suggestion;
     }
 
     this.getSuggestions = function(homeDirectory, currentFile, editor) {
@@ -214,7 +214,7 @@ angular.module('ramlEditorApp')
           function () { return []; }
         )
         .then(function (suggestions) { return suggestions.map(beautifyCategoryName); })
-        .then(function (suggestions) { return suggestions.map(asureTextFieldNotUndefined); });
+        .then(function (suggestions) { return suggestions.map(ensureTextFieldNotUndefined); });
     };
 
     // class methods

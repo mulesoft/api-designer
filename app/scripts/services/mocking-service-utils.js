@@ -58,12 +58,12 @@
 
 
       function replaceTypeIfExists(raml, type, value) {
-        var expandedTypeIsDefined = retrieveType(raml, type);
-        if (expandedTypeIsDefined) {
-          for (var key in expandedTypeIsDefined) {
-            if (expandedTypeIsDefined.hasOwnProperty(key)) {
+        var expandedType = retrieveType(raml, type);
+        if (expandedType) {
+          for (var key in expandedType) {
+            if (expandedType.hasOwnProperty(key)) {
               if (['example', 'examples'].includes(key) && value[key]) { return; }
-              value[key] = expandedTypeIsDefined[key];
+              value[key] = expandedType[key];
             }
           }
         }
@@ -84,7 +84,9 @@
         return arrayNode.items;
       }
 
-      function isNotObject(value) { return value === null || typeof value !== 'object'; }
+      function isNotObject(value) {
+        return value === null || typeof value !== 'object';
+      }
 
       function dereferenceTypesInArrays(raml) {
         jsTraverse.traverse(raml).forEach(function (value) {
