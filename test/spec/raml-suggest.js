@@ -289,6 +289,28 @@ describe('ramlEditorApp', function () {
             done();
           });
       });
+
+      it('should suggest "include"', function (done) {
+        var contentLines = [
+          '#%RAML 1.0',
+          'title: hello',
+          'types: !i'
+        ];
+        var cursor = {line: 2, ch: 9};
+
+        getAutocompleteHelper(ramlSuggest, contentLines, cursor)
+          .then(function(suggestion) {
+            var suggestionTexts = suggestion.list.map(function (suggestion) {
+              return suggestion.displayText || suggestion.text;
+            });
+
+            suggestionTexts.should.include('include');
+            suggestion.list.should.have.length.be(1);
+            suggestion.word.should.be.equal('i');
+
+            done();
+          });
+      });
     });
 
     describe('FSResolver', function () {
@@ -382,7 +404,7 @@ describe('ramlEditorApp', function () {
         fsResolver.extname('/nodir').should.be.equal('');
       });
 
-      it('should return the rigth if is a directory or not', function (done) {
+      it('should return the right if is a directory or not', function (done) {
         var fsResolver = createFSResolver();
 
         fsResolver.isDirectoryAsync('/first.raml')

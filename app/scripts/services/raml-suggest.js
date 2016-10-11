@@ -133,7 +133,7 @@ angular.module('ramlEditorApp')
     this.EditorStateProvider = EditorStateProvider;
 
     function codemirrorHint(editor, suggestions) {
-      var separator = /:?(:|\s|\.|\[|]|-)+/;
+      var separator = /:?(:|\s|\.|\[|]|-)+|!/;
       var currentPrefix = function(line, ch){
         if (!line) { return ''; }
         var split = line.slice(0, ch).split(separator);

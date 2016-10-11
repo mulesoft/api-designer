@@ -7,11 +7,16 @@
         var replacementPrefix = suggestion.replacementPrefix || '';
         var cursor = editor.getCursor();
 
-        var rangeEnd = editor.getLine(cursor.line);
+        var rangeEnd = {
+          line: cursor.line,
+          ch: editor.getLine(cursor.line).length
+        };
+
         var rangeStart = {
           line: cursor.line,
           ch: cursor.ch - replacementPrefix.length
         };
+
         editor.replaceRange(suggestion.key, rangeStart, rangeEnd);
 
         var suggestionLines = suggestion.key.split('\n');
