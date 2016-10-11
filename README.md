@@ -114,6 +114,10 @@ The following example details how to embed the API Designer:
 </html>
 ```
 
+## Embedding as React component
+
+There is an example on how to use api-designer as a react component in [react-example.html](example/react-index.html)
+
 ## Contribution
 
 If you want to contribute to this project, please read our [contribution guide](https://github.com/mulesoft/api-designer/blob/master/CONTRIBUTING.md) first.
