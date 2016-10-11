@@ -20,6 +20,9 @@
       angular.element($this).scope().$root.rootNode = $this.get(0);
       // set el height and width etc.
     },
+    shouldComponentUpdate: function (newProps, newState) {
+      return false;
+    },
     render: function render() {
       return React.createElement(
         'div',
