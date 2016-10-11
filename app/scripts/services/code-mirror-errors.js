@@ -56,19 +56,20 @@
         };
 
         function hide (e) {
-          CodeMirror.off(node, 'mouseleave', hide);
           if (tooltip) {
-            var offset = $(tooltip).offset();
-            var top = offset.top;
+            var top = $(tooltip).offset().top;
             var bottom = top + $(tooltip).outerHeight();
-            var isValidX = (top) <= e.clientY  && e.clientY <= bottom;
+            var isValidX = (top) <= e.clientY && e.clientY <= bottom;
 
-            var left = offset.left;
+            var left = $(errorNode).offset().left;
             var right = left + $(tooltip).outerWidth();
             var isValidY = (left - 5) <= e.clientX && e.clientX <= right;
 
             var mouseOverTooltip = isValidX && isValidY;
             if (!mouseOverTooltip) {
+              CodeMirror.off(tooltip, 'mousedown', openTrace);
+              CodeMirror.off(document, 'mousemove', hide);
+
               hideTooltip(tooltip);
               tooltip = null;
             }
@@ -91,9 +92,8 @@
           }
         }, 400);
 
-        CodeMirror.on(node, 'mouseleave', hide);
         CodeMirror.on(tooltip, 'mousedown', openTrace);
-        CodeMirror.on(tooltip, 'mouseleave', hide);
+        CodeMirror.on(document, 'mousemove', hide);
       }
 
       function clearMarks (cm) {
