@@ -181,14 +181,14 @@ a {
     .main-content blockquote > :last-child {
       margin-bottom: 0; }
   .main-content table {
-    display: block;
     width: 100%;
     overflow: auto;
     word-break: normal;
     word-break: keep-all;
     -webkit-overflow-scrolling: touch; }
     .main-content table th {
-      font-weight: bold; }
+      font-weight: bold;
+      text-align: left; }
     .main-content table th, .main-content table td {
       padding: 0.5rem 1rem;
       border: 1px solid #eee; }
