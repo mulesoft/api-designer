@@ -2,7 +2,7 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .service('swaggerToRAML', function swaggerToRAML($window, $q, $http, importService, apiSpecConverter) {
+    .service('swaggerToRAML', function swaggerToRAML($window, $q, $http, importService, apiSpecTransformer) {
       var self  = this;
 
       function replaceExtension (path, ext) {
@@ -14,10 +14,14 @@
       }
 
       function ramlConverter () {
-        return new apiSpecConverter.Converter(apiSpecConverter.Formats.SWAGGER, apiSpecConverter.Formats.RAML10);
+        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.SWAGGER, apiSpecTransformer.Formats.RAML10);
       }
 
-      function doConvert (converter, deferred) {
+      function doConvert (error, converter, deferred) {
+        if (error) {
+          deferred.reject(error);
+        }
+
         try {
           converter.convert('yaml', function (err, result) {
             if (err) {
@@ -32,8 +36,8 @@
 
       function convertData (content, deferred, options) {
         var converter = ramlConverter();
-        converter.loadData(content, options).then(function() {
-          doConvert(converter, deferred);
+        converter.loadData(content, options).then(function(error) {
+          doConvert(error, converter, deferred);
         }).catch(deferred.reject);
         return deferred;
       }
@@ -97,8 +101,8 @@
         var deferred = $q.defer();
         var converter = ramlConverter();
         try {
-          converter.loadFile(url, function() {
-            doConvert(converter, deferred);
+          converter.loadFile(url, function(error) {
+            doConvert(error, converter, deferred);
           });
         } catch (err) {
           deferred.reject(err);

@@ -8,13 +8,20 @@
       var SEVERITIES = /^(?:error|warning)$/;
       var service = {};
 
-      function showTooltip (content) {
+      function showTooltip (content, node) {
         var tt = document.createElement('div');
         tt.className = 'CodeMirror-lint-tooltip';
         tt.appendChild(content.cloneNode(true));
+
+        var offset = $(node).offset();
+        tt.style.top = Math.max(0, offset.top - tt.offsetHeight - 5) + 'px';
+        tt.style.left = (offset.left + 20) + 'px';
+
         if (tt.style.opacity !== null) {
           tt.style.opacity = 1;
         }
+
+        document.body.appendChild(tt);
         return tt;
       }
 
@@ -37,22 +44,40 @@
 
       function showTooltipFor (content, node) {
         var tooltip = showTooltip(content, node);
-        node.appendChild(tooltip);
+        var errorNode = node;
 
         var openTrace = function(event){
+          hide(tooltip);
           var path = event.target.dataset.path;
           if (path) {
-            var $scope = angular.element(event.target).scope();
+            var $scope = angular.element(errorNode).scope();
             $scope.$emit('event:raml-editor-file-select', path);
           }
         };
 
-        function hide () {
-          CodeMirror.off(node, 'mouseleave', hide);
-          CodeMirror.off(node, 'mousedown', openTrace);
+        function isMouseOverElement(element, e) {
+          var left = $(element).offset().left;
+          var right = left + $(element).outerWidth();
+          var mouseOverX = left <= e.clientX && e.clientX <= right + 5;
+
+          var top = $(element).offset().top;
+          var bottom = top + $(element).outerHeight();
+          var mouseOverY = top <= e.clientY && e.clientY <= bottom;
+
+          return mouseOverX && mouseOverY;
+        }
+
+        function hide (e) {
           if (tooltip) {
-            hideTooltip(tooltip);
-            tooltip = null;
+            var mouseOverError = isMouseOverElement(errorNode, e);
+            var mouseOverTooltip = isMouseOverElement(tooltip, e);
+            if (!(mouseOverTooltip || mouseOverError)) {
+              CodeMirror.off(tooltip, 'mousedown', openTrace);
+              CodeMirror.off(document, 'mousemove', hide);
+
+              hideTooltip(tooltip);
+              tooltip = null;
+            }
           }
         }
 
@@ -72,8 +97,8 @@
           }
         }, 400);
 
-        CodeMirror.on(node, 'mouseleave', hide);
-        CodeMirror.on(node, 'mousedown', openTrace);
+        CodeMirror.on(tooltip, 'mousedown', openTrace);
+        CodeMirror.on(document, 'mousemove', hide);
       }
 
       function clearMarks (cm) {
@@ -105,9 +130,8 @@
 
         // if error belongs to different file, add tracing information to message
         if (annotation.path) {
-          var line = annotation.tracingLine + 1;
-          message += ' at line ' + line + ' col ' + annotation.tracingColumn + ' in ' +
-            '<a href="#/'+annotation.path+'" data-path="/'+annotation.path+'">'+annotation.path+'</a>';
+          message += ' at line ' + annotation.tracingLine + ' col ' + annotation.tracingColumn + ' in ' +
+            '<a href="javascript:" data-path="/'+annotation.path+'">'+annotation.path+'</a>';
         }
 
         tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' +

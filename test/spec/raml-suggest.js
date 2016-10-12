@@ -31,9 +31,7 @@ describe('ramlEditorApp', function () {
 
   function getWord(ramlSuggest, lines, cursor) {
     return getAutocompleteHelper(ramlSuggest, lines, cursor)
-            .then(function(hint) {
-              return hint.word;
-            });
+            .then(function(hint) { return hint.word; });
   }
 
   function getSuggestions(ramlSuggest, contentLines, cursor) {
@@ -262,7 +260,7 @@ describe('ramlEditorApp', function () {
             result.from.line.should.equal(2);
             result.from.ch.should.equal(2);
             result.to.line.should.equal(2);
-            result.to.ch.should.equal(2);
+            result.to.ch.should.equal(3);
 
             done();
           });
@@ -287,6 +285,28 @@ describe('ramlEditorApp', function () {
             suggestionTexts.should.include('version');
             suggestionTexts.should.not.include('title');
             suggestionTexts.should.not.include('description');
+
+            done();
+          });
+      });
+
+      it('should suggest "include"', function (done) {
+        var contentLines = [
+          '#%RAML 1.0',
+          'title: hello',
+          'types: !i'
+        ];
+        var cursor = {line: 2, ch: 9};
+
+        getAutocompleteHelper(ramlSuggest, contentLines, cursor)
+          .then(function(suggestion) {
+            var suggestionTexts = suggestion.list.map(function (suggestion) {
+              return suggestion.displayText || suggestion.text;
+            });
+
+            suggestionTexts.should.include('include');
+            suggestion.list.should.have.length.be(1);
+            suggestion.word.should.be.equal('i');
 
             done();
           });
@@ -384,7 +404,7 @@ describe('ramlEditorApp', function () {
         fsResolver.extname('/nodir').should.be.equal('');
       });
 
-      it('should return the rigth if is a directory or not', function (done) {
+      it('should return the right if is a directory or not', function (done) {
         var fsResolver = createFSResolver();
 
         fsResolver.isDirectoryAsync('/first.raml')

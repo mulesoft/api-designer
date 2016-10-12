@@ -79,6 +79,19 @@ describe('Shelf controller', function () {
       editor.getCursor().line.should.be.equal(3);
       editor.getCursor().ch.should.be.equal(2);
     });
+
+
+    it('should replace RAML version', function () {
+      var editor = getEditor(codeMirror,
+        ['#%RAML 1.0', 'title: Nice Title', ''],
+        {line: 0, ch: 7}
+      );
+
+      applySuggestion(editor, { key: '0.8', replacementPrefix: ''});
+      editor.getLine(0).should.be.equal('#%RAML 0.8');
+      editor.getCursor().line.should.be.equal(0);
+      editor.getCursor().ch.should.be.equal(10);
+    });
     //endregion
   });
 

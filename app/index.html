@@ -50,7 +50,10 @@
     <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
     <script src="bower_components/es5-shim/es5-shim.js"></script>
 
+    <script src="bower_components/raml-1-parser/raml-json-validation.js"></script>
+    <script src="bower_components/raml-1-parser/raml-xml-validation.js"></script>
     <script src="bower_components/raml-1-parser/raml-1-parser.js"></script>
+    
     <script src="bower_components/resolve-url/resolve-url.js"></script>
     <script src="bower_components/jszip/jszip.js"></script>
     <script src="bower_components/jszip/jszip-load.js"></script>
@@ -84,7 +87,7 @@
     <!-- build:js({.,.tmp,app}) scripts/api-designer.js -->
     <script src=".tmp/js-traverse/js-traverse.js"></script>
     <script src=".tmp/raml-suggestions/raml-suggestions.js"></script>
-    <script src=".tmp/api-spec-converter/api-spec-converter.js"></script>
+    <script src=".tmp/api-spec-transformer/api-spec-transformer.js"></script>
 
     <script src="vendor/scripts/codemirror.js"></script>
     <script src="vendor/scripts/foldcode.js"></script>
@@ -126,7 +129,7 @@
     <script src="scripts/services/swagger-to-raml.js"></script>
     <script src="scripts/services/import-service.js"></script>
     <script src="scripts/services/import-service-conflict-modal.js"></script>
-    <script src="scripts/services/api-spec-converter.js"></script>
+    <script src="scripts/services/api-spec-transformer.js"></script>
     <script src="scripts/services/js-traverse.js"></script>
     <script src="scripts/services/ref-parser.js"></script>
     <script src="scripts/filters/string-filters.js"></script>
