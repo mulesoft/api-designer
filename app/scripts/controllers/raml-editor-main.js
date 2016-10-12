@@ -196,23 +196,39 @@
           var errorInfo = error;
           var tracingInfo = { line : undefined, column : undefined, path : undefined };
           var needErrorPath = error.trace !== undefined;
+
+          function findError(errors, selectedFile) {
+            for (var i = 0; i < errors.length; i++) {
+              var error = errors[i];
+              if (error.path === selectedFile.name) {
+                error.from = errorInfo;
+                return error;
+              }
+              else {
+                var innerError = findError(error.trace, selectedFile);
+                if (innerError) {
+                  innerError.from = error;
+                  return innerError;
+                }
+              }
+            }
+          }
+
           if (needErrorPath) {
             var selectedFile = event.currentScope.fileBrowser.selectedFile;
-
-            errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
-              return trace.path === event.currentScope.fileBrowser.selectedFile.name;
-            });
+            errorInfo = findError(error.trace, selectedFile);
             errorInfo.isWarning = error.isWarning;
 
             var selectedFilePath = selectedFile.path;
             var directorySeparator = '/';
             var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
             var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
+            var range = errorInfo.from.range;
 
             tracingInfo = {
-              line : ((error.range && error.range.start.line) || 0) + 1,
-              column : (error.range && error.range.start.column) || 1,
-              path : folderPath + error.path
+              line : ((range && range.start.line) || 0) + 1,
+              column : (range && range.start.column) || 1,
+              path : folderPath + errorInfo.from.path
             };
           }
 
