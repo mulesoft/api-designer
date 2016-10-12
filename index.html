@@ -18,7 +18,7 @@ title: {{ site.name }}
 		<tr>
 			<td><a href="{{site.repository}}/tree/{{branch.name}}">{{branch.name}}</td>
 			<td><a href="{{site.repository}}/commit/{{branch.sha}}">{{branch.date | date_to_string}}</a></td>
-			<td><a href="{{site.baseurl}}/dists/{{branch.name}}/latest">Open</a></td>
+			<td><a href="{{site.baseurl}}/dists/{{branch.folder}}/latest">Open</a></td>
 		</tr>
 		{% endfor %}		
 	</tbody>

@@ -7,7 +7,8 @@ fi
 
 # get updated repo for the especified branch
 BRANCH=$1
-SOURCE_REPO=./_tmp/api-designer-$BRANCH
+BRANCH_NORMALIZED="${BRANCH//\//-}"
+SOURCE_REPO=./_tmp/api-designer-$BRANCH_NORMALIZED
 if [ -d "$SOURCE_REPO" ]; then
 	echo "> Updating latest api-designer from branch '$BRANCH' in cache '$SOURCE_REPO'"
 	git --git-dir=$SOURCE_REPO/.git fetch
@@ -20,7 +21,7 @@ fi
 
 # copy dist
 SOURCE_FOLDER=$SOURCE_REPO/dist/
-TARGET=./dists/$BRANCH
+TARGET=./dists/$BRANCH_NORMALIZED
 VERSIONED_TARGET=$TARGET/latest
 echo "> Updating '$VERSIONED_TARGET' from '$SOURCE_FOLDER'"
 rm -rf $VERSIONED_TARGET
@@ -39,10 +40,10 @@ sed -i '' -e "s/api-designer-vendor.js/api-designer-vendor.min.js/g" $VERSIONED_
 # create md page with branch info
 BRANCH_SHA="$(git --git-dir=$SOURCE_REPO/.git rev-parse HEAD)"
 BRANCH_SHA_DATE="$(git --git-dir=$SOURCE_REPO/.git show -s --format=%aI $BRANCH_SHA^{commit})"
-BRANCH_INFO_MD=./_branchs/$BRANCH.md
-echo "> generating branch info file in '$BRANCH_INFO_MD'"
+BRANCH_INFO_MD=./_branchs/$BRANCH_NORMALIZED.md
+echo "> Generating branch info file in '$BRANCH_INFO_MD'"
 rm $BRANCH_INFO_MD
-echo -e "---\nname: $BRANCH\nsha: $BRANCH_SHA\ndate: $BRANCH_SHA_DATE\n---" >> $BRANCH_INFO_MD
+echo -e "---\nname: $BRANCH\nfolder: $BRANCH_NORMALIZED\nsha: $BRANCH_SHA\ndate: $BRANCH_SHA_DATE\n---" >> $BRANCH_INFO_MD
 
 # create commit
-echo "> review and then run: git add .; git commit -am 'Update $BRANCH to commit $BRANCH_SHA'; git push origin gh-pages"
+echo "> Review then run: git add .; git commit -am 'Update $BRANCH to commit $BRANCH_SHA'; git push origin gh-pages"
