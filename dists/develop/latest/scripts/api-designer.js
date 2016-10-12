@@ -1320,6 +1320,12 @@
         if (!allowNull && !astNode) {
           return ast;
         }
+        if (astNode && search.isExampleNode(astNode)) {
+          var exampleEnd = astNode.lowLevel().end();
+          if (exampleEnd === actualOffset && text[exampleEnd] === '\n') {
+            astNode = astNode.parent();
+          }
+        }
         return astNode;
       }
       function modifiedContent(request) {
@@ -1772,10 +1778,60 @@
         }
         return rs;
       }
+      function isUnexspected(symbol) {
+        if (symbol === '\'') {
+          return true;
+        }
+        if (symbol === '"') {
+          return true;
+        }
+        return false;
+      }
+      function isValueBroken(request) {
+        var text = request.content.getText();
+        var offset = request.content.getOffset();
+        var prefix = request.prefix();
+        var beginning = text.substring(0, offset);
+        var value = beginning.substring(beginning.lastIndexOf(':') + 1).trim();
+        if (!value.length) {
+          return false;
+        }
+        if (value[value.length - 1] === ',') {
+          if (value.indexOf('[') < 0) {
+            return true;
+          }
+        }
+        if (beginning[beginning.length - 1] === ' ') {
+          if (/^\w$/.test(value[value.length - 1])) {
+            return true;
+          } else if (value[value.length - 1] === ',') {
+            if (value.indexOf('[') < 0) {
+              return true;
+            }
+          }
+        }
+        if (/^\w+$/.test(prefix)) {
+          value = value.substring(0, value.lastIndexOf(prefix)).trim();
+          if (/^\w$/.test(value[value.length - 1])) {
+            return true;
+          } else if (value[value.length - 1] === ',') {
+            if (value.indexOf('[') < 0) {
+              return true;
+            }
+          }
+        }
+        if (isUnexspected(value[value.length - 1])) {
+          return true;
+        }
+        return false;
+      }
       function valueCompletion(node, attr, request, provider) {
         var hlnode = node;
         var text = request.content.getText();
         var offset = request.content.getOffset();
+        if (isValueBroken(request)) {
+          return [];
+        }
         if (attr) {
           var p = attr.property();
           var vl = attr.value();
@@ -6140,7 +6196,10 @@
           this.title = title;
           //TODO anyway to know version?
           this.version = env.Version;
-          this.baseUri = env.Host + env.BasePath;
+          var baseUri = env.Host + env.BasePath;
+          if (baseUri) {
+            this.baseUri = baseUri;
+          }
           this.mediaType = env.DefaultResponseType || '';
           var protocols = mapProtocols(env.Protocols);
           if (!_.isEmpty(protocols)) {
@@ -6460,14 +6519,18 @@
                 if (val.type == 'string') {
                   if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
                     object[id] = { type: 'string' };
-                  }
-                  if (val.format == 'date') {
+                  } else if (val.format == 'date') {
                     object[id] = { type: 'date-only' };
                   } else if (val.format == 'date-time') {
                     object[id] = {
                       type: 'datetime',
                       format: 'rfc3339'
                     };
+                  } else {
+                    //remove invalid format.
+                    if (ramlHelper.getValidFormat.indexOf(val.format) < 0) {
+                      delete object[id].format;
+                    }
                   }
                 } else {
                   object[id] = this.convertRefFromModel(val);
@@ -6681,7 +6744,7 @@
             if (this.hasExternalDocs) {
               ramlDef.annotationTypes.externalDocs = {
                 properties: {
-                  'description': 'string',
+                  'description?': 'string',
                   'url': 'string'
                 }
               };
@@ -7050,7 +7113,8 @@
           return ag;
         };
         RAML10.prototype.mapBody = function (bodyData) {
-          var result = this.convertRefFromModel(jsonHelper.parse(bodyData.body));
+          var body = jsonHelper.parse(bodyData.body);
+          var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
             result.example = jsonHelper.format(bodyData.example);
           }
@@ -7085,6 +7149,41 @@
         RAML10.prototype.addSchema = function (ramlDef, schema) {
           ramlDef.types = schema;
         };
+        RAML10.prototype.convertAllOfToModel = function (object) {
+          for (var id in object) {
+            if (!object.hasOwnProperty(id))
+              continue;
+            var val = object[id];
+            if (!val)
+              continue;
+            if (id == 'allOf') {
+              object = this.convertAllOfAttribute(object);
+            } else if (typeof val === 'object') {
+              object[id] = this.convertAllOfToModel(val);
+            }
+          }
+          return object;
+        };
+        RAML10.prototype.convertAllOfAttribute = function (definition) {
+          var allOfTypes = [];
+          if (!definition.allOf)
+            return definition;
+          for (var j in definition.allOf) {
+            if (!definition.allOf.hasOwnProperty(j))
+              continue;
+            var allOf = definition.allOf[j];
+            if (allOf.properties) {
+              definition = this.mapSchemaProperties(allOf);
+              break;
+            }
+            if (allOf.type) {
+              allOfTypes.push(allOf.type);
+            }
+          }
+          definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          delete definition.allOf;
+          return definition;
+        };
         RAML10.prototype.mapSchema = function (slSchemas) {
           var results = {};
           for (var i in slSchemas) {
@@ -7093,21 +7192,7 @@
             var schema = slSchemas[i];
             var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition));
             if (definition.allOf) {
-              var allOfTypes = [];
-              for (var j in definition.allOf) {
-                if (!definition.allOf.hasOwnProperty(j))
-                  continue;
-                var allOf = definition.allOf[j];
-                if (allOf.properties) {
-                  definition = this.mapSchemaProperties(allOf);
-                  break;
-                }
-                if (allOf.type) {
-                  allOfTypes.push(allOf.type);
-                }
-              }
-              definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-              delete definition.allOf;
+              definition = this.convertAllOfToModel(definition);
             } else {
               if (definition.properties) {
                 definition = this.mapSchemaProperties(definition);
@@ -7970,6 +8055,13 @@
             'file',
             'array',
             'nilValue'
+          ],
+          getValidFormat: [
+            'byte',
+            'binary',
+            'password',
+            'date',
+            'date-time'
           ],
           parameterMappings: {},
           getSupportedParameterFields: [
@@ -9144,6 +9236,7 @@
             data.mimeType = i;
             if (mimeType.example) {
               data.example = mimeType.example;
+              delete mimeType.example;
             }
             if (mimeType.description) {
               data.description = mimeType.description;
@@ -9180,6 +9273,8 @@
                 break;
               default:
               }
+            } else if (this.isArray(mimeType)) {
+              data.body = this.convertRefToModel(this.convertArray(mimeType));
             } else if (mimeType.schema && !_.isEmpty(mimeType.schema)) {
               data.body = this.convertRefToModel({ type: mimeType.schema[0] });
             } else if (mimeType.type && !_.isEmpty(mimeType.type) && mimeType.type[0] !== 'object') {
@@ -9228,7 +9323,7 @@
                   delete data.required;
                 }
               }
-              if (definition.type && definition.type !== 'object') {
+              if (definition.type && definition.type != 'object') {
                 //type
                 if (data) {
                   //type and properties
@@ -9240,6 +9335,15 @@
                   if (_.isArray(definition.type) && definition.type.length > 1) {
                     definition.allOf = definition.type;
                     delete definition.type;
+                  } else if (this.isArray(definition)) {
+                    //check for array
+                    //convert array
+                    definition = this.convertArray(definition);
+                  } else if (this.isFacet(definition)) {
+                    //check for facets
+                    definition = this.convertFacet(definition);
+                  } else if (this.isFixedFacet(definition)) {
+                    definition = this.convertFixedFacet(definition);
                   } else {
                     definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
                   }
@@ -9253,6 +9357,55 @@
             }
           }
           return schemas;
+        };
+        RAML10.prototype.isArray = function (definition) {
+          var type = _.isArray(definition.type) ? definition.type[0] : definition.type;
+          return type === 'array' && definition.items;
+        };
+        RAML10.prototype.isFacet = function (definition) {
+          return definition.facets;
+        };
+        RAML10.prototype.isFixedFacet = function (definition) {
+          return definition.fixedFacets;
+        };
+        RAML10.prototype.convertArray = function (definition) {
+          var items;
+          if (definition.items.type) {
+            items = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
+          } else {
+            items = definition.items;
+          }
+          definition.items = {};
+          definition.items.type = items;
+          definition.type = 'array';
+          return definition;
+        };
+        RAML10.prototype.convertFacet = function (definition) {
+          var facets = definition.facets;
+          var result = [];
+          for (var key in facets) {
+            if (!facets.hasOwnProperty(key))
+              continue;
+            var facet = facets[key];
+            facet[key] = _.isArray(facet.type) ? facet.type[0] : facet.type;
+            delete facet.name;
+            delete facet.type;
+            result.push(facet);
+          }
+          definition['x-facets'] = result;
+          delete definition.facets;
+          return definition;
+        };
+        RAML10.prototype.convertFixedFacet = function (definition) {
+          var result = [];
+          var fixedFacets = definition.fixedFacets;
+          for (var key in fixedFacets) {
+            if (!fixedFacets.hasOwnProperty(key))
+              continue;
+            definition['x-' + key] = fixedFacets[key];
+          }
+          delete definition.fixedFacets;
+          return definition;
         };
         RAML10.prototype.getSchema = function (data) {
           return data.types;
@@ -10063,7 +10216,7 @@
           this._mapEndpoints(this.data.consumes, this.data.produces);
           this.project.Environment.summary = this.data.info.description || '';
           this.project.Environment.BasePath = this.data.basePath || '';
-          this.project.Environment.Host = this.data.host ? protocol + '://' + this.data.host : null;
+          this.project.Environment.Host = this.data.host ? protocol + '://' + this.data.host : '';
           this.project.Environment.Version = this.data.info.version;
           if (this.data.externalDocs) {
             this.project.Environment.ExternalDocs = {
@@ -13518,7 +13671,7 @@
             /** Used as a safe reference for `undefined` in pre-ES5 environments. */
             var undefined;
             /** Used as the semantic version number. */
-            var VERSION = '4.16.3';
+            var VERSION = '4.16.4';
             /** Used as the size to enable large array optimizations. */
             var LARGE_ARRAY_SIZE = 200;
             /** Error message constants. */
@@ -15616,12 +15769,9 @@
      * @returns {Array} Returns the array of property names.
      */
               function arrayLikeKeys(value, inherited) {
-                // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-                // Safari 9 makes `arguments.length` enumerable in strict mode.
-                var result = isArray(value) || isArguments(value) ? baseTimes(value.length, String) : [];
-                var length = result.length, skipIndexes = !!length;
+                var isArr = isArray(value), isArg = !isArr && isArguments(value), isBuff = !isArr && !isArg && isBuffer(value), isType = !isArr && !isArg && !isBuff && isTypedArray(value), skipIndexes = isArr || isArg || isBuff || isType, result = skipIndexes ? baseTimes(value.length, String) : [], length = result.length;
                 for (var key in value) {
-                  if ((inherited || hasOwnProperty.call(value, key)) && !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+                  if ((inherited || hasOwnProperty.call(value, key)) && !(skipIndexes && (key == 'length' || isBuff && (key == 'offset' || key == 'parent') || isType && (key == 'buffer' || key == 'byteLength' || key == 'byteOffset') || isIndex(key, length)))) {
                     result.push(key);
                   }
                 }
@@ -15647,7 +15797,7 @@
      * @returns {Array} Returns the random elements.
      */
               function arraySampleSize(array, n) {
-                return shuffleSelf(copyArray(array), n);
+                return shuffleSelf(copyArray(array), baseClamp(n, 0, array.length));
               }
               /**
      * A specialized version of `_.shuffle` for arrays.
@@ -15862,9 +16012,7 @@
                   return stacked;
                 }
                 stack.set(value, result);
-                if (!isArr) {
-                  var props = isFull ? getAllKeys(value) : keys(value);
-                }
+                var props = isArr ? undefined : (isFull ? getAllKeys : keys)(value);
                 arrayEach(props || value, function (subValue, key) {
                   if (props) {
                     key = subValue;
@@ -16326,6 +16474,16 @@
                 return func == null ? undefined : apply(func, object, args);
               }
               /**
+     * The base implementation of `_.isArguments`.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+     */
+              function baseIsArguments(value) {
+                return isObjectLike(value) && objectToString.call(value) == argsTag;
+              }
+              /**
      * The base implementation of `_.isArrayBuffer` without Node.js optimizations.
      *
      * @private
@@ -16650,14 +16808,7 @@
                 if (object === source) {
                   return;
                 }
-                if (!(isArray(source) || isTypedArray(source))) {
-                  var props = baseKeysIn(source);
-                }
-                arrayEach(props || source, function (srcValue, key) {
-                  if (props) {
-                    key = srcValue;
-                    srcValue = source[key];
-                  }
+                baseFor(source, function (srcValue, key) {
                   if (isObject(srcValue)) {
                     stack || (stack = new Stack());
                     baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
@@ -16668,7 +16819,7 @@
                     }
                     assignMergeValue(object, key, newValue);
                   }
-                });
+                }, keysIn);
               }
               /**
      * A specialized version of `baseMerge` for arrays and objects which performs
@@ -16694,13 +16845,16 @@
                 var newValue = customizer ? customizer(objValue, srcValue, key + '', object, source, stack) : undefined;
                 var isCommon = newValue === undefined;
                 if (isCommon) {
-                  var isArr = isArray(srcValue), isTyped = !isArr && isTypedArray(srcValue);
+                  var isArr = isArray(srcValue), isBuff = !isArr && isBuffer(srcValue), isTyped = !isArr && !isBuff && isTypedArray(srcValue);
                   newValue = srcValue;
-                  if (isArr || isTyped) {
+                  if (isArr || isBuff || isTyped) {
                     if (isArray(objValue)) {
                       newValue = objValue;
                     } else if (isArrayLikeObject(objValue)) {
                       newValue = copyArray(objValue);
+                    } else if (isBuff) {
+                      isCommon = false;
+                      newValue = cloneBuffer(srcValue, true);
                     } else if (isTyped) {
                       isCommon = false;
                       newValue = cloneTypedArray(srcValue, true);
@@ -16960,7 +17114,8 @@
      * @returns {Array} Returns the random elements.
      */
               function baseSampleSize(collection, n) {
-                return shuffleSelf(values(collection), n);
+                var array = values(collection);
+                return shuffleSelf(array, baseClamp(n, 0, array.length));
               }
               /**
      * The base implementation of `_.set`.
@@ -17188,6 +17343,10 @@
                 // Exit early for strings to avoid a performance hit in some environments.
                 if (typeof value == 'string') {
                   return value;
+                }
+                if (isArray(value)) {
+                  // Recursively convert values (susceptible to call stack limits).
+                  return arrayMap(value, baseToString) + '';
                 }
                 if (isSymbol(value)) {
                   return symbolToString ? symbolToString.call(value) : '';
@@ -19242,7 +19401,7 @@
      */
               function shuffleSelf(array, size) {
                 var index = -1, length = array.length, lastIndex = length - 1;
-                size = size === undefined ? length : baseClamp(size, 0, length);
+                size = size === undefined ? length : size;
                 while (++index < size) {
                   var rand = baseRandom(index, lastIndex), value = array[rand];
                   array[rand] = array[index];
@@ -23550,10 +23709,11 @@
      * _.isArguments([1, 2, 3]);
      * // => false
      */
-              function isArguments(value) {
-                // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
-                return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') && (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-              }
+              var isArguments = baseIsArguments(function () {
+                  return arguments;
+                }()) ? baseIsArguments : function (value) {
+                  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') && !propertyIsEnumerable.call(value, 'callee');
+                };
               /**
      * Checks if `value` is classified as an `Array` object.
      *
@@ -23762,7 +23922,7 @@
      * // => false
      */
               function isEmpty(value) {
-                if (isArrayLike(value) && (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' || isBuffer(value) || isArguments(value))) {
+                if (isArrayLike(value) && (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' || isBuffer(value) || isTypedArray(value) || isArguments(value))) {
                   return !value.length;
                 }
                 var tag = getTag(value);
@@ -23770,7 +23930,7 @@
                   return !value.size;
                 }
                 if (isPrototype(value)) {
-                  return !nativeKeys(value).length;
+                  return !baseKeys(value).length;
                 }
                 for (var key in value) {
                   if (hasOwnProperty.call(value, key)) {
@@ -23919,7 +24079,7 @@
      */
               function isFunction(value) {
                 // The use of `Object#toString` avoids issues with the `typeof` operator
-                // in Safari 8-9 which returns 'object' for typed array and other constructors.
+                // in Safari 9 which returns 'object' for typed array and other constructors.
                 var tag = isObject(value) ? objectToString.call(value) : '';
                 return tag == funcTag || tag == genTag || tag == proxyTag;
               }
@@ -24766,8 +24926,8 @@
      * @memberOf _
      * @since 4.0.0
      * @category Lang
-     * @param {*} value The value to process.
-     * @returns {string} Returns the string.
+     * @param {*} value The value to convert.
+     * @returns {string} Returns the converted string.
      * @example
      *
      * _.toString(null);
@@ -25903,21 +26063,19 @@
      * // => { '1': ['a', 'c'], '2': ['b'] }
      */
               function transform(object, iteratee, accumulator) {
-                var isArr = isArray(object) || isTypedArray(object);
+                var isArr = isArray(object), isArrLike = isArr || isBuffer(object) || isTypedArray(object);
                 iteratee = getIteratee(iteratee, 4);
                 if (accumulator == null) {
-                  if (isArr || isObject(object)) {
-                    var Ctor = object.constructor;
-                    if (isArr) {
-                      accumulator = isArray(object) ? new Ctor() : [];
-                    } else {
-                      accumulator = isFunction(Ctor) ? baseCreate(getPrototype(object)) : {};
-                    }
+                  var Ctor = object && object.constructor;
+                  if (isArrLike) {
+                    accumulator = isArr ? new Ctor() : [];
+                  } else if (isObject(object)) {
+                    accumulator = isFunction(Ctor) ? baseCreate(getPrototype(object)) : {};
                   } else {
                     accumulator = {};
                   }
                 }
-                (isArr ? arrayEach : baseForOwn)(object, function (value, index, object) {
+                (isArrLike ? arrayEach : baseForOwn)(object, function (value, index, object) {
                   return iteratee(accumulator, value, index, object);
                 });
                 return accumulator;
@@ -56218,7 +56376,6 @@ CodeMirror.overlayMode = CodeMirror.overlayParser = function (base, overlay, com
           handle.setFocus(handle.length);
         },
         Enter: handle.pick,
-        Tab: handle.pick,
         Esc: handle.close
       };
     var ourMap = options.customKeys ? {} : baseMap;
@@ -59198,7 +59355,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     this.FSResolver = FSResolver;
     this.EditorStateProvider = EditorStateProvider;
     function codemirrorHint(editor, suggestions) {
-      var separator = /:?(:|\s|\.|\[|]|-)+/;
+      var separator = /:?(:|\s|\.|\[|]|-)+|!/;
       var currentPrefix = function (line, ch) {
         if (!line) {
           return '';
@@ -59263,9 +59420,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       return suggestion;
     }
-    function asureTextFieldNotUndefined(suggetion) {
-      suggetion.text = suggetion.text || suggetion.displayText || '';
-      return suggetion;
+    function ensureTextFieldNotUndefined(suggestion) {
+      suggestion.text = suggestion.text || suggestion.displayText || '';
+      return suggestion;
     }
     this.getSuggestions = function (homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
@@ -59279,7 +59436,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }).then(function (suggestions) {
         return suggestions.map(beautifyCategoryName);
       }).then(function (suggestions) {
-        return suggestions.map(asureTextFieldNotUndefined);
+        return suggestions.map(ensureTextFieldNotUndefined);
       });
     };
     // class methods
@@ -59772,17 +59929,17 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return object ? object[typeName] : object;
       }
       function replaceTypeIfExists(raml, type, value) {
-        var expandedTypeIsDefined = retrieveType(raml, type);
-        if (expandedTypeIsDefined) {
-          for (var key in expandedTypeIsDefined) {
-            if (expandedTypeIsDefined.hasOwnProperty(key)) {
+        var expandedType = retrieveType(raml, type);
+        if (expandedType) {
+          for (var key in expandedType) {
+            if (expandedType.hasOwnProperty(key)) {
               if ([
                   'example',
                   'examples'
                 ].includes(key) && value[key]) {
                 return;
               }
-              value[key] = expandedTypeIsDefined[key];
+              value[key] = expandedType[key];
             }
           }
         }
@@ -61241,7 +61398,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     return function applySuggestion(editor, suggestion) {
       var replacementPrefix = suggestion.replacementPrefix || '';
       var cursor = editor.getCursor();
-      var rangeEnd = editor.getLine(cursor.line);
+      var rangeEnd = {
+          line: cursor.line,
+          ch: editor.getLine(cursor.line).length
+        };
       var rangeStart = {
           line: cursor.line,
           ch: cursor.ch - replacementPrefix.length
