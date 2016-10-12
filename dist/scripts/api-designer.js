@@ -1320,6 +1320,12 @@
         if (!allowNull && !astNode) {
           return ast;
         }
+        if (astNode && search.isExampleNode(astNode)) {
+          var exampleEnd = astNode.lowLevel().end();
+          if (exampleEnd === actualOffset && text[exampleEnd] === '\n') {
+            astNode = astNode.parent();
+          }
+        }
         return astNode;
       }
       function modifiedContent(request) {
@@ -1772,10 +1778,60 @@
         }
         return rs;
       }
+      function isUnexspected(symbol) {
+        if (symbol === '\'') {
+          return true;
+        }
+        if (symbol === '"') {
+          return true;
+        }
+        return false;
+      }
+      function isValueBroken(request) {
+        var text = request.content.getText();
+        var offset = request.content.getOffset();
+        var prefix = request.prefix();
+        var beginning = text.substring(0, offset);
+        var value = beginning.substring(beginning.lastIndexOf(':') + 1).trim();
+        if (!value.length) {
+          return false;
+        }
+        if (value[value.length - 1] === ',') {
+          if (value.indexOf('[') < 0) {
+            return true;
+          }
+        }
+        if (beginning[beginning.length - 1] === ' ') {
+          if (/^\w$/.test(value[value.length - 1])) {
+            return true;
+          } else if (value[value.length - 1] === ',') {
+            if (value.indexOf('[') < 0) {
+              return true;
+            }
+          }
+        }
+        if (/^\w+$/.test(prefix)) {
+          value = value.substring(0, value.lastIndexOf(prefix)).trim();
+          if (/^\w$/.test(value[value.length - 1])) {
+            return true;
+          } else if (value[value.length - 1] === ',') {
+            if (value.indexOf('[') < 0) {
+              return true;
+            }
+          }
+        }
+        if (isUnexspected(value[value.length - 1])) {
+          return true;
+        }
+        return false;
+      }
       function valueCompletion(node, attr, request, provider) {
         var hlnode = node;
         var text = request.content.getText();
         var offset = request.content.getOffset();
+        if (isValueBroken(request)) {
+          return [];
+        }
         if (attr) {
           var p = attr.property();
           var vl = attr.value();
