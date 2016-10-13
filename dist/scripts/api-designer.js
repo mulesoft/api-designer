@@ -59933,12 +59933,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }
             replaceTypeIfExists(raml, type, value.items);
             if (!value.examples && !value.example) {
-              generateArrayExampleIfPosible(value);
+              generateArrayExampleIfPossible(value);
             }
           }
         });
       }
-      function generateArrayExampleIfPosible(arrayNode) {
+      function generateArrayExampleIfPossible(arrayNode) {
         var examples = getExampleList(arrayNode.items);
         if (examples.length === 0) {
           return;

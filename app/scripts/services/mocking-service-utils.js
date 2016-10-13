@@ -95,13 +95,13 @@
             if (isNotObject(value.items)) { value.items = {}; }
             replaceTypeIfExists(raml, type, value.items);
 
-            if (!value.examples && !value.example) { generateArrayExampleIfPosible(value); }
+            if (!value.examples && !value.example) { generateArrayExampleIfPossible(value); }
           }
         });
 
       }
 
-      function generateArrayExampleIfPosible(arrayNode) {
+      function generateArrayExampleIfPossible(arrayNode) {
         var examples = getExampleList(arrayNode.items);
         if (examples.length === 0 ) { return; }
 
