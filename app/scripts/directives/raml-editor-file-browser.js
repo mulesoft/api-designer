@@ -213,8 +213,7 @@
         });
 
         $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
-          var parent = ramlRepository.getParent(target);
-          parent.sortChildren();
+          ramlRepository.getParent(target).sortChildren();
         });
 
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
