@@ -12,6 +12,43 @@ describe('CodeMirror Service', function () {
     codeMirror = $injector.get('codeMirror');
   }));
 
+  describe('errors', function () {
+
+    var codeMirrorErrors;
+
+    beforeEach(inject(function ($injector) {
+      codeMirrorErrors = $injector.get('codeMirrorErrors');
+    }));
+
+    it('should show errors', function () {
+      var indentUnit = 7;
+      var incompleteIndent = 3;
+      var editor = getEditor(codeMirror,
+        [
+          'title: hello',
+          'version: v1.0',
+          'baseUri: http://example.com/api',
+          sp(incompleteIndent)
+        ].join('\n'),
+        {line: 3, ch: 0},
+        {indentUnit: indentUnit}
+      );
+
+      should.not.exist(editor.lineInfo(0).gutterMarkers);
+      should.not.exist(editor.lineInfo(1).gutterMarkers);
+      should.not.exist(editor.lineInfo(2).gutterMarkers);
+
+      codeMirrorErrors.displayAnnotations([
+        {severity:'error', message: 'error msg', line: 1},
+        {severity:'warning', message: 'warning msg', line: 2}
+        ], editor);
+
+      should.exist(editor.lineInfo(0).gutterMarkers);
+      should.exist(editor.lineInfo(1).gutterMarkers);
+      should.not.exist(editor.lineInfo(2).gutterMarkers);
+    });
+  });
+
   describe('tab key', function () {
     it('should complete the indentUnit', function () {
       var indentUnit       = 7;
