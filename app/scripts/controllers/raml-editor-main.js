@@ -192,6 +192,7 @@
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
         var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message, isWarning: error.isWarning}];
+
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           var errorInfo = error;
           var tracingInfo = { line : undefined, column : undefined, path : undefined };
