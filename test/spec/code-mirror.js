@@ -21,17 +21,14 @@ describe('CodeMirror Service', function () {
     }));
 
     it('should show errors', function () {
-      var indentUnit = 7;
-      var incompleteIndent = 3;
       var editor = getEditor(codeMirror,
         [
           'title: hello',
           'version: v1.0',
-          'baseUri: http://example.com/api',
-          sp(incompleteIndent)
+          'baseUri: http://example.com/api'
         ].join('\n'),
         {line: 3, ch: 0},
-        {indentUnit: indentUnit}
+        {indentUnit: 7}
       );
 
       should.not.exist(editor.lineInfo(0).gutterMarkers);
@@ -75,7 +72,7 @@ describe('CodeMirror Service', function () {
           'title: hello',
           'version: v1.0',
           'baseUri: http://example.com/api',
-          'lala',
+          'lala'
         ],
         {line: 3, ch: 0},
         {indentUnit: indentUnit}
@@ -108,7 +105,7 @@ describe('CodeMirror Service', function () {
       var indentUnit = 2;
       var editor     = getEditor(codeMirror,
         [
-          'title: hello ',
+          'title: hello '
         ],
         {line: 0, ch: 666},
         {indentUnit: indentUnit}

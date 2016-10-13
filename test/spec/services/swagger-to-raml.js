@@ -137,13 +137,15 @@ describe('swaggerToRAML', function () {
       });
 
       it('should respond with RAML', function () {
-        //var spy     = sinon.spy();
+        var spy     = sinon.spy();
         var promise = swaggerToRAML.file({ name: 'api-docs.json' });
 
         promise.then(function(raml) {
           console.log(raml);
+          spy(raml);
         }).catch(function (err) {
           console.log(err);
+          spy(err);
         });
 
         $rootScope.$digest();
@@ -159,7 +161,13 @@ describe('swaggerToRAML', function () {
         var spy = sinon.spy();
 
         var promise = swaggerToRAML.url(URL);
-        promise.then(spy).catch(spy);
+        promise.then(function(raml) {
+          console.log(raml);
+          spy(raml);
+        }).catch(function (err) {
+          console.log(err);
+          spy(err);
+        });
 
         $rootScope.$digest();
 
