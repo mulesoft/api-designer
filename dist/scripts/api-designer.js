@@ -57107,6 +57107,17 @@ if (!Array.prototype.find) {
     return undefined;
   };
 }
+if (!Array.prototype.includes) {
+  Array.prototype.includes = function (value) {
+    for (var i = 0; i < this.length; i++) {
+      var item = this[i];
+      if (item === value) {
+        return true;
+      }
+    }
+    return false;
+  };
+}
 'use strict';
 if (!String.prototype.startsWith) {
   String.prototype.startsWith = function (text) {
