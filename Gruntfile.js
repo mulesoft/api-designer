@@ -58,6 +58,10 @@ module.exports = function (grunt) {
   } catch (e) {
   }
 
+
+  grunt.loadNpmTasks('grunt-karma-coveralls');
+
+
   grunt.initConfig({
     yeoman: yeomanConfig,
 
@@ -250,6 +254,16 @@ module.exports = function (grunt) {
       unit: {
         configFile: 'karma.conf.js',
         singleRun:  true
+      }
+    },
+
+    coveralls: {
+      options: {
+        debug: true,
+        coverageDir: 'coverage',
+        dryRun: true,
+        force: true,
+        recursive: true
       }
     },
 

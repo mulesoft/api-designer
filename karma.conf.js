@@ -70,7 +70,6 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
     reporters: [
-      'dots',
       'coverage'
     ],
 
@@ -79,8 +78,8 @@ module.exports = function(config) {
     },
 
     coverageReporter: {
-      type: 'html',
-      dir: 'coverage/'
+      type: "lcov",
+      dir: "coverage/"
     },
 
     // web server port
