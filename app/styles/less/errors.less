@@ -12,41 +12,26 @@
   font-size: 10pt;
   overflow: hidden;
   padding: 2px 5px;
-  white-space:nowrap;
-  position: absolute;
-  max-width: none;
+  position: fixed;
+  z-index: 1000;
+  max-width: 600px;
   opacity: 0;
   transition: opacity .4s;
-  margin: -6px 0 0 18px;
-}
-
-.CodeMirror-linenumber + .CodeMirror-gutter-elt {
-  z-index: 1000;
 }
 
 .CodeMirror-lint-mark-error, .CodeMirror-lint-mark-warning {
-  z-index: 1000;
   background-position: left bottom;
   background-repeat: repeat-x;
 }
 
-.CodeMirror-lint-mark-error {
-  background-image:
-  url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJDw4cOCW1/KIAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAHElEQVQI12NggIL/DAz/GdA5/xkY/qPKMDAwAADLZwf5rvm+LQAAAABJRU5ErkJggg==");
-}
-
-.CodeMirror-lint-mark-warning {
-  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAAAXNSR0IArs4c6QAAAAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJFhQXEbhTg7YAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAMklEQVQI12NkgIIvJ3QXMjAwdDN+OaEbysDA4MPAwNDNwMCwiOHLCd1zX07o6kBVGQEAKBANtobskNMAAAAASUVORK5CYII=");
-}
-
 .CodeMirror-lint-marker-error, .CodeMirror-lint-marker-warning {
   cursor: pointer;
-  display: block;
+  display: inline-block;
   height: 16px;
   width: 16px;
   vertical-align: middle;
   position: relative;
-  margin-left: -2px;
+  margin-left: 3px;
   margin-top: -1px;
 }
 
@@ -59,7 +44,7 @@
   margin-bottom: 4px;
 
   .CodeMirror-message {
-    display: inline-block;
+    display: inline;
     word-wrap: break-word;
     margin: 0;
   }
@@ -77,7 +62,8 @@
   background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAAXNSR0IArs4c6QAAAAZiS0dEAAAAAAAA+UO7fwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sJEAQvB2JVdrAAAAAdaVRYdENvbW1lbnQAAAAAAENyZWF0ZWQgd2l0aCBHSU1QZC5lBwAAAD1JREFUCNdtjkESADAEAzemf69f66HMqGlOIhYiFRFRtSQBWAY7mzx+EDTL6sSgb1jTk7Q87rxyqe37fXsAa78gLyZnRgEAAAAASUVORK5CYII=");
   background-repeat: no-repeat;
   background-position: right bottom;
-  width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
 }
 
 .cm-s-solarized .CodeMirror-gutters {

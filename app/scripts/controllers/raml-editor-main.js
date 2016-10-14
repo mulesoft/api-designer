@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlParser, ramlParserAdapter, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -157,16 +157,21 @@
 
         $scope.loadRaml(file.contents, file.path).then(
           // success
-          safeApplyWrapper($scope, function success(value) {
+          safeApplyWrapper($scope, function success(api) {
             // hack: we have to make a full copy of an object because console modifies
             // it later and makes it unusable for mocking service
-            var raml = ramlParserAdapter.expandApiToJSON(value);
-            var ramlExpanded = ramlParserAdapter.expandApiToJSON(value, true);
+            var raml = ramlParserAdapter.expandApiToJSON(api);
+            var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
 
             $scope.fileBrowser.selectedFile.raml = raml;
             $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
 
             $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
+
+            // a success, but with warnings
+            if (api.errors().length > 0) {
+              $rootScope.$broadcast('event:raml-parser-error', {parserErrors: api.errors()});
+            }
           }),
 
           // failure
@@ -191,14 +196,39 @@
           var errorInfo = error;
           var tracingInfo = { line : undefined, column : undefined, path : undefined };
           var needErrorPath = error.trace !== undefined;
+
+          function findError(errors, selectedFile) {
+            for (var i = 0; i < errors.length; i++) {
+              var error = errors[i];
+              if (error.path === selectedFile.name) {
+                error.from = errorInfo;
+                return error;
+              }
+              else {
+                var innerError = findError(error.trace, selectedFile);
+                if (innerError) {
+                  innerError.from = error;
+                  return innerError;
+                }
+              }
+            }
+          }
+
           if (needErrorPath) {
-            errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
-              return trace.path === event.currentScope.fileBrowser.selectedFile.name;
-            });
+            var selectedFile = event.currentScope.fileBrowser.selectedFile;
+            errorInfo = findError(error.trace, selectedFile);
+            errorInfo.isWarning = error.isWarning;
+
+            var selectedFilePath = selectedFile.path;
+            var directorySeparator = '/';
+            var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
+            var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
+            var range = errorInfo.from.range;
+
             tracingInfo = {
-              line : ((error.range && error.range.start.line) || 0) + 1,
-              column : (error.range && error.range.start.column) || 1,
-              path : error.path
+              line : ((range && range.start.line) || 0) + 1,
+              column : (range && range.start.column) || 1,
+              path : folderPath + errorInfo.from.path
             };
           }
 

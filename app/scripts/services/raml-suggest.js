@@ -63,7 +63,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.listAsync = function(path){ return Promise.resolve(this.list(path)); };
 
-  this.exists = function(path) { return this.getElement(path); };
+  this.exists = function(path) { return this.getElement(path)? true : false; };
 
   this.existsAsync = function(path) { return Promise.resolve(this.exists(path)); };
 
@@ -71,7 +71,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     var element = this.getElement(path);
     if (!element) { return ''; }
     if (element.isDirectory) { return element.path; }
-    var result = path.substring(0, path.lastIndexOf('/'));
+    var result = path.substring(0, path.lastIndexOf('/') + 1);
     return result || '';
   };
 
@@ -84,7 +84,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.extname = function (path) {
     var element = this.getElement(path);
-    if (element.isDirectory) { return ''; }
+    if (!element || element.isDirectory) { return ''; }
 
     var nameParts = element.name.split('.');
     if (nameParts.length <= 1) { return ''; }
@@ -93,7 +93,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.isDirectory = function (path) {
     var element = this.getElement(path);
-    return element && element.isDirectory;
+    return element && element.isDirectory ? true : false;
   };
 
   this.isDirectoryAsync = function (path) { return Promise.resolve(this.isDirectory(path)); };
@@ -128,8 +128,12 @@ var EditorStateProvider = function (fsResolver, path, editor) {
 angular.module('ramlEditorApp')
   .factory('ramlSuggest', function (ramlRepository) {
 
+    this.FSResolver = FSResolver;
+
+    this.EditorStateProvider = EditorStateProvider;
+
     function codemirrorHint(editor, suggestions) {
-      var separator = /:?(:|\s|\.|\[|]|-)+/;
+      var separator = /:?(:|\s|\.|\[|]|-)+|!/;
       var currentPrefix = function(line, ch){
         if (!line) { return ''; }
         var split = line.slice(0, ch).split(separator);
@@ -158,23 +162,27 @@ angular.module('ramlEditorApp')
 
       function isWordPartOfTheSuggestion(word, suggestion) {
         if (!word) { return true; }
-        return suggestion.text.startsWith(word) && suggestion.text !== word;
+        var lowerCaseText = suggestion.text.toLowerCase();
+        return lowerCaseText.startsWith(word) && lowerCaseText !== word;
       }
 
       var cursor = editor.getCursor();
       var line = editor.getLine(cursor.line);
       var ch = cursor.ch;
       var prefix = currentPrefix(line, ch) || '';
-      var sufix = currentSufix(line, ch) ;
-      var toCh = ch + sufix.length;
+      var suffix = currentSufix(line, ch) ;
+      var word = prefix + suffix;
+      var lowerCaseWord = word.toLowerCase();
+      var toCh = editor.getLine(cursor.line).length;
       var fromCh = ch - prefix.length;
 
+
       var codeMirrorSuggestions = suggestions
-        .filter(function (suggestion) { return isWordPartOfTheSuggestion(prefix, suggestion); })
+        .filter(function (suggestion) { return isWordPartOfTheSuggestion(lowerCaseWord, suggestion); })
         .map(codemirrorSuggestion);
 
       return {
-        word: prefix + sufix,
+        word: word,
         list: codeMirrorSuggestions,
         from: CodeMirror.Pos(cursor.line, fromCh),
         to: CodeMirror.Pos(cursor.line, toCh)
@@ -185,6 +193,11 @@ angular.module('ramlEditorApp')
       if(suggestion.category === undefined || suggestion.category.toLowerCase() === 'unknown') {
         suggestion.category = 'others';
       }
+      return suggestion;
+    }
+
+    function ensureTextFieldNotUndefined(suggestion) {
+      suggestion.text = suggestion.text || suggestion.displayText || '';
       return suggestion;
     }
 
@@ -200,7 +213,8 @@ angular.module('ramlEditorApp')
           function (result) { return Array.isArray(result)? result: []; },
           function () { return []; }
         )
-        .then(function (suggestions) { return suggestions.map(beautifyCategoryName); });
+        .then(function (suggestions) { return suggestions.map(beautifyCategoryName); })
+        .then(function (suggestions) { return suggestions.map(ensureTextFieldNotUndefined); });
     };
 
     // class methods

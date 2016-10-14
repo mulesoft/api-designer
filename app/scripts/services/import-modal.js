@@ -79,10 +79,7 @@
         return swaggerToRAML.url(mode.value)
           .then(function (contents) {
             var filename = extractFileName(mode.value, 'raml');
-
-            return importService.createAndSaveFile(
-              $scope.rootDirectory, filename, contents
-            );
+            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
           })
           .then(function () {
             return $modalInstance.close(true);
@@ -98,36 +95,26 @@
       function importSwaggerZip (mode) {
         $scope.importing = true;
 
+        var importSwaggerPromise;
         if (importService.isZip(mode.value)) {
-          return swaggerToRAML.zip($scope.rootDirectory, mode.value)
-            .then(function () {
-              return $modalInstance.close(true);
-            })
-            .catch(function (err) {
-              broadcastError('Failed to parse Swagger: ' + err.message);
-            })
-            .finally(function () {
-              $scope.importing = false;
-            });
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value);
         } else {
-          return swaggerToRAML.file(mode.value)
-            .then(function (contents) {
-              var filename = extractFileName(mode.value.name, 'raml');
-
-              return importService.createAndSaveFile(
-                $scope.rootDirectory, filename, contents
-              );
-            })
-            .then(function () {
-              return $modalInstance.close(true);
-            })
-            .catch(function (err) {
-              broadcastError('Failed to parse Swagger: ' + err.message);
-            })
-            .finally(function () {
-              $scope.importing = false;
-            });
+          importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
+            var filename = extractFileName(mode.value.name, 'raml');
+            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+          });
         }
+
+        return importSwaggerPromise
+          .then(function () {
+            return $modalInstance.close(true);
+          })
+          .catch(function (err) {
+            broadcastError('Failed to parse Swagger: ' + err.message);
+          })
+          .finally(function () {
+            $scope.importing = false;
+          });
       }
 
       $scope.options = [

@@ -7,11 +7,16 @@
         var replacementPrefix = suggestion.replacementPrefix || '';
         var cursor = editor.getCursor();
 
-        var rangeEnd = cursor;
+        var rangeEnd = {
+          line: cursor.line,
+          ch: editor.getLine(cursor.line).length
+        };
+
         var rangeStart = {
           line: cursor.line,
           ch: cursor.ch - replacementPrefix.length
         };
+
         editor.replaceRange(suggestion.key, rangeStart, rangeEnd);
 
         var suggestionLines = suggestion.key.split('\n');
@@ -25,7 +30,7 @@
       };
     })
     .factory('newSuggestions', function(ramlSuggest) {
-      Array.prototype.groupBy = function(key) {
+      var groupBy = function (items, key) {
         var addItemToResult = function (result, item) {
           var list = result[item[key]] || [];
           list.push(item);
@@ -33,7 +38,7 @@
           return result;
         };
 
-        return this.reduce(addItemToResult, {});
+        return items.reduce(addItemToResult, {});
       };
 
       var createModel = function (suggestions) {
@@ -45,12 +50,12 @@
             replacementPrefix: suggestion.replacementPrefix || ''
           };
         });
-        var categoryMap = items.groupBy('category');
-        var categories = Object.keys(categoryMap)
-          .map(function(key) { return {name: key, items: categoryMap[key]}; });
+        var categoryMap = groupBy(items, 'category');
+        var categories = Object.keys(categoryMap).map(function(key) {
+          return {name: key, items: categoryMap[key]};
+        });
 
-        // model.path = suggestions.path;
-          return {categories: categories}; // model
+        return {categories: categories}; // model
       };
 
       return function (homeDirectory, selectedFile, editor) {
@@ -86,7 +91,9 @@
         return (index === -1) ? index.length : index;
       };
 
-      $scope.itemClick = function itemClick(suggestion) { applySuggestion(editor, suggestion); };
+      $scope.itemClick = function itemClick(suggestion) {
+        applySuggestion(editor, suggestion);
+      };
 
       editor.on('cursorActivity', $scope.cursorMoved);
     });
