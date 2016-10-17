@@ -60176,6 +60176,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
         $scope.importing = true;
         return importService.mergeFile($scope.rootDirectory, mode.value).then(function () {
+          if (importService.isZip(mode.value)) {
+            $rootScope.$broadcast('event:save-all');
+          }
+        }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
           broadcastError(err.message);
@@ -60204,7 +60208,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.importing = true;
         var importSwaggerPromise;
         if (importService.isZip(mode.value)) {
-          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value);
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
+            $rootScope.$broadcast('event:save-all');
+          });
         } else {
           importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
             var filename = extractFileName(mode.value.name, 'raml');
@@ -60833,13 +60839,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
               if (!converter) {
-                return self.createAndSaveFile(directory, name, files[name]);
+                return self.createFile(directory, name, files[name]);
               } else {
                 // convert content before importing file
                 var defer = $q.defer();
                 converter(files, name, defer);
                 return defer.promise.then(function (file) {
-                  return self.createAndSaveFile(directory, file.name, file.content);
+                  return self.createFile(directory, file.name, file.content);
                 });
               }
             };
