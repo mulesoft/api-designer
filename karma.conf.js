@@ -70,17 +70,26 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress', 'junit', 'growl', 'coverage'
     reporters: [
+      'dots',
       'coverage'
     ],
 
     preprocessors: {
-      'app/scripts/**/*.js': ['coverage']
+      'app/scripts/**/*.js': 'coverage'
     },
 
     coverageReporter: {
       type: "lcov",
       dir: "coverage/"
     },
+
+
+    plugins: [
+      'karma-mocha',
+      'karma-chai-sinon',
+      'karma-phantomjs-launcher',
+      'karma-coverage'
+    ],
 
     // web server port
     port: 9876,
