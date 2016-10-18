@@ -4,7 +4,7 @@ var codeMirror, codeMirrorErrors,
   $rootScope, $controller, $q, applySuggestion;
 
 describe('RAML Editor Main Controller', function () {
-  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository, sandbox;
+  var params, ctrl, scope, annotationsToDisplay, editor, $timeout, $confirm, $window, ramlRepository, sandbox, ramlParser;
 
   beforeEach(module('ramlEditorApp'));
 
@@ -26,6 +26,7 @@ describe('RAML Editor Main Controller', function () {
     codeMirror      = $injector.get('codeMirror');
     applySuggestion = $injector.get('applySuggestion');
     ramlRepository  = $injector.get('ramlRepository');
+    ramlParser      = $injector.get('ramlParser');
   }));
 
   beforeEach(function () {
@@ -95,6 +96,28 @@ describe('RAML Editor Main Controller', function () {
     });
   });
 
+  describe('on raml parser warning', function () {
+    it('should display warnings', function () {
+      // Arrange
+      ctrl = $controller('ramlEditorMain', params);
+      var warning = {
+        message: 'Unknown property',
+        isWarning: true
+      };
+      should.not.exist(scope.currentError);
+
+      // Act
+      $rootScope.$broadcast('event:raml-parser-error', warning);
+
+      // Assert
+      annotationsToDisplay.length.should.be.equal(1);
+      annotationsToDisplay[0].line.should.be.equal(1);
+      annotationsToDisplay[0].column.should.be.equal(1);
+      annotationsToDisplay[0].message.should.be.equal(warning.message);
+      annotationsToDisplay[0].severity.should.be.equal('warning');
+    });
+  });
+
   describe('on raml parser error', function () {
     it('should display errors on first line if no line specified', function () {
       // Arrange
@@ -112,6 +135,7 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].line.should.be.equal(1);
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
+      annotationsToDisplay[0].severity.should.be.equal('error');
     });
 
     describe.skip('code folding a block containing the errored line', function() {
@@ -131,6 +155,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(7);
         annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
+        annotationsToDisplay[0].severity.should.be.equal('error');
       });
 
       it('restores the error marker on unfolding', function() {
@@ -150,6 +175,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(9);
         annotationsToDisplay[0].message.should.be.equal(error.message);
+        annotationsToDisplay[0].severity.should.be.equal('error');
       });
 
       it('moves the error marker to the next fold when nested', function() {
@@ -178,6 +204,7 @@ describe('RAML Editor Main Controller', function () {
 
         annotationsToDisplay[0].line.should.be.equal(8);
         annotationsToDisplay[0].message.should.be.equal('Error on line 9: ' + error.message);
+        annotationsToDisplay[0].severity.should.be.equal('error');
       });
     });
   });
@@ -260,6 +287,53 @@ describe('RAML Editor Main Controller', function () {
       $timeout.flush();
 
       scope.fileBrowser.selectedFile.contents.should.equal('updated editor contents');
+    });
+  });
+
+  describe('tracing errors', function () {
+    beforeEach(function () {
+      scope.fileBrowser = {
+        rootFile: {
+          type: 'file',
+          path: '/api.raml',
+          isDirectory : false,
+          extension: 'raml',
+          name: 'api.raml',
+          contents: '#%RAML 1.0\ntitle: My API\nresourceTypes:\n  collection: !include resourceType.raml',
+          children: []
+        },
+
+        resourceFile: {
+          name: 'resourceType.raml',
+          path:      '/resourceType.raml',
+          extension: 'raml',
+          contents : '#%RAML 1.0 ResourceType'
+        }
+      };
+    });
+
+    it('error should be traced in files including it', function () {
+      ctrl = $controller('ramlEditorMain', params);
+
+      sinon.stub(ramlRepository, 'getByPath', function (path) {
+        return { path: path };
+      });
+
+      var loadRaml = sinon.spy(scope, 'loadRaml');
+
+      scope.fileBrowser.selectedFile = scope.fileBrowser.rootFile;
+      scope.$emit('event:raml-editor-file-selected', scope.fileBrowser.selectedFile);
+      scope.$emit('event:file-updated');
+      scope.$digest();
+      loadRaml.exceptions.length.should.be.equal(1);
+      loadRaml.should.have.been.calledWith(scope.fileBrowser.rootFile.contents, scope.fileBrowser.rootFile.path);
+
+      scope.fileBrowser.selectedFile = scope.fileBrowser.resourceFile;
+      scope.$emit('event:raml-editor-file-selected', scope.fileBrowser.selectedFile);
+      scope.$emit('event:file-updated');
+      scope.$digest();
+      loadRaml.exceptions.length.should.be.equal(2);
+      loadRaml.should.have.been.calledWith(scope.fileBrowser.resourceFile.contents, scope.fileBrowser.resourceFile.path);
     });
   });
 
@@ -419,6 +493,79 @@ describe('RAML Editor Main Controller', function () {
 
         it.skip('should return false', function () {
           getIsFileParsable(scope.fileBrowser.selectedFile).should.be.false;
+        });
+      });
+    });
+
+    describe('typed fragments are parsable', function () {
+      beforeEach(function () {
+        scope.fileBrowser = {
+          rootFile: {
+            name:      'root.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0', '---', 'title: My API'].join('\n')
+          },
+          libraryFile: {
+            name:      'library.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Library', '---', 'title: My API'].join('\n')
+          },
+          overlayFile: {
+            name:      'overlay.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Overlay', '---', 'title: My API'].join('\n')
+          },
+          extensionFile: {
+            name:      'extension.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Extension', '---', 'title: My API'].join('\n')
+          },
+          traitFile: {
+            name:      'trait.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 Trait', '---', 'title: My API'].join('\n')
+          },
+          resourceTypeFile: {
+            name:      'resourceType.raml',
+            extension: 'raml',
+            contents:  ['#%RAML 1.0 ResourceType', '---', 'title: My API'].join('\n')
+          }
+        };
+      });
+
+      describe('root file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.rootFile).should.be.true;
+        });
+      });
+
+      describe('library file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.libraryFile).should.be.true;
+        });
+      });
+
+      describe('overlay file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.overlayFile).should.be.true;
+        });
+      });
+
+      describe('extension file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.extensionFile).should.be.true;
+        });
+      });
+
+      describe('trait file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.traitFile).should.be.true;
+        });
+      });
+
+      describe('resourceType file is parsable', function () {
+        it('should return true', function () {
+          getIsFileParsable(scope.fileBrowser.resourceTypeFile).should.be.true;
         });
       });
     });

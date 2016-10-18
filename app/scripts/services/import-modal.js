@@ -37,6 +37,14 @@
         $scope.mode.value = element.files[0];
       };
 
+      function broadcastError(msg) {
+        return $rootScope.$broadcast('event:notification', {
+          message: msg,
+          expires: true,
+          level: 'error'
+        });
+      }
+
       /**
        * Import files from the local filesystem.
        *
@@ -44,11 +52,7 @@
        */
       function importFile (mode) {
         if (!$scope.fileSupported) {
-          return $rootScope.$broadcast('event:notification', {
-            message: 'File upload not supported. Try upgrading your browser.',
-            expires: true,
-            level: 'error'
-          });
+          return broadcastError('File upload not supported. Try upgrading your browser.');
         }
 
         $scope.importing = true;
@@ -58,11 +62,7 @@
             return $modalInstance.close(true);
           })
           .catch(function (err) {
-            $rootScope.$broadcast('event:notification', {
-              message: err.message,
-              expires: true,
-              level: 'error'
-            });
+            broadcastError(err.message);
           })
           .finally(function () {
             $scope.importing = false;
@@ -76,23 +76,16 @@
         $scope.importing = true;
 
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.convert(mode.value)
+        return swaggerToRAML.url(mode.value)
           .then(function (contents) {
             var filename = extractFileName(mode.value, 'raml');
-
-            return importService.createFile(
-              $scope.rootDirectory, filename, contents
-            );
+            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
           })
           .then(function () {
             return $modalInstance.close(true);
           })
           .catch(function (err) {
-            $rootScope.$broadcast('event:notification', {
-              message: 'Failed to import Swagger: ' + err.message,
-              expires: true,
-              level: 'error'
-            });
+            broadcastError('Failed to import Swagger: ' + err.message);
           })
           .finally(function () {
             $scope.importing = false;
@@ -102,23 +95,22 @@
       function importSwaggerZip (mode) {
         $scope.importing = true;
 
-        return swaggerToRAML.zip(mode.value)
-          .then(function (contents) {
+        var importSwaggerPromise;
+        if (importService.isZip(mode.value)) {
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value);
+        } else {
+          importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
             var filename = extractFileName(mode.value.name, 'raml');
+            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+          });
+        }
 
-            return importService.createFile(
-              $scope.rootDirectory, filename, contents
-            );
-          })
+        return importSwaggerPromise
           .then(function () {
             return $modalInstance.close(true);
           })
           .catch(function (err) {
-            $rootScope.$broadcast('event:notification', {
-              message: 'Failed to parse Swagger: ' + err.message,
-              expires: true,
-              level: 'error'
-            });
+            broadcastError('Failed to parse Swagger: ' + err.message);
           })
           .finally(function () {
             $scope.importing = false;
@@ -137,7 +129,7 @@
           callback: importSwagger
         },
         {
-          name: 'Swagger .zip',
+          name: 'Swagger file',
           type: 'zip',
           callback: importSwaggerZip
         }
@@ -163,11 +155,16 @@
           return;
         }
 
-        return $scope.mode.callback($scope.mode);
+        try {
+          return $scope.mode.callback($scope.mode);
+        } catch (err) {
+          $scope.importing = false;
+          broadcastError(err);
+        }
       };
 
       /**
-       * Extract a useable filename from a path.
+       * Extract a usable filename from a path.
        *
        * @param  {String} path
        * @param  {String} [ext]

@@ -20,7 +20,7 @@
       self.mergeFile = function (directory, file) {
         // Import every other file as normal.
         if (!self.isZip(file)) {
-          return self.importFile(directory, file);
+          return self.importFile(directory, file).then(ramlRepository.saveFile);
         }
 
         return self.readFile(file)
@@ -159,6 +159,20 @@
         return promiseChain(imports);
       };
 
+
+
+      /**
+       * Create and save file.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @param  {String}  content
+       * @return {Promise}
+       */
+      self.createAndSaveFile = function (directory, name, content) {
+        return self.createFile(directory, name, content).then(ramlRepository.saveFile);
+      };
+
       /**
        * Create a file in the filesystem.
        *
@@ -207,8 +221,8 @@
 
                     // Mark the file as dirty.
                     file.dirty = true;
-                    return file;
                   }
+                  return file;
                 })
               ;
             }
@@ -313,12 +327,13 @@
        *
        * @param  {Object}  directory
        * @param  {String}  contents
+       * @param  {Function}  converter
        * @return {Promise}
        */
-      self.importZip = function (directory, contents) {
+      self.importZip = function (directory, contents, converter) {
         var files = self.parseZip(contents);
 
-        return importZipFiles(directory, files);
+        return importZipFiles(directory, files, converter);
       };
 
       /**
@@ -351,14 +366,24 @@
        *
        * @param  {Object}  directory
        * @param  {Object}  files
+       * @param  {Function}  converter
        * @return {Promise}
        */
-      function importZipFiles (directory, files) {
+      function importZipFiles (directory, files, converter) {
         var imports = Object.keys(files)
           .filter(canImport)
           .map(function (name) {
             return function () {
-              return self.createFile(directory, name, files[name]);
+              if (!converter) {
+                return self.createAndSaveFile(directory, name, files[name]);
+              } else {
+                // convert content before importing file
+                var defer = $q.defer();
+                converter(files, name, defer);
+                return defer.promise.then(function (file) {
+                  return self.createAndSaveFile(directory, file.name, file.content);
+                });
+              }
             };
           });
 

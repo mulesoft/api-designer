@@ -1,6 +1,6 @@
 <form name="form" novalidate ng-submit="import(form)">
   <div class="modal-header">
-    <h3>Import file (beta)</h3>
+    <h3>Import file</h3>
   </div>
 
   <div class="modal-body" ng-class="{'has-error': submittedType === mode.type && form.$invalid}">
@@ -14,7 +14,7 @@
       </div>
 
       <div style="margin-left: 145px;" ng-switch="mode.type">
-        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
+        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">
 
         <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">
 
@@ -23,7 +23,7 @@
     </div>
 
     <div ng-if="submittedType === 'swagger'">
-      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>
+      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>
     </div>
 
     <div ng-if="submittedType === 'file'">
@@ -34,12 +34,12 @@
       <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>
     </div>
 
-    <div ng-if="mode.type === 'file'">
+    <div ng-if="mode.type !== 'swagger'">
       <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>
     </div>
 
     <div ng-if="mode.type !== 'file'">
-      <p>Note: Currently only supports Swagger v1.2</p>
+      <p>Note: Currently supports Swagger v2.0</p>
     </div>
   </div>
 
