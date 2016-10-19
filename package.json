@@ -19,7 +19,7 @@
     "express": "~4.12.4",
     "jshint-html-reporter": "^0.2.4",
     "open": "0.0.5",
-    "raml-suggestions": "0.0.21",
+    "raml-suggestions": "0.0.22",
     "yargs": "~3.11.0"
   },
   "devDependencies": {
