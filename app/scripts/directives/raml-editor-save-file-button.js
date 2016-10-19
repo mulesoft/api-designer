@@ -8,7 +8,7 @@
     ) {
       return {
         restrict: 'E',
-        template: '<span role="save-button" ng-click="saveFile()"><i class="fa fa-save"></i>&nbsp;Save</span>',
+        template: '<a role="save-button" ng-click="saveFile()"><i class="fa fa-save"></i>&nbsp;Save</a>',
         link:     function(scope) {
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;

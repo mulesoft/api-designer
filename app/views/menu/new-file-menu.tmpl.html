@@ -1,67 +1,18 @@
-<div class="submenu" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">
-  <span>
-    <i class="fa fa-plus"></i>&nbsp;New File
-    <i class="submenu-icon fa fa-caret-right"></i>
-  </span>
+<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">
+  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">
+    <a>
+        &nbsp;Raml 1.0
+        <i class="submenu-icon fa fa-caret-right"></i>
+    </a>
 
-  <ul role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showFileMenu">
-    <li>
-      <div ng-mouseenter="openVersionSubMenu()" ng-mouseleave="closeVersionSubMenu()">
-        <span class="menu-item-toggle" ng-click="newFile('1.0')">
-            &nbsp;Raml 1.0
-            <i class="submenu-icon fa fa-caret-right"></i>
-        </span>
+    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">
+      <li role="context-menu-item" ng-repeat="fragment in notSorted(fragments)">
+        <a role="new-raml-{{fragment.name}}" ng-click="newFragmentFile(fragment.label)">&nbsp;{{ fragment.name }}</a>
+      </li>
+    </ul>
+  </li>
 
-        <ul role="menu-dropdown" class="subsubmenu-item menu-item-context" ng-show="showVersionSubMenu">
-          <li role="context-menu-item">
-          <span role="new-button"
-                ng-click="newFragmentFile('DocumentationItem')">&nbsp;User Documentation</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('DataType')">&nbsp;Type</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('NamedExample')">&nbsp;Example</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('ResourceType')">&nbsp;Resource Type</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('Trait')">&nbsp;Trait</span>
-          </li>
-
-          <li role="context-menu-item">
-          <span role="new-button"
-                ng-click="newFragmentFile('AnnotationTypeDeclaration')">&nbsp;Annotation</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('Library')">&nbsp;Library</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('Overlay')">&nbsp;Overlay</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('Extension')">&nbsp;Extension</span>
-          </li>
-
-          <li role="context-menu-item">
-            <span role="new-button" ng-click="newFragmentFile('SecurityScheme')">&nbsp;Security Scheme</span>
-          </li>
-        </ul>
-      </div>
-    </li>
-
-    <li>
-      <span class="menu-item-toggle" ng-click="newFile('0.8')">
-          &nbsp;Raml 0.8
-      </span>
-    </li>
-  </ul>
-</div>
+  <li role="context-menu-item">
+    <a role="new-raml-0.8" ng-click="newFile('0.8')">&nbsp;Raml 0.8 API Spec</a>
+  </li>
+</ul>

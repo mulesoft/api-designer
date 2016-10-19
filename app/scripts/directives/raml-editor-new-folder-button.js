@@ -7,7 +7,7 @@
     ) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
+        template: '<a role="new-folder-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</a>',
         link:     function (scope) {
           scope.newFolder = function newFolder() {
             return newFolderService.prompt(scope.homeDirectory);

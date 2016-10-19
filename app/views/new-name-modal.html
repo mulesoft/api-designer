@@ -6,7 +6,12 @@
   <div class="modal-body">
     <!-- name -->
     <div class="form-group" ng-class="{'has-error': form.$submitted && form.name.$invalid}">
-      <p>{{input.message}}</p>
+      <div>
+        <p style="display: inline;">{{input.message}}</p>
+        <a ng-if="input.link" target="_blank" href="{{input.link}}">
+          <i class="fa fa-external-link"></i>
+        </a>
+      </div>
       <!-- label -->
       <label for="name" class="control-label required-field-label">Name</label>
 
@@ -14,7 +19,7 @@
       <input id="name" name="name" type="text"
              ng-model="input.newName" class="form-control"
              ng-validate="isValid($value)"
-             ng-maxlength="64" ng-auto-focus="true" required>
+             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>
 
       <!-- error -->
       <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>

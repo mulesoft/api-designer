@@ -811,10 +811,15 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   background: #1e4f6a;
   color: #DDD;
 }
+[role="context-menu"] .submenu-item {
+  margin-left: 138px;
+  margin-top: -21px;
+  left: inherit !important;
+}
 [role="menu-dropdown"] {
-  z-index: 210;
+  z-index: 2000;
   list-style: none;
-  border: 1px solid #AAA;
+  border-top: 1px solid #AAA;
   background-color: #EEE;
   color: #666;
   padding: 3px 0;
@@ -824,21 +829,16 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   box-shadow: 3px 3px 10px 0 rgba(0, 0, 0, 0.25);
   opacity: 0.95;
 }
+[role="menu-dropdown"] i {
+  width: 18px;
+}
 [role="menu-dropdown"] li {
-  margin: 2px 5px;
+  padding: 6px 5px 4px 5px;
 }
 [role="menu-dropdown"] li > a {
   width: 100%;
 }
-[role="menu-dropdown"] li span {
-  padding: 2px 5px !important;
-  width: 100%;
-}
-[role="menu-dropdown"] li span > i {
-  width: 15px;
-}
-[role="menu-dropdown"] li a:after,
-[role="menu-dropdown"] li span:after {
+[role="menu-dropdown"] li a:after {
   content: "";
   display: block;
   height: 1px;
@@ -849,13 +849,33 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
 [role="menu-dropdown"] li span:hover {
   color: #1e4f6a !important;
 }
-[role="menu-dropdown"] li:last-child > a:after,
-[role="menu-dropdown"] li:last-child span:after {
+[role="menu-dropdown"] li:last-child a:after {
   display: none;
+}
+[role="menu-dropdown"] [role="new-button"] {
+  white-space: nowrap;
+}
+[role="menu-dropdown"] .submenu-icon {
+  float: right;
+}
+[role="menu-dropdown"] .submenu-item {
+  top: inherit !important;
+  left: 112% !important;
+}
+[role="menu-dropdown"] .submenu-item {
+  margin-top: -29px;
 }
 [role="menu-item"] i,
 [role="menu-item"] span {
   cursor: pointer;
+}
+[role="context-menu-item"] .submenu-item {
+  top: inherit;
+  left: 15%;
+}
+[role="context-menu-item"] .subsubmenu-item {
+  top: inherit;
+  left: 30%;
 }
 
 /* CodeMirror Overrides */
@@ -1314,10 +1334,6 @@ div[role=raml-editor] .menubar .menu-item-toggle {
 div[role=raml-editor] .menubar .menu-icon {
   padding-left: 8px;
 }
-div[role=raml-editor] .menubar .submenu-icon {
-  float: right;
-  margin-right: -6px;
-}
 div[role=raml-editor] .menubar hr.line-with-linear-gradient {
   border: 0;
   height: 1px;
@@ -1327,12 +1343,14 @@ div[role=raml-editor] .menubar hr.line-with-linear-gradient {
 div[role=raml-editor] .menubar .menu-item-context {
   position: absolute;
   top: 106%;
-  left: 17%;
-  margin-left: -15px;
+  left: 18%;
+  margin-left: -18px;
+  border: 1px solid black;
 }
 div[role=raml-editor] .menubar .menu-item-context a {
   color: inherit;
   text-decoration: none;
+  display: block;
 }
 div[role=raml-editor] .menubar .menu-item {
   position: relative;
@@ -1429,12 +1447,4 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=chec
 div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=checkbox]:checked + label {
   left: -webkit-calc(100% - 2em - 3px);
   left: calc(100% - 2em - 3px);
-}
-div[role=raml-editor] .menubar .submenu-item {
-  top: -1px;
-  left: 161px;
-}
-div[role=raml-editor] .menubar .subsubmenu-item {
-  left: 113%;
-  top: -1px;
 }

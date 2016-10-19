@@ -11,7 +11,7 @@
     ) {
       return {
         restrict: 'E',
-        template: '<span role="save-all-button" ng-click="saveAllFiles()"><i class="fa fa-save"></i>&nbsp;Save All</span>',
+        template: '<a role="save-all-button" ng-click="saveAllFiles()"><i class="fa fa-save"></i>&nbsp;Save All</a>',
         link: function(scope) {
           scope.saveAllFiles = function saveAllFiles() {
             var promises = [];
