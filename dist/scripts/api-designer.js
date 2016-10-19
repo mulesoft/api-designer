@@ -369,6 +369,804 @@
 }({
   1: [
     function (require, module, exports) {
+      (function () {
+        var PathSeparator, legacy_scorer, pluckCandidates, scorer, sortCandidates;
+        scorer = require('./scorer');
+        legacy_scorer = require('./legacy');
+        pluckCandidates = function (a) {
+          return a.candidate;
+        };
+        sortCandidates = function (a, b) {
+          return b.score - a.score;
+        };
+        PathSeparator = require('path').sep;
+        module.exports = function (candidates, query, _arg) {
+          var allowErrors, bAllowErrors, bKey, candidate, coreQuery, key, legacy, maxInners, maxResults, prepQuery, queryHasSlashes, score, scoredCandidates, spotLeft, string, _i, _j, _len, _len1, _ref;
+          _ref = _arg != null ? _arg : {}, key = _ref.key, maxResults = _ref.maxResults, maxInners = _ref.maxInners, allowErrors = _ref.allowErrors, legacy = _ref.legacy;
+          scoredCandidates = [];
+          spotLeft = maxInners != null && maxInners > 0 ? maxInners : candidates.length;
+          bAllowErrors = !!allowErrors;
+          bKey = key != null;
+          prepQuery = scorer.prepQuery(query);
+          if (!legacy) {
+            for (_i = 0, _len = candidates.length; _i < _len; _i++) {
+              candidate = candidates[_i];
+              string = bKey ? candidate[key] : candidate;
+              if (!string) {
+                continue;
+              }
+              score = scorer.score(string, query, prepQuery, bAllowErrors);
+              if (score > 0) {
+                scoredCandidates.push({
+                  candidate: candidate,
+                  score: score
+                });
+                if (!--spotLeft) {
+                  break;
+                }
+              }
+            }
+          } else {
+            queryHasSlashes = prepQuery.depth > 0;
+            coreQuery = prepQuery.core;
+            for (_j = 0, _len1 = candidates.length; _j < _len1; _j++) {
+              candidate = candidates[_j];
+              string = key != null ? candidate[key] : candidate;
+              if (!string) {
+                continue;
+              }
+              score = legacy_scorer.score(string, coreQuery, queryHasSlashes);
+              if (!queryHasSlashes) {
+                score = legacy_scorer.basenameScore(string, coreQuery, score);
+              }
+              if (score > 0) {
+                scoredCandidates.push({
+                  candidate: candidate,
+                  score: score
+                });
+              }
+            }
+          }
+          scoredCandidates.sort(sortCandidates);
+          candidates = scoredCandidates.map(pluckCandidates);
+          if (maxResults != null) {
+            candidates = candidates.slice(0, maxResults);
+          }
+          return candidates;
+        };
+      }.call(this));
+    },
+    {
+      './legacy': 3,
+      './scorer': 5,
+      'path': 6
+    }
+  ],
+  2: [
+    function (require, module, exports) {
+      (function () {
+        var PathSeparator, filter, legacy_scorer, matcher, prepQueryCache, scorer;
+        scorer = require('./scorer');
+        legacy_scorer = require('./legacy');
+        filter = require('./filter');
+        matcher = require('./matcher');
+        PathSeparator = require('path').sep;
+        prepQueryCache = null;
+        module.exports = {
+          filter: function (candidates, query, options) {
+            if (!((query != null ? query.length : void 0) && (candidates != null ? candidates.length : void 0))) {
+              return [];
+            }
+            return filter(candidates, query, options);
+          },
+          prepQuery: function (query) {
+            return scorer.prepQuery(query);
+          },
+          score: function (string, query, prepQuery, _arg) {
+            var allowErrors, coreQuery, legacy, queryHasSlashes, score, _ref;
+            _ref = _arg != null ? _arg : {}, allowErrors = _ref.allowErrors, legacy = _ref.legacy;
+            if (!((string != null ? string.length : void 0) && (query != null ? query.length : void 0))) {
+              return 0;
+            }
+            if (prepQuery == null) {
+              prepQuery = prepQueryCache && prepQueryCache.query === query ? prepQueryCache : prepQueryCache = scorer.prepQuery(query);
+            }
+            if (!legacy) {
+              score = scorer.score(string, query, prepQuery, !!allowErrors);
+            } else {
+              queryHasSlashes = prepQuery.depth > 0;
+              coreQuery = prepQuery.core;
+              score = legacy_scorer.score(string, coreQuery, queryHasSlashes);
+              if (!queryHasSlashes) {
+                score = legacy_scorer.basenameScore(string, coreQuery, score);
+              }
+            }
+            return score;
+          },
+          match: function (string, query, prepQuery, _arg) {
+            var allowErrors, baseMatches, matches, query_lw, string_lw, _i, _ref, _results;
+            allowErrors = (_arg != null ? _arg : {}).allowErrors;
+            if (!string) {
+              return [];
+            }
+            if (!query) {
+              return [];
+            }
+            if (string === query) {
+              return function () {
+                _results = [];
+                for (var _i = 0, _ref = string.length; 0 <= _ref ? _i < _ref : _i > _ref; 0 <= _ref ? _i++ : _i--) {
+                  _results.push(_i);
+                }
+                return _results;
+              }.apply(this);
+            }
+            if (prepQuery == null) {
+              prepQuery = prepQueryCache && prepQueryCache.query === query ? prepQueryCache : prepQueryCache = scorer.prepQuery(query);
+            }
+            if (!(allowErrors || scorer.isMatch(string, prepQuery.core_lw, prepQuery.core_up))) {
+              return [];
+            }
+            string_lw = string.toLowerCase();
+            query_lw = prepQuery.query_lw;
+            matches = matcher.match(string, string_lw, prepQuery);
+            if (matches.length === 0) {
+              return matches;
+            }
+            if (string.indexOf(PathSeparator) > -1) {
+              baseMatches = matcher.basenameMatch(string, string_lw, prepQuery);
+              matches = matcher.mergeMatches(matches, baseMatches);
+            }
+            return matches;
+          }
+        };
+      }.call(this));
+    },
+    {
+      './filter': 1,
+      './legacy': 3,
+      './matcher': 4,
+      './scorer': 5,
+      'path': 6
+    }
+  ],
+  3: [
+    function (require, module, exports) {
+      (function () {
+        var PathSeparator, queryIsLastPathSegment;
+        PathSeparator = require('path').sep;
+        exports.basenameScore = function (string, query, score) {
+          var base, depth, index, lastCharacter, segmentCount, slashCount;
+          index = string.length - 1;
+          while (string[index] === PathSeparator) {
+            index--;
+          }
+          slashCount = 0;
+          lastCharacter = index;
+          base = null;
+          while (index >= 0) {
+            if (string[index] === PathSeparator) {
+              slashCount++;
+              if (base == null) {
+                base = string.substring(index + 1, lastCharacter + 1);
+              }
+            } else if (index === 0) {
+              if (lastCharacter < string.length - 1) {
+                if (base == null) {
+                  base = string.substring(0, lastCharacter + 1);
+                }
+              } else {
+                if (base == null) {
+                  base = string;
+                }
+              }
+            }
+            index--;
+          }
+          if (base === string) {
+            score *= 2;
+          } else if (base) {
+            score += exports.score(base, query);
+          }
+          segmentCount = slashCount + 1;
+          depth = Math.max(1, 10 - segmentCount);
+          score *= depth * 0.01;
+          return score;
+        };
+        exports.score = function (string, query) {
+          var character, characterScore, indexInQuery, indexInString, lowerCaseIndex, minIndex, queryLength, queryScore, stringLength, totalCharacterScore, upperCaseIndex, _ref;
+          if (string === query) {
+            return 1;
+          }
+          if (queryIsLastPathSegment(string, query)) {
+            return 1;
+          }
+          totalCharacterScore = 0;
+          queryLength = query.length;
+          stringLength = string.length;
+          indexInQuery = 0;
+          indexInString = 0;
+          while (indexInQuery < queryLength) {
+            character = query[indexInQuery++];
+            lowerCaseIndex = string.indexOf(character.toLowerCase());
+            upperCaseIndex = string.indexOf(character.toUpperCase());
+            minIndex = Math.min(lowerCaseIndex, upperCaseIndex);
+            if (minIndex === -1) {
+              minIndex = Math.max(lowerCaseIndex, upperCaseIndex);
+            }
+            indexInString = minIndex;
+            if (indexInString === -1) {
+              return 0;
+            }
+            characterScore = 0.1;
+            if (string[indexInString] === character) {
+              characterScore += 0.1;
+            }
+            if (indexInString === 0 || string[indexInString - 1] === PathSeparator) {
+              characterScore += 0.8;
+            } else if ((_ref = string[indexInString - 1]) === '-' || _ref === '_' || _ref === ' ') {
+              characterScore += 0.7;
+            }
+            string = string.substring(indexInString + 1, stringLength);
+            totalCharacterScore += characterScore;
+          }
+          queryScore = totalCharacterScore / queryLength;
+          return (queryScore * (queryLength / stringLength) + queryScore) / 2;
+        };
+        queryIsLastPathSegment = function (string, query) {
+          if (string[string.length - query.length - 1] === PathSeparator) {
+            return string.lastIndexOf(query) === string.length - query.length;
+          }
+        };
+        exports.match = function (string, query, stringOffset) {
+          var character, indexInQuery, indexInString, lowerCaseIndex, matches, minIndex, queryLength, stringLength, upperCaseIndex, _i, _ref, _results;
+          if (stringOffset == null) {
+            stringOffset = 0;
+          }
+          if (string === query) {
+            return function () {
+              _results = [];
+              for (var _i = stringOffset, _ref = stringOffset + string.length; stringOffset <= _ref ? _i < _ref : _i > _ref; stringOffset <= _ref ? _i++ : _i--) {
+                _results.push(_i);
+              }
+              return _results;
+            }.apply(this);
+          }
+          queryLength = query.length;
+          stringLength = string.length;
+          indexInQuery = 0;
+          indexInString = 0;
+          matches = [];
+          while (indexInQuery < queryLength) {
+            character = query[indexInQuery++];
+            lowerCaseIndex = string.indexOf(character.toLowerCase());
+            upperCaseIndex = string.indexOf(character.toUpperCase());
+            minIndex = Math.min(lowerCaseIndex, upperCaseIndex);
+            if (minIndex === -1) {
+              minIndex = Math.max(lowerCaseIndex, upperCaseIndex);
+            }
+            indexInString = minIndex;
+            if (indexInString === -1) {
+              return [];
+            }
+            matches.push(stringOffset + indexInString);
+            stringOffset += indexInString + 1;
+            string = string.substring(indexInString + 1, stringLength);
+          }
+          return matches;
+        };
+      }.call(this));
+    },
+    { 'path': 6 }
+  ],
+  4: [
+    function (require, module, exports) {
+      (function () {
+        var PathSeparator, scorer;
+        PathSeparator = require('path').sep;
+        scorer = require('./scorer');
+        exports.basenameMatch = function (subject, subject_lw, prepQuery) {
+          var basePos, depth, end;
+          end = subject.length - 1;
+          while (subject[end] === PathSeparator) {
+            end--;
+          }
+          basePos = subject.lastIndexOf(PathSeparator, end);
+          if (basePos === -1) {
+            return [];
+          }
+          depth = prepQuery.depth;
+          while (depth-- > 0) {
+            basePos = subject.lastIndexOf(PathSeparator, basePos - 1);
+            if (basePos === -1) {
+              return [];
+            }
+          }
+          basePos++;
+          end++;
+          return exports.match(subject.slice(basePos, end), subject_lw.slice(basePos, end), prepQuery, basePos);
+        };
+        exports.mergeMatches = function (a, b) {
+          var ai, bj, i, j, m, n, out;
+          m = a.length;
+          n = b.length;
+          if (n === 0) {
+            return a.slice();
+          }
+          if (m === 0) {
+            return b.slice();
+          }
+          i = -1;
+          j = 0;
+          bj = b[j];
+          out = [];
+          while (++i < m) {
+            ai = a[i];
+            while (bj <= ai && ++j < n) {
+              if (bj < ai) {
+                out.push(bj);
+              }
+              bj = b[j];
+            }
+            out.push(ai);
+          }
+          while (j < n) {
+            out.push(b[j++]);
+          }
+          return out;
+        };
+        exports.match = function (subject, subject_lw, prepQuery, offset) {
+          var DIAGONAL, LEFT, STOP, UP, acro_score, align, backtrack, csc_diag, csc_row, csc_score, i, j, m, matches, move, n, pos, query, query_lw, score, score_diag, score_row, score_up, si_lw, start, trace;
+          if (offset == null) {
+            offset = 0;
+          }
+          query = prepQuery.query;
+          query_lw = prepQuery.query_lw;
+          m = subject.length;
+          n = query.length;
+          acro_score = scorer.scoreAcronyms(subject, subject_lw, query, query_lw).score;
+          score_row = new Array(n);
+          csc_row = new Array(n);
+          STOP = 0;
+          UP = 1;
+          LEFT = 2;
+          DIAGONAL = 3;
+          trace = new Array(m * n);
+          pos = -1;
+          j = -1;
+          while (++j < n) {
+            score_row[j] = 0;
+            csc_row[j] = 0;
+          }
+          i = -1;
+          while (++i < m) {
+            score = 0;
+            score_up = 0;
+            csc_diag = 0;
+            si_lw = subject_lw[i];
+            j = -1;
+            while (++j < n) {
+              csc_score = 0;
+              align = 0;
+              score_diag = score_up;
+              if (query_lw[j] === si_lw) {
+                start = scorer.isWordStart(i, subject, subject_lw);
+                csc_score = csc_diag > 0 ? csc_diag : scorer.scoreConsecutives(subject, subject_lw, query, query_lw, i, j, start);
+                align = score_diag + scorer.scoreCharacter(i, j, start, acro_score, csc_score);
+              }
+              score_up = score_row[j];
+              csc_diag = csc_row[j];
+              if (score > score_up) {
+                move = LEFT;
+              } else {
+                score = score_up;
+                move = UP;
+              }
+              if (align > score) {
+                score = align;
+                move = DIAGONAL;
+              } else {
+                csc_score = 0;
+              }
+              score_row[j] = score;
+              csc_row[j] = csc_score;
+              trace[++pos] = score > 0 ? move : STOP;
+            }
+          }
+          i = m - 1;
+          j = n - 1;
+          pos = i * n + j;
+          backtrack = true;
+          matches = [];
+          while (backtrack && i >= 0 && j >= 0) {
+            switch (trace[pos]) {
+            case UP:
+              i--;
+              pos -= n;
+              break;
+            case LEFT:
+              j--;
+              pos--;
+              break;
+            case DIAGONAL:
+              matches.push(i + offset);
+              j--;
+              i--;
+              pos -= n + 1;
+              break;
+            default:
+              backtrack = false;
+            }
+          }
+          matches.reverse();
+          return matches;
+        };
+      }.call(this));
+    },
+    {
+      './scorer': 5,
+      'path': 6
+    }
+  ],
+  5: [
+    function (require, module, exports) {
+      (function () {
+        var AcronymResult, PathSeparator, Query, basenameScore, coreChars, countDir, doScore, emptyAcronymResult, file_coeff, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, opt_char_re, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_depth, tau_size, truncatedUpperCase, wm;
+        PathSeparator = require('path').sep;
+        wm = 150;
+        pos_bonus = 20;
+        tau_depth = 13;
+        tau_size = 85;
+        file_coeff = 1.2;
+        miss_coeff = 0.75;
+        opt_char_re = /[ _\-:\/\\]/g;
+        exports.coreChars = coreChars = function (query) {
+          return query.replace(opt_char_re, '');
+        };
+        exports.score = function (string, query, prepQuery, allowErrors) {
+          var score, string_lw;
+          if (prepQuery == null) {
+            prepQuery = new Query(query);
+          }
+          if (allowErrors == null) {
+            allowErrors = false;
+          }
+          if (!(allowErrors || isMatch(string, prepQuery.core_lw, prepQuery.core_up))) {
+            return 0;
+          }
+          string_lw = string.toLowerCase();
+          score = doScore(string, string_lw, prepQuery);
+          return Math.ceil(basenameScore(string, string_lw, prepQuery, score));
+        };
+        Query = function () {
+          function Query(query) {
+            if (!(query != null ? query.length : void 0)) {
+              return null;
+            }
+            this.query = query;
+            this.query_lw = query.toLowerCase();
+            this.core = coreChars(query);
+            this.core_lw = this.core.toLowerCase();
+            this.core_up = truncatedUpperCase(this.core);
+            this.depth = countDir(query, query.length);
+          }
+          return Query;
+        }();
+        exports.prepQuery = function (query) {
+          return new Query(query);
+        };
+        exports.isMatch = isMatch = function (subject, query_lw, query_up) {
+          var i, j, m, n, qj_lw, qj_up, si;
+          m = subject.length;
+          n = query_lw.length;
+          if (!m || n > m) {
+            return false;
+          }
+          i = -1;
+          j = -1;
+          while (++j < n) {
+            qj_lw = query_lw[j];
+            qj_up = query_up[j];
+            while (++i < m) {
+              si = subject[i];
+              if (si === qj_lw || si === qj_up) {
+                break;
+              }
+            }
+            if (i === m) {
+              return false;
+            }
+          }
+          return true;
+        };
+        doScore = function (subject, subject_lw, prepQuery) {
+          var acro, acro_score, align, csc_diag, csc_row, csc_score, i, j, m, miss_budget, miss_left, mm, n, pos, query, query_lw, record_miss, score, score_diag, score_row, score_up, si_lw, start, sz;
+          query = prepQuery.query;
+          query_lw = prepQuery.query_lw;
+          m = subject.length;
+          n = query.length;
+          acro = scoreAcronyms(subject, subject_lw, query, query_lw);
+          acro_score = acro.score;
+          if (acro.count === n) {
+            return scoreExact(n, m, acro_score, acro.pos);
+          }
+          pos = subject_lw.indexOf(query_lw);
+          if (pos > -1) {
+            return scoreExactMatch(subject, subject_lw, query, query_lw, pos, n, m);
+          }
+          score_row = new Array(n);
+          csc_row = new Array(n);
+          sz = scoreSize(n, m);
+          miss_budget = Math.ceil(miss_coeff * n) + 5;
+          miss_left = miss_budget;
+          j = -1;
+          while (++j < n) {
+            score_row[j] = 0;
+            csc_row[j] = 0;
+          }
+          i = subject_lw.indexOf(query_lw[0]);
+          if (i > -1) {
+            i--;
+          }
+          mm = subject_lw.lastIndexOf(query_lw[n - 1], m);
+          if (mm > i) {
+            m = mm + 1;
+          }
+          while (++i < m) {
+            score = 0;
+            score_diag = 0;
+            csc_diag = 0;
+            si_lw = subject_lw[i];
+            record_miss = true;
+            j = -1;
+            while (++j < n) {
+              score_up = score_row[j];
+              if (score_up > score) {
+                score = score_up;
+              }
+              csc_score = 0;
+              if (query_lw[j] === si_lw) {
+                start = isWordStart(i, subject, subject_lw);
+                csc_score = csc_diag > 0 ? csc_diag : scoreConsecutives(subject, subject_lw, query, query_lw, i, j, start);
+                align = score_diag + scoreCharacter(i, j, start, acro_score, csc_score);
+                if (align > score) {
+                  score = align;
+                  miss_left = miss_budget;
+                } else {
+                  if (record_miss && --miss_left <= 0) {
+                    return score_row[n - 1] * sz;
+                  }
+                  record_miss = false;
+                }
+              }
+              score_diag = score_up;
+              csc_diag = csc_row[j];
+              csc_row[j] = csc_score;
+              score_row[j] = score;
+            }
+          }
+          return score * sz;
+        };
+        exports.isWordStart = isWordStart = function (pos, subject, subject_lw) {
+          var curr_s, prev_s;
+          if (pos === 0) {
+            return true;
+          }
+          curr_s = subject[pos];
+          prev_s = subject[pos - 1];
+          return isSeparator(curr_s) || isSeparator(prev_s) || curr_s !== subject_lw[pos] && prev_s === subject_lw[pos - 1];
+        };
+        exports.isWordEnd = isWordEnd = function (pos, subject, subject_lw, len) {
+          var curr_s, next_s;
+          if (pos === len - 1) {
+            return true;
+          }
+          curr_s = subject[pos];
+          next_s = subject[pos + 1];
+          return isSeparator(curr_s) || isSeparator(next_s) || curr_s === subject_lw[pos] && next_s !== subject_lw[pos + 1];
+        };
+        isSeparator = function (c) {
+          return c === ' ' || c === '.' || c === '-' || c === '_' || c === '/' || c === '\\';
+        };
+        scorePosition = function (pos) {
+          var sc;
+          if (pos < pos_bonus) {
+            sc = pos_bonus - pos;
+            return 100 + sc * sc;
+          } else {
+            return Math.max(100 + pos_bonus - pos, 0);
+          }
+        };
+        scoreSize = function (n, m) {
+          return tau_size / (tau_size + Math.abs(m - n));
+        };
+        scoreExact = function (n, m, quality, pos) {
+          return 2 * n * (wm * quality + scorePosition(pos)) * scoreSize(n, m);
+        };
+        exports.scorePattern = scorePattern = function (count, len, sameCase, start, end) {
+          var bonus, sz;
+          sz = count;
+          bonus = 6;
+          if (sameCase === count) {
+            bonus += 2;
+          }
+          if (start) {
+            bonus += 3;
+          }
+          if (end) {
+            bonus += 1;
+          }
+          if (count === len) {
+            if (start) {
+              if (sameCase === len) {
+                sz += 2;
+              } else {
+                sz += 1;
+              }
+            }
+            if (end) {
+              bonus += 1;
+            }
+          }
+          return sameCase + sz * (sz + bonus);
+        };
+        exports.scoreCharacter = scoreCharacter = function (i, j, start, acro_score, csc_score) {
+          var posBonus;
+          posBonus = scorePosition(i);
+          if (start) {
+            return posBonus + wm * ((acro_score > csc_score ? acro_score : csc_score) + 10);
+          }
+          return posBonus + wm * csc_score;
+        };
+        exports.scoreConsecutives = scoreConsecutives = function (subject, subject_lw, query, query_lw, i, j, start) {
+          var k, m, mi, n, nj, sameCase, startPos, sz;
+          m = subject.length;
+          n = query.length;
+          mi = m - i;
+          nj = n - j;
+          k = mi < nj ? mi : nj;
+          startPos = i;
+          sameCase = 0;
+          sz = 0;
+          if (query[j] === subject[i]) {
+            sameCase++;
+          }
+          while (++sz < k && query_lw[++j] === subject_lw[++i]) {
+            if (query[j] === subject[i]) {
+              sameCase++;
+            }
+          }
+          if (sz === 1) {
+            return 1 + 2 * sameCase;
+          }
+          return scorePattern(sz, n, sameCase, start, isWordEnd(i, subject, subject_lw, m));
+        };
+        exports.scoreExactMatch = scoreExactMatch = function (subject, subject_lw, query, query_lw, pos, n, m) {
+          var end, i, pos2, sameCase, start;
+          start = isWordStart(pos, subject, subject_lw);
+          if (!start) {
+            pos2 = subject_lw.indexOf(query_lw, pos + 1);
+            if (pos2 > -1) {
+              start = isWordStart(pos2, subject, subject_lw);
+              if (start) {
+                pos = pos2;
+              }
+            }
+          }
+          i = -1;
+          sameCase = 0;
+          while (++i < n) {
+            if (query[pos + i] === subject[i]) {
+              sameCase++;
+            }
+          }
+          end = isWordEnd(pos + n - 1, subject, subject_lw, m);
+          return scoreExact(n, m, scorePattern(n, n, sameCase, start, end), pos);
+        };
+        AcronymResult = function () {
+          function AcronymResult(score, pos, count) {
+            this.score = score;
+            this.pos = pos;
+            this.count = count;
+          }
+          return AcronymResult;
+        }();
+        emptyAcronymResult = new AcronymResult(0, 0.1, 0);
+        exports.scoreAcronyms = scoreAcronyms = function (subject, subject_lw, query, query_lw) {
+          var count, i, j, m, n, pos, qj_lw, sameCase, score;
+          m = subject.length;
+          n = query.length;
+          if (!(m > 1 && n > 1)) {
+            return emptyAcronymResult;
+          }
+          count = 0;
+          pos = 0;
+          sameCase = 0;
+          i = -1;
+          j = -1;
+          while (++j < n) {
+            qj_lw = query_lw[j];
+            while (++i < m) {
+              if (qj_lw === subject_lw[i] && isWordStart(i, subject, subject_lw)) {
+                if (query[j] === subject[i]) {
+                  sameCase++;
+                }
+                pos += i;
+                count++;
+                break;
+              }
+            }
+            if (i === m) {
+              break;
+            }
+          }
+          if (count < 2) {
+            return emptyAcronymResult;
+          }
+          score = scorePattern(count, n, sameCase, true, false);
+          return new AcronymResult(score, pos / count, count);
+        };
+        basenameScore = function (subject, subject_lw, prepQuery, fullPathScore) {
+          var alpha, basePathScore, basePos, depth, end;
+          if (fullPathScore === 0) {
+            return 0;
+          }
+          end = subject.length - 1;
+          while (subject[end] === PathSeparator) {
+            end--;
+          }
+          basePos = subject.lastIndexOf(PathSeparator, end);
+          if (basePos === -1) {
+            return fullPathScore;
+          }
+          depth = prepQuery.depth;
+          while (depth-- > 0) {
+            basePos = subject.lastIndexOf(PathSeparator, basePos - 1);
+            if (basePos === -1) {
+              return fullPathScore;
+            }
+          }
+          basePos++;
+          end++;
+          basePathScore = doScore(subject.slice(basePos, end), subject_lw.slice(basePos, end), prepQuery);
+          alpha = 0.5 * tau_depth / (tau_depth + countDir(subject, end + 1));
+          return alpha * basePathScore + (1 - alpha) * fullPathScore * scoreSize(0, file_coeff * (end - basePos));
+        };
+        exports.countDir = countDir = function (path, end) {
+          var count, i;
+          if (end < 1) {
+            return 0;
+          }
+          count = 0;
+          i = -1;
+          while (++i < end && path[i] === PathSeparator) {
+            continue;
+          }
+          while (++i < end) {
+            if (path[i] === PathSeparator) {
+              count++;
+              while (++i < end && path[i] === PathSeparator) {
+                continue;
+              }
+            }
+          }
+          return count;
+        };
+        truncatedUpperCase = function (str) {
+          var char, upper, _i, _len;
+          upper = '';
+          for (_i = 0, _len = str.length; _i < _len; _i++) {
+            char = str[_i];
+            upper += char.toUpperCase()[0];
+          }
+          return upper;
+        };
+      }.call(this));
+    },
+    { 'path': 6 }
+  ],
+  6: [
+    function (require, module, exports) {
       (function (process) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -559,9 +1357,9 @@
         ;
       }.call(this, require('_process')));
     },
-    { '_process': 2 }
+    { '_process': 7 }
   ],
-  2: [
+  7: [
     function (require, module, exports) {
       // shim for using process in browser
       var process = module.exports = {};
@@ -735,14 +1533,14 @@
     },
     {}
   ],
-  3: [
+  8: [
     function (require, module, exports) {
       window['RAML'] = window['RAML'] || {};
       window['RAML'].Suggestions = require('./index');
     },
-    { './index': 5 }
+    { './index': 10 }
   ],
-  4: [
+  9: [
     function (require, module, exports) {
       'use strict';
       /// <reference path="../typings/main.d.ts" />
@@ -883,7 +1681,7 @@
           });
         return finalPromise;
       }
-      function getSuggestions(request, provider, preParsedAst) {
+      function getSuggestions(request, provider, preParsedAst, project) {
         if (preParsedAst === void 0) {
           preParsedAst = undefined;
         }
@@ -896,7 +1694,7 @@
           var offset = request.content.getOffset();
           var text = request.content.getText();
           var kind = completionKind(request);
-          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider);
+          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider, true, true, project);
           var hlnode = node;
           if (kind === parserApi.search.LocationKind.DIRECTIVE_COMPLETION) {
             return [{ text: 'include' }];
@@ -1290,7 +2088,7 @@
       function completionKind(request) {
         return parserApi.search.determineCompletionKind(request.content.getText(), request.content.getOffset());
       }
-      function getAstNode(request, contentProvider, clearLastChar, allowNull) {
+      function getAstNode(request, contentProvider, clearLastChar, allowNull, oldProject) {
         if (clearLastChar === void 0) {
           clearLastChar = true;
         }
@@ -1298,7 +2096,7 @@
           allowNull = true;
         }
         var newProjectId = contentProvider.contentDirName(request.content);
-        var project = parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
+        var project = oldProject || parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
         var offset = request.content.getOffset();
         var text = request.content.getText();
         var kind = completionKind(request);
@@ -2361,7 +3159,8 @@
         var parsedExample = search.parseStructuredExample(node, contentType);
         if (!parsedExample)
           return [];
-        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request));
+        var project = node && node.lowLevel() && node.lowLevel().unit() && node.lowLevel().unit().project();
+        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request), project);
       }
       function postProcess(providerSuggestions, request) {
         var prepared = postProcess1(providerSuggestions, request);
@@ -2526,12 +3325,12 @@
       exports.getContentProvider = getContentProvider;
     },
     {
-      '../resources/categories.json': 12,
-      'fuzzaldrin-plus': 7,
-      'underscore': 11
+      '../resources/categories.json': 11,
+      'fuzzaldrin-plus': 2,
+      'underscore': 12
     }
   ],
-  5: [
+  10: [
     function (require, module, exports) {
       'use strict';
       var completionProvider = require('./completionProvider');
@@ -2591,807 +3390,494 @@
       }
       exports.getContentProvider = getContentProvider;
     },
-    { './completionProvider': 4 }
-  ],
-  6: [
-    function (require, module, exports) {
-      (function () {
-        var PathSeparator, legacy_scorer, pluckCandidates, scorer, sortCandidates;
-        scorer = require('./scorer');
-        legacy_scorer = require('./legacy');
-        pluckCandidates = function (a) {
-          return a.candidate;
-        };
-        sortCandidates = function (a, b) {
-          return b.score - a.score;
-        };
-        PathSeparator = require('path').sep;
-        module.exports = function (candidates, query, _arg) {
-          var allowErrors, bAllowErrors, bKey, candidate, coreQuery, key, legacy, maxInners, maxResults, prepQuery, queryHasSlashes, score, scoredCandidates, spotLeft, string, _i, _j, _len, _len1, _ref;
-          _ref = _arg != null ? _arg : {}, key = _ref.key, maxResults = _ref.maxResults, maxInners = _ref.maxInners, allowErrors = _ref.allowErrors, legacy = _ref.legacy;
-          scoredCandidates = [];
-          spotLeft = maxInners != null && maxInners > 0 ? maxInners : candidates.length;
-          bAllowErrors = !!allowErrors;
-          bKey = key != null;
-          prepQuery = scorer.prepQuery(query);
-          if (!legacy) {
-            for (_i = 0, _len = candidates.length; _i < _len; _i++) {
-              candidate = candidates[_i];
-              string = bKey ? candidate[key] : candidate;
-              if (!string) {
-                continue;
-              }
-              score = scorer.score(string, query, prepQuery, bAllowErrors);
-              if (score > 0) {
-                scoredCandidates.push({
-                  candidate: candidate,
-                  score: score
-                });
-                if (!--spotLeft) {
-                  break;
-                }
-              }
-            }
-          } else {
-            queryHasSlashes = prepQuery.depth > 0;
-            coreQuery = prepQuery.core;
-            for (_j = 0, _len1 = candidates.length; _j < _len1; _j++) {
-              candidate = candidates[_j];
-              string = key != null ? candidate[key] : candidate;
-              if (!string) {
-                continue;
-              }
-              score = legacy_scorer.score(string, coreQuery, queryHasSlashes);
-              if (!queryHasSlashes) {
-                score = legacy_scorer.basenameScore(string, coreQuery, score);
-              }
-              if (score > 0) {
-                scoredCandidates.push({
-                  candidate: candidate,
-                  score: score
-                });
-              }
-            }
-          }
-          scoredCandidates.sort(sortCandidates);
-          candidates = scoredCandidates.map(pluckCandidates);
-          if (maxResults != null) {
-            candidates = candidates.slice(0, maxResults);
-          }
-          return candidates;
-        };
-      }.call(this));
-    },
-    {
-      './legacy': 8,
-      './scorer': 10,
-      'path': 1
-    }
-  ],
-  7: [
-    function (require, module, exports) {
-      (function () {
-        var PathSeparator, filter, legacy_scorer, matcher, prepQueryCache, scorer;
-        scorer = require('./scorer');
-        legacy_scorer = require('./legacy');
-        filter = require('./filter');
-        matcher = require('./matcher');
-        PathSeparator = require('path').sep;
-        prepQueryCache = null;
-        module.exports = {
-          filter: function (candidates, query, options) {
-            if (!((query != null ? query.length : void 0) && (candidates != null ? candidates.length : void 0))) {
-              return [];
-            }
-            return filter(candidates, query, options);
-          },
-          prepQuery: function (query) {
-            return scorer.prepQuery(query);
-          },
-          score: function (string, query, prepQuery, _arg) {
-            var allowErrors, coreQuery, legacy, queryHasSlashes, score, _ref;
-            _ref = _arg != null ? _arg : {}, allowErrors = _ref.allowErrors, legacy = _ref.legacy;
-            if (!((string != null ? string.length : void 0) && (query != null ? query.length : void 0))) {
-              return 0;
-            }
-            if (prepQuery == null) {
-              prepQuery = prepQueryCache && prepQueryCache.query === query ? prepQueryCache : prepQueryCache = scorer.prepQuery(query);
-            }
-            if (!legacy) {
-              score = scorer.score(string, query, prepQuery, !!allowErrors);
-            } else {
-              queryHasSlashes = prepQuery.depth > 0;
-              coreQuery = prepQuery.core;
-              score = legacy_scorer.score(string, coreQuery, queryHasSlashes);
-              if (!queryHasSlashes) {
-                score = legacy_scorer.basenameScore(string, coreQuery, score);
-              }
-            }
-            return score;
-          },
-          match: function (string, query, prepQuery, _arg) {
-            var allowErrors, baseMatches, matches, query_lw, string_lw, _i, _ref, _results;
-            allowErrors = (_arg != null ? _arg : {}).allowErrors;
-            if (!string) {
-              return [];
-            }
-            if (!query) {
-              return [];
-            }
-            if (string === query) {
-              return function () {
-                _results = [];
-                for (var _i = 0, _ref = string.length; 0 <= _ref ? _i < _ref : _i > _ref; 0 <= _ref ? _i++ : _i--) {
-                  _results.push(_i);
-                }
-                return _results;
-              }.apply(this);
-            }
-            if (prepQuery == null) {
-              prepQuery = prepQueryCache && prepQueryCache.query === query ? prepQueryCache : prepQueryCache = scorer.prepQuery(query);
-            }
-            if (!(allowErrors || scorer.isMatch(string, prepQuery.core_lw, prepQuery.core_up))) {
-              return [];
-            }
-            string_lw = string.toLowerCase();
-            query_lw = prepQuery.query_lw;
-            matches = matcher.match(string, string_lw, prepQuery);
-            if (matches.length === 0) {
-              return matches;
-            }
-            if (string.indexOf(PathSeparator) > -1) {
-              baseMatches = matcher.basenameMatch(string, string_lw, prepQuery);
-              matches = matcher.mergeMatches(matches, baseMatches);
-            }
-            return matches;
-          }
-        };
-      }.call(this));
-    },
-    {
-      './filter': 6,
-      './legacy': 8,
-      './matcher': 9,
-      './scorer': 10,
-      'path': 1
-    }
-  ],
-  8: [
-    function (require, module, exports) {
-      (function () {
-        var PathSeparator, queryIsLastPathSegment;
-        PathSeparator = require('path').sep;
-        exports.basenameScore = function (string, query, score) {
-          var base, depth, index, lastCharacter, segmentCount, slashCount;
-          index = string.length - 1;
-          while (string[index] === PathSeparator) {
-            index--;
-          }
-          slashCount = 0;
-          lastCharacter = index;
-          base = null;
-          while (index >= 0) {
-            if (string[index] === PathSeparator) {
-              slashCount++;
-              if (base == null) {
-                base = string.substring(index + 1, lastCharacter + 1);
-              }
-            } else if (index === 0) {
-              if (lastCharacter < string.length - 1) {
-                if (base == null) {
-                  base = string.substring(0, lastCharacter + 1);
-                }
-              } else {
-                if (base == null) {
-                  base = string;
-                }
-              }
-            }
-            index--;
-          }
-          if (base === string) {
-            score *= 2;
-          } else if (base) {
-            score += exports.score(base, query);
-          }
-          segmentCount = slashCount + 1;
-          depth = Math.max(1, 10 - segmentCount);
-          score *= depth * 0.01;
-          return score;
-        };
-        exports.score = function (string, query) {
-          var character, characterScore, indexInQuery, indexInString, lowerCaseIndex, minIndex, queryLength, queryScore, stringLength, totalCharacterScore, upperCaseIndex, _ref;
-          if (string === query) {
-            return 1;
-          }
-          if (queryIsLastPathSegment(string, query)) {
-            return 1;
-          }
-          totalCharacterScore = 0;
-          queryLength = query.length;
-          stringLength = string.length;
-          indexInQuery = 0;
-          indexInString = 0;
-          while (indexInQuery < queryLength) {
-            character = query[indexInQuery++];
-            lowerCaseIndex = string.indexOf(character.toLowerCase());
-            upperCaseIndex = string.indexOf(character.toUpperCase());
-            minIndex = Math.min(lowerCaseIndex, upperCaseIndex);
-            if (minIndex === -1) {
-              minIndex = Math.max(lowerCaseIndex, upperCaseIndex);
-            }
-            indexInString = minIndex;
-            if (indexInString === -1) {
-              return 0;
-            }
-            characterScore = 0.1;
-            if (string[indexInString] === character) {
-              characterScore += 0.1;
-            }
-            if (indexInString === 0 || string[indexInString - 1] === PathSeparator) {
-              characterScore += 0.8;
-            } else if ((_ref = string[indexInString - 1]) === '-' || _ref === '_' || _ref === ' ') {
-              characterScore += 0.7;
-            }
-            string = string.substring(indexInString + 1, stringLength);
-            totalCharacterScore += characterScore;
-          }
-          queryScore = totalCharacterScore / queryLength;
-          return (queryScore * (queryLength / stringLength) + queryScore) / 2;
-        };
-        queryIsLastPathSegment = function (string, query) {
-          if (string[string.length - query.length - 1] === PathSeparator) {
-            return string.lastIndexOf(query) === string.length - query.length;
-          }
-        };
-        exports.match = function (string, query, stringOffset) {
-          var character, indexInQuery, indexInString, lowerCaseIndex, matches, minIndex, queryLength, stringLength, upperCaseIndex, _i, _ref, _results;
-          if (stringOffset == null) {
-            stringOffset = 0;
-          }
-          if (string === query) {
-            return function () {
-              _results = [];
-              for (var _i = stringOffset, _ref = stringOffset + string.length; stringOffset <= _ref ? _i < _ref : _i > _ref; stringOffset <= _ref ? _i++ : _i--) {
-                _results.push(_i);
-              }
-              return _results;
-            }.apply(this);
-          }
-          queryLength = query.length;
-          stringLength = string.length;
-          indexInQuery = 0;
-          indexInString = 0;
-          matches = [];
-          while (indexInQuery < queryLength) {
-            character = query[indexInQuery++];
-            lowerCaseIndex = string.indexOf(character.toLowerCase());
-            upperCaseIndex = string.indexOf(character.toUpperCase());
-            minIndex = Math.min(lowerCaseIndex, upperCaseIndex);
-            if (minIndex === -1) {
-              minIndex = Math.max(lowerCaseIndex, upperCaseIndex);
-            }
-            indexInString = minIndex;
-            if (indexInString === -1) {
-              return [];
-            }
-            matches.push(stringOffset + indexInString);
-            stringOffset += indexInString + 1;
-            string = string.substring(indexInString + 1, stringLength);
-          }
-          return matches;
-        };
-      }.call(this));
-    },
-    { 'path': 1 }
-  ],
-  9: [
-    function (require, module, exports) {
-      (function () {
-        var PathSeparator, scorer;
-        PathSeparator = require('path').sep;
-        scorer = require('./scorer');
-        exports.basenameMatch = function (subject, subject_lw, prepQuery) {
-          var basePos, depth, end;
-          end = subject.length - 1;
-          while (subject[end] === PathSeparator) {
-            end--;
-          }
-          basePos = subject.lastIndexOf(PathSeparator, end);
-          if (basePos === -1) {
-            return [];
-          }
-          depth = prepQuery.depth;
-          while (depth-- > 0) {
-            basePos = subject.lastIndexOf(PathSeparator, basePos - 1);
-            if (basePos === -1) {
-              return [];
-            }
-          }
-          basePos++;
-          end++;
-          return exports.match(subject.slice(basePos, end), subject_lw.slice(basePos, end), prepQuery, basePos);
-        };
-        exports.mergeMatches = function (a, b) {
-          var ai, bj, i, j, m, n, out;
-          m = a.length;
-          n = b.length;
-          if (n === 0) {
-            return a.slice();
-          }
-          if (m === 0) {
-            return b.slice();
-          }
-          i = -1;
-          j = 0;
-          bj = b[j];
-          out = [];
-          while (++i < m) {
-            ai = a[i];
-            while (bj <= ai && ++j < n) {
-              if (bj < ai) {
-                out.push(bj);
-              }
-              bj = b[j];
-            }
-            out.push(ai);
-          }
-          while (j < n) {
-            out.push(b[j++]);
-          }
-          return out;
-        };
-        exports.match = function (subject, subject_lw, prepQuery, offset) {
-          var DIAGONAL, LEFT, STOP, UP, acro_score, align, backtrack, csc_diag, csc_row, csc_score, i, j, m, matches, move, n, pos, query, query_lw, score, score_diag, score_row, score_up, si_lw, start, trace;
-          if (offset == null) {
-            offset = 0;
-          }
-          query = prepQuery.query;
-          query_lw = prepQuery.query_lw;
-          m = subject.length;
-          n = query.length;
-          acro_score = scorer.scoreAcronyms(subject, subject_lw, query, query_lw).score;
-          score_row = new Array(n);
-          csc_row = new Array(n);
-          STOP = 0;
-          UP = 1;
-          LEFT = 2;
-          DIAGONAL = 3;
-          trace = new Array(m * n);
-          pos = -1;
-          j = -1;
-          while (++j < n) {
-            score_row[j] = 0;
-            csc_row[j] = 0;
-          }
-          i = -1;
-          while (++i < m) {
-            score = 0;
-            score_up = 0;
-            csc_diag = 0;
-            si_lw = subject_lw[i];
-            j = -1;
-            while (++j < n) {
-              csc_score = 0;
-              align = 0;
-              score_diag = score_up;
-              if (query_lw[j] === si_lw) {
-                start = scorer.isWordStart(i, subject, subject_lw);
-                csc_score = csc_diag > 0 ? csc_diag : scorer.scoreConsecutives(subject, subject_lw, query, query_lw, i, j, start);
-                align = score_diag + scorer.scoreCharacter(i, j, start, acro_score, csc_score);
-              }
-              score_up = score_row[j];
-              csc_diag = csc_row[j];
-              if (score > score_up) {
-                move = LEFT;
-              } else {
-                score = score_up;
-                move = UP;
-              }
-              if (align > score) {
-                score = align;
-                move = DIAGONAL;
-              } else {
-                csc_score = 0;
-              }
-              score_row[j] = score;
-              csc_row[j] = csc_score;
-              trace[++pos] = score > 0 ? move : STOP;
-            }
-          }
-          i = m - 1;
-          j = n - 1;
-          pos = i * n + j;
-          backtrack = true;
-          matches = [];
-          while (backtrack && i >= 0 && j >= 0) {
-            switch (trace[pos]) {
-            case UP:
-              i--;
-              pos -= n;
-              break;
-            case LEFT:
-              j--;
-              pos--;
-              break;
-            case DIAGONAL:
-              matches.push(i + offset);
-              j--;
-              i--;
-              pos -= n + 1;
-              break;
-            default:
-              backtrack = false;
-            }
-          }
-          matches.reverse();
-          return matches;
-        };
-      }.call(this));
-    },
-    {
-      './scorer': 10,
-      'path': 1
-    }
-  ],
-  10: [
-    function (require, module, exports) {
-      (function () {
-        var AcronymResult, PathSeparator, Query, basenameScore, coreChars, countDir, doScore, emptyAcronymResult, file_coeff, isMatch, isSeparator, isWordEnd, isWordStart, miss_coeff, opt_char_re, pos_bonus, scoreAcronyms, scoreCharacter, scoreConsecutives, scoreExact, scoreExactMatch, scorePattern, scorePosition, scoreSize, tau_depth, tau_size, truncatedUpperCase, wm;
-        PathSeparator = require('path').sep;
-        wm = 150;
-        pos_bonus = 20;
-        tau_depth = 13;
-        tau_size = 85;
-        file_coeff = 1.2;
-        miss_coeff = 0.75;
-        opt_char_re = /[ _\-:\/\\]/g;
-        exports.coreChars = coreChars = function (query) {
-          return query.replace(opt_char_re, '');
-        };
-        exports.score = function (string, query, prepQuery, allowErrors) {
-          var score, string_lw;
-          if (prepQuery == null) {
-            prepQuery = new Query(query);
-          }
-          if (allowErrors == null) {
-            allowErrors = false;
-          }
-          if (!(allowErrors || isMatch(string, prepQuery.core_lw, prepQuery.core_up))) {
-            return 0;
-          }
-          string_lw = string.toLowerCase();
-          score = doScore(string, string_lw, prepQuery);
-          return Math.ceil(basenameScore(string, string_lw, prepQuery, score));
-        };
-        Query = function () {
-          function Query(query) {
-            if (!(query != null ? query.length : void 0)) {
-              return null;
-            }
-            this.query = query;
-            this.query_lw = query.toLowerCase();
-            this.core = coreChars(query);
-            this.core_lw = this.core.toLowerCase();
-            this.core_up = truncatedUpperCase(this.core);
-            this.depth = countDir(query, query.length);
-          }
-          return Query;
-        }();
-        exports.prepQuery = function (query) {
-          return new Query(query);
-        };
-        exports.isMatch = isMatch = function (subject, query_lw, query_up) {
-          var i, j, m, n, qj_lw, qj_up, si;
-          m = subject.length;
-          n = query_lw.length;
-          if (!m || n > m) {
-            return false;
-          }
-          i = -1;
-          j = -1;
-          while (++j < n) {
-            qj_lw = query_lw[j];
-            qj_up = query_up[j];
-            while (++i < m) {
-              si = subject[i];
-              if (si === qj_lw || si === qj_up) {
-                break;
-              }
-            }
-            if (i === m) {
-              return false;
-            }
-          }
-          return true;
-        };
-        doScore = function (subject, subject_lw, prepQuery) {
-          var acro, acro_score, align, csc_diag, csc_row, csc_score, i, j, m, miss_budget, miss_left, mm, n, pos, query, query_lw, record_miss, score, score_diag, score_row, score_up, si_lw, start, sz;
-          query = prepQuery.query;
-          query_lw = prepQuery.query_lw;
-          m = subject.length;
-          n = query.length;
-          acro = scoreAcronyms(subject, subject_lw, query, query_lw);
-          acro_score = acro.score;
-          if (acro.count === n) {
-            return scoreExact(n, m, acro_score, acro.pos);
-          }
-          pos = subject_lw.indexOf(query_lw);
-          if (pos > -1) {
-            return scoreExactMatch(subject, subject_lw, query, query_lw, pos, n, m);
-          }
-          score_row = new Array(n);
-          csc_row = new Array(n);
-          sz = scoreSize(n, m);
-          miss_budget = Math.ceil(miss_coeff * n) + 5;
-          miss_left = miss_budget;
-          j = -1;
-          while (++j < n) {
-            score_row[j] = 0;
-            csc_row[j] = 0;
-          }
-          i = subject_lw.indexOf(query_lw[0]);
-          if (i > -1) {
-            i--;
-          }
-          mm = subject_lw.lastIndexOf(query_lw[n - 1], m);
-          if (mm > i) {
-            m = mm + 1;
-          }
-          while (++i < m) {
-            score = 0;
-            score_diag = 0;
-            csc_diag = 0;
-            si_lw = subject_lw[i];
-            record_miss = true;
-            j = -1;
-            while (++j < n) {
-              score_up = score_row[j];
-              if (score_up > score) {
-                score = score_up;
-              }
-              csc_score = 0;
-              if (query_lw[j] === si_lw) {
-                start = isWordStart(i, subject, subject_lw);
-                csc_score = csc_diag > 0 ? csc_diag : scoreConsecutives(subject, subject_lw, query, query_lw, i, j, start);
-                align = score_diag + scoreCharacter(i, j, start, acro_score, csc_score);
-                if (align > score) {
-                  score = align;
-                  miss_left = miss_budget;
-                } else {
-                  if (record_miss && --miss_left <= 0) {
-                    return score_row[n - 1] * sz;
-                  }
-                  record_miss = false;
-                }
-              }
-              score_diag = score_up;
-              csc_diag = csc_row[j];
-              csc_row[j] = csc_score;
-              score_row[j] = score;
-            }
-          }
-          return score * sz;
-        };
-        exports.isWordStart = isWordStart = function (pos, subject, subject_lw) {
-          var curr_s, prev_s;
-          if (pos === 0) {
-            return true;
-          }
-          curr_s = subject[pos];
-          prev_s = subject[pos - 1];
-          return isSeparator(curr_s) || isSeparator(prev_s) || curr_s !== subject_lw[pos] && prev_s === subject_lw[pos - 1];
-        };
-        exports.isWordEnd = isWordEnd = function (pos, subject, subject_lw, len) {
-          var curr_s, next_s;
-          if (pos === len - 1) {
-            return true;
-          }
-          curr_s = subject[pos];
-          next_s = subject[pos + 1];
-          return isSeparator(curr_s) || isSeparator(next_s) || curr_s === subject_lw[pos] && next_s !== subject_lw[pos + 1];
-        };
-        isSeparator = function (c) {
-          return c === ' ' || c === '.' || c === '-' || c === '_' || c === '/' || c === '\\';
-        };
-        scorePosition = function (pos) {
-          var sc;
-          if (pos < pos_bonus) {
-            sc = pos_bonus - pos;
-            return 100 + sc * sc;
-          } else {
-            return Math.max(100 + pos_bonus - pos, 0);
-          }
-        };
-        scoreSize = function (n, m) {
-          return tau_size / (tau_size + Math.abs(m - n));
-        };
-        scoreExact = function (n, m, quality, pos) {
-          return 2 * n * (wm * quality + scorePosition(pos)) * scoreSize(n, m);
-        };
-        exports.scorePattern = scorePattern = function (count, len, sameCase, start, end) {
-          var bonus, sz;
-          sz = count;
-          bonus = 6;
-          if (sameCase === count) {
-            bonus += 2;
-          }
-          if (start) {
-            bonus += 3;
-          }
-          if (end) {
-            bonus += 1;
-          }
-          if (count === len) {
-            if (start) {
-              if (sameCase === len) {
-                sz += 2;
-              } else {
-                sz += 1;
-              }
-            }
-            if (end) {
-              bonus += 1;
-            }
-          }
-          return sameCase + sz * (sz + bonus);
-        };
-        exports.scoreCharacter = scoreCharacter = function (i, j, start, acro_score, csc_score) {
-          var posBonus;
-          posBonus = scorePosition(i);
-          if (start) {
-            return posBonus + wm * ((acro_score > csc_score ? acro_score : csc_score) + 10);
-          }
-          return posBonus + wm * csc_score;
-        };
-        exports.scoreConsecutives = scoreConsecutives = function (subject, subject_lw, query, query_lw, i, j, start) {
-          var k, m, mi, n, nj, sameCase, startPos, sz;
-          m = subject.length;
-          n = query.length;
-          mi = m - i;
-          nj = n - j;
-          k = mi < nj ? mi : nj;
-          startPos = i;
-          sameCase = 0;
-          sz = 0;
-          if (query[j] === subject[i]) {
-            sameCase++;
-          }
-          while (++sz < k && query_lw[++j] === subject_lw[++i]) {
-            if (query[j] === subject[i]) {
-              sameCase++;
-            }
-          }
-          if (sz === 1) {
-            return 1 + 2 * sameCase;
-          }
-          return scorePattern(sz, n, sameCase, start, isWordEnd(i, subject, subject_lw, m));
-        };
-        exports.scoreExactMatch = scoreExactMatch = function (subject, subject_lw, query, query_lw, pos, n, m) {
-          var end, i, pos2, sameCase, start;
-          start = isWordStart(pos, subject, subject_lw);
-          if (!start) {
-            pos2 = subject_lw.indexOf(query_lw, pos + 1);
-            if (pos2 > -1) {
-              start = isWordStart(pos2, subject, subject_lw);
-              if (start) {
-                pos = pos2;
-              }
-            }
-          }
-          i = -1;
-          sameCase = 0;
-          while (++i < n) {
-            if (query[pos + i] === subject[i]) {
-              sameCase++;
-            }
-          }
-          end = isWordEnd(pos + n - 1, subject, subject_lw, m);
-          return scoreExact(n, m, scorePattern(n, n, sameCase, start, end), pos);
-        };
-        AcronymResult = function () {
-          function AcronymResult(score, pos, count) {
-            this.score = score;
-            this.pos = pos;
-            this.count = count;
-          }
-          return AcronymResult;
-        }();
-        emptyAcronymResult = new AcronymResult(0, 0.1, 0);
-        exports.scoreAcronyms = scoreAcronyms = function (subject, subject_lw, query, query_lw) {
-          var count, i, j, m, n, pos, qj_lw, sameCase, score;
-          m = subject.length;
-          n = query.length;
-          if (!(m > 1 && n > 1)) {
-            return emptyAcronymResult;
-          }
-          count = 0;
-          pos = 0;
-          sameCase = 0;
-          i = -1;
-          j = -1;
-          while (++j < n) {
-            qj_lw = query_lw[j];
-            while (++i < m) {
-              if (qj_lw === subject_lw[i] && isWordStart(i, subject, subject_lw)) {
-                if (query[j] === subject[i]) {
-                  sameCase++;
-                }
-                pos += i;
-                count++;
-                break;
-              }
-            }
-            if (i === m) {
-              break;
-            }
-          }
-          if (count < 2) {
-            return emptyAcronymResult;
-          }
-          score = scorePattern(count, n, sameCase, true, false);
-          return new AcronymResult(score, pos / count, count);
-        };
-        basenameScore = function (subject, subject_lw, prepQuery, fullPathScore) {
-          var alpha, basePathScore, basePos, depth, end;
-          if (fullPathScore === 0) {
-            return 0;
-          }
-          end = subject.length - 1;
-          while (subject[end] === PathSeparator) {
-            end--;
-          }
-          basePos = subject.lastIndexOf(PathSeparator, end);
-          if (basePos === -1) {
-            return fullPathScore;
-          }
-          depth = prepQuery.depth;
-          while (depth-- > 0) {
-            basePos = subject.lastIndexOf(PathSeparator, basePos - 1);
-            if (basePos === -1) {
-              return fullPathScore;
-            }
-          }
-          basePos++;
-          end++;
-          basePathScore = doScore(subject.slice(basePos, end), subject_lw.slice(basePos, end), prepQuery);
-          alpha = 0.5 * tau_depth / (tau_depth + countDir(subject, end + 1));
-          return alpha * basePathScore + (1 - alpha) * fullPathScore * scoreSize(0, file_coeff * (end - basePos));
-        };
-        exports.countDir = countDir = function (path, end) {
-          var count, i;
-          if (end < 1) {
-            return 0;
-          }
-          count = 0;
-          i = -1;
-          while (++i < end && path[i] === PathSeparator) {
-            continue;
-          }
-          while (++i < end) {
-            if (path[i] === PathSeparator) {
-              count++;
-              while (++i < end && path[i] === PathSeparator) {
-                continue;
-              }
-            }
-          }
-          return count;
-        };
-        truncatedUpperCase = function (str) {
-          var char, upper, _i, _len;
-          upper = '';
-          for (_i = 0, _len = str.length; _i < _len; _i++) {
-            char = str[_i];
-            upper += char.toUpperCase()[0];
-          }
-          return upper;
-        };
-      }.call(this));
-    },
-    { 'path': 1 }
+    { './completionProvider': 9 }
   ],
   11: [
+    function (require, module, exports) {
+      module.exports = {
+        'docs': {
+          'description': {
+            'is': [
+              'Universe10.MarkdownString',
+              'Universe08.MarkdownString'
+            ]
+          },
+          'displayName': {
+            'parentIs': [
+              'Universe10.ExampleSpec',
+              'Universe10.TypeDeclaration',
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.AbstractSecurityScheme',
+              'Universe10.ResourceType',
+              'Universe10.Resource',
+              'Universe08.Parameter',
+              'Universe08.Resource',
+              'Universe08.ResourceType',
+              'Universe08.Trait'
+            ]
+          },
+          'example': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter',
+              'Universe08.BodyLike',
+              'Universe08.XMLBody',
+              'Universe08.JSONBody'
+            ]
+          },
+          'usage': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe10.Trait',
+              'Universe10.ResourceType',
+              'Universe08.ResourceType',
+              'Universe08.Trait'
+            ]
+          },
+          'content': {
+            'parentIs': [
+              'Universe10.DocumentationItem',
+              'Universe08.DocumentationItem'
+            ]
+          },
+          'documentation': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'title': {
+            'parentIs': [
+              'Universe10.DocumentationItem',
+              'Universe08.DocumentationItem'
+            ]
+          }
+        },
+        'parameters': {
+          'default': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'enum': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'maximum': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'minimum': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'maxLength': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'minLength': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'required': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.Parameter'
+            ]
+          },
+          'baseUriParameters': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api',
+              'Universe08.Resource',
+              'Universe08.ResourceType',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'uriParameters': {
+            'parentIs': [
+              'Universe10.ResourceType',
+              'Universe10.ResourceBase',
+              'Universe10.Resource',
+              'Universe08.Api',
+              'Universe08.Resource',
+              'Universe08.ResourceType'
+            ]
+          },
+          'headers': {
+            'parentIs': [
+              'Universe10.Response',
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.Operation',
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.Response',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'queryParameters': {
+            'parentIs': [
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.Operation',
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'type': { 'parentIs': ['Universe08.Parameter'] }
+        },
+        'schemas': {
+          'schema': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike',
+              'Universe08.XMLBody',
+              'Universe08.JSONBody'
+            ]
+          },
+          'schemas': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          }
+        },
+        'root': {
+          'baseUri': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'mediaType': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'protocols': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe08.Api',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'version': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'title': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          }
+        },
+        'responses': {
+          'responses': {
+            'parentIs': [
+              'Universe10.Trait',
+              'Universe10.MethodBase',
+              'Universe10.Operation',
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.MethodBase',
+              'Universe08.Trait',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          }
+        },
+        'response': {
+          'body': {
+            'parentIs': [
+              'Universe10.Response',
+              'Universe08.Response'
+            ]
+          }
+        },
+        'security': {
+          'securedBy': {
+            'is': [
+              'Universe10.SecuritySchemeRef',
+              'Universe08.SecuritySchemeRef'
+            ]
+          },
+          'securitySchemes': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'accessTokenUri': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'authorizationGrants': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'authorizationUri': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'requestTokenUri': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'scopes': {
+            'parentIs': [
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'describedBy': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'settings': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'OAuth 1.0': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'OAuth 2.0': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'Basic Authentication': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'Digest Authentication': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          },
+          'type': {
+            'parentIs': [
+              'Universe10.AbstractSecurityScheme',
+              'Universe08.AbstractSecurityScheme'
+            ]
+          }
+        },
+        'types and traits': {
+          'type': {
+            'parentIs': [
+              'Universe10.ResourceType',
+              'Universe10.ResourceBase',
+              'Universe10.Resource',
+              'Universe08.Resource',
+              'Universe08.ResourceType'
+            ]
+          },
+          'is': {
+            'is': [
+              'Universe10.TraitRef',
+              'Universe08.TraitRef'
+            ]
+          },
+          'resourceTypes': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          },
+          'traits': {
+            'parentIs': [
+              'Universe10.Library',
+              'Universe10.LibraryBase',
+              'Universe10.Api',
+              'Universe10.Overlay',
+              'Universe10.Extension',
+              'Universe08.Api'
+            ]
+          }
+        },
+        'methods': {
+          'options': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'get': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'head': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'post': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'put': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'delete': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'trace': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'connect': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'patch': {
+            'is': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          }
+        },
+        'protocols': {
+          'HTTP': {
+            'parentIs': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          },
+          'HTTPS': {
+            'parentIs': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          }
+        },
+        'body': {
+          'application/json': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'application/x-www-form-urlencoded': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'application/xml': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'multipart/form-data': {
+            'parentIs': [
+              'Universe10.TypeDeclaration',
+              'Universe08.BodyLike'
+            ]
+          },
+          'body': {
+            'parentIs': [
+              'Universe10.MethodBase',
+              'Universe08.MethodBase'
+            ]
+          }
+        }
+      };
+    },
+    {}
+  ],
+  12: [
     function (require, module, exports) {
       //     Underscore.js 1.8.3
       //     http://underscorejs.org
@@ -4876,493 +5362,8 @@
       }.call(this));
     },
     {}
-  ],
-  12: [
-    function (require, module, exports) {
-      module.exports = {
-        'docs': {
-          'description': {
-            'is': [
-              'Universe10.MarkdownString',
-              'Universe08.MarkdownString'
-            ]
-          },
-          'displayName': {
-            'parentIs': [
-              'Universe10.ExampleSpec',
-              'Universe10.TypeDeclaration',
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.AbstractSecurityScheme',
-              'Universe10.ResourceType',
-              'Universe10.Resource',
-              'Universe08.Parameter',
-              'Universe08.Resource',
-              'Universe08.ResourceType',
-              'Universe08.Trait'
-            ]
-          },
-          'example': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter',
-              'Universe08.BodyLike',
-              'Universe08.XMLBody',
-              'Universe08.JSONBody'
-            ]
-          },
-          'usage': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe10.Trait',
-              'Universe10.ResourceType',
-              'Universe08.ResourceType',
-              'Universe08.Trait'
-            ]
-          },
-          'content': {
-            'parentIs': [
-              'Universe10.DocumentationItem',
-              'Universe08.DocumentationItem'
-            ]
-          },
-          'documentation': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'title': {
-            'parentIs': [
-              'Universe10.DocumentationItem',
-              'Universe08.DocumentationItem'
-            ]
-          }
-        },
-        'parameters': {
-          'default': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'enum': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'maximum': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'minimum': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'maxLength': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'minLength': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'required': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.Parameter'
-            ]
-          },
-          'baseUriParameters': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api',
-              'Universe08.Resource',
-              'Universe08.ResourceType',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'uriParameters': {
-            'parentIs': [
-              'Universe10.ResourceType',
-              'Universe10.ResourceBase',
-              'Universe10.Resource',
-              'Universe08.Api',
-              'Universe08.Resource',
-              'Universe08.ResourceType'
-            ]
-          },
-          'headers': {
-            'parentIs': [
-              'Universe10.Response',
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.Operation',
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.Response',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'queryParameters': {
-            'parentIs': [
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.Operation',
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'type': { 'parentIs': ['Universe08.Parameter'] }
-        },
-        'schemas': {
-          'schema': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike',
-              'Universe08.XMLBody',
-              'Universe08.JSONBody'
-            ]
-          },
-          'schemas': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          }
-        },
-        'root': {
-          'baseUri': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'mediaType': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'protocols': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe08.Api',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'version': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'title': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          }
-        },
-        'responses': {
-          'responses': {
-            'parentIs': [
-              'Universe10.Trait',
-              'Universe10.MethodBase',
-              'Universe10.Operation',
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.MethodBase',
-              'Universe08.Trait',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          }
-        },
-        'response': {
-          'body': {
-            'parentIs': [
-              'Universe10.Response',
-              'Universe08.Response'
-            ]
-          }
-        },
-        'security': {
-          'securedBy': {
-            'is': [
-              'Universe10.SecuritySchemeRef',
-              'Universe08.SecuritySchemeRef'
-            ]
-          },
-          'securitySchemes': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'accessTokenUri': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'authorizationGrants': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'authorizationUri': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'requestTokenUri': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'scopes': {
-            'parentIs': [
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'describedBy': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'settings': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'OAuth 1.0': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'OAuth 2.0': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'Basic Authentication': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'Digest Authentication': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          },
-          'type': {
-            'parentIs': [
-              'Universe10.AbstractSecurityScheme',
-              'Universe08.AbstractSecurityScheme'
-            ]
-          }
-        },
-        'types and traits': {
-          'type': {
-            'parentIs': [
-              'Universe10.ResourceType',
-              'Universe10.ResourceBase',
-              'Universe10.Resource',
-              'Universe08.Resource',
-              'Universe08.ResourceType'
-            ]
-          },
-          'is': {
-            'is': [
-              'Universe10.TraitRef',
-              'Universe08.TraitRef'
-            ]
-          },
-          'resourceTypes': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          },
-          'traits': {
-            'parentIs': [
-              'Universe10.Library',
-              'Universe10.LibraryBase',
-              'Universe10.Api',
-              'Universe10.Overlay',
-              'Universe10.Extension',
-              'Universe08.Api'
-            ]
-          }
-        },
-        'methods': {
-          'options': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'get': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'head': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'post': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'put': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'delete': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'trace': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'connect': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'patch': {
-            'is': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          }
-        },
-        'protocols': {
-          'HTTP': {
-            'parentIs': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          },
-          'HTTPS': {
-            'parentIs': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          }
-        },
-        'body': {
-          'application/json': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'application/x-www-form-urlencoded': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'application/xml': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'multipart/form-data': {
-            'parentIs': [
-              'Universe10.TypeDeclaration',
-              'Universe08.BodyLike'
-            ]
-          },
-          'body': {
-            'parentIs': [
-              'Universe10.MethodBase',
-              'Universe08.MethodBase'
-            ]
-          }
-        }
-      };
-    },
-    {}
   ]
-}, {}, [3]));
+}, {}, [8]));
 (function (f) {
   if (typeof exports === 'object' && typeof module !== 'undefined') {
     module.exports = f();
