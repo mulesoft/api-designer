@@ -1,6 +1,6 @@
 {
   "name": "api-designer",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "A web editor for creating and sharing RAML API specifications",
   "repository": {
     "type": "git",
@@ -17,6 +17,7 @@
   "license": "CPAL 1.0",
   "dependencies": {
     "express": "~4.12.4",
+    "jshint-html-reporter": "^0.2.4",
     "open": "0.0.5",
     "raml-suggestions": "0.0.21",
     "yargs": "~3.11.0"
@@ -42,6 +43,7 @@
     "grunt-contrib-uglify": "~0.2.7",
     "grunt-contrib-watch": "~0.5.3",
     "grunt-karma": "~0.8.3",
+    "grunt-karma-coveralls": "^2.5.4",
     "grunt-ngmin": "~0.0.2",
     "grunt-open": "~0.2.0",
     "grunt-protractor-runner": "3.2.0",

@@ -75,13 +75,21 @@ module.exports = function(config) {
     ],
 
     preprocessors: {
-      'app/scripts/**/*.js': ['coverage']
+      'app/scripts/**/*.js': 'coverage'
     },
 
     coverageReporter: {
-      type: 'html',
-      dir: 'coverage/'
+      type: "lcov",
+      dir: "coverage/"
     },
+
+
+    plugins: [
+      'karma-mocha',
+      'karma-chai-sinon',
+      'karma-phantomjs-launcher',
+      'karma-coverage'
+    ],
 
     // web server port
     port: 9876,

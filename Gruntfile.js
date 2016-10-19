@@ -58,6 +58,10 @@ module.exports = function (grunt) {
   } catch (e) {
   }
 
+
+  grunt.loadNpmTasks('grunt-karma-coveralls');
+
+
   grunt.initConfig({
     yeoman: yeomanConfig,
 
@@ -253,6 +257,16 @@ module.exports = function (grunt) {
       }
     },
 
+    coveralls: {
+      options: {
+        debug: true,
+        coverageDir: 'coverage',
+        dryRun: true,
+        force: true,
+        recursive: true
+      }
+    },
+
     ngmin: {
       dist: {
         files: {
@@ -413,7 +427,8 @@ module.exports = function (grunt) {
   grunt.registerTask('test', [
     'jshint-once',
     'ngtemplates',
-    'karma'
+    'karma',
+    'coveralls'
   ]);
 
   grunt.registerTask('localScenario', [

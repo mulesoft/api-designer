@@ -2118,6 +2118,12 @@
         if (!allowNull && !astNode) {
           return ast;
         }
+        if (astNode && search.isExampleNode(astNode)) {
+          var exampleEnd = astNode.lowLevel().end();
+          if (exampleEnd === actualOffset && text[exampleEnd] === '\n') {
+            astNode = astNode.parent();
+          }
+        }
         return astNode;
       }
       function modifiedContent(request) {
@@ -2483,7 +2489,9 @@
         if (!mv && !onlyKey) {
           rs = props.map(function (x) {
             var complextionText = x.nameId() + ks;
-            if (!x.range().hasValueTypeInHierarchy() && needColon) {
+            if (x.range().isAssignableFrom(universeModule.Universe10.ExampleSpec.name)) {
+              complextionText = complextionText.trim();
+            } else if (!x.range().hasValueTypeInHierarchy() && needColon) {
               complextionText += '\n' + getIndent(offset, text) + '  ';
             }
             return {
@@ -2568,10 +2576,60 @@
         }
         return rs;
       }
+      function isUnexspected(symbol) {
+        if (symbol === '\'') {
+          return true;
+        }
+        if (symbol === '"') {
+          return true;
+        }
+        return false;
+      }
+      function isValueBroken(request) {
+        var text = request.content.getText();
+        var offset = request.content.getOffset();
+        var prefix = request.prefix();
+        var beginning = text.substring(0, offset);
+        var value = beginning.substring(beginning.lastIndexOf(':') + 1).trim();
+        if (!value.length) {
+          return false;
+        }
+        if (value[value.length - 1] === ',') {
+          if (value.indexOf('[') < 0) {
+            return true;
+          }
+        }
+        if (beginning[beginning.length - 1] === ' ') {
+          if (/^\w$/.test(value[value.length - 1])) {
+            return true;
+          } else if (value[value.length - 1] === ',') {
+            if (value.indexOf('[') < 0) {
+              return true;
+            }
+          }
+        }
+        if (/^\w+$/.test(prefix)) {
+          value = value.substring(0, value.lastIndexOf(prefix)).trim();
+          if (/^\w$/.test(value[value.length - 1])) {
+            return true;
+          } else if (value[value.length - 1] === ',') {
+            if (value.indexOf('[') < 0) {
+              return true;
+            }
+          }
+        }
+        if (isUnexspected(value[value.length - 1])) {
+          return true;
+        }
+        return false;
+      }
       function valueCompletion(node, attr, request, provider) {
         var hlnode = node;
         var text = request.content.getText();
         var offset = request.content.getOffset();
+        if (isValueBroken(request)) {
+          return [];
+        }
         if (attr) {
           var p = attr.property();
           var vl = attr.value();
@@ -2704,7 +2762,17 @@
             var typeProperties = parentNode.children() && parentNode.children().filter(function (child) {
                 return child.isAttr() && parserApi.universeHelpers.isTypeProperty(child.property());
               });
+            var visibleScopes = [];
+            var api = parentNode && parentNode.root && parentNode.root();
+            api && api.lowLevel() && api.lowLevel().unit() && visibleScopes.push(api.lowLevel().unit().absolutePath());
+            api && api.wrapperNode && api.wrapperNode() && api.wrapperNode().uses && api.wrapperNode().uses().forEach(function (usesDeclaration) {
+              usesDeclaration && usesDeclaration.value && usesDeclaration.value() && visibleScopes.push(api.lowLevel().unit().resolve(usesDeclaration.value()).absolutePath());
+            });
             var definitionNodes = parserApi.search.globalDeclarations(parentNode).filter(function (node) {
+                var nodeLocation = node.lowLevel().unit().absolutePath();
+                if (visibleScopes.indexOf(nodeLocation) < 0) {
+                  return false;
+                }
                 if (parserApi.universeHelpers.isGlobalSchemaType(node.definition())) {
                   return true;
                 }
@@ -57039,6 +57107,17 @@ if (!Array.prototype.find) {
     return undefined;
   };
 }
+if (!Array.prototype.includes) {
+  Array.prototype.includes = function (value) {
+    for (var i = 0; i < this.length; i++) {
+      var item = this[i];
+      if (item === value) {
+        return true;
+      }
+    }
+    return false;
+  };
+}
 'use strict';
 if (!String.prototype.startsWith) {
   String.prototype.startsWith = function (text) {
@@ -57121,41 +57200,6 @@ if (!String.prototype.endsWith) {
         };
       };
     }
-  ]).factory('throttle', [
-    'getTime',
-    '$timeout',
-    function (getTime, $timeout) {
-      function throttle(func, wait, options) {
-        var context, args, result;
-        var timeout = null;
-        var previous = 0;
-        options || (options = {});
-        var later = function () {
-          previous = options.leading === false ? 0 : getTime();
-          timeout = null;
-          result = func.apply(context, args);
-        };
-        return function () {
-          var now = getTime();
-          if (!previous && options.leading === false) {
-            previous = now;
-          }
-          var remaining = wait - (now - previous);
-          context = this;
-          args = arguments;
-          if (remaining <= 0) {
-            $timeout.cancel(timeout);
-            timeout = null;
-            previous = now;
-            result = func.apply(context, args);
-          } else if (!timeout && options.trailing !== false) {
-            timeout = $timeout(later, remaining);
-          }
-          return result;
-        };
-      }
-      return throttle;
-    }
   ]).value('generateSpaces', function (spaceCount) {
     spaceCount = spaceCount || 0;
     return new Array(spaceCount + 1).join(' ');
@@ -57211,7 +57255,6 @@ if (!String.prototype.endsWith) {
     function keyDown(e) {
       if (keys[e.keyCode]) {
         preventDefault(e);
-        return;
       }
     }
     function wheel(e) {
@@ -57599,21 +57642,7 @@ if (!String.prototype.endsWith) {
 }());
 (function () {
   'use strict';
-  angular.module('lightweightParse', ['utils']).factory('getEditorTextAsArrayOfLines', function getEditorTextAsArrayOfLinesFactory() {
-    var cachedValue = '';
-    var cachedLines = [];
-    return function getEditorTextAsArrayOfLines(editor) {
-      if (cachedValue === editor.getValue()) {
-        return cachedLines;
-      }
-      cachedValue = editor.getValue();
-      cachedLines = [];
-      for (var i = 0, lineCount = editor.lineCount(); i < lineCount; i++) {
-        cachedLines.push(editor.getLine(i));
-      }
-      return cachedLines;
-    };
-  }).factory('getSpaceCount', function getSpaceCountFactory() {
+  angular.module('lightweightParse', ['utils']).factory('getSpaceCount', function getSpaceCountFactory() {
     return function getSpaceCount(line) {
       for (var i = 0, length = line.length; i < length; i++) {
         if (line[i] !== ' ') {
@@ -58245,10 +58274,10 @@ if (!String.prototype.endsWith) {
         marker.setAttribute('data-marker-message', annotations[0].message);
         return marker;
       }
-      service.displayAnnotations = function (annotationsNotSorted) {
-        var editor = codeMirror.getEditor();
+      service.displayAnnotations = function (annotationsNotSorted, editor) {
+        editor = editor || codeMirror.getEditor();
+        clearMarks(editor);
         var annotations = groupByLine(annotationsNotSorted);
-        this.clearAnnotations();
         for (var line = 0; line < annotations.length; ++line) {
           var anns = annotations[line];
           if (!anns) {
@@ -58269,8 +58298,7 @@ if (!String.prototype.endsWith) {
         }
       };
       service.clearAnnotations = function () {
-        var editor = codeMirror.getEditor();
-        clearMarks(editor);
+        clearMarks(codeMirror.getEditor());
       };
       return service;
     }
@@ -58290,6 +58318,7 @@ if (!String.prototype.endsWith) {
         };
       return {
         loadPath: toQ(loadPath),
+        loadPathUnwrapped: loadPath,
         expandApiToJSON: expandApiToJSON
       };
       // ---
@@ -58345,7 +58374,6 @@ if (!String.prototype.endsWith) {
               return $http(req).then(function (res) {
                 return { content: res.data };
               });
-              ;
             }
           }
         });
@@ -60072,12 +60100,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }
             replaceTypeIfExists(raml, type, value.items);
             if (!value.examples && !value.example) {
-              generateArrayExampleIfPosible(value);
+              generateArrayExampleIfPossible(value);
             }
           }
         });
       }
-      function generateArrayExampleIfPosible(arrayNode) {
+      function generateArrayExampleIfPossible(arrayNode) {
         var examples = getExampleList(arrayNode.items);
         if (examples.length === 0) {
           return;
@@ -60318,6 +60346,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
         $scope.importing = true;
         return importService.mergeFile($scope.rootDirectory, mode.value).then(function () {
+          if (importService.isZip(mode.value)) {
+            $rootScope.$broadcast('event:save-all');
+          }
+        }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
           broadcastError(err.message);
@@ -60346,7 +60378,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.importing = true;
         var importSwaggerPromise;
         if (importService.isZip(mode.value)) {
-          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value);
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
+            $rootScope.$broadcast('event:save-all');
+          });
         } else {
           importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
             var filename = extractFileName(mode.value.name, 'raml');
@@ -61056,13 +61090,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
               if (!converter) {
-                return self.createAndSaveFile(directory, name, files[name]);
+                return self.createFile(directory, name, files[name]);
               } else {
                 // convert content before importing file
                 var defer = $q.defer();
                 converter(files, name, defer);
                 return defer.promise.then(function (file) {
-                  return self.createAndSaveFile(directory, file.name, file.content);
+                  return self.createFile(directory, file.name, file.content);
                 });
               }
             };
@@ -61282,7 +61316,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApply',
     'safeApplyWrapper',
     'debounce',
-    'throttle',
     'ramlParserAdapter',
     'ramlRepository',
     'codeMirror',
@@ -61294,7 +61327,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -62504,8 +62537,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           expandAncestors(dir);
         });
         $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
-          var parent = ramlRepository.getParent(target);
-          parent.sortChildren();
+          ramlRepository.getParent(target).sortChildren();
         });
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
           $timeout(function () {
@@ -63311,7 +63343,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/menu/export-menu.tmpl.html', '<a>\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;Swagger 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;Swagger 2.0 YAML</a></li>\n' + '</ul>\n');
     $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="raml-specification"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>\n' + '  <li role="raml-website"><a href="http://raml.org" target="_blank">raml.org Website</a></li>\n' + '  <li role="report-raml-bug"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <li role="raml-guide"><a href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>\n' + '  <li role="raml-about" ng-click="openHelpModal()"><a>About</a></li>\n' + '</ul>\n');
     $templateCache.put('views/menu/new-file-menu.tmpl.html', '<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">\n' + '  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">\n' + '    <a>\n' + '        &nbsp;Raml 1.0\n' + '        <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '\n' + '    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">\n' + '      <li role="context-menu-item" ng-repeat="fragment in notSorted(fragments)">\n' + '        <a role="new-raml-{{fragment.name}}" ng-click="newFragmentFile(fragment.label)">&nbsp;{{ fragment.name }}</a>\n' + '      </li>\n' + '    </ul>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item">\n' + '    <a role="new-raml-0.8" ng-click="newFile(\'0.8\')">&nbsp;Raml 0.8 API Spec</a>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '\n' + '  </li>\n' + '\n' + '  <li ng-show="supportsFolders" role="context-menu-item">\n' + '    <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item">\n' + '    <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item">\n' + '    <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item">\n' + '    <raml-editor-import-button></raml-editor-import-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '\n' + '  </li>\n' + '\n' + '  <li ng-show="supportsFolders" role="context-menu-item">\n' + '    <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item">\n' + '    <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item">\n' + '    <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item">\n' + '    <raml-editor-import-button></raml-editor-import-button>\n' + '  </li>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/menu/view-menu.tmpl.html', '<span class="menu-item-toggle" ng-click="openViewMenu($event)">\n' + '  <i class="fa fa-edit"></i>&nbsp;View\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showViewMenu">\n' + '  <li role="context-menu-item">\n' + '      <a role="toogle-background" ng-click="toogleBackgroundColor()">&nbsp;Toggle Background Color (ctrl+shift+t)</a>\n' + '  </li>\n' + '</ul>\n' + '\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <div>\n' + '        <p style="display: inline;">{{input.message}}</p>\n' + '        <a ng-if="input.link" target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </div>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');

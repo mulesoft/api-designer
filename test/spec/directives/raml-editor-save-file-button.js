@@ -19,7 +19,16 @@ describe('ramlEditorSaveFileButton', function() {
     scope.fileBrowser = {
       selectedFile: {
         path: '/myFile.raml',
-        contents: 'some content'
+        contents: 'some content',
+        dirty: true
+      }
+    };
+    scope.homeDirectory = {
+      children: [scope.fileBrowser.selectedFile],
+      forEachChildDo: function(action) {
+        for (var i = 0; i < this.children.length; i++) {
+          action.call(this.children[i], this.children[i]);
+        }
       }
     };
 
