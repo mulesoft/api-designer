@@ -12,7 +12,7 @@
       var specUrl = 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md#';
       self.files = {
         '0.8': {
-          'spec': {
+          '': {
             label: '',
             name: 'API Spec',
             description: 'RAML 0.8 API Spec',
@@ -20,7 +20,7 @@
           }
         },
         '1.0': {
-          'spec': {
+          '': {
             label: '',
             name: 'API Spec',
             description: 'RAML 1.0 API Spec',
@@ -89,22 +89,9 @@
         }
       };
 
-      function findFragment(version, fragmentLabel) {
-        var files = self.files[version];
-        for (var file in files) {
-          if (files.hasOwnProperty(file)) {
-            var currentFragment = files[file];
-            if (currentFragment.label === fragmentLabel) {
-              return currentFragment;
-            }
-          }
-        }
-      }
-
       function nameSuggestion(target, fragment, fragmentLabel) {
-        var names = [];
-        target.children.forEach(function (file) {
-          names.push(file.name);
+        var names = target.children.map(function (file) {
+          return file.name;
         });
 
         var defaultName = (fragment.label !== '' ? fragmentLabel : 'api') + '-';
@@ -113,8 +100,6 @@
 
       self.prompt = function prompt(target, ramlVersion, fragmentLabel) {
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var label = fragmentLabel ? fragmentLabel : '';
-        var fragment = findFragment(ramlVersion, label);
 
         var validations = [
           {
@@ -127,6 +112,8 @@
           }
         ];
 
+        var label = fragmentLabel ? fragmentLabel : '';
+        var fragment = self.files[ramlVersion][label];
         var suggestedName = nameSuggestion(target, fragment, fragmentLabel);
         var title = 'Add new ' + fragment.name + ' file';
 

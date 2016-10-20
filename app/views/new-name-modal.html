@@ -6,12 +6,12 @@
   <div class="modal-body">
     <!-- name -->
     <div class="form-group" ng-class="{'has-error': form.$submitted && form.name.$invalid}">
-      <div>
-        <p style="display: inline;">{{input.message}}</p>
+      <p>
+        {{input.message}}
         <a ng-if="input.link" target="_blank" href="{{input.link}}">
           <i class="fa fa-external-link"></i>
         </a>
-      </div>
+      </p>
       <!-- label -->
       <label for="name" class="control-label required-field-label">Name</label>
 
