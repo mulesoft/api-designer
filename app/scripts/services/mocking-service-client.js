@@ -20,7 +20,25 @@
         return url;
       };
 
+      function cleanBaseUri(mock) {
+        var baseUri       = mock.baseUri;
+        var mocksQuantity = baseUri.match(/mocks/g).length;
+
+        if (mocksQuantity > 1) {
+          var mocks = 'mocks/';
+
+          for (var i = mocksQuantity; i > 1; i--) {
+            var from  = baseUri.indexOf(mocks);
+            var to    = baseUri.indexOf('/', from + mocks.length);
+            baseUri   = baseUri.substring(0, from) + baseUri.substring(to + 1, baseUri.length);
+          }
+
+        }
+        mock.baseUri = baseUri;
+      }
+
       self.simplifyMock = function simplifyMock(mock) {
+        cleanBaseUri(mock);
         return {
           id:        mock.id,
           baseUri:   mock.baseUri,
