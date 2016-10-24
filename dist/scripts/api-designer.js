@@ -6538,26 +6538,30 @@
               } else if (id === '$ref') {
                 object.type = val.replace('#/definitions/', '');
                 delete object[id];
+              } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum') {
+                delete object[id];
               }
             }
           }
           return object;
         };
         RAML.prototype._mapTraits = function (slTraits, mimeType) {
-          var traits = [];
+          var traits = this.initializeTraits();
+          // var traits = [];
+          // var traitMap = {};
           for (var i in slTraits) {
             if (!slTraits.hasOwnProperty(i))
               continue;
             var slTrait = slTraits[i], trait = {};
             try {
-              var queryString = JSON.parse(slTrait.request.queryString);
+              var queryString = jsonHelper.parse(slTrait.request.queryString);
               if (!jsonHelper.isEmptySchema(queryString)) {
                 trait.queryParameters = this._mapNamedParams(queryString);
               }
             } catch (e) {
             }
             try {
-              var headers = JSON.parse(slTrait.request.headers);
+              var headers = jsonHelper.parse(slTrait.request.headers);
               if (!jsonHelper.isEmptySchema(headers)) {
                 trait.headers = this._mapNamedParams(headers);
               }
@@ -6569,10 +6573,16 @@
               }
             } catch (e) {
             }
-            var newTrait = {};
-            newTrait[_.camelCase(slTrait.name)] = trait;
-            traits.push(newTrait);
+            this.addTrait(slTrait.name, trait, traits);  //   var traitKey = _.camelCase(slTrait.name);
+                                                         //   var newTrait = {};
+                                                         //   newTrait[traitKey] = trait;
+                                                         //   traits.push(newTrait);
+                                                         //   traitMap[traitKey] = trait;
           }
+          //
+          // if (this.version() === '1.0') {
+          //   return traitMap;
+          // }
           return traits;
         };
         RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
@@ -6671,7 +6681,7 @@
               method.description = endpoint.Description;
             }
             if (endpoint.Summary) {
-              method.description = endpoint.Summary + '. ' + method.description;
+              method.description = endpoint.Summary + (method.description ? '. ' + method.description : '');
             }
             var is = this._mapEndpointTraits(this.project.Traits, endpoint);
             if (is.length) {
@@ -6796,7 +6806,7 @@
         RAML.prototype._getData = function (format) {
           switch (format) {
           case 'yaml':
-            var yaml = this._unescapeYamlIncludes(YAML.dump(JSON.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
+            var yaml = this._unescapeYamlIncludes(YAML.dump(jsonHelper.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
             return '#%RAML ' + this.version() + '\n' + yaml;
           default:
             throw Error('RAML doesn not support ' + format + ' format');
@@ -6831,6 +6841,12 @@
         };
         RAML.prototype.setMethodDisplayName = function (method, displayName) {
           throw new Error('setMethodDisplayName method not implemented');
+        };
+        RAML.prototype.initializeTraits = function () {
+          throw new Error('initializeTraits method not implemented');
+        };
+        RAML.prototype.addTrait = function (id, trait, traits) {
+          throw new Error('addTrait method not implemented');
         };
         module.exports = RAML;
       },
@@ -7063,6 +7079,14 @@
         };
         RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
         };
+        RAML08.prototype.initializeTraits = function () {
+          return [];
+        };
+        RAML08.prototype.addTrait = function (id, trait, traits) {
+          var newTrait = {};
+          newTrait[_.camelCase(id)] = trait;
+          traits.push(newTrait);
+        };
         module.exports = RAML08;
       },
       {
@@ -7116,7 +7140,7 @@
           var body = jsonHelper.parse(bodyData.body);
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
-            result.example = jsonHelper.format(bodyData.example);
+            result.example = jsonHelper.parse(bodyData.example);
           }
           return result;
         };
@@ -7165,6 +7189,7 @@
           return object;
         };
         RAML10.prototype.convertAllOfAttribute = function (definition) {
+          var result = {};
           var allOfTypes = [];
           if (!definition.allOf)
             return definition;
@@ -7173,16 +7198,17 @@
               continue;
             var allOf = definition.allOf[j];
             if (allOf.properties) {
-              definition = this.mapSchemaProperties(allOf);
-              break;
-            }
-            if (allOf.type) {
+              result = this.mapSchemaProperties(allOf);
+            } else if (allOf.type) {
               allOfTypes.push(allOf.type);
             }
           }
-          definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-          delete definition.allOf;
-          return definition;
+          result.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          delete result.allOf;
+          // definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          //
+          // delete definition.allOf;
+          return result;
         };
         RAML10.prototype.mapSchema = function (slSchemas) {
           var results = {};
@@ -7198,8 +7224,17 @@
                 definition = this.mapSchemaProperties(definition);
               }
             }
+            if (definition.additionalProperties) {
+              if (!definition.properties) {
+                definition.properties = {};
+              }
+              definition.properties['//'] = definition.additionalProperties;
+              delete definition.additionalProperties;
+            }
             if (schema.example) {
-              definition.example = jsonHelper.parse(schema.example);
+              definition.example = jsonHelper.parse(schema.example);  // var example = jsonHelper.parse(schema.example);
+                                                                      // if (!_.isEmpty(example)) {
+                                                                      // 	definition.example = example;
             }
             results[schema.NameSpace] = definition;
           }
@@ -7243,6 +7278,12 @@
         };
         RAML10.prototype.setMethodDisplayName = function (method, displayName) {
           method.displayName = displayName;
+        };
+        RAML10.prototype.initializeTraits = function () {
+          return {};
+        };
+        RAML10.prototype.addTrait = function (id, trait, traits) {
+          traits[_.camelCase(id)] = trait;
         };
         module.exports = RAML10;
       },
@@ -7627,6 +7668,7 @@
             if (!_.isEmpty(prop.description)) {
               param.description = prop.description;
             }
+            this._addPatternedObjects(prop, param);
             parameters.push(param);
           }
           return parameters;
@@ -7881,6 +7923,17 @@
                 swaggerDef.paths[endpoint.Path][endpoint.Method]['security'] = security;
               }
             }
+            this._addPatternedObjects(endpoint, swaggerDef.paths[endpoint.Path][endpoint.Method]);
+          }
+        };
+        Swagger.prototype._addPatternedObjects = function (source, target) {
+          for (var key in source) {
+            if (!source.hasOwnProperty(key))
+              continue;
+            var value = source[key];
+            if (_.startsWith(key, 'x-')) {
+              target[key] = value;
+            }
           }
         };
         Swagger.prototype._mapTraitParameters = function (traits) {
@@ -7937,6 +7990,9 @@
           if (hostUrl.path && hostUrl.path !== '/') {
             swaggerDef.BasePath = urlHelper.join(hostUrl.path, env.BasePath);
           }
+          if (this._isTemplateUri(swaggerDef.basePath)) {
+            this._convertToTemplateUri(swaggerDef);
+          }
           if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
             var filteredSchemes = [];
             env.Protocols.map(function (p) {
@@ -7950,6 +8006,14 @@
           } else {
             delete swaggerDef.schemes;
           }
+        };
+        Swagger.prototype._isTemplateUri = function (uri) {
+          var decodeUri = decodeURI(uri);
+          return decodeUri.indexOf('{') !== -1 || decodeUri.indexOf('}') !== -1;
+        };
+        Swagger.prototype._convertToTemplateUri = function (swaggerDef) {
+          swaggerDef['x-basePath'] = decodeURI(swaggerDef.basePath);
+          delete swaggerDef.basePath;
         };
         Swagger.prototype._export = function () {
           //TODO
@@ -8419,6 +8483,7 @@
               description: key.displayName || key.description || '',
               type: key.type || 'string'
             };
+            this._addAnnotations(key, pathParams.properties[key.name]);
           }
           return pathParams;
         };
@@ -8437,7 +8502,7 @@
               result.example = jsonHelper.stringify(result.example, 4);
             }
             if (response.description) {
-              result.description = response.description;
+              result.description = jsonHelper.stringify(response.description);
             }
             data.push(result);
           }
@@ -8459,18 +8524,23 @@
         RAML.prototype.isValidRefValue = function (value) {
           return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
         };
-        // from type=type1 to ref=type1
+        // from type=type1 & schema=type1 to ref=type1
         RAML.prototype.convertRefToModel = function (object) {
+          // if the object is a string, that means it's a direct ref/type
+          if (typeof object === 'string') {
+            return { $ref: '#/definitions/' + object };
+          }
           for (var id in object) {
+            var isType = id == 'type';
             if (!object.hasOwnProperty(id))
               continue;
-            if (id == 'type' && _.isArray(object[id]) && object[id].length == 1) {
+            if (isType && _.isArray(object[id]) && object[id].length == 1) {
               object[id] = object[id][0];
             }
             var val = object[id];
             if (!val)
               continue;
-            if (id == 'type' && this.isValidRefValues(val)) {
+            if (isType && this.isValidRefValues(val)) {
               object.ref = val;
               delete object[id];
             } else if (typeof val === 'object') {
@@ -8488,7 +8558,12 @@
                 //delete garbage
                 delete object[id];
               } else {
-                object[id] = this.convertRefToModel(val);
+                if (id == 'xml') {
+                  //no process xml object
+                  object[id] = val;
+                } else {
+                  object[id] = this.convertRefToModel(val);
+                }
               }
             } else if (id == 'name') {
               //delete garbage
@@ -8529,7 +8604,7 @@
             var endpoint = new Endpoint(summary);
             endpoint.Method = method.method;
             endpoint.Path = baseURI + resource.relativeUri;
-            endpoint.Description = method.description ? method.description : '';
+            endpoint.Description = method.description ? jsonHelper.stringify(method.description) : '';
             endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
             if (method.body) {
               var c = this.mapMimeTypes(method.body, this.data.mediaType);
@@ -8555,7 +8630,7 @@
               endpoint.Responses = this._mapResponseBody(method.responses);
             }
             endpoint.traits = [];
-            var isMethod = method.is;
+            var isMethod = method.is || resource.is;
             if (isMethod) {
               if (isMethod instanceof Array) {
                 endpoint.traits = isMethod;
@@ -8582,6 +8657,8 @@
                 }
               }
             }
+            //add annotations
+            this._addAnnotations(method, endpoint);
             //TODO endpoint security
             this.project.addEndpoint(endpoint);
           }
@@ -8609,19 +8686,18 @@
           }
         };
         RAML.prototype.loadFile = function (filePath, cb) {
-          var me = this;
-          parser.loadApi(filePath, parseOptions).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
-          }, function (error) {
-            cb(error);
-          });
+          return this.loadFileWithOptions(filePath, parseOptions, cb);
         };
         RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
           var me = this;
-          parser.loadApi(filePath, _.merge(parseOptions, options)).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
+          var mergedOptions = _.merge(parseOptions, options);
+          parser.loadApi(filePath, mergedOptions).then(function (api) {
+            try {
+              me.data = api.expand(false).toJSON(toJSONOptions);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
           }, function (error) {
             cb(error);
           });
@@ -8634,11 +8710,10 @@
               if (parsedData.name === 'Error') {
                 reject(error);
               } else {
-                me.data = parsedData.toJSON(toJSONOptions);
+                me.data = parsedData.expand(false).toJSON(toJSONOptions);
                 resolve();
               }
             } catch (e) {
-              console.error('raml#loadData', e, data, options);
               reject(e);
             }
           });
@@ -8666,7 +8741,7 @@
                   responses: []
                 };
               if (!_.isEmpty(trait.usage)) {
-                slTrait.description = trait.usage;
+                slTrait.description = jsonHelper.stringify(trait.usage);
               } else {
                 delete slTrait.description;
               }
@@ -8685,6 +8760,20 @@
             }
           }
           return slTraits;
+        };
+        RAML.prototype._addAnnotations = function (source, target) {
+          if (!source.annotations)
+            return;
+          var annotations = source.annotations;
+          for (var i in annotations) {
+            if (!annotations.hasOwnProperty(i))
+              continue;
+            var value = annotations[i];
+            var key = 'x-annotation-' + value.name;
+            target[key] = value.structuredValue;
+          }
+          if (target.annotations)
+            delete target.annotations;
         };
         RAML.prototype._import = function () {
           try {
@@ -8725,8 +8814,10 @@
             }
             this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
             var resources = this.data.resources;
-            for (var i = 0; i < resources.length; i++) {
-              this._mapEndpoint(resources[i], '', {});
+            if (!_.isEmpty(resources)) {
+              for (var i = 0; i < resources.length; i++) {
+                this._mapEndpoint(resources[i], '', {});
+              }
             }
             var schemas = this._mapSchema(this.getSchema(this.data));
             for (var s in schemas) {
@@ -9294,65 +9385,74 @@
               var sd = new Schema(schemaName);
               sd.Name = schemaName;
               var definition = schemData[i][schemaName];
-              var data = null;
+              var properties = null;
+              var result = definition;
               if (definition.properties && !_.isEmpty(definition.properties)) {
-                data = {
+                properties = {
                   properties: {},
                   type: 'object',
                   required: []
                 };
                 if (definition.description) {
-                  data.description = definition.description;
+                  properties.description = jsonHelper.stringify(definition.description);
                 }
                 for (var paramName in definition.properties) {
                   if (!definition.properties.hasOwnProperty(paramName))
                     continue;
                   var param = definition.properties[paramName];
-                  data.properties[paramName] = param;
+                  if (this.isArray(param)) {
+                    properties.properties[paramName] = this.convertArray(param);
+                  } else {
+                    properties.properties[paramName] = param;
+                  }
+                  //add annotations
+                  this._addAnnotations(param, properties.properties[paramName]);
                   if (param.hasOwnProperty('required')) {
                     if (param.required == true) {
-                      data['required'].push(paramName);
+                      properties['required'].push(paramName);
                     }
                     delete param.required;
                   } else {
                     //required true by default.
-                    data['required'].push(paramName);
+                    properties['required'].push(paramName);
                   }
                 }
-                if (data.required && data.required.length == 0) {
-                  delete data.required;
+                if (properties.required && properties.required.length == 0) {
+                  delete properties.required;
                 }
               }
               if (definition.type && definition.type != 'object') {
                 //type
-                if (data) {
+                if (properties) {
                   //type and properties
-                  definition.allOf = definition.type;
-                  definition.allOf.push(data);
-                  delete definition.type;
-                  delete definition.properties;
+                  result.allOf = definition.type;
+                  result.allOf.push(properties);
+                  delete result.type;
+                  delete result.properties;
                 } else {
                   if (_.isArray(definition.type) && definition.type.length > 1) {
-                    definition.allOf = definition.type;
-                    delete definition.type;
+                    result.allOf = definition.type;
+                    delete result.type;
                   } else if (this.isArray(definition)) {
                     //check for array
                     //convert array
-                    definition = this.convertArray(definition);
+                    result = this.convertArray(definition);
                   } else if (this.isFacet(definition)) {
                     //check for facets
-                    definition = this.convertFacet(definition);
+                    result = this.convertFacet(definition);
                   } else if (this.isFixedFacet(definition)) {
-                    definition = this.convertFixedFacet(definition);
+                    result = this.convertFixedFacet(definition);
                   } else {
-                    definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                    result = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
                   }
                 }
               } else {
                 //only properties
-                definition = data;
+                result = properties;
               }
-              sd.Definition = this.convertRefToModel(definition);
+              //add annotations
+              this._addAnnotations(definition, result);
+              sd.Definition = this.convertRefToModel(result);
               schemas.push(sd);
             }
           }
@@ -9369,16 +9469,28 @@
           return definition.fixedFacets;
         };
         RAML10.prototype.convertArray = function (definition) {
-          var items;
           if (definition.items.type) {
-            items = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
+            definition.items.type = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
           } else {
-            items = definition.items;
+            var items = definition.items;
+            if (this.isRamlArray(items)) {
+              definition.items = this.convertArray(this.convertRamlArray(definition.items));
+            } else {
+              definition.items = {};
+              definition.items.type = items;
+            }
           }
-          definition.items = {};
-          definition.items.type = items;
           definition.type = 'array';
           return definition;
+        };
+        RAML10.prototype.isRamlArray = function (object) {
+          return _.endsWith(object, '[]');
+        };
+        RAML10.prototype.convertRamlArray = function (object) {
+          return {
+            type: 'array',
+            items: { type: _.replace(object, '[]', '') }
+          };
         };
         RAML10.prototype.convertFacet = function (definition) {
           var facets = definition.facets;
@@ -9810,7 +9922,7 @@
               data.body.properties[param.name] = prop;
             }
             if (param.description) {
-              data.description = param.description;
+              data.description = jsonHelper.stringify(param.description);
             }
           }
           //remove required field if doesn't have anything inside it
@@ -9829,33 +9941,37 @@
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || $refs.exists(responseBody[code].$ref))) {
+            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || _.includes($refs, responseBody[code].$ref))) {
               continue;
             }
             // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
             if (needDeReferenced(responseBody[code]) && resolvedResponses) {
               schema = resolvedResponses[code].schema;
-              description = resolvedResponses[code].description || '';
+              description = jsonHelper.stringify(resolvedResponses[code].description || '');
               res.body = schema;
             } else if (responseBody[code].schema) {
               var schema = responseBody[code].schema;
               if (needDeReferenced(responseBody[code].schema)) {
-                description = resolvedResponses[code].description || '';
+                description = jsonHelper.stringify(resolvedResponses[code].description || '');
                 schema = resolvedResponses[code].schema;
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples') && _.isEmpty(responseBody[code].examples)) {
+            if (responseBody[code].hasOwnProperty('examples') && !_.isEmpty(responseBody[code].examples)) {
               var examples = responseBody[code].examples;
-              res.example = jsonHelper.stringify(examples[0], 4);  // TODO: Once stoplight supports multiple examples, support them here.
-                                                                   // for(var t in examples) {
-                                                                   //   if (!examples.hasOwnProperty(t)) continue;
-                                                                   //   if (t === resType) {
-                                                                   //     res.example = jsonHelper.stringify(examples[t], 4);
-                                                                   //   }
-                                                                   // }
+              if (_.isArray(examples)) {
+                for (var t in examples) {
+                  if (!examples.hasOwnProperty(t))
+                    continue;
+                  if (t === resType) {
+                    res.example = jsonHelper.stringify(examples[t], 4);
+                  }
+                }
+              } else {
+                res.example = jsonHelper.stringify(examples, 4);
+              }
             }
-            res.description = description || responseBody[code].description || '';
+            res.description = jsonHelper.stringify(description || responseBody[code].description || '');
             res.body = res.body;
             res.codes.push(String(code));
             data.push(res);
@@ -10015,7 +10131,7 @@
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
               endpoint.Summary = (currentMethod.summary || '').substring(0, 139);
-              endpoint.Description = currentMethod.description || currentMethod.summary;
+              endpoint.Description = jsonHelper.stringify(currentMethod.description);
               endpoint.Deprecated = currentMethod.deprecated;
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
@@ -57098,13 +57214,24 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 'use strict';
 if (!Array.prototype.find) {
   Array.prototype.find = function (predicate) {
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0, len = this.length; i < len; i++) {
       var item = this[i];
       if (predicate(item)) {
         return item;
       }
     }
     return undefined;
+  };
+}
+if (!Array.prototype.includes) {
+  Array.prototype.includes = function (value) {
+    for (var i = 0, len = this.length; i < len; i++) {
+      var item = this[i];
+      if (item === value) {
+        return true;
+      }
+    }
+    return false;
   };
 }
 'use strict';
@@ -57189,41 +57316,6 @@ if (!String.prototype.endsWith) {
         };
       };
     }
-  ]).factory('throttle', [
-    'getTime',
-    '$timeout',
-    function (getTime, $timeout) {
-      function throttle(func, wait, options) {
-        var context, args, result;
-        var timeout = null;
-        var previous = 0;
-        options || (options = {});
-        var later = function () {
-          previous = options.leading === false ? 0 : getTime();
-          timeout = null;
-          result = func.apply(context, args);
-        };
-        return function () {
-          var now = getTime();
-          if (!previous && options.leading === false) {
-            previous = now;
-          }
-          var remaining = wait - (now - previous);
-          context = this;
-          args = arguments;
-          if (remaining <= 0) {
-            $timeout.cancel(timeout);
-            timeout = null;
-            previous = now;
-            result = func.apply(context, args);
-          } else if (!timeout && options.trailing !== false) {
-            timeout = $timeout(later, remaining);
-          }
-          return result;
-        };
-      }
-      return throttle;
-    }
   ]).value('generateSpaces', function (spaceCount) {
     spaceCount = spaceCount || 0;
     return new Array(spaceCount + 1).join(' ');
@@ -57279,7 +57371,6 @@ if (!String.prototype.endsWith) {
     function keyDown(e) {
       if (keys[e.keyCode]) {
         preventDefault(e);
-        return;
       }
     }
     function wheel(e) {
@@ -57667,21 +57758,7 @@ if (!String.prototype.endsWith) {
 }());
 (function () {
   'use strict';
-  angular.module('lightweightParse', ['utils']).factory('getEditorTextAsArrayOfLines', function getEditorTextAsArrayOfLinesFactory() {
-    var cachedValue = '';
-    var cachedLines = [];
-    return function getEditorTextAsArrayOfLines(editor) {
-      if (cachedValue === editor.getValue()) {
-        return cachedLines;
-      }
-      cachedValue = editor.getValue();
-      cachedLines = [];
-      for (var i = 0, lineCount = editor.lineCount(); i < lineCount; i++) {
-        cachedLines.push(editor.getLine(i));
-      }
-      return cachedLines;
-    };
-  }).factory('getSpaceCount', function getSpaceCountFactory() {
+  angular.module('lightweightParse', ['utils']).factory('getSpaceCount', function getSpaceCountFactory() {
     return function getSpaceCount(line) {
       for (var i = 0, length = line.length; i < length; i++) {
         if (line[i] !== ' ') {
@@ -58274,7 +58351,7 @@ if (!String.prototype.endsWith) {
       }
       function groupByLine(annotations) {
         var lines = [];
-        for (var i = 0; i < annotations.length; ++i) {
+        for (var i = 0, len = annotations.length; i < len; ++i) {
           var annotation = annotations[i], line = annotation.line || 1;
           (lines[line] || (lines[line] = [])).push(annotation);
         }
@@ -58313,10 +58390,10 @@ if (!String.prototype.endsWith) {
         marker.setAttribute('data-marker-message', annotations[0].message);
         return marker;
       }
-      service.displayAnnotations = function (annotationsNotSorted) {
-        var editor = codeMirror.getEditor();
+      service.displayAnnotations = function (annotationsNotSorted, editor) {
+        editor = editor || codeMirror.getEditor();
+        clearMarks(editor);
         var annotations = groupByLine(annotationsNotSorted);
-        this.clearAnnotations();
         for (var line = 0; line < annotations.length; ++line) {
           var anns = annotations[line];
           if (!anns) {
@@ -58337,8 +58414,7 @@ if (!String.prototype.endsWith) {
         }
       };
       service.clearAnnotations = function () {
-        var editor = codeMirror.getEditor();
-        clearMarks(editor);
+        clearMarks(codeMirror.getEditor());
       };
       return service;
     }
@@ -58358,6 +58434,7 @@ if (!String.prototype.endsWith) {
         };
       return {
         loadPath: toQ(loadPath),
+        loadPathUnwrapped: loadPath,
         expandApiToJSON: expandApiToJSON
       };
       // ---
@@ -58413,7 +58490,6 @@ if (!String.prototype.endsWith) {
               return $http(req).then(function (res) {
                 return { content: res.data };
               });
-              ;
             }
           }
         });
@@ -59973,12 +60049,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }
             replaceTypeIfExists(raml, type, value.items);
             if (!value.examples && !value.example) {
-              generateArrayExampleIfPosible(value);
+              generateArrayExampleIfPossible(value);
             }
           }
         });
       }
-      function generateArrayExampleIfPosible(arrayNode) {
+      function generateArrayExampleIfPossible(arrayNode) {
         var examples = getExampleList(arrayNode.items);
         if (examples.length === 0) {
           return;
@@ -61099,7 +61175,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApply',
     'safeApplyWrapper',
     'debounce',
-    'throttle',
     'ramlParserAdapter',
     'ramlRepository',
     'codeMirror',
@@ -61111,7 +61186,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -62302,8 +62377,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           expandAncestors(dir);
         });
         $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
-          var parent = ramlRepository.getParent(target);
-          parent.sortChildren();
+          ramlRepository.getParent(target).sortChildren();
         });
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
           $timeout(function () {
