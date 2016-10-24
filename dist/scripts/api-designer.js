@@ -61814,9 +61814,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         function setLine(lineNumber, line, prefix) {
           $scope.editor.setLine(lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
-        if (!$scope.mock) {
-          return;
-        }
         var baseUri = 'baseUri: ' + $scope.mock.baseUri;
         var node = getNode($scope.editor, 0);
         // try to find `baseUri` line
@@ -61871,7 +61868,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.enabled = !!mock;
       }
       function getMock() {
-        loading(mockingService.getMock($scope.fileBrowser.selectedFile).then(setMock).then(addBaseUri));
+        loading(mockingService.getMock($scope.fileBrowser.selectedFile).then(setMock).then(function () {
+          if ($scope.mock) {
+            addBaseUri();
+          }
+        }));
       }
       function createMock() {
         loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.ramlExpanded).then(setMock).then(addBaseUri));

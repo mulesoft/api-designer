@@ -12,8 +12,6 @@
           $scope.editor.setLine(lineNumber, (prefix || '') + $scope.editor.getLine(lineNumber) + '\n' + line);
         }
 
-        if (!$scope.mock) { return; }
-
         var baseUri = 'baseUri: ' + $scope.mock.baseUri;
         var node    = getNode($scope.editor, 0);
 
@@ -82,7 +80,9 @@
       function getMock() {
         loading(mockingService.getMock($scope.fileBrowser.selectedFile)
           .then(setMock)
-          .then(addBaseUri)
+          .then(function() {
+            if ($scope.mock) { addBaseUri(); }
+          })
         );
       }
 
