@@ -57098,24 +57098,13 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 'use strict';
 if (!Array.prototype.find) {
   Array.prototype.find = function (predicate) {
-    for (var i = 0, len = this.length; i < len; i++) {
+    for (var i = 0; i < this.length; i++) {
       var item = this[i];
       if (predicate(item)) {
         return item;
       }
     }
     return undefined;
-  };
-}
-if (!Array.prototype.includes) {
-  Array.prototype.includes = function (value) {
-    for (var i = 0, len = this.length; i < len; i++) {
-      var item = this[i];
-      if (item === value) {
-        return true;
-      }
-    }
-    return false;
   };
 }
 'use strict';
@@ -57200,6 +57189,41 @@ if (!String.prototype.endsWith) {
         };
       };
     }
+  ]).factory('throttle', [
+    'getTime',
+    '$timeout',
+    function (getTime, $timeout) {
+      function throttle(func, wait, options) {
+        var context, args, result;
+        var timeout = null;
+        var previous = 0;
+        options || (options = {});
+        var later = function () {
+          previous = options.leading === false ? 0 : getTime();
+          timeout = null;
+          result = func.apply(context, args);
+        };
+        return function () {
+          var now = getTime();
+          if (!previous && options.leading === false) {
+            previous = now;
+          }
+          var remaining = wait - (now - previous);
+          context = this;
+          args = arguments;
+          if (remaining <= 0) {
+            $timeout.cancel(timeout);
+            timeout = null;
+            previous = now;
+            result = func.apply(context, args);
+          } else if (!timeout && options.trailing !== false) {
+            timeout = $timeout(later, remaining);
+          }
+          return result;
+        };
+      }
+      return throttle;
+    }
   ]).value('generateSpaces', function (spaceCount) {
     spaceCount = spaceCount || 0;
     return new Array(spaceCount + 1).join(' ');
@@ -57255,6 +57279,7 @@ if (!String.prototype.endsWith) {
     function keyDown(e) {
       if (keys[e.keyCode]) {
         preventDefault(e);
+        return;
       }
     }
     function wheel(e) {
@@ -57642,7 +57667,21 @@ if (!String.prototype.endsWith) {
 }());
 (function () {
   'use strict';
-  angular.module('lightweightParse', ['utils']).factory('getSpaceCount', function getSpaceCountFactory() {
+  angular.module('lightweightParse', ['utils']).factory('getEditorTextAsArrayOfLines', function getEditorTextAsArrayOfLinesFactory() {
+    var cachedValue = '';
+    var cachedLines = [];
+    return function getEditorTextAsArrayOfLines(editor) {
+      if (cachedValue === editor.getValue()) {
+        return cachedLines;
+      }
+      cachedValue = editor.getValue();
+      cachedLines = [];
+      for (var i = 0, lineCount = editor.lineCount(); i < lineCount; i++) {
+        cachedLines.push(editor.getLine(i));
+      }
+      return cachedLines;
+    };
+  }).factory('getSpaceCount', function getSpaceCountFactory() {
     return function getSpaceCount(line) {
       for (var i = 0, length = line.length; i < length; i++) {
         if (line[i] !== ' ') {
@@ -58235,7 +58274,7 @@ if (!String.prototype.endsWith) {
       }
       function groupByLine(annotations) {
         var lines = [];
-        for (var i = 0, len = annotations.length; i < len; ++i) {
+        for (var i = 0; i < annotations.length; ++i) {
           var annotation = annotations[i], line = annotation.line || 1;
           (lines[line] || (lines[line] = [])).push(annotation);
         }
@@ -58274,10 +58313,10 @@ if (!String.prototype.endsWith) {
         marker.setAttribute('data-marker-message', annotations[0].message);
         return marker;
       }
-      service.displayAnnotations = function (annotationsNotSorted, editor) {
-        editor = editor || codeMirror.getEditor();
-        clearMarks(editor);
+      service.displayAnnotations = function (annotationsNotSorted) {
+        var editor = codeMirror.getEditor();
         var annotations = groupByLine(annotationsNotSorted);
+        this.clearAnnotations();
         for (var line = 0; line < annotations.length; ++line) {
           var anns = annotations[line];
           if (!anns) {
@@ -58298,7 +58337,8 @@ if (!String.prototype.endsWith) {
         }
       };
       service.clearAnnotations = function () {
-        clearMarks(codeMirror.getEditor());
+        var editor = codeMirror.getEditor();
+        clearMarks(editor);
       };
       return service;
     }
@@ -58318,7 +58358,6 @@ if (!String.prototype.endsWith) {
         };
       return {
         loadPath: toQ(loadPath),
-        loadPathUnwrapped: loadPath,
         expandApiToJSON: expandApiToJSON
       };
       // ---
@@ -58374,6 +58413,7 @@ if (!String.prototype.endsWith) {
               return $http(req).then(function (res) {
                 return { content: res.data };
               });
+              ;
             }
           }
         });
@@ -59933,12 +59973,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }
             replaceTypeIfExists(raml, type, value.items);
             if (!value.examples && !value.example) {
-              generateArrayExampleIfPossible(value);
+              generateArrayExampleIfPosible(value);
             }
           }
         });
       }
-      function generateArrayExampleIfPossible(arrayNode) {
+      function generateArrayExampleIfPosible(arrayNode) {
         var examples = getExampleList(arrayNode.items);
         if (examples.length === 0) {
           return;
@@ -61059,6 +61099,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApply',
     'safeApplyWrapper',
     'debounce',
+    'throttle',
     'ramlParserAdapter',
     'ramlRepository',
     'codeMirror',
@@ -61070,7 +61111,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -62261,7 +62302,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           expandAncestors(dir);
         });
         $scope.$on('event:raml-editor-filetree-modified', function (event, target) {
-          ramlRepository.getParent(target).sortChildren();
+          var parent = ramlRepository.getParent(target);
+          parent.sortChildren();
         });
         $scope.$on('event:raml-editor-file-removed', function (event, file) {
           $timeout(function () {
