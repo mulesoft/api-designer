@@ -60306,11 +60306,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             var to = baseUri.indexOf('/', from + mocks.length);
             baseUri = baseUri.substring(0, from) + baseUri.substring(to + 1, baseUri.length);
           }
-          mock.baseUri = baseUri;
         }
+        mock.baseUri = baseUri;
       }
       self.simplifyMock = function simplifyMock(mock) {
-        cleanBaseUri(mock);
+        if (mock.baseUri) {
+          cleanBaseUri(mock);
+        }
         return {
           id: mock.id,
           baseUri: mock.baseUri,

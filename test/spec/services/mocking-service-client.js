@@ -171,7 +171,7 @@ describe('mockingServiceClient', function () {
         angular.toJson({
           id:        'id',
           manageKey: 'manageKey',
-          baseUri:   'baseUri'
+          baseUri:   'baseUri/mocks/'
         }),
 
         // headers

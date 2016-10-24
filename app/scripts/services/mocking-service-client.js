@@ -38,7 +38,8 @@
       }
 
       self.simplifyMock = function simplifyMock(mock) {
-        cleanBaseUri(mock);
+        if (mock.baseUri) { cleanBaseUri(mock); }
+
         return {
           id:        mock.id,
           baseUri:   mock.baseUri,
