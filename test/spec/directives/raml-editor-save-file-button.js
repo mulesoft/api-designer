@@ -35,7 +35,7 @@ describe('ramlEditorSaveFileButton', function() {
     scope.homeDirectory = {
       children: [scope.fileBrowser.selectedFile],
       forEachChildDo: function(action) {
-        for (var i = 0; i < this.children.length; i++) {
+        for (var i = 0, len = this.children.length; i < len; i++) {
           action.call(this.children[i], this.children[i]);
         }
       }

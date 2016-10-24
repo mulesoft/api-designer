@@ -2,7 +2,7 @@
 
 if (!Array.prototype.find) {
   Array.prototype.find = function (predicate) {
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0, len = this.length; i < len; i++) {
       var item = this[i];
       if (predicate(item)) { return item; }
     }
@@ -12,7 +12,7 @@ if (!Array.prototype.find) {
 
 if (!Array.prototype.includes) {
   Array.prototype.includes = function (value) {
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0, len = this.length; i < len; i++) {
       var item = this[i];
       if (item === value) { return true; }
     }
