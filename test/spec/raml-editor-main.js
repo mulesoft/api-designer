@@ -54,7 +54,7 @@ describe('RAML Editor Main Controller', function () {
       $scope: scope,
       codeMirror: codeMirror,
       codeMirrorErrors: codeMirrorErrors,
-      $confirm: $confirm,
+      $confirm: $confirm
     };
   });
 
@@ -135,6 +135,93 @@ describe('RAML Editor Main Controller', function () {
       annotationsToDisplay[0].line.should.be.equal(1);
       annotationsToDisplay[0].column.should.be.equal(1);
       annotationsToDisplay[0].message.should.be.equal(error.message);
+      annotationsToDisplay[0].severity.should.be.equal('error');
+    });
+
+    it('should display errors with link to root cause', function () {
+      // Arrange
+      ctrl = $controller('ramlEditorMain', params);
+      var apiRamlErrorMessage = 'Issues in the used library: "./libraries/types.raml"';
+
+      scope.fileBrowser = {
+        selectedFile: {
+          name: 'api.raml',
+          path: 'api.raml'
+        }
+      };
+
+      var error = {
+        parserErrors: [{
+          'code': 11,
+          'message': 'Required property "type" is missing',
+          'path': 'libraries/album_simple.raml',
+          'range': {
+            'start': {
+              'line': 5,
+              'column': 0,
+              'position': 93
+            },
+            'end': {
+              'line': 5,
+              'column': 7,
+              'position': 100
+            }
+          },
+          'isWarning': false,
+          'trace': [
+            {
+              'code': 11,
+              'message': 'Error in the included file: Required property "type" is missing',
+              'path': 'libraries/types.raml',
+              'range': {
+                'start': {
+                  'line': 2,
+                  'column': 2,
+                  'position': 28
+                },
+                'end': {
+                  'line': 2,
+                  'column': 13,
+                  'position': 39
+                }
+              },
+              'isWarning': false,
+              'trace': [
+                {
+                  'code': 0,
+                  'message': apiRamlErrorMessage,
+                  'path': 'api.raml',
+                  'range': {
+                    'start': {
+                      'line': 5,
+                      'column': 2,
+                      'position': 82
+                    },
+                    'end': {
+                      'line': 5,
+                      'column': 5,
+                      'position': 85
+                    }
+                  },
+                  'isWarning': true
+                }
+              ]
+            }
+          ]
+        }]
+      };
+      should.not.exist(scope.currentError);
+
+      // Act
+      $rootScope.$broadcast('event:raml-parser-error', error);
+
+      // Assert
+      annotationsToDisplay.length.should.be.equal(1);
+      annotationsToDisplay[0].line.should.be.equal(6);
+      annotationsToDisplay[0].column.should.be.equal(2);
+      annotationsToDisplay[0].tracingColumn.should.be.equal(2);
+      annotationsToDisplay[0].tracingLine.should.be.equal(3);
+      annotationsToDisplay[0].message.should.be.equal(apiRamlErrorMessage);
       annotationsToDisplay[0].severity.should.be.equal('error');
     });
 

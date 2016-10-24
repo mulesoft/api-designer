@@ -63,39 +63,6 @@
         };
       };
     })
-    .factory('throttle', function (getTime, $timeout) {
-      function throttle(func, wait, options) {
-        var context, args, result;
-        var timeout = null;
-        var previous = 0;
-        options || (options = {});
-        var later = function () {
-          previous = options.leading === false ? 0 : getTime();
-          timeout = null;
-          result = func.apply(context, args);
-        };
-        return function () {
-          var now = getTime();
-          if (!previous && options.leading === false) {
-            previous = now;
-          }
-          var remaining = wait - (now - previous);
-          context = this;
-          args = arguments;
-          if (remaining <= 0) {
-            $timeout.cancel(timeout);
-            timeout = null;
-            previous = now;
-            result = func.apply(context, args);
-          } else if (!timeout && options.trailing !== false) {
-            timeout = $timeout(later, remaining);
-          }
-          return result;
-        };
-      }
-
-      return throttle;
-    })
     .value('generateSpaces', function (spaceCount) {
       spaceCount = spaceCount || 0;
       return new Array(spaceCount + 1).join(' ');
@@ -150,7 +117,6 @@
       function keyDown(e) {
         if (keys[e.keyCode]) {
           preventDefault(e);
-          return;
         }
       }
 
