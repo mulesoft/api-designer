@@ -375,13 +375,13 @@
           .map(function (name) {
             return function () {
               if (!converter) {
-                return self.createAndSaveFile(directory, name, files[name]);
+                return self.createFile(directory, name, files[name]);
               } else {
                 // convert content before importing file
                 var defer = $q.defer();
                 converter(files, name, defer);
                 return defer.promise.then(function (file) {
-                  return self.createAndSaveFile(directory, file.name, file.content);
+                  return self.createFile(directory, file.name, file.content);
                 });
               }
             };
