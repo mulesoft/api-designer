@@ -32,10 +32,11 @@ cp -r $SOURCE_FOLDER $VERSIONED_TARGET
 echo "> Leave empty RAML.Settings.proxy setting from $VERSIONED_TARGET/scripts/api-designer.js"
 sed -i '' -e "s/RAML\.Settings\.proxy = '\/proxy\/'/RAML\.Settings\.proxy = ''/g" $VERSIONED_TARGET/scripts/api-designer.js
 sed -i '' -e 's/RAML\.Settings\.proxy = "\/proxy\/"/RAML\.Settings\.proxy = ""/g' $VERSIONED_TARGET/scripts/api-designer.min.js
-echo "> Use minified versions of css and js"
-cp $VERSIONED_TARGET/index.html $VERSIONED_TARGET/dev.html
-sed -i '' -e "s/.css/.min.css/g" $VERSIONED_TARGET/index.html
-sed -i '' -e "s/api-designer-vendor.js/api-designer-vendor.min.js/g" $VERSIONED_TARGET/index.html # todo api-designer.js fails...
+
+#echo "> Use minified versions of css and js"
+#cp $VERSIONED_TARGET/index.html $VERSIONED_TARGET/dev.html
+#sed -i '' -e "s/.css/.min.css/g" $VERSIONED_TARGET/index.html
+#sed -i '' -e "s/api-designer-vendor.js/api-designer-vendor.min.js/g" $VERSIONED_TARGET/index.html # todo api-designer.js fails...
 
 # create md page with branch info
 BRANCH_SHA="$(git --git-dir=$SOURCE_REPO/.git rev-parse HEAD)"
