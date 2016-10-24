@@ -59,6 +59,11 @@
 
         return importService.mergeFile($scope.rootDirectory, mode.value)
           .then(function () {
+            if (importService.isZip(mode.value)) {
+              $rootScope.$broadcast('event:save-all');
+            }
+          })
+          .then(function () {
             return $modalInstance.close(true);
           })
           .catch(function (err) {
@@ -97,7 +102,9 @@
 
         var importSwaggerPromise;
         if (importService.isZip(mode.value)) {
-          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value);
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function() {
+            $rootScope.$broadcast('event:save-all');
+          });
         } else {
           importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
             var filename = extractFileName(mode.value.name, 'raml');
