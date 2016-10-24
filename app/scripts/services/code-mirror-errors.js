@@ -111,7 +111,7 @@
 
       function groupByLine (annotations) {
         var lines = [];
-        for (var i = 0; i < annotations.length; ++i) {
+        for (var i = 0, len = annotations.length; i < len; ++i) {
           var annotation = annotations[i], line = annotation.line || 1;
           (lines[line] || (lines[line] = [])).push(annotation);
         }
@@ -163,12 +163,11 @@
         return marker;
       }
 
-      service.displayAnnotations = function (annotationsNotSorted) {
-        var editor = codeMirror.getEditor();
+      service.displayAnnotations = function (annotationsNotSorted, editor) {
+        editor = editor || codeMirror.getEditor();
+        clearMarks(editor);
+
         var annotations = groupByLine(annotationsNotSorted);
-
-        this.clearAnnotations();
-
         for (var line = 0; line < annotations.length; ++line) {
           var anns = annotations[line];
           if (!anns) {
@@ -194,8 +193,7 @@
       };
 
       service.clearAnnotations = function () {
-        var editor = codeMirror.getEditor();
-        clearMarks(editor);
+        clearMarks(codeMirror.getEditor());
       };
 
       return service;

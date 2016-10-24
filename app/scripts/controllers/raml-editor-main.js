@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -192,6 +192,7 @@
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
         var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message, isWarning: error.isWarning}];
+
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           var errorInfo = error;
           var tracingInfo = { line : undefined, column : undefined, path : undefined };
