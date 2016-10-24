@@ -10,6 +10,7 @@
 
       return {
         loadPath: toQ(loadPath),
+        loadPathUnwrapped: loadPath,
         expandApiToJSON: expandApiToJSON
       };
 
@@ -73,8 +74,7 @@
               return $http(req)
                 .then(function (res) {
                   return {content: res.data};
-                })
-                ;
+                });
             }
           }
         });
