@@ -62657,6 +62657,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       $scope.handleFileSelect = function (element) {
         $scope.mode.value = element.files[0];
       };
+      function broadcastError(msg) {
+        return $rootScope.$broadcast('event:notification', {
+          message: msg,
+          expires: true,
+          level: 'error'
+        });
+      }
       /**
        * Import files from the local filesystem.
        *
@@ -62664,21 +62671,17 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        */
       function importFile(mode) {
         if (!$scope.fileSupported) {
-          return $rootScope.$broadcast('event:notification', {
-            message: 'File upload not supported. Try upgrading your browser.',
-            expires: true,
-            level: 'error'
-          });
+          return broadcastError('File upload not supported. Try upgrading your browser.');
         }
         $scope.importing = true;
         return importService.mergeFile($scope.rootDirectory, mode.value).then(function () {
+          if (importService.isZip(mode.value)) {
+            $rootScope.$broadcast('event:save-all');
+          }
+        }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
-          $rootScope.$broadcast('event:notification', {
-            message: err.message,
-            expires: true,
-            level: 'error'
-          });
+          broadcastError(err.message);
         }).finally(function () {
           $scope.importing = false;
         });
@@ -62691,15 +62694,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         // Attempt to import from a Swagger definition.
         return swaggerToRAML.convert(mode.value).then(function (contents) {
           var filename = extractFileName(mode.value, 'raml');
-          return importService.createFile($scope.rootDirectory, filename, contents);
+          return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
         }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
-          $rootScope.$broadcast('event:notification', {
-            message: 'Failed to import Swagger: ' + err.message,
-            expires: true,
-            level: 'error'
-          });
+          broadcastError('Failed to import Swagger: ' + err.message);
         }).finally(function () {
           $scope.importing = false;
         });
@@ -62708,15 +62707,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.importing = true;
         return swaggerToRAML.zip(mode.value).then(function (contents) {
           var filename = extractFileName(mode.value.name, 'raml');
-          return importService.createFile($scope.rootDirectory, filename, contents);
+          return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
         }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
-          $rootScope.$broadcast('event:notification', {
-            message: 'Failed to parse Swagger: ' + err.message,
-            expires: true,
-            level: 'error'
-          });
+          broadcastError('Failed to parse Swagger: ' + err.message);
         }).finally(function () {
           $scope.importing = false;
         });
@@ -62755,7 +62750,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return $scope.mode.callback($scope.mode);
       };
       /**
-       * Extract a useable filename from a path.
+       * Extract a usable filename from a path.
        *
        * @param  {String} path
        * @param  {String} [ext]
