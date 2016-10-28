@@ -1,14 +1,14 @@
 'use strict';
 
-describe('Mocking Service Utils', function () {
-  var ramlParserAdapter, mockingServiceUtils;
+describe('Raml Expander', function () {
+  var ramlParserAdapter, ramlExpander;
 
-  angular.module('mockingServiceUtilsTest', ['ramlEditorApp']);
-  beforeEach(module('mockingServiceUtilsTest'));
+  angular.module('ramlExpanderTest', ['ramlEditorApp']);
+  beforeEach(module('ramlExpanderTest'));
 
   beforeEach(inject(function ($injector) {
     ramlParserAdapter = $injector.get('ramlParserAdapter');
-    mockingServiceUtils = $injector.get('mockingServiceUtils');
+    ramlExpander = $injector.get('ramlExpander');
   }));
 
   describe('Dereference raml', function () {
@@ -57,7 +57,7 @@ describe('Mocking Service Utils', function () {
           return raml;
         }
       ).then(function (raml) {
-        mockingServiceUtils.dereference(raml);
+        ramlExpander.expandRaml(raml);
         raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('object');
         raml.resources[0].methods[0].body['application/json'].properties.name.type[0].should.be.equal('string');
         raml.resources[0].methods[0].body['application/json'].properties.address.type[0].should.be.equal('string');
@@ -122,7 +122,7 @@ describe('Mocking Service Utils', function () {
           return raml;
         }
       ).then(function (raml) {
-        mockingServiceUtils.dereference(raml);
+        ramlExpander.expandRaml(raml);
         raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('array');
         raml.resources[0].methods[0].body['application/json'].items.name.should.be.equal('MyType');
         raml.resources[0].methods[0].body['application/json'].items.examples[0].name.should.be.equal('A');

@@ -61685,8 +61685,13 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     });
   };
   this.getFileContentAsync = function (file) {
-    if (file.loaded && file.doc) {
-      return Promise.resolve(file.doc.getValue());
+    if (file.loaded) {
+      if (file.doc) {
+        return Promise.resolve(file.doc.getValue());
+      }
+      if (file.contents) {
+        return Promise.resolve(file.contents);
+      }
     }
     var getFileContent = function (file) {
       return file.contents;
@@ -61890,6 +61895,96 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     return this;
   }
 ]);
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').factory('ramlExpander', [
+    '$q',
+    'jsTraverse',
+    function mockingServiceUtils($q, jsTraverse) {
+      return { expandRaml: expandRaml };
+      // ---
+      function retrieveType(raml, typeName) {
+        if (!raml.types) {
+          return;
+        }
+        var object = raml.types.filter(function (type) {
+            return type[typeName];
+          })[0];
+        return object ? object[typeName] : object;
+      }
+      function replaceTypeIfExists(raml, type, value) {
+        var expandedType = retrieveType(raml, type);
+        if (expandedType) {
+          for (var key in expandedType) {
+            if (expandedType.hasOwnProperty(key)) {
+              if ([
+                  'example',
+                  'examples'
+                ].includes(key) && value[key]) {
+                return;
+              }
+              value[key] = expandedType[key];
+            }
+          }
+        }
+      }
+      function dereferenceTypes(raml) {
+        jsTraverse.traverse(raml).forEach(function (value) {
+          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
+            var type = value.type[0];
+            replaceTypeIfExists(raml, type, value);
+          }
+        });
+      }
+      function extractArrayType(arrayNode) {
+        if (arrayNode.items.type) {
+          return arrayNode.items.type[0];
+        }
+        return arrayNode.items;
+      }
+      function isNotObject(value) {
+        return value === null || typeof value !== 'object';
+      }
+      function dereferenceTypesInArrays(raml) {
+        jsTraverse.traverse(raml).forEach(function (value) {
+          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
+            var type = extractArrayType(value);
+            if (isNotObject(value.items)) {
+              value.items = {};
+            }
+            replaceTypeIfExists(raml, type, value.items);
+            if (!value.examples && !value.example) {
+              generateArrayExampleIfPossible(value);
+            }
+          }
+        });
+      }
+      function generateArrayExampleIfPossible(arrayNode) {
+        var examples = getExampleList(arrayNode.items);
+        if (examples.length === 0) {
+          return;
+        }
+        arrayNode.example = examples;
+      }
+      function getExampleList(node) {
+        if (node.examples) {
+          return node.examples.map(function (example) {
+            return example.structuredValue;
+          });
+        }
+        if (node.example) {
+          return [node.example];
+        }
+        return [];
+      }
+      function expandRaml(raml) {
+        dereferenceTypes(raml);
+        dereferenceTypesInArrays(raml);
+      }
+    }
+  ]);
+  ;
+}());
 (function () {
   'use strict';
   function FileSystem() {
@@ -62351,83 +62446,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return $q.all(promises);
         });
       }
-      function retrieveType(raml, typeName) {
-        if (!raml.types) {
-          return;
-        }
-        var object = raml.types.filter(function (type) {
-            return type[typeName];
-          })[0];
-        return object ? object[typeName] : object;
-      }
-      function replaceTypeIfExists(raml, type, value) {
-        var expandedType = retrieveType(raml, type);
-        if (expandedType) {
-          for (var key in expandedType) {
-            if (expandedType.hasOwnProperty(key)) {
-              if ([
-                  'example',
-                  'examples'
-                ].includes(key) && value[key]) {
-                return;
-              }
-              value[key] = expandedType[key];
-            }
-          }
-        }
-      }
-      function dereferenceTypes(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
-            var type = value.type[0];
-            replaceTypeIfExists(raml, type, value);
-          }
-        });
-      }
-      function extractArrayType(arrayNode) {
-        if (arrayNode.items.type) {
-          return arrayNode.items.type[0];
-        }
-        return arrayNode.items;
-      }
-      function isNotObject(value) {
-        return value === null || typeof value !== 'object';
-      }
-      function dereferenceTypesInArrays(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
-            var type = extractArrayType(value);
-            if (isNotObject(value.items)) {
-              value.items = {};
-            }
-            replaceTypeIfExists(raml, type, value.items);
-            if (!value.examples && !value.example) {
-              generateArrayExampleIfPossible(value);
-            }
-          }
-        });
-      }
-      function generateArrayExampleIfPossible(arrayNode) {
-        var examples = getExampleList(arrayNode.items);
-        if (examples.length === 0) {
-          return;
-        }
-        arrayNode.example = examples;
-      }
-      function getExampleList(node) {
-        if (node.examples) {
-          return node.examples.map(function (example) {
-            return example.structuredValue;
-          });
-        }
-        if (node.example) {
-          return [node.example];
-        }
-        return [];
-      }
       function dereference(raml) {
-        dereferenceTypes(raml);
-        dereferenceTypesInArrays(raml);
         return dereferenceJsons(raml);
       }
       // ---
@@ -62627,6 +62646,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       $scope.handleFileSelect = function (element) {
         $scope.mode.value = element.files[0];
       };
+      function broadcastError(msg) {
+        return $rootScope.$broadcast('event:notification', {
+          message: msg,
+          expires: true,
+          level: 'error'
+        });
+      }
       /**
        * Import files from the local filesystem.
        *
@@ -62634,21 +62660,17 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        */
       function importFile(mode) {
         if (!$scope.fileSupported) {
-          return $rootScope.$broadcast('event:notification', {
-            message: 'File upload not supported. Try upgrading your browser.',
-            expires: true,
-            level: 'error'
-          });
+          return broadcastError('File upload not supported. Try upgrading your browser.');
         }
         $scope.importing = true;
         return importService.mergeFile($scope.rootDirectory, mode.value).then(function () {
+          if (importService.isZip(mode.value)) {
+            $rootScope.$broadcast('event:save-all');
+          }
+        }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
-          $rootScope.$broadcast('event:notification', {
-            message: err.message,
-            expires: true,
-            level: 'error'
-          });
+          broadcastError(err.message);
         }).finally(function () {
           $scope.importing = false;
         });
@@ -62661,15 +62683,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         // Attempt to import from a Swagger definition.
         return swaggerToRAML.convert(mode.value).then(function (contents) {
           var filename = extractFileName(mode.value, 'raml');
-          return importService.createFile($scope.rootDirectory, filename, contents);
+          return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
         }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
-          $rootScope.$broadcast('event:notification', {
-            message: 'Failed to import Swagger: ' + err.message,
-            expires: true,
-            level: 'error'
-          });
+          broadcastError('Failed to import Swagger: ' + err.message);
         }).finally(function () {
           $scope.importing = false;
         });
@@ -62678,15 +62696,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.importing = true;
         return swaggerToRAML.zip(mode.value).then(function (contents) {
           var filename = extractFileName(mode.value.name, 'raml');
-          return importService.createFile($scope.rootDirectory, filename, contents);
+          return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
         }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
-          $rootScope.$broadcast('event:notification', {
-            message: 'Failed to parse Swagger: ' + err.message,
-            expires: true,
-            level: 'error'
-          });
+          broadcastError('Failed to parse Swagger: ' + err.message);
         }).finally(function () {
           $scope.importing = false;
         });
@@ -62725,7 +62739,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return $scope.mode.callback($scope.mode);
       };
       /**
-       * Extract a useable filename from a path.
+       * Extract a usable filename from a path.
        *
        * @param  {String} path
        * @param  {String} [ext]
@@ -63439,6 +63453,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApplyWrapper',
     'debounce',
     'ramlParserAdapter',
+    'ramlExpander',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -63449,7 +63464,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlExpander, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -63567,6 +63582,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           // it later and makes it unusable for mocking service
           var raml = ramlParserAdapter.expandApiToJSON(api);
           var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
+          ramlExpander.expandRaml(ramlExpanded);
           $scope.fileBrowser.selectedFile.raml = raml;
           $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
           $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
