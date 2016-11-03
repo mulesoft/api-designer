@@ -40,7 +40,10 @@ var FSResolver = function (homeDirectory, ramlRepository) {
   };
 
   this.getFileContentAsync = function (file) {
-    if (file.loaded && file.doc) { return Promise.resolve(file.doc.getValue()); }
+    if (file.loaded) {
+      if (file.doc) { return Promise.resolve(file.doc.getValue()); }
+      if (file.contents) { return Promise.resolve(file.contents); }
+    }
 
     var getFileContent = function (file) { return file.contents; };
     return ramlRepository.loadFile(file)
