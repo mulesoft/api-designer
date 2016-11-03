@@ -14,6 +14,10 @@
 * [Notes API](http://static-anypoint-mulesoft-com.s3.amazonaws.com/API_examples_notebooks/raml-design3.html)
 * [Congo API for Drone Delivery](http://static-anypoint-mulesoft-com.s3.amazonaws.com/API_examples_notebooks/raml-design2.html)
 
+## API Designer online
+
+There is an online preview version of the API Designer, open the last stable version [here](http://mulesoft.github.io/api-designer/dists/master/latest/) or check out a [different branch](http://mulesoft.github.io/api-designer/).
+
 ## Running Locally
 
 ```

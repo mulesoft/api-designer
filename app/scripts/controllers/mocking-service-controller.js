@@ -80,6 +80,9 @@
       function getMock() {
         loading(mockingService.getMock($scope.fileBrowser.selectedFile)
           .then(setMock)
+          .then(function() {
+            if ($scope.mock) { addBaseUri(); }
+          })
         );
       }
 

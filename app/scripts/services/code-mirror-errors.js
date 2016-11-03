@@ -55,18 +55,23 @@
           }
         };
 
+        function isMouseOverElement(element, e) {
+          var left = $(element).offset().left;
+          var right = left + $(element).outerWidth();
+          var mouseOverX = left <= e.clientX && e.clientX <= right + 5;
+
+          var top = $(element).offset().top;
+          var bottom = top + $(element).outerHeight();
+          var mouseOverY = top <= e.clientY && e.clientY <= bottom;
+
+          return mouseOverX && mouseOverY;
+        }
+
         function hide (e) {
           if (tooltip) {
-            var top = $(tooltip).offset().top;
-            var bottom = top + $(tooltip).outerHeight();
-            var isValidX = (top) <= e.clientY && e.clientY <= bottom;
-
-            var left = $(errorNode).offset().left;
-            var right = left + $(tooltip).outerWidth();
-            var isValidY = (left - 5) <= e.clientX && e.clientX <= right;
-
-            var mouseOverTooltip = isValidX && isValidY;
-            if (!mouseOverTooltip) {
+            var mouseOverError = isMouseOverElement(errorNode, e);
+            var mouseOverTooltip = isMouseOverElement(tooltip, e);
+            if (!(mouseOverTooltip || mouseOverError)) {
               CodeMirror.off(tooltip, 'mousedown', openTrace);
               CodeMirror.off(document, 'mousemove', hide);
 
@@ -106,7 +111,7 @@
 
       function groupByLine (annotations) {
         var lines = [];
-        for (var i = 0; i < annotations.length; ++i) {
+        for (var i = 0, len = annotations.length; i < len; ++i) {
           var annotation = annotations[i], line = annotation.line || 1;
           (lines[line] || (lines[line] = [])).push(annotation);
         }
@@ -125,9 +130,8 @@
 
         // if error belongs to different file, add tracing information to message
         if (annotation.path) {
-          var line = annotation.tracingLine + 1;
-          message += ' at line ' + line + ' col ' + annotation.tracingColumn + ' in ' +
-            '<a href="#/'+annotation.path+'" data-path="/'+annotation.path+'">'+annotation.path+'</a>';
+          message += ' at line ' + annotation.tracingLine + ' col ' + annotation.tracingColumn + ' in ' +
+            '<a href="javascript:" data-path="/'+annotation.path+'">'+annotation.path+'</a>';
         }
 
         tip.innerHTML = '<p class=CodeMirror-tag-' + severity + '>' + severity + '</p>' +
@@ -159,12 +163,11 @@
         return marker;
       }
 
-      service.displayAnnotations = function (annotationsNotSorted) {
-        var editor = codeMirror.getEditor();
+      service.displayAnnotations = function (annotationsNotSorted, editor) {
+        editor = editor || codeMirror.getEditor();
+        clearMarks(editor);
+
         var annotations = groupByLine(annotationsNotSorted);
-
-        this.clearAnnotations();
-
         for (var line = 0; line < annotations.length; ++line) {
           var anns = annotations[line];
           if (!anns) {
@@ -190,8 +193,7 @@
       };
 
       service.clearAnnotations = function () {
-        var editor = codeMirror.getEditor();
-        clearMarks(editor);
+        clearMarks(codeMirror.getEditor());
       };
 
       return service;

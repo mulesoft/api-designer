@@ -42,6 +42,19 @@ describe('Utils module', function () {
     });
   });
 
+  describe('generateName', function () {
+    var generateName;
+
+    beforeEach(inject(function($injector) {
+      generateName = $injector.get('generateName');
+    }));
+
+    it('should generate next default name for raml file', function () {
+      generateName(['Untitled-1.raml', 'test.raml'], 'Untitled-', 'raml').should.be.equal('Untitled-2.raml');
+      generateName(['Untitled-1.raml', 'Untitled-2.raml', 'test.raml'], 'Untitled-', 'raml').should.be.equal('Untitled-3.raml');
+    });
+  });
+
   describe('safeApplyWrapper', function () {
     var safeApplyWrapper;
     beforeEach(inject(function ($injector) {

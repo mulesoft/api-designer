@@ -4,21 +4,16 @@ describe('swaggerToRAML', function () {
   var $q;
   var $window;
   var $rootScope;
-  var ramlRepository;
-  var apiSpecTransformer;
   var importService;
   var swaggerToRAML;
   var $httpBackend;
 
-  angular.module('editorShelfTest', ['ramlEditorApp', 'testFs']);
-  beforeEach(module('editorShelfTest'));
+  beforeEach(module('ramlEditorApp'));
 
   beforeEach(inject(function ($injector) {
     $q             = $injector.get('$q');
     $window        = $injector.get('$window');
     $rootScope     = $injector.get('$rootScope');
-    ramlRepository  = $injector.get('ramlRepository');
-    apiSpecTransformer  = $injector.get('apiSpecTransformer');
     importService  = $injector.get('importService');
     swaggerToRAML  = $injector.get('swaggerToRAML');
     $httpBackend   = $injector.get('$httpBackend');
@@ -32,8 +27,6 @@ describe('swaggerToRAML', function () {
   describe('parse zip files', function () {
     var parseZipStub;
     var readFileStub;
-    var createFileStub;
-    var checkExistenceStub;
 
     describe('multi-file zip', function () {
       beforeEach(function () {
@@ -44,32 +37,23 @@ describe('swaggerToRAML', function () {
         readFileStub = sinon.stub(importService, 'readFile', function () {
           return $q.when('');
         });
-
-        checkExistenceStub = sinon.stub(importService, 'checkExistence', function () {
-          return $q.when(false);
-        });
-
-        createFileStub = sinon.stub(importService, 'createFile', function (f) {
-          return $q.when(f);
-        });
       });
 
       afterEach(function () {
         parseZipStub.restore();
         readFileStub.restore();
-        createFileStub.restore();
-        checkExistenceStub.restore();
       });
 
       it('should respond with RAML', function () {
         var spy     = sinon.spy();
-        var promise = swaggerToRAML.zip(ramlRepository.rootDirectory, { name: 'api.zip' });
+        var promise = swaggerToRAML.zip({ name: 'api.zip' });
 
-        promise.then(spy).catch(function (err) { console.log(err); });
+        promise.then(spy);
 
         $rootScope.$digest();
 
         spy.should.have.been.called.once;
+        spy.getCall(0).args[0].should.be.a('string').and.match(/^#%RAML 0.8/);
       });
     });
 
@@ -82,53 +66,18 @@ describe('swaggerToRAML', function () {
         readFileStub = sinon.stub(importService, 'readFile', function () {
           return $q.when('');
         });
-
-        checkExistenceStub = sinon.stub(importService, 'checkExistence', function () {
-          return $q.when(false);
-        });
-
-        createFileStub = sinon.stub(importService, 'createFile', function (f) {
-          return $q.when(f);
-        });
       });
 
       afterEach(function () {
         parseZipStub.restore();
         readFileStub.restore();
-        createFileStub.restore();
-        checkExistenceStub.restore();
       });
 
       it('should respond with RAML', function () {
         var spy     = sinon.spy();
-        var promise = swaggerToRAML.zip(ramlRepository.rootDirectory, { name: 'api.zip' });
+        var promise = swaggerToRAML.zip({ name: 'api.zip' });
 
         promise.then(spy).catch(function (err) { console.log(err); });
-
-        $rootScope.$digest();
-
-        spy.should.have.been.called.once;
-      });
-    });
-
-    describe.skip('parse HTTP(s) resources', function () {
-      var swaggerRequestHandler;
-      var URL = 'https://example.com/swagger/pet-store-1.2.json';
-      var PROXY_URL = '/proxy/' + URL;
-
-      beforeEach(function () {
-        swaggerRequestHandler = $httpBackend.when('GET', PROXY_URL)
-          .respond(200, FILES.pet);
-      });
-
-      it('should respond with RAML', function () {
-        var spy = sinon.spy();
-
-        $httpBackend.expectGET(PROXY_URL);
-        var promise = swaggerToRAML.url(URL);
-        $httpBackend.flush();
-
-        promise.then(spy);
 
         $rootScope.$digest();
 
@@ -136,6 +85,31 @@ describe('swaggerToRAML', function () {
         spy.getCall(0).args[0].should.be.a('string').and.match(/^#%RAML 0.8/);
       });
     });
+  });
 
+  describe('parse HTTP(s) resources', function () {
+    var swaggerRequestHandler;
+    var URL = 'https://example.com/swagger/pet-store-1.2.json';
+    var PROXY_URL = '/proxy/' + URL;
+
+    beforeEach(function () {
+      swaggerRequestHandler = $httpBackend.when('GET', PROXY_URL)
+        .respond(200, FILES.pet);
+    });
+
+    it('should respond with RAML', function () {
+      var spy = sinon.spy();
+
+      $httpBackend.expectGET(PROXY_URL);
+      var promise = swaggerToRAML.convert(URL);
+      $httpBackend.flush();
+
+      promise.then(spy);
+
+      $rootScope.$digest();
+
+      spy.should.have.been.called.once;
+      spy.getCall(0).args[0].should.be.a('string').and.match(/^#%RAML 0.8/);
+    });
   });
 });

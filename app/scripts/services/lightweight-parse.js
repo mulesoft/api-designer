@@ -2,25 +2,6 @@
   'use strict';
 
   angular.module('lightweightParse', ['utils'])
-    .factory('getEditorTextAsArrayOfLines', function getEditorTextAsArrayOfLinesFactory() {
-      var cachedValue = '';
-      var cachedLines = [];
-
-      return function getEditorTextAsArrayOfLines(editor) {
-        if (cachedValue === editor.getValue()) {
-          return cachedLines;
-        }
-
-        cachedValue = editor.getValue();
-        cachedLines = [];
-
-        for (var i = 0, lineCount = editor.lineCount(); i < lineCount; i++) {
-          cachedLines.push(editor.getLine(i));
-        }
-
-        return cachedLines;
-      };
-    })
     .factory('getSpaceCount', function getSpaceCountFactory() {
       return function getSpaceCount(line) {
         for (var i = 0, length = line.length; i < length; i++) {

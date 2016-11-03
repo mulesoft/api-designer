@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, throttle, ramlParserAdapter, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlExpander, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -163,6 +163,8 @@
             var raml = ramlParserAdapter.expandApiToJSON(api);
             var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
 
+            ramlExpander.expandRaml(ramlExpanded);
+
             $scope.fileBrowser.selectedFile.raml = raml;
             $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
 
@@ -192,27 +194,44 @@
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
         var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message, isWarning: error.isWarning}];
+
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           var errorInfo = error;
           var tracingInfo = { line : undefined, column : undefined, path : undefined };
           var needErrorPath = error.trace !== undefined;
+
+          function findError(errors, selectedFile) {
+            for (var i = 0; i < errors.length; i++) {
+              var error = errors[i];
+              if (error.path === selectedFile.name) {
+                error.from = errorInfo;
+                return error;
+              }
+              else {
+                var innerError = findError(error.trace, selectedFile);
+                if (innerError) {
+                  innerError.from = error;
+                  return innerError;
+                }
+              }
+            }
+          }
+
           if (needErrorPath) {
             var selectedFile = event.currentScope.fileBrowser.selectedFile;
-
-            errorInfo = error.trace.find(function getTraceForCurrentFile(trace) {
-              return trace.path === event.currentScope.fileBrowser.selectedFile.name;
-            });
+            errorInfo = findError(error.trace, selectedFile);
             errorInfo.isWarning = error.isWarning;
 
             var selectedFilePath = selectedFile.path;
             var directorySeparator = '/';
             var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
             var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
+            var range = errorInfo.from.range;
 
             tracingInfo = {
-              line : ((error.range && error.range.start.line) || 0) + 1,
-              column : (error.range && error.range.start.column) || 1,
-              path : folderPath + error.path
+              line : ((range && range.start.line) || 0) + 1,
+              column : (range && range.start.column) || 1,
+              path : folderPath + errorInfo.from.path
             };
           }
 
