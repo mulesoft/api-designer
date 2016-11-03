@@ -65364,9 +65364,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     componentDidMount: function componentDidMount() {
       var fileSystem = this.props.fileSystem;
       if (fileSystem) {
-        angular.module('fs').factory('fileSystem', function () {
-          return fileSystem;
-        });
+        angular.module('fs').config([
+          'fileSystemProvider',
+          function (fileSystemProvider) {
+            fileSystemProvider.setFileSystemFactory(function () {
+              return fileSystem;
+            });
+          }
+        ]);
       }
       var $this = $(ReactDOM.findDOMNode(this));
       angular.bootstrap($this, ['ramlEditorApp']);
