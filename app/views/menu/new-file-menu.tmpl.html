@@ -6,13 +6,13 @@
     </a>
 
     <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">
-      <li role="context-menu-item" ng-repeat="fragment in notSorted(fragments)">
-        <a role="new-raml-{{fragment.name}}" ng-click="newFragmentFile(fragment.label)">&nbsp;{{ fragment.name }}</a>
+      <li role="new-raml-{{fragment.name}}" ng-repeat="fragment in notSorted(fragments)" ng-click="newFragmentFile(fragment.label)">
+        <a>&nbsp;{{ fragment.name }}</a>
       </li>
     </ul>
   </li>
 
-  <li role="context-menu-item">
-    <a role="new-raml-0.8" ng-click="newFile('0.8')">&nbsp;Raml 0.8 API Spec</a>
+  <li role="new-raml-0.8" ng-click="newFile('0.8')">
+    <a>&nbsp;Raml 0.8 API Spec</a>
   </li>
 </ul>

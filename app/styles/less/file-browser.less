@@ -201,8 +201,8 @@ div[role=raml-editor].light {
     padding: 2px 5px;
 
     &:hover {
-      background: @cello_blue;
-      color: #DDD;
+      color: white;
+      background-color: #969494;
     }
   }
 
@@ -232,7 +232,7 @@ div[role=raml-editor].light {
   }
 
   li {
-    padding: 6px 5px 4px 5px;
+    padding: 8px 5px 0 5px;
 
     > a {
       width: 100%;
@@ -242,19 +242,14 @@ div[role=raml-editor].light {
       content: "";
       display: block;
       height: 1px;
-      margin: 2px;
+      margin-top: 2px;
       background: #c6c0c0;
-    }
-
-    a:hover, span:hover {
-      color: @cello_blue !important;
     }
   }
 
-  li:last-child {
-    a:after {
-      display: none;
-    }
+  li:hover {
+    color: white;
+    background-color: #969494;
   }
 
   [role="new-button"] {

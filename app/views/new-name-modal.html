@@ -8,6 +8,9 @@
     <div class="form-group" ng-class="{'has-error': form.$submitted && form.name.$invalid}">
       <p>
         {{input.message}}
+      </p>
+      <p>
+        Learn more
         <a ng-if="input.link" target="_blank" href="{{input.link}}">
           <i class="fa fa-external-link"></i>
         </a>

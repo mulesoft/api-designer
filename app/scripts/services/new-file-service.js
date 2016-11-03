@@ -15,7 +15,7 @@
           '': {
             label: '',
             name: 'API Spec',
-            description: 'RAML 0.8 API Spec',
+            description: 'RAML 0.8 API Spec.',
             spec: 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md'
           }
         },
@@ -23,67 +23,67 @@
           '': {
             label: '',
             name: 'API Spec',
-            description: 'RAML 1.0 API Spec',
+            description: 'RAML 1.0 API Spec.',
             spec: specUrl + 'the-root-of-the-document'
           },
           'Trait': {
             label: 'Trait',
             name: 'Trait',
-            description: 'Provides reusability for common characteristics that can then be applied to multiple methods.',
+            description: 'Define a single trait with common characteristics for methods.',
             spec: specUrl + 'resource-types-and-traits'
           },
           'ResourceType': {
             label: 'ResourceType',
             name: 'Resource Type',
-            description: 'Provides reusability for common characteristics that can then be applied to multiple resources.',
+            description: 'Define a single resource type with common characteristics for resources.',
             spec: specUrl + 'resource-types-and-traits'
           },
           'Library': {
             label: 'Library',
             name: 'Library',
-            description: 'Combine any collection of data type declarations, resource type declarations, trait declarations, and security scheme declarations into modular, externalized, reusable groups.',
+            description: 'Define a collection of data type declarations, resource type declarations, trait declarations, and security scheme declarations into modular, externalized, reusable groups.',
             spec: specUrl + 'libraries'
           },
           'Overlay': {
             label: 'Overlay',
             name: 'Overlay',
-            description: 'Add or overrides nodes of a RAML API definition while preserving its behavioral, functional aspects.',
+            description: 'Define an overlay that adds or overrides nodes of a RAML API definition while preserving its behavioral, functional aspects.',
             spec: specUrl + 'overlays'
           },
           'Extension': {
             label: 'Extension',
             name: 'Extension',
-            description: 'Broaden a RAML API definition by adding to, or modifying aspects of its behavior and other functionality.',
+            description: 'Define an extension that adds or modifies nodes of a RAML API definition.',
             spec: specUrl + 'extensions'
           },
           'DataType': {
             label: 'DataType',
             name: 'Type',
-            description: 'Data type declaration where the type node may be used.',
+            description: 'Define a single data type declaration.',
             spec: specUrl + '#raml-data-types'
           },
           'DocumentationItem': {
             label: 'DocumentationItem',
             name: 'User Documentation',
-            description: 'An item in the collection of items that is the value of the root-level documentation node.',
+            description: 'Define a single page documentation item.',
             spec: specUrl + 'user-documentation'
           },
           'NamedExample': {
             label: 'NamedExample',
             name: 'Example',
-            description: 'An examples facet, whose key is a name of an example and whose value describes the example.',
+            description: 'Define a single example for a given data type.',
             spec: specUrl + 'defining-examples-in-raml'
           },
           'AnnotationTypeDeclaration': {
             label: 'AnnotationTypeDeclaration',
             name: 'Annotation',
-            description: 'Extend the API specification with metadata beyond the metadata already defined in the RAML specification.',
+            description: 'Define a single annotation type declaration that describes additional metadata that can be applied to any RAML node.',
             spec: specUrl + 'annotations'
           },
           'SecurityScheme': {
             label: 'SecurityScheme',
             name: 'Security Scheme',
-            description: 'Define one or more mechanisms to secure data access, identify requests, and determine access level and data visibility.',
+            description: 'Define a single security scheme that describes the mechanism to secure data access, identify requests, and determine access level and data visibility.',
             spec: specUrl + 'security-schemes'
           }
         }

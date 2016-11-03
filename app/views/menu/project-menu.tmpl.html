@@ -9,24 +9,15 @@
       <i class="submenu-icon fa fa-caret-right"></i>
     </a>
     <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>
-
   </li>
 
-  <li ng-show="supportsFolders" role="context-menu-item">
-    <raml-editor-new-folder-button></raml-editor-new-folder-button>
-  </li>
+  <raml-editor-new-folder-button></raml-editor-new-folder-button>
 
-  <li role="context-menu-item">
-    <raml-editor-save-file-button></raml-editor-save-file-button>
-  </li>
+  <raml-editor-save-file-button></raml-editor-save-file-button>
 
-  <li role="context-menu-item">
-    <raml-editor-save-all-button></raml-editor-save-all-button>
-  </li>
+  <raml-editor-save-all-button></raml-editor-save-all-button>
 
-  <li role="context-menu-item">
-    <raml-editor-import-button></raml-editor-import-button>
-  </li>
+  <raml-editor-import-button></raml-editor-import-button>
 
   <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">
     <raml-editor-export-menu></raml-editor-export-menu>
