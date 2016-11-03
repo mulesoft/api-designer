@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlExpander, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -162,6 +162,8 @@
             // it later and makes it unusable for mocking service
             var raml = ramlParserAdapter.expandApiToJSON(api);
             var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
+
+            ramlExpander.expandRaml(ramlExpanded);
 
             $scope.fileBrowser.selectedFile.raml = raml;
             $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
