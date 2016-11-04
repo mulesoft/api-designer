@@ -18,7 +18,7 @@
   </div>
 
   <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">
-    <li ui-tree-node ng-repeat="node in node.children" ng-include="'file-item.html'" data-collapsed="node.collapsed">
+    <li ui-tree-node ng-repeat="node in node.children" ng-include="'file-item.html'" data-collapsed="node.collapsed" data-path="{{node.path}}">
     </li>
   </ul>
 </script>
@@ -27,6 +27,7 @@
   <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">
     <ui-tree-dummy-node class="top"></ui-tree-dummy-node>
     <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="'file-item.html'" data-collapsed="node.collapsed"
+     data-path="{{node.path}}"
      ng-drag-enter="node.collapsed = false"
      ng-drag-leave="node.collapsed = true"></li>
     <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>
