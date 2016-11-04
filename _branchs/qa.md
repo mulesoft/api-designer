@@ -1,6 +1,6 @@
 ---
 name: qa
 folder: qa
-sha: 49bac0945da2654686aabaac018243558fe1508c
-date: 2016-11-03T14:06:17-03:00
+sha: 8048d1d1c1e4d7cf6b07b2223a4fd6fccfc6879f
+date: 2016-11-04T10:54:07-03:00
 ---
