@@ -808,8 +808,8 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   padding: 2px 5px;
 }
 [role="context-menu"] li:hover {
-  background: #1e4f6a;
-  color: #DDD;
+  color: white;
+  background-color: #969494;
 }
 [role="context-menu"] .submenu-item {
   margin-left: 138px;
@@ -833,7 +833,7 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   width: 18px;
 }
 [role="menu-dropdown"] li {
-  padding: 6px 5px 4px 5px;
+  padding: 8px 5px 0 5px;
 }
 [role="menu-dropdown"] li > a {
   width: 100%;
@@ -842,15 +842,12 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   content: "";
   display: block;
   height: 1px;
-  margin: 2px;
+  margin-top: 2px;
   background: #c6c0c0;
 }
-[role="menu-dropdown"] li a:hover,
-[role="menu-dropdown"] li span:hover {
-  color: #1e4f6a !important;
-}
-[role="menu-dropdown"] li:last-child a:after {
-  display: none;
+[role="menu-dropdown"] li:hover {
+  color: white;
+  background-color: #969494;
 }
 [role="menu-dropdown"] [role="new-button"] {
   white-space: nowrap;
@@ -1185,6 +1182,9 @@ div.CodeMirror {
 .modal-body p {
   margin: 0 0 10px;
 }
+.modal-body .fa-external-link {
+  margin-left: 4px;
+}
 label {
   font-weight: bold;
   margin: 0;
@@ -1351,6 +1351,7 @@ div[role=raml-editor] .menubar .menu-item-context a {
   color: inherit;
   text-decoration: none;
   display: block;
+  white-space: nowrap;
 }
 div[role=raml-editor] .menubar .menu-item {
   position: relative;
