@@ -135,15 +135,16 @@
   };
 
   angular.module('fs')
-    .factory('fileSystem', function ($injector, config) {
-      var fsFactory    = config.get('fsFactory');
-      var hasFsFactory = fsFactory && $injector.has(fsFactory);
+    .provider('fileSystem', function fileSystemProvider() {
+      this.hasFactory = false;
 
-      if (!hasFsFactory) {
-        config.set('fsFactory', (fsFactory = 'localStorageFileSystem'));
-      }
+      this.setFileSystemFactory = function (fileSystemFactory) {
+        this.$get = fileSystemFactory;
+        this.hasFactory = true;
+      };
 
-      return $injector.get(fsFactory);
-    })
-  ;
+      this.$get = function() { return new FileSystem(); };
+
+      return this;
+    });
 })();
