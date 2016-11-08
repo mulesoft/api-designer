@@ -87,14 +87,14 @@
       }
 
       function createMock() {
-        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.ramlExpanded)
+        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml)
           .then(setMock)
           .then(addBaseUri)
         );
       }
 
       function updateMock() {
-        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.ramlExpanded)
+        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml)
           .then(setMock)
         ;
       }
