@@ -30,18 +30,9 @@
         };
       }
 
-      function expandApiToJSON(api, expandFlag) {
-        api = api.expand ? api.expand(expandFlag) : api;
-        var apiJSON = api.toJSON(jsonOptions);
-        if (api.uses && api.uses()) {
-          apiJSON.uses = {};
-          api.uses().forEach(function (usesItem) {
-            var libraryAST = usesItem.ast();
-            libraryAST = libraryAST.expand ? libraryAST.expand() : libraryAST;
-            apiJSON.uses[usesItem.key()] = libraryAST.toJSON(jsonOptions);
-          });
-        }
-        return apiJSON;
+      function expandApiToJSON(api) {
+        api = api.expand ? api.expand(true) : api;
+        return api.toJSON(jsonOptions);
       }
 
       /**

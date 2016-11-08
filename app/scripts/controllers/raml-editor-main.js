@@ -158,21 +158,16 @@
         $scope.loadRaml(file.contents, file.path).then(
           // success
           safeApplyWrapper($scope, function success(api) {
-            // hack: we have to make a full copy of an object because console modifies
-            // it later and makes it unusable for mocking service
             var raml = ramlParserAdapter.expandApiToJSON(api);
-            var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
-
-            ramlExpander.expandRaml(ramlExpanded);
+            ramlExpander.expandRaml(raml);
 
             $scope.fileBrowser.selectedFile.raml = raml;
-            $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
+            $rootScope.$broadcast('event:raml-parsed', raml);
 
-            $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
-
-            // a success, but with warnings
-            if (api.errors().length > 0) {
-              $rootScope.$broadcast('event:raml-parser-error', {parserErrors: api.errors()});
+            // a success, but with warnings (takes to long... skip for now until improvements on parser)
+            var errors = api.errors();
+            if (errors.length > 0) {
+              $rootScope.$broadcast('event:raml-parser-error', {parserErrors: errors});
             }
           }),
 
@@ -183,9 +178,8 @@
         );
       });
 
-      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml, ramlExpanded) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
         $scope.raml         = raml;
-        $scope.ramlExpanded = ramlExpanded;
         $scope.title        = raml && raml.title;
         $scope.version      = raml && raml.version;
         $scope.currentError = undefined;

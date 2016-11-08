@@ -30,54 +30,6 @@ describe('RAML Parser adapter', function () {
       );
     });
 
-    it('should parse the expand with out flag the RAML file with title and uses', function (done) {
-      var file = {
-        name: 'api.raml',
-        path: '/api.raml',
-        contents: [
-          '#%RAML 1.0',
-          'title: My RAML',
-          'uses:',
-          '  lib: library.raml',
-          '/myResource:',
-          '  get:',
-          '    body:',
-          '      application/json:',
-          '        type: lib.MyType'
-        ].join('\n')
-      };
-
-      var lib = {
-        name: 'library.raml',
-        path: '/library.raml',
-        contents: [
-          '#%RAML 1.0 Library',
-          'usage: Defines types',
-          'types:',
-          '  MyType:',
-          '    properties:',
-          '      name: string',
-          '      address: string'
-        ].join('\n')
-      };
-
-      var loadPath = ramlParserAdapter.loadPathUnwrapped('/api.raml', function (path) {
-        var content;
-        if (path === file.path) { content = file.contents; }
-        if (path === lib.path) { content = lib.contents; }
-
-        return Promise.resolve(content ? content : '');
-      });
-
-      loadPath.then(
-        function (api) {
-          var raml = ramlParserAdapter.expandApiToJSON(api, false);
-          raml.uses.lib.types[0].MyType.name.should.be.equal('MyType');
-          done();
-        }
-      );
-    });
-
     it('should parse the expand with out flag the RAML file with title and types', function (done) {
       var file = {
         name: 'api.raml',
