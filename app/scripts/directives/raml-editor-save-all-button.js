@@ -5,8 +5,6 @@
     .directive('ramlEditorSaveAllButton', function ramlEditorSaveAllButton(
       $rootScope,
       ramlRepository,
-      $window,
-      $timeout,
       $q
     ) {
       return {
@@ -37,6 +35,10 @@
                 });
               });
           };
+
+          $rootScope.$on('event:save-all', function() {
+            scope.saveAllFiles();
+          });
         }
       };
     })

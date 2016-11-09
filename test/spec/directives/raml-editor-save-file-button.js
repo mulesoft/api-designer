@@ -8,7 +8,7 @@ describe('ramlEditorSaveFileButton', function() {
   }
 
   function compileSaveAllFileButton() {
-    el = compileTemplate('<raml-editor-save-all-file-button></raml-editor-save-all-file-button>', scope);
+    el = compileTemplate('<raml-editor-save-all-button></raml-editor-save-all-button>', scope);
   }
 
   function clickSaveFileButton() {
@@ -81,15 +81,25 @@ describe('ramlEditorSaveFileButton', function() {
     });
   });
 
-	// todo re-add
-  describe.skip('on save all click', function() {
-    var saveFileSpy, broadcastSpy;
+  describe('on click save all', function() {
+    var saveFileSpy, broadcastSpy, rootScope;
 
     beforeEach(inject(function($rootScope) {
+      rootScope = $rootScope;
       broadcastSpy = sandbox.spy($rootScope, '$broadcast');
       saveFileSpy = sandbox.stub(ramlRepository, 'saveFile').returns(promise.resolved());
       compileSaveAllFileButton();
     }));
+
+    it('calls saveFile on the ramlRepository', function() {
+      clickSaveAllFileButton();
+      ramlRepository.saveFile.should.have.been.calledWith(scope.fileBrowser.selectedFile);
+    });
+
+    it('is the same as event:save-all broadcast', function() {
+      rootScope.$broadcast('event:save-all');
+      ramlRepository.saveFile.should.have.been.calledWith(scope.fileBrowser.selectedFile);
+    });
 
     describe('when ramlRepository successfully saves', function() {
       beforeEach(inject(function($rootScope) {

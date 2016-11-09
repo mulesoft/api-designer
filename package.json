@@ -23,7 +23,7 @@
     "yargs": "~3.11.0"
   },
   "devDependencies": {
-    "api-spec-transformer": "git://github.com/mulesoft/api-spec-converter/#v0.0.2",
+    "api-spec-transformer": "git://github.com/mulesoft/api-spec-converter/#v0.0.3",
     "browser-request": "^0.3.3",
     "browserify-global-shim": "^1.0.3",
     "chai": "~1.10.0",
