@@ -1681,7 +1681,7 @@
           });
         return finalPromise;
       }
-      function getSuggestions(request, provider, preParsedAst, project) {
+      function getSuggestions(request, provider, preParsedAst) {
         if (preParsedAst === void 0) {
           preParsedAst = undefined;
         }
@@ -1694,7 +1694,7 @@
           var offset = request.content.getOffset();
           var text = request.content.getText();
           var kind = completionKind(request);
-          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider, true, true, project);
+          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider);
           var hlnode = node;
           if (kind === parserApi.search.LocationKind.DIRECTIVE_COMPLETION) {
             return [{ text: 'include' }];
@@ -2088,7 +2088,7 @@
       function completionKind(request) {
         return parserApi.search.determineCompletionKind(request.content.getText(), request.content.getOffset());
       }
-      function getAstNode(request, contentProvider, clearLastChar, allowNull, oldProject) {
+      function getAstNode(request, contentProvider, clearLastChar, allowNull) {
         if (clearLastChar === void 0) {
           clearLastChar = true;
         }
@@ -2096,7 +2096,7 @@
           allowNull = true;
         }
         var newProjectId = contentProvider.contentDirName(request.content);
-        var project = oldProject || parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
+        var project = parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
         var offset = request.content.getOffset();
         var text = request.content.getText();
         var kind = completionKind(request);
@@ -3159,8 +3159,7 @@
         var parsedExample = search.parseStructuredExample(node, contentType);
         if (!parsedExample)
           return [];
-        var project = node && node.lowLevel() && node.lowLevel().unit() && node.lowLevel().unit().project();
-        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request), project);
+        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request));
       }
       function postProcess(providerSuggestions, request) {
         var prepared = postProcess1(providerSuggestions, request);
@@ -6539,30 +6538,26 @@
               } else if (id === '$ref') {
                 object.type = val.replace('#/definitions/', '');
                 delete object[id];
-              } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum') {
-                delete object[id];
               }
             }
           }
           return object;
         };
         RAML.prototype._mapTraits = function (slTraits, mimeType) {
-          var traits = this.initializeTraits();
-          // var traits = [];
-          // var traitMap = {};
+          var traits = [];
           for (var i in slTraits) {
             if (!slTraits.hasOwnProperty(i))
               continue;
             var slTrait = slTraits[i], trait = {};
             try {
-              var queryString = jsonHelper.parse(slTrait.request.queryString);
+              var queryString = JSON.parse(slTrait.request.queryString);
               if (!jsonHelper.isEmptySchema(queryString)) {
                 trait.queryParameters = this._mapNamedParams(queryString);
               }
             } catch (e) {
             }
             try {
-              var headers = jsonHelper.parse(slTrait.request.headers);
+              var headers = JSON.parse(slTrait.request.headers);
               if (!jsonHelper.isEmptySchema(headers)) {
                 trait.headers = this._mapNamedParams(headers);
               }
@@ -6574,16 +6569,10 @@
               }
             } catch (e) {
             }
-            this.addTrait(slTrait.name, trait, traits);  //   var traitKey = _.camelCase(slTrait.name);
-                                                         //   var newTrait = {};
-                                                         //   newTrait[traitKey] = trait;
-                                                         //   traits.push(newTrait);
-                                                         //   traitMap[traitKey] = trait;
+            var newTrait = {};
+            newTrait[_.camelCase(slTrait.name)] = trait;
+            traits.push(newTrait);
           }
-          //
-          // if (this.version() === '1.0') {
-          //   return traitMap;
-          // }
           return traits;
         };
         RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
@@ -6682,7 +6671,7 @@
               method.description = endpoint.Description;
             }
             if (endpoint.Summary) {
-              method.description = endpoint.Summary + (method.description ? '. ' + method.description : '');
+              method.description = endpoint.Summary + '. ' + method.description;
             }
             var is = this._mapEndpointTraits(this.project.Traits, endpoint);
             if (is.length) {
@@ -6807,7 +6796,7 @@
         RAML.prototype._getData = function (format) {
           switch (format) {
           case 'yaml':
-            var yaml = this._unescapeYamlIncludes(YAML.dump(jsonHelper.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
+            var yaml = this._unescapeYamlIncludes(YAML.dump(JSON.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
             return '#%RAML ' + this.version() + '\n' + yaml;
           default:
             throw Error('RAML doesn not support ' + format + ' format');
@@ -6842,12 +6831,6 @@
         };
         RAML.prototype.setMethodDisplayName = function (method, displayName) {
           throw new Error('setMethodDisplayName method not implemented');
-        };
-        RAML.prototype.initializeTraits = function () {
-          throw new Error('initializeTraits method not implemented');
-        };
-        RAML.prototype.addTrait = function (id, trait, traits) {
-          throw new Error('addTrait method not implemented');
         };
         module.exports = RAML;
       },
@@ -7080,14 +7063,6 @@
         };
         RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
         };
-        RAML08.prototype.initializeTraits = function () {
-          return [];
-        };
-        RAML08.prototype.addTrait = function (id, trait, traits) {
-          var newTrait = {};
-          newTrait[_.camelCase(id)] = trait;
-          traits.push(newTrait);
-        };
         module.exports = RAML08;
       },
       {
@@ -7141,7 +7116,7 @@
           var body = jsonHelper.parse(bodyData.body);
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
-            result.example = jsonHelper.parse(bodyData.example);
+            result.example = jsonHelper.format(bodyData.example);
           }
           return result;
         };
@@ -7190,7 +7165,6 @@
           return object;
         };
         RAML10.prototype.convertAllOfAttribute = function (definition) {
-          var result = {};
           var allOfTypes = [];
           if (!definition.allOf)
             return definition;
@@ -7199,17 +7173,16 @@
               continue;
             var allOf = definition.allOf[j];
             if (allOf.properties) {
-              result = this.mapSchemaProperties(allOf);
-            } else if (allOf.type) {
+              definition = this.mapSchemaProperties(allOf);
+              break;
+            }
+            if (allOf.type) {
               allOfTypes.push(allOf.type);
             }
           }
-          result.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-          delete result.allOf;
-          // definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-          //
-          // delete definition.allOf;
-          return result;
+          definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          delete definition.allOf;
+          return definition;
         };
         RAML10.prototype.mapSchema = function (slSchemas) {
           var results = {};
@@ -7225,17 +7198,8 @@
                 definition = this.mapSchemaProperties(definition);
               }
             }
-            if (definition.additionalProperties) {
-              if (!definition.properties) {
-                definition.properties = {};
-              }
-              definition.properties['//'] = definition.additionalProperties;
-              delete definition.additionalProperties;
-            }
             if (schema.example) {
-              definition.example = jsonHelper.parse(schema.example);  // var example = jsonHelper.parse(schema.example);
-                                                                      // if (!_.isEmpty(example)) {
-                                                                      // 	definition.example = example;
+              definition.example = jsonHelper.parse(schema.example);
             }
             results[schema.NameSpace] = definition;
           }
@@ -7279,12 +7243,6 @@
         };
         RAML10.prototype.setMethodDisplayName = function (method, displayName) {
           method.displayName = displayName;
-        };
-        RAML10.prototype.initializeTraits = function () {
-          return {};
-        };
-        RAML10.prototype.addTrait = function (id, trait, traits) {
-          traits[_.camelCase(id)] = trait;
         };
         module.exports = RAML10;
       },
@@ -7669,7 +7627,6 @@
             if (!_.isEmpty(prop.description)) {
               param.description = prop.description;
             }
-            this._addPatternedObjects(prop, param);
             parameters.push(param);
           }
           return parameters;
@@ -7924,17 +7881,6 @@
                 swaggerDef.paths[endpoint.Path][endpoint.Method]['security'] = security;
               }
             }
-            this._addPatternedObjects(endpoint, swaggerDef.paths[endpoint.Path][endpoint.Method]);
-          }
-        };
-        Swagger.prototype._addPatternedObjects = function (source, target) {
-          for (var key in source) {
-            if (!source.hasOwnProperty(key))
-              continue;
-            var value = source[key];
-            if (_.startsWith(key, 'x-')) {
-              target[key] = value;
-            }
           }
         };
         Swagger.prototype._mapTraitParameters = function (traits) {
@@ -7991,9 +7937,6 @@
           if (hostUrl.path && hostUrl.path !== '/') {
             swaggerDef.BasePath = urlHelper.join(hostUrl.path, env.BasePath);
           }
-          if (this._isTemplateUri(swaggerDef.basePath)) {
-            this._convertToTemplateUri(swaggerDef);
-          }
           if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
             var filteredSchemes = [];
             env.Protocols.map(function (p) {
@@ -8007,14 +7950,6 @@
           } else {
             delete swaggerDef.schemes;
           }
-        };
-        Swagger.prototype._isTemplateUri = function (uri) {
-          var decodeUri = decodeURI(uri);
-          return decodeUri.indexOf('{') !== -1 || decodeUri.indexOf('}') !== -1;
-        };
-        Swagger.prototype._convertToTemplateUri = function (swaggerDef) {
-          swaggerDef['x-basePath'] = decodeURI(swaggerDef.basePath);
-          delete swaggerDef.basePath;
         };
         Swagger.prototype._export = function () {
           //TODO
@@ -8484,7 +8419,6 @@
               description: key.displayName || key.description || '',
               type: key.type || 'string'
             };
-            this._addAnnotations(key, pathParams.properties[key.name]);
           }
           return pathParams;
         };
@@ -8503,7 +8437,7 @@
               result.example = jsonHelper.stringify(result.example, 4);
             }
             if (response.description) {
-              result.description = jsonHelper.stringify(response.description);
+              result.description = response.description;
             }
             data.push(result);
           }
@@ -8525,23 +8459,18 @@
         RAML.prototype.isValidRefValue = function (value) {
           return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
         };
-        // from type=type1 & schema=type1 to ref=type1
+        // from type=type1 to ref=type1
         RAML.prototype.convertRefToModel = function (object) {
-          // if the object is a string, that means it's a direct ref/type
-          if (typeof object === 'string') {
-            return { $ref: '#/definitions/' + object };
-          }
           for (var id in object) {
-            var isType = id == 'type';
             if (!object.hasOwnProperty(id))
               continue;
-            if (isType && _.isArray(object[id]) && object[id].length == 1) {
+            if (id == 'type' && _.isArray(object[id]) && object[id].length == 1) {
               object[id] = object[id][0];
             }
             var val = object[id];
             if (!val)
               continue;
-            if (isType && this.isValidRefValues(val)) {
+            if (id == 'type' && this.isValidRefValues(val)) {
               object.ref = val;
               delete object[id];
             } else if (typeof val === 'object') {
@@ -8559,12 +8488,7 @@
                 //delete garbage
                 delete object[id];
               } else {
-                if (id == 'xml') {
-                  //no process xml object
-                  object[id] = val;
-                } else {
-                  object[id] = this.convertRefToModel(val);
-                }
+                object[id] = this.convertRefToModel(val);
               }
             } else if (id == 'name') {
               //delete garbage
@@ -8605,7 +8529,7 @@
             var endpoint = new Endpoint(summary);
             endpoint.Method = method.method;
             endpoint.Path = baseURI + resource.relativeUri;
-            endpoint.Description = method.description ? jsonHelper.stringify(method.description) : '';
+            endpoint.Description = method.description ? method.description : '';
             endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
             if (method.body) {
               var c = this.mapMimeTypes(method.body, this.data.mediaType);
@@ -8631,7 +8555,7 @@
               endpoint.Responses = this._mapResponseBody(method.responses);
             }
             endpoint.traits = [];
-            var isMethod = method.is || resource.is;
+            var isMethod = method.is;
             if (isMethod) {
               if (isMethod instanceof Array) {
                 endpoint.traits = isMethod;
@@ -8658,8 +8582,6 @@
                 }
               }
             }
-            //add annotations
-            this._addAnnotations(method, endpoint);
             //TODO endpoint security
             this.project.addEndpoint(endpoint);
           }
@@ -8687,18 +8609,19 @@
           }
         };
         RAML.prototype.loadFile = function (filePath, cb) {
-          return this.loadFileWithOptions(filePath, parseOptions, cb);
+          var me = this;
+          parser.loadApi(filePath, parseOptions).then(function (api) {
+            me.data = api.toJSON(toJSONOptions);
+            cb();
+          }, function (error) {
+            cb(error);
+          });
         };
         RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
           var me = this;
-          var mergedOptions = _.merge(parseOptions, options);
-          parser.loadApi(filePath, mergedOptions).then(function (api) {
-            try {
-              me.data = api.expand(false).toJSON(toJSONOptions);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
+          parser.loadApi(filePath, _.merge(parseOptions, options)).then(function (api) {
+            me.data = api.toJSON(toJSONOptions);
+            cb();
           }, function (error) {
             cb(error);
           });
@@ -8711,10 +8634,11 @@
               if (parsedData.name === 'Error') {
                 reject(error);
               } else {
-                me.data = parsedData.expand(false).toJSON(toJSONOptions);
+                me.data = parsedData.toJSON(toJSONOptions);
                 resolve();
               }
             } catch (e) {
+              console.error('raml#loadData', e, data, options);
               reject(e);
             }
           });
@@ -8742,7 +8666,7 @@
                   responses: []
                 };
               if (!_.isEmpty(trait.usage)) {
-                slTrait.description = jsonHelper.stringify(trait.usage);
+                slTrait.description = trait.usage;
               } else {
                 delete slTrait.description;
               }
@@ -8761,20 +8685,6 @@
             }
           }
           return slTraits;
-        };
-        RAML.prototype._addAnnotations = function (source, target) {
-          if (!source.annotations)
-            return;
-          var annotations = source.annotations;
-          for (var i in annotations) {
-            if (!annotations.hasOwnProperty(i))
-              continue;
-            var value = annotations[i];
-            var key = 'x-annotation-' + value.name;
-            target[key] = value.structuredValue;
-          }
-          if (target.annotations)
-            delete target.annotations;
         };
         RAML.prototype._import = function () {
           try {
@@ -8815,10 +8725,8 @@
             }
             this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
             var resources = this.data.resources;
-            if (!_.isEmpty(resources)) {
-              for (var i = 0; i < resources.length; i++) {
-                this._mapEndpoint(resources[i], '', {});
-              }
+            for (var i = 0; i < resources.length; i++) {
+              this._mapEndpoint(resources[i], '', {});
             }
             var schemas = this._mapSchema(this.getSchema(this.data));
             for (var s in schemas) {
@@ -9386,74 +9294,65 @@
               var sd = new Schema(schemaName);
               sd.Name = schemaName;
               var definition = schemData[i][schemaName];
-              var properties = null;
-              var result = definition;
+              var data = null;
               if (definition.properties && !_.isEmpty(definition.properties)) {
-                properties = {
+                data = {
                   properties: {},
                   type: 'object',
                   required: []
                 };
                 if (definition.description) {
-                  properties.description = jsonHelper.stringify(definition.description);
+                  data.description = definition.description;
                 }
                 for (var paramName in definition.properties) {
                   if (!definition.properties.hasOwnProperty(paramName))
                     continue;
                   var param = definition.properties[paramName];
-                  if (this.isArray(param)) {
-                    properties.properties[paramName] = this.convertArray(param);
-                  } else {
-                    properties.properties[paramName] = param;
-                  }
-                  //add annotations
-                  this._addAnnotations(param, properties.properties[paramName]);
+                  data.properties[paramName] = param;
                   if (param.hasOwnProperty('required')) {
                     if (param.required == true) {
-                      properties['required'].push(paramName);
+                      data['required'].push(paramName);
                     }
                     delete param.required;
                   } else {
                     //required true by default.
-                    properties['required'].push(paramName);
+                    data['required'].push(paramName);
                   }
                 }
-                if (properties.required && properties.required.length == 0) {
-                  delete properties.required;
+                if (data.required && data.required.length == 0) {
+                  delete data.required;
                 }
               }
               if (definition.type && definition.type != 'object') {
                 //type
-                if (properties) {
+                if (data) {
                   //type and properties
-                  result.allOf = definition.type;
-                  result.allOf.push(properties);
-                  delete result.type;
-                  delete result.properties;
+                  definition.allOf = definition.type;
+                  definition.allOf.push(data);
+                  delete definition.type;
+                  delete definition.properties;
                 } else {
                   if (_.isArray(definition.type) && definition.type.length > 1) {
-                    result.allOf = definition.type;
-                    delete result.type;
+                    definition.allOf = definition.type;
+                    delete definition.type;
                   } else if (this.isArray(definition)) {
                     //check for array
                     //convert array
-                    result = this.convertArray(definition);
+                    definition = this.convertArray(definition);
                   } else if (this.isFacet(definition)) {
                     //check for facets
-                    result = this.convertFacet(definition);
+                    definition = this.convertFacet(definition);
                   } else if (this.isFixedFacet(definition)) {
-                    result = this.convertFixedFacet(definition);
+                    definition = this.convertFixedFacet(definition);
                   } else {
-                    result = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                    definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
                   }
                 }
               } else {
                 //only properties
-                result = properties;
+                definition = data;
               }
-              //add annotations
-              this._addAnnotations(definition, result);
-              sd.Definition = this.convertRefToModel(result);
+              sd.Definition = this.convertRefToModel(definition);
               schemas.push(sd);
             }
           }
@@ -9470,28 +9369,16 @@
           return definition.fixedFacets;
         };
         RAML10.prototype.convertArray = function (definition) {
+          var items;
           if (definition.items.type) {
-            definition.items.type = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
+            items = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
           } else {
-            var items = definition.items;
-            if (this.isRamlArray(items)) {
-              definition.items = this.convertArray(this.convertRamlArray(definition.items));
-            } else {
-              definition.items = {};
-              definition.items.type = items;
-            }
+            items = definition.items;
           }
+          definition.items = {};
+          definition.items.type = items;
           definition.type = 'array';
           return definition;
-        };
-        RAML10.prototype.isRamlArray = function (object) {
-          return _.endsWith(object, '[]');
-        };
-        RAML10.prototype.convertRamlArray = function (object) {
-          return {
-            type: 'array',
-            items: { type: _.replace(object, '[]', '') }
-          };
         };
         RAML10.prototype.convertFacet = function (definition) {
           var facets = definition.facets;
@@ -9923,7 +9810,7 @@
               data.body.properties[param.name] = prop;
             }
             if (param.description) {
-              data.description = jsonHelper.stringify(param.description);
+              data.description = param.description;
             }
           }
           //remove required field if doesn't have anything inside it
@@ -9942,37 +9829,33 @@
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || _.includes($refs, responseBody[code].$ref))) {
+            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || $refs.exists(responseBody[code].$ref))) {
               continue;
             }
             // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
             if (needDeReferenced(responseBody[code]) && resolvedResponses) {
               schema = resolvedResponses[code].schema;
-              description = jsonHelper.stringify(resolvedResponses[code].description || '');
+              description = resolvedResponses[code].description || '';
               res.body = schema;
             } else if (responseBody[code].schema) {
               var schema = responseBody[code].schema;
               if (needDeReferenced(responseBody[code].schema)) {
-                description = jsonHelper.stringify(resolvedResponses[code].description || '');
+                description = resolvedResponses[code].description || '';
                 schema = resolvedResponses[code].schema;
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples') && !_.isEmpty(responseBody[code].examples)) {
+            if (responseBody[code].hasOwnProperty('examples') && _.isEmpty(responseBody[code].examples)) {
               var examples = responseBody[code].examples;
-              if (_.isArray(examples)) {
-                for (var t in examples) {
-                  if (!examples.hasOwnProperty(t))
-                    continue;
-                  if (t === resType) {
-                    res.example = jsonHelper.stringify(examples[t], 4);
-                  }
-                }
-              } else {
-                res.example = jsonHelper.stringify(examples, 4);
-              }
+              res.example = jsonHelper.stringify(examples[0], 4);  // TODO: Once stoplight supports multiple examples, support them here.
+                                                                   // for(var t in examples) {
+                                                                   //   if (!examples.hasOwnProperty(t)) continue;
+                                                                   //   if (t === resType) {
+                                                                   //     res.example = jsonHelper.stringify(examples[t], 4);
+                                                                   //   }
+                                                                   // }
             }
-            res.description = jsonHelper.stringify(description || responseBody[code].description || '');
+            res.description = description || responseBody[code].description || '';
             res.body = res.body;
             res.codes.push(String(code));
             data.push(res);
@@ -10132,7 +10015,7 @@
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
               endpoint.Summary = (currentMethod.summary || '').substring(0, 139);
-              endpoint.Description = jsonHelper.stringify(currentMethod.description);
+              endpoint.Description = currentMethod.description || currentMethod.summary;
               endpoint.Deprecated = currentMethod.deprecated;
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
@@ -20693,7 +20576,7 @@
           /**
  * @license
  * lodash <https://lodash.com/>
- * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -20703,7 +20586,7 @@
             /** Used as a safe reference for `undefined` in pre-ES5 environments. */
             var undefined;
             /** Used as the semantic version number. */
-            var VERSION = '4.16.4';
+            var VERSION = '4.16.6';
             /** Used as the size to enable large array optimizations. */
             var LARGE_ARRAY_SIZE = 200;
             /** Error message constants. */
@@ -20721,7 +20604,7 @@
             /** Used as default options for `_.truncate`. */
             var DEFAULT_TRUNC_LENGTH = 30, DEFAULT_TRUNC_OMISSION = '...';
             /** Used to detect hot functions by number of calls within a span of milliseconds. */
-            var HOT_COUNT = 500, HOT_SPAN = 16;
+            var HOT_COUNT = 800, HOT_SPAN = 16;
             /** Used to indicate the type of lazy iteratees. */
             var LAZY_FILTER_FLAG = 1, LAZY_MAP_FLAG = 2, LAZY_WHILE_FLAG = 3;
             /** Used as references for various `Number` constants. */
@@ -20768,7 +20651,7 @@
                 ]
               ];
             /** `Object#toString` result references. */
-            var argsTag = '[object Arguments]', arrayTag = '[object Array]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', objectTag = '[object Object]', promiseTag = '[object Promise]', proxyTag = '[object Proxy]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
+            var argsTag = '[object Arguments]', arrayTag = '[object Array]', asyncTag = '[object AsyncFunction]', boolTag = '[object Boolean]', dateTag = '[object Date]', domExcTag = '[object DOMException]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', nullTag = '[object Null]', objectTag = '[object Object]', promiseTag = '[object Promise]', proxyTag = '[object Proxy]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', undefinedTag = '[object Undefined]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
             var arrayBufferTag = '[object ArrayBuffer]', dataViewTag = '[object DataView]', float32Tag = '[object Float32Array]', float64Tag = '[object Float64Array]', int8Tag = '[object Int8Array]', int16Tag = '[object Int16Array]', int32Tag = '[object Int32Array]', uint8Tag = '[object Uint8Array]', uint8ClampedTag = '[object Uint8ClampedArray]', uint16Tag = '[object Uint16Array]', uint32Tag = '[object Uint32Array]';
             /** Used to match empty string literals in compiled template source. */
             var reEmptyStringLeading = /\b__p \+= '';/g, reEmptyStringMiddle = /\b(__p \+=) '' \+/g, reEmptyStringTrailing = /(__e\(.*?\)|\b__t\)) \+\n'';/g;
@@ -20819,11 +20702,11 @@
             /** Used to compose unicode capture groups. */
             var rsApos = '[\'\u2019]', rsAstral = '[' + rsAstralRange + ']', rsBreak = '[' + rsBreakRange + ']', rsCombo = '[' + rsComboMarksRange + rsComboSymbolsRange + ']', rsDigits = '\\d+', rsDingbat = '[' + rsDingbatRange + ']', rsLower = '[' + rsLowerRange + ']', rsMisc = '[^' + rsAstralRange + rsBreakRange + rsDigits + rsDingbatRange + rsLowerRange + rsUpperRange + ']', rsFitz = '\\ud83c[\\udffb-\\udfff]', rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')', rsNonAstral = '[^' + rsAstralRange + ']', rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}', rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]', rsUpper = '[' + rsUpperRange + ']', rsZWJ = '\\u200d';
             /** Used to compose unicode regexes. */
-            var rsLowerMisc = '(?:' + rsLower + '|' + rsMisc + ')', rsUpperMisc = '(?:' + rsUpper + '|' + rsMisc + ')', rsOptLowerContr = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?', rsOptUpperContr = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?', reOptMod = rsModifier + '?', rsOptVar = '[' + rsVarRange + ']?', rsOptJoin = '(?:' + rsZWJ + '(?:' + [
+            var rsMiscLower = '(?:' + rsLower + '|' + rsMisc + ')', rsMiscUpper = '(?:' + rsUpper + '|' + rsMisc + ')', rsOptContrLower = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?', rsOptContrUpper = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?', reOptMod = rsModifier + '?', rsOptVar = '[' + rsVarRange + ']?', rsOptJoin = '(?:' + rsZWJ + '(?:' + [
                 rsNonAstral,
                 rsRegional,
                 rsSurrPair
-              ].join('|') + ')' + rsOptVar + reOptMod + ')*', rsSeq = rsOptVar + reOptMod + rsOptJoin, rsEmoji = '(?:' + [
+              ].join('|') + ')' + rsOptVar + reOptMod + ')*', rsOrdLower = '\\d*(?:(?:1st|2nd|3rd|(?![123])\\dth)\\b)', rsOrdUpper = '\\d*(?:(?:1ST|2ND|3RD|(?![123])\\dTH)\\b)', rsSeq = rsOptVar + reOptMod + rsOptJoin, rsEmoji = '(?:' + [
                 rsDingbat,
                 rsRegional,
                 rsSurrPair
@@ -20845,18 +20728,20 @@
             var reUnicode = RegExp(rsFitz + '(?=' + rsFitz + ')|' + rsSymbol + rsSeq, 'g');
             /** Used to match complex or compound words. */
             var reUnicodeWord = RegExp([
-                rsUpper + '?' + rsLower + '+' + rsOptLowerContr + '(?=' + [
+                rsUpper + '?' + rsLower + '+' + rsOptContrLower + '(?=' + [
                   rsBreak,
                   rsUpper,
                   '$'
                 ].join('|') + ')',
-                rsUpperMisc + '+' + rsOptUpperContr + '(?=' + [
+                rsMiscUpper + '+' + rsOptContrUpper + '(?=' + [
                   rsBreak,
-                  rsUpper + rsLowerMisc,
+                  rsUpper + rsMiscLower,
                   '$'
                 ].join('|') + ')',
-                rsUpper + '?' + rsLowerMisc + '+' + rsOptLowerContr,
-                rsUpper + '+' + rsOptUpperContr,
+                rsUpper + '?' + rsMiscLower + '+' + rsOptContrLower,
+                rsUpper + '+' + rsOptContrUpper,
+                rsOrdUpper,
+                rsOrdLower,
                 rsDigits,
                 rsEmoji
               ].join('|'), 'g');
@@ -21211,7 +21096,7 @@
    * @returns {Function} Returns `accumulator`.
    */
             function arrayAggregator(array, setter, iteratee, accumulator) {
-              var index = -1, length = array ? array.length : 0;
+              var index = -1, length = array == null ? 0 : array.length;
               while (++index < length) {
                 var value = array[index];
                 setter(accumulator, value, iteratee(value), array);
@@ -21228,7 +21113,7 @@
    * @returns {Array} Returns `array`.
    */
             function arrayEach(array, iteratee) {
-              var index = -1, length = array ? array.length : 0;
+              var index = -1, length = array == null ? 0 : array.length;
               while (++index < length) {
                 if (iteratee(array[index], index, array) === false) {
                   break;
@@ -21246,7 +21131,7 @@
    * @returns {Array} Returns `array`.
    */
             function arrayEachRight(array, iteratee) {
-              var length = array ? array.length : 0;
+              var length = array == null ? 0 : array.length;
               while (length--) {
                 if (iteratee(array[length], length, array) === false) {
                   break;
@@ -21265,7 +21150,7 @@
    *  else `false`.
    */
             function arrayEvery(array, predicate) {
-              var index = -1, length = array ? array.length : 0;
+              var index = -1, length = array == null ? 0 : array.length;
               while (++index < length) {
                 if (!predicate(array[index], index, array)) {
                   return false;
@@ -21283,7 +21168,7 @@
    * @returns {Array} Returns the new filtered array.
    */
             function arrayFilter(array, predicate) {
-              var index = -1, length = array ? array.length : 0, resIndex = 0, result = [];
+              var index = -1, length = array == null ? 0 : array.length, resIndex = 0, result = [];
               while (++index < length) {
                 var value = array[index];
                 if (predicate(value, index, array)) {
@@ -21302,7 +21187,7 @@
    * @returns {boolean} Returns `true` if `target` is found, else `false`.
    */
             function arrayIncludes(array, value) {
-              var length = array ? array.length : 0;
+              var length = array == null ? 0 : array.length;
               return !!length && baseIndexOf(array, value, 0) > -1;
             }
             /**
@@ -21315,7 +21200,7 @@
    * @returns {boolean} Returns `true` if `target` is found, else `false`.
    */
             function arrayIncludesWith(array, value, comparator) {
-              var index = -1, length = array ? array.length : 0;
+              var index = -1, length = array == null ? 0 : array.length;
               while (++index < length) {
                 if (comparator(value, array[index])) {
                   return true;
@@ -21333,7 +21218,7 @@
    * @returns {Array} Returns the new mapped array.
    */
             function arrayMap(array, iteratee) {
-              var index = -1, length = array ? array.length : 0, result = Array(length);
+              var index = -1, length = array == null ? 0 : array.length, result = Array(length);
               while (++index < length) {
                 result[index] = iteratee(array[index], index, array);
               }
@@ -21367,7 +21252,7 @@
    * @returns {*} Returns the accumulated value.
    */
             function arrayReduce(array, iteratee, accumulator, initAccum) {
-              var index = -1, length = array ? array.length : 0;
+              var index = -1, length = array == null ? 0 : array.length;
               if (initAccum && length) {
                 accumulator = array[++index];
               }
@@ -21389,7 +21274,7 @@
    * @returns {*} Returns the accumulated value.
    */
             function arrayReduceRight(array, iteratee, accumulator, initAccum) {
-              var length = array ? array.length : 0;
+              var length = array == null ? 0 : array.length;
               if (initAccum && length) {
                 accumulator = array[--length];
               }
@@ -21409,7 +21294,7 @@
    *  else `false`.
    */
             function arraySome(array, predicate) {
-              var index = -1, length = array ? array.length : 0;
+              var index = -1, length = array == null ? 0 : array.length;
               while (++index < length) {
                 if (predicate(array[index], index, array)) {
                   return true;
@@ -21537,7 +21422,7 @@
    * @returns {number} Returns the mean.
    */
             function baseMean(array, iteratee) {
-              var length = array ? array.length : 0;
+              var length = array == null ? 0 : array.length;
               return length ? baseSum(array, iteratee) / length : NAN;
             }
             /**
@@ -22022,38 +21907,38 @@
    * var defer = _.runInContext({ 'setTimeout': setImmediate }).defer;
    */
             var runInContext = function runInContext(context) {
-              context = context ? _.defaults(root.Object(), context, _.pick(root, contextProps)) : root;
+              context = context == null ? root : _.defaults(root.Object(), context, _.pick(root, contextProps));
               /** Built-in constructor references. */
               var Array = context.Array, Date = context.Date, Error = context.Error, Function = context.Function, Math = context.Math, Object = context.Object, RegExp = context.RegExp, String = context.String, TypeError = context.TypeError;
               /** Used for built-in method references. */
               var arrayProto = Array.prototype, funcProto = Function.prototype, objectProto = Object.prototype;
               /** Used to detect overreaching core-js shims. */
               var coreJsData = context['__core-js_shared__'];
-              /** Used to detect methods masquerading as native. */
-              var maskSrcKey = function () {
-                  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-                  return uid ? 'Symbol(src)_1.' + uid : '';
-                }();
               /** Used to resolve the decompiled source of functions. */
               var funcToString = funcProto.toString;
               /** Used to check objects for own properties. */
               var hasOwnProperty = objectProto.hasOwnProperty;
               /** Used to generate unique IDs. */
               var idCounter = 0;
-              /** Used to infer the `Object` constructor. */
-              var objectCtorString = funcToString.call(Object);
+              /** Used to detect methods masquerading as native. */
+              var maskSrcKey = function () {
+                  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+                  return uid ? 'Symbol(src)_1.' + uid : '';
+                }();
               /**
      * Used to resolve the
      * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
      * of values.
      */
-              var objectToString = objectProto.toString;
+              var nativeObjectToString = objectProto.toString;
+              /** Used to infer the `Object` constructor. */
+              var objectCtorString = funcToString.call(Object);
               /** Used to restore the original `_` reference in `_.noConflict`. */
               var oldDash = root._;
               /** Used to detect if a method is native. */
               var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
               /** Built-in value references. */
-              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined, getPrototype = overArg(Object.getPrototypeOf, Object), iteratorSymbol = Symbol ? Symbol.iterator : undefined, objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
+              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined, getPrototype = overArg(Object.getPrototypeOf, Object), objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined, symIterator = Symbol ? Symbol.iterator : undefined, symToStringTag = Symbol ? Symbol.toStringTag : undefined;
               var defineProperty = function () {
                   try {
                     var func = getNative(Object, 'defineProperty');
@@ -22371,7 +22256,7 @@
      * @param {Array} [entries] The key-value pairs to cache.
      */
               function Hash(entries) {
-                var index = -1, length = entries ? entries.length : 0;
+                var index = -1, length = entries == null ? 0 : entries.length;
                 this.clear();
                 while (++index < length) {
                   var entry = entries[index];
@@ -22465,7 +22350,7 @@
      * @param {Array} [entries] The key-value pairs to cache.
      */
               function ListCache(entries) {
-                var index = -1, length = entries ? entries.length : 0;
+                var index = -1, length = entries == null ? 0 : entries.length;
                 this.clear();
                 while (++index < length) {
                   var entry = entries[index];
@@ -22569,7 +22454,7 @@
      * @param {Array} [entries] The key-value pairs to cache.
      */
               function MapCache(entries) {
-                var index = -1, length = entries ? entries.length : 0;
+                var index = -1, length = entries == null ? 0 : entries.length;
                 this.clear();
                 while (++index < length) {
                   var entry = entries[index];
@@ -22661,7 +22546,7 @@
      * @param {Array} [values] The values to cache.
      */
               function SetCache(values) {
-                var index = -1, length = values ? values.length : 0;
+                var index = -1, length = values == null ? 0 : values.length;
                 this.__data__ = new MapCache();
                 while (++index < length) {
                   this.add(values[index]);
@@ -22963,9 +22848,9 @@
      * @returns {Array} Returns the picked elements.
      */
               function baseAt(object, paths) {
-                var index = -1, isNil = object == null, length = paths.length, result = Array(length);
+                var index = -1, length = paths.length, result = Array(length), skip = object == null;
                 while (++index < length) {
-                  result[index] = isNil ? undefined : get(object, paths[index]);
+                  result[index] = skip ? undefined : get(object, paths[index]);
                 }
                 return result;
               }
@@ -23137,7 +23022,7 @@
                 }
                 outer:
                   while (++index < length) {
-                    var value = array[index], computed = iteratee ? iteratee(value) : value;
+                    var value = array[index], computed = iteratee == null ? value : iteratee(value);
                     value = comparator || value !== 0 ? value : 0;
                     if (isCommon && computed === computed) {
                       var valuesIndex = valuesLength;
@@ -23372,14 +23257,18 @@
                 return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
               }
               /**
-     * The base implementation of `getTag`.
+     * The base implementation of `getTag` without fallbacks for buggy environments.
      *
      * @private
      * @param {*} value The value to query.
      * @returns {string} Returns the `toStringTag`.
      */
               function baseGetTag(value) {
-                return objectToString.call(value);
+                if (value == null) {
+                  return value === undefined ? undefinedTag : nullTag;
+                }
+                value = Object(value);
+                return symToStringTag && symToStringTag in value ? getRawTag(value) : objectToString(value);
               }
               /**
      * The base implementation of `_.gt` which doesn't coerce arguments.
@@ -23513,7 +23402,7 @@
      * @returns {boolean} Returns `true` if `value` is an `arguments` object,
      */
               function baseIsArguments(value) {
-                return isObjectLike(value) && objectToString.call(value) == argsTag;
+                return isObjectLike(value) && baseGetTag(value) == argsTag;
               }
               /**
      * The base implementation of `_.isArrayBuffer` without Node.js optimizations.
@@ -23523,7 +23412,7 @@
      * @returns {boolean} Returns `true` if `value` is an array buffer, else `false`.
      */
               function baseIsArrayBuffer(value) {
-                return isObjectLike(value) && objectToString.call(value) == arrayBufferTag;
+                return isObjectLike(value) && baseGetTag(value) == arrayBufferTag;
               }
               /**
      * The base implementation of `_.isDate` without Node.js optimizations.
@@ -23533,7 +23422,7 @@
      * @returns {boolean} Returns `true` if `value` is a date object, else `false`.
      */
               function baseIsDate(value) {
-                return isObjectLike(value) && objectToString.call(value) == dateTag;
+                return isObjectLike(value) && baseGetTag(value) == dateTag;
               }
               /**
      * The base implementation of `_.isEqual` which supports partial comparisons
@@ -23684,7 +23573,7 @@
      * @returns {boolean} Returns `true` if `value` is a regexp, else `false`.
      */
               function baseIsRegExp(value) {
-                return isObject(value) && objectToString.call(value) == regexpTag;
+                return isObjectLike(value) && baseGetTag(value) == regexpTag;
               }
               /**
      * The base implementation of `_.isSet` without Node.js optimizations.
@@ -23704,7 +23593,7 @@
      * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
      */
               function baseIsTypedArray(value) {
-                return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
+                return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
               }
               /**
      * The base implementation of `_.iteratee`.
@@ -24273,7 +24162,7 @@
      *  into `array`.
      */
               function baseSortedIndex(array, value, retHighest) {
-                var low = 0, high = array ? array.length : low;
+                var low = 0, high = array == null ? low : array.length;
                 if (typeof value == 'number' && value === value && high <= HALF_MAX_ARRAY_LENGTH) {
                   while (low < high) {
                     var mid = low + high >>> 1, computed = array[mid];
@@ -24302,7 +24191,7 @@
      */
               function baseSortedIndexBy(array, value, iteratee, retHighest) {
                 value = iteratee(value);
-                var low = 0, high = array ? array.length : 0, valIsNaN = value !== value, valIsNull = value === null, valIsSymbol = isSymbol(value), valIsUndefined = value === undefined;
+                var low = 0, high = array == null ? 0 : array.length, valIsNaN = value !== value, valIsNull = value === null, valIsSymbol = isSymbol(value), valIsUndefined = value === undefined;
                 while (low < high) {
                   var mid = nativeFloor((low + high) / 2), computed = iteratee(array[mid]), othIsDefined = computed !== undefined, othIsNull = computed === null, othIsReflexive = computed === computed, othIsSymbol = isSymbol(computed);
                   if (valIsNaN) {
@@ -24509,11 +24398,20 @@
      * @returns {Array} Returns the new array of values.
      */
               function baseXor(arrays, iteratee, comparator) {
-                var index = -1, length = arrays.length;
-                while (++index < length) {
-                  var result = result ? arrayPush(baseDifference(result, arrays[index], iteratee, comparator), baseDifference(arrays[index], result, iteratee, comparator)) : arrays[index];
+                var length = arrays.length;
+                if (length < 2) {
+                  return length ? baseUniq(arrays[0]) : [];
                 }
-                return result && result.length ? baseUniq(result, iteratee, comparator) : [];
+                var index = -1, result = Array(length);
+                while (++index < length) {
+                  var array = arrays[index], othIndex = -1;
+                  while (++othIndex < length) {
+                    if (othIndex != index) {
+                      result[index] = baseDifference(result[index] || array, arrays[othIndex], iteratee, comparator);
+                    }
+                  }
+                }
+                return baseUniq(baseFlatten(result, 1), iteratee, comparator);
               }
               /**
      * This base implementation of `_.zipObject` which assigns values using `assignFunc`.
@@ -25818,6 +25716,30 @@
                 return baseIsNative(value) ? value : undefined;
               }
               /**
+     * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+     *
+     * @private
+     * @param {*} value The value to query.
+     * @returns {string} Returns the raw `toStringTag`.
+     */
+              function getRawTag(value) {
+                var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
+                try {
+                  value[symToStringTag] = undefined;
+                  var unmasked = true;
+                } catch (e) {
+                }
+                var result = nativeObjectToString.call(value);
+                if (unmasked) {
+                  if (isOwn) {
+                    value[symToStringTag] = tag;
+                  } else {
+                    delete value[symToStringTag];
+                  }
+                }
+                return result;
+              }
+              /**
      * Creates an array of the own enumerable symbol properties of `object`.
      *
      * @private
@@ -25852,7 +25774,7 @@
               // Fallback for data views, maps, sets, and weak maps in IE 11 and promises in Node.js < 6.
               if (DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag || Map && getTag(new Map()) != mapTag || Promise && getTag(Promise.resolve()) != promiseTag || Set && getTag(new Set()) != setTag || WeakMap && getTag(new WeakMap()) != weakMapTag) {
                 getTag = function (value) {
-                  var result = objectToString.call(value), Ctor = result == objectTag ? value.constructor : undefined, ctorString = Ctor ? toSource(Ctor) : undefined;
+                  var result = baseGetTag(value), Ctor = result == objectTag ? value.constructor : undefined, ctorString = Ctor ? toSource(Ctor) : '';
                   if (ctorString) {
                     switch (ctorString) {
                     case dataViewCtorString:
@@ -25937,7 +25859,7 @@
                 if (result || ++index != length) {
                   return result;
                 }
-                length = object ? object.length : 0;
+                length = object == null ? 0 : object.length;
                 return !!length && isLength(length) && isIndex(key, length) && (isArray(object) || isArguments(object));
               }
               /**
@@ -26297,6 +26219,16 @@
                 return result;
               }
               /**
+     * Converts `value` to a string using `Object.prototype.toString`.
+     *
+     * @private
+     * @param {*} value The value to convert.
+     * @returns {string} Returns the converted string.
+     */
+              function objectToString(value) {
+                return nativeObjectToString.call(value);
+              }
+              /**
      * A specialized version of `baseRest` which transforms the rest array.
      *
      * @private
@@ -26478,7 +26410,7 @@
      * Converts `func` to its source code.
      *
      * @private
-     * @param {Function} func The function to process.
+     * @param {Function} func The function to convert.
      * @returns {string} Returns the source code.
      */
               function toSource(func) {
@@ -26556,7 +26488,7 @@
                 } else {
                   size = nativeMax(toInteger(size), 0);
                 }
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length || size < 1) {
                   return [];
                 }
@@ -26582,7 +26514,7 @@
      * // => [1, 2, 3]
      */
               function compact(array) {
-                var index = -1, length = array ? array.length : 0, resIndex = 0, result = [];
+                var index = -1, length = array == null ? 0 : array.length, resIndex = 0, result = [];
                 while (++index < length) {
                   var value = array[index];
                   if (value) {
@@ -26737,7 +26669,7 @@
      * // => [1, 2, 3]
      */
               function drop(array, n, guard) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return [];
                 }
@@ -26770,7 +26702,7 @@
      * // => [1, 2, 3]
      */
               function dropRight(array, n, guard) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return [];
                 }
@@ -26826,8 +26758,7 @@
      * @since 3.0.0
      * @category Array
      * @param {Array} array The array to query.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @returns {Array} Returns the slice of `array`.
      * @example
      *
@@ -26885,7 +26816,7 @@
      * // => [4, '*', '*', 10]
      */
               function fill(array, value, start, end) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return [];
                 }
@@ -26904,8 +26835,7 @@
      * @since 1.1.0
      * @category Array
      * @param {Array} array The array to inspect.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @param {number} [fromIndex=0] The index to search from.
      * @returns {number} Returns the index of the found element, else `-1`.
      * @example
@@ -26932,7 +26862,7 @@
      * // => 2
      */
               function findIndex(array, predicate, fromIndex) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return -1;
                 }
@@ -26951,8 +26881,7 @@
      * @since 2.0.0
      * @category Array
      * @param {Array} array The array to inspect.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @param {number} [fromIndex=array.length-1] The index to search from.
      * @returns {number} Returns the index of the found element, else `-1`.
      * @example
@@ -26979,7 +26908,7 @@
      * // => 0
      */
               function findLastIndex(array, predicate, fromIndex) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return -1;
                 }
@@ -27005,7 +26934,7 @@
      * // => [1, 2, [3, [4]], 5]
      */
               function flatten(array) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 return length ? baseFlatten(array, 1) : [];
               }
               /**
@@ -27023,7 +26952,7 @@
      * // => [1, 2, 3, 4, 5]
      */
               function flattenDeep(array) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 return length ? baseFlatten(array, INFINITY) : [];
               }
               /**
@@ -27047,7 +26976,7 @@
      * // => [1, 2, 3, [4], 5]
      */
               function flattenDepth(array, depth) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return [];
                 }
@@ -27070,7 +26999,7 @@
      * // => { 'a': 1, 'b': 2 }
      */
               function fromPairs(pairs) {
-                var index = -1, length = pairs ? pairs.length : 0, result = {};
+                var index = -1, length = pairs == null ? 0 : pairs.length, result = {};
                 while (++index < length) {
                   var pair = pairs[index];
                   result[pair[0]] = pair[1];
@@ -27122,7 +27051,7 @@
      * // => 3
      */
               function indexOf(array, value, fromIndex) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return -1;
                 }
@@ -27147,7 +27076,7 @@
      * // => [1, 2]
      */
               function initial(array) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 return length ? baseSlice(array, 0, -1) : [];
               }
               /**
@@ -27226,9 +27155,8 @@
      */
               var intersectionWith = baseRest(function (arrays) {
                   var comparator = last(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
-                  if (comparator === last(mapped)) {
-                    comparator = undefined;
-                  } else {
+                  comparator = typeof comparator == 'function' ? comparator : undefined;
+                  if (comparator) {
                     mapped.pop();
                   }
                   return mapped.length && mapped[0] === arrays[0] ? baseIntersection(mapped, undefined, comparator) : [];
@@ -27249,7 +27177,7 @@
      * // => 'a~b~c'
      */
               function join(array, separator) {
-                return array ? nativeJoin.call(array, separator) : '';
+                return array == null ? '' : nativeJoin.call(array, separator);
               }
               /**
      * Gets the last element of `array`.
@@ -27266,7 +27194,7 @@
      * // => 3
      */
               function last(array) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 return length ? array[length - 1] : undefined;
               }
               /**
@@ -27291,7 +27219,7 @@
      * // => 1
      */
               function lastIndexOf(array, value, fromIndex) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return -1;
                 }
@@ -27386,8 +27314,7 @@
      * @category Array
      * @param {Array} array The array to modify.
      * @param {Array} values The values to remove.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
      * @returns {Array} Returns `array`.
      * @example
      *
@@ -27451,7 +27378,7 @@
      * // => ['b', 'd']
      */
               var pullAt = flatRest(function (array, indexes) {
-                  var length = array ? array.length : 0, result = baseAt(array, indexes);
+                  var length = array == null ? 0 : array.length, result = baseAt(array, indexes);
                   basePullAt(array, arrayMap(indexes, function (index) {
                     return isIndex(index, length) ? +index : index;
                   }).sort(compareAscending));
@@ -27470,8 +27397,7 @@
      * @since 2.0.0
      * @category Array
      * @param {Array} array The array to modify.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @returns {Array} Returns the new array of removed elements.
      * @example
      *
@@ -27527,7 +27453,7 @@
      * // => [3, 2, 1]
      */
               function reverse(array) {
-                return array ? nativeReverse.call(array) : array;
+                return array == null ? array : nativeReverse.call(array);
               }
               /**
      * Creates a slice of `array` from `start` up to, but not including, `end`.
@@ -27546,7 +27472,7 @@
      * @returns {Array} Returns the slice of `array`.
      */
               function slice(array, start, end) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return [];
                 }
@@ -27590,8 +27516,7 @@
      * @category Array
      * @param {Array} array The sorted array to inspect.
      * @param {*} value The value to evaluate.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
      * @returns {number} Returns the index at which `value` should be inserted
      *  into `array`.
      * @example
@@ -27625,7 +27550,7 @@
      * // => 1
      */
               function sortedIndexOf(array, value) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (length) {
                   var index = baseSortedIndex(array, value);
                   if (index < length && eq(array[index], value)) {
@@ -27666,8 +27591,7 @@
      * @category Array
      * @param {Array} array The sorted array to inspect.
      * @param {*} value The value to evaluate.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
      * @returns {number} Returns the index at which `value` should be inserted
      *  into `array`.
      * @example
@@ -27701,7 +27625,7 @@
      * // => 3
      */
               function sortedLastIndexOf(array, value) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (length) {
                   var index = baseSortedIndex(array, value, true) - 1;
                   if (eq(array[index], value)) {
@@ -27762,7 +27686,7 @@
      * // => [2, 3]
      */
               function tail(array) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 return length ? baseSlice(array, 1, length) : [];
               }
               /**
@@ -27823,7 +27747,7 @@
      * // => []
      */
               function takeRight(array, n, guard) {
-                var length = array ? array.length : 0;
+                var length = array == null ? 0 : array.length;
                 if (!length) {
                   return [];
                 }
@@ -27841,8 +27765,7 @@
      * @since 3.0.0
      * @category Array
      * @param {Array} array The array to query.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @returns {Array} Returns the slice of `array`.
      * @example
      *
@@ -27880,8 +27803,7 @@
      * @since 3.0.0
      * @category Array
      * @param {Array} array The array to query.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @returns {Array} Returns the slice of `array`.
      * @example
      *
@@ -27940,8 +27862,7 @@
      * @since 4.0.0
      * @category Array
      * @param {...Array} [arrays] The arrays to inspect.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
      * @returns {Array} Returns the new array of combined values.
      * @example
      *
@@ -27982,9 +27903,7 @@
      */
               var unionWith = baseRest(function (arrays) {
                   var comparator = last(arrays);
-                  if (isArrayLikeObject(comparator)) {
-                    comparator = undefined;
-                  }
+                  comparator = typeof comparator == 'function' ? comparator : undefined;
                   return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true), undefined, comparator);
                 });
               /**
@@ -28020,8 +27939,7 @@
      * @since 4.0.0
      * @category Array
      * @param {Array} array The array to inspect.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
      * @returns {Array} Returns the new duplicate free array.
      * @example
      *
@@ -28056,6 +27974,7 @@
      * // => [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }]
      */
               function uniqWith(array, comparator) {
+                comparator = typeof comparator == 'function' ? comparator : undefined;
                 return array && array.length ? baseUniq(array, undefined, comparator) : [];
               }
               /**
@@ -28181,8 +28100,7 @@
      * @since 4.0.0
      * @category Array
      * @param {...Array} [arrays] The arrays to inspect.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
      * @returns {Array} Returns the new array of filtered values.
      * @example
      *
@@ -28223,9 +28141,7 @@
      */
               var xorWith = baseRest(function (arrays) {
                   var comparator = last(arrays);
-                  if (isArrayLikeObject(comparator)) {
-                    comparator = undefined;
-                  }
+                  comparator = typeof comparator == 'function' ? comparator : undefined;
                   return baseXor(arrayFilter(arrays, isArrayLikeObject), undefined, comparator);
                 });
               /**
@@ -28292,7 +28208,8 @@
      * @since 3.8.0
      * @category Array
      * @param {...Array} [arrays] The arrays to process.
-     * @param {Function} [iteratee=_.identity] The function to combine grouped values.
+     * @param {Function} [iteratee=_.identity] The function to combine
+     *  grouped values.
      * @returns {Array} Returns the new array of grouped elements.
      * @example
      *
@@ -28649,8 +28566,7 @@
      * @since 0.5.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee to transform keys.
+     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
      * @returns {Object} Returns the composed aggregate object.
      * @example
      *
@@ -28683,8 +28599,7 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @param- {Object} [guard] Enables use as an iteratee for methods like `_.map`.
      * @returns {boolean} Returns `true` if all elements pass the predicate check,
      *  else `false`.
@@ -28729,8 +28644,7 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @returns {Array} Returns the new filtered array.
      * @see _.reject
      * @example
@@ -28769,8 +28683,7 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to inspect.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @param {number} [fromIndex=0] The index to search from.
      * @returns {*} Returns the matched element, else `undefined`.
      * @example
@@ -28806,8 +28719,7 @@
      * @since 2.0.0
      * @category Collection
      * @param {Array|Object} collection The collection to inspect.
-     * @param {Function} [predicate=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [predicate=_.identity] The function invoked per iteration.
      * @param {number} [fromIndex=collection.length-1] The index to search from.
      * @returns {*} Returns the matched element, else `undefined`.
      * @example
@@ -28828,8 +28740,7 @@
      * @since 4.0.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Array} Returns the new flattened array.
      * @example
      *
@@ -28852,8 +28763,7 @@
      * @since 4.7.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @returns {Array} Returns the new flattened array.
      * @example
      *
@@ -28876,8 +28786,7 @@
      * @since 4.7.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity]
-     *  The function invoked per iteration.
+     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
      * @param {number} [depth=1] The maximum recursion depth.
      * @returns {Array} Returns the new flattened array.
      * @example
@@ -28963,8 +28872,7 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee to transform keys.
+     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
      * @returns {Object} Returns the composed aggregate object.
      * @example
      *
@@ -29063,8 +28971,7 @@
      * @since 4.0.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity]
-     *  The iteratee to transform keys.
+     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
      * @returns {Object} Returns the composed aggregate object.
      * @example
      *
@@ -30022,7 +29929,7 @@
      * function. Its creation may be customized by replacing the `_.memoize.Cache`
      * constructor with one whose instances implement the
      * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
-     * method interface of `delete`, `get`, `has`, and `set`.
+     * method interface of `clear`, `delete`, `get`, `has`, and `set`.
      *
      * @static
      * @memberOf _
@@ -30056,7 +29963,7 @@
      * _.memoize.Cache = WeakMap;
      */
               function memoize(func, resolver) {
-                if (typeof func != 'function' || resolver && typeof resolver != 'function') {
+                if (typeof func != 'function' || resolver != null && typeof resolver != 'function') {
                   throw new TypeError(FUNC_ERROR_TEXT);
                 }
                 var memoized = function () {
@@ -30452,8 +30359,7 @@
      * // => '<p>fred, barney, &amp; pebbles</p>'
      */
               function wrap(value, wrapper) {
-                wrapper = wrapper == null ? identity : wrapper;
-                return partial(wrapper, value);
+                return partial(castFunction(wrapper), value);
               }
               /*------------------------------------------------------------------------*/
               /**
@@ -30557,6 +30463,7 @@
      * // => 0
      */
               function cloneWith(value, customizer) {
+                customizer = typeof customizer == 'function' ? customizer : undefined;
                 return baseClone(value, false, true, customizer);
               }
               /**
@@ -30609,6 +30516,7 @@
      * // => 20
      */
               function cloneDeepWith(value, customizer) {
+                customizer = typeof customizer == 'function' ? customizer : undefined;
                 return baseClone(value, true, true, customizer);
               }
               /**
@@ -30862,7 +30770,7 @@
      * // => false
      */
               function isBoolean(value) {
-                return value === true || value === false || isObjectLike(value) && objectToString.call(value) == boolTag;
+                return value === true || value === false || isObjectLike(value) && baseGetTag(value) == boolTag;
               }
               /**
      * Checks if `value` is a buffer.
@@ -30918,7 +30826,7 @@
      * // => false
      */
               function isElement(value) {
-                return value != null && value.nodeType === 1 && isObjectLike(value) && !isPlainObject(value);
+                return isObjectLike(value) && value.nodeType === 1 && !isPlainObject(value);
               }
               /**
      * Checks if `value` is an empty object, collection, map, or set.
@@ -30954,6 +30862,9 @@
      * // => false
      */
               function isEmpty(value) {
+                if (value == null) {
+                  return true;
+                }
                 if (isArrayLike(value) && (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' || isBuffer(value) || isTypedArray(value) || isArguments(value))) {
                   return !value.length;
                 }
@@ -31061,7 +30972,8 @@
                 if (!isObjectLike(value)) {
                   return false;
                 }
-                return objectToString.call(value) == errorTag || typeof value.message == 'string' && typeof value.name == 'string';
+                var tag = baseGetTag(value);
+                return tag == errorTag || tag == domExcTag || typeof value.message == 'string' && typeof value.name == 'string' && !isPlainObject(value);
               }
               /**
      * Checks if `value` is a finite primitive number.
@@ -31110,10 +31022,13 @@
      * // => false
      */
               function isFunction(value) {
+                if (!isObject(value)) {
+                  return false;
+                }
                 // The use of `Object#toString` avoids issues with the `typeof` operator
-                // in Safari 9 which returns 'object' for typed array and other constructors.
-                var tag = isObject(value) ? objectToString.call(value) : '';
-                return tag == funcTag || tag == genTag || tag == proxyTag;
+                // in Safari 9 which returns 'object' for typed arrays and other constructors.
+                var tag = baseGetTag(value);
+                return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
               }
               /**
      * Checks if `value` is an integer.
@@ -31450,7 +31365,7 @@
      * // => false
      */
               function isNumber(value) {
-                return typeof value == 'number' || isObjectLike(value) && objectToString.call(value) == numberTag;
+                return typeof value == 'number' || isObjectLike(value) && baseGetTag(value) == numberTag;
               }
               /**
      * Checks if `value` is a plain object, that is, an object created by the
@@ -31481,7 +31396,7 @@
      * // => true
      */
               function isPlainObject(value) {
-                if (!isObjectLike(value) || objectToString.call(value) != objectTag) {
+                if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
                   return false;
                 }
                 var proto = getPrototype(value);
@@ -31575,7 +31490,7 @@
      * // => false
      */
               function isString(value) {
-                return typeof value == 'string' || !isArray(value) && isObjectLike(value) && objectToString.call(value) == stringTag;
+                return typeof value == 'string' || !isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag;
               }
               /**
      * Checks if `value` is classified as a `Symbol` primitive or object.
@@ -31595,7 +31510,7 @@
      * // => false
      */
               function isSymbol(value) {
-                return typeof value == 'symbol' || isObjectLike(value) && objectToString.call(value) == symbolTag;
+                return typeof value == 'symbol' || isObjectLike(value) && baseGetTag(value) == symbolTag;
               }
               /**
      * Checks if `value` is classified as a typed array.
@@ -31673,7 +31588,7 @@
      * // => false
      */
               function isWeakSet(value) {
-                return isObjectLike(value) && objectToString.call(value) == weakSetTag;
+                return isObjectLike(value) && baseGetTag(value) == weakSetTag;
               }
               /**
      * Checks if `value` is less than `other`.
@@ -31755,8 +31670,8 @@
                 if (isArrayLike(value)) {
                   return isString(value) ? stringToArray(value) : copyArray(value);
                 }
-                if (iteratorSymbol && value[iteratorSymbol]) {
-                  return iteratorToArray(value[iteratorSymbol]());
+                if (symIterator && value[symIterator]) {
+                  return iteratorToArray(value[symIterator]());
                 }
                 var tag = getTag(value), func = tag == mapTag ? mapToArray : tag == setTag ? setToArray : values;
                 return func(value);
@@ -32169,7 +32084,7 @@
      */
               function create(prototype, properties) {
                 var result = baseCreate(prototype);
-                return properties ? baseAssign(result, properties) : result;
+                return properties == null ? result : baseAssign(result, properties);
               }
               /**
      * Assigns own and inherited enumerable string keyed properties of source
@@ -33227,7 +33142,7 @@
      * // => ['h', 'i']
      */
               function values(object) {
-                return object ? baseValues(object, keys(object)) : [];
+                return object == null ? [] : baseValues(object, keys(object));
               }
               /**
      * Creates an array of the own and inherited enumerable string keyed property
@@ -34481,7 +34396,7 @@
      * // => 'no match'
      */
               function cond(pairs) {
-                var length = pairs ? pairs.length : 0, toIteratee = getIteratee();
+                var length = pairs == null ? 0 : pairs.length, toIteratee = getIteratee();
                 pairs = !length ? [] : arrayMap(pairs, function (pair) {
                   if (typeof pair[1] != 'function') {
                     throw new TypeError(FUNC_ERROR_TEXT);
@@ -36144,8 +36059,8 @@
               lodash.prototype.toJSON = lodash.prototype.valueOf = lodash.prototype.value = wrapperValue;
               // Add lazy aliases.
               lodash.prototype.first = lodash.prototype.head;
-              if (iteratorSymbol) {
-                lodash.prototype[iteratorSymbol] = wrapperToIterator;
+              if (symIterator) {
+                lodash.prototype[symIterator] = wrapperToIterator;
               }
               return lodash;
             };
@@ -60896,11 +60811,71 @@ if (!String.prototype.endsWith) {
     'snippets',
     function (snippets) {
       var service = {};
-      service.getEmptyRaml = function () {
-        return [
-          '#%RAML 1.0',
-          'title:'
-        ].join('\n');
+      var emptyValues = [];
+      var extendValue = ['extends'];
+      var fragments = [
+          {
+            label: 'Trait',
+            keyValues: emptyValues
+          },
+          {
+            label: 'ResourceType',
+            keyValues: emptyValues
+          },
+          {
+            label: 'Library',
+            keyValues: ['usage']
+          },
+          {
+            label: 'Overlay',
+            keyValues: extendValue
+          },
+          {
+            label: 'Extension',
+            keyValues: extendValue
+          },
+          {
+            label: 'DataType',
+            keyValues: emptyValues
+          },
+          {
+            label: 'DocumentationItem',
+            keyValues: [
+              'title',
+              'content'
+            ]
+          },
+          {
+            label: 'NamedExample',
+            keyValues: ['value']
+          },
+          {
+            label: 'AnnotationTypeDeclaration',
+            keyValues: emptyValues
+          },
+          {
+            label: 'SecurityScheme',
+            keyValues: ['type']
+          },
+          {
+            label: '',
+            keyValues: ['title']
+          }
+        ];
+      function getRequiredValuesForFragment(typedFragment) {
+        return fragments.find(function (fragment) {
+          return fragment.label === typedFragment;
+        }).keyValues;
+      }
+      service.getEmptyRaml = function (ramlVersion, fragmentLabel) {
+        var version = ramlVersion ? ramlVersion : '1.0';
+        var type = fragmentLabel ? ' ' + fragmentLabel : '';
+        var requiredValues = getRequiredValuesForFragment(fragmentLabel ? fragmentLabel : '');
+        var ramlContent = ['#%RAML ' + version + type];
+        requiredValues.forEach(function (value) {
+          ramlContent.push(value + ':');
+        });
+        return ramlContent.join('\n');
       };
       service.getSnippet = function getSnippet(suggestion) {
         var key = suggestion.key;
@@ -61547,10 +61522,10 @@ if (!String.prototype.endsWith) {
           return file;
         });
       };
-      service.generateFile = function generateFile(parent, name) {
+      service.generateFile = function generateFile(parent, name, ramlVersion, fragmentLabel) {
         return service.createFile(parent, name).then(function (file) {
           if (file.extension === 'raml') {
-            file.contents = ramlSnippets.getEmptyRaml();
+            file.contents = ramlSnippets.getEmptyRaml(ramlVersion, fragmentLabel);
           }
           $rootScope.$broadcast('event:raml-editor-file-generated', file);
           return file;
@@ -62018,15 +61993,97 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'ramlRepository',
     'newNameModal',
     '$rootScope',
-    function newFolderService(ramlRepository, newNameModal, $rootScope) {
+    'generateName',
+    function newFolderService(ramlRepository, newNameModal, $rootScope, generateName) {
       var self = this;
-      self.prompt = function prompt(target) {
+      var specUrl = 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md#';
+      self.files = {
+        '0.8': {
+          '': {
+            label: '',
+            name: 'API Spec',
+            description: 'RAML 0.8 API Spec.',
+            spec: 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md'
+          }
+        },
+        '1.0': {
+          '': {
+            label: '',
+            name: 'API Spec',
+            description: 'RAML 1.0 API Spec.',
+            spec: specUrl + 'the-root-of-the-document'
+          },
+          'Trait': {
+            label: 'Trait',
+            name: 'Trait',
+            description: 'Define a single trait with common characteristics for methods.',
+            spec: specUrl + 'resource-types-and-traits'
+          },
+          'ResourceType': {
+            label: 'ResourceType',
+            name: 'Resource Type',
+            description: 'Define a single resource type with common characteristics for resources.',
+            spec: specUrl + 'resource-types-and-traits'
+          },
+          'Library': {
+            label: 'Library',
+            name: 'Library',
+            description: 'Define a collection of data type declarations, resource type declarations, trait declarations, and security scheme declarations into modular, externalized, reusable groups.',
+            spec: specUrl + 'libraries'
+          },
+          'Overlay': {
+            label: 'Overlay',
+            name: 'Overlay',
+            description: 'Define an overlay that adds or overrides nodes of a RAML API definition while preserving its behavioral, functional aspects.',
+            spec: specUrl + 'overlays'
+          },
+          'Extension': {
+            label: 'Extension',
+            name: 'Extension',
+            description: 'Define an extension that adds or modifies nodes of a RAML API definition.',
+            spec: specUrl + 'extensions'
+          },
+          'DataType': {
+            label: 'DataType',
+            name: 'Type',
+            description: 'Define a single data type declaration.',
+            spec: specUrl + '#raml-data-types'
+          },
+          'DocumentationItem': {
+            label: 'DocumentationItem',
+            name: 'User Documentation',
+            description: 'Define a single page documentation item.',
+            spec: specUrl + 'user-documentation'
+          },
+          'NamedExample': {
+            label: 'NamedExample',
+            name: 'Example',
+            description: 'Define a single example for a given data type.',
+            spec: specUrl + 'defining-examples-in-raml'
+          },
+          'AnnotationTypeDeclaration': {
+            label: 'AnnotationTypeDeclaration',
+            name: 'Annotation',
+            description: 'Define a single annotation type declaration that describes additional metadata that can be applied to any RAML node.',
+            spec: specUrl + 'annotations'
+          },
+          'SecurityScheme': {
+            label: 'SecurityScheme',
+            name: 'Security Scheme',
+            description: 'Define a single security scheme that describes the mechanism to secure data access, identify requests, and determine access level and data visibility.',
+            spec: specUrl + 'security-schemes'
+          }
+        }
+      };
+      function nameSuggestion(target, fragment, fragmentLabel) {
+        var names = target.children.map(function (file) {
+            return file.name;
+          });
+        var defaultName = (fragment.label !== '' ? fragmentLabel : 'api') + '-';
+        return generateName(names, defaultName, 'raml');
+      }
+      self.prompt = function prompt(target, ramlVersion, fragmentLabel) {
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var title = 'Add a new file';
-        var message = [
-            'For a new RAML spec, be sure to name your file <something>.raml; ',
-            'For files to be !included, feel free to use an extension or not.'
-          ].join('');
         var validations = [{
               message: 'That file name is already taken.',
               validate: function (input) {
@@ -62034,10 +62091,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 return !ramlRepository.getByPath(path);
               }
             }];
-        return newNameModal.open(message, '', validations, title).then(function (name) {
+        var label = fragmentLabel ? fragmentLabel : '';
+        var fragment = self.files[ramlVersion][label];
+        var suggestedName = nameSuggestion(target, fragment, fragmentLabel);
+        var title = 'Add new ' + fragment.name + ' file';
+        return newNameModal.open(fragment.description, suggestedName, validations, title, fragment.spec).then(function (name) {
           // Need to catch errors from `generateFile`, otherwise
           // `newNameModel.open` will error random modal close strings.
-          return ramlRepository.generateFile(parent, name).catch(function (err) {
+          return ramlRepository.generateFile(parent, name, ramlVersion, label).catch(function (err) {
             return $rootScope.$broadcast('event:notification', {
               message: err.message,
               expires: true,
@@ -62045,6 +62106,15 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             });
           });
         });
+      };
+      self.newFragmentFile = function newFragmentFile(homeDirectory, fragmentType) {
+        if (fragmentType === '') {
+          return self.prompt(homeDirectory, '1.0');
+        }
+        return self.prompt(homeDirectory, '1.0', fragmentType);
+      };
+      self.newFile = function newFile(homeDirectory, version) {
+        return self.prompt(homeDirectory, version);
       };
       return self;
     }
@@ -62613,6 +62683,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         });
         scope[subMenuName] = true;
       };
+      this.openSubMenu = function (scope, subMenuName) {
+        scope[subMenuName] = true;
+      };
     }
   ]);
 }());
@@ -62695,10 +62768,18 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function importSwaggerZip(mode) {
         $scope.importing = true;
-        return swaggerToRAML.zip(mode.value).then(function (contents) {
-          var filename = extractFileName(mode.value.name, 'raml');
-          return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
-        }).then(function () {
+        var importSwaggerPromise;
+        if (importService.isZip(mode.value)) {
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
+            $rootScope.$broadcast('event:save-all');
+          });
+        } else {
+          importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
+            var filename = extractFileName(mode.value.name, 'raml');
+            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+          });
+        }
+        importSwaggerPromise.then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
           broadcastError('Failed to parse Swagger: ' + err.message);
@@ -62814,7 +62895,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$modal',
     function newNameModal($modal) {
       var self = this;
-      self.open = function open(message, defaultName, validations, title) {
+      self.open = function open(message, defaultName, validations, title, link) {
         return $modal.open({
           templateUrl: 'views/new-name-modal.html',
           controller: 'NewNameController',
@@ -62831,6 +62912,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             },
             validations: function validationsResolver() {
               return validations;
+            },
+            link: function linkResolver() {
+              return link;
             }
           }
         }).result;
@@ -62845,11 +62929,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'defaultName',
     'validations',
     'title',
-    function NewNameController($modalInstance, $scope, message, defaultName, validations, title) {
+    'link',
+    function NewNameController($modalInstance, $scope, message, defaultName, validations, title, link) {
       $scope.input = {
         newName: defaultName,
         message: message,
-        title: title
+        title: title,
+        link: link
       };
       $scope.validationErrorMessage = '';
       $scope.isValid = function isValid(value) {
@@ -62874,7 +62960,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   ]);
   ;
 }());
-/* global swaggerToRamlObject, ramlObjectToRaml */
 (function () {
   'use strict';
   angular.module('ramlEditorApp').service('swaggerToRAML', [
@@ -62882,52 +62967,195 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$q',
     '$http',
     'importService',
-    function swaggerToRAML($window, $q, $http, importService) {
+    'apiSpecTransformer',
+    function swaggerToRAML($window, $q, $http, importService, apiSpecTransformer) {
       var self = this;
-      var proxy = $window.RAML.Settings.proxy || '';
-      function reader(filename, done) {
-        if (!/^https?\:\/\//.test(filename)) {
-          return done(new Error('Invalid file location: ' + filename));
+      function replaceExtension(path, ext) {
+        var index = path.lastIndexOf('.');
+        if (index > -1) {
+          path = path.substr(0, index);
         }
-        return $http.get(proxy + filename, { transformResponse: false }).then(function (response) {
-          return done(null, response.data);
-        }).catch(function (err) {
-          return done(new Error(err.data));
-        });
+        return path + '.' + ext;
       }
-      function parseResult(deferred) {
-        return function (err, result) {
-          if (err) {
-            return deferred.reject(err);
-          }
+      function ramlConverter() {
+        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.SWAGGER, apiSpecTransformer.Formats.RAML10);
+      }
+      function doConvert(error, converter, deferred) {
+        if (error) {
+          deferred.reject(error);
+        }
+        try {
+          converter.convert('yaml', function (err, result) {
+            if (err) {
+              return deferred.reject(err);
+            }
+            return deferred.resolve(result);
+          });
+        } catch (err) {
+          deferred.reject(err);
+        }
+      }
+      function convertData(content, deferred, options) {
+        var converter = ramlConverter();
+        converter.loadData(content, options).then(function (error) {
+          doConvert(error, converter, deferred);
+        }).catch(deferred.reject);
+        return deferred;
+      }
+      function convertZip(root, contents) {
+        var decimalRegexp = /^\d+\.\d+$/;
+        var swaggerYamlRegexp = /swagger\s*:\s*"{0,1}\d+\.\d+"{0,1}/;
+        function isSwaggerSpec(text) {
           try {
-            return deferred.resolve(ramlObjectToRaml(result));
-          } catch (e) {
-            return deferred.reject(e);
+            var parsedData = JSON.parse(text);
+            return decimalRegexp.test(parsedData.swagger);
+          } catch (err) {
+            // Possibly YAML Data
+            return swaggerYamlRegexp.test(text);
           }
+        }
+        var converter = function (files, name, deferred) {
+          var content = files[name];
+          // leave files that are not swagger unmodified
+          if (!isSwaggerSpec(content)) {
+            return deferred.resolve({
+              name: name,
+              content: content
+            });
+          }
+          // custom fileResolver to take in memory files from the zip
+          var fileResolver = {
+              canRead: function (path) {
+                return this.read(path) != null;
+              },
+              read: function (path) {
+                var url = path.url.replace(window.location.origin + '/', '');
+                for (var filename in files) {
+                  if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
+                    return files[filename];
+                  }
+                }
+                return null;
+              }
+            };
+          // convert main swagger spec
+          convertData(content, $q.defer(), {
+            resolve: {
+              file: fileResolver,
+              http: fileResolver
+            }
+          }).promise.then(function (convertedData) {
+            deferred.resolve({
+              name: replaceExtension(name, 'raml'),
+              content: convertedData
+            });
+          });
+          return deferred.promise;
         };
+        return importService.importZip(root, contents, converter);
       }
-      self.convert = function convert(url) {
+      self.url = function convert(url) {
+        // fetch and convert single file
         var deferred = $q.defer();
-        swaggerToRamlObject(url, reader, parseResult(deferred));
+        var converter = ramlConverter();
+        try {
+          converter.loadFile(url, function (error) {
+            doConvert(error, converter, deferred);
+          });
+        } catch (err) {
+          deferred.reject(err);
+        }
         return deferred.promise;
       };
-      self.zip = function zip(file) {
+      self.file = function zip(file) {
         var deferred = $q.defer();
-        if (!importService.isZip(file)) {
-          deferred.reject(new Error('Invalid zip file'));
-        } else {
-          importService.readFile(file).then(function (contents) {
-            var files = importService.parseZip(contents);
-            swaggerToRamlObject.files(Object.keys(files), function (filename, done) {
-              if (files.hasOwnProperty(filename)) {
-                return done(null, files[filename]);
-              }
-              return reader(filename, done);
-            }, parseResult(deferred));
-          });
-        }
+        importService.readFile(file).then(function (contents) {
+          convertData(contents, deferred);
+        }).catch(deferred.reject);
         return deferred.promise;
+      };
+      self.zip = function zip(rootDirectory, file) {
+        var deferred = $q.defer();
+        importService.readFile(file).then(function (contents) {
+          convertZip(rootDirectory, contents).then(deferred.resolve).catch(deferred.reject);
+        }).catch(deferred.reject);
+        return deferred.promise;
+      };
+      return self;
+    }
+  ]);
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').service('ramlToSwagger', [
+    '$q',
+    'ramlRepository',
+    'ramlEditorMainHelpers',
+    'apiSpecTransformer',
+    function ramlToSwagger($q, ramlRepository, ramlEditorMainHelpers, apiSpecTransformer) {
+      var self = this;
+      function findRootRaml() {
+        var defer = $q.defer();
+        var rootDirectory = ramlRepository.getByPath('/');
+        findRootRamlRecursive(rootDirectory, defer);
+        return defer.promise;
+      }
+      function loadFile(file, defer) {
+        (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: file.path })).then(function (loadedFile) {
+          if (ramlEditorMainHelpers.isApiDefinition(loadedFile.contents)) {
+            defer.resolve(loadedFile);
+          }
+        });
+      }
+      function findRootRamlRecursive(directory, defer) {
+        for (var i = 0; i < directory.children.length; i++) {
+          var child = directory.children[i];
+          if (child.isDirectory) {
+            findRootRamlRecursive(child, defer);
+          } else {
+            loadFile(child, defer);
+          }
+        }
+      }
+      function swaggerConverter() {
+        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.RAML10, apiSpecTransformer.Formats.SWAGGER);
+      }
+      function doConvert(converter, file, format, deferred) {
+        try {
+          converter.convert(format, function (err, result) {
+            if (err) {
+              return deferred.reject(err);
+            }
+            return deferred.resolve({
+              name: file.name,
+              contents: result
+            });
+          });
+        } catch (err) {
+          deferred.reject(err);
+        }
+      }
+      function convertData(file, format, deferred, options) {
+        var converter = swaggerConverter();
+        converter.loadData(file.contents, options).then(function () {
+          doConvert(converter, file, format, deferred);
+        }).catch(deferred.reject);
+        return deferred;
+      }
+      function toSwagger(format) {
+        var deferred = $q.defer();
+        findRootRaml().then(function (rootRaml) {
+          convertData(rootRaml, format, deferred);
+        }).catch(function (err) {
+          deferred.reject(err);
+        });
+        return deferred.promise;
+      }
+      self.json = function json() {
+        return toSwagger('json');
+      };
+      self.yaml = function yaml() {
+        return toSwagger('yaml');
       };
       return self;
     }
@@ -63230,12 +63458,22 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        *
        * @param  {Object}  directory
        * @param  {Object}  files
+       * @param  {Function}  converter
        * @return {Promise}
        */
-      function importZipFiles(directory, files) {
+      function importZipFiles(directory, files, converter) {
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
-              return self.createFile(directory, name, files[name]);
+              if (!converter) {
+                return self.createFile(directory, name, files[name]);
+              } else {
+                // convert content before importing file
+                var defer = $q.defer();
+                converter(files, name, defer);
+                return defer.promise.then(function (file) {
+                  return self.createFile(directory, file.name, file.content);
+                });
+              }
             };
           });
         return promiseChain(imports);
@@ -63738,6 +63976,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   angular.module('ramlEditorApp').factory('ramlEditorMainHelpers', function ramlEditorMainHelpers() {
     return {
       isRamlFile: isRamlFile,
+      isApiDefinition: isApiDefinition,
       isApiDefinitionLike: isApiDefinitionLike
     };
     // ---
@@ -64252,7 +64491,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }
             $timeout(function () {
               element[0].focus();
-            });
+            }, 100);
           });
         }
       };
@@ -64364,8 +64603,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'ramlRepository',
     'newFileService',
     'newFolderService',
+    'subMenuService',
     'scroll',
-    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, newFileService, newFolderService, scroll) {
+    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, newFileService, newFolderService, subMenuService, scroll) {
       function createActions(target) {
         var saveAction = {
             label: 'Save',
@@ -64375,8 +64615,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           };
         var newFileAction = {
             label: 'New File',
-            execute: function execute() {
-              return newFileService.prompt(target);
+            fragments: newFileService.files['1.0'],
+            execute: function execute(fragmentLabel) {
+              if (fragmentLabel) {
+                return newFileService.prompt(target, '1.0', fragmentLabel);
+              }
+            },
+            newFile: function newFile() {
+              return newFileService.prompt(target, '0.8');
             }
           };
         var newFolderAction = {
@@ -64447,6 +64693,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         restrict: 'E',
         templateUrl: 'views/raml-editor-context-menu.tmpl.html',
         link: function link(scope, element) {
+          scope.openFileMenu = function (action) {
+            if (action.label === 'New File') {
+              subMenuService.openSubMenu(scope, 'showFileMenu');
+            }
+          };
+          scope.closeFileMenu = function () {
+            scope.showFileMenu = false;
+          };
           function positionMenu(element, event) {
             var top = event.pageY;
             var left = event.pageX;
@@ -64459,7 +64713,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               }
             }, 0);
           }
-          function close() {
+          function close(e) {
+            if (e && e.target.firstChild.nodeValue.match('New File')) {
+              return;
+            }
             scroll.enable();
             scope.$apply(function () {
               delete contextMenuController.target;
@@ -64756,29 +65013,39 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorProjectButton', [
+    '$timeout',
+    '$window',
+    'subMenuService',
+    function ramlEditorProjectButton($timeout, $window, subMenuService) {
+      return {
+        restrict: 'E',
+        templateUrl: 'views/menu/project-menu.tmpl.html',
+        link: function (scope) {
+          scope.openProjectMenu = function () {
+            subMenuService.open(scope, 'showProjectMenu');
+          };
+          scope.openFileMenu = function () {
+            subMenuService.openSubMenu(scope, 'showFileMenu');
+          };
+          scope.closeFileMenu = function () {
+            scope.showFileMenu = false;
+          };
+        }
+      };
+    }
+  ]);
+}());
+(function () {
+  'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorSaveFileButton', [
     '$rootScope',
     'ramlRepository',
-    '$window',
-    '$timeout',
-    '$q',
-    'subMenuService',
-    function ramlEditorSaveFileButton($rootScope, ramlRepository, $window, $timeout, $q, subMenuService) {
+    function ramlEditorSaveFileButton($rootScope, ramlRepository) {
       return {
         restrict: 'E',
-        template: [
-          '<span role="save-button" ng-click="saveFile()"><i class="fa fa-save"></i>&nbsp;Save</span>',
-          '<span class="menu-item-toggle" ng-click="openContextMenu($event)">',
-          '  <i class="fa fa-caret-down"></i>',
-          '</span>',
-          '<ul role="context-menu" class="menu-item-context" ng-show="contextMenuOpen">',
-          '  <li role="context-menu-item" ng-click="saveAllFiles()">Save All</li>',
-          '</ul>'
-        ].join('\n'),
+        template: '<li role="save-button" ng-click="saveFile()">' + '<a><i class="fa fa-save"></i>&nbsp;Save</a>' + '</li>',
         link: function (scope) {
-          scope.openContextMenu = function () {
-            subMenuService.open(scope, 'contextMenuOpen');
-          };
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
             return ramlRepository.saveFile(file).then(function success() {
@@ -64788,6 +65055,25 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               });
             });
           };
+        }
+      };
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorSaveAllButton', [
+    '$rootScope',
+    'ramlRepository',
+    '$window',
+    '$timeout',
+    '$q',
+    function ramlEditorSaveAllButton($rootScope, ramlRepository, $window, $timeout, $q) {
+      return {
+        restrict: 'E',
+        template: '<li role="save-all-button" ng-click="saveAllFiles()">' + '<a><i class="fa fa-save"></i>&nbsp;Save All</a>' + '</li>',
+        link: function (scope) {
           scope.saveAllFiles = function saveAllFiles() {
             var promises = [];
             scope.homeDirectory.forEachChildDo(function (file) {
@@ -64805,9 +65091,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               });
             });
           };
-          scope.$on('event:save-all', function () {
-            scope.saveAllFiles();
-          });
         }
       };
     }
@@ -64821,7 +65104,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     function ramlEditorNewFolderButton(newFolderService) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
+        template: '<li ng-show="supportsFolders" role="new-folder-button" ng-click="newFolder()">' + '<a><i class="fa fa-folder-open"></i>&nbsp;New Folder</a>' + '</li>',
         link: function (scope) {
           scope.newFolder = function newFolder() {
             return newFolderService.prompt(scope.homeDirectory);
@@ -64834,15 +65117,40 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorNewFileButton', [
+  angular.module('ramlEditorApp').directive('ramlEditorNewFileMenu', [
     'newFileService',
-    function ramlEditorNewFileButton(newFileService) {
+    'subMenuService',
+    function ramlEditorNewFileMenu(newFileService, subMenuService) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
+        scope: {
+          showFileMenu: '=',
+          showFragmentMenu: '=',
+          openFileMenuCondition: '@',
+          menuRole: '@'
+        },
+        templateUrl: 'views/menu/new-file-menu.tmpl.html',
         link: function (scope) {
-          scope.newFile = function newFile() {
-            return newFileService.prompt(scope.homeDirectory);
+          scope.closeFragmentMenu = function () {
+            scope.showFragmentMenu = false;
+          };
+          scope.openFragmentMenu = function () {
+            subMenuService.openSubMenu(scope, 'showFragmentMenu');
+            scope.fragments = newFileService.files['1.0'];
+          };
+          scope.newFragmentFile = function newFragmentFile(fragmentType) {
+            return newFileService.newFragmentFile(scope.$parent.homeDirectory, fragmentType);
+          };
+          scope.newFile = function newFile(version) {
+            return newFileService.newFile(scope.$parent.homeDirectory, version);
+          };
+          scope.notSorted = function (fragments) {
+            if (!fragments) {
+              return [];
+            }
+            return Object.keys(fragments).map(function (f) {
+              return fragments[f];
+            });
           };
         }
       };
@@ -64852,22 +65160,63 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorExportFilesButton', [
-    '$rootScope',
+  angular.module('ramlEditorApp').directive('ramlEditorExportMenu', [
     'ramlRepository',
-    function ramlEditorExportFilesButton($rootScope, ramlRepository) {
+    'subMenuService',
+    'ramlToSwagger',
+    '$window',
+    '$rootScope',
+    function ramlEditorExportMenu(ramlRepository, subMenuService, ramlToSwagger, $window, $rootScope) {
       return {
         restrict: 'E',
-        template: '<span role="export-button" ng-click="exportFiles()"><i class="fa fa-download"></i>&nbsp;Export files</span>',
+        template: '<li role="export-zip" ng-click="exportZipFiles()">' + '<a><i class="fa fa-download"></i>&nbsp;Export files</a>' + '</li>',
         link: function (scope) {
-          scope.exportFiles = function exportFiles() {
+          function saveFile(yaml, name) {
+            var blob = new Blob([yaml], { type: 'application/json;charset=utf-8' });
+            $window.saveAs(blob, name);
+          }
+          function broadcastError(msg) {
+            return $rootScope.$broadcast('event:notification', {
+              message: msg,
+              expires: true,
+              level: 'error'
+            });
+          }
+          function replaceExtension(path, ext) {
+            var index = path.lastIndexOf('.');
+            if (index > -1) {
+              path = path.substr(0, index);
+            }
+            return path + '.' + ext;
+          }
+          scope.openExportMenu = function () {
+            subMenuService.openSubMenu(scope, 'showExportMenu');
+          };
+          scope.closeExportMenu = function () {
+            scope.showExportMenu = false;
+          };
+          scope.exportZipFiles = function exportZipFiles() {
             ramlRepository.exportFiles();
+          };
+          scope.exportJsonFiles = function exportJsonFiles() {
+            ramlToSwagger.json().then(function (convert) {
+              var lines = JSON.stringify(convert.contents, null, 2);
+              saveFile(lines, replaceExtension(convert.name, 'json'));
+            }).catch(function (error) {
+              broadcastError(error);
+            });
+          };
+          scope.exportYamlFiles = function exportYamlFiles() {
+            ramlToSwagger.yaml().then(function (convert) {
+              saveFile(convert.contents, replaceExtension(convert.name, 'yaml'));
+            }).catch(function (error) {
+              broadcastError(error);
+            });
           };
         }
       };
     }
   ]);
-  ;
 }());
 (function () {
   'use strict';
@@ -64877,7 +65226,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     function ramlEditorImportButton($injector, importModal) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="importFile()"><i class="fa fa-cloud-download"></i> Import</span>',
+        template: '<li role="import-button" ng-click="importFile()">' + '<a><i class="fa fa-cloud-download"></i> Import</a>' + '</li>',
         link: function (scope) {
           scope.importFile = function importFile() {
             return importModal.open();
@@ -64887,6 +65236,29 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     }
   ]);
   ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorViewButton', [
+    '$timeout',
+    '$window',
+    'subMenuService',
+    '$rootScope',
+    function ramlEditorViewButton($timeout, $window, subMenuService, $rootScope) {
+      return {
+        restrict: 'E',
+        templateUrl: 'views/menu/view-menu.tmpl.html',
+        link: function (scope) {
+          scope.openViewMenu = function () {
+            subMenuService.open(scope, 'showViewMenu');
+          };
+          scope.toogleBackgroundColor = function () {
+            $rootScope.$broadcast('event:toggle-theme');
+          };
+        }
+      };
+    }
+  ]);
 }());
 (function () {
   'use strict';
@@ -65345,12 +65717,16 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently only supports Swagger v1.2</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '</span>\n' + '<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md" target="_blank">Language Spec (0.8)</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">Language Spec (1.0)</a></li>\n' + '  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <hr class="line-with-linear-gradient">\n' + '  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/export-menu.tmpl.html', '<a>\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;OAS 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;OAS 2.0 YAML</a></li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a role="raml-specification" href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>\n' + '  <li rile="context-menu-item"><a role="raml-website" href="http://raml.org" target="_blank">raml.org Website</a></li>\n' + '  <li role="context-menu-item"><a role="report-raml-bug" href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <li role="context-menu-item"><a role="raml-guide" href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>\n' + '  <li role="context-menu-item" ng-click="openHelpModal()"><a role="raml-about">About</a></li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/new-file-menu.tmpl.html', '<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">\n' + '  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">\n' + '    <a>\n' + '        &nbsp;Raml 1.0\n' + '        <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '\n' + '    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">\n' + '      <li role="new-raml-{{fragment.name}}" ng-repeat="fragment in notSorted(fragments)" ng-click="newFragmentFile(fragment.label)">\n' + '        <a>&nbsp;{{ fragment.name }}</a>\n' + '      </li>\n' + '    </ul>\n' + '  </li>\n' + '\n' + '  <li role="new-raml-0.8" ng-click="newFile(\'0.8\')">\n' + '    <a>&nbsp;Raml 0.8 API Spec</a>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '\n' + '\n' + '  <!--Uncomment to include export menu-->\n' + '\n' + '  <!--<li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">-->\n' + '  <raml-editor-export-menu></raml-editor-export-menu>\n' + '  <!--</li>-->\n' + '</ul>\n');
+    $templateCache.put('views/menu/view-menu.tmpl.html', '<span class="menu-item-toggle" ng-click="openViewMenu($event)">\n' + '  <i class="fa fa-edit"></i>&nbsp;View\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showViewMenu">\n' + '  <li role="toogle-background" ng-click="toogleBackgroundColor()">\n' + '      <a>&nbsp;Toggle Background Color (ctrl+shift+t)</a>\n' + '  </li>\n' + '</ul>\n' + '\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
-    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
+    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p>\n' + '        Learn more\n' + '        <a ng-if="input.link" target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

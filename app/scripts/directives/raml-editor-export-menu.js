@@ -10,7 +10,12 @@
       $rootScope) {
         return {
           restrict: 'E',
-          templateUrl: 'views/menu/export-menu.tmpl.html',
+          template:
+          '<li role="export-zip" ng-click="exportZipFiles()">' +
+            '<a><i class="fa fa-download"></i>&nbsp;Export files</a>' +
+          '</li>',
+          // Uncomment to include export menu
+          // templateUrl: 'views/menu/export-menu.tmpl.html',
           link: function (scope) {
 
             function saveFile(yaml, name) {
