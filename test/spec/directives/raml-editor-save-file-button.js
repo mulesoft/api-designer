@@ -7,8 +7,18 @@ describe('ramlEditorSaveFileButton', function() {
     el = compileTemplate('<raml-editor-save-file-button></raml-editor-save-file-button>', scope);
   }
 
+  function compileSaveAllFileButton() {
+    el = compileTemplate('<raml-editor-save-all-file-button></raml-editor-save-all-file-button>', scope);
+  }
+
   function clickSaveFileButton() {
     angular.element(el[0].querySelector('[role="save-button"]')).triggerHandler('click');
+  }
+
+  function clickSaveAllFileButton() {
+    angular.element(el[0].querySelector('[role="save-all-button"]')).triggerHandler('click');
+    //angular.element(el[0].querySelector('[role="context-menu"]')).triggerHandler('click');
+    //angular.element(el[0].querySelector('[role="context-menu"]')).scope().$broadcast('event:save-all');
   }
 
   beforeEach(module('ramlEditorApp'));
@@ -26,7 +36,7 @@ describe('ramlEditorSaveFileButton', function() {
     scope.homeDirectory = {
       children: [scope.fileBrowser.selectedFile],
       forEachChildDo: function(action) {
-        for (var i = 0; i < this.children.length; i++) {
+        for (var i = 0, len = this.children.length; i < len; i++) {
           action.call(this.children[i], this.children[i]);
         }
       }
@@ -65,6 +75,31 @@ describe('ramlEditorSaveFileButton', function() {
       it('broadcasts an event', function() {
         broadcastSpy.should.have.been.calledWith('event:notification', {
           message: 'File saved.',
+          expires: true
+        });
+      });
+    });
+  });
+
+	// todo re-add
+  describe.skip('on save all click', function() {
+    var saveFileSpy, broadcastSpy;
+
+    beforeEach(inject(function($rootScope) {
+      broadcastSpy = sandbox.spy($rootScope, '$broadcast');
+      saveFileSpy = sandbox.stub(ramlRepository, 'saveFile').returns(promise.resolved());
+      compileSaveAllFileButton();
+    }));
+
+    describe('when ramlRepository successfully saves', function() {
+      beforeEach(inject(function($rootScope) {
+        clickSaveAllFileButton();
+        $rootScope.$digest();
+      }));
+
+      it('broadcasts an event', function() {
+        broadcastSpy.should.have.been.calledWith('event:notification', {
+          message: 'All files saved.',
           expires: true
         });
       });

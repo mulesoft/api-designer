@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlExpander, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -158,19 +158,16 @@
         $scope.loadRaml(file.contents, file.path).then(
           // success
           safeApplyWrapper($scope, function success(api) {
-            // hack: we have to make a full copy of an object because console modifies
-            // it later and makes it unusable for mocking service
             var raml = ramlParserAdapter.expandApiToJSON(api);
-            var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
+            ramlExpander.expandRaml(raml);
 
             $scope.fileBrowser.selectedFile.raml = raml;
-            $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
+            $rootScope.$broadcast('event:raml-parsed', raml);
 
-            $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
-
-            // a success, but with warnings
-            if (api.errors().length > 0) {
-              $rootScope.$broadcast('event:raml-parser-error', {parserErrors: api.errors()});
+            // a success, but with warnings (takes to long... skip for now until improvements on parser)
+            var errors = api.errors();
+            if (errors.length > 0) {
+              $rootScope.$broadcast('event:raml-parser-error', {parserErrors: errors});
             }
           }),
 
@@ -181,9 +178,8 @@
         );
       });
 
-      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml, ramlExpanded) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
         $scope.raml         = raml;
-        $scope.ramlExpanded = ramlExpanded;
         $scope.title        = raml && raml.title;
         $scope.version      = raml && raml.version;
         $scope.currentError = undefined;
@@ -192,6 +188,7 @@
 
       $scope.$on('event:raml-parser-error', safeApplyWrapper($scope, function onRamlParserError(event, error) {
         var parserErrors = error.parserErrors || [{line: 0, column: 1, message: error.message, isWarning: error.isWarning}];
+
         codeMirrorErrors.displayAnnotations(parserErrors.map(function mapErrorToAnnotation(error) {
           var errorInfo = error;
           var tracingInfo = { line : undefined, column : undefined, path : undefined };

@@ -1681,7 +1681,7 @@
           });
         return finalPromise;
       }
-      function getSuggestions(request, provider, preParsedAst) {
+      function getSuggestions(request, provider, preParsedAst, project) {
         if (preParsedAst === void 0) {
           preParsedAst = undefined;
         }
@@ -1694,7 +1694,7 @@
           var offset = request.content.getOffset();
           var text = request.content.getText();
           var kind = completionKind(request);
-          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider);
+          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider, true, true, project);
           var hlnode = node;
           if (kind === parserApi.search.LocationKind.DIRECTIVE_COMPLETION) {
             return [{ text: 'include' }];
@@ -2088,7 +2088,7 @@
       function completionKind(request) {
         return parserApi.search.determineCompletionKind(request.content.getText(), request.content.getOffset());
       }
-      function getAstNode(request, contentProvider, clearLastChar, allowNull) {
+      function getAstNode(request, contentProvider, clearLastChar, allowNull, oldProject) {
         if (clearLastChar === void 0) {
           clearLastChar = true;
         }
@@ -2096,7 +2096,7 @@
           allowNull = true;
         }
         var newProjectId = contentProvider.contentDirName(request.content);
-        var project = parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
+        var project = oldProject || parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
         var offset = request.content.getOffset();
         var text = request.content.getText();
         var kind = completionKind(request);
@@ -3159,7 +3159,8 @@
         var parsedExample = search.parseStructuredExample(node, contentType);
         if (!parsedExample)
           return [];
-        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request));
+        var project = node && node.lowLevel() && node.lowLevel().unit() && node.lowLevel().unit().project();
+        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request), project);
       }
       function postProcess(providerSuggestions, request) {
         var prepared = postProcess1(providerSuggestions, request);
@@ -6538,26 +6539,30 @@
               } else if (id === '$ref') {
                 object.type = val.replace('#/definitions/', '');
                 delete object[id];
+              } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum') {
+                delete object[id];
               }
             }
           }
           return object;
         };
         RAML.prototype._mapTraits = function (slTraits, mimeType) {
-          var traits = [];
+          var traits = this.initializeTraits();
+          // var traits = [];
+          // var traitMap = {};
           for (var i in slTraits) {
             if (!slTraits.hasOwnProperty(i))
               continue;
             var slTrait = slTraits[i], trait = {};
             try {
-              var queryString = JSON.parse(slTrait.request.queryString);
+              var queryString = jsonHelper.parse(slTrait.request.queryString);
               if (!jsonHelper.isEmptySchema(queryString)) {
                 trait.queryParameters = this._mapNamedParams(queryString);
               }
             } catch (e) {
             }
             try {
-              var headers = JSON.parse(slTrait.request.headers);
+              var headers = jsonHelper.parse(slTrait.request.headers);
               if (!jsonHelper.isEmptySchema(headers)) {
                 trait.headers = this._mapNamedParams(headers);
               }
@@ -6569,10 +6574,16 @@
               }
             } catch (e) {
             }
-            var newTrait = {};
-            newTrait[_.camelCase(slTrait.name)] = trait;
-            traits.push(newTrait);
+            this.addTrait(slTrait.name, trait, traits);  //   var traitKey = _.camelCase(slTrait.name);
+                                                         //   var newTrait = {};
+                                                         //   newTrait[traitKey] = trait;
+                                                         //   traits.push(newTrait);
+                                                         //   traitMap[traitKey] = trait;
           }
+          //
+          // if (this.version() === '1.0') {
+          //   return traitMap;
+          // }
           return traits;
         };
         RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
@@ -6671,7 +6682,7 @@
               method.description = endpoint.Description;
             }
             if (endpoint.Summary) {
-              method.description = endpoint.Summary + '. ' + method.description;
+              method.description = endpoint.Summary + (method.description ? '. ' + method.description : '');
             }
             var is = this._mapEndpointTraits(this.project.Traits, endpoint);
             if (is.length) {
@@ -6796,7 +6807,7 @@
         RAML.prototype._getData = function (format) {
           switch (format) {
           case 'yaml':
-            var yaml = this._unescapeYamlIncludes(YAML.dump(JSON.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
+            var yaml = this._unescapeYamlIncludes(YAML.dump(jsonHelper.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
             return '#%RAML ' + this.version() + '\n' + yaml;
           default:
             throw Error('RAML doesn not support ' + format + ' format');
@@ -6831,6 +6842,12 @@
         };
         RAML.prototype.setMethodDisplayName = function (method, displayName) {
           throw new Error('setMethodDisplayName method not implemented');
+        };
+        RAML.prototype.initializeTraits = function () {
+          throw new Error('initializeTraits method not implemented');
+        };
+        RAML.prototype.addTrait = function (id, trait, traits) {
+          throw new Error('addTrait method not implemented');
         };
         module.exports = RAML;
       },
@@ -7063,6 +7080,14 @@
         };
         RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
         };
+        RAML08.prototype.initializeTraits = function () {
+          return [];
+        };
+        RAML08.prototype.addTrait = function (id, trait, traits) {
+          var newTrait = {};
+          newTrait[_.camelCase(id)] = trait;
+          traits.push(newTrait);
+        };
         module.exports = RAML08;
       },
       {
@@ -7116,7 +7141,7 @@
           var body = jsonHelper.parse(bodyData.body);
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
-            result.example = jsonHelper.format(bodyData.example);
+            result.example = jsonHelper.parse(bodyData.example);
           }
           return result;
         };
@@ -7165,6 +7190,7 @@
           return object;
         };
         RAML10.prototype.convertAllOfAttribute = function (definition) {
+          var result = {};
           var allOfTypes = [];
           if (!definition.allOf)
             return definition;
@@ -7173,16 +7199,17 @@
               continue;
             var allOf = definition.allOf[j];
             if (allOf.properties) {
-              definition = this.mapSchemaProperties(allOf);
-              break;
-            }
-            if (allOf.type) {
+              result = this.mapSchemaProperties(allOf);
+            } else if (allOf.type) {
               allOfTypes.push(allOf.type);
             }
           }
-          definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-          delete definition.allOf;
-          return definition;
+          result.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          delete result.allOf;
+          // definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          //
+          // delete definition.allOf;
+          return result;
         };
         RAML10.prototype.mapSchema = function (slSchemas) {
           var results = {};
@@ -7198,8 +7225,17 @@
                 definition = this.mapSchemaProperties(definition);
               }
             }
+            if (definition.additionalProperties) {
+              if (!definition.properties) {
+                definition.properties = {};
+              }
+              definition.properties['//'] = definition.additionalProperties;
+              delete definition.additionalProperties;
+            }
             if (schema.example) {
-              definition.example = jsonHelper.parse(schema.example);
+              definition.example = jsonHelper.parse(schema.example);  // var example = jsonHelper.parse(schema.example);
+                                                                      // if (!_.isEmpty(example)) {
+                                                                      // 	definition.example = example;
             }
             results[schema.NameSpace] = definition;
           }
@@ -7243,6 +7279,12 @@
         };
         RAML10.prototype.setMethodDisplayName = function (method, displayName) {
           method.displayName = displayName;
+        };
+        RAML10.prototype.initializeTraits = function () {
+          return {};
+        };
+        RAML10.prototype.addTrait = function (id, trait, traits) {
+          traits[_.camelCase(id)] = trait;
         };
         module.exports = RAML10;
       },
@@ -7627,6 +7669,7 @@
             if (!_.isEmpty(prop.description)) {
               param.description = prop.description;
             }
+            this._addPatternedObjects(prop, param);
             parameters.push(param);
           }
           return parameters;
@@ -7881,6 +7924,17 @@
                 swaggerDef.paths[endpoint.Path][endpoint.Method]['security'] = security;
               }
             }
+            this._addPatternedObjects(endpoint, swaggerDef.paths[endpoint.Path][endpoint.Method]);
+          }
+        };
+        Swagger.prototype._addPatternedObjects = function (source, target) {
+          for (var key in source) {
+            if (!source.hasOwnProperty(key))
+              continue;
+            var value = source[key];
+            if (_.startsWith(key, 'x-')) {
+              target[key] = value;
+            }
           }
         };
         Swagger.prototype._mapTraitParameters = function (traits) {
@@ -7937,6 +7991,9 @@
           if (hostUrl.path && hostUrl.path !== '/') {
             swaggerDef.BasePath = urlHelper.join(hostUrl.path, env.BasePath);
           }
+          if (this._isTemplateUri(swaggerDef.basePath)) {
+            this._convertToTemplateUri(swaggerDef);
+          }
           if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
             var filteredSchemes = [];
             env.Protocols.map(function (p) {
@@ -7950,6 +8007,14 @@
           } else {
             delete swaggerDef.schemes;
           }
+        };
+        Swagger.prototype._isTemplateUri = function (uri) {
+          var decodeUri = decodeURI(uri);
+          return decodeUri.indexOf('{') !== -1 || decodeUri.indexOf('}') !== -1;
+        };
+        Swagger.prototype._convertToTemplateUri = function (swaggerDef) {
+          swaggerDef['x-basePath'] = decodeURI(swaggerDef.basePath);
+          delete swaggerDef.basePath;
         };
         Swagger.prototype._export = function () {
           //TODO
@@ -8419,6 +8484,7 @@
               description: key.displayName || key.description || '',
               type: key.type || 'string'
             };
+            this._addAnnotations(key, pathParams.properties[key.name]);
           }
           return pathParams;
         };
@@ -8437,7 +8503,7 @@
               result.example = jsonHelper.stringify(result.example, 4);
             }
             if (response.description) {
-              result.description = response.description;
+              result.description = jsonHelper.stringify(response.description);
             }
             data.push(result);
           }
@@ -8459,18 +8525,23 @@
         RAML.prototype.isValidRefValue = function (value) {
           return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
         };
-        // from type=type1 to ref=type1
+        // from type=type1 & schema=type1 to ref=type1
         RAML.prototype.convertRefToModel = function (object) {
+          // if the object is a string, that means it's a direct ref/type
+          if (typeof object === 'string') {
+            return { $ref: '#/definitions/' + object };
+          }
           for (var id in object) {
+            var isType = id == 'type';
             if (!object.hasOwnProperty(id))
               continue;
-            if (id == 'type' && _.isArray(object[id]) && object[id].length == 1) {
+            if (isType && _.isArray(object[id]) && object[id].length == 1) {
               object[id] = object[id][0];
             }
             var val = object[id];
             if (!val)
               continue;
-            if (id == 'type' && this.isValidRefValues(val)) {
+            if (isType && this.isValidRefValues(val)) {
               object.ref = val;
               delete object[id];
             } else if (typeof val === 'object') {
@@ -8488,7 +8559,12 @@
                 //delete garbage
                 delete object[id];
               } else {
-                object[id] = this.convertRefToModel(val);
+                if (id == 'xml') {
+                  //no process xml object
+                  object[id] = val;
+                } else {
+                  object[id] = this.convertRefToModel(val);
+                }
               }
             } else if (id == 'name') {
               //delete garbage
@@ -8529,7 +8605,7 @@
             var endpoint = new Endpoint(summary);
             endpoint.Method = method.method;
             endpoint.Path = baseURI + resource.relativeUri;
-            endpoint.Description = method.description ? method.description : '';
+            endpoint.Description = method.description ? jsonHelper.stringify(method.description) : '';
             endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
             if (method.body) {
               var c = this.mapMimeTypes(method.body, this.data.mediaType);
@@ -8555,7 +8631,7 @@
               endpoint.Responses = this._mapResponseBody(method.responses);
             }
             endpoint.traits = [];
-            var isMethod = method.is;
+            var isMethod = method.is || resource.is;
             if (isMethod) {
               if (isMethod instanceof Array) {
                 endpoint.traits = isMethod;
@@ -8582,6 +8658,8 @@
                 }
               }
             }
+            //add annotations
+            this._addAnnotations(method, endpoint);
             //TODO endpoint security
             this.project.addEndpoint(endpoint);
           }
@@ -8609,19 +8687,18 @@
           }
         };
         RAML.prototype.loadFile = function (filePath, cb) {
-          var me = this;
-          parser.loadApi(filePath, parseOptions).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
-          }, function (error) {
-            cb(error);
-          });
+          return this.loadFileWithOptions(filePath, parseOptions, cb);
         };
         RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
           var me = this;
-          parser.loadApi(filePath, _.merge(parseOptions, options)).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
+          var mergedOptions = _.merge(parseOptions, options);
+          parser.loadApi(filePath, mergedOptions).then(function (api) {
+            try {
+              me.data = api.expand(false).toJSON(toJSONOptions);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
           }, function (error) {
             cb(error);
           });
@@ -8634,11 +8711,10 @@
               if (parsedData.name === 'Error') {
                 reject(error);
               } else {
-                me.data = parsedData.toJSON(toJSONOptions);
+                me.data = parsedData.expand(false).toJSON(toJSONOptions);
                 resolve();
               }
             } catch (e) {
-              console.error('raml#loadData', e, data, options);
               reject(e);
             }
           });
@@ -8666,7 +8742,7 @@
                   responses: []
                 };
               if (!_.isEmpty(trait.usage)) {
-                slTrait.description = trait.usage;
+                slTrait.description = jsonHelper.stringify(trait.usage);
               } else {
                 delete slTrait.description;
               }
@@ -8685,6 +8761,20 @@
             }
           }
           return slTraits;
+        };
+        RAML.prototype._addAnnotations = function (source, target) {
+          if (!source.annotations)
+            return;
+          var annotations = source.annotations;
+          for (var i in annotations) {
+            if (!annotations.hasOwnProperty(i))
+              continue;
+            var value = annotations[i];
+            var key = 'x-annotation-' + value.name;
+            target[key] = value.structuredValue;
+          }
+          if (target.annotations)
+            delete target.annotations;
         };
         RAML.prototype._import = function () {
           try {
@@ -8725,8 +8815,10 @@
             }
             this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
             var resources = this.data.resources;
-            for (var i = 0; i < resources.length; i++) {
-              this._mapEndpoint(resources[i], '', {});
+            if (!_.isEmpty(resources)) {
+              for (var i = 0; i < resources.length; i++) {
+                this._mapEndpoint(resources[i], '', {});
+              }
             }
             var schemas = this._mapSchema(this.getSchema(this.data));
             for (var s in schemas) {
@@ -9294,65 +9386,74 @@
               var sd = new Schema(schemaName);
               sd.Name = schemaName;
               var definition = schemData[i][schemaName];
-              var data = null;
+              var properties = null;
+              var result = definition;
               if (definition.properties && !_.isEmpty(definition.properties)) {
-                data = {
+                properties = {
                   properties: {},
                   type: 'object',
                   required: []
                 };
                 if (definition.description) {
-                  data.description = definition.description;
+                  properties.description = jsonHelper.stringify(definition.description);
                 }
                 for (var paramName in definition.properties) {
                   if (!definition.properties.hasOwnProperty(paramName))
                     continue;
                   var param = definition.properties[paramName];
-                  data.properties[paramName] = param;
+                  if (this.isArray(param)) {
+                    properties.properties[paramName] = this.convertArray(param);
+                  } else {
+                    properties.properties[paramName] = param;
+                  }
+                  //add annotations
+                  this._addAnnotations(param, properties.properties[paramName]);
                   if (param.hasOwnProperty('required')) {
                     if (param.required == true) {
-                      data['required'].push(paramName);
+                      properties['required'].push(paramName);
                     }
                     delete param.required;
                   } else {
                     //required true by default.
-                    data['required'].push(paramName);
+                    properties['required'].push(paramName);
                   }
                 }
-                if (data.required && data.required.length == 0) {
-                  delete data.required;
+                if (properties.required && properties.required.length == 0) {
+                  delete properties.required;
                 }
               }
               if (definition.type && definition.type != 'object') {
                 //type
-                if (data) {
+                if (properties) {
                   //type and properties
-                  definition.allOf = definition.type;
-                  definition.allOf.push(data);
-                  delete definition.type;
-                  delete definition.properties;
+                  result.allOf = definition.type;
+                  result.allOf.push(properties);
+                  delete result.type;
+                  delete result.properties;
                 } else {
                   if (_.isArray(definition.type) && definition.type.length > 1) {
-                    definition.allOf = definition.type;
-                    delete definition.type;
+                    result.allOf = definition.type;
+                    delete result.type;
                   } else if (this.isArray(definition)) {
                     //check for array
                     //convert array
-                    definition = this.convertArray(definition);
+                    result = this.convertArray(definition);
                   } else if (this.isFacet(definition)) {
                     //check for facets
-                    definition = this.convertFacet(definition);
+                    result = this.convertFacet(definition);
                   } else if (this.isFixedFacet(definition)) {
-                    definition = this.convertFixedFacet(definition);
+                    result = this.convertFixedFacet(definition);
                   } else {
-                    definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                    result = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
                   }
                 }
               } else {
                 //only properties
-                definition = data;
+                result = properties;
               }
-              sd.Definition = this.convertRefToModel(definition);
+              //add annotations
+              this._addAnnotations(definition, result);
+              sd.Definition = this.convertRefToModel(result);
               schemas.push(sd);
             }
           }
@@ -9369,16 +9470,28 @@
           return definition.fixedFacets;
         };
         RAML10.prototype.convertArray = function (definition) {
-          var items;
           if (definition.items.type) {
-            items = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
+            definition.items.type = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
           } else {
-            items = definition.items;
+            var items = definition.items;
+            if (this.isRamlArray(items)) {
+              definition.items = this.convertArray(this.convertRamlArray(definition.items));
+            } else {
+              definition.items = {};
+              definition.items.type = items;
+            }
           }
-          definition.items = {};
-          definition.items.type = items;
           definition.type = 'array';
           return definition;
+        };
+        RAML10.prototype.isRamlArray = function (object) {
+          return _.endsWith(object, '[]');
+        };
+        RAML10.prototype.convertRamlArray = function (object) {
+          return {
+            type: 'array',
+            items: { type: _.replace(object, '[]', '') }
+          };
         };
         RAML10.prototype.convertFacet = function (definition) {
           var facets = definition.facets;
@@ -9810,7 +9923,7 @@
               data.body.properties[param.name] = prop;
             }
             if (param.description) {
-              data.description = param.description;
+              data.description = jsonHelper.stringify(param.description);
             }
           }
           //remove required field if doesn't have anything inside it
@@ -9829,33 +9942,37 @@
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || $refs.exists(responseBody[code].$ref))) {
+            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || _.includes($refs, responseBody[code].$ref))) {
               continue;
             }
             // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
             if (needDeReferenced(responseBody[code]) && resolvedResponses) {
               schema = resolvedResponses[code].schema;
-              description = resolvedResponses[code].description || '';
+              description = jsonHelper.stringify(resolvedResponses[code].description || '');
               res.body = schema;
             } else if (responseBody[code].schema) {
               var schema = responseBody[code].schema;
               if (needDeReferenced(responseBody[code].schema)) {
-                description = resolvedResponses[code].description || '';
+                description = jsonHelper.stringify(resolvedResponses[code].description || '');
                 schema = resolvedResponses[code].schema;
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples') && _.isEmpty(responseBody[code].examples)) {
+            if (responseBody[code].hasOwnProperty('examples') && !_.isEmpty(responseBody[code].examples)) {
               var examples = responseBody[code].examples;
-              res.example = jsonHelper.stringify(examples[0], 4);  // TODO: Once stoplight supports multiple examples, support them here.
-                                                                   // for(var t in examples) {
-                                                                   //   if (!examples.hasOwnProperty(t)) continue;
-                                                                   //   if (t === resType) {
-                                                                   //     res.example = jsonHelper.stringify(examples[t], 4);
-                                                                   //   }
-                                                                   // }
+              if (_.isArray(examples)) {
+                for (var t in examples) {
+                  if (!examples.hasOwnProperty(t))
+                    continue;
+                  if (t === resType) {
+                    res.example = jsonHelper.stringify(examples[t], 4);
+                  }
+                }
+              } else {
+                res.example = jsonHelper.stringify(examples, 4);
+              }
             }
-            res.description = description || responseBody[code].description || '';
+            res.description = jsonHelper.stringify(description || responseBody[code].description || '');
             res.body = res.body;
             res.codes.push(String(code));
             data.push(res);
@@ -10015,7 +10132,7 @@
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
               endpoint.Summary = (currentMethod.summary || '').substring(0, 139);
-              endpoint.Description = currentMethod.description || currentMethod.summary;
+              endpoint.Description = jsonHelper.stringify(currentMethod.description);
               endpoint.Deprecated = currentMethod.deprecated;
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
@@ -20576,7 +20693,7 @@
           /**
  * @license
  * lodash <https://lodash.com/>
- * Copyright JS Foundation and other contributors <https://js.foundation/>
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -20586,7 +20703,7 @@
             /** Used as a safe reference for `undefined` in pre-ES5 environments. */
             var undefined;
             /** Used as the semantic version number. */
-            var VERSION = '4.16.6';
+            var VERSION = '4.16.4';
             /** Used as the size to enable large array optimizations. */
             var LARGE_ARRAY_SIZE = 200;
             /** Error message constants. */
@@ -20604,7 +20721,7 @@
             /** Used as default options for `_.truncate`. */
             var DEFAULT_TRUNC_LENGTH = 30, DEFAULT_TRUNC_OMISSION = '...';
             /** Used to detect hot functions by number of calls within a span of milliseconds. */
-            var HOT_COUNT = 800, HOT_SPAN = 16;
+            var HOT_COUNT = 500, HOT_SPAN = 16;
             /** Used to indicate the type of lazy iteratees. */
             var LAZY_FILTER_FLAG = 1, LAZY_MAP_FLAG = 2, LAZY_WHILE_FLAG = 3;
             /** Used as references for various `Number` constants. */
@@ -20651,7 +20768,7 @@
                 ]
               ];
             /** `Object#toString` result references. */
-            var argsTag = '[object Arguments]', arrayTag = '[object Array]', asyncTag = '[object AsyncFunction]', boolTag = '[object Boolean]', dateTag = '[object Date]', domExcTag = '[object DOMException]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', nullTag = '[object Null]', objectTag = '[object Object]', promiseTag = '[object Promise]', proxyTag = '[object Proxy]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', undefinedTag = '[object Undefined]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
+            var argsTag = '[object Arguments]', arrayTag = '[object Array]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', objectTag = '[object Object]', promiseTag = '[object Promise]', proxyTag = '[object Proxy]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', weakMapTag = '[object WeakMap]', weakSetTag = '[object WeakSet]';
             var arrayBufferTag = '[object ArrayBuffer]', dataViewTag = '[object DataView]', float32Tag = '[object Float32Array]', float64Tag = '[object Float64Array]', int8Tag = '[object Int8Array]', int16Tag = '[object Int16Array]', int32Tag = '[object Int32Array]', uint8Tag = '[object Uint8Array]', uint8ClampedTag = '[object Uint8ClampedArray]', uint16Tag = '[object Uint16Array]', uint32Tag = '[object Uint32Array]';
             /** Used to match empty string literals in compiled template source. */
             var reEmptyStringLeading = /\b__p \+= '';/g, reEmptyStringMiddle = /\b(__p \+=) '' \+/g, reEmptyStringTrailing = /(__e\(.*?\)|\b__t\)) \+\n'';/g;
@@ -20702,11 +20819,11 @@
             /** Used to compose unicode capture groups. */
             var rsApos = '[\'\u2019]', rsAstral = '[' + rsAstralRange + ']', rsBreak = '[' + rsBreakRange + ']', rsCombo = '[' + rsComboMarksRange + rsComboSymbolsRange + ']', rsDigits = '\\d+', rsDingbat = '[' + rsDingbatRange + ']', rsLower = '[' + rsLowerRange + ']', rsMisc = '[^' + rsAstralRange + rsBreakRange + rsDigits + rsDingbatRange + rsLowerRange + rsUpperRange + ']', rsFitz = '\\ud83c[\\udffb-\\udfff]', rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')', rsNonAstral = '[^' + rsAstralRange + ']', rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}', rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]', rsUpper = '[' + rsUpperRange + ']', rsZWJ = '\\u200d';
             /** Used to compose unicode regexes. */
-            var rsMiscLower = '(?:' + rsLower + '|' + rsMisc + ')', rsMiscUpper = '(?:' + rsUpper + '|' + rsMisc + ')', rsOptContrLower = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?', rsOptContrUpper = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?', reOptMod = rsModifier + '?', rsOptVar = '[' + rsVarRange + ']?', rsOptJoin = '(?:' + rsZWJ + '(?:' + [
+            var rsLowerMisc = '(?:' + rsLower + '|' + rsMisc + ')', rsUpperMisc = '(?:' + rsUpper + '|' + rsMisc + ')', rsOptLowerContr = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?', rsOptUpperContr = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?', reOptMod = rsModifier + '?', rsOptVar = '[' + rsVarRange + ']?', rsOptJoin = '(?:' + rsZWJ + '(?:' + [
                 rsNonAstral,
                 rsRegional,
                 rsSurrPair
-              ].join('|') + ')' + rsOptVar + reOptMod + ')*', rsOrdLower = '\\d*(?:(?:1st|2nd|3rd|(?![123])\\dth)\\b)', rsOrdUpper = '\\d*(?:(?:1ST|2ND|3RD|(?![123])\\dTH)\\b)', rsSeq = rsOptVar + reOptMod + rsOptJoin, rsEmoji = '(?:' + [
+              ].join('|') + ')' + rsOptVar + reOptMod + ')*', rsSeq = rsOptVar + reOptMod + rsOptJoin, rsEmoji = '(?:' + [
                 rsDingbat,
                 rsRegional,
                 rsSurrPair
@@ -20728,20 +20845,18 @@
             var reUnicode = RegExp(rsFitz + '(?=' + rsFitz + ')|' + rsSymbol + rsSeq, 'g');
             /** Used to match complex or compound words. */
             var reUnicodeWord = RegExp([
-                rsUpper + '?' + rsLower + '+' + rsOptContrLower + '(?=' + [
+                rsUpper + '?' + rsLower + '+' + rsOptLowerContr + '(?=' + [
                   rsBreak,
                   rsUpper,
                   '$'
                 ].join('|') + ')',
-                rsMiscUpper + '+' + rsOptContrUpper + '(?=' + [
+                rsUpperMisc + '+' + rsOptUpperContr + '(?=' + [
                   rsBreak,
-                  rsUpper + rsMiscLower,
+                  rsUpper + rsLowerMisc,
                   '$'
                 ].join('|') + ')',
-                rsUpper + '?' + rsMiscLower + '+' + rsOptContrLower,
-                rsUpper + '+' + rsOptContrUpper,
-                rsOrdUpper,
-                rsOrdLower,
+                rsUpper + '?' + rsLowerMisc + '+' + rsOptLowerContr,
+                rsUpper + '+' + rsOptUpperContr,
                 rsDigits,
                 rsEmoji
               ].join('|'), 'g');
@@ -21096,7 +21211,7 @@
    * @returns {Function} Returns `accumulator`.
    */
             function arrayAggregator(array, setter, iteratee, accumulator) {
-              var index = -1, length = array == null ? 0 : array.length;
+              var index = -1, length = array ? array.length : 0;
               while (++index < length) {
                 var value = array[index];
                 setter(accumulator, value, iteratee(value), array);
@@ -21113,7 +21228,7 @@
    * @returns {Array} Returns `array`.
    */
             function arrayEach(array, iteratee) {
-              var index = -1, length = array == null ? 0 : array.length;
+              var index = -1, length = array ? array.length : 0;
               while (++index < length) {
                 if (iteratee(array[index], index, array) === false) {
                   break;
@@ -21131,7 +21246,7 @@
    * @returns {Array} Returns `array`.
    */
             function arrayEachRight(array, iteratee) {
-              var length = array == null ? 0 : array.length;
+              var length = array ? array.length : 0;
               while (length--) {
                 if (iteratee(array[length], length, array) === false) {
                   break;
@@ -21150,7 +21265,7 @@
    *  else `false`.
    */
             function arrayEvery(array, predicate) {
-              var index = -1, length = array == null ? 0 : array.length;
+              var index = -1, length = array ? array.length : 0;
               while (++index < length) {
                 if (!predicate(array[index], index, array)) {
                   return false;
@@ -21168,7 +21283,7 @@
    * @returns {Array} Returns the new filtered array.
    */
             function arrayFilter(array, predicate) {
-              var index = -1, length = array == null ? 0 : array.length, resIndex = 0, result = [];
+              var index = -1, length = array ? array.length : 0, resIndex = 0, result = [];
               while (++index < length) {
                 var value = array[index];
                 if (predicate(value, index, array)) {
@@ -21187,7 +21302,7 @@
    * @returns {boolean} Returns `true` if `target` is found, else `false`.
    */
             function arrayIncludes(array, value) {
-              var length = array == null ? 0 : array.length;
+              var length = array ? array.length : 0;
               return !!length && baseIndexOf(array, value, 0) > -1;
             }
             /**
@@ -21200,7 +21315,7 @@
    * @returns {boolean} Returns `true` if `target` is found, else `false`.
    */
             function arrayIncludesWith(array, value, comparator) {
-              var index = -1, length = array == null ? 0 : array.length;
+              var index = -1, length = array ? array.length : 0;
               while (++index < length) {
                 if (comparator(value, array[index])) {
                   return true;
@@ -21218,7 +21333,7 @@
    * @returns {Array} Returns the new mapped array.
    */
             function arrayMap(array, iteratee) {
-              var index = -1, length = array == null ? 0 : array.length, result = Array(length);
+              var index = -1, length = array ? array.length : 0, result = Array(length);
               while (++index < length) {
                 result[index] = iteratee(array[index], index, array);
               }
@@ -21252,7 +21367,7 @@
    * @returns {*} Returns the accumulated value.
    */
             function arrayReduce(array, iteratee, accumulator, initAccum) {
-              var index = -1, length = array == null ? 0 : array.length;
+              var index = -1, length = array ? array.length : 0;
               if (initAccum && length) {
                 accumulator = array[++index];
               }
@@ -21274,7 +21389,7 @@
    * @returns {*} Returns the accumulated value.
    */
             function arrayReduceRight(array, iteratee, accumulator, initAccum) {
-              var length = array == null ? 0 : array.length;
+              var length = array ? array.length : 0;
               if (initAccum && length) {
                 accumulator = array[--length];
               }
@@ -21294,7 +21409,7 @@
    *  else `false`.
    */
             function arraySome(array, predicate) {
-              var index = -1, length = array == null ? 0 : array.length;
+              var index = -1, length = array ? array.length : 0;
               while (++index < length) {
                 if (predicate(array[index], index, array)) {
                   return true;
@@ -21422,7 +21537,7 @@
    * @returns {number} Returns the mean.
    */
             function baseMean(array, iteratee) {
-              var length = array == null ? 0 : array.length;
+              var length = array ? array.length : 0;
               return length ? baseSum(array, iteratee) / length : NAN;
             }
             /**
@@ -21907,38 +22022,38 @@
    * var defer = _.runInContext({ 'setTimeout': setImmediate }).defer;
    */
             var runInContext = function runInContext(context) {
-              context = context == null ? root : _.defaults(root.Object(), context, _.pick(root, contextProps));
+              context = context ? _.defaults(root.Object(), context, _.pick(root, contextProps)) : root;
               /** Built-in constructor references. */
               var Array = context.Array, Date = context.Date, Error = context.Error, Function = context.Function, Math = context.Math, Object = context.Object, RegExp = context.RegExp, String = context.String, TypeError = context.TypeError;
               /** Used for built-in method references. */
               var arrayProto = Array.prototype, funcProto = Function.prototype, objectProto = Object.prototype;
               /** Used to detect overreaching core-js shims. */
               var coreJsData = context['__core-js_shared__'];
+              /** Used to detect methods masquerading as native. */
+              var maskSrcKey = function () {
+                  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+                  return uid ? 'Symbol(src)_1.' + uid : '';
+                }();
               /** Used to resolve the decompiled source of functions. */
               var funcToString = funcProto.toString;
               /** Used to check objects for own properties. */
               var hasOwnProperty = objectProto.hasOwnProperty;
               /** Used to generate unique IDs. */
               var idCounter = 0;
-              /** Used to detect methods masquerading as native. */
-              var maskSrcKey = function () {
-                  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
-                  return uid ? 'Symbol(src)_1.' + uid : '';
-                }();
+              /** Used to infer the `Object` constructor. */
+              var objectCtorString = funcToString.call(Object);
               /**
      * Used to resolve the
      * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
      * of values.
      */
-              var nativeObjectToString = objectProto.toString;
-              /** Used to infer the `Object` constructor. */
-              var objectCtorString = funcToString.call(Object);
+              var objectToString = objectProto.toString;
               /** Used to restore the original `_` reference in `_.noConflict`. */
               var oldDash = root._;
               /** Used to detect if a method is native. */
               var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
               /** Built-in value references. */
-              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined, getPrototype = overArg(Object.getPrototypeOf, Object), objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined, symIterator = Symbol ? Symbol.iterator : undefined, symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+              var Buffer = moduleExports ? context.Buffer : undefined, Symbol = context.Symbol, Uint8Array = context.Uint8Array, allocUnsafe = Buffer ? Buffer.allocUnsafe : undefined, getPrototype = overArg(Object.getPrototypeOf, Object), iteratorSymbol = Symbol ? Symbol.iterator : undefined, objectCreate = Object.create, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice, spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
               var defineProperty = function () {
                   try {
                     var func = getNative(Object, 'defineProperty');
@@ -22256,7 +22371,7 @@
      * @param {Array} [entries] The key-value pairs to cache.
      */
               function Hash(entries) {
-                var index = -1, length = entries == null ? 0 : entries.length;
+                var index = -1, length = entries ? entries.length : 0;
                 this.clear();
                 while (++index < length) {
                   var entry = entries[index];
@@ -22350,7 +22465,7 @@
      * @param {Array} [entries] The key-value pairs to cache.
      */
               function ListCache(entries) {
-                var index = -1, length = entries == null ? 0 : entries.length;
+                var index = -1, length = entries ? entries.length : 0;
                 this.clear();
                 while (++index < length) {
                   var entry = entries[index];
@@ -22454,7 +22569,7 @@
      * @param {Array} [entries] The key-value pairs to cache.
      */
               function MapCache(entries) {
-                var index = -1, length = entries == null ? 0 : entries.length;
+                var index = -1, length = entries ? entries.length : 0;
                 this.clear();
                 while (++index < length) {
                   var entry = entries[index];
@@ -22546,7 +22661,7 @@
      * @param {Array} [values] The values to cache.
      */
               function SetCache(values) {
-                var index = -1, length = values == null ? 0 : values.length;
+                var index = -1, length = values ? values.length : 0;
                 this.__data__ = new MapCache();
                 while (++index < length) {
                   this.add(values[index]);
@@ -22848,9 +22963,9 @@
      * @returns {Array} Returns the picked elements.
      */
               function baseAt(object, paths) {
-                var index = -1, length = paths.length, result = Array(length), skip = object == null;
+                var index = -1, isNil = object == null, length = paths.length, result = Array(length);
                 while (++index < length) {
-                  result[index] = skip ? undefined : get(object, paths[index]);
+                  result[index] = isNil ? undefined : get(object, paths[index]);
                 }
                 return result;
               }
@@ -23022,7 +23137,7 @@
                 }
                 outer:
                   while (++index < length) {
-                    var value = array[index], computed = iteratee == null ? value : iteratee(value);
+                    var value = array[index], computed = iteratee ? iteratee(value) : value;
                     value = comparator || value !== 0 ? value : 0;
                     if (isCommon && computed === computed) {
                       var valuesIndex = valuesLength;
@@ -23257,18 +23372,14 @@
                 return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
               }
               /**
-     * The base implementation of `getTag` without fallbacks for buggy environments.
+     * The base implementation of `getTag`.
      *
      * @private
      * @param {*} value The value to query.
      * @returns {string} Returns the `toStringTag`.
      */
               function baseGetTag(value) {
-                if (value == null) {
-                  return value === undefined ? undefinedTag : nullTag;
-                }
-                value = Object(value);
-                return symToStringTag && symToStringTag in value ? getRawTag(value) : objectToString(value);
+                return objectToString.call(value);
               }
               /**
      * The base implementation of `_.gt` which doesn't coerce arguments.
@@ -23402,7 +23513,7 @@
      * @returns {boolean} Returns `true` if `value` is an `arguments` object,
      */
               function baseIsArguments(value) {
-                return isObjectLike(value) && baseGetTag(value) == argsTag;
+                return isObjectLike(value) && objectToString.call(value) == argsTag;
               }
               /**
      * The base implementation of `_.isArrayBuffer` without Node.js optimizations.
@@ -23412,7 +23523,7 @@
      * @returns {boolean} Returns `true` if `value` is an array buffer, else `false`.
      */
               function baseIsArrayBuffer(value) {
-                return isObjectLike(value) && baseGetTag(value) == arrayBufferTag;
+                return isObjectLike(value) && objectToString.call(value) == arrayBufferTag;
               }
               /**
      * The base implementation of `_.isDate` without Node.js optimizations.
@@ -23422,7 +23533,7 @@
      * @returns {boolean} Returns `true` if `value` is a date object, else `false`.
      */
               function baseIsDate(value) {
-                return isObjectLike(value) && baseGetTag(value) == dateTag;
+                return isObjectLike(value) && objectToString.call(value) == dateTag;
               }
               /**
      * The base implementation of `_.isEqual` which supports partial comparisons
@@ -23573,7 +23684,7 @@
      * @returns {boolean} Returns `true` if `value` is a regexp, else `false`.
      */
               function baseIsRegExp(value) {
-                return isObjectLike(value) && baseGetTag(value) == regexpTag;
+                return isObject(value) && objectToString.call(value) == regexpTag;
               }
               /**
      * The base implementation of `_.isSet` without Node.js optimizations.
@@ -23593,7 +23704,7 @@
      * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
      */
               function baseIsTypedArray(value) {
-                return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
+                return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
               }
               /**
      * The base implementation of `_.iteratee`.
@@ -24162,7 +24273,7 @@
      *  into `array`.
      */
               function baseSortedIndex(array, value, retHighest) {
-                var low = 0, high = array == null ? low : array.length;
+                var low = 0, high = array ? array.length : low;
                 if (typeof value == 'number' && value === value && high <= HALF_MAX_ARRAY_LENGTH) {
                   while (low < high) {
                     var mid = low + high >>> 1, computed = array[mid];
@@ -24191,7 +24302,7 @@
      */
               function baseSortedIndexBy(array, value, iteratee, retHighest) {
                 value = iteratee(value);
-                var low = 0, high = array == null ? 0 : array.length, valIsNaN = value !== value, valIsNull = value === null, valIsSymbol = isSymbol(value), valIsUndefined = value === undefined;
+                var low = 0, high = array ? array.length : 0, valIsNaN = value !== value, valIsNull = value === null, valIsSymbol = isSymbol(value), valIsUndefined = value === undefined;
                 while (low < high) {
                   var mid = nativeFloor((low + high) / 2), computed = iteratee(array[mid]), othIsDefined = computed !== undefined, othIsNull = computed === null, othIsReflexive = computed === computed, othIsSymbol = isSymbol(computed);
                   if (valIsNaN) {
@@ -24398,20 +24509,11 @@
      * @returns {Array} Returns the new array of values.
      */
               function baseXor(arrays, iteratee, comparator) {
-                var length = arrays.length;
-                if (length < 2) {
-                  return length ? baseUniq(arrays[0]) : [];
-                }
-                var index = -1, result = Array(length);
+                var index = -1, length = arrays.length;
                 while (++index < length) {
-                  var array = arrays[index], othIndex = -1;
-                  while (++othIndex < length) {
-                    if (othIndex != index) {
-                      result[index] = baseDifference(result[index] || array, arrays[othIndex], iteratee, comparator);
-                    }
-                  }
+                  var result = result ? arrayPush(baseDifference(result, arrays[index], iteratee, comparator), baseDifference(arrays[index], result, iteratee, comparator)) : arrays[index];
                 }
-                return baseUniq(baseFlatten(result, 1), iteratee, comparator);
+                return result && result.length ? baseUniq(result, iteratee, comparator) : [];
               }
               /**
      * This base implementation of `_.zipObject` which assigns values using `assignFunc`.
@@ -25716,30 +25818,6 @@
                 return baseIsNative(value) ? value : undefined;
               }
               /**
-     * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
-     *
-     * @private
-     * @param {*} value The value to query.
-     * @returns {string} Returns the raw `toStringTag`.
-     */
-              function getRawTag(value) {
-                var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
-                try {
-                  value[symToStringTag] = undefined;
-                  var unmasked = true;
-                } catch (e) {
-                }
-                var result = nativeObjectToString.call(value);
-                if (unmasked) {
-                  if (isOwn) {
-                    value[symToStringTag] = tag;
-                  } else {
-                    delete value[symToStringTag];
-                  }
-                }
-                return result;
-              }
-              /**
      * Creates an array of the own enumerable symbol properties of `object`.
      *
      * @private
@@ -25774,7 +25852,7 @@
               // Fallback for data views, maps, sets, and weak maps in IE 11 and promises in Node.js < 6.
               if (DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag || Map && getTag(new Map()) != mapTag || Promise && getTag(Promise.resolve()) != promiseTag || Set && getTag(new Set()) != setTag || WeakMap && getTag(new WeakMap()) != weakMapTag) {
                 getTag = function (value) {
-                  var result = baseGetTag(value), Ctor = result == objectTag ? value.constructor : undefined, ctorString = Ctor ? toSource(Ctor) : '';
+                  var result = objectToString.call(value), Ctor = result == objectTag ? value.constructor : undefined, ctorString = Ctor ? toSource(Ctor) : undefined;
                   if (ctorString) {
                     switch (ctorString) {
                     case dataViewCtorString:
@@ -25859,7 +25937,7 @@
                 if (result || ++index != length) {
                   return result;
                 }
-                length = object == null ? 0 : object.length;
+                length = object ? object.length : 0;
                 return !!length && isLength(length) && isIndex(key, length) && (isArray(object) || isArguments(object));
               }
               /**
@@ -26219,16 +26297,6 @@
                 return result;
               }
               /**
-     * Converts `value` to a string using `Object.prototype.toString`.
-     *
-     * @private
-     * @param {*} value The value to convert.
-     * @returns {string} Returns the converted string.
-     */
-              function objectToString(value) {
-                return nativeObjectToString.call(value);
-              }
-              /**
      * A specialized version of `baseRest` which transforms the rest array.
      *
      * @private
@@ -26410,7 +26478,7 @@
      * Converts `func` to its source code.
      *
      * @private
-     * @param {Function} func The function to convert.
+     * @param {Function} func The function to process.
      * @returns {string} Returns the source code.
      */
               function toSource(func) {
@@ -26488,7 +26556,7 @@
                 } else {
                   size = nativeMax(toInteger(size), 0);
                 }
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length || size < 1) {
                   return [];
                 }
@@ -26514,7 +26582,7 @@
      * // => [1, 2, 3]
      */
               function compact(array) {
-                var index = -1, length = array == null ? 0 : array.length, resIndex = 0, result = [];
+                var index = -1, length = array ? array.length : 0, resIndex = 0, result = [];
                 while (++index < length) {
                   var value = array[index];
                   if (value) {
@@ -26669,7 +26737,7 @@
      * // => [1, 2, 3]
      */
               function drop(array, n, guard) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return [];
                 }
@@ -26702,7 +26770,7 @@
      * // => [1, 2, 3]
      */
               function dropRight(array, n, guard) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return [];
                 }
@@ -26758,7 +26826,8 @@
      * @since 3.0.0
      * @category Array
      * @param {Array} array The array to query.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @returns {Array} Returns the slice of `array`.
      * @example
      *
@@ -26816,7 +26885,7 @@
      * // => [4, '*', '*', 10]
      */
               function fill(array, value, start, end) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return [];
                 }
@@ -26835,7 +26904,8 @@
      * @since 1.1.0
      * @category Array
      * @param {Array} array The array to inspect.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @param {number} [fromIndex=0] The index to search from.
      * @returns {number} Returns the index of the found element, else `-1`.
      * @example
@@ -26862,7 +26932,7 @@
      * // => 2
      */
               function findIndex(array, predicate, fromIndex) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return -1;
                 }
@@ -26881,7 +26951,8 @@
      * @since 2.0.0
      * @category Array
      * @param {Array} array The array to inspect.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @param {number} [fromIndex=array.length-1] The index to search from.
      * @returns {number} Returns the index of the found element, else `-1`.
      * @example
@@ -26908,7 +26979,7 @@
      * // => 0
      */
               function findLastIndex(array, predicate, fromIndex) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return -1;
                 }
@@ -26934,7 +27005,7 @@
      * // => [1, 2, [3, [4]], 5]
      */
               function flatten(array) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 return length ? baseFlatten(array, 1) : [];
               }
               /**
@@ -26952,7 +27023,7 @@
      * // => [1, 2, 3, 4, 5]
      */
               function flattenDeep(array) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 return length ? baseFlatten(array, INFINITY) : [];
               }
               /**
@@ -26976,7 +27047,7 @@
      * // => [1, 2, 3, [4], 5]
      */
               function flattenDepth(array, depth) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return [];
                 }
@@ -26999,7 +27070,7 @@
      * // => { 'a': 1, 'b': 2 }
      */
               function fromPairs(pairs) {
-                var index = -1, length = pairs == null ? 0 : pairs.length, result = {};
+                var index = -1, length = pairs ? pairs.length : 0, result = {};
                 while (++index < length) {
                   var pair = pairs[index];
                   result[pair[0]] = pair[1];
@@ -27051,7 +27122,7 @@
      * // => 3
      */
               function indexOf(array, value, fromIndex) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return -1;
                 }
@@ -27076,7 +27147,7 @@
      * // => [1, 2]
      */
               function initial(array) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 return length ? baseSlice(array, 0, -1) : [];
               }
               /**
@@ -27155,8 +27226,9 @@
      */
               var intersectionWith = baseRest(function (arrays) {
                   var comparator = last(arrays), mapped = arrayMap(arrays, castArrayLikeObject);
-                  comparator = typeof comparator == 'function' ? comparator : undefined;
-                  if (comparator) {
+                  if (comparator === last(mapped)) {
+                    comparator = undefined;
+                  } else {
                     mapped.pop();
                   }
                   return mapped.length && mapped[0] === arrays[0] ? baseIntersection(mapped, undefined, comparator) : [];
@@ -27177,7 +27249,7 @@
      * // => 'a~b~c'
      */
               function join(array, separator) {
-                return array == null ? '' : nativeJoin.call(array, separator);
+                return array ? nativeJoin.call(array, separator) : '';
               }
               /**
      * Gets the last element of `array`.
@@ -27194,7 +27266,7 @@
      * // => 3
      */
               function last(array) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 return length ? array[length - 1] : undefined;
               }
               /**
@@ -27219,7 +27291,7 @@
      * // => 1
      */
               function lastIndexOf(array, value, fromIndex) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return -1;
                 }
@@ -27314,7 +27386,8 @@
      * @category Array
      * @param {Array} array The array to modify.
      * @param {Array} values The values to remove.
-     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee invoked per element.
      * @returns {Array} Returns `array`.
      * @example
      *
@@ -27378,7 +27451,7 @@
      * // => ['b', 'd']
      */
               var pullAt = flatRest(function (array, indexes) {
-                  var length = array == null ? 0 : array.length, result = baseAt(array, indexes);
+                  var length = array ? array.length : 0, result = baseAt(array, indexes);
                   basePullAt(array, arrayMap(indexes, function (index) {
                     return isIndex(index, length) ? +index : index;
                   }).sort(compareAscending));
@@ -27397,7 +27470,8 @@
      * @since 2.0.0
      * @category Array
      * @param {Array} array The array to modify.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @returns {Array} Returns the new array of removed elements.
      * @example
      *
@@ -27453,7 +27527,7 @@
      * // => [3, 2, 1]
      */
               function reverse(array) {
-                return array == null ? array : nativeReverse.call(array);
+                return array ? nativeReverse.call(array) : array;
               }
               /**
      * Creates a slice of `array` from `start` up to, but not including, `end`.
@@ -27472,7 +27546,7 @@
      * @returns {Array} Returns the slice of `array`.
      */
               function slice(array, start, end) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return [];
                 }
@@ -27516,7 +27590,8 @@
      * @category Array
      * @param {Array} array The sorted array to inspect.
      * @param {*} value The value to evaluate.
-     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee invoked per element.
      * @returns {number} Returns the index at which `value` should be inserted
      *  into `array`.
      * @example
@@ -27550,7 +27625,7 @@
      * // => 1
      */
               function sortedIndexOf(array, value) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (length) {
                   var index = baseSortedIndex(array, value);
                   if (index < length && eq(array[index], value)) {
@@ -27591,7 +27666,8 @@
      * @category Array
      * @param {Array} array The sorted array to inspect.
      * @param {*} value The value to evaluate.
-     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee invoked per element.
      * @returns {number} Returns the index at which `value` should be inserted
      *  into `array`.
      * @example
@@ -27625,7 +27701,7 @@
      * // => 3
      */
               function sortedLastIndexOf(array, value) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (length) {
                   var index = baseSortedIndex(array, value, true) - 1;
                   if (eq(array[index], value)) {
@@ -27686,7 +27762,7 @@
      * // => [2, 3]
      */
               function tail(array) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 return length ? baseSlice(array, 1, length) : [];
               }
               /**
@@ -27747,7 +27823,7 @@
      * // => []
      */
               function takeRight(array, n, guard) {
-                var length = array == null ? 0 : array.length;
+                var length = array ? array.length : 0;
                 if (!length) {
                   return [];
                 }
@@ -27765,7 +27841,8 @@
      * @since 3.0.0
      * @category Array
      * @param {Array} array The array to query.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @returns {Array} Returns the slice of `array`.
      * @example
      *
@@ -27803,7 +27880,8 @@
      * @since 3.0.0
      * @category Array
      * @param {Array} array The array to query.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @returns {Array} Returns the slice of `array`.
      * @example
      *
@@ -27862,7 +27940,8 @@
      * @since 4.0.0
      * @category Array
      * @param {...Array} [arrays] The arrays to inspect.
-     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee invoked per element.
      * @returns {Array} Returns the new array of combined values.
      * @example
      *
@@ -27903,7 +27982,9 @@
      */
               var unionWith = baseRest(function (arrays) {
                   var comparator = last(arrays);
-                  comparator = typeof comparator == 'function' ? comparator : undefined;
+                  if (isArrayLikeObject(comparator)) {
+                    comparator = undefined;
+                  }
                   return baseUniq(baseFlatten(arrays, 1, isArrayLikeObject, true), undefined, comparator);
                 });
               /**
@@ -27939,7 +28020,8 @@
      * @since 4.0.0
      * @category Array
      * @param {Array} array The array to inspect.
-     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee invoked per element.
      * @returns {Array} Returns the new duplicate free array.
      * @example
      *
@@ -27974,7 +28056,6 @@
      * // => [{ 'x': 1, 'y': 2 }, { 'x': 2, 'y': 1 }]
      */
               function uniqWith(array, comparator) {
-                comparator = typeof comparator == 'function' ? comparator : undefined;
                 return array && array.length ? baseUniq(array, undefined, comparator) : [];
               }
               /**
@@ -28100,7 +28181,8 @@
      * @since 4.0.0
      * @category Array
      * @param {...Array} [arrays] The arrays to inspect.
-     * @param {Function} [iteratee=_.identity] The iteratee invoked per element.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee invoked per element.
      * @returns {Array} Returns the new array of filtered values.
      * @example
      *
@@ -28141,7 +28223,9 @@
      */
               var xorWith = baseRest(function (arrays) {
                   var comparator = last(arrays);
-                  comparator = typeof comparator == 'function' ? comparator : undefined;
+                  if (isArrayLikeObject(comparator)) {
+                    comparator = undefined;
+                  }
                   return baseXor(arrayFilter(arrays, isArrayLikeObject), undefined, comparator);
                 });
               /**
@@ -28208,8 +28292,7 @@
      * @since 3.8.0
      * @category Array
      * @param {...Array} [arrays] The arrays to process.
-     * @param {Function} [iteratee=_.identity] The function to combine
-     *  grouped values.
+     * @param {Function} [iteratee=_.identity] The function to combine grouped values.
      * @returns {Array} Returns the new array of grouped elements.
      * @example
      *
@@ -28566,7 +28649,8 @@
      * @since 0.5.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee to transform keys.
      * @returns {Object} Returns the composed aggregate object.
      * @example
      *
@@ -28599,7 +28683,8 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @param- {Object} [guard] Enables use as an iteratee for methods like `_.map`.
      * @returns {boolean} Returns `true` if all elements pass the predicate check,
      *  else `false`.
@@ -28644,7 +28729,8 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @returns {Array} Returns the new filtered array.
      * @see _.reject
      * @example
@@ -28683,7 +28769,8 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to inspect.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @param {number} [fromIndex=0] The index to search from.
      * @returns {*} Returns the matched element, else `undefined`.
      * @example
@@ -28719,7 +28806,8 @@
      * @since 2.0.0
      * @category Collection
      * @param {Array|Object} collection The collection to inspect.
-     * @param {Function} [predicate=_.identity] The function invoked per iteration.
+     * @param {Function} [predicate=_.identity]
+     *  The function invoked per iteration.
      * @param {number} [fromIndex=collection.length-1] The index to search from.
      * @returns {*} Returns the matched element, else `undefined`.
      * @example
@@ -28740,7 +28828,8 @@
      * @since 4.0.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+     * @param {Function} [iteratee=_.identity]
+     *  The function invoked per iteration.
      * @returns {Array} Returns the new flattened array.
      * @example
      *
@@ -28763,7 +28852,8 @@
      * @since 4.7.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+     * @param {Function} [iteratee=_.identity]
+     *  The function invoked per iteration.
      * @returns {Array} Returns the new flattened array.
      * @example
      *
@@ -28786,7 +28876,8 @@
      * @since 4.7.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity] The function invoked per iteration.
+     * @param {Function} [iteratee=_.identity]
+     *  The function invoked per iteration.
      * @param {number} [depth=1] The maximum recursion depth.
      * @returns {Array} Returns the new flattened array.
      * @example
@@ -28872,7 +28963,8 @@
      * @since 0.1.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee to transform keys.
      * @returns {Object} Returns the composed aggregate object.
      * @example
      *
@@ -28971,7 +29063,8 @@
      * @since 4.0.0
      * @category Collection
      * @param {Array|Object} collection The collection to iterate over.
-     * @param {Function} [iteratee=_.identity] The iteratee to transform keys.
+     * @param {Function} [iteratee=_.identity]
+     *  The iteratee to transform keys.
      * @returns {Object} Returns the composed aggregate object.
      * @example
      *
@@ -29929,7 +30022,7 @@
      * function. Its creation may be customized by replacing the `_.memoize.Cache`
      * constructor with one whose instances implement the
      * [`Map`](http://ecma-international.org/ecma-262/7.0/#sec-properties-of-the-map-prototype-object)
-     * method interface of `clear`, `delete`, `get`, `has`, and `set`.
+     * method interface of `delete`, `get`, `has`, and `set`.
      *
      * @static
      * @memberOf _
@@ -29963,7 +30056,7 @@
      * _.memoize.Cache = WeakMap;
      */
               function memoize(func, resolver) {
-                if (typeof func != 'function' || resolver != null && typeof resolver != 'function') {
+                if (typeof func != 'function' || resolver && typeof resolver != 'function') {
                   throw new TypeError(FUNC_ERROR_TEXT);
                 }
                 var memoized = function () {
@@ -30359,7 +30452,8 @@
      * // => '<p>fred, barney, &amp; pebbles</p>'
      */
               function wrap(value, wrapper) {
-                return partial(castFunction(wrapper), value);
+                wrapper = wrapper == null ? identity : wrapper;
+                return partial(wrapper, value);
               }
               /*------------------------------------------------------------------------*/
               /**
@@ -30463,7 +30557,6 @@
      * // => 0
      */
               function cloneWith(value, customizer) {
-                customizer = typeof customizer == 'function' ? customizer : undefined;
                 return baseClone(value, false, true, customizer);
               }
               /**
@@ -30516,7 +30609,6 @@
      * // => 20
      */
               function cloneDeepWith(value, customizer) {
-                customizer = typeof customizer == 'function' ? customizer : undefined;
                 return baseClone(value, true, true, customizer);
               }
               /**
@@ -30770,7 +30862,7 @@
      * // => false
      */
               function isBoolean(value) {
-                return value === true || value === false || isObjectLike(value) && baseGetTag(value) == boolTag;
+                return value === true || value === false || isObjectLike(value) && objectToString.call(value) == boolTag;
               }
               /**
      * Checks if `value` is a buffer.
@@ -30826,7 +30918,7 @@
      * // => false
      */
               function isElement(value) {
-                return isObjectLike(value) && value.nodeType === 1 && !isPlainObject(value);
+                return value != null && value.nodeType === 1 && isObjectLike(value) && !isPlainObject(value);
               }
               /**
      * Checks if `value` is an empty object, collection, map, or set.
@@ -30862,9 +30954,6 @@
      * // => false
      */
               function isEmpty(value) {
-                if (value == null) {
-                  return true;
-                }
                 if (isArrayLike(value) && (isArray(value) || typeof value == 'string' || typeof value.splice == 'function' || isBuffer(value) || isTypedArray(value) || isArguments(value))) {
                   return !value.length;
                 }
@@ -30972,8 +31061,7 @@
                 if (!isObjectLike(value)) {
                   return false;
                 }
-                var tag = baseGetTag(value);
-                return tag == errorTag || tag == domExcTag || typeof value.message == 'string' && typeof value.name == 'string' && !isPlainObject(value);
+                return objectToString.call(value) == errorTag || typeof value.message == 'string' && typeof value.name == 'string';
               }
               /**
      * Checks if `value` is a finite primitive number.
@@ -31022,13 +31110,10 @@
      * // => false
      */
               function isFunction(value) {
-                if (!isObject(value)) {
-                  return false;
-                }
                 // The use of `Object#toString` avoids issues with the `typeof` operator
-                // in Safari 9 which returns 'object' for typed arrays and other constructors.
-                var tag = baseGetTag(value);
-                return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
+                // in Safari 9 which returns 'object' for typed array and other constructors.
+                var tag = isObject(value) ? objectToString.call(value) : '';
+                return tag == funcTag || tag == genTag || tag == proxyTag;
               }
               /**
      * Checks if `value` is an integer.
@@ -31365,7 +31450,7 @@
      * // => false
      */
               function isNumber(value) {
-                return typeof value == 'number' || isObjectLike(value) && baseGetTag(value) == numberTag;
+                return typeof value == 'number' || isObjectLike(value) && objectToString.call(value) == numberTag;
               }
               /**
      * Checks if `value` is a plain object, that is, an object created by the
@@ -31396,7 +31481,7 @@
      * // => true
      */
               function isPlainObject(value) {
-                if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
+                if (!isObjectLike(value) || objectToString.call(value) != objectTag) {
                   return false;
                 }
                 var proto = getPrototype(value);
@@ -31490,7 +31575,7 @@
      * // => false
      */
               function isString(value) {
-                return typeof value == 'string' || !isArray(value) && isObjectLike(value) && baseGetTag(value) == stringTag;
+                return typeof value == 'string' || !isArray(value) && isObjectLike(value) && objectToString.call(value) == stringTag;
               }
               /**
      * Checks if `value` is classified as a `Symbol` primitive or object.
@@ -31510,7 +31595,7 @@
      * // => false
      */
               function isSymbol(value) {
-                return typeof value == 'symbol' || isObjectLike(value) && baseGetTag(value) == symbolTag;
+                return typeof value == 'symbol' || isObjectLike(value) && objectToString.call(value) == symbolTag;
               }
               /**
      * Checks if `value` is classified as a typed array.
@@ -31588,7 +31673,7 @@
      * // => false
      */
               function isWeakSet(value) {
-                return isObjectLike(value) && baseGetTag(value) == weakSetTag;
+                return isObjectLike(value) && objectToString.call(value) == weakSetTag;
               }
               /**
      * Checks if `value` is less than `other`.
@@ -31670,8 +31755,8 @@
                 if (isArrayLike(value)) {
                   return isString(value) ? stringToArray(value) : copyArray(value);
                 }
-                if (symIterator && value[symIterator]) {
-                  return iteratorToArray(value[symIterator]());
+                if (iteratorSymbol && value[iteratorSymbol]) {
+                  return iteratorToArray(value[iteratorSymbol]());
                 }
                 var tag = getTag(value), func = tag == mapTag ? mapToArray : tag == setTag ? setToArray : values;
                 return func(value);
@@ -32084,7 +32169,7 @@
      */
               function create(prototype, properties) {
                 var result = baseCreate(prototype);
-                return properties == null ? result : baseAssign(result, properties);
+                return properties ? baseAssign(result, properties) : result;
               }
               /**
      * Assigns own and inherited enumerable string keyed properties of source
@@ -33142,7 +33227,7 @@
      * // => ['h', 'i']
      */
               function values(object) {
-                return object == null ? [] : baseValues(object, keys(object));
+                return object ? baseValues(object, keys(object)) : [];
               }
               /**
      * Creates an array of the own and inherited enumerable string keyed property
@@ -34396,7 +34481,7 @@
      * // => 'no match'
      */
               function cond(pairs) {
-                var length = pairs == null ? 0 : pairs.length, toIteratee = getIteratee();
+                var length = pairs ? pairs.length : 0, toIteratee = getIteratee();
                 pairs = !length ? [] : arrayMap(pairs, function (pair) {
                   if (typeof pair[1] != 'function') {
                     throw new TypeError(FUNC_ERROR_TEXT);
@@ -36059,8 +36144,8 @@
               lodash.prototype.toJSON = lodash.prototype.valueOf = lodash.prototype.value = wrapperValue;
               // Add lazy aliases.
               lodash.prototype.first = lodash.prototype.head;
-              if (symIterator) {
-                lodash.prototype[symIterator] = wrapperToIterator;
+              if (iteratorSymbol) {
+                lodash.prototype[iteratorSymbol] = wrapperToIterator;
               }
               return lodash;
             };
@@ -48040,6 +48125,2358 @@
     ]
   }, {}, [1])(1);
 }));
+!function (e) {
+  if ('object' == typeof exports && 'undefined' != typeof module)
+    module.exports = e();
+  else if ('function' == typeof define && define.amd)
+    define([], e);
+  else {
+    var f;
+    'undefined' != typeof window ? f = window : 'undefined' != typeof global ? f = global : 'undefined' != typeof self && (f = self), f.ramlObjectToRaml = e();
+  }
+}(function () {
+  var define, module, exports;
+  return function e(t, n, r) {
+    function s(o, u) {
+      if (!n[o]) {
+        if (!t[o]) {
+          var a = typeof require == 'function' && require;
+          if (!u && a)
+            return a(o, !0);
+          if (i)
+            return i(o, !0);
+          var f = new Error('Cannot find module \'' + o + '\'');
+          throw f.code = 'MODULE_NOT_FOUND', f;
+        }
+        var l = n[o] = { exports: {} };
+        t[o][0].call(l.exports, function (e) {
+          var n = t[o][1][e];
+          return s(n ? n : e);
+        }, l, l.exports, e, t, n, r);
+      }
+      return n[o].exports;
+    }
+    var i = typeof require == 'function' && require;
+    for (var o = 0; o < r.length; o++)
+      s(r[o]);
+    return s;
+  }({
+    1: [
+      function (require, module, exports) {
+        var is = require('../utils/is');
+        /**
+ * Sanitize documentation for RAML.
+ *
+ * @param  {Array} documentation
+ * @return {Array}
+ */
+        module.exports = function (documentation) {
+          return documentation.filter(function (document) {
+            return is.string(document.title) && is.string(document.content);
+          }).map(function (document) {
+            return {
+              title: document.title,
+              content: document.content
+            };
+          });
+        };
+      },
+      { '../utils/is': 12 }
+    ],
+    2: [
+      function (require, module, exports) {
+        var extend = require('xtend/mutable');
+        var is = require('../utils/is');
+        var sanitizeSchemas = require('./schemas');
+        var sanitizeParameters = require('./parameters');
+        var sanitizeDocumentation = require('./documentation');
+        var sanitizeSecuritySchemes = require('./security-schemes');
+        var sanitizeResources = require('./resources');
+        var sanitizeResourceTypes = require('./resource-types');
+        var sanitizeTraits = require('./traits');
+        /**
+ * Transform a RAML object into a YAML compatible structure.
+ *
+ * @param  {Object} input
+ * @return {Object}
+ */
+        module.exports = function (input) {
+          var output = {};
+          if (is.string(input.title)) {
+            output.title = input.title;
+          }
+          if (is.string(input.version) || is.number(input.version)) {
+            output.version = input.version;
+          }
+          if (is.string(input.mediaType)) {
+            output.mediaType = input.mediaType;
+          }
+          if (is.string(input.baseUri)) {
+            output.baseUri = input.baseUri;
+          }
+          if (is.object(input.baseUriParameters)) {
+            output.baseUriParameters = sanitizeParameters(input.baseUriParameters);
+          }
+          if (is.array(input.documentation)) {
+            output.documentation = sanitizeDocumentation(input.documentation);
+          }
+          if (is.array(input.securitySchemes)) {
+            output.securitySchemes = sanitizeSecuritySchemes(input.securitySchemes);
+          }
+          if (is.array(input.schemas)) {
+            output.schemas = sanitizeSchemas(input.schemas);
+          }
+          if (is.array(input.resourceTypes)) {
+            output.resourceTypes = sanitizeResourceTypes(input.resourceTypes);
+          }
+          if (is.array(input.traits)) {
+            output.traits = sanitizeTraits(input.traits);
+          }
+          if (is.array(input.resources)) {
+            extend(output, sanitizeResources(input.resources));
+          }
+          return output;
+        };
+      },
+      {
+        '../utils/is': 12,
+        './documentation': 1,
+        './parameters': 3,
+        './resource-types': 4,
+        './resources': 5,
+        './schemas': 7,
+        './security-schemes': 8,
+        './traits': 10,
+        'xtend/mutable': 18
+      }
+    ],
+    3: [
+      function (require, module, exports) {
+        var extend = require('xtend/mutable');
+        var is = require('../utils/is');
+        /**
+ * Map of valid types.
+ *
+ * @type {Object}
+ */
+        var TYPES = {
+            string: true,
+            number: true,
+            integer: true,
+            date: true,
+            boolean: true,
+            file: true
+          };
+        /**
+ * Sanitize a single parameter representation.
+ *
+ * @param  {Object} param
+ * @param  {String} key
+ * @return {Object}
+ */
+        var sanitizeParameter = function (param, key) {
+          var obj = {};
+          // Avoid unneccessary display names.
+          if (is.string(param.displayName) && key !== param.displayName) {
+            obj.displayName = param.displayName;
+          }
+          if (is.string(param.type) && TYPES.hasOwnProperty(param.type)) {
+            obj.type = param.type;
+          }
+          if (is.string(param.description)) {
+            obj.description = param.description;
+          }
+          if (is.array(param.enum)) {
+            obj.enum = param.enum;
+          }
+          if (is.string(param.pattern)) {
+            obj.pattern = param.pattern;
+          }
+          if (is.number(param.minLength)) {
+            obj.minLength = param.minLength;
+          }
+          if (is.number(param.maxLength)) {
+            obj.maxLength = param.maxLength;
+          }
+          if (is.number(param.minimum)) {
+            obj.minimum = param.minimum;
+          }
+          if (is.number(param.maximum)) {
+            obj.maximum = param.maximum;
+          }
+          if (param.example != null && is.primitive(param.example)) {
+            obj.example = param.example;
+          }
+          if (param.default != null && is.primitive(param.default)) {
+            obj.default = param.default;
+          }
+          if (is.boolean(param.repeat)) {
+            obj.repeat = param.repeat;
+          }
+          if (is.boolean(param.required)) {
+            obj.required = param.required;
+          }
+          return obj;
+        };
+        /**
+ * Sanitize parameters and ensure the object structure is correct.
+ *
+ * @param  {Object} params
+ * @return {Object}
+ */
+        module.exports = function (params) {
+          var obj = {};
+          Object.keys(params).forEach(function (key) {
+            var param = params[key];
+            if (is.array(param)) {
+              return obj[key] = param.map(sanitizeParameter);
+            }
+            obj[key] = sanitizeParameter(param, key);
+          });
+          return obj;
+        };
+      },
+      {
+        '../utils/is': 12,
+        'xtend/mutable': 18
+      }
+    ],
+    4: [
+      function (require, module, exports) {
+        var is = require('../utils/is');
+        var sanitizeTrait = require('./trait');
+        /**
+ * Escape characters used inside a method name for the regexp.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+        var escape = function (str) {
+          return str.replace(/([\-])/g, '\\$1');
+        };
+        /**
+ * Check if the key is potentially a method name.
+ *
+ * @type {RegExp}
+ */
+        var METHOD_KEY_REGEXP = /^(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\??$/i;
+        /**
+ * Sanitize resource types suitable for RAML.
+ *
+ * @param  {Array} resourceTypes
+ * @return {Array}
+ */
+        module.exports = function (resourceTypes) {
+          var array = [];
+          resourceTypes.forEach(function (resourceTypeMap) {
+            Object.keys(resourceTypeMap).forEach(function (type) {
+              var obj = {};
+              var child = obj[type] = {};
+              var resourceType = resourceTypeMap[type];
+              Object.keys(resourceType).forEach(function (key) {
+                var value = resourceType[key];
+                var keys = [
+                    'type',
+                    'usage',
+                    'description'
+                  ];
+                if (METHOD_KEY_REGEXP.test(key)) {
+                  child[key] = value == null ? value : sanitizeTrait(value);
+                }
+                // Allow usage and description strings alongside methods.
+                if (~keys.indexOf(key) && is.string(value)) {
+                  child[key] = value;
+                }
+              });
+              array.push(obj);
+            });
+          });
+          return array;
+        };
+      },
+      {
+        '../utils/is': 12,
+        './trait': 9
+      }
+    ],
+    5: [
+      function (require, module, exports) {
+        var extend = require('xtend/mutable');
+        var is = require('../utils/is');
+        var sanitizeTrait = require('./trait');
+        var sanitizeParameters = require('./parameters');
+        /**
+ * Sanitize a method into RAML structure for stringification.
+ *
+ * @param  {Object} method
+ * @return {Object}
+ */
+        var sanitizeMethods = function (methods) {
+          var obj = {};
+          methods.forEach(function (method) {
+            var child = obj[method.method.toLowerCase()] = {};
+            if (is.array(method.is)) {
+              child.is = method.is;
+            }
+            extend(child, sanitizeTrait(method));
+          });
+          return obj;
+        };
+        /**
+ * Sanitize the resources array to the correct RAML structure.
+ *
+ * @param  {Array}  resources
+ * @return {Object}
+ */
+        module.exports = function sanitizeResources(resources) {
+          var obj = {};
+          resources.forEach(function (resource) {
+            var child = obj;
+            if (resource.relativeUri) {
+              child = obj[resource.relativeUri] = obj[resource.relativeUri] || {};
+            }
+            if (resource.uriParameters) {
+              child.uriParameters = sanitizeParameters(resource.uriParameters);
+            }
+            if (is.string(resource.type) || is.object(resource.type)) {
+              child.type = resource.type;
+            }
+            if (is.array(resource.methods)) {
+              extend(child, sanitizeMethods(resource.methods));
+            }
+            if (is.array(resource.resources)) {
+              extend(child, sanitizeResources(resource.resources));
+            }
+          });
+          return obj;
+        };
+      },
+      {
+        '../utils/is': 12,
+        './parameters': 3,
+        './trait': 9,
+        'xtend/mutable': 18
+      }
+    ],
+    6: [
+      function (require, module, exports) {
+        /**
+ * Sanitize the responses object.
+ *
+ * @param  {Object} responses
+ * @return {Object}
+ */
+        module.exports = function (responses) {
+          var obj = {};
+          Object.keys(responses).forEach(function (code) {
+            if (!/^\d{3}$/.test(code)) {
+              return;
+            }
+            obj[code] = responses[code];
+          });
+          return obj;
+        };
+      },
+      {}
+    ],
+    7: [
+      function (require, module, exports) {
+        var is = require('../utils/is');
+        /**
+ * Map the schemas array of objects into a standard array.
+ *
+ * @param  {Array} schemas
+ * @return {Array}
+ */
+        module.exports = function (schemas) {
+          var array = [];
+          // Iterate over the schema array and object and make it one schema per index.
+          schemas.forEach(function (schemaMap) {
+            Object.keys(schemaMap).forEach(function (key) {
+              if (!is.string(schemaMap[key])) {
+                return;
+              }
+              var obj = {};
+              obj[key] = schemaMap[key];
+              array.push(obj);
+            });
+          });
+          return array;
+        };
+      },
+      { '../utils/is': 12 }
+    ],
+    8: [
+      function (require, module, exports) {
+        var is = require('../utils/is');
+        var sanitizeTrait = require('./trait');
+        /**
+ * Map of valid authentication types.
+ *
+ * @type {Object}
+ */
+        var AUTH_TYPES = {
+            'Basic Authentication': true,
+            'Digest Authentication': true,
+            'OAuth 1.0': true,
+            'OAuth 2.0': true
+          };
+        /**
+ * Sanitize security schemes.
+ *
+ * @param  {Array} securitySchemes
+ * @return {Array}
+ */
+        module.exports = function (securitySchemes) {
+          var array = [];
+          securitySchemes.forEach(function (schemeMap) {
+            Object.keys(schemeMap).forEach(function (key) {
+              var scheme = schemeMap[key];
+              if (!AUTH_TYPES[scheme.type] && !/^x-/i.test(scheme.type)) {
+                return;
+              }
+              var obj = {};
+              var data = obj[key] = { type: scheme.type };
+              if (is.string(scheme.description)) {
+                data.description = scheme.description;
+              }
+              if (is.object(scheme.describedBy)) {
+                data.describedBy = sanitizeTrait(scheme.describedBy);
+              }
+              if (is.object(scheme.settings)) {
+                data.settings = scheme.settings;
+              }
+              array.push(obj);
+            });
+          });
+          return array;
+        };
+      },
+      {
+        '../utils/is': 12,
+        './trait': 9
+      }
+    ],
+    9: [
+      function (require, module, exports) {
+        var is = require('../utils/is');
+        var sanitizeResponses = require('./responses');
+        var sanitizeParameters = require('./parameters');
+        /**
+ * Sanitize a trait-like object.
+ *
+ * @param  {Object} trait
+ * @return {Object}
+ */
+        module.exports = function (trait) {
+          var obj = {};
+          if (is.string(trait.usage)) {
+            obj.usage = trait.usage;
+          }
+          if (is.string(trait.description)) {
+            obj.description = trait.description;
+          }
+          if (is.object(trait.headers)) {
+            obj.headers = sanitizeParameters(trait.headers);
+          }
+          if (is.object(trait.queryParameters)) {
+            obj.queryParameters = sanitizeParameters(trait.queryParameters);
+          }
+          if (is.object(trait.body)) {
+            obj.body = trait.body;
+          }
+          if (is.object(trait.responses)) {
+            obj.responses = sanitizeResponses(trait.responses);
+          }
+          return obj;
+        };
+      },
+      {
+        '../utils/is': 12,
+        './parameters': 3,
+        './responses': 6
+      }
+    ],
+    10: [
+      function (require, module, exports) {
+        var sanitizeTrait = require('./trait');
+        /**
+ * Sanitize traits into an array of keyed maps.
+ *
+ * @param  {Array} traits
+ * @return {Array}
+ */
+        module.exports = function (traits) {
+          var array = [];
+          traits.forEach(function (traitMap) {
+            Object.keys(traitMap).forEach(function (key) {
+              var obj = {};
+              obj[key] = sanitizeTrait(traitMap[key]);
+              array.push(obj);
+            });
+          });
+          return array;
+        };
+      },
+      { './trait': 9 }
+    ],
+    11: [
+      function (require, module, exports) {
+        var extend = require('xtend/mutable');
+        var indent = require('indent-string');
+        var repeat = require('repeat-string');
+        var length = require('string-length');
+        var is = require('./utils/is');
+        var toString = Function.prototype.call.bind(Object.prototype.toString);
+        /**
+ * Map of characters to escape character sequences.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L39-L55
+ *
+ * @type {Object}
+ */
+        var ESCAPE_SEQUENCES = {};
+        ESCAPE_SEQUENCES[0] = '\\0';
+        ESCAPE_SEQUENCES[7] = '\\a';
+        ESCAPE_SEQUENCES[8] = '\\b';
+        ESCAPE_SEQUENCES[9] = '\\t';
+        ESCAPE_SEQUENCES[10] = '\\n';
+        ESCAPE_SEQUENCES[11] = '\\v';
+        ESCAPE_SEQUENCES[12] = '\\f';
+        ESCAPE_SEQUENCES[13] = '\\r';
+        ESCAPE_SEQUENCES[27] = '\\e';
+        ESCAPE_SEQUENCES[34] = '\\"';
+        ESCAPE_SEQUENCES[92] = '\\\\';
+        ESCAPE_SEQUENCES[133] = '\\N';
+        ESCAPE_SEQUENCES[160] = '\\_';
+        ESCAPE_SEQUENCES[8232] = '\\L';
+        ESCAPE_SEQUENCES[8233] = '\\P';
+        /**
+ * Quickly check wheter a character code needs to be quoted within a string.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L14-L36
+ *
+ * @type {Object}
+ */
+        var QUOTED_CHARACTERS = {};
+        QUOTED_CHARACTERS[9] = true;
+        /* Tab */
+        QUOTED_CHARACTERS[10] = true;
+        /* LF */
+        QUOTED_CHARACTERS[13] = true;
+        /* CR */
+        QUOTED_CHARACTERS[33] = true;
+        /* ! */
+        QUOTED_CHARACTERS[34] = true;
+        /* " */
+        QUOTED_CHARACTERS[35] = true;
+        /* # */
+        QUOTED_CHARACTERS[37] = true;
+        /* % */
+        QUOTED_CHARACTERS[38] = true;
+        /* & */
+        QUOTED_CHARACTERS[39] = true;
+        /* ' */
+        QUOTED_CHARACTERS[42] = true;
+        /* * */
+        // QUOTED_CHARACTERS[0x2C] = true; /* , */
+        // QUOTED_CHARACTERS[0x3A] = true; /* : */
+        QUOTED_CHARACTERS[62] = true;
+        /* > */
+        QUOTED_CHARACTERS[64] = true;
+        /* @ */
+        QUOTED_CHARACTERS[91] = true;
+        /* [ */
+        QUOTED_CHARACTERS[93] = true;
+        /* ] */
+        QUOTED_CHARACTERS[96] = true;
+        /* ` */
+        QUOTED_CHARACTERS[123] = true;
+        /* { */
+        QUOTED_CHARACTERS[124] = true;
+        /* | */
+        QUOTED_CHARACTERS[125] = true;
+        /* } */
+        /**
+ * Check if numbers match the YAML number pattern.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/6030fa6c389aaf14545222f7fa27e86359ca3a3b/lib/js-yaml/type/float.js#L6-L11
+ *
+ * @type {RegExp}
+ */
+        var NUMBER_REGEXP = new RegExp('^(?:[-+]?(?:[0-9][0-9_]*)' + '|[-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+][0-9]+)?' + '|\\.[0-9_]+(?:[eE][-+][0-9]+)?' + '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' + '|[-+]?\\.(?:inf|Inf|INF)' + '|\\.(?:nan|NaN|NAN))$');
+        /**
+ * Encode a character code in hex form.
+ *
+ * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L95-L114
+ *
+ * @param  {Number} charCode
+ * @return {String}
+ */
+        var encodeHex = function (charCode) {
+          var string = charCode.toString(16).toUpperCase();
+          var handle;
+          var length;
+          if (charCode <= 255) {
+            handle = 'x';
+            length = 2;
+          } else if (charCode <= 65535) {
+            handle = 'u';
+            length = 4;
+          } else if (charCode <= 4294967295) {
+            handle = 'U';
+            length = 8;
+          } else {
+            throw new Error('Character code within a string may not be greater than 0xFFFFFFFF');
+          }
+          return '\\' + handle + repeat('0', length - string.length) + string;
+        };
+        /**
+ * Return whether a character code needs to be escaped.
+ *
+ * @param  {Number}  charCode
+ * @return {Boolean}
+ */
+        var requiresEscape = function (charCode) {
+          return ESCAPE_SEQUENCES[charCode] || !(32 <= charCode && charCode <= 126 || 133 === charCode || 160 <= charCode && charCode <= 55295 || 57344 <= charCode && charCode <= 65533 || 65536 <= charCode && charCode <= 1114111);
+        };
+        /**
+ * Check whether a string requires quotes in RAML.
+ *
+ * @param  {String}  str
+ * @return {Boolean}
+ */
+        var requiresQuotes = function (str) {
+          // Empty strings require quotes.
+          if (length(str) === 0) {
+            return true;
+          }
+          // Check whether it's surrounded by spaces or starts with `-` or `?`.
+          if (/^[ \-?]| $/.test(str) || NUMBER_REGEXP.test(str)) {
+            return true;
+          }
+          for (var i = 0; i < str.length; i++) {
+            var charCode = str.charCodeAt(i);
+            if (requiresEscape(charCode)) {
+              return true;
+            }
+            if (QUOTED_CHARACTERS[charCode]) {
+              return true;
+            }
+          }
+          return false;
+        };
+        /**
+ * Escape a string to be wrapped in quotes.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+        var escapeString = function (str) {
+          return str.split('').map(function (character) {
+            var charCode = character.charCodeAt(0);
+            if (requiresEscape(charCode)) {
+              return ESCAPE_SEQUENCES[charCode] || escapeHex(charCode);
+            }
+            return character;
+          }).join('');
+        };
+        /**
+ * Wrap a string in quotes and escape.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+        var wrapString = function (str) {
+          return '"' + escapeString(str) + '"';
+        };
+        /**
+ * Stringify a string into RAML.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+        var stringifyString = function (str) {
+          if (requiresQuotes(str)) {
+            return wrapString(str);
+          }
+          return str;
+        };
+        /**
+ * Check whether an inline RAML array can be rendered with the max length.
+ *
+ * @param  {Array}   array
+ * @param  {Number}  length
+ * @param  {Object}  opts
+ * @return {Boolean}
+ */
+        var arrayWithinLength = function (array, maxLength, opts) {
+          // Empty arrays must always be true.
+          if (!array.length) {
+            return true;
+          }
+          // Surrounding brackets and every comma separator - "[ ... ]".
+          var total = 4 + (array.length - 1) * 2;
+          return array.every(function (value) {
+            if (!is.primitive(value)) {
+              return false;
+            }
+            total += length(stringify(value, 0, opts));
+            return total < maxLength;
+          });
+        };
+        /**
+ * Stringify an array using the inline RAML format.
+ *
+ * @param  {Array}  array
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringifyArrayInline = function (array, level, opts) {
+          if (!array.length) {
+            return '[]';
+          }
+          return '[ ' + array.map(function (value) {
+            if (is.string(value) && value.indexOf(':') > -1) {
+              return wrapString(value);
+            }
+            return stringify(value, level, opts);
+          }).join(', ') + ' ]';
+        };
+        /**
+ * Check whether a string fits within the designated width.
+ *
+ * @param  {String}  str
+ * @param  {Number}  maxLength
+ * @param  {Object}  opts
+ * @return {Boolean}
+ */
+        var stringWithinLength = function (str, maxLength, opts) {
+          if (/\r?\n/.test(str)) {
+            return false;
+          }
+          return length(stringifyString(str)) < maxLength;
+        };
+        /**
+ * Stringify a string into RAML with support for multiple lines.
+ *
+ * @param  {String} str
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringifyStringMultiLine = function (str, level, opts) {
+          return indent(str, opts.indent, level);
+        };
+        /**
+ * Generalized property stringification.
+ *
+ * @param  {String} prefix
+ * @param  {*}      value
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringifyProperty = function (prefix, value, level, opts) {
+          var maxLength = opts.maxLength - length(prefix) - 1;
+          // Empty values can stay empty in RAML.
+          if (value == null) {
+            return prefix;
+          }
+          // Check whether the array can fit using inline representation.
+          if (is.array(value) && arrayWithinLength(value, maxLength, opts)) {
+            return prefix + ' ' + stringifyArrayInline(value, level + 1, opts);
+          }
+          // Check whether strings should be on a single line.
+          if (is.string(value) && !stringWithinLength(value, maxLength, opts)) {
+            return prefix + ' |\n' + stringifyStringMultiLine(value, level + 1, opts);
+          }
+          // Inline object representation when empty.
+          if (is.object(value) && !Object.keys(value).length) {
+            return prefix + ' {}';
+          }
+          // All other primitives will fit inline.
+          if (is.primitive(value)) {
+            return prefix + ' ' + stringify(value, level + 1, opts);
+          }
+          return prefix + '\n' + stringify(value, level + 1, opts);
+        };
+        /**
+ * Stringify an object property for RAML.
+ *
+ * @param  {String} key
+ * @param  {*}      value
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringifyObjectProperty = function (key, value, level, opts) {
+          var prefix = repeat(opts.indent, level) + key + ':';
+          return stringifyProperty(prefix, value, level, opts);
+        };
+        /**
+ * Stringify an object for RAML.
+ *
+ * @param  {Object} obj
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringifyObject = function (obj, level, opts) {
+          var keys = Object.keys(obj);
+          return keys.map(function (key) {
+            return stringifyObjectProperty(key, obj[key], level, opts);
+          }).join('\n');
+        };
+        /**
+ * Stringify an array property for RAML.
+ *
+ * @param  {*}      value
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringifyArrayProperty = function (value, level, opts) {
+          var prefix = repeat(opts.indent, level) + '-';
+          // Represent objects inline with the array token. E.g. "- schema: test".
+          if (is.object(value)) {
+            return prefix + ' ' + stringify(value, level + 1, opts).replace(/^ +/, '');
+          }
+          if (is.string(value) && value.indexOf(':') > -1) {
+            return prefix + ' ' + wrapString(value);
+          }
+          return stringifyProperty(prefix, value, level, opts);
+        };
+        /**
+ * Stringify an array for RAML.
+ *
+ * @param  {Array}  array
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringifyArray = function (array, level, opts) {
+          return array.map(function (value) {
+            return stringifyArrayProperty(value, level, opts);
+          }).join('\n');
+        };
+        /**
+ * Map of types to stringify.
+ *
+ * @type {Object}
+ */
+        var TYPES = {
+            '[object String]': stringifyString,
+            '[object Object]': stringifyObject,
+            '[object Array]': stringifyArray,
+            '[object Number]': String,
+            '[object Boolean]': String
+          };
+        /**
+ * Stringify any JavaScript type.
+ *
+ * @param  {*}      input
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        var stringify = function (input, level, opts) {
+          var type = toString(input);
+          if (!TYPES[type]) {
+            return '';
+          }
+          return TYPES[type](input, level, opts);
+        };
+        /**
+ * Stringify JavaScript to a YAML (RAML) string.
+ *
+ * @param  {*}      input
+ * @param  {Number} level
+ * @param  {Object} opts
+ * @return {String}
+ */
+        module.exports = function (input, opts) {
+          return stringify(input, 0, extend({
+            indent: '  ',
+            maxLength: 80
+          }, opts));
+        };
+      },
+      {
+        './utils/is': 12,
+        'indent-string': 13,
+        'repeat-string': 14,
+        'string-length': 15,
+        'xtend/mutable': 18
+      }
+    ],
+    12: [
+      function (require, module, exports) {
+        var is = exports;
+        var _toString = Object.prototype.toString;
+        [
+          'String',
+          'Number',
+          'Boolean',
+          'RegExp',
+          'Object',
+          'Array',
+          'Function',
+          'Null',
+          'Undefined'
+        ].forEach(function (instance) {
+          var name = instance.charAt(0).toLowerCase() + instance.substr(1);
+          var type = '[object ' + instance + ']';
+          is[name] = function (value) {
+            return _toString.call(value) === type;
+          };
+        });
+        /**
+ * Map of primitive types.
+ *
+ * @type {Object}
+ */
+        var PRIMITIVES = {
+            '[object Number]': true,
+            '[object String]': true,
+            '[object Boolean]': true,
+            '[object Null]': true,
+            '[object Undefined]': true
+          };
+        /**
+ * Check whether a value is a primitive JavaScript type.
+ *
+ * @param  {*}       value
+ * @return {Boolean}
+ */
+        is.primitive = function (value) {
+          return !!PRIMITIVES[_toString.call(value)];
+        };
+      },
+      {}
+    ],
+    13: [
+      function (require, module, exports) {
+        'use strict';
+        var repeatString = require('repeat-string');
+        module.exports = function (str, indent, count) {
+          if (typeof str !== 'string' || typeof indent !== 'string') {
+            throw new TypeError('`string` and `indent` should be strings');
+          }
+          if (count != null && typeof count !== 'number') {
+            throw new TypeError('`count` should be a number');
+          }
+          indent = count > 1 ? repeatString(indent, count) : indent;
+          return str.replace(/^(?!\s*$)/gm, indent);
+        };
+      },
+      { 'repeat-string': 14 }
+    ],
+    14: [
+      function (require, module, exports) {
+        module.exports = function (str, count) {
+          if (count < 1) {
+            return '';
+          }
+          var result = '';
+          while (count > 0) {
+            if (count & 1) {
+              result += str;
+            }
+            count >>= 1;
+            str += str;
+          }
+          return result;
+        };
+      },
+      {}
+    ],
+    15: [
+      function (require, module, exports) {
+        'use strict';
+        var stripAnsi = require('strip-ansi');
+        var reAstral = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
+        module.exports = function (str) {
+          return stripAnsi(str).replace(reAstral, ' ').length;
+        };
+      },
+      { 'strip-ansi': 16 }
+    ],
+    16: [
+      function (require, module, exports) {
+        'use strict';
+        var ansiRegex = require('ansi-regex')();
+        module.exports = function (str) {
+          return typeof str === 'string' ? str.replace(ansiRegex, '') : str;
+        };
+      },
+      { 'ansi-regex': 17 }
+    ],
+    17: [
+      function (require, module, exports) {
+        'use strict';
+        module.exports = function () {
+          return /(?:(?:\u001b\[)|\u009b)(?:(?:[0-9]{1,3})?(?:(?:;[0-9]{0,3})*)?[A-M|f-m])|\u001b[A-M]/g;
+        };
+      },
+      {}
+    ],
+    18: [
+      function (require, module, exports) {
+        module.exports = extend;
+        function extend(target) {
+          for (var i = 1; i < arguments.length; i++) {
+            var source = arguments[i];
+            for (var key in source) {
+              if (source.hasOwnProperty(key)) {
+                target[key] = source[key];
+              }
+            }
+          }
+          return target;
+        }
+      },
+      {}
+    ],
+    19: [
+      function (require, module, exports) {
+        var sanitize = require('./lib/sanitize');
+        var stringify = require('./lib/stringify');
+        /**
+ * Transform a RAML object into a RAML string.
+ *
+ * @param  {Object} obj
+ * @return {String}
+ */
+        module.exports = function (obj) {
+          return '#%RAML 0.8\n' + stringify(sanitize(obj));
+        };
+      },
+      {
+        './lib/sanitize': 2,
+        './lib/stringify': 11
+      }
+    ]
+  }, {}, [19])(19);
+});
+!function (e) {
+  if ('object' == typeof exports && 'undefined' != typeof module)
+    module.exports = e();
+  else if ('function' == typeof define && define.amd)
+    define([], e);
+  else {
+    var f;
+    'undefined' != typeof window ? f = window : 'undefined' != typeof global ? f = global : 'undefined' != typeof self && (f = self), f.swaggerToRamlObject = e();
+  }
+}(function () {
+  var define, module, exports;
+  return function e(t, n, r) {
+    function s(o, u) {
+      if (!n[o]) {
+        if (!t[o]) {
+          var a = typeof require == 'function' && require;
+          if (!u && a)
+            return a(o, !0);
+          if (i)
+            return i(o, !0);
+          var f = new Error('Cannot find module \'' + o + '\'');
+          throw f.code = 'MODULE_NOT_FOUND', f;
+        }
+        var l = n[o] = { exports: {} };
+        t[o][0].call(l.exports, function (e) {
+          var n = t[o][1][e];
+          return s(n ? n : e);
+        }, l, l.exports, e, t, n, r);
+      }
+      return n[o].exports;
+    }
+    var i = typeof require == 'function' && require;
+    for (var o = 0; o < r.length; o++)
+      s(r[o]);
+    return s;
+  }({
+    1: [
+      function (require, module, exports) {
+        var extend = require('extend');
+        var camelCase = require('camel-case');
+        var getVersion = require('./utils/version');
+        var compareVersion = require('./utils/version-equal');
+        /**
+ * Map of valid param types to raml types.
+ *
+ * @type {Object}
+ */
+        var PARAM_TYPE_MAP = {
+            string: { type: 'string' },
+            number: { type: 'number' },
+            integer: { type: 'integer' },
+            boolean: { type: 'boolean' },
+            File: { type: 'file' },
+            array: { repeat: true }
+          };
+        /**
+ * Map of valid param types to json schema types.
+ *
+ * @type {Object}
+ */
+        var JSON_TYPE_MAP = {
+            string: { type: 'string' },
+            number: { type: 'number' },
+            integer: { type: 'integer' },
+            boolean: { type: 'boolean' },
+            array: { type: 'array' },
+            object: { type: 'object' }
+          };
+        /**
+ * Map of valid formats to their properties.
+ *
+ * @type {Object}
+ */
+        var PARAM_FORMAT_MAP = {
+            int32: {
+              type: 'integer',
+              minimum: -2147483648,
+              maximum: 2147483647
+            },
+            int64: {
+              type: 'integer',
+              minimum: -9223372036854776000,
+              maximum: 9223372036854776000
+            },
+            date: { type: 'date' },
+            'date-time': { type: 'date' }
+          };
+        /**
+ * Url-encoded form content type.
+ *
+ * @type {String}
+ */
+        var URL_ENCODED_MIME = 'application/x-www-form-urlencoded';
+        /**
+ * Content type for multipart form uploads.
+ *
+ * @type {String}
+ */
+        var MULTI_PART_MIME = 'multipart/form-data';
+        /**
+ * Location of the spec on api declarations.
+ *
+ * @type {String}
+ */
+        var API_SPEC_URI = 'https://github.com/wordnik/swagger-spec' + '/blob/master/versions/1.2.md#52-api-declaration';
+        /**
+ * Expose the converter function.
+ */
+        module.exports = convertApiDeclaration;
+        /**
+ * Convert an api declaration into RAML.
+ *
+ * @param  {Object} declaration
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+        function convertApiDeclaration(declaration, ramlObject) {
+          var version = getVersion(declaration);
+          if (version >= 2) {
+            throw new Error('Swagger ' + version.toFixed(1) + ' is not supported');
+          }
+          // Verify the api declaration is valid.
+          if (!declaration.basePath || !declaration.apis) {
+            throw new Error('Must be a valid api declaration: ' + API_SPEC_URI);
+          }
+          ramlObject = ramlObject || {};
+          // Check if the api version is still the same.
+          if (!compareVersion(declaration.apiVersion, ramlObject.version)) {
+            throw new Error('The api version has changed: ' + ramlObject.version + ' -> ' + declaration.apiVersion);
+          } else if (!ramlObject.version) {
+            ramlObject.version = declaration.apiVersion;
+          }
+          addBasePath(declaration.basePath, ramlObject);
+          convertApis(declaration, ramlObject);
+          return ramlObject;
+        }
+        /**
+ * Set the base path from the api declaration on the raml object.
+ *
+ * @param  {String} basePath
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+        function addBasePath(basePath, ramlObject) {
+          // If a base uri has not been set yet, set it here.
+          if (!ramlObject.baseUri) {
+            ramlObject.baseUri = basePath;
+            return ramlObject;
+          }
+          // If the base path changes for some reason, throw an error. In the future,
+          // we may want to refactor the resource tree with new prefixes.
+          if (ramlObject.baseUri !== basePath) {
+            throw new Error('The base uri has changed: ' + ramlObject.baseUri + ' -> ' + basePath);
+          }
+          return ramlObject;
+        }
+        /**
+ * Convert an array of apis into a raml resource.
+ *
+ * @param  {Object} declaration
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+        function convertApis(declaration, ramlObject) {
+          var relativeUri = declaration.resourcePath;
+          var ramlResources = ramlObject.resources = ramlObject.resources || [];
+          var ramlResource = findResource(ramlResources, relativeUri);
+          declaration.apis.forEach(function (api) {
+            var path = api.path;
+            var resource = ramlResource;
+            // I assume this will always occur based on the Swagger specs I've seen.
+            if (path.substr(0, relativeUri.length) === relativeUri) {
+              path = path.substr(relativeUri.length);
+              // If no raml resource exists, create it.
+              if (!ramlResource) {
+                resource = ramlResource = { relativeUri: relativeUri };
+                ramlResources.push(resource);
+              }
+              // Only create a new subresource when the path has changed.
+              if (path !== '') {
+                resource = { relativeUri: path };
+                ramlResource.resources = ramlResource.resources || [];
+                ramlResource.resources.push(resource);
+              }
+            } else {
+              ramlResources.push(resource = { relativeUri: path });
+            }
+            // Alias the api description onto the new raml resource.
+            if (api.description) {
+              resource.description = api.description;
+            }
+            return convertOperations(api.operations, declaration, resource);
+          });
+          return ramlResource;
+        }
+        /**
+ * Find a resource by uri in an array of resources.
+ *
+ * @param  {Array}  resources
+ * @param  {String} uri
+ * @return {Object}
+ */
+        function findResource(resources, uri) {
+          var matchingResource;
+          resources.some(function (resource) {
+            if (resource.relativeUri === uri) {
+              matchingResource = resource;
+              return true;
+            }
+          });
+          return matchingResource;
+        }
+        /**
+ * Convert an array of swagger operations for a raml resource.
+ *
+ * @param  {Object} operations
+ * @param  {Object} declaration
+ * @param  {Object} ramlResource
+ * @return {Object}
+ */
+        function convertOperations(operations, declaration, ramlResource) {
+          ramlResource.methods = ramlResource.methods || [];
+          operations.forEach(function (operation) {
+            if (!operation.method) {
+              throw new Error('Expected the operation to have a method defined');
+            }
+            // Initialise the method object. This assumes the same method name has not
+            // already been used.
+            var method = { method: operation.method };
+            if (operation.nickname) {
+              method.displayName = operation.nickname;
+            }
+            if (operation.notes || operation.summary) {
+              method.description = operation.notes || operation.summary;
+            }
+            if (operation.deprecated === 'true' || operation.deprecated === true) {
+              if (!method.description) {
+                method.description = '';
+              } else {
+                method.description += '\n\n';
+              }
+              method.description += 'This method has been deprecated.';
+            }
+            convertParameters(operation, declaration, method, ramlResource);
+            convertResponseMessages(operation, declaration, method);
+            ramlResource.methods.push(method);
+          });
+          return ramlResource;
+        }
+        /**
+ * Convert response messages into the raml object.
+ *
+ * @param  {Object} operation
+ * @param  {Object} declaration
+ * @param  {Object} method
+ * @return {Object}
+ */
+        function convertResponseMessages(operation, declaration, method) {
+          if (!operation.responseMessages || !operation.responseMessages.length) {
+            return method;
+          }
+          // Initialise the responses object.
+          var responses = method.responses = method.responses || {};
+          var produces = operation.produces || declaration.produces || [];
+          // Alias all response messages.
+          operation.responseMessages.forEach(function (response) {
+            responses[response.code] = { description: response.message };
+            // Adds the produces mime types to the reponses object.
+            if (produces.length) {
+              responses[response.code].body = {};
+              produces.forEach(function (mime) {
+                if (response.responseModel && CONVERT_MODEL_TO_SCHEMA[mime]) {
+                  responses[response.code].body[mime] = { schema: CONVERT_MODEL_TO_SCHEMA[mime](response.responseModel, declaration) };
+                  return;
+                }
+                responses[response.code].body[mime] = null;
+              });
+            }
+          });
+          return method;
+        }
+        /**
+ * Checks whether a uri parameter is valid.
+ *
+ * @param  {String}  name
+ * @return {Boolean}
+ */
+        function isValidUriParameterName(name) {
+          return /^(?:[\w\.]|%\d{2})*$/.test(name);
+        }
+        /**
+ * Correct resource uri parameters to be valid.
+ *
+ * @param  {Object} ramlResource
+ * @return {Object}
+ */
+        function sanitizeUriParameterNames(ramlResource) {
+          /**
+   * Replace uri parameters with valid names.
+   *
+   * @param  {String} match
+   * @param  {String} name
+   * @return {String}
+   */
+          function replaceParameters(match, name) {
+            if (isValidUriParameterName(name)) {
+              return match;
+            }
+            // Camelize invalid parameter names. Purely stylistic over the
+            // alternative of using percent-encoding.
+            var updatedName = camelCase(name);
+            var uriParameters = ramlResource.uriParameters;
+            // Move the uri parameter definition.
+            if (uriParameters[name]) {
+              uriParameters[updatedName] = uriParameters[name];
+              delete uriParameters[name];
+            }
+            return '{' + updatedName + '}';
+          }
+          ramlResource.relativeUri = ramlResource.relativeUri.replace(/\{([^\}]+)\}/g, replaceParameters);
+          return ramlResource;
+        }
+        /**
+ * Convert swagger operation parameters for a raml method.
+ *
+ * @param  {Array}  operation
+ * @param  {Object} declaration
+ * @param  {Object} ramlMethod
+ * @param  {Object} ramlResource
+ * @return {Object}
+ */
+        function convertParameters(operation, declaration, ramlMethod, ramlResource) {
+          var consumes = operation.consumes || declaration.consumes || [];
+          var parameters = groupParameters(operation.parameters);
+          // Path parameters are more applicable to the resource than the method.
+          if (parameters.path) {
+            ramlResource.uriParameters = convertParametersToRaml(parameters.path, declaration);
+            sanitizeUriParameterNames(ramlResource);
+          }
+          // Add query parameters to the current method.
+          if (parameters.query) {
+            ramlMethod.queryParameters = convertParametersToRaml(parameters.query, declaration);
+          }
+          // Add headers to the current method.
+          if (parameters.header) {
+            ramlMethod.headers = convertParametersToRaml(parameters.header, declaration);
+          }
+          // Convert the body parameters before attempting the form.
+          if (parameters.body) {
+            convertBodyParameters(parameters.body, consumes, declaration, ramlMethod);
+          }
+          // Convert the form parameter into something that works better
+          if (parameters.form) {
+            convertFormParameters(parameters.form, consumes, declaration, ramlMethod);
+          }
+          return ramlMethod;
+        }
+        /**
+ * Map of parameter mime types to conversion functions.
+ *
+ * @type {Object}
+ */
+        var CONVERT_PARAMS_TO_SCHEMA = {
+            'application/xml': null,
+            'application/json': convertParameterToJsonSchema
+          };
+        /**
+ * Map of model mime types to conversion functions.
+ *
+ * @type {Object}
+ */
+        var CONVERT_MODEL_TO_SCHEMA = {
+            'application/xml': null,
+            'application/json': convertModelToJsonSchema
+          };
+        /**
+ * Convert body parameters inline into raml schemas.
+ *
+ * @param  {Array}  params
+ * @param  {Array}  consumes
+ * @param  {Object} declaration
+ * @param  {Object} ramlMethod
+ * @return {Object}
+ */
+        function convertBodyParameters(params, consumes, declaration, ramlMethod) {
+          ramlMethod.body = ramlMethod.body || {};
+          if (params.length > 1) {
+            throw new Error('Found ' + param.length + ' parameters for body type');
+          }
+          // Iterate over the consumes object and convert known types.
+          params.forEach(function (param) {
+            consumes.forEach(function (mime) {
+              if (CONVERT_PARAMS_TO_SCHEMA[mime]) {
+                return ramlMethod.body[mime] = { schema: CONVERT_PARAMS_TO_SCHEMA[mime](param, declaration) };
+              }
+              ramlMethod.body[mime] = null;
+            });
+          });
+          return ramlMethod;
+        }
+        /**
+ * Convert form parameters inline and mutate the raml method.
+ *
+ * @param  {Array}  params
+ * @param  {Array}  consumes
+ * @param  {Object} declaration
+ * @param  {Object} ramlMethod
+ * @return {Object}
+ */
+        function convertFormParameters(params, consumes, declaration, ramlMethod) {
+          var multiPart = consumes.indexOf(MULTI_PART_MIME) > -1;
+          var urlEncoded = consumes.indexOf(URL_ENCODED_MIME) > -1;
+          var ramlParams = convertParametersToRaml(params, declaration);
+          // Enforce multipart if the parameters contain a file type.
+          if (!multiPart) {
+            multiPart = params.some(function (param) {
+              return param.type === 'File';
+            });
+          }
+          // Initialise the body to an object, if it hasn't already been.
+          ramlMethod.body = ramlMethod.body || {};
+          // Alias the object based on the consumes type.
+          if (multiPart && urlEncoded) {
+            ramlMethod.body[MULTI_PART_MIME] = { formParameters: ramlParams };
+            ramlMethod.body[URL_ENCODED_MIME] = { formParameters: ramlParams };
+          } else if (multiPart) {
+            ramlMethod.body[MULTI_PART_MIME] = { formParameters: ramlParams };
+          } else {
+            ramlMethod.body[URL_ENCODED_MIME] = { formParameters: ramlParams };
+          }
+          return ramlMethod;
+        }
+        /**
+ * Group parameters by types.
+ *
+ * @param  {Array}  parameters
+ * @return {Object}
+ */
+        function groupParameters(parameters) {
+          var groups = {};
+          Object.keys(parameters).forEach(function (key) {
+            var parameter = parameters[key];
+            var type = parameter.paramType;
+            var group = groups[type] = groups[type] || [];
+            group.push(parameter);
+          });
+          return groups;
+        }
+        /**
+ * Convert an array of swagger parameters to the resource path.
+ *
+ * @param  {Array}  params
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+        function convertParametersToRaml(params, declaration) {
+          var ramlParams = {};
+          params.forEach(function (param) {
+            ramlParams[param.name] = convertParameter(param, declaration);
+          });
+          return ramlParams;
+        }
+        /**
+ * Convert a single parameter to raml style.
+ *
+ * @param  {Object} param
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+        function convertParameter(param, declaration) {
+          var ramlParameter = {};
+          // Extend the parameter information based on the type.
+          if (param.type && PARAM_TYPE_MAP[param.type]) {
+            extend(ramlParameter, PARAM_TYPE_MAP[param.type]);
+          } else {
+          }
+          // Extend the parameter with defaults set by the format.
+          if (PARAM_FORMAT_MAP[param.format]) {
+            extend(ramlParameter, PARAM_FORMAT_MAP[param.format]);
+          }
+          if (typeof param.description === 'string') {
+            ramlParameter.description = param.description;
+          }
+          if (typeof param.required === 'boolean') {
+            ramlParameter.required = param.required;
+          }
+          if (param.defaultValue) {
+            ramlParameter.default = param.defaultValue;
+          }
+          if (Array.isArray(param.enum)) {
+            ramlParameter.enum = param.enum;
+          }
+          if (typeof param.minimum === 'number') {
+            ramlParameter.minimum = param.minimum;
+          }
+          if (typeof param.maximum === 'number') {
+            ramlParameter.maximum = param.maximum;
+          }
+          return ramlParameter;
+        }
+        /**
+ * Convert a model to a JSON schema object.
+ *
+ * @param  {String} name
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+        function convertModelToJson(name, declaration) {
+          var schema = {};
+          var model = declaration.models[name];
+          // Unfortunately, it is possible that the model has not been documented.
+          if (!model) {
+            return;
+          }
+          // Find potential parent models.
+          Object.keys(declaration.models).some(function (key) {
+            var model = declaration.models[key];
+            if (!model || !model.subTypes || !model.subTypes.indexOf(name)) {
+              return false;
+            }
+            // Find and compile the parent schema.
+            var parentSchema = convertParameterToJson(key, declaration);
+            extend(schema, parentSchema);
+            schema.properties = extend({}, parentSchema.properties);
+            return true;
+          });
+          // Compile child properties into expected objects.
+          Object.keys(model.properties || {}).forEach(function (key) {
+            var property = model.properties[key];
+            var properties = schema.properties = schema.properties || {};
+            properties[key] = convertParameterToJson(property, declaration);
+          });
+          return schema;
+        }
+        /**
+ * Convert a parameter into JSON schema object.
+ *
+ * @param  {Object} param
+ * @param  {Object} declaration
+ * @return {Object}
+ */
+        function convertParameterToJson(param, declaration) {
+          var schema = {};
+          if (param.type && JSON_TYPE_MAP[param.type]) {
+            extend(schema, JSON_TYPE_MAP[param.type]);
+          } else if (param.$ref || param.type) {
+            // Extend the current schema with model meta data.
+            extend(schema, convertModelToJson(param.$ref || param.type, declaration));
+          }
+          // Iterate over the allowed JSON schema properties in Swagger and set.
+          [
+            'description',
+            'defaultValue',
+            'enum',
+            'minimum',
+            'maximum',
+            'items',
+            'required',
+            'uniqueItems'
+          ].forEach(function (key) {
+            if (param[key] == null) {
+              return;
+            }
+            // Handle sub-items different and convert the types.
+            if (key === 'items') {
+              return schema[key] = convertParameterToJson(param[key], declaration);
+            }
+            schema[key] = param[key];
+          });
+          return schema;
+        }
+        /**
+ * Convert a parameter to JSON.
+ *
+ * @param  {Object} param
+ * @param  {Object} declaration
+ * @return {String}
+ */
+        function convertParameterToJsonSchema(param, declaration) {
+          var schema = extend({ $schema: 'http://json-schema.org/draft-04/schema#' }, convertParameterToJson(param, declaration));
+          return JSON.stringify(schema, null, 2);
+        }
+        /**
+ * Convert a model to JSON.
+ *
+ * @param  {String} name
+ * @param  {Object} declaration
+ * @return {String}
+ */
+        function convertModelToJsonSchema(name, declaration) {
+          var schema = extend({ $schema: 'http://json-schema.org/draft-04/schema#' }, convertModelToJson(name, declaration));
+          return JSON.stringify(schema, null, 2);
+        }
+      },
+      {
+        './utils/version': 7,
+        './utils/version-equal': 6,
+        'camel-case': 8,
+        'extend': 13
+      }
+    ],
+    2: [
+      function (require, module, exports) {
+        /**
+ * Expose the parse module.
+ */
+        module.exports = parse;
+        /**
+ * Parse the content based on the file name.
+ *
+ * @param  {String} content
+ * @return {Object}
+ */
+        function parse(content) {
+          var result = JSON.parse(content);
+          if (!result.swaggerVersion) {
+            throw new Error('Swagger version is required');
+          }
+          return result;
+        }
+      },
+      {}
+    ],
+    3: [
+      function (require, module, exports) {
+        var getVersion = require('./utils/version');
+        /**
+ * Map swagger documentation keys into title-cased strings.
+ *
+ * @type {Object}
+ */
+        var DOCUMENTATION_NAME_MAP = {
+            description: 'Description',
+            termsOfServiceUrl: 'Terms of Service URL',
+            contact: 'Contact',
+            license: 'License',
+            licenseUrl: 'License URL'
+          };
+        /**
+ * Map of Swagger OAuth 2.0 grant types to the RAML equivalents.
+ *
+ * @type {Object}
+ */
+        var GRANT_TYPE_MAP = {
+            implicit: 'token',
+            authorization_code: 'code'
+          };
+        /**
+ * Map of ways to pass API keys in Swagger to RAML properties.
+ * @type {Object}
+ */
+        var API_KEY_PASS_AS_MAP = {
+            header: 'headers',
+            query: 'queryParameters'
+          };
+        /**
+ * Location of the swagger spec on resource listings.
+ *
+ * @type {String}
+ */
+        var RESOURCE_SPEC_URI = 'https://github.com/wordnik/swagger-spec' + '/blob/master/versions/1.2.md#51-resource-listing';
+        /**
+ * Expose the converter.
+ */
+        module.exports = convertResourceListing;
+        /**
+ * Convert a resource listing into a base raml object.
+ *
+ * @param  {Object} resource
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+        function convertResourceListing(resource, ramlObject) {
+          var version = getVersion(resource);
+          if (version >= 2) {
+            throw new Error('Swagger ' + version.toFixed(1) + ' is not supported');
+          }
+          if (!resource.apis) {
+            throw new Error('Must be a valid resource listing: ' + RESOURCE_SPEC_URI);
+          }
+          ramlObject = ramlObject || {};
+          if (resource.apiVersion) {
+            ramlObject.version = resource.apiVersion;
+          }
+          convertInfo(resource.info, ramlObject);
+          convertAuthorizations(resource.authorizations, ramlObject);
+          return ramlObject;
+        }
+        /**
+ * Attach information from the swagger spec to the raml object.
+ *
+ * @param  {Object} info
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+        function convertInfo(info, ramlObject) {
+          if (!info) {
+            return ramlObject;
+          }
+          var documentation = Object.keys(DOCUMENTATION_NAME_MAP).filter(function (key) {
+              return info[key];
+            }).map(function (key) {
+              return {
+                title: DOCUMENTATION_NAME_MAP[key],
+                content: info[key]
+              };
+            });
+          if (info.title) {
+            ramlObject.title = info.title;
+          }
+          if (documentation.length) {
+            ramlObject.documentation = documentation;
+          }
+          return ramlObject;
+        }
+        /**
+ * Convert swagger authorizations into raml object format.
+ *
+ * @param  {Object} authorizations
+ * @param  {Object} ramlObject
+ * @return {Object}
+ */
+        function convertAuthorizations(authorizations, ramlObject) {
+          if (!authorizations) {
+            return ramlObject;
+          }
+          ramlObject.securitySchemes = Object.keys(authorizations).map(function (key) {
+            var data = {};
+            data[key] = convertAuthorization(authorizations[key]);
+            return data;
+          });
+          return ramlObject;
+        }
+        /**
+ * Convert a single swagger authorization object into something compatible
+ * with raml.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+        function convertAuthorization(authorization) {
+          if (authorization.type === 'oauth2') {
+            return convertOAuth2(authorization);
+          }
+          if (authorization.type === 'apiKey') {
+            return convertApiKey(authorization);
+          }
+          if (authorization.type === 'basicAuth') {
+            return convertBasicAuth(authorization);
+          }
+        }
+        /**
+ * Convert the OAuth 2.0 authorization from swagger into raml object.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+        function convertOAuth2(authorization) {
+          var ramlAuth = {
+              type: 'OAuth 2.0',
+              settings: { authorizationGrants: [] }
+            };
+          var implicit = authorization.grantTypes.implicit;
+          var authCode = authorization.grantTypes.authorization_code;
+          var description = [];
+          var authSettings = ramlAuth.settings;
+          // Map scopes to the RAML object.
+          if (authorization.scopes && authorization.scopes.length) {
+            var scopeDescriptions = [];
+            authSettings.scopes = authorization.scopes.map(function (scope) {
+              var name = scope.scope;
+              if (scope.description) {
+                scopeDescriptions.push('* ' + name + ' - ' + scope.description);
+              }
+              return name;
+            });
+            // Push the scope descriptions onto the primary description.
+            if (scopeDescriptions.length) {
+              description.push('Available scopes: ');
+              description.push(scopeDescriptions.join('\n'));
+            }
+          }
+          // Map grant types into the raml object.
+          Object.keys(authorization.grantTypes).forEach(function (grantType) {
+            authSettings.authorizationGrants.push(GRANT_TYPE_MAP[grantType]);
+          });
+          if (implicit) {
+            if (implicit.loginEndpoint && implicit.loginEndpoint.url) {
+              authSettings.authorizationUri = implicit.loginEndpoint.url;
+            }
+            // Add a manual description if the token name is non-standard.
+            if (implicit.tokenName && implicit.tokenName !== 'access_token') {
+              description.push('The token grant uses "' + implicit.tokenName + '" as the token name.');
+            }
+          }
+          if (authCode) {
+            var tokenEndpoint = authCode.tokenEndpoint;
+            var tokenRequestEndpoint = authCode.tokenRequestEndpoint;
+            var clientIdName = tokenRequestEndpoint.clientIdName;
+            var clientSecretName = tokenRequestEndpoint.clientSecretName;
+            var tokenName = tokenEndpoint.tokenName;
+            authSettings.accessTokenUri = tokenEndpoint.url;
+            authSettings.authorizationUri = tokenRequestEndpoint.url;
+            if (clientIdName && clientIdName !== 'client_id') {
+              description.push('The code grant uses "' + clientIdName + '" as the parameter for ' + 'passing the client id.');
+            }
+            if (clientSecretName && clientSecretName !== 'client_secret') {
+              description.push('The code grant uses "' + clientSecretName + '" as the parameter ' + 'for passing the client secret.');
+            }
+            if (tokenName && tokenName !== 'access_code') {
+              description.push('The code grant uses "' + tokenName + '" as the parameter for ' + 'passing the authorization token.');
+            }
+          }
+          // Add the description to the object if options are available.
+          if (description.length) {
+            ramlAuth.description = description.join('\n\n');
+          }
+          return ramlAuth;
+        }
+        /**
+ * Convert the API key definition in Swagger to a RAML object.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+        function convertApiKey(authorization) {
+          var ramlAuth = {
+              type: 'x-api-key',
+              describedBy: {}
+            };
+          var describedBy = API_KEY_PASS_AS_MAP[authorization.passAs];
+          // If the described by property is valid,
+          if (describedBy) {
+            var description = ramlAuth.describedBy[describedBy] = {};
+            // Set the correct parameter on the `describedBy` object.
+            description[authorization.keyname] = {
+              type: 'string',
+              description: 'Used to send a valid API key for authentication.'
+            };
+          }
+          return ramlAuth;
+        }
+        /**
+ * Convert the basic auth definition in Swagger to a RAML object.
+ *
+ * @param  {Object} authorization
+ * @return {Object}
+ */
+        function convertBasicAuth(authorization) {
+          return { type: 'Basic Authentication' };
+        }
+      },
+      { './utils/version': 7 }
+    ],
+    4: [
+      function (require, module, exports) {
+        /**
+ * Export the resource listing check.
+ */
+        module.exports = isResourceListing;
+        /**
+ * Check whether an object is a resource listing.
+ *
+ * @param  {Object}  resource
+ * @return {Boolean}
+ */
+        function isResourceListing(resource) {
+          return !resource.basePath;
+        }
+      },
+      {}
+    ],
+    5: [
+      function (require, module, exports) {
+        /**
+ * Export the resolve function.
+ */
+        module.exports = resolve;
+        /**
+ * Resolve a series of path segments.
+ *
+ * @return {String}
+ */
+        function resolve() {
+          var parts = Array.prototype.reduce.call(arguments, function (path, segment) {
+              var parts = splitSegment(segment);
+              if (hasProtocol(segment)) {
+                return parts;
+              }
+              return path.concat(parts);
+            }, []);
+          var index = 0;
+          while (index < parts.length) {
+            var part = parts[index];
+            if (part === '' || part === '.') {
+              parts.splice(index, 1);
+            } else if (part === '..') {
+              parts.splice(index - 1, 2);
+              index--;
+            } else {
+              index++;
+            }
+          }
+          return parts.join('/');
+        }
+        /**
+ * Split a path into parts.
+ *
+ * @param  {String} segment
+ * @return {Array}
+ */
+        function splitSegment(segment) {
+          if (!hasProtocol(segment)) {
+            return segment.replace(/^\/+/, '').split(/\/+/g);
+          }
+          var proto = segment.match(/^\w+:\/\//)[0];
+          var index = segment.substr(proto.length).indexOf('/');
+          // No URL path.
+          if (index === -1) {
+            return [segment];
+          }
+          var pathIndex = proto.length + index;
+          var parts = splitSegment(segment.substr(pathIndex));
+          var origin = segment.substr(0, pathIndex);
+          return [origin].concat(parts);
+        }
+        /**
+ * Check if the path begins with a protocol.
+ *
+ * @param  {String}  path
+ * @return {Boolean}
+ */
+        function hasProtocol(path) {
+          return /^\w+:\/\//.test(path);
+        }
+        /**
+ * Check if a path is absolute.
+ *
+ * @param  {String}  path
+ * @return {Boolean}
+ */
+        function isAbsolute(path) {
+          return /^\//.test(path);
+        }
+      },
+      {}
+    ],
+    6: [
+      function (require, module, exports) {
+        /**
+ * Export the function.
+ */
+        module.exports = versionEqual;
+        /**
+ * Check whether the new version is the same as the previous version.
+ *
+ * @param  {String}  currentVersion
+ * @param  {String}  newVersion
+ * @return {Boolean}
+ */
+        function versionEqual(currentVersion, newVersion) {
+          // Allow the new version to be empty.
+          if (newVersion == null) {
+            return true;
+          }
+          var newVersionNumber = Number(newVersion);
+          var currentVersionNumber = Number(currentVersion);
+          // If both are valid numbers, compare as numbers.
+          if (newVersionNumber && currentVersionNumber) {
+            return newVersionNumber === currentVersionNumber;
+          }
+          // Compare directly as strings.
+          return currentVersion === newVersion;
+        }
+      },
+      {}
+    ],
+    7: [
+      function (require, module, exports) {
+        /**
+ * Export version function.
+ */
+        module.exports = version;
+        /**
+ * Retrieve the Swagger version from a specification.
+ *
+ * @param  {Object} declaration
+ * @return {Number}
+ */
+        function version(declaration) {
+          return parseFloat(declaration.swaggerVersion || declaration.swagger);
+        }
+      },
+      {}
+    ],
+    8: [
+      function (require, module, exports) {
+        var sentence = require('sentence-case');
+        /**
+ * Camel case a string.
+ *
+ * @param  {String} string
+ * @return {String}
+ */
+        module.exports = function (string) {
+          return sentence(string).replace(/(\d) (?=\d)/g, '$1_').replace(/ (\w)/g, function (_, $1) {
+            return $1.toUpperCase();
+          });
+        };
+      },
+      { 'sentence-case': 9 }
+    ],
+    9: [
+      function (require, module, exports) {
+        var NON_WORD_REGEXP = require('./vendor/non-word-regexp.js');
+        var CAMEL_CASE_REGEXP = require('./vendor/camel-case-regexp.js');
+        var TRAILING_DIGIT_REGEXP = require('./vendor/trailing-digit-regexp.js');
+        /**
+ * Sentence case a string.
+ *
+ * @param  {String} str
+ * @return {String}
+ */
+        module.exports = function (str) {
+          if (str == null) {
+            return '';
+          }
+          return String(str).replace(CAMEL_CASE_REGEXP, '$1 $2').replace(TRAILING_DIGIT_REGEXP, '$1 $2').replace(NON_WORD_REGEXP, ' ').replace(/^ | $/g, '').toLowerCase();
+        };
+      },
+      {
+        './vendor/camel-case-regexp.js': 10,
+        './vendor/non-word-regexp.js': 11,
+        './vendor/trailing-digit-regexp.js': 12
+      }
+    ],
+    10: [
+      function (require, module, exports) {
+        module.exports = /([\u0061-\u007A\u00B5\u00DF-\u00F6\u00F8-\u00FF\u0101\u0103\u0105\u0107\u0109\u010B\u010D\u010F\u0111\u0113\u0115\u0117\u0119\u011B\u011D\u011F\u0121\u0123\u0125\u0127\u0129\u012B\u012D\u012F\u0131\u0133\u0135\u0137\u0138\u013A\u013C\u013E\u0140\u0142\u0144\u0146\u0148\u0149\u014B\u014D\u014F\u0151\u0153\u0155\u0157\u0159\u015B\u015D\u015F\u0161\u0163\u0165\u0167\u0169\u016B\u016D\u016F\u0171\u0173\u0175\u0177\u017A\u017C\u017E-\u0180\u0183\u0185\u0188\u018C\u018D\u0192\u0195\u0199-\u019B\u019E\u01A1\u01A3\u01A5\u01A8\u01AA\u01AB\u01AD\u01B0\u01B4\u01B6\u01B9\u01BA\u01BD-\u01BF\u01C6\u01C9\u01CC\u01CE\u01D0\u01D2\u01D4\u01D6\u01D8\u01DA\u01DC\u01DD\u01DF\u01E1\u01E3\u01E5\u01E7\u01E9\u01EB\u01ED\u01EF\u01F0\u01F3\u01F5\u01F9\u01FB\u01FD\u01FF\u0201\u0203\u0205\u0207\u0209\u020B\u020D\u020F\u0211\u0213\u0215\u0217\u0219\u021B\u021D\u021F\u0221\u0223\u0225\u0227\u0229\u022B\u022D\u022F\u0231\u0233-\u0239\u023C\u023F\u0240\u0242\u0247\u0249\u024B\u024D\u024F-\u0293\u0295-\u02AF\u0371\u0373\u0377\u037B-\u037D\u0390\u03AC-\u03CE\u03D0\u03D1\u03D5-\u03D7\u03D9\u03DB\u03DD\u03DF\u03E1\u03E3\u03E5\u03E7\u03E9\u03EB\u03ED\u03EF-\u03F3\u03F5\u03F8\u03FB\u03FC\u0430-\u045F\u0461\u0463\u0465\u0467\u0469\u046B\u046D\u046F\u0471\u0473\u0475\u0477\u0479\u047B\u047D\u047F\u0481\u048B\u048D\u048F\u0491\u0493\u0495\u0497\u0499\u049B\u049D\u049F\u04A1\u04A3\u04A5\u04A7\u04A9\u04AB\u04AD\u04AF\u04B1\u04B3\u04B5\u04B7\u04B9\u04BB\u04BD\u04BF\u04C2\u04C4\u04C6\u04C8\u04CA\u04CC\u04CE\u04CF\u04D1\u04D3\u04D5\u04D7\u04D9\u04DB\u04DD\u04DF\u04E1\u04E3\u04E5\u04E7\u04E9\u04EB\u04ED\u04EF\u04F1\u04F3\u04F5\u04F7\u04F9\u04FB\u04FD\u04FF\u0501\u0503\u0505\u0507\u0509\u050B\u050D\u050F\u0511\u0513\u0515\u0517\u0519\u051B\u051D\u051F\u0521\u0523\u0525\u0527\u0561-\u0587\u1D00-\u1D2B\u1D6B-\u1D77\u1D79-\u1D9A\u1E01\u1E03\u1E05\u1E07\u1E09\u1E0B\u1E0D\u1E0F\u1E11\u1E13\u1E15\u1E17\u1E19\u1E1B\u1E1D\u1E1F\u1E21\u1E23\u1E25\u1E27\u1E29\u1E2B\u1E2D\u1E2F\u1E31\u1E33\u1E35\u1E37\u1E39\u1E3B\u1E3D\u1E3F\u1E41\u1E43\u1E45\u1E47\u1E49\u1E4B\u1E4D\u1E4F\u1E51\u1E53\u1E55\u1E57\u1E59\u1E5B\u1E5D\u1E5F\u1E61\u1E63\u1E65\u1E67\u1E69\u1E6B\u1E6D\u1E6F\u1E71\u1E73\u1E75\u1E77\u1E79\u1E7B\u1E7D\u1E7F\u1E81\u1E83\u1E85\u1E87\u1E89\u1E8B\u1E8D\u1E8F\u1E91\u1E93\u1E95-\u1E9D\u1E9F\u1EA1\u1EA3\u1EA5\u1EA7\u1EA9\u1EAB\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5\u1EB7\u1EB9\u1EBB\u1EBD\u1EBF\u1EC1\u1EC3\u1EC5\u1EC7\u1EC9\u1ECB\u1ECD\u1ECF\u1ED1\u1ED3\u1ED5\u1ED7\u1ED9\u1EDB\u1EDD\u1EDF\u1EE1\u1EE3\u1EE5\u1EE7\u1EE9\u1EEB\u1EED\u1EEF\u1EF1\u1EF3\u1EF5\u1EF7\u1EF9\u1EFB\u1EFD\u1EFF-\u1F07\u1F10-\u1F15\u1F20-\u1F27\u1F30-\u1F37\u1F40-\u1F45\u1F50-\u1F57\u1F60-\u1F67\u1F70-\u1F7D\u1F80-\u1F87\u1F90-\u1F97\u1FA0-\u1FA7\u1FB0-\u1FB4\u1FB6\u1FB7\u1FBE\u1FC2-\u1FC4\u1FC6\u1FC7\u1FD0-\u1FD3\u1FD6\u1FD7\u1FE0-\u1FE7\u1FF2-\u1FF4\u1FF6\u1FF7\u210A\u210E\u210F\u2113\u212F\u2134\u2139\u213C\u213D\u2146-\u2149\u214E\u2184\u2C30-\u2C5E\u2C61\u2C65\u2C66\u2C68\u2C6A\u2C6C\u2C71\u2C73\u2C74\u2C76-\u2C7B\u2C81\u2C83\u2C85\u2C87\u2C89\u2C8B\u2C8D\u2C8F\u2C91\u2C93\u2C95\u2C97\u2C99\u2C9B\u2C9D\u2C9F\u2CA1\u2CA3\u2CA5\u2CA7\u2CA9\u2CAB\u2CAD\u2CAF\u2CB1\u2CB3\u2CB5\u2CB7\u2CB9\u2CBB\u2CBD\u2CBF\u2CC1\u2CC3\u2CC5\u2CC7\u2CC9\u2CCB\u2CCD\u2CCF\u2CD1\u2CD3\u2CD5\u2CD7\u2CD9\u2CDB\u2CDD\u2CDF\u2CE1\u2CE3\u2CE4\u2CEC\u2CEE\u2CF3\u2D00-\u2D25\u2D27\u2D2D\uA641\uA643\uA645\uA647\uA649\uA64B\uA64D\uA64F\uA651\uA653\uA655\uA657\uA659\uA65B\uA65D\uA65F\uA661\uA663\uA665\uA667\uA669\uA66B\uA66D\uA681\uA683\uA685\uA687\uA689\uA68B\uA68D\uA68F\uA691\uA693\uA695\uA697\uA723\uA725\uA727\uA729\uA72B\uA72D\uA72F-\uA731\uA733\uA735\uA737\uA739\uA73B\uA73D\uA73F\uA741\uA743\uA745\uA747\uA749\uA74B\uA74D\uA74F\uA751\uA753\uA755\uA757\uA759\uA75B\uA75D\uA75F\uA761\uA763\uA765\uA767\uA769\uA76B\uA76D\uA76F\uA771-\uA778\uA77A\uA77C\uA77F\uA781\uA783\uA785\uA787\uA78C\uA78E\uA791\uA793\uA7A1\uA7A3\uA7A5\uA7A7\uA7A9\uA7FA\uFB00-\uFB06\uFB13-\uFB17\uFF41-\uFF5A])([\u0041-\u005A\u00C0-\u00D6\u00D8-\u00DE\u0100\u0102\u0104\u0106\u0108\u010A\u010C\u010E\u0110\u0112\u0114\u0116\u0118\u011A\u011C\u011E\u0120\u0122\u0124\u0126\u0128\u012A\u012C\u012E\u0130\u0132\u0134\u0136\u0139\u013B\u013D\u013F\u0141\u0143\u0145\u0147\u014A\u014C\u014E\u0150\u0152\u0154\u0156\u0158\u015A\u015C\u015E\u0160\u0162\u0164\u0166\u0168\u016A\u016C\u016E\u0170\u0172\u0174\u0176\u0178\u0179\u017B\u017D\u0181\u0182\u0184\u0186\u0187\u0189-\u018B\u018E-\u0191\u0193\u0194\u0196-\u0198\u019C\u019D\u019F\u01A0\u01A2\u01A4\u01A6\u01A7\u01A9\u01AC\u01AE\u01AF\u01B1-\u01B3\u01B5\u01B7\u01B8\u01BC\u01C4\u01C7\u01CA\u01CD\u01CF\u01D1\u01D3\u01D5\u01D7\u01D9\u01DB\u01DE\u01E0\u01E2\u01E4\u01E6\u01E8\u01EA\u01EC\u01EE\u01F1\u01F4\u01F6-\u01F8\u01FA\u01FC\u01FE\u0200\u0202\u0204\u0206\u0208\u020A\u020C\u020E\u0210\u0212\u0214\u0216\u0218\u021A\u021C\u021E\u0220\u0222\u0224\u0226\u0228\u022A\u022C\u022E\u0230\u0232\u023A\u023B\u023D\u023E\u0241\u0243-\u0246\u0248\u024A\u024C\u024E\u0370\u0372\u0376\u0386\u0388-\u038A\u038C\u038E\u038F\u0391-\u03A1\u03A3-\u03AB\u03CF\u03D2-\u03D4\u03D8\u03DA\u03DC\u03DE\u03E0\u03E2\u03E4\u03E6\u03E8\u03EA\u03EC\u03EE\u03F4\u03F7\u03F9\u03FA\u03FD-\u042F\u0460\u0462\u0464\u0466\u0468\u046A\u046C\u046E\u0470\u0472\u0474\u0476\u0478\u047A\u047C\u047E\u0480\u048A\u048C\u048E\u0490\u0492\u0494\u0496\u0498\u049A\u049C\u049E\u04A0\u04A2\u04A4\u04A6\u04A8\u04AA\u04AC\u04AE\u04B0\u04B2\u04B4\u04B6\u04B8\u04BA\u04BC\u04BE\u04C0\u04C1\u04C3\u04C5\u04C7\u04C9\u04CB\u04CD\u04D0\u04D2\u04D4\u04D6\u04D8\u04DA\u04DC\u04DE\u04E0\u04E2\u04E4\u04E6\u04E8\u04EA\u04EC\u04EE\u04F0\u04F2\u04F4\u04F6\u04F8\u04FA\u04FC\u04FE\u0500\u0502\u0504\u0506\u0508\u050A\u050C\u050E\u0510\u0512\u0514\u0516\u0518\u051A\u051C\u051E\u0520\u0522\u0524\u0526\u0531-\u0556\u10A0-\u10C5\u10C7\u10CD\u1E00\u1E02\u1E04\u1E06\u1E08\u1E0A\u1E0C\u1E0E\u1E10\u1E12\u1E14\u1E16\u1E18\u1E1A\u1E1C\u1E1E\u1E20\u1E22\u1E24\u1E26\u1E28\u1E2A\u1E2C\u1E2E\u1E30\u1E32\u1E34\u1E36\u1E38\u1E3A\u1E3C\u1E3E\u1E40\u1E42\u1E44\u1E46\u1E48\u1E4A\u1E4C\u1E4E\u1E50\u1E52\u1E54\u1E56\u1E58\u1E5A\u1E5C\u1E5E\u1E60\u1E62\u1E64\u1E66\u1E68\u1E6A\u1E6C\u1E6E\u1E70\u1E72\u1E74\u1E76\u1E78\u1E7A\u1E7C\u1E7E\u1E80\u1E82\u1E84\u1E86\u1E88\u1E8A\u1E8C\u1E8E\u1E90\u1E92\u1E94\u1E9E\u1EA0\u1EA2\u1EA4\u1EA6\u1EA8\u1EAA\u1EAC\u1EAE\u1EB0\u1EB2\u1EB4\u1EB6\u1EB8\u1EBA\u1EBC\u1EBE\u1EC0\u1EC2\u1EC4\u1EC6\u1EC8\u1ECA\u1ECC\u1ECE\u1ED0\u1ED2\u1ED4\u1ED6\u1ED8\u1EDA\u1EDC\u1EDE\u1EE0\u1EE2\u1EE4\u1EE6\u1EE8\u1EEA\u1EEC\u1EEE\u1EF0\u1EF2\u1EF4\u1EF6\u1EF8\u1EFA\u1EFC\u1EFE\u1F08-\u1F0F\u1F18-\u1F1D\u1F28-\u1F2F\u1F38-\u1F3F\u1F48-\u1F4D\u1F59\u1F5B\u1F5D\u1F5F\u1F68-\u1F6F\u1FB8-\u1FBB\u1FC8-\u1FCB\u1FD8-\u1FDB\u1FE8-\u1FEC\u1FF8-\u1FFB\u2102\u2107\u210B-\u210D\u2110-\u2112\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u2130-\u2133\u213E\u213F\u2145\u2183\u2C00-\u2C2E\u2C60\u2C62-\u2C64\u2C67\u2C69\u2C6B\u2C6D-\u2C70\u2C72\u2C75\u2C7E-\u2C80\u2C82\u2C84\u2C86\u2C88\u2C8A\u2C8C\u2C8E\u2C90\u2C92\u2C94\u2C96\u2C98\u2C9A\u2C9C\u2C9E\u2CA0\u2CA2\u2CA4\u2CA6\u2CA8\u2CAA\u2CAC\u2CAE\u2CB0\u2CB2\u2CB4\u2CB6\u2CB8\u2CBA\u2CBC\u2CBE\u2CC0\u2CC2\u2CC4\u2CC6\u2CC8\u2CCA\u2CCC\u2CCE\u2CD0\u2CD2\u2CD4\u2CD6\u2CD8\u2CDA\u2CDC\u2CDE\u2CE0\u2CE2\u2CEB\u2CED\u2CF2\uA640\uA642\uA644\uA646\uA648\uA64A\uA64C\uA64E\uA650\uA652\uA654\uA656\uA658\uA65A\uA65C\uA65E\uA660\uA662\uA664\uA666\uA668\uA66A\uA66C\uA680\uA682\uA684\uA686\uA688\uA68A\uA68C\uA68E\uA690\uA692\uA694\uA696\uA722\uA724\uA726\uA728\uA72A\uA72C\uA72E\uA732\uA734\uA736\uA738\uA73A\uA73C\uA73E\uA740\uA742\uA744\uA746\uA748\uA74A\uA74C\uA74E\uA750\uA752\uA754\uA756\uA758\uA75A\uA75C\uA75E\uA760\uA762\uA764\uA766\uA768\uA76A\uA76C\uA76E\uA779\uA77B\uA77D\uA77E\uA780\uA782\uA784\uA786\uA78B\uA78D\uA790\uA792\uA7A0\uA7A2\uA7A4\uA7A6\uA7A8\uA7AA\uFF21-\uFF3A\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
+      },
+      {}
+    ],
+    11: [
+      function (require, module, exports) {
+        module.exports = /[^\u0041-\u005A\u0061-\u007A\u00AA\u00B5\u00BA\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u0527\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0\u08A2-\u08AC\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0977\u0979-\u097F\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C33\u0C35-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191C\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2183\u2184\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005\u3006\u3031-\u3035\u303B\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA697\uA6A0-\uA6E5\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA793\uA7A0-\uA7AA\uA7F8-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA80-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19]+/g;
+      },
+      {}
+    ],
+    12: [
+      function (require, module, exports) {
+        module.exports = /([\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])([^\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
+      },
+      {}
+    ],
+    13: [
+      function (require, module, exports) {
+        var hasOwn = Object.prototype.hasOwnProperty;
+        var toString = Object.prototype.toString;
+        var undefined;
+        var isPlainObject = function isPlainObject(obj) {
+          'use strict';
+          if (!obj || toString.call(obj) !== '[object Object]' || obj.nodeType || obj.setInterval) {
+            return false;
+          }
+          var has_own_constructor = hasOwn.call(obj, 'constructor');
+          var has_is_property_of_method = obj.constructor && obj.constructor.prototype && hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
+          // Not own constructor property must be Object
+          if (obj.constructor && !has_own_constructor && !has_is_property_of_method) {
+            return false;
+          }
+          // Own properties are enumerated firstly, so to speed up,
+          // if last one is own, then all properties are own.
+          var key;
+          for (key in obj) {
+          }
+          return key === undefined || hasOwn.call(obj, key);
+        };
+        module.exports = function extend() {
+          'use strict';
+          var options, name, src, copy, copyIsArray, clone, target = arguments[0], i = 1, length = arguments.length, deep = false;
+          // Handle a deep copy situation
+          if (typeof target === 'boolean') {
+            deep = target;
+            target = arguments[1] || {};
+            // skip the boolean and the target
+            i = 2;
+          } else if (typeof target !== 'object' && typeof target !== 'function' || target == undefined) {
+            target = {};
+          }
+          for (; i < length; ++i) {
+            // Only deal with non-null/undefined values
+            if ((options = arguments[i]) != null) {
+              // Extend the base object
+              for (name in options) {
+                src = target[name];
+                copy = options[name];
+                // Prevent never-ending loop
+                if (target === copy) {
+                  continue;
+                }
+                // Recurse if we're merging plain objects or arrays
+                if (deep && copy && (isPlainObject(copy) || (copyIsArray = Array.isArray(copy)))) {
+                  if (copyIsArray) {
+                    copyIsArray = false;
+                    clone = src && Array.isArray(src) ? src : [];
+                  } else {
+                    clone = src && isPlainObject(src) ? src : {};
+                  }
+                  // Never move original objects, clone them
+                  target[name] = extend(deep, clone, copy);  // Don't bring in undefined values
+                } else if (copy !== undefined) {
+                  target[name] = copy;
+                }
+              }
+            }
+          }
+          // Return the modified object
+          return target;
+        };
+      },
+      {}
+    ],
+    14: [
+      function (require, module, exports) {
+        var parse = require('./lib/parse');
+        var resolve = require('./lib/utils/resolve');
+        var isResourceListing = require('./lib/utils/is-resource-listing');
+        var convertApiDeclaration = require('./lib/api-declaration');
+        var convertResourceListing = require('./lib/resource-listing');
+        /**
+ * Expose the swagger to raml object converter module.
+ */
+        module.exports = swaggerToRamlObject;
+        module.exports.files = swaggerFilesToRamlObject;
+        /**
+ * Convert swagger to a raml object by loading the file.
+ *
+ * @param {String}   filename
+ * @param {Function} filereader
+ * @param {Function} done
+ */
+        function swaggerToRamlObject(filename, filereader, done) {
+          var read = wrapFileReader(filereader);
+          return read(filename, wrapContents(function (result) {
+            if (!isResourceListing(result)) {
+              return done(null, convertApiDeclaration(result));
+            }
+            // Parse the initial resource listing to start reading more resources.
+            var resources = extractResources(result, filename);
+            var ramlObject = convertResourceListing(result);
+            function success(results) {
+              results.forEach(function (contents) {
+                convertApiDeclaration(contents, ramlObject);
+              });
+              return done(null, ramlObject);
+            }
+            return async(resources, read, wrapContents(success, done));
+          }, done));
+        }
+        /**
+ * Generate RAML from an array of Swagger files.
+ *
+ * @param {Array}    files
+ * @param {Function} filereader
+ * @param {Function} done
+ */
+        function swaggerFilesToRamlObject(files, filereader, done) {
+          return async(files, filereader, wrapContents(function (results) {
+            var fileMap = {};
+            // Parse all the files and ignore non-parsable files (non-Swagger, etc.)
+            results.forEach(function (contents, index) {
+              var filename = files[index];
+              var result;
+              try {
+                result = parse(contents);
+              } catch (e) {
+                return;
+              }
+              fileMap[filename] = result;
+            });
+            var keys = Object.keys(fileMap);
+            var rootFileName = keys[0];
+            if (keys.length > 1) {
+              rootFileName = findResourceListing(fileMap);
+              if (!rootFileName) {
+                throw new TypeError('Unable to determine entry file (Swagger resource listing)');
+              }
+            }
+            var resourceListing = fileMap[rootFileName];
+            if (!isResourceListing(resourceListing)) {
+              return done(null, convertApiDeclaration(resourceListing));
+            }
+            var read = wrapFileReader(filereader);
+            var resources = extractResources(resourceListing, rootFileName);
+            var ramlObject = convertResourceListing(resourceListing);
+            function readfile(filename, done) {
+              if (fileMap.hasOwnProperty(filename)) {
+                return done(null, fileMap[filename]);
+              }
+              return read(filename, done);
+            }
+            function success(results) {
+              results.forEach(function (contents) {
+                convertApiDeclaration(contents, ramlObject);
+              });
+              return done(null, ramlObject);
+            }
+            return async(resources, readfile, wrapContents(success, done));
+          }, done));
+        }
+        /**
+ * Extract API resources from a resource listing.
+ *
+ * @param  {Object} resourceListing
+ * @param  {String} filename
+ * @return {Array}
+ */
+        function extractResources(resourceListing, filename) {
+          return resourceListing.apis.map(function (api) {
+            return resolve(filename, api.path);
+          });
+        }
+        /**
+ * Find a valid resource listing file out of an object.
+ *
+ * @param  {Object} files
+ * @return {String}
+ */
+        function findResourceListing(files) {
+          var resourceListings = Object.keys(files).filter(function (key) {
+              return isResourceListing(files[key]);
+            });
+          if (resourceListings.length > 1) {
+            throw new Error('Multiple resource listings found');
+          }
+          return resourceListings[0];
+        }
+        /**
+ * Run a function on an array of items asynchonrously.
+ *
+ * @param {Array}    items
+ * @param {Function} fn
+ * @param {Function} done
+ */
+        function async(items, fn, done) {
+          var count = 0;
+          var length = items.length;
+          var results = [];
+          var errored = false;
+          items.forEach(function (item, index) {
+            // Call the async function with the item and callback.
+            fn(item, function (err, result) {
+              if (errored) {
+                return;
+              }
+              if (err) {
+                errored = true;
+                return done(err);
+              }
+              count++;
+              results[index] = result;
+              if (count === length) {
+                return done(null, results);
+              }
+            });
+          });
+        }
+        /**
+ * Wrap the file reader functionality with parsing.
+ *
+ * @param  {Function} fn
+ * @return {Function}
+ */
+        function wrapFileReader(fn) {
+          return function (filename, done) {
+            return fn(filename, function (err, result) {
+              if (err) {
+                return done(err);
+              }
+              try {
+                return done(null, parse(result));
+              } catch (e) {
+                return done(e);
+              }
+            });
+          };
+        }
+        /**
+ * Wrap the response from a file reader with parse ability.
+ *
+ * @param  {Function} resolve
+ * @param  {Function} reject
+ * @return {Function}
+ */
+        function wrapContents(resolve, reject) {
+          return function (err, result) {
+            if (err) {
+              return reject(err);
+            }
+            try {
+              return resolve(result);
+            } catch (e) {
+              return reject(e);
+            }
+          };
+        }
+      },
+      {
+        './lib/api-declaration': 1,
+        './lib/parse': 2,
+        './lib/resource-listing': 3,
+        './lib/utils/is-resource-listing': 4,
+        './lib/utils/resolve': 5
+      }
+    ]
+  }, {}, [14])(14);
+});
 // CodeMirror is the only global var we claim
 window.CodeMirror = function () {
   'use strict';
@@ -57130,7 +59567,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 'use strict';
 if (!Array.prototype.find) {
   Array.prototype.find = function (predicate) {
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0, len = this.length; i < len; i++) {
       var item = this[i];
       if (predicate(item)) {
         return item;
@@ -57141,7 +59578,7 @@ if (!Array.prototype.find) {
 }
 if (!Array.prototype.includes) {
   Array.prototype.includes = function (value) {
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0, len = this.length; i < len; i++) {
       var item = this[i];
       if (item === value) {
         return true;
@@ -58267,7 +60704,7 @@ if (!String.prototype.endsWith) {
       }
       function groupByLine(annotations) {
         var lines = [];
-        for (var i = 0; i < annotations.length; ++i) {
+        for (var i = 0, len = annotations.length; i < len; ++i) {
           var annotation = annotations[i], line = annotation.line || 1;
           (lines[line] || (lines[line] = [])).push(annotation);
         }
@@ -58365,18 +60802,9 @@ if (!String.prototype.endsWith) {
           return $q.when(fn.apply(this, arguments));
         };
       }
-      function expandApiToJSON(api, expandFlag) {
-        api = api.expand ? api.expand(expandFlag) : api;
-        var apiJSON = api.toJSON(jsonOptions);
-        if (api.uses && api.uses()) {
-          apiJSON.uses = {};
-          api.uses().forEach(function (usesItem) {
-            var libraryAST = usesItem.ast();
-            libraryAST = libraryAST.expand ? libraryAST.expand() : libraryAST;
-            apiJSON.uses[usesItem.key()] = libraryAST.toJSON(jsonOptions);
-          });
-        }
-        return apiJSON;
+      function expandApiToJSON(api) {
+        api = api.expand ? api.expand(true) : api;
+        return api.toJSON(jsonOptions);
       }
       /**
        * @param  {String}   path
@@ -58468,71 +60896,11 @@ if (!String.prototype.endsWith) {
     'snippets',
     function (snippets) {
       var service = {};
-      var emptyValues = [];
-      var extendValue = ['extends'];
-      var fragments = [
-          {
-            label: 'Trait',
-            keyValues: emptyValues
-          },
-          {
-            label: 'ResourceType',
-            keyValues: emptyValues
-          },
-          {
-            label: 'Library',
-            keyValues: ['usage']
-          },
-          {
-            label: 'Overlay',
-            keyValues: extendValue
-          },
-          {
-            label: 'Extension',
-            keyValues: extendValue
-          },
-          {
-            label: 'DataType',
-            keyValues: emptyValues
-          },
-          {
-            label: 'DocumentationItem',
-            keyValues: [
-              'title',
-              'content'
-            ]
-          },
-          {
-            label: 'NamedExample',
-            keyValues: ['value']
-          },
-          {
-            label: 'AnnotationTypeDeclaration',
-            keyValues: emptyValues
-          },
-          {
-            label: 'SecurityScheme',
-            keyValues: ['type']
-          },
-          {
-            label: '',
-            keyValues: ['title']
-          }
-        ];
-      function getRequiredValuesForFragment(typedFragment) {
-        return fragments.find(function (fragment) {
-          return fragment.label === typedFragment;
-        }).keyValues;
-      }
-      service.getEmptyRaml = function (ramlVersion, fragmentLabel) {
-        var version = ramlVersion ? ramlVersion : '1.0';
-        var type = fragmentLabel ? ' ' + fragmentLabel : '';
-        var requiredValues = getRequiredValuesForFragment(fragmentLabel ? fragmentLabel : '');
-        var ramlContent = ['#%RAML ' + version + type];
-        requiredValues.forEach(function (value) {
-          ramlContent.push(value + ':');
-        });
-        return ramlContent.join('\n');
+      service.getEmptyRaml = function () {
+        return [
+          '#%RAML 1.0',
+          'title:'
+        ].join('\n');
       };
       service.getSnippet = function getSnippet(suggestion) {
         var key = suggestion.key;
@@ -59179,10 +61547,10 @@ if (!String.prototype.endsWith) {
           return file;
         });
       };
-      service.generateFile = function generateFile(parent, name, ramlVersion, fragmentLabel) {
+      service.generateFile = function generateFile(parent, name) {
         return service.createFile(parent, name).then(function (file) {
           if (file.extension === 'raml') {
-            file.contents = ramlSnippets.getEmptyRaml(ramlVersion, fragmentLabel);
+            file.contents = ramlSnippets.getEmptyRaml();
           }
           $rootScope.$broadcast('event:raml-editor-file-generated', file);
           return file;
@@ -59308,8 +61676,13 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     });
   };
   this.getFileContentAsync = function (file) {
-    if (file.loaded && file.doc) {
-      return Promise.resolve(file.doc.getValue());
+    if (file.loaded) {
+      if (file.doc) {
+        return Promise.resolve(file.doc.getValue());
+      }
+      if (file.contents) {
+        return Promise.resolve(file.contents);
+      }
     }
     var getFileContent = function (file) {
       return file.contents;
@@ -59515,560 +61888,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 ]);
 (function () {
   'use strict';
-  function FileSystem() {
-  }
-  FileSystem.prototype = {
-    directory: function (fullpath) {
-      throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
-    },
-    save: function (fullpath, content) {
-      throw 'Not implemented: FileSystem save invoked with [fullpath=' + fullpath + '] and [content=' + content + ']';
-    },
-    createFolder: function (fullpath) {
-      throw 'Not implemented: FileSystem createFolder invoked with [fullpath=' + fullpath + ']';
-    },
-    load: function (fullpath) {
-      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
-    },
-    remove: function (fullpath) {
-      throw 'Not implemented: FileSystem remove invoked with [fullpath=' + fullpath + ']';
-    },
-    rename: function (source, destination) {
-      throw 'Not implemented: FileSystem rename invoked with [source=' + source + '] and [destination=' + destination + ']';
-    }
-  };
-  angular.module('fs').factory('fileSystem', [
-    '$injector',
-    'config',
-    function ($injector, config) {
-      var fsFactory = config.get('fsFactory');
-      var hasFsFactory = fsFactory && $injector.has(fsFactory);
-      if (!hasFsFactory) {
-        config.set('fsFactory', fsFactory = 'localStorageFileSystem');
-      }
-      return $injector.get(fsFactory);
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').service('newFileService', [
-    'ramlRepository',
-    'newNameModal',
-    '$rootScope',
-    'generateName',
-    function newFolderService(ramlRepository, newNameModal, $rootScope, generateName) {
-      var self = this;
-      var specUrl = 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md#';
-      self.files = {
-        '0.8': {
-          '': {
-            label: '',
-            name: 'API Spec',
-            description: 'RAML 0.8 API Spec.',
-            spec: 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md'
-          }
-        },
-        '1.0': {
-          '': {
-            label: '',
-            name: 'API Spec',
-            description: 'RAML 1.0 API Spec.',
-            spec: specUrl + 'the-root-of-the-document'
-          },
-          'Trait': {
-            label: 'Trait',
-            name: 'Trait',
-            description: 'Define a single trait with common characteristics for methods.',
-            spec: specUrl + 'resource-types-and-traits'
-          },
-          'ResourceType': {
-            label: 'ResourceType',
-            name: 'Resource Type',
-            description: 'Define a single resource type with common characteristics for resources.',
-            spec: specUrl + 'resource-types-and-traits'
-          },
-          'Library': {
-            label: 'Library',
-            name: 'Library',
-            description: 'Define a collection of data type declarations, resource type declarations, trait declarations, and security scheme declarations into modular, externalized, reusable groups.',
-            spec: specUrl + 'libraries'
-          },
-          'Overlay': {
-            label: 'Overlay',
-            name: 'Overlay',
-            description: 'Define an overlay that adds or overrides nodes of a RAML API definition while preserving its behavioral, functional aspects.',
-            spec: specUrl + 'overlays'
-          },
-          'Extension': {
-            label: 'Extension',
-            name: 'Extension',
-            description: 'Define an extension that adds or modifies nodes of a RAML API definition.',
-            spec: specUrl + 'extensions'
-          },
-          'DataType': {
-            label: 'DataType',
-            name: 'Type',
-            description: 'Define a single data type declaration.',
-            spec: specUrl + '#raml-data-types'
-          },
-          'DocumentationItem': {
-            label: 'DocumentationItem',
-            name: 'User Documentation',
-            description: 'Define a single page documentation item.',
-            spec: specUrl + 'user-documentation'
-          },
-          'NamedExample': {
-            label: 'NamedExample',
-            name: 'Example',
-            description: 'Define a single example for a given data type.',
-            spec: specUrl + 'defining-examples-in-raml'
-          },
-          'AnnotationTypeDeclaration': {
-            label: 'AnnotationTypeDeclaration',
-            name: 'Annotation',
-            description: 'Define a single annotation type declaration that describes additional metadata that can be applied to any RAML node.',
-            spec: specUrl + 'annotations'
-          },
-          'SecurityScheme': {
-            label: 'SecurityScheme',
-            name: 'Security Scheme',
-            description: 'Define a single security scheme that describes the mechanism to secure data access, identify requests, and determine access level and data visibility.',
-            spec: specUrl + 'security-schemes'
-          }
-        }
-      };
-      function nameSuggestion(target, fragment, fragmentLabel) {
-        var names = target.children.map(function (file) {
-            return file.name;
-          });
-        var defaultName = (fragment.label !== '' ? fragmentLabel : 'api') + '-';
-        return generateName(names, defaultName, 'raml');
-      }
-      self.prompt = function prompt(target, ramlVersion, fragmentLabel) {
-        var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var validations = [{
-              message: 'That file name is already taken.',
-              validate: function (input) {
-                var path = ramlRepository.join(parent.path, input);
-                return !ramlRepository.getByPath(path);
-              }
-            }];
-        var label = fragmentLabel ? fragmentLabel : '';
-        var fragment = self.files[ramlVersion][label];
-        var suggestedName = nameSuggestion(target, fragment, fragmentLabel);
-        var title = 'Add new ' + fragment.name + ' file';
-        return newNameModal.open(fragment.description, suggestedName, validations, title, fragment.spec).then(function (name) {
-          // Need to catch errors from `generateFile`, otherwise
-          // `newNameModel.open` will error random modal close strings.
-          return ramlRepository.generateFile(parent, name, ramlVersion, label).catch(function (err) {
-            return $rootScope.$broadcast('event:notification', {
-              message: err.message,
-              expires: true,
-              level: 'error'
-            });
-          });
-        });
-      };
-      self.newFragmentFile = function newFragmentFile(homeDirectory, fragmentType) {
-        if (fragmentType === '') {
-          return self.prompt(homeDirectory, '1.0');
-        }
-        return self.prompt(homeDirectory, '1.0', fragmentType);
-      };
-      self.newFile = function newFile(homeDirectory, version) {
-        return self.prompt(homeDirectory, version);
-      };
-      return self;
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').service('newFolderService', [
-    'ramlRepository',
-    'newNameModal',
-    function newFolderService(ramlRepository, newNameModal) {
-      var self = this;
-      self.prompt = function prompt(target) {
-        var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var message = 'Input a name for your new folder:';
-        var title = 'Add a new folder';
-        var validations = [{
-              message: 'That folder name is already taken.',
-              validate: function (input) {
-                var path = ramlRepository.join(parent.path, input);
-                return !ramlRepository.getByPath(path);
-              }
-            }];
-        return newNameModal.open(message, '', validations, title).then(function (name) {
-          return ramlRepository.generateDirectory(parent, name);
-        });
-      };
-      return self;
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
-  angular.module('fs').constant('LOCAL_PERSISTENCE_KEY', 'localStorageFilePersistence').constant('FOLDER', 'folder').factory('localStorageHelper', [
-    'LOCAL_PERSISTENCE_KEY',
-    function (LOCAL_PERSISTENCE_KEY) {
-      return {
-        forEach: function (fn) {
-          for (var key in localStorage) {
-            if (localStorage.hasOwnProperty(key)) {
-              // A key is a local storage file system entry if it starts
-              //with LOCAL_PERSISTENCE_KEY + '.'
-              if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
-                fn(JSON.parse(localStorage.getItem(key)));
-              }
-            }
-          }
-        },
-        has: function (path) {
-          var has = false;
-          path = path || '/';
-          this.forEach(function (entry) {
-            if (entry.path.toLowerCase() === path.toLowerCase()) {
-              has = true;
-            }
-          });
-          return has;
-        },
-        set: function (path, content) {
-          localStorage.setItem(LOCAL_PERSISTENCE_KEY + '.' + path, JSON.stringify(content));
-        },
-        get: function (path) {
-          return JSON.parse(localStorage.getItem(LOCAL_PERSISTENCE_KEY + '.' + path));
-        },
-        remove: function (path) {
-          localStorage.removeItem(LOCAL_PERSISTENCE_KEY + '.' + path);
-        }
-      };
-    }
-  ]).factory('localStorageFileSystem', [
-    '$window',
-    '$q',
-    '$prompt',
-    '$timeout',
-    'localStorageHelper',
-    'FOLDER',
-    function ($window, $q, $prompt, $timeout, localStorageHelper, FOLDER) {
-      function fileNotFoundMessage(path) {
-        return 'file with path="' + path + '" does not exist';
-      }
-      function addChildren(entry, fn) {
-        if (entry.type === FOLDER) {
-          entry.children = fn(entry.path);
-        }
-      }
-      function findFolder(path) {
-        var entries = [];
-        localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() === path.toLowerCase()) {
-            addChildren(entry, findFiles);
-            entries.push(entry);
-          }
-        });
-        return entries.length > 0 ? entries[0] : null;
-      }
-      function findFiles(path) {
-        if (path.lastIndexOf('/') !== path.length - 1) {
-          path += '/';
-        }
-        var entries = [];
-        localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() !== path.toLowerCase() && extractParentPath(entry.path) + '/' === path) {
-            addChildren(entry, findFiles);
-            entries.push(entry);
-          }
-        });
-        return entries;
-      }
-      /**
-       *
-       * Save in localStorage entries.
-       *
-       * File structure are objects that contain the following attributes:
-       * * path: The full path (including the filename).
-       * * content: The content of the file (only valid for files).
-       * * isFolder: A flag that indicates whether is a folder or file.
-       */
-      var service = {};
-      var delay = 500;
-      service.supportsFolders = true;
-      function validatePath(path) {
-        if (path.indexOf('/') !== 0) {
-          return {
-            valid: false,
-            reason: 'Path should start with "/"'
-          };
-        }
-        return { valid: true };
-      }
-      function isValidParent(path) {
-        var parent = extractParentPath(path);
-        if (!localStorageHelper.has(parent) && parent !== '') {
-          return false;
-        }
-        return true;
-      }
-      function hasChildrens(path) {
-        var has = false;
-        localStorageHelper.forEach(function (entry) {
-          if (entry.path.indexOf(path + '/') === 0) {
-            has = true;
-          }
-        });
-        return has;
-      }
-      function extractNameFromPath(path) {
-        var pathInfo = validatePath(path);
-        if (!pathInfo.valid) {
-          throw 'Invalid Path!';
-        }
-        // When the path is ended in '/'
-        if (path.lastIndexOf('/') === path.length - 1) {
-          path = path.slice(0, -1);
-        }
-        return path.slice(path.lastIndexOf('/') + 1);
-      }
-      function extractParentPath(path) {
-        var pathInfo = validatePath(path);
-        if (!pathInfo.valid) {
-          throw 'Invalid Path!';
-        }
-        // When the path is ended in '/'
-        if (path.lastIndexOf('/') === path.length - 1) {
-          path = path.slice(0, -1);
-        }
-        return path.slice(0, path.lastIndexOf('/'));
-      }
-      /**
-       * List files found in a given path.
-       */
-      service.directory = function (path) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var isValidPath = validatePath(path);
-          if (!isValidPath.valid) {
-            deferred.reject(isValidPath.reason);
-            return deferred.promise;
-          }
-          if (!localStorageHelper.has('/')) {
-            localStorageHelper.set(path, {
-              path: '/',
-              name: '',
-              type: 'folder',
-              meta: { 'created': Math.round(new Date().getTime() / 1000) }
-            });
-          }
-          deferred.resolve(findFolder(path));
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Persist a file to an existing folder.
-       */
-      service.save = function (path, content) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var name = extractNameFromPath(path);
-          var entry = localStorageHelper.get(path);
-          if (!isValidParent(path)) {
-            deferred.reject(new Error('Parent folder does not exists: ' + path));
-            return deferred.promise;
-          }
-          var file = {};
-          if (entry) {
-            if (entry.type === FOLDER) {
-              deferred.reject('file has the same name as a folder');
-              return deferred.promise;
-            }
-            entry.content = content;
-            entry.meta.lastUpdated = Math.round(new Date().getTime() / 1000);
-            file = entry;
-          } else {
-            file = {
-              path: path,
-              name: name,
-              content: content,
-              type: 'file',
-              meta: { 'created': Math.round(new Date().getTime() / 1000) }
-            };
-          }
-          localStorageHelper.set(path, file);
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Create the folders contained in a path.
-       */
-      service.createFolder = function (path) {
-        var deferred = $q.defer();
-        var isValidPath = validatePath(path);
-        if (!isValidPath.valid) {
-          deferred.reject(isValidPath.reason);
-          return deferred.promise;
-        }
-        if (localStorageHelper.has(path)) {
-          deferred.reject(new Error('Folder already exists: ' + path));
-          return deferred.promise;
-        }
-        var parent = extractParentPath(path);
-        if (!localStorageHelper.has(parent)) {
-          deferred.reject(new Error('Parent folder does not exists: ' + path));
-          return deferred.promise;
-        }
-        $timeout(function () {
-          localStorageHelper.set(path, {
-            path: path,
-            name: extractNameFromPath(path),
-            type: 'folder',
-            meta: { 'created': Math.round(new Date().getTime() / 1000) }
-          });
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Loads the content of a file.
-       */
-      service.load = function (path) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var entry = localStorageHelper.get(path);
-          if (entry && entry.type === 'file') {
-            deferred.resolve(localStorageHelper.get(path).content);
-          } else {
-            deferred.reject(fileNotFoundMessage(path));
-          }
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Removes a file or directory.
-       */
-      service.remove = function (path) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var entry = localStorageHelper.get(path);
-          if (entry && entry.type === FOLDER && hasChildrens(path)) {
-            deferred.reject('folder not empty');
-            return deferred.promise;
-          }
-          localStorageHelper.remove(path);
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Renames a file or directory
-       */
-      service.rename = function (source, destination) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var sourceEntry = localStorageHelper.get(source);
-          if (!sourceEntry) {
-            deferred.reject('Source file or folder does not exists.');
-            return deferred.promise;
-          }
-          var destinationEntry = localStorageHelper.get(destination);
-          if (destinationEntry) {
-            deferred.reject('File or folder already exists.');
-            return deferred.promise;
-          }
-          if (!isValidParent(destination)) {
-            deferred.reject('Destination folder does not exist.');
-            return deferred.promise;
-          }
-          sourceEntry.path = destination;
-          sourceEntry.name = extractNameFromPath(destination);
-          localStorageHelper.remove(destination);
-          localStorageHelper.remove(source);
-          localStorageHelper.set(destination, sourceEntry);
-          if (sourceEntry.type === FOLDER) {
-            // if (!isValidPath(destination)) {
-            //   deferred.reject('Destination is not a valid folder');
-            //   return deferred.promise;
-            // }
-            //move all child items
-            localStorageHelper.forEach(function (entry) {
-              if (entry.path.toLowerCase() !== source.toLowerCase() && entry.path.indexOf(source) === 0) {
-                var newPath = destination + entry.path.substring(source.length);
-                localStorageHelper.remove(entry.path);
-                entry.path = newPath;
-                localStorageHelper.set(newPath, entry);
-              }
-            });
-          }
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      service.exportFiles = function exportFiles() {
-        var jszip = new $window.JSZip();
-        localStorageHelper.forEach(function (item) {
-          // Skip root folder
-          if (item.path === '/') {
-            return;
-          }
-          // Skip meta files
-          if (item.name.slice(-5) === '.meta') {
-            return;
-          }
-          var path = item.path.slice(1);
-          // Remove starting slash
-          item.type === 'folder' ? jszip.folder(path) : jszip.file(path, item.content);
-        });
-        var fileName = $prompt('Please enter a ZIP file name:', 'api.zip');
-        fileName && $window.saveAs(jszip.generate({ type: 'blob' }), fileName);
-      };
-      return service;
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').factory('mockingServiceUtils', [
+  angular.module('ramlEditorApp').factory('ramlExpander', [
     '$q',
     'jsTraverse',
-    'ramlRepository',
-    'refParser',
-    function mockingServiceUtils($q, jsTraverse, ramlRepository, refParser) {
-      return { dereference: dereference };
+    function mockingServiceUtils($q, jsTraverse) {
+      return { expandRaml: expandRaml };
       // ---
-      function dereferenceJsons(raml) {
-        return $q.when().then(function () {
-          var promises = [];
-          jsTraverse.traverse(raml).forEach(function (value) {
-            if (this.path.slice(-2).join('.') === 'body.application/json') {
-              var jsonSchema;
-              if (value.schema) {
-                jsonSchema = value.schema;
-              } else if (value.type) {
-                jsonSchema = value.type;
-              }
-              if (Array.isArray(jsonSchema)) {
-                jsonSchema = jsonSchema[0];
-              }
-              try {
-                promises.push(refParser.dereference(JSON.parse(jsonSchema), { $refs: { read$Ref: read$Ref } }).then(JSON.stringify).then(function (schema) {
-                  value.schema = schema;
-                }));
-              } catch (e) {
-              }
-            }
-          });
-          return $q.all(promises);
-        });
-      }
       function retrieveType(raml, typeName) {
         if (!raml.types) {
           return;
@@ -60143,9 +61968,470 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
         return [];
       }
-      function dereference(raml) {
+      function expandRaml(raml) {
         dereferenceTypes(raml);
         dereferenceTypesInArrays(raml);
+      }
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
+  function FileSystem() {
+  }
+  FileSystem.prototype = {
+    directory: function (fullpath) {
+      throw 'Not implemented: FileSystem list invoked with [fullpath=' + fullpath + ']';
+    },
+    save: function (fullpath, content) {
+      throw 'Not implemented: FileSystem save invoked with [fullpath=' + fullpath + '] and [content=' + content + ']';
+    },
+    createFolder: function (fullpath) {
+      throw 'Not implemented: FileSystem createFolder invoked with [fullpath=' + fullpath + ']';
+    },
+    load: function (fullpath) {
+      throw 'Not implemented: FileSystem load invoked with [fullpath=' + fullpath + ']';
+    },
+    remove: function (fullpath) {
+      throw 'Not implemented: FileSystem remove invoked with [fullpath=' + fullpath + ']';
+    },
+    rename: function (source, destination) {
+      throw 'Not implemented: FileSystem rename invoked with [source=' + source + '] and [destination=' + destination + ']';
+    }
+  };
+  angular.module('fs').provider('fileSystem', function fileSystemProvider() {
+    this.hasFactory = false;
+    this.setFileSystemFactory = function (fileSystemFactory) {
+      this.$get = fileSystemFactory;
+      this.hasFactory = true;
+    };
+    this.$get = function () {
+      return new FileSystem();
+    };
+    return this;
+  });
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').service('newFileService', [
+    'ramlRepository',
+    'newNameModal',
+    '$rootScope',
+    function newFolderService(ramlRepository, newNameModal, $rootScope) {
+      var self = this;
+      self.prompt = function prompt(target) {
+        var parent = target.isDirectory ? target : ramlRepository.getParent(target);
+        var title = 'Add a new file';
+        var message = [
+            'For a new RAML spec, be sure to name your file <something>.raml; ',
+            'For files to be !included, feel free to use an extension or not.'
+          ].join('');
+        var validations = [{
+              message: 'That file name is already taken.',
+              validate: function (input) {
+                var path = ramlRepository.join(parent.path, input);
+                return !ramlRepository.getByPath(path);
+              }
+            }];
+        return newNameModal.open(message, '', validations, title).then(function (name) {
+          // Need to catch errors from `generateFile`, otherwise
+          // `newNameModel.open` will error random modal close strings.
+          return ramlRepository.generateFile(parent, name).catch(function (err) {
+            return $rootScope.$broadcast('event:notification', {
+              message: err.message,
+              expires: true,
+              level: 'error'
+            });
+          });
+        });
+      };
+      return self;
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').service('newFolderService', [
+    'ramlRepository',
+    'newNameModal',
+    function newFolderService(ramlRepository, newNameModal) {
+      var self = this;
+      self.prompt = function prompt(target) {
+        var parent = target.isDirectory ? target : ramlRepository.getParent(target);
+        var message = 'Input a name for your new folder:';
+        var title = 'Add a new folder';
+        var validations = [{
+              message: 'That folder name is already taken.',
+              validate: function (input) {
+                var path = ramlRepository.join(parent.path, input);
+                return !ramlRepository.getByPath(path);
+              }
+            }];
+        return newNameModal.open(message, '', validations, title).then(function (name) {
+          return ramlRepository.generateDirectory(parent, name);
+        });
+      };
+      return self;
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
+  function localStorageFileSystemFactory($window, $q, $prompt, $timeout, localStorageHelper, FOLDER) {
+    function fileNotFoundMessage(path) {
+      return 'file with path="' + path + '" does not exist';
+    }
+    function addChildren(entry, fn) {
+      if (entry.type === FOLDER) {
+        entry.children = fn(entry.path);
+      }
+    }
+    function findFolder(path) {
+      var entries = [];
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() === path.toLowerCase()) {
+          addChildren(entry, findFiles);
+          entries.push(entry);
+        }
+      });
+      return entries.length > 0 ? entries[0] : null;
+    }
+    function findFiles(path) {
+      if (path.lastIndexOf('/') !== path.length - 1) {
+        path += '/';
+      }
+      var entries = [];
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() !== path.toLowerCase() && extractParentPath(entry.path) + '/' === path) {
+          addChildren(entry, findFiles);
+          entries.push(entry);
+        }
+      });
+      return entries;
+    }
+    /**
+     *
+     * Save in localStorage entries.
+     *
+     * File structure are objects that contain the following attributes:
+     * * path: The full path (including the filename).
+     * * content: The content of the file (only valid for files).
+     * * isFolder: A flag that indicates whether is a folder or file.
+     */
+    var service = {};
+    var delay = 500;
+    service.supportsFolders = true;
+    function validatePath(path) {
+      if (path.indexOf('/') !== 0) {
+        return {
+          valid: false,
+          reason: 'Path should start with "/"'
+        };
+      }
+      return { valid: true };
+    }
+    function isValidParent(path) {
+      var parent = extractParentPath(path);
+      if (!localStorageHelper.has(parent) && parent !== '') {
+        return false;
+      }
+      return true;
+    }
+    function hasChildrens(path) {
+      var has = false;
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.indexOf(path + '/') === 0) {
+          has = true;
+        }
+      });
+      return has;
+    }
+    function extractNameFromPath(path) {
+      var pathInfo = validatePath(path);
+      if (!pathInfo.valid) {
+        throw 'Invalid Path!';
+      }
+      // When the path is ended in '/'
+      if (path.lastIndexOf('/') === path.length - 1) {
+        path = path.slice(0, -1);
+      }
+      return path.slice(path.lastIndexOf('/') + 1);
+    }
+    function extractParentPath(path) {
+      var pathInfo = validatePath(path);
+      if (!pathInfo.valid) {
+        throw 'Invalid Path!';
+      }
+      // When the path is ended in '/'
+      if (path.lastIndexOf('/') === path.length - 1) {
+        path = path.slice(0, -1);
+      }
+      return path.slice(0, path.lastIndexOf('/'));
+    }
+    /**
+     * List files found in a given path.
+     */
+    service.directory = function (path) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var isValidPath = validatePath(path);
+        if (!isValidPath.valid) {
+          deferred.reject(isValidPath.reason);
+          return deferred.promise;
+        }
+        if (!localStorageHelper.has('/')) {
+          localStorageHelper.set(path, {
+            path: '/',
+            name: '',
+            type: 'folder',
+            meta: { 'created': Math.round(new Date().getTime() / 1000) }
+          });
+        }
+        deferred.resolve(findFolder(path));
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Persist a file to an existing folder.
+     */
+    service.save = function (path, content) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var name = extractNameFromPath(path);
+        var entry = localStorageHelper.get(path);
+        if (!isValidParent(path)) {
+          deferred.reject(new Error('Parent folder does not exists: ' + path));
+          return deferred.promise;
+        }
+        var file = {};
+        if (entry) {
+          if (entry.type === FOLDER) {
+            deferred.reject('file has the same name as a folder');
+            return deferred.promise;
+          }
+          entry.content = content;
+          entry.meta.lastUpdated = Math.round(new Date().getTime() / 1000);
+          file = entry;
+        } else {
+          file = {
+            path: path,
+            name: name,
+            content: content,
+            type: 'file',
+            meta: { 'created': Math.round(new Date().getTime() / 1000) }
+          };
+        }
+        localStorageHelper.set(path, file);
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Create the folders contained in a path.
+     */
+    service.createFolder = function (path) {
+      var deferred = $q.defer();
+      var isValidPath = validatePath(path);
+      if (!isValidPath.valid) {
+        deferred.reject(isValidPath.reason);
+        return deferred.promise;
+      }
+      if (localStorageHelper.has(path)) {
+        deferred.reject(new Error('Folder already exists: ' + path));
+        return deferred.promise;
+      }
+      var parent = extractParentPath(path);
+      if (!localStorageHelper.has(parent)) {
+        deferred.reject(new Error('Parent folder does not exists: ' + path));
+        return deferred.promise;
+      }
+      $timeout(function () {
+        localStorageHelper.set(path, {
+          path: path,
+          name: extractNameFromPath(path),
+          type: 'folder',
+          meta: { 'created': Math.round(new Date().getTime() / 1000) }
+        });
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Loads the content of a file.
+     */
+    service.load = function (path) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var entry = localStorageHelper.get(path);
+        if (entry && entry.type === 'file') {
+          deferred.resolve(localStorageHelper.get(path).content);
+        } else {
+          deferred.reject(fileNotFoundMessage(path));
+        }
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Removes a file or directory.
+     */
+    service.remove = function (path) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var entry = localStorageHelper.get(path);
+        if (entry && entry.type === FOLDER && hasChildrens(path)) {
+          deferred.reject('folder not empty');
+          return deferred.promise;
+        }
+        localStorageHelper.remove(path);
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Renames a file or directory
+     */
+    service.rename = function (source, destination) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var sourceEntry = localStorageHelper.get(source);
+        if (!sourceEntry) {
+          deferred.reject('Source file or folder does not exists.');
+          return deferred.promise;
+        }
+        var destinationEntry = localStorageHelper.get(destination);
+        if (destinationEntry) {
+          deferred.reject('File or folder already exists.');
+          return deferred.promise;
+        }
+        if (!isValidParent(destination)) {
+          deferred.reject('Destination folder does not exist.');
+          return deferred.promise;
+        }
+        sourceEntry.path = destination;
+        sourceEntry.name = extractNameFromPath(destination);
+        localStorageHelper.remove(destination);
+        localStorageHelper.remove(source);
+        localStorageHelper.set(destination, sourceEntry);
+        if (sourceEntry.type === FOLDER) {
+          // if (!isValidPath(destination)) {
+          //   deferred.reject('Destination is not a valid folder');
+          //   return deferred.promise;
+          // }
+          //move all child items
+          localStorageHelper.forEach(function (entry) {
+            if (entry.path.toLowerCase() !== source.toLowerCase() && entry.path.indexOf(source) === 0) {
+              var newPath = destination + entry.path.substring(source.length);
+              localStorageHelper.remove(entry.path);
+              entry.path = newPath;
+              localStorageHelper.set(newPath, entry);
+            }
+          });
+        }
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    service.exportFiles = function exportFiles() {
+      var jszip = new $window.JSZip();
+      localStorageHelper.forEach(function (item) {
+        // Skip root folder
+        if (item.path === '/') {
+          return;
+        }
+        // Skip meta files
+        if (item.name.slice(-5) === '.meta') {
+          return;
+        }
+        var path = item.path.slice(1);
+        // Remove starting slash
+        item.type === 'folder' ? jszip.folder(path) : jszip.file(path, item.content);
+      });
+      var fileName = $prompt('Please enter a ZIP file name:', 'api.zip');
+      fileName && $window.saveAs(jszip.generate({ type: 'blob' }), fileName);
+    };
+    return service;
+  }
+  angular.module('fs').constant('LOCAL_PERSISTENCE_KEY', 'localStorageFilePersistence').constant('FOLDER', 'folder').factory('localStorageHelper', [
+    'LOCAL_PERSISTENCE_KEY',
+    function (LOCAL_PERSISTENCE_KEY) {
+      return {
+        forEach: function (fn) {
+          for (var key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+              // A key is a local storage file system entry if it starts
+              //with LOCAL_PERSISTENCE_KEY + '.'
+              if (key.indexOf(LOCAL_PERSISTENCE_KEY + '.') === 0) {
+                fn(JSON.parse(localStorage.getItem(key)));
+              }
+            }
+          }
+        },
+        has: function (path) {
+          var has = false;
+          path = path || '/';
+          this.forEach(function (entry) {
+            if (entry.path.toLowerCase() === path.toLowerCase()) {
+              has = true;
+            }
+          });
+          return has;
+        },
+        set: function (path, content) {
+          localStorage.setItem(LOCAL_PERSISTENCE_KEY + '.' + path, JSON.stringify(content));
+        },
+        get: function (path) {
+          return JSON.parse(localStorage.getItem(LOCAL_PERSISTENCE_KEY + '.' + path));
+        },
+        remove: function (path) {
+          localStorage.removeItem(LOCAL_PERSISTENCE_KEY + '.' + path);
+        }
+      };
+    }
+  ]).factory('localStorageFileSystem', localStorageFileSystemFactory).config(function (fileSystemProvider) {
+    if (!fileSystemProvider.hasFactory) {
+      fileSystemProvider.setFileSystemFactory(localStorageFileSystemFactory);
+    }
+  });
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').factory('mockingServiceUtils', [
+    '$q',
+    'jsTraverse',
+    'ramlRepository',
+    'refParser',
+    function mockingServiceUtils($q, jsTraverse, ramlRepository, refParser) {
+      return { dereference: dereference };
+      // ---
+      function dereferenceJsons(raml) {
+        return $q.when().then(function () {
+          var promises = [];
+          jsTraverse.traverse(raml).forEach(function (value) {
+            if (this.path.slice(-2).join('.') === 'body.application/json') {
+              var jsonSchema;
+              if (value.schema) {
+                jsonSchema = value.schema;
+              } else if (value.type) {
+                jsonSchema = value.type;
+              }
+              if (Array.isArray(jsonSchema)) {
+                jsonSchema = jsonSchema[0];
+              }
+              try {
+                promises.push(refParser.dereference(JSON.parse(jsonSchema), { $refs: { read$Ref: read$Ref } }).then(JSON.stringify).then(function (schema) {
+                  value.schema = schema;
+                }));
+              } catch (e) {
+              }
+            }
+          });
+          return $q.all(promises);
+        });
+      }
+      function dereference(raml) {
         return dereferenceJsons(raml);
       }
       // ---
@@ -60184,7 +62470,23 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
         return url;
       };
+      function cleanBaseUri(mock) {
+        var baseUri = mock.baseUri;
+        var mocksQuantity = baseUri.match(/mocks/g).length;
+        if (mocksQuantity > 1) {
+          var mocks = 'mocks/';
+          for (var i = mocksQuantity; i > 1; i--) {
+            var from = baseUri.indexOf(mocks);
+            var to = baseUri.indexOf('/', from + mocks.length);
+            baseUri = baseUri.substring(0, from) + baseUri.substring(to + 1, baseUri.length);
+          }
+        }
+        mock.baseUri = baseUri;
+      }
       self.simplifyMock = function simplifyMock(mock) {
+        if (mock.baseUri) {
+          cleanBaseUri(mock);
+        }
         return {
           id: mock.id,
           baseUri: mock.baseUri,
@@ -60311,9 +62613,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         });
         scope[subMenuName] = true;
       };
-      this.openSubMenu = function (scope, subMenuName) {
-        scope[subMenuName] = true;
-      };
     }
   ]);
 }());
@@ -60383,7 +62682,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       function importSwagger(mode) {
         $scope.importing = true;
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.url(mode.value).then(function (contents) {
+        return swaggerToRAML.convert(mode.value).then(function (contents) {
           var filename = extractFileName(mode.value, 'raml');
           return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
         }).then(function () {
@@ -60396,18 +62695,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       function importSwaggerZip(mode) {
         $scope.importing = true;
-        var importSwaggerPromise;
-        if (importService.isZip(mode.value)) {
-          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
-            $rootScope.$broadcast('event:save-all');
-          });
-        } else {
-          importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
-            var filename = extractFileName(mode.value.name, 'raml');
-            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
-          });
-        }
-        return importSwaggerPromise.then(function () {
+        return swaggerToRAML.zip(mode.value).then(function (contents) {
+          var filename = extractFileName(mode.value.name, 'raml');
+          return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+        }).then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
           broadcastError('Failed to parse Swagger: ' + err.message);
@@ -60427,7 +62718,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           callback: importSwagger
         },
         {
-          name: 'Swagger file',
+          name: 'Swagger .zip',
           type: 'zip',
           callback: importSwaggerZip
         }
@@ -60446,12 +62737,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         if (form.$invalid || $scope.importing) {
           return;
         }
-        try {
-          return $scope.mode.callback($scope.mode);
-        } catch (err) {
-          $scope.importing = false;
-          broadcastError(err);
-        }
+        return $scope.mode.callback($scope.mode);
       };
       /**
        * Extract a usable filename from a path.
@@ -60528,7 +62814,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$modal',
     function newNameModal($modal) {
       var self = this;
-      self.open = function open(message, defaultName, validations, title, link) {
+      self.open = function open(message, defaultName, validations, title) {
         return $modal.open({
           templateUrl: 'views/new-name-modal.html',
           controller: 'NewNameController',
@@ -60545,9 +62831,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             },
             validations: function validationsResolver() {
               return validations;
-            },
-            link: function linkResolver() {
-              return link;
             }
           }
         }).result;
@@ -60562,13 +62845,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'defaultName',
     'validations',
     'title',
-    'link',
-    function NewNameController($modalInstance, $scope, message, defaultName, validations, title, link) {
+    function NewNameController($modalInstance, $scope, message, defaultName, validations, title) {
       $scope.input = {
         newName: defaultName,
         message: message,
-        title: title,
-        link: link
+        title: title
       };
       $scope.validationErrorMessage = '';
       $scope.isValid = function isValid(value) {
@@ -60593,6 +62874,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   ]);
   ;
 }());
+/* global swaggerToRamlObject, ramlObjectToRaml */
 (function () {
   'use strict';
   angular.module('ramlEditorApp').service('swaggerToRAML', [
@@ -60600,195 +62882,52 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$q',
     '$http',
     'importService',
-    'apiSpecTransformer',
-    function swaggerToRAML($window, $q, $http, importService, apiSpecTransformer) {
+    function swaggerToRAML($window, $q, $http, importService) {
       var self = this;
-      function replaceExtension(path, ext) {
-        var index = path.lastIndexOf('.');
-        if (index > -1) {
-          path = path.substr(0, index);
+      var proxy = $window.RAML.Settings.proxy || '';
+      function reader(filename, done) {
+        if (!/^https?\:\/\//.test(filename)) {
+          return done(new Error('Invalid file location: ' + filename));
         }
-        return path + '.' + ext;
-      }
-      function ramlConverter() {
-        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.SWAGGER, apiSpecTransformer.Formats.RAML10);
-      }
-      function doConvert(error, converter, deferred) {
-        if (error) {
-          deferred.reject(error);
-        }
-        try {
-          converter.convert('yaml', function (err, result) {
-            if (err) {
-              return deferred.reject(err);
-            }
-            return deferred.resolve(result);
-          });
-        } catch (err) {
-          deferred.reject(err);
-        }
-      }
-      function convertData(content, deferred, options) {
-        var converter = ramlConverter();
-        converter.loadData(content, options).then(function (error) {
-          doConvert(error, converter, deferred);
-        }).catch(deferred.reject);
-        return deferred;
-      }
-      function convertZip(root, contents) {
-        var decimalRegexp = /^\d+\.\d+$/;
-        var swaggerYamlRegexp = /swagger\s*:\s*"{0,1}\d+\.\d+"{0,1}/;
-        function isSwaggerSpec(text) {
-          try {
-            var parsedData = JSON.parse(text);
-            return decimalRegexp.test(parsedData.swagger);
-          } catch (err) {
-            // Possibly YAML Data
-            return swaggerYamlRegexp.test(text);
-          }
-        }
-        var converter = function (files, name, deferred) {
-          var content = files[name];
-          // leave files that are not swagger unmodified
-          if (!isSwaggerSpec(content)) {
-            return deferred.resolve({
-              name: name,
-              content: content
-            });
-          }
-          // custom fileResolver to take in memory files from the zip
-          var fileResolver = {
-              canRead: function (path) {
-                return this.read(path) != null;
-              },
-              read: function (path) {
-                var url = path.url.replace(window.location.origin + '/', '');
-                for (var filename in files) {
-                  if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
-                    return files[filename];
-                  }
-                }
-                return null;
-              }
-            };
-          // convert main swagger spec
-          convertData(content, $q.defer(), {
-            resolve: {
-              file: fileResolver,
-              http: fileResolver
-            }
-          }).promise.then(function (convertedData) {
-            deferred.resolve({
-              name: replaceExtension(name, 'raml'),
-              content: convertedData
-            });
-          });
-          return deferred.promise;
-        };
-        return importService.importZip(root, contents, converter);
-      }
-      self.url = function convert(url) {
-        // fetch and convert single file
-        var deferred = $q.defer();
-        var converter = ramlConverter();
-        try {
-          converter.loadFile(url, function (error) {
-            doConvert(error, converter, deferred);
-          });
-        } catch (err) {
-          deferred.reject(err);
-        }
-        return deferred.promise;
-      };
-      self.file = function zip(file) {
-        var deferred = $q.defer();
-        importService.readFile(file).then(function (contents) {
-          convertData(contents, deferred);
-        }).catch(deferred.reject);
-        return deferred.promise;
-      };
-      self.zip = function zip(rootDirectory, file) {
-        var deferred = $q.defer();
-        importService.readFile(file).then(function (contents) {
-          convertZip(rootDirectory, contents).then(deferred.resolve).catch(deferred.reject);
-        }).catch(deferred.reject);
-        return deferred.promise;
-      };
-      return self;
-    }
-  ]);
-}());
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').service('ramlToSwagger', [
-    '$q',
-    'ramlRepository',
-    'ramlEditorMainHelpers',
-    'apiSpecTransformer',
-    function ramlToSwagger($q, ramlRepository, ramlEditorMainHelpers, apiSpecTransformer) {
-      var self = this;
-      function findRootRaml() {
-        var defer = $q.defer();
-        var rootDirectory = ramlRepository.getByPath('/');
-        findRootRamlRecursive(rootDirectory, defer);
-        return defer.promise;
-      }
-      function loadFile(file, defer) {
-        (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: file.path })).then(function (loadedFile) {
-          if (ramlEditorMainHelpers.isApiDefinition(loadedFile.contents)) {
-            defer.resolve(loadedFile);
-          }
-        });
-      }
-      function findRootRamlRecursive(directory, defer) {
-        for (var i = 0; i < directory.children.length; i++) {
-          var child = directory.children[i];
-          if (child.isDirectory) {
-            findRootRamlRecursive(child, defer);
-          } else {
-            loadFile(child, defer);
-          }
-        }
-      }
-      function swaggerConverter() {
-        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.RAML10, apiSpecTransformer.Formats.SWAGGER);
-      }
-      function doConvert(converter, file, format, deferred) {
-        try {
-          converter.convert(format, function (err, result) {
-            if (err) {
-              return deferred.reject(err);
-            }
-            return deferred.resolve({
-              name: file.name,
-              contents: result
-            });
-          });
-        } catch (err) {
-          deferred.reject(err);
-        }
-      }
-      function convertData(file, format, deferred, options) {
-        var converter = swaggerConverter();
-        converter.loadData(file.contents, options).then(function () {
-          doConvert(converter, file, format, deferred);
-        }).catch(deferred.reject);
-        return deferred;
-      }
-      function toSwagger(format) {
-        var deferred = $q.defer();
-        findRootRaml().then(function (rootRaml) {
-          convertData(rootRaml, format, deferred);
+        return $http.get(proxy + filename, { transformResponse: false }).then(function (response) {
+          return done(null, response.data);
         }).catch(function (err) {
-          deferred.reject(err);
+          return done(new Error(err.data));
         });
-        return deferred.promise;
       }
-      self.json = function json() {
-        return toSwagger('json');
+      function parseResult(deferred) {
+        return function (err, result) {
+          if (err) {
+            return deferred.reject(err);
+          }
+          try {
+            return deferred.resolve(ramlObjectToRaml(result));
+          } catch (e) {
+            return deferred.reject(e);
+          }
+        };
+      }
+      self.convert = function convert(url) {
+        var deferred = $q.defer();
+        swaggerToRamlObject(url, reader, parseResult(deferred));
+        return deferred.promise;
       };
-      self.yaml = function yaml() {
-        return toSwagger('yaml');
+      self.zip = function zip(file) {
+        var deferred = $q.defer();
+        if (!importService.isZip(file)) {
+          deferred.reject(new Error('Invalid zip file'));
+        } else {
+          importService.readFile(file).then(function (contents) {
+            var files = importService.parseZip(contents);
+            swaggerToRamlObject.files(Object.keys(files), function (filename, done) {
+              if (files.hasOwnProperty(filename)) {
+                return done(null, files[filename]);
+              }
+              return reader(filename, done);
+            }, parseResult(deferred));
+          });
+        }
+        return deferred.promise;
       };
       return self;
     }
@@ -60813,7 +62952,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       self.mergeFile = function (directory, file) {
         // Import every other file as normal.
         if (!self.isZip(file)) {
-          return self.importFile(directory, file).then(ramlRepository.saveFile);
+          return self.importFile(directory, file);
         }
         return self.readFile(file).then(function (contents) {
           return self.mergeZip(directory, contents);
@@ -60931,17 +63070,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return promiseChain(imports);
       };
       /**
-       * Create and save file.
-       *
-       * @param  {Object}  directory
-       * @param  {String}  name
-       * @param  {String}  content
-       * @return {Promise}
-       */
-      self.createAndSaveFile = function (directory, name, content) {
-        return self.createFile(directory, name, content).then(ramlRepository.saveFile);
-      };
-      /**
        * Create a file in the filesystem.
        *
        * @param  {Object}  directory
@@ -60981,8 +63109,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 }
                 // Mark the file as dirty.
                 file.dirty = true;
+                return file;
               }
-              return file;
             });
             ;
           }
@@ -61071,12 +63199,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        *
        * @param  {Object}  directory
        * @param  {String}  contents
-       * @param  {Function}  converter
        * @return {Promise}
        */
-      self.importZip = function (directory, contents, converter) {
+      self.importZip = function (directory, contents) {
         var files = self.parseZip(contents);
-        return importZipFiles(directory, files, converter);
+        return importZipFiles(directory, files);
       };
       /**
        * Import a single file at specific path.
@@ -61103,22 +63230,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        *
        * @param  {Object}  directory
        * @param  {Object}  files
-       * @param  {Function}  converter
        * @return {Promise}
        */
-      function importZipFiles(directory, files, converter) {
+      function importZipFiles(directory, files) {
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
-              if (!converter) {
-                return self.createFile(directory, name, files[name]);
-              } else {
-                // convert content before importing file
-                var defer = $q.defer();
-                converter(files, name, defer);
-                return defer.promise.then(function (file) {
-                  return self.createFile(directory, file.name, file.content);
-                });
-              }
+              return self.createFile(directory, name, files[name]);
             };
           });
         return promiseChain(imports);
@@ -61337,6 +63454,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApplyWrapper',
     'debounce',
     'ramlParserAdapter',
+    'ramlExpander',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -61347,7 +63465,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlExpander, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -61461,24 +63579,21 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return;
         }
         $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function success(api) {
-          // hack: we have to make a full copy of an object because console modifies
-          // it later and makes it unusable for mocking service
           var raml = ramlParserAdapter.expandApiToJSON(api);
-          var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
+          ramlExpander.expandRaml(raml);
           $scope.fileBrowser.selectedFile.raml = raml;
-          $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
-          $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
-          // a success, but with warnings
-          if (api.errors().length > 0) {
-            $rootScope.$broadcast('event:raml-parser-error', { parserErrors: api.errors() });
+          $rootScope.$broadcast('event:raml-parsed', raml);
+          // a success, but with warnings (takes to long... skip for now until improvements on parser)
+          var errors = api.errors();
+          if (errors.length > 0) {
+            $rootScope.$broadcast('event:raml-parser-error', { parserErrors: errors });
           }
         }), safeApplyWrapper($scope, function failure(error) {
           $rootScope.$broadcast('event:raml-parser-error', error);
         }));
       });
-      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml, ramlExpanded) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
         $scope.raml = raml;
-        $scope.ramlExpanded = ramlExpanded;
         $scope.title = raml && raml.title;
         $scope.version = raml && raml.version;
         $scope.currentError = undefined;
@@ -61623,7 +63738,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   angular.module('ramlEditorApp').factory('ramlEditorMainHelpers', function ramlEditorMainHelpers() {
     return {
       isRamlFile: isRamlFile,
-      isApiDefinition: isApiDefinition,
       isApiDefinitionLike: isApiDefinitionLike
     };
     // ---
@@ -61841,13 +63955,17 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.enabled = !!mock;
       }
       function getMock() {
-        loading(mockingService.getMock($scope.fileBrowser.selectedFile).then(setMock));
+        loading(mockingService.getMock($scope.fileBrowser.selectedFile).then(setMock).then(function () {
+          if ($scope.mock) {
+            addBaseUri();
+          }
+        }));
       }
       function createMock() {
-        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.ramlExpanded).then(setMock).then(addBaseUri));
+        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml).then(setMock).then(addBaseUri));
       }
       function updateMock() {
-        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.ramlExpanded).then(setMock);
+        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml).then(setMock);
         ;
       }
       function deleteMock() {
@@ -62134,7 +64252,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }
             $timeout(function () {
               element[0].focus();
-            }, 100);
+            });
           });
         }
       };
@@ -62246,9 +64364,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'ramlRepository',
     'newFileService',
     'newFolderService',
-    'subMenuService',
     'scroll',
-    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, newFileService, newFolderService, subMenuService, scroll) {
+    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, newFileService, newFolderService, scroll) {
       function createActions(target) {
         var saveAction = {
             label: 'Save',
@@ -62258,14 +64375,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           };
         var newFileAction = {
             label: 'New File',
-            fragments: newFileService.files['1.0'],
-            execute: function execute(fragmentLabel) {
-              if (fragmentLabel) {
-                return newFileService.prompt(target, '1.0', fragmentLabel);
-              }
-            },
-            newFile: function newFile() {
-              return newFileService.prompt(target, '0.8');
+            execute: function execute() {
+              return newFileService.prompt(target);
             }
           };
         var newFolderAction = {
@@ -62336,14 +64447,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         restrict: 'E',
         templateUrl: 'views/raml-editor-context-menu.tmpl.html',
         link: function link(scope, element) {
-          scope.openFileMenu = function (action) {
-            if (action.label === 'New File') {
-              subMenuService.openSubMenu(scope, 'showFileMenu');
-            }
-          };
-          scope.closeFileMenu = function () {
-            scope.showFileMenu = false;
-          };
           function positionMenu(element, event) {
             var top = event.pageY;
             var left = event.pageX;
@@ -62356,10 +64459,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               }
             }, 0);
           }
-          function close(e) {
-            if (e && e.target.firstChild.nodeValue.match('New File')) {
-              return;
-            }
+          function close() {
             scroll.enable();
             scope.$apply(function () {
               delete contextMenuController.target;
@@ -62656,39 +64756,29 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorProjectButton', [
-    '$timeout',
-    '$window',
-    'subMenuService',
-    function ramlEditorProjectButton($timeout, $window, subMenuService) {
-      return {
-        restrict: 'E',
-        templateUrl: 'views/menu/project-menu.tmpl.html',
-        link: function (scope) {
-          scope.openProjectMenu = function () {
-            subMenuService.open(scope, 'showProjectMenu');
-          };
-          scope.openFileMenu = function () {
-            subMenuService.openSubMenu(scope, 'showFileMenu');
-          };
-          scope.closeFileMenu = function () {
-            scope.showFileMenu = false;
-          };
-        }
-      };
-    }
-  ]);
-}());
-(function () {
-  'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorSaveFileButton', [
     '$rootScope',
     'ramlRepository',
-    function ramlEditorSaveFileButton($rootScope, ramlRepository) {
+    '$window',
+    '$timeout',
+    '$q',
+    'subMenuService',
+    function ramlEditorSaveFileButton($rootScope, ramlRepository, $window, $timeout, $q, subMenuService) {
       return {
         restrict: 'E',
-        template: '<li role="save-button" ng-click="saveFile()">' + '<a><i class="fa fa-save"></i>&nbsp;Save</a>' + '</li>',
+        template: [
+          '<span role="save-button" ng-click="saveFile()"><i class="fa fa-save"></i>&nbsp;Save</span>',
+          '<span class="menu-item-toggle" ng-click="openContextMenu($event)">',
+          '  <i class="fa fa-caret-down"></i>',
+          '</span>',
+          '<ul role="context-menu" class="menu-item-context" ng-show="contextMenuOpen">',
+          '  <li role="context-menu-item" ng-click="saveAllFiles()">Save All</li>',
+          '</ul>'
+        ].join('\n'),
         link: function (scope) {
+          scope.openContextMenu = function () {
+            subMenuService.open(scope, 'contextMenuOpen');
+          };
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
             return ramlRepository.saveFile(file).then(function success() {
@@ -62698,25 +64788,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               });
             });
           };
-        }
-      };
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorSaveAllButton', [
-    '$rootScope',
-    'ramlRepository',
-    '$window',
-    '$timeout',
-    '$q',
-    function ramlEditorSaveAllButton($rootScope, ramlRepository, $window, $timeout, $q) {
-      return {
-        restrict: 'E',
-        template: '<li role="save-all-button" ng-click="saveAllFiles()">' + '<a><i class="fa fa-save"></i>&nbsp;Save All</a>' + '</li>',
-        link: function (scope) {
           scope.saveAllFiles = function saveAllFiles() {
             var promises = [];
             scope.homeDirectory.forEachChildDo(function (file) {
@@ -62734,6 +64805,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               });
             });
           };
+          scope.$on('event:save-all', function () {
+            scope.saveAllFiles();
+          });
         }
       };
     }
@@ -62747,7 +64821,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     function ramlEditorNewFolderButton(newFolderService) {
       return {
         restrict: 'E',
-        template: '<li ng-show="supportsFolders" role="new-folder-button" ng-click="newFolder()">' + '<a><i class="fa fa-folder-open"></i>&nbsp;New Folder</a>' + '</li>',
+        template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
         link: function (scope) {
           scope.newFolder = function newFolder() {
             return newFolderService.prompt(scope.homeDirectory);
@@ -62760,40 +64834,15 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorNewFileMenu', [
+  angular.module('ramlEditorApp').directive('ramlEditorNewFileButton', [
     'newFileService',
-    'subMenuService',
-    function ramlEditorNewFileMenu(newFileService, subMenuService) {
+    function ramlEditorNewFileButton(newFileService) {
       return {
         restrict: 'E',
-        scope: {
-          showFileMenu: '=',
-          showFragmentMenu: '=',
-          openFileMenuCondition: '@',
-          menuRole: '@'
-        },
-        templateUrl: 'views/menu/new-file-menu.tmpl.html',
+        template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
         link: function (scope) {
-          scope.closeFragmentMenu = function () {
-            scope.showFragmentMenu = false;
-          };
-          scope.openFragmentMenu = function () {
-            subMenuService.openSubMenu(scope, 'showFragmentMenu');
-            scope.fragments = newFileService.files['1.0'];
-          };
-          scope.newFragmentFile = function newFragmentFile(fragmentType) {
-            return newFileService.newFragmentFile(scope.$parent.homeDirectory, fragmentType);
-          };
-          scope.newFile = function newFile(version) {
-            return newFileService.newFile(scope.$parent.homeDirectory, version);
-          };
-          scope.notSorted = function (fragments) {
-            if (!fragments) {
-              return [];
-            }
-            return Object.keys(fragments).map(function (f) {
-              return fragments[f];
-            });
+          scope.newFile = function newFile() {
+            return newFileService.prompt(scope.homeDirectory);
           };
         }
       };
@@ -62803,63 +64852,22 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorExportMenu', [
-    'ramlRepository',
-    'subMenuService',
-    'ramlToSwagger',
-    '$window',
+  angular.module('ramlEditorApp').directive('ramlEditorExportFilesButton', [
     '$rootScope',
-    function ramlEditorExportMenu(ramlRepository, subMenuService, ramlToSwagger, $window, $rootScope) {
+    'ramlRepository',
+    function ramlEditorExportFilesButton($rootScope, ramlRepository) {
       return {
         restrict: 'E',
-        templateUrl: 'views/menu/export-menu.tmpl.html',
+        template: '<span role="export-button" ng-click="exportFiles()"><i class="fa fa-download"></i>&nbsp;Export files</span>',
         link: function (scope) {
-          function saveFile(yaml, name) {
-            var blob = new Blob([yaml], { type: 'application/json;charset=utf-8' });
-            $window.saveAs(blob, name);
-          }
-          function broadcastError(msg) {
-            return $rootScope.$broadcast('event:notification', {
-              message: msg,
-              expires: true,
-              level: 'error'
-            });
-          }
-          function replaceExtension(path, ext) {
-            var index = path.lastIndexOf('.');
-            if (index > -1) {
-              path = path.substr(0, index);
-            }
-            return path + '.' + ext;
-          }
-          scope.openExportMenu = function () {
-            subMenuService.openSubMenu(scope, 'showExportMenu');
-          };
-          scope.closeExportMenu = function () {
-            scope.showExportMenu = false;
-          };
-          scope.exportZipFiles = function exportZipFiles() {
+          scope.exportFiles = function exportFiles() {
             ramlRepository.exportFiles();
-          };
-          scope.exportJsonFiles = function exportJsonFiles() {
-            ramlToSwagger.json().then(function (convert) {
-              var lines = JSON.stringify(convert.contents, null, 2);
-              saveFile(lines, replaceExtension(convert.name, 'json'));
-            }).catch(function (error) {
-              broadcastError(error);
-            });
-          };
-          scope.exportYamlFiles = function exportYamlFiles() {
-            ramlToSwagger.yaml().then(function (convert) {
-              saveFile(convert.contents, replaceExtension(convert.name, 'yaml'));
-            }).catch(function (error) {
-              broadcastError(error);
-            });
           };
         }
       };
     }
   ]);
+  ;
 }());
 (function () {
   'use strict';
@@ -62869,7 +64877,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     function ramlEditorImportButton($injector, importModal) {
       return {
         restrict: 'E',
-        template: '<li role="import-button" ng-click="importFile()">' + '<a><i class="fa fa-cloud-download"></i> Import</a>' + '</li>',
+        template: '<span role="new-button" ng-click="importFile()"><i class="fa fa-cloud-download"></i> Import</span>',
         link: function (scope) {
           scope.importFile = function importFile() {
             return importModal.open();
@@ -62879,29 +64887,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     }
   ]);
   ;
-}());
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorViewButton', [
-    '$timeout',
-    '$window',
-    'subMenuService',
-    '$rootScope',
-    function ramlEditorViewButton($timeout, $window, subMenuService, $rootScope) {
-      return {
-        restrict: 'E',
-        templateUrl: 'views/menu/view-menu.tmpl.html',
-        link: function (scope) {
-          scope.openViewMenu = function () {
-            subMenuService.open(scope, 'showViewMenu');
-          };
-          scope.toogleBackgroundColor = function () {
-            $rootScope.$broadcast('event:toggle-theme');
-          };
-        }
-      };
-    }
-  ]);
 }());
 (function () {
   'use strict';
@@ -63358,18 +65343,14 @@ angular.module('ramlEditorApp').run([
   function ($templateCache) {
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'swagger\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently supports Swagger v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently only supports Swagger v1.2</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/menu/export-menu.tmpl.html', '<a>\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;Swagger 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;Swagger 2.0 YAML</a></li>\n' + '</ul>\n');
-    $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a role="raml-specification" href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>\n' + '  <li rile="context-menu-item"><a role="raml-website" href="http://raml.org" target="_blank">raml.org Website</a></li>\n' + '  <li role="context-menu-item"><a role="report-raml-bug" href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <li role="context-menu-item"><a role="raml-guide" href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>\n' + '  <li role="context-menu-item" ng-click="openHelpModal()"><a role="raml-about">About</a></li>\n' + '</ul>\n');
-    $templateCache.put('views/menu/new-file-menu.tmpl.html', '<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">\n' + '  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">\n' + '    <a>\n' + '        &nbsp;Raml 1.0\n' + '        <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '\n' + '    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">\n' + '      <li role="new-raml-{{fragment.name}}" ng-repeat="fragment in notSorted(fragments)" ng-click="newFragmentFile(fragment.label)">\n' + '        <a>&nbsp;{{ fragment.name }}</a>\n' + '      </li>\n' + '    </ul>\n' + '  </li>\n' + '\n' + '  <li role="new-raml-0.8" ng-click="newFile(\'0.8\')">\n' + '    <a>&nbsp;Raml 0.8 API Spec</a>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/menu/view-menu.tmpl.html', '<span class="menu-item-toggle" ng-click="openViewMenu($event)">\n' + '  <i class="fa fa-edit"></i>&nbsp;View\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showViewMenu">\n' + '  <li role="toogle-background" ng-click="toogleBackgroundColor()">\n' + '      <a>&nbsp;Toggle Background Color (ctrl+shift+t)</a>\n' + '  </li>\n' + '</ul>\n' + '\n');
+    $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '</span>\n' + '<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md" target="_blank">Language Spec (0.8)</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">Language Spec (1.0)</a></li>\n' + '  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <hr class="line-with-linear-gradient">\n' + '  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>\n' + '</ul>\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
-    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p>\n' + '        Learn more\n' + '        <a ng-if="input.link" target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="ramlExpanded"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
+    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

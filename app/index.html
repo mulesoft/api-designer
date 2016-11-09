@@ -87,7 +87,9 @@
     <!-- build:js({.,.tmp,app}) scripts/api-designer.js -->
     <script src=".tmp/js-traverse/js-traverse.js"></script>
     <script src=".tmp/raml-suggestions/raml-suggestions.js"></script>
-    <script src=".tmp/api-spec-transformer/api-spec-transformer.js"></script>
+    <!--<script src=".tmp/api-spec-transformer/api-spec-transformer.js"></script>-->
+    <script src="bower_components/raml-object-to-raml/dist/raml-object-to-raml.js"></script>
+    <script src="bower_components/swagger-to-raml-object/dist/swagger-to-raml-object.js"></script>
 
     <script src="vendor/scripts/codemirror.js"></script>
     <script src="vendor/scripts/foldcode.js"></script>
@@ -115,6 +117,7 @@
     <script src="scripts/services/raml-highlight-config.js"></script>
     <script src="scripts/services/raml-repository.js"></script>
     <script src="scripts/services/raml-suggest.js"></script>
+    <script src="scripts/services/raml-expander.js"></script>
     <script src="scripts/services/file-system.js"></script>
     <script src="scripts/services/new-file-service.js"></script>
     <script src="scripts/services/new-folder-service.js"></script>
