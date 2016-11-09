@@ -1681,7 +1681,7 @@
           });
         return finalPromise;
       }
-      function getSuggestions(request, provider, preParsedAst) {
+      function getSuggestions(request, provider, preParsedAst, project) {
         if (preParsedAst === void 0) {
           preParsedAst = undefined;
         }
@@ -1694,7 +1694,7 @@
           var offset = request.content.getOffset();
           var text = request.content.getText();
           var kind = completionKind(request);
-          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider);
+          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider, true, true, project);
           var hlnode = node;
           if (kind === parserApi.search.LocationKind.DIRECTIVE_COMPLETION) {
             return [{ text: 'include' }];
@@ -2088,7 +2088,7 @@
       function completionKind(request) {
         return parserApi.search.determineCompletionKind(request.content.getText(), request.content.getOffset());
       }
-      function getAstNode(request, contentProvider, clearLastChar, allowNull) {
+      function getAstNode(request, contentProvider, clearLastChar, allowNull, oldProject) {
         if (clearLastChar === void 0) {
           clearLastChar = true;
         }
@@ -2096,7 +2096,7 @@
           allowNull = true;
         }
         var newProjectId = contentProvider.contentDirName(request.content);
-        var project = parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
+        var project = oldProject || parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
         var offset = request.content.getOffset();
         var text = request.content.getText();
         var kind = completionKind(request);
@@ -3159,7 +3159,8 @@
         var parsedExample = search.parseStructuredExample(node, contentType);
         if (!parsedExample)
           return [];
-        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request));
+        var project = node && node.lowLevel() && node.lowLevel().unit() && node.lowLevel().unit().project();
+        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request), project);
       }
       function postProcess(providerSuggestions, request) {
         var prepared = postProcess1(providerSuggestions, request);
@@ -5420,9 +5421,9 @@
       },
       {
         './lib/converter': 2,
-        './lib/exporters/index': 14,
-        './lib/formats': 19,
-        './lib/importers/index': 25
+        './lib/exporters/index': 15,
+        './lib/formats': 20,
+        './lib/importers/index': 26
       }
     ],
     2: [
@@ -5476,9 +5477,9 @@
         exports.Converter = Converter;
       },
       {
-        './exporters/index': 14,
-        './importers/index': 25,
-        'lodash': 109
+        './exporters/index': 15,
+        './importers/index': 26,
+        'lodash': 110
       }
     ],
     3: [
@@ -5672,8 +5673,8 @@
         module.exports = Endpoint;
       },
       {
-        '../utils/json': 33,
-        '../utils/strings': 34
+        '../utils/json': 34,
+        '../utils/strings': 35
       }
     ],
     4: [
@@ -5952,7 +5953,7 @@
         };
         module.exports = SavedEntry;
       },
-      { '../utils/json': 33 }
+      { '../utils/json': 34 }
     ],
     7: [
       function (require, module, exports) {
@@ -6062,6 +6063,66 @@
     ],
     9: [
       function (require, module, exports) {
+        function Method(method, methodResolved) {
+          this.method = method;
+          this.methodResolved = methodResolved;
+          this.summary = this.method.summary || this.methodResolved.summary;
+          this.tags = this.method.tags || this.methodResolved.tags;
+          this.description = this.method.description || this.methodResolved.description;
+          this.deprecated = this.method.deprecated || this.methodResolved.deprecated;
+          this.operationId = this.method.operationId || this.methodResolved.operationId;
+          this.externalDocs = this.method.externalDocs || this.methodResolved.externalDocs;
+          this.schemes = this.method.schemes || this.methodResolved.schemes;
+          this.parameters = this.method.parameters || this.methodResolved.parameters;
+          this.consumes = this.method.consumes || this.methodResolved.consumes;
+          this.produces = this.method.produces || this.methodResolved.produces;
+          this.responses = this.method.responses || this.methodResolved.responses;
+          this.security = this.method.security || this.methodResolved.security;
+        }
+        Method.prototype = {
+          get Summary() {
+            return this.summary;
+          },
+          get Tags() {
+            return this.tags;
+          },
+          get Description() {
+            return this.description;
+          },
+          get Deprecated() {
+            return this.deprecated;
+          },
+          get OperationId() {
+            return this.operationId;
+          },
+          get ExternalDocs() {
+            return this.externalDocs;
+          },
+          get Schemes() {
+            return this.schemes;
+          },
+          get Parameters() {
+            return this.parameters;
+          },
+          get Consumes() {
+            return this.consumes;
+          },
+          get Produces() {
+            return this.produces;
+          },
+          get Responses() {
+            return this.responses;
+          },
+          get Security() {
+            return this.security;
+          }
+        };
+        module.exports = Method;
+      },
+      {}
+    ],
+    10: [
+      function (require, module, exports) {
         var jsonHelper = require('../utils/json');
         function Test(name) {
           this._id = null;
@@ -6104,9 +6165,9 @@
         };
         module.exports = Test;
       },
-      { '../utils/json': 33 }
+      { '../utils/json': 34 }
     ],
-    10: [
+    11: [
       function (require, module, exports) {
         function Text(name) {
           this._id = null;
@@ -6153,7 +6214,7 @@
       },
       {}
     ],
-    11: [
+    12: [
       function (require, module, exports) {
         function UtilityFunction(name) {
           this.name = name;
@@ -6189,7 +6250,7 @@
       },
       {}
     ],
-    12: [
+    13: [
       function (require, module, exports) {
         var _ = require('lodash'), Exporter = require('./exporter'), ramlHelper = require('../helpers/raml'), jsonHelper = require('../utils/json'), YAML = require('js-yaml');
         function RAMLDefinition(title, env) {
@@ -6219,9 +6280,11 @@
               if (!method.uriParameters.hasOwnProperty(attrname))
                 continue;
               //uri not available, so check with displayName, which is same
-              var isURIParamExist = resource.displayName.split(attrname).length - 1;
-              if (isURIParamExist) {
-                resource.uriParameters[attrname] = method.uriParameters[attrname];
+              if (resource.displayName) {
+                var isURIParamExist = resource.displayName.split(attrname).length - 1;
+                if (isURIParamExist) {
+                  resource.uriParameters[attrname] = method.uriParameters[attrname];
+                }
               }
             }
             delete method.uriParameters;
@@ -6231,7 +6294,10 @@
           } else {
             var currentURI = '/' + methodURIs[0];
             if (!resource[currentURI]) {
-              resource[currentURI] = { displayName: methodURIs[0] };  //TODO uriParams?!?
+              resource[currentURI] = {};
+              if (!_.isEmpty(methodURIs[0])) {
+                resource[currentURI].displayName = methodURIs[0];
+              }  //TODO uriParams?!?
             }
             methodURIs.splice(0, 1);
             this.addMethod(resource[currentURI], methodURIs, methodKey, method);
@@ -6242,6 +6308,7 @@
           this.hasDeprecated = false;
           this.hasExternalDocs = false;
           this.hasInfo = false;
+          this.hasSummary = false;
         }
         RAML.prototype = new Exporter();
         RAML.prototype._mapSecurityScheme = function (slSecuritySchemes) {
@@ -6325,7 +6392,8 @@
               'date',
               'boolean',
               'file',
-              'array'
+              'array',
+              'datetime'
             ];
           for (var key in params) {
             if (!params.hasOwnProperty(key))
@@ -6365,6 +6433,7 @@
               case 'repeat':
               case 'default':
               case 'items':
+              case 'format':
                 break;
               default:
                 //not supported types
@@ -6401,10 +6470,11 @@
           if (!params || _.isEmpty(params.properties))
             return;
           var newParams = {};
-          for (var key in params.properties) {
-            if (!params.properties.hasOwnProperty(key))
+          var convertedParams = this.convertRefFromModel(params.properties);
+          for (var key in convertedParams) {
+            if (!convertedParams.hasOwnProperty(key))
               continue;
-            newParams[key] = ramlHelper.setParameterFields(params.properties[key], {});
+            newParams[key] = ramlHelper.setParameterFields(convertedParams[key], {});
             if (params.required && params.required.indexOf(key) > -1) {
               newParams[key].required = true;
             }
@@ -6426,18 +6496,20 @@
               if (code === 'default' || parseInt(code) == 'NaN') {
                 continue;
               }
-              responses[code] = { body: {} };
+              responses[code] = {};
               var type = mimeType;
               if (type) {
-                responses[code]['body'][type] = this.mapBody(resBody);
-              } else {
-                responses[code] = {};
+                var body = this.mapBody(resBody);
+                if (!_.isEmpty(body)) {
+                  responses[code].body = {};
+                  responses[code]['body'][type] = body;
+                }
               }
               if (resBody.description) {
                 responses[code]['description'] = resBody.description;
               }
               if (!jsonHelper.isEmptySchema(resBody.headers)) {
-                responses[code]['body'][type].headers = this._mapNamedParams(resBody.headers);
+                responses[code].headers = this._mapNamedParams(resBody.headers);
               }
             }
           }
@@ -6459,6 +6531,9 @@
             }
             if (prop.items) {
               pathParams[key].items = prop.items;
+            }
+            if (prop.format) {
+              pathParams[key].format = prop.format;
             }
             pathParams[key].type = pathParams[key].type || 'string';
           }
@@ -6504,7 +6579,7 @@
                 if (val.indexOf('#/') == 0) {
                   object.type = val.replace('#/definitions/', '');
                 } else {
-                  object.type = '!include ' + val;
+                  object.type = '!include ' + val.replace('#/', '#');
                 }
                 delete object[id];
               } else if (typeof val === 'string') {
@@ -6518,19 +6593,22 @@
               } else if (val && typeof val === 'object') {
                 if (val.type == 'string') {
                   if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
-                    object[id] = { type: 'string' };
+                    object[id]['type'] = 'string';
+                    delete object[id].format;
                   } else if (val.format == 'date') {
-                    object[id] = { type: 'date-only' };
+                    object[id]['type'] = 'date-only';
+                    delete object[id].format;
                   } else if (val.format == 'date-time') {
-                    object[id] = {
-                      type: 'datetime',
-                      format: 'rfc3339'
-                    };
+                    object[id]['type'] = 'datetime';
+                    object[id]['format'] = 'rfc3339';
                   } else {
                     //remove invalid format.
                     if (ramlHelper.getValidFormat.indexOf(val.format) < 0) {
                       delete object[id].format;
                     }
+                  }
+                  if (val.readOnly) {
+                    delete object[id].readOnly;
                   }
                 } else {
                   object[id] = this.convertRefFromModel(val);
@@ -6538,26 +6616,30 @@
               } else if (id === '$ref') {
                 object.type = val.replace('#/definitions/', '');
                 delete object[id];
+              } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum') {
+                delete object[id];
               }
             }
           }
           return object;
         };
         RAML.prototype._mapTraits = function (slTraits, mimeType) {
-          var traits = [];
+          var traits = this.initializeTraits();
+          // var traits = [];
+          // var traitMap = {};
           for (var i in slTraits) {
             if (!slTraits.hasOwnProperty(i))
               continue;
             var slTrait = slTraits[i], trait = {};
             try {
-              var queryString = JSON.parse(slTrait.request.queryString);
+              var queryString = jsonHelper.parse(slTrait.request.queryString);
               if (!jsonHelper.isEmptySchema(queryString)) {
                 trait.queryParameters = this._mapNamedParams(queryString);
               }
             } catch (e) {
             }
             try {
-              var headers = JSON.parse(slTrait.request.headers);
+              var headers = jsonHelper.parse(slTrait.request.headers);
               if (!jsonHelper.isEmptySchema(headers)) {
                 trait.headers = this._mapNamedParams(headers);
               }
@@ -6569,10 +6651,16 @@
               }
             } catch (e) {
             }
-            var newTrait = {};
-            newTrait[_.camelCase(slTrait.name)] = trait;
-            traits.push(newTrait);
+            this.addTrait(slTrait.name, trait, traits);  //   var traitKey = _.camelCase(slTrait.name);
+                                                         //   var newTrait = {};
+                                                         //   newTrait[traitKey] = trait;
+                                                         //   traits.push(newTrait);
+                                                         //   traitMap[traitKey] = trait;
           }
+          //
+          // if (this.version() === '1.0') {
+          //   return traitMap;
+          // }
           return traits;
         };
         RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
@@ -6671,7 +6759,12 @@
               method.description = endpoint.Description;
             }
             if (endpoint.Summary) {
-              method.description = endpoint.Summary + '. ' + method.description;
+              this.hasSummary = true;
+              method['(summary)'] = endpoint.Summary;
+            }
+            var protocols = mapProtocols(endpoint.protocols);
+            if (!_.isEmpty(protocols)) {
+              method.protocols = protocols;
             }
             var is = this._mapEndpointTraits(this.project.Traits, endpoint);
             if (is.length) {
@@ -6679,11 +6772,17 @@
             }
             if (endpoint.Method.toLowerCase() === 'post' || endpoint.Method.toLowerCase() === 'put' || endpoint.Method.toLowerCase() === 'patch') {
               var mimeType = getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
-              method.body = this._mapRequestBody(endpoint.Body, mimeType);
+              var body = this._mapRequestBody(endpoint.Body, mimeType);
+              if (!_.isEmpty(body)) {
+                method.body = body;
+              }
             }
             method.headers = this._mapNamedParams(endpoint.Headers);
             var mimeType = getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
-            method.responses = this._mapResponseBody(endpoint.Responses, mimeType);
+            var responses = this._mapResponseBody(endpoint.Responses, mimeType);
+            if (!_.isEmpty(responses)) {
+              method.responses = responses;
+            }
             method.queryParameters = this._mapURIParams(endpoint.QueryString);
             method.uriParameters = this._mapURIParams(endpoint.PathParams);
             if (endpoint.securedBy) {
@@ -6733,13 +6832,16 @@
               };
             }
           }
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary) {
             ramlDef.annotationTypes = {};
             if (this.hasTags) {
               ramlDef.annotationTypes.tags = 'string[]';
             }
             if (this.hasDeprecated) {
               ramlDef.annotationTypes.deprecated = 'boolean';
+            }
+            if (this.hasSummary) {
+              ramlDef.annotationTypes.summary = 'string';
             }
             if (this.hasExternalDocs) {
               ramlDef.annotationTypes.externalDocs = {
@@ -6796,7 +6898,7 @@
         RAML.prototype._getData = function (format) {
           switch (format) {
           case 'yaml':
-            var yaml = this._unescapeYamlIncludes(YAML.dump(JSON.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
+            var yaml = this._unescapeYamlIncludes(YAML.dump(jsonHelper.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
             return '#%RAML ' + this.version() + '\n' + yaml;
           default:
             throw Error('RAML doesn not support ' + format + ' format');
@@ -6832,17 +6934,23 @@
         RAML.prototype.setMethodDisplayName = function (method, displayName) {
           throw new Error('setMethodDisplayName method not implemented');
         };
+        RAML.prototype.initializeTraits = function () {
+          throw new Error('initializeTraits method not implemented');
+        };
+        RAML.prototype.addTrait = function (id, trait, traits) {
+          throw new Error('addTrait method not implemented');
+        };
         module.exports = RAML;
       },
       {
-        '../helpers/raml': 20,
-        '../utils/json': 33,
-        './exporter': 13,
-        'js-yaml': 56,
-        'lodash': 109
+        '../helpers/raml': 21,
+        '../utils/json': 34,
+        './exporter': 14,
+        'js-yaml': 57,
+        'lodash': 110
       }
     ],
-    13: [
+    14: [
       function (require, module, exports) {
         var YAML = require('js-yaml'), Importer = require('../importers/index');
         function Exporter() {
@@ -6935,11 +7043,11 @@
         module.exports = Exporter;
       },
       {
-        '../importers/index': 25,
-        'js-yaml': 56
+        '../importers/index': 26,
+        'js-yaml': 57
       }
     ],
-    14: [
+    15: [
       function (require, module, exports) {
         var exporters = {
             Swagger: require('./swagger'),
@@ -6964,13 +7072,13 @@
         };
       },
       {
-        './raml08': 15,
-        './raml10': 16,
-        './stoplightx': 17,
-        './swagger': 18
+        './raml08': 16,
+        './raml10': 17,
+        './stoplightx': 18,
+        './swagger': 19
       }
     ],
-    15: [
+    16: [
       function (require, module, exports) {
         var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML08() {
@@ -7061,17 +7169,25 @@
             return m;
           });
         };
-        RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
+        RAML08.prototype.setMethodDisplayName = function (method, displayName) {
+        };
+        RAML08.prototype.initializeTraits = function () {
+          return [];
+        };
+        RAML08.prototype.addTrait = function (id, trait, traits) {
+          var newTrait = {};
+          newTrait[_.camelCase(id)] = trait;
+          traits.push(newTrait);
         };
         module.exports = RAML08;
       },
       {
-        '../utils/json': 33,
-        './baseraml': 12,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 13,
+        'lodash': 110
       }
     ],
-    16: [
+    17: [
       function (require, module, exports) {
         var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML10() {
@@ -7116,7 +7232,7 @@
           var body = jsonHelper.parse(bodyData.body);
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
-            result.example = jsonHelper.format(bodyData.example);
+            result.example = jsonHelper.parse(bodyData.example);
           }
           return result;
         };
@@ -7165,6 +7281,7 @@
           return object;
         };
         RAML10.prototype.convertAllOfAttribute = function (definition) {
+          var result = {};
           var allOfTypes = [];
           if (!definition.allOf)
             return definition;
@@ -7173,16 +7290,17 @@
               continue;
             var allOf = definition.allOf[j];
             if (allOf.properties) {
-              definition = this.mapSchemaProperties(allOf);
-              break;
-            }
-            if (allOf.type) {
+              result = this.mapSchemaProperties(allOf);
+            } else if (allOf.type) {
               allOfTypes.push(allOf.type);
             }
           }
-          definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-          delete definition.allOf;
-          return definition;
+          result.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          delete result.allOf;
+          // definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          //
+          // delete definition.allOf;
+          return result;
         };
         RAML10.prototype.mapSchema = function (slSchemas) {
           var results = {};
@@ -7198,8 +7316,17 @@
                 definition = this.mapSchemaProperties(definition);
               }
             }
+            if (definition.additionalProperties) {
+              if (!definition.properties) {
+                definition.properties = {};
+              }
+              definition.properties['//'] = definition.additionalProperties;
+              delete definition.additionalProperties;
+            }
             if (schema.example) {
-              definition.example = jsonHelper.parse(schema.example);
+              definition.example = jsonHelper.parse(schema.example);  // var example = jsonHelper.parse(schema.example);
+                                                                      // if (!_.isEmpty(example)) {
+                                                                      // 	definition.example = example;
             }
             results[schema.NameSpace] = definition;
           }
@@ -7242,17 +7369,25 @@
           return securitySchemes;
         };
         RAML10.prototype.setMethodDisplayName = function (method, displayName) {
-          method.displayName = displayName;
+          if (displayName) {
+            method.displayName = displayName;
+          }
+        };
+        RAML10.prototype.initializeTraits = function () {
+          return {};
+        };
+        RAML10.prototype.addTrait = function (id, trait, traits) {
+          traits[_.camelCase(id)] = trait;
         };
         module.exports = RAML10;
       },
       {
-        '../utils/json': 33,
-        './baseraml': 12,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 13,
+        'lodash': 110
       }
     ],
-    17: [
+    18: [
       function (require, module, exports) {
         var Exporter = require('./exporter'), SwaggerExporter = require('./swagger'), _ = require('lodash');
         function StopLightX() {
@@ -7366,12 +7501,12 @@
         module.exports = StopLightX;
       },
       {
-        './exporter': 13,
-        './swagger': 18,
-        'lodash': 109
+        './exporter': 14,
+        './swagger': 19,
+        'lodash': 110
       }
     ],
-    18: [
+    19: [
       function (require, module, exports) {
         var Endpoint = require('../entities/endpoint'), Exporter = require('./exporter'), SwaggerParser = require('swagger-parser'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
         function Swagger() {
@@ -7627,6 +7762,7 @@
             if (!_.isEmpty(prop.description)) {
               param.description = prop.description;
             }
+            this._addPatternedObjects(prop, param);
             parameters.push(param);
           }
           return parameters;
@@ -7881,6 +8017,17 @@
                 swaggerDef.paths[endpoint.Path][endpoint.Method]['security'] = security;
               }
             }
+            this._addPatternedObjects(endpoint, swaggerDef.paths[endpoint.Path][endpoint.Method]);
+          }
+        };
+        Swagger.prototype._addPatternedObjects = function (source, target) {
+          for (var key in source) {
+            if (!source.hasOwnProperty(key))
+              continue;
+            var value = source[key];
+            if (_.startsWith(key, 'x-')) {
+              target[key] = value;
+            }
           }
         };
         Swagger.prototype._mapTraitParameters = function (traits) {
@@ -7937,6 +8084,9 @@
           if (hostUrl.path && hostUrl.path !== '/') {
             swaggerDef.BasePath = urlHelper.join(hostUrl.path, env.BasePath);
           }
+          if (this._isTemplateUri(swaggerDef.basePath)) {
+            this._convertToTemplateUri(swaggerDef);
+          }
           if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
             var filteredSchemes = [];
             env.Protocols.map(function (p) {
@@ -7950,6 +8100,14 @@
           } else {
             delete swaggerDef.schemes;
           }
+        };
+        Swagger.prototype._isTemplateUri = function (uri) {
+          var decodeUri = decodeURI(uri);
+          return decodeUri.indexOf('{') !== -1 || decodeUri.indexOf('}') !== -1;
+        };
+        Swagger.prototype._convertToTemplateUri = function (swaggerDef) {
+          swaggerDef['x-basePath'] = decodeURI(swaggerDef.basePath);
+          delete swaggerDef.basePath;
         };
         Swagger.prototype._export = function () {
           //TODO
@@ -7994,17 +8152,17 @@
       {
         '../entities/endpoint': 3,
         '../entities/swagger/definition': 8,
-        '../helpers/swagger': 21,
-        '../utils/json.js': 33,
-        '../utils/strings.js': 34,
-        '../utils/url': 35,
-        './exporter': 13,
-        'lodash': 109,
-        'swagger-parser': 139,
-        'url': 146
+        '../helpers/swagger': 22,
+        '../utils/json.js': 34,
+        '../utils/strings.js': 35,
+        '../utils/url': 36,
+        './exporter': 14,
+        'lodash': 110,
+        'swagger-parser': 140,
+        'url': 147
       }
     ],
-    19: [
+    20: [
       function (require, module, exports) {
         var supportedFormats = {
             'POSTMAN': {
@@ -8040,7 +8198,7 @@
       },
       {}
     ],
-    20: [
+    21: [
       function (require, module, exports) {
         var _ = require('lodash');
         module.exports = {
@@ -8074,7 +8232,8 @@
             'maxLength',
             'minLength',
             'pattern',
-            'enum'
+            'enum',
+            'format'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -8105,9 +8264,9 @@
           }
         };
       },
-      { 'lodash': 109 }
+      { 'lodash': 110 }
     ],
-    21: [
+    22: [
       function (require, module, exports) {
         module.exports = {
           parameterMappings: {},
@@ -8157,7 +8316,7 @@
       },
       {}
     ],
-    22: [
+    23: [
       function (require, module, exports) {
         var fs = require('fs'), _ = require('lodash'), Importer = require('./importer'), Swagger = require('./swagger'), RAML08 = require('./raml08'), RAML10 = require('./raml10'), Postman = require('./postman'), StopLightX = require('./stoplightx'), urlHelper = require('../utils/url');
         // Detect input format automatically
@@ -8286,18 +8445,18 @@
         module.exports = Auto;
       },
       {
-        '../utils/url': 35,
-        './importer': 24,
-        './postman': 26,
-        './raml08': 27,
-        './raml10': 28,
-        './stoplightx': 30,
-        './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        '../utils/url': 36,
+        './importer': 25,
+        './postman': 27,
+        './raml08': 28,
+        './raml10': 29,
+        './stoplightx': 31,
+        './swagger': 32,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    23: [
+    24: [
       function (require, module, exports) {
         var parser = window.RAML.Parser, Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
         var toJSONOptions = { serializeMetadata: false };
@@ -8419,6 +8578,7 @@
               description: key.displayName || key.description || '',
               type: key.type || 'string'
             };
+            this._addAnnotations(key, pathParams.properties[key.name]);
           }
           return pathParams;
         };
@@ -8437,7 +8597,7 @@
               result.example = jsonHelper.stringify(result.example, 4);
             }
             if (response.description) {
-              result.description = response.description;
+              result.description = jsonHelper.stringify(response.description);
             }
             data.push(result);
           }
@@ -8459,18 +8619,23 @@
         RAML.prototype.isValidRefValue = function (value) {
           return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
         };
-        // from type=type1 to ref=type1
+        // from type=type1 & schema=type1 to ref=type1
         RAML.prototype.convertRefToModel = function (object) {
+          // if the object is a string, that means it's a direct ref/type
+          if (typeof object === 'string') {
+            return { $ref: '#/definitions/' + object };
+          }
           for (var id in object) {
+            var isType = id == 'type';
             if (!object.hasOwnProperty(id))
               continue;
-            if (id == 'type' && _.isArray(object[id]) && object[id].length == 1) {
+            if (isType && _.isArray(object[id]) && object[id].length == 1) {
               object[id] = object[id][0];
             }
             var val = object[id];
             if (!val)
               continue;
-            if (id == 'type' && this.isValidRefValues(val)) {
+            if (isType && this.isValidRefValues(val)) {
               object.ref = val;
               delete object[id];
             } else if (typeof val === 'object') {
@@ -8488,7 +8653,12 @@
                 //delete garbage
                 delete object[id];
               } else {
-                object[id] = this.convertRefToModel(val);
+                if (id == 'xml') {
+                  //no process xml object
+                  object[id] = val;
+                } else {
+                  object[id] = this.convertRefToModel(val);
+                }
               }
             } else if (id == 'name') {
               //delete garbage
@@ -8529,7 +8699,7 @@
             var endpoint = new Endpoint(summary);
             endpoint.Method = method.method;
             endpoint.Path = baseURI + resource.relativeUri;
-            endpoint.Description = method.description ? method.description : '';
+            endpoint.Description = method.description ? jsonHelper.stringify(method.description) : '';
             endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
             if (method.body) {
               var c = this.mapMimeTypes(method.body, this.data.mediaType);
@@ -8555,7 +8725,7 @@
               endpoint.Responses = this._mapResponseBody(method.responses);
             }
             endpoint.traits = [];
-            var isMethod = method.is;
+            var isMethod = method.is || resource.is;
             if (isMethod) {
               if (isMethod instanceof Array) {
                 endpoint.traits = isMethod;
@@ -8582,6 +8752,8 @@
                 }
               }
             }
+            //add annotations
+            this._addAnnotations(method, endpoint);
             //TODO endpoint security
             this.project.addEndpoint(endpoint);
           }
@@ -8609,19 +8781,23 @@
           }
         };
         RAML.prototype.loadFile = function (filePath, cb) {
-          var me = this;
-          parser.loadApi(filePath, parseOptions).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
-          }, function (error) {
-            cb(error);
-          });
+          return this.loadFileWithOptions(filePath, parseOptions, cb);
         };
+        function apiWithOptions(api, options) {
+          if (options.expand)
+            return api.expand(false);
+          return api;
+        }
         RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
           var me = this;
-          parser.loadApi(filePath, _.merge(parseOptions, options)).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
+          var mergedOptions = _.merge(parseOptions, options);
+          parser.loadApi(filePath, mergedOptions).then(function (api) {
+            try {
+              me.data = apiWithOptions(api, mergedOptions).toJSON(toJSONOptions);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
           }, function (error) {
             cb(error);
           });
@@ -8630,15 +8806,15 @@
           var me = this;
           return new Promise(function (resolve, reject) {
             try {
-              var parsedData = parser.parseRAMLSync(data, _.merge(parseOptions, options));
+              var mergeOptions = _.merge(parseOptions, options);
+              var parsedData = parser.parseRAMLSync(data, mergeOptions);
               if (parsedData.name === 'Error') {
                 reject(error);
               } else {
-                me.data = parsedData.toJSON(toJSONOptions);
+                me.data = apiWithOptions(parsedData, mergeOptions).toJSON(toJSONOptions);
                 resolve();
               }
             } catch (e) {
-              console.error('raml#loadData', e, data, options);
               reject(e);
             }
           });
@@ -8666,7 +8842,7 @@
                   responses: []
                 };
               if (!_.isEmpty(trait.usage)) {
-                slTrait.description = trait.usage;
+                slTrait.description = jsonHelper.stringify(trait.usage);
               } else {
                 delete slTrait.description;
               }
@@ -8685,6 +8861,20 @@
             }
           }
           return slTraits;
+        };
+        RAML.prototype._addAnnotations = function (source, target) {
+          if (!source.annotations)
+            return;
+          var annotations = source.annotations;
+          for (var i in annotations) {
+            if (!annotations.hasOwnProperty(i))
+              continue;
+            var value = annotations[i];
+            var key = 'x-annotation-' + value.name;
+            target[key] = value.structuredValue;
+          }
+          if (target.annotations)
+            delete target.annotations;
         };
         RAML.prototype._import = function () {
           try {
@@ -8725,8 +8915,10 @@
             }
             this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
             var resources = this.data.resources;
-            for (var i = 0; i < resources.length; i++) {
-              this._mapEndpoint(resources[i], '', {});
+            if (!_.isEmpty(resources)) {
+              for (var i = 0; i < resources.length; i++) {
+                this._mapEndpoint(resources[i], '', {});
+              }
             }
             var schemas = this._mapSchema(this.getSchema(this.data));
             for (var s in schemas) {
@@ -8757,14 +8949,14 @@
       {
         '../entities/endpoint': 3,
         '../entities/project': 5,
-        '../helpers/raml': 20,
-        '../utils/json': 33,
-        './importer': 24,
-        'lodash': 109,
-        'url': 146
+        '../helpers/raml': 21,
+        '../utils/json': 34,
+        './importer': 25,
+        'lodash': 110,
+        'url': 147
       }
     ],
-    24: [
+    25: [
       function (require, module, exports) {
         function Importer() {
           this.data = null;
@@ -8832,7 +9024,7 @@
       },
       {}
     ],
-    25: [
+    26: [
       function (require, module, exports) {
         var importers = {
             Postman: require('./postman'),
@@ -8860,16 +9052,16 @@
         };
       },
       {
-        './auto': 22,
-        './postman': 26,
-        './raml08': 27,
-        './raml10': 28,
-        './stoplight': 29,
-        './stoplightx': 30,
-        './swagger': 31
+        './auto': 23,
+        './postman': 27,
+        './raml08': 28,
+        './raml10': 29,
+        './stoplight': 30,
+        './stoplightx': 31,
+        './swagger': 32
       }
     ],
-    26: [
+    27: [
       function (require, module, exports) {
         var fs = require('fs'), Endpoint = require('../entities/endpoint'), SavedEntry = require('../entities/savedEntry'), Importer = require('./importer'), Project = require('../entities/project'), urlHelper = require('../utils/url'), jsonHelper = require('../utils/json'), arrayHelper = require('../utils/array'), _ = require('lodash');
         function Postman() {
@@ -9119,15 +9311,15 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/savedEntry': 6,
-        '../utils/array': 32,
-        '../utils/json': 33,
-        '../utils/url': 35,
-        './importer': 24,
-        'fs': 39,
-        'lodash': 109
+        '../utils/array': 33,
+        '../utils/json': 34,
+        '../utils/url': 36,
+        './importer': 25,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    27: [
+    28: [
       function (require, module, exports) {
         var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), Text = require('../entities/text');
         function RAML08() {
@@ -9215,12 +9407,12 @@
       },
       {
         '../entities/schema': 7,
-        '../entities/text': 10,
-        '../utils/json': 33,
-        './baseraml': 23
+        '../entities/text': 11,
+        '../utils/json': 34,
+        './baseraml': 24
       }
     ],
-    28: [
+    29: [
       function (require, module, exports) {
         var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), _ = require('lodash');
         function RAML10() {
@@ -9294,65 +9486,77 @@
               var sd = new Schema(schemaName);
               sd.Name = schemaName;
               var definition = schemData[i][schemaName];
-              var data = null;
+              var properties = null;
+              var result = definition;
               if (definition.properties && !_.isEmpty(definition.properties)) {
-                data = {
+                properties = {
                   properties: {},
                   type: 'object',
                   required: []
                 };
                 if (definition.description) {
-                  data.description = definition.description;
+                  properties.description = jsonHelper.stringify(definition.description);
                 }
                 for (var paramName in definition.properties) {
                   if (!definition.properties.hasOwnProperty(paramName))
                     continue;
                   var param = definition.properties[paramName];
-                  data.properties[paramName] = param;
+                  if (this.isArray(param)) {
+                    properties.properties[paramName] = this.convertArray(param);
+                  } else if (this.isFacet(param)) {
+                    //check for facets
+                    properties.properties[paramName] = this.convertFacet(param);
+                  } else {
+                    properties.properties[paramName] = param;
+                  }
+                  //add annotations
+                  this._addAnnotations(param, properties.properties[paramName]);
                   if (param.hasOwnProperty('required')) {
                     if (param.required == true) {
-                      data['required'].push(paramName);
+                      properties['required'].push(paramName);
                     }
                     delete param.required;
                   } else {
                     //required true by default.
-                    data['required'].push(paramName);
+                    properties['required'].push(paramName);
                   }
                 }
-                if (data.required && data.required.length == 0) {
-                  delete data.required;
+                if (properties.required && properties.required.length == 0) {
+                  delete properties.required;
                 }
               }
               if (definition.type && definition.type != 'object') {
                 //type
-                if (data) {
+                if (properties) {
                   //type and properties
-                  definition.allOf = definition.type;
-                  definition.allOf.push(data);
-                  delete definition.type;
-                  delete definition.properties;
+                  result.allOf = definition.type;
+                  result.allOf.push(properties);
+                  delete result.type;
+                  delete result.properties;
                 } else {
                   if (_.isArray(definition.type) && definition.type.length > 1) {
-                    definition.allOf = definition.type;
-                    delete definition.type;
+                    result.allOf = definition.type;
+                    delete result.type;
                   } else if (this.isArray(definition)) {
                     //check for array
                     //convert array
-                    definition = this.convertArray(definition);
+                    result = this.convertArray(definition);
                   } else if (this.isFacet(definition)) {
                     //check for facets
-                    definition = this.convertFacet(definition);
+                    result = this.convertFacet(definition);
                   } else if (this.isFixedFacet(definition)) {
-                    definition = this.convertFixedFacet(definition);
+                    result = this.convertFixedFacet(definition);
                   } else {
-                    definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                    result = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
                   }
                 }
               } else {
                 //only properties
-                definition = data;
+                result = properties;
               }
-              sd.Definition = this.convertRefToModel(definition);
+              //add annotations
+              this._addAnnotations(definition, result);
+              sd.Definition = this.convertRefToModel(result);
               schemas.push(sd);
             }
           }
@@ -9369,16 +9573,28 @@
           return definition.fixedFacets;
         };
         RAML10.prototype.convertArray = function (definition) {
-          var items;
           if (definition.items.type) {
-            items = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
+            definition.items.type = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
           } else {
-            items = definition.items;
+            var items = definition.items;
+            if (this.isRamlArray(items)) {
+              definition.items = this.convertArray(this.convertRamlArray(definition.items));
+            } else {
+              definition.items = {};
+              definition.items.type = items;
+            }
           }
-          definition.items = {};
-          definition.items.type = items;
           definition.type = 'array';
           return definition;
+        };
+        RAML10.prototype.isRamlArray = function (object) {
+          return _.endsWith(object, '[]');
+        };
+        RAML10.prototype.convertRamlArray = function (object) {
+          return {
+            type: 'array',
+            items: { type: _.replace(object, '[]', '') }
+          };
         };
         RAML10.prototype.convertFacet = function (definition) {
           var facets = definition.facets;
@@ -9419,12 +9635,12 @@
       },
       {
         '../entities/schema': 7,
-        '../utils/json': 33,
-        './baseraml': 23,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 24,
+        'lodash': 110
       }
     ],
-    29: [
+    30: [
       function (require, module, exports) {
         var Endpoint = require('../entities/endpoint'), Project = require('../entities/project'), Schema = require('../entities/schema'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Importer = require('./importer'), jsonHelper = require('../utils/json'), fs = require('fs');
         function StopLight() {
@@ -9507,14 +9723,14 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/schema': 7,
-        '../entities/text': 10,
-        '../entities/utilityFunction': 11,
-        '../utils/json': 33,
-        './importer': 24,
-        'fs': 39
+        '../entities/text': 11,
+        '../entities/utilityFunction': 12,
+        '../utils/json': 34,
+        './importer': 25,
+        'fs': 40
       }
     ],
-    30: [
+    31: [
       function (require, module, exports) {
         var Swagger = require('./swagger'), Importer = require('./importer'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Test = require('../entities/test'), fs = require('fs'), _ = require('lodash');
         var prefix = 'x-stoplight';
@@ -9620,18 +9836,18 @@
         module.exports = StopLightX;
       },
       {
-        '../entities/test': 9,
-        '../entities/text': 10,
-        '../entities/utilityFunction': 11,
-        './importer': 24,
-        './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        '../entities/test': 10,
+        '../entities/text': 11,
+        '../entities/utilityFunction': 12,
+        './importer': 25,
+        './swagger': 32,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    31: [
+    32: [
       function (require, module, exports) {
-        var parser = require('swagger-parser'), Endpoint = require('../entities/endpoint'), Schema = require('../entities/schema'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), swaggerHelper = require('../helpers/swagger'), YAML = require('js-yaml'), _ = require('lodash');
+        var parser = require('swagger-parser'), Method = require('../entities/swagger/method'), Endpoint = require('../entities/endpoint'), Schema = require('../entities/schema'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), swaggerHelper = require('../helpers/swagger'), YAML = require('js-yaml'), _ = require('lodash');
         function Swagger() {
           this.dereferencedAPI = null;
         }
@@ -9810,7 +10026,7 @@
               data.body.properties[param.name] = prop;
             }
             if (param.description) {
-              data.description = param.description;
+              data.description = jsonHelper.stringify(param.description);
             }
           }
           //remove required field if doesn't have anything inside it
@@ -9829,34 +10045,40 @@
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || $refs.exists(responseBody[code].$ref))) {
+            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || _.includes($refs, responseBody[code].$ref))) {
               continue;
             }
             // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
             if (needDeReferenced(responseBody[code]) && resolvedResponses) {
               schema = resolvedResponses[code].schema;
-              description = resolvedResponses[code].description || '';
+              description = jsonHelper.stringify(resolvedResponses[code].description || '');
               res.body = schema;
             } else if (responseBody[code].schema) {
               var schema = responseBody[code].schema;
               if (needDeReferenced(responseBody[code].schema)) {
-                description = resolvedResponses[code].description || '';
+                description = jsonHelper.stringify(resolvedResponses[code].description || '');
                 schema = resolvedResponses[code].schema;
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples') && _.isEmpty(responseBody[code].examples)) {
+            if (responseBody[code].hasOwnProperty('examples') && !_.isEmpty(responseBody[code].examples)) {
               var examples = responseBody[code].examples;
-              res.example = jsonHelper.stringify(examples[0], 4);  // TODO: Once stoplight supports multiple examples, support them here.
-                                                                   // for(var t in examples) {
-                                                                   //   if (!examples.hasOwnProperty(t)) continue;
-                                                                   //   if (t === resType) {
-                                                                   //     res.example = jsonHelper.stringify(examples[t], 4);
-                                                                   //   }
-                                                                   // }
+              if (_.isArray(examples)) {
+                for (var t in examples) {
+                  if (!examples.hasOwnProperty(t))
+                    continue;
+                  if (t === resType) {
+                    res.example = jsonHelper.stringify(examples[t], 4);
+                  }
+                }
+              } else {
+                res.example = jsonHelper.stringify(examples, 4);
+              }
             }
-            res.description = description || responseBody[code].description || '';
-            res.body = res.body;
+            if (responseBody[code].hasOwnProperty('headers') && !_.isEmpty(responseBody[code].headers)) {
+              res.headers = { properties: responseBody[code].headers };
+            }
+            res.description = jsonHelper.stringify(description || responseBody[code].description || '');
             res.codes.push(String(code));
             data.push(res);
           }
@@ -10005,8 +10227,8 @@
             for (var method in methods) {
               if (!methods.hasOwnProperty(method))
                 continue;
-              var currentMethod = methods[method];
-              var currentMethodResolved = this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : currentMethod;
+              var currentMethod = new Method(methods[method], this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method]);
+              var currentMethodResolved = this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method];
               if (method === 'parameters') {
                 continue;
               }
@@ -10015,10 +10237,13 @@
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
               endpoint.Summary = (currentMethod.summary || '').substring(0, 139);
-              endpoint.Description = currentMethod.description || currentMethod.summary;
+              endpoint.Description = jsonHelper.stringify(currentMethod.description);
               endpoint.Deprecated = currentMethod.deprecated;
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
+              if (currentMethod.schemes) {
+                endpoint.protocols = currentMethod.schemes;
+              }
               //map request body
               // if (_.isArray(currentMethod.consumes)) {
               //   if (_.isEmpty(currentMethod.consumes)) {
@@ -10273,15 +10498,16 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/schema': 7,
-        '../helpers/swagger': 21,
-        '../utils/json': 33,
-        './importer': 24,
-        'js-yaml': 56,
-        'lodash': 109,
-        'swagger-parser': 139
+        '../entities/swagger/method': 9,
+        '../helpers/swagger': 22,
+        '../utils/json': 34,
+        './importer': 25,
+        'js-yaml': 57,
+        'lodash': 110,
+        'swagger-parser': 140
       }
     ],
-    32: [
+    33: [
       function (require, module, exports) {
         module.exports = {
           groupBy: function groupBy(array, f) {
@@ -10299,7 +10525,7 @@
       },
       {}
     ],
-    33: [
+    34: [
       function (require, module, exports) {
         var _ = require('lodash'), jsonSchemaConverter = require('json-schema-compatibility');
         module.exports = {
@@ -10410,11 +10636,11 @@
         };
       },
       {
-        'json-schema-compatibility': 86,
-        'lodash': 109
+        'json-schema-compatibility': 87,
+        'lodash': 110
       }
     ],
-    34: [
+    35: [
       function (require, module, exports) {
         var _ = require('lodash');
         module.exports = {
@@ -10435,9 +10661,9 @@
           }
         };
       },
-      { 'lodash': 109 }
+      { 'lodash': 110 }
     ],
-    35: [
+    36: [
       function (require, module, exports) {
         var request = require('request');
         var _ = require('lodash');
@@ -10467,11 +10693,11 @@
         };
       },
       {
-        'lodash': 109,
-        'request': 37
+        'lodash': 110,
+        'request': 38
       }
     ],
-    36: [
+    37: [
       function (require, module, exports) {
         var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
         ;
@@ -10578,7 +10804,7 @@
       },
       {}
     ],
-    37: [
+    38: [
       function (require, module, exports) {
         // Browser Request
         //
@@ -11025,18 +11251,18 @@
       },
       {}
     ],
-    38: [
+    39: [
       function (require, module, exports) {
       },
       {}
     ],
-    39: [
-      function (require, module, exports) {
-        arguments[4][38][0].apply(exports, arguments);
-      },
-      { 'dup': 38 }
-    ],
     40: [
+      function (require, module, exports) {
+        arguments[4][39][0].apply(exports, arguments);
+      },
+      { 'dup': 39 }
+    ],
+    41: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -11147,9 +11373,9 @@
           };
         }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    41: [
+    42: [
       function (require, module, exports) {
         (function (global) {
           /*!
@@ -12562,12 +12788,12 @@
         }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        'base64-js': 36,
-        'ieee754': 52,
-        'isarray': 42
+        'base64-js': 37,
+        'ieee754': 53,
+        'isarray': 43
       }
     ],
-    42: [
+    43: [
       function (require, module, exports) {
         var toString = {}.toString;
         module.exports = Array.isArray || function (arr) {
@@ -12576,7 +12802,7 @@
       },
       {}
     ],
-    43: [
+    44: [
       function (require, module, exports) {
         module.exports = {
           '100': 'Continue',
@@ -12640,7 +12866,7 @@
       },
       {}
     ],
-    44: [
+    45: [
       function (require, module, exports) {
         (function (process, global) {
           'use strict';
@@ -12665,9 +12891,9 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    45: [
+    46: [
       function (require, module, exports) {
         (function (Buffer) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -12757,9 +12983,9 @@
           }
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
-      { '../../is-buffer/index.js': 55 }
+      { '../../is-buffer/index.js': 56 }
     ],
-    46: [
+    47: [
       function (require, module, exports) {
         /**
  * This is the web browser implementation of `debug()`.
@@ -12898,9 +13124,9 @@
           }
         }
       },
-      { './debug': 47 }
+      { './debug': 48 }
     ],
-    47: [
+    48: [
       function (require, module, exports) {
         /**
  * This is the common logic for both the Node.js and web browser
@@ -13068,9 +13294,9 @@
           return val;
         }
       },
-      { 'ms': 110 }
+      { 'ms': 111 }
     ],
-    48: [
+    49: [
       function (require, module, exports) {
         (function (process, global) {
           /*!
@@ -13888,9 +14114,9 @@
           }));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    49: [
+    50: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -14141,7 +14367,7 @@
       },
       {}
     ],
-    50: [
+    51: [
       function (require, module, exports) {
         var hasOwn = Object.prototype.hasOwnProperty;
         var toString = Object.prototype.toString;
@@ -14165,7 +14391,7 @@
       },
       {}
     ],
-    51: [
+    52: [
       function (require, module, exports) {
         var http = require('http');
         var https = module.exports;
@@ -14182,9 +14408,9 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 133 }
+      { 'http': 134 }
     ],
-    52: [
+    53: [
       function (require, module, exports) {
         exports.read = function (buffer, offset, isLE, mLen, nBytes) {
           var e, m;
@@ -14266,7 +14492,7 @@
       },
       {}
     ],
-    53: [
+    54: [
       function (require, module, exports) {
         var indexOf = [].indexOf;
         module.exports = function (arr, obj) {
@@ -14281,7 +14507,7 @@
       },
       {}
     ],
-    54: [
+    55: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -14310,7 +14536,7 @@
       },
       {}
     ],
-    55: [
+    56: [
       function (require, module, exports) {
         /*!
  * Determine if an object is a Buffer
@@ -14333,15 +14559,15 @@
       },
       {}
     ],
-    56: [
+    57: [
       function (require, module, exports) {
         'use strict';
         var yaml = require('./lib/js-yaml.js');
         module.exports = yaml;
       },
-      { './lib/js-yaml.js': 57 }
+      { './lib/js-yaml.js': 58 }
     ],
-    57: [
+    58: [
       function (require, module, exports) {
         'use strict';
         var loader = require('./js-yaml/loader');
@@ -14376,19 +14602,19 @@
         module.exports.addConstructor = deprecated('addConstructor');
       },
       {
-        './js-yaml/dumper': 59,
-        './js-yaml/exception': 60,
-        './js-yaml/loader': 61,
-        './js-yaml/schema': 63,
-        './js-yaml/schema/core': 64,
-        './js-yaml/schema/default_full': 65,
-        './js-yaml/schema/default_safe': 66,
-        './js-yaml/schema/failsafe': 67,
-        './js-yaml/schema/json': 68,
-        './js-yaml/type': 69
+        './js-yaml/dumper': 60,
+        './js-yaml/exception': 61,
+        './js-yaml/loader': 62,
+        './js-yaml/schema': 64,
+        './js-yaml/schema/core': 65,
+        './js-yaml/schema/default_full': 66,
+        './js-yaml/schema/default_safe': 67,
+        './js-yaml/schema/failsafe': 68,
+        './js-yaml/schema/json': 69,
+        './js-yaml/type': 70
       }
     ],
-    58: [
+    59: [
       function (require, module, exports) {
         'use strict';
         function isNothing(subject) {
@@ -14434,7 +14660,7 @@
       },
       {}
     ],
-    59: [
+    60: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-use-before-define*/
@@ -15069,13 +15295,13 @@
         module.exports.safeDump = safeDump;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 59,
+        './exception': 61,
+        './schema/default_full': 66,
+        './schema/default_safe': 67
       }
     ],
-    60: [
+    61: [
       function (require, module, exports) {
         // YAML error class. http://stackoverflow.com/questions/8458984
         //
@@ -15111,7 +15337,7 @@
       },
       {}
     ],
-    61: [
+    62: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len,no-use-before-define*/
@@ -16229,14 +16455,14 @@
         module.exports.safeLoad = safeLoad;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './mark': 62,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 59,
+        './exception': 61,
+        './mark': 63,
+        './schema/default_full': 66,
+        './schema/default_safe': 67
       }
     ],
-    62: [
+    63: [
       function (require, module, exports) {
         'use strict';
         var common = require('./common');
@@ -16292,9 +16518,9 @@
         };
         module.exports = Mark;
       },
-      { './common': 58 }
+      { './common': 59 }
     ],
-    63: [
+    64: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len*/
@@ -16376,12 +16602,12 @@
         module.exports = Schema;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './type': 69
+        './common': 59,
+        './exception': 61,
+        './type': 70
       }
     ],
-    64: [
+    65: [
       function (require, module, exports) {
         // Standard YAML's Core schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2804923
@@ -16393,11 +16619,11 @@
         module.exports = new Schema({ include: [require('./json')] });
       },
       {
-        '../schema': 63,
-        './json': 68
+        '../schema': 64,
+        './json': 69
       }
     ],
-    65: [
+    66: [
       function (require, module, exports) {
         // JS-YAML's default schema for `load` function.
         // It is not described in the YAML specification.
@@ -16418,14 +16644,14 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/js/function': 74,
-        '../type/js/regexp': 75,
-        '../type/js/undefined': 76,
-        './default_safe': 66
+        '../schema': 64,
+        '../type/js/function': 75,
+        '../type/js/regexp': 76,
+        '../type/js/undefined': 77,
+        './default_safe': 67
       }
     ],
-    66: [
+    67: [
       function (require, module, exports) {
         // JS-YAML's default schema for `safeLoad` function.
         // It is not described in the YAML specification.
@@ -16449,17 +16675,17 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/binary': 70,
-        '../type/merge': 78,
-        '../type/omap': 80,
-        '../type/pairs': 81,
-        '../type/set': 83,
-        '../type/timestamp': 85,
-        './core': 64
+        '../schema': 64,
+        '../type/binary': 71,
+        '../type/merge': 79,
+        '../type/omap': 81,
+        '../type/pairs': 82,
+        '../type/set': 84,
+        '../type/timestamp': 86,
+        './core': 65
       }
     ],
-    67: [
+    68: [
       function (require, module, exports) {
         // Standard YAML's Failsafe schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2802346
@@ -16474,13 +16700,13 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/map': 77,
-        '../type/seq': 82,
-        '../type/str': 84
+        '../schema': 64,
+        '../type/map': 78,
+        '../type/seq': 83,
+        '../type/str': 85
       }
     ],
-    68: [
+    69: [
       function (require, module, exports) {
         // Standard YAML's JSON schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2803231
@@ -16501,15 +16727,15 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/bool': 71,
-        '../type/float': 72,
-        '../type/int': 73,
-        '../type/null': 79,
-        './failsafe': 67
+        '../schema': 64,
+        '../type/bool': 72,
+        '../type/float': 73,
+        '../type/int': 74,
+        '../type/null': 80,
+        './failsafe': 68
       }
     ],
-    69: [
+    70: [
       function (require, module, exports) {
         'use strict';
         var YAMLException = require('./exception');
@@ -16566,9 +16792,9 @@
         }
         module.exports = Type;
       },
-      { './exception': 60 }
+      { './exception': 61 }
     ],
-    70: [
+    71: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-bitwise*/
@@ -16673,9 +16899,9 @@
           represent: representYamlBinary
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    71: [
+    72: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16710,9 +16936,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    72: [
+    73: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -16802,11 +17028,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 59,
+        '../type': 70
       }
     ],
-    73: [
+    74: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -16973,11 +17199,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 59,
+        '../type': 70
       }
     ],
-    74: [
+    75: [
       function (require, module, exports) {
         'use strict';
         var esprima;
@@ -17040,9 +17266,9 @@
           represent: representJavascriptFunction
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    75: [
+    76: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -17096,9 +17322,9 @@
           represent: representJavascriptRegExp
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    76: [
+    77: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -17123,9 +17349,9 @@
           represent: representJavascriptUndefined
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    77: [
+    78: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17136,9 +17362,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    78: [
+    79: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17150,9 +17376,9 @@
           resolve: resolveYamlMerge
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    79: [
+    80: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17190,9 +17416,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    80: [
+    81: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17233,9 +17459,9 @@
           construct: constructYamlOmap
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    81: [
+    82: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17280,9 +17506,9 @@
           construct: constructYamlPairs
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    82: [
+    83: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17293,9 +17519,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    83: [
+    84: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17321,9 +17547,9 @@
           construct: constructYamlSet
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    84: [
+    85: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17334,9 +17560,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    85: [
+    86: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17406,9 +17632,9 @@
           represent: representYamlTimestamp
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    86: [
+    87: [
       function (require, module, exports) {
         var JsonSchemaCompatability = function () {
             function convert3to4Type(types, always) {
@@ -17517,7 +17743,7 @@
       },
       {}
     ],
-    87: [
+    88: [
       function (require, module, exports) {
         /** !
  * JSON Schema $Ref Parser v3.1.2
@@ -17695,13 +17921,13 @@
         }
       },
       {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106
       }
     ],
-    88: [
+    89: [
       function (require, module, exports) {
         'use strict';
         var $Ref = require('./ref'), Pointer = require('./pointer'), ono = require('ono'), debug = require('./util/debug'), url = require('./util/url');
@@ -17829,14 +18055,14 @@
         }
       },
       {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105,
-        'ono': 113
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    89: [
+    90: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18088,21 +18314,21 @@
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
       {
-        '../../is-buffer/index.js': 55,
-        './bundle': 87,
-        './dereference': 88,
-        './options': 90,
-        './parse': 91,
-        './refs': 98,
-        './resolve-external': 99,
-        './util/promise': 104,
-        './util/url': 105,
-        './util/yaml': 106,
-        'call-me-maybe': 44,
-        'ono': 113
+        '../../is-buffer/index.js': 56,
+        './bundle': 88,
+        './dereference': 89,
+        './options': 91,
+        './parse': 92,
+        './refs': 99,
+        './resolve-external': 100,
+        './util/promise': 105,
+        './util/url': 106,
+        './util/yaml': 107,
+        'call-me-maybe': 45,
+        'ono': 114
       }
     ],
-    90: [
+    91: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -18170,16 +18396,16 @@
         }
       },
       {
-        './parsers/binary': 92,
-        './parsers/json': 93,
-        './parsers/text': 94,
-        './parsers/yaml': 95,
-        './resolvers/file': 100,
-        './resolvers/http': 101,
-        './validators/z-schema': 107
+        './parsers/binary': 93,
+        './parsers/json': 94,
+        './parsers/text': 95,
+        './parsers/yaml': 96,
+        './resolvers/file': 101,
+        './resolvers/http': 102,
+        './validators/z-schema': 108
       }
     ],
-    91: [
+    92: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18304,15 +18530,15 @@
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
       {
-        '../../is-buffer/index.js': 55,
-        './util/debug': 102,
-        './util/plugins': 103,
-        './util/promise': 104,
-        './util/url': 105,
-        'ono': 113
+        '../../is-buffer/index.js': 56,
+        './util/debug': 103,
+        './util/plugins': 104,
+        './util/promise': 105,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    92: [
+    93: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18335,9 +18561,9 @@
           };
         }.call(this, require('buffer').Buffer));
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    93: [
+    94: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18368,11 +18594,11 @@
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
       {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104
+        '../../../is-buffer/index.js': 56,
+        '../util/promise': 105
       }
     ],
-    94: [
+    95: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18397,9 +18623,9 @@
           };
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
-      { '../../../is-buffer/index.js': 55 }
+      { '../../../is-buffer/index.js': 56 }
     ],
-    95: [
+    96: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18430,12 +18656,12 @@
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
       {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104,
-        '../util/yaml': 106
+        '../../../is-buffer/index.js': 56,
+        '../util/promise': 105,
+        '../util/yaml': 107
       }
     ],
-    96: [
+    97: [
       function (require, module, exports) {
         'use strict';
         module.exports = Pointer;
@@ -18650,12 +18876,12 @@
         }
       },
       {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
+        './ref': 98,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    97: [
+    98: [
       function (require, module, exports) {
         'use strict';
         module.exports = $Ref;
@@ -18867,9 +19093,9 @@
           }
         };
       },
-      { './pointer': 96 }
+      { './pointer': 97 }
     ],
-    98: [
+    99: [
       function (require, module, exports) {
         'use strict';
         var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
@@ -19044,12 +19270,12 @@
         }
       },
       {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
+        './ref': 98,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    99: [
+    100: [
       function (require, module, exports) {
         'use strict';
         var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
@@ -19145,15 +19371,15 @@
         }
       },
       {
-        './parse': 91,
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/promise': 104,
-        './util/url': 105
+        './parse': 92,
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/promise': 105,
+        './util/url': 106
       }
     ],
-    100: [
+    101: [
       function (require, module, exports) {
         'use strict';
         var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
@@ -19187,14 +19413,14 @@
         };
       },
       {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        'fs': 39,
-        'ono': 113
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        'fs': 40,
+        'ono': 114
       }
     ],
-    101: [
+    102: [
       function (require, module, exports) {
         (function (process, Buffer) {
           'use strict';
@@ -19299,17 +19525,17 @@
         }.call(this, require('_process'), require('buffer').Buffer));
       },
       {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        '_process': 115,
-        'buffer': 41,
-        'http': 133,
-        'https': 51,
-        'ono': 113
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        '_process': 116,
+        'buffer': 42,
+        'http': 134,
+        'https': 52,
+        'ono': 114
       }
     ],
-    102: [
+    103: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug');
@@ -19320,9 +19546,9 @@
  */
         module.exports = debug('json-schema-ref-parser');
       },
-      { 'debug': 46 }
+      { 'debug': 47 }
     ],
-    103: [
+    104: [
       function (require, module, exports) {
         'use strict';
         var Promise = require('./promise'), debug = require('./debug');
@@ -19462,19 +19688,19 @@
         }
       },
       {
-        './debug': 102,
-        './promise': 104
+        './debug': 103,
+        './promise': 105
       }
     ],
-    104: [
+    105: [
       function (require, module, exports) {
         'use strict';
         /** @type {Promise} **/
         module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
       },
-      { 'es6-promise': 48 }
+      { 'es6-promise': 49 }
     ],
-    105: [
+    106: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -19673,11 +19899,11 @@
         }.call(this, require('_process')));
       },
       {
-        '_process': 115,
-        'url': 146
+        '_process': 116,
+        'url': 147
       }
     ],
-    106: [
+    107: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -19714,11 +19940,11 @@
         };
       },
       {
-        'js-yaml': 56,
-        'ono': 113
+        'js-yaml': 57,
+        'ono': 114
       }
     ],
-    107: [
+    108: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -19733,7 +19959,7 @@
       },
       {}
     ],
-    108: [
+    109: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -20570,7 +20796,7 @@
       },
       {}
     ],
-    109: [
+    110: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -36094,7 +36320,7 @@
       },
       {}
     ],
-    110: [
+    111: [
       function (require, module, exports) {
         /**
  * Helpers.
@@ -36216,7 +36442,7 @@
       },
       {}
     ],
-    111: [
+    112: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -36353,9 +36579,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 112 }
+      { './isArguments': 113 }
     ],
-    112: [
+    113: [
       function (require, module, exports) {
         'use strict';
         var toStr = Object.prototype.toString;
@@ -36370,7 +36596,7 @@
       },
       {}
     ],
-    113: [
+    114: [
       function (require, module, exports) {
         /**!
  * Ono v2.2.1
@@ -36576,9 +36802,9 @@
           }
         }
       },
-      { 'util': 150 }
+      { 'util': 151 }
     ],
-    114: [
+    115: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -36622,9 +36848,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    115: [
+    116: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -36798,7 +37024,7 @@
       },
       {}
     ],
-    116: [
+    117: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -37216,7 +37442,7 @@
       },
       {}
     ],
-    117: [
+    118: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37293,7 +37519,7 @@
       },
       {}
     ],
-    118: [
+    119: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37373,18 +37599,18 @@
       },
       {}
     ],
-    119: [
+    120: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 117,
-        './encode': 118
+        './decode': 118,
+        './encode': 119
       }
     ],
-    120: [
+    121: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37488,28 +37714,28 @@
         };
       },
       {
-        'events': 49,
-        'inherits': 54,
-        'readable-stream/duplex.js': 122,
-        'readable-stream/passthrough.js': 129,
-        'readable-stream/readable.js': 130,
-        'readable-stream/transform.js': 131,
-        'readable-stream/writable.js': 132
+        'events': 50,
+        'inherits': 55,
+        'readable-stream/duplex.js': 123,
+        'readable-stream/passthrough.js': 130,
+        'readable-stream/readable.js': 131,
+        'readable-stream/transform.js': 132,
+        'readable-stream/writable.js': 133
       }
-    ],
-    121: [
-      function (require, module, exports) {
-        arguments[4][42][0].apply(exports, arguments);
-      },
-      { 'dup': 42 }
     ],
     122: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_duplex.js');
+        arguments[4][43][0].apply(exports, arguments);
       },
-      { './lib/_stream_duplex.js': 123 }
+      { 'dup': 43 }
     ],
     123: [
+      function (require, module, exports) {
+        module.exports = require('./lib/_stream_duplex.js');
+      },
+      { './lib/_stream_duplex.js': 124 }
+    ],
+    124: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -37576,14 +37802,14 @@
         }
       },
       {
-        './_stream_readable': 125,
-        './_stream_writable': 127,
-        'core-util-is': 45,
-        'inherits': 54,
-        'process-nextick-args': 114
+        './_stream_readable': 126,
+        './_stream_writable': 128,
+        'core-util-is': 46,
+        'inherits': 55,
+        'process-nextick-args': 115
       }
     ],
-    124: [
+    125: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -37606,12 +37832,12 @@
         };
       },
       {
-        './_stream_transform': 126,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_transform': 127,
+        'core-util-is': 46,
+        'inherits': 55
       }
     ],
-    125: [
+    126: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -38515,21 +38741,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        './internal/streams/BufferList': 128,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'isarray': 121,
-        'process-nextick-args': 114,
-        'string_decoder/': 137,
-        'util': 38
+        './_stream_duplex': 124,
+        './internal/streams/BufferList': 129,
+        '_process': 116,
+        'buffer': 42,
+        'buffer-shims': 41,
+        'core-util-is': 46,
+        'events': 50,
+        'inherits': 55,
+        'isarray': 122,
+        'process-nextick-args': 115,
+        'string_decoder/': 138,
+        'util': 39
       }
     ],
-    126: [
+    127: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -38692,12 +38918,12 @@
         }
       },
       {
-        './_stream_duplex': 123,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_duplex': 124,
+        'core-util-is': 46,
+        'inherits': 55
       }
     ],
-    127: [
+    128: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -39176,18 +39402,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'process-nextick-args': 114,
-        'util-deprecate': 147
+        './_stream_duplex': 124,
+        '_process': 116,
+        'buffer': 42,
+        'buffer-shims': 41,
+        'core-util-is': 46,
+        'events': 50,
+        'inherits': 55,
+        'process-nextick-args': 115,
+        'util-deprecate': 148
       }
     ],
-    128: [
+    129: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -39264,17 +39490,17 @@
         };
       },
       {
-        'buffer': 41,
-        'buffer-shims': 40
+        'buffer': 42,
+        'buffer-shims': 41
       }
     ],
-    129: [
+    130: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 124 }
+      { './lib/_stream_passthrough.js': 125 }
     ],
-    130: [
+    131: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -39296,27 +39522,27 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 123,
-        './lib/_stream_passthrough.js': 124,
-        './lib/_stream_readable.js': 125,
-        './lib/_stream_transform.js': 126,
-        './lib/_stream_writable.js': 127,
-        '_process': 115
+        './lib/_stream_duplex.js': 124,
+        './lib/_stream_passthrough.js': 125,
+        './lib/_stream_readable.js': 126,
+        './lib/_stream_transform.js': 127,
+        './lib/_stream_writable.js': 128,
+        '_process': 116
       }
-    ],
-    131: [
-      function (require, module, exports) {
-        module.exports = require('./lib/_stream_transform.js');
-      },
-      { './lib/_stream_transform.js': 126 }
     ],
     132: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_writable.js');
+        module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_writable.js': 127 }
+      { './lib/_stream_transform.js': 127 }
     ],
     133: [
+      function (require, module, exports) {
+        module.exports = require('./lib/_stream_writable.js');
+      },
+      { './lib/_stream_writable.js': 128 }
+    ],
+    134: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -39384,13 +39610,13 @@
         ];
       },
       {
-        './lib/request': 135,
-        'builtin-status-codes': 43,
-        'url': 146,
-        'xtend': 215
+        './lib/request': 136,
+        'builtin-status-codes': 44,
+        'url': 147,
+        'xtend': 216
       }
     ],
-    134: [
+    135: [
       function (require, module, exports) {
         (function (global) {
           exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableByteStream);
@@ -39431,7 +39657,7 @@
       },
       {}
     ],
-    135: [
+    136: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           // var Base64 = require('Base64')
@@ -39680,18 +39906,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        './response': 136,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'indexof': 53,
-        'inherits': 54,
-        'object-keys': 111,
-        'stream': 120
+        './capability': 135,
+        './response': 137,
+        '_process': 116,
+        'buffer': 42,
+        'foreach': 51,
+        'indexof': 54,
+        'inherits': 55,
+        'object-keys': 112,
+        'stream': 121
       }
     ],
-    136: [
+    137: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           var capability = require('./capability');
@@ -39858,15 +40084,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'inherits': 54,
-        'stream': 120
+        './capability': 135,
+        '_process': 116,
+        'buffer': 42,
+        'foreach': 51,
+        'inherits': 55,
+        'stream': 121
       }
     ],
-    137: [
+    138: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -40068,9 +40294,9 @@
           this.charLength = this.charReceived ? 3 : 0;
         }
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    138: [
+    139: [
       function (require, module, exports) {
         module.exports = [
           'get',
@@ -40084,7 +40310,7 @@
       },
       {}
     ],
-    139: [
+    140: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -40260,18 +40486,18 @@
         }
       },
       {
-        './options': 140,
-        './promise': 141,
-        './util': 142,
-        './validate-schema': 143,
-        './validate-spec': 144,
-        'call-me-maybe': 44,
-        'json-schema-ref-parser': 89,
-        'json-schema-ref-parser/lib/dereference': 88,
-        'ono': 113
+        './options': 141,
+        './promise': 142,
+        './util': 143,
+        './validate-schema': 144,
+        './validate-spec': 145,
+        'call-me-maybe': 45,
+        'json-schema-ref-parser': 90,
+        'json-schema-ref-parser/lib/dereference': 89,
+        'ono': 114
       }
     ],
-    140: [
+    141: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -40296,20 +40522,20 @@
         util.inherits(ParserOptions, $RefParserOptions);
       },
       {
-        'json-schema-ref-parser/lib/options': 90,
-        'util': 150
-      }
-    ],
-    141: [
-      function (require, module, exports) {
-        arguments[4][104][0].apply(exports, arguments);
-      },
-      {
-        'dup': 104,
-        'es6-promise': 48
+        'json-schema-ref-parser/lib/options': 91,
+        'util': 151
       }
     ],
     142: [
+      function (require, module, exports) {
+        arguments[4][105][0].apply(exports, arguments);
+      },
+      {
+        'dup': 105,
+        'es6-promise': 49
+      }
+    ],
+    143: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -40327,11 +40553,11 @@
         exports.swaggerParamRegExp = /\{([^\/}]+)}/g;
       },
       {
-        'debug': 46,
-        'util': 150
+        'debug': 47,
+        'util': 151
       }
     ],
-    143: [
+    144: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -40386,13 +40612,13 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-schema-official/schema': 145,
-        'z-schema': 225
+        './util': 143,
+        'ono': 114,
+        'swagger-schema-official/schema': 146,
+        'z-schema': 226
       }
     ],
-    144: [
+    145: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -40637,12 +40863,12 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-methods': 138
+        './util': 143,
+        'ono': 114,
+        'swagger-methods': 139
       }
     ],
-    145: [
+    146: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -41620,7 +41846,7 @@
       },
       {}
     ],
-    146: [
+    147: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -42255,11 +42481,11 @@
         }
       },
       {
-        'punycode': 116,
-        'querystring': 119
+        'punycode': 117,
+        'querystring': 120
       }
     ],
-    147: [
+    148: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -42327,13 +42553,13 @@
       },
       {}
     ],
-    148: [
-      function (require, module, exports) {
-        arguments[4][54][0].apply(exports, arguments);
-      },
-      { 'dup': 54 }
-    ],
     149: [
+      function (require, module, exports) {
+        arguments[4][55][0].apply(exports, arguments);
+      },
+      { 'dup': 55 }
+    ],
+    150: [
       function (require, module, exports) {
         module.exports = function isBuffer(arg) {
           return arg && typeof arg === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
@@ -42341,7 +42567,7 @@
       },
       {}
     ],
-    150: [
+    151: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -42900,12 +43126,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 149,
-        '_process': 115,
-        'inherits': 148
+        './support/isBuffer': 150,
+        '_process': 116,
+        'inherits': 149
       }
     ],
-    151: [
+    152: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43100,69 +43326,69 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 153,
-        './lib/contains': 154,
-        './lib/equals': 155,
-        './lib/escape': 156,
-        './lib/isAfter': 157,
-        './lib/isAlpha': 158,
-        './lib/isAlphanumeric': 159,
-        './lib/isAscii': 160,
-        './lib/isBase64': 161,
-        './lib/isBefore': 162,
-        './lib/isBoolean': 163,
-        './lib/isByteLength': 164,
-        './lib/isCreditCard': 165,
-        './lib/isCurrency': 166,
-        './lib/isDataURI': 167,
-        './lib/isDate': 168,
-        './lib/isDecimal': 169,
-        './lib/isDivisibleBy': 170,
-        './lib/isEmail': 171,
-        './lib/isFQDN': 172,
-        './lib/isFloat': 173,
-        './lib/isFullWidth': 174,
-        './lib/isHalfWidth': 175,
-        './lib/isHexColor': 176,
-        './lib/isHexadecimal': 177,
-        './lib/isIP': 178,
-        './lib/isISBN': 179,
-        './lib/isISIN': 180,
-        './lib/isISO8601': 181,
-        './lib/isIn': 182,
-        './lib/isInt': 183,
-        './lib/isJSON': 184,
-        './lib/isLength': 185,
-        './lib/isLowercase': 186,
-        './lib/isMACAddress': 187,
-        './lib/isMD5': 188,
-        './lib/isMobilePhone': 189,
-        './lib/isMongoId': 190,
-        './lib/isMultibyte': 191,
-        './lib/isNull': 192,
-        './lib/isNumeric': 193,
-        './lib/isSurrogatePair': 194,
-        './lib/isURL': 195,
-        './lib/isUUID': 196,
-        './lib/isUppercase': 197,
-        './lib/isVariableWidth': 198,
-        './lib/isWhitelisted': 199,
-        './lib/ltrim': 200,
-        './lib/matches': 201,
-        './lib/normalizeEmail': 202,
-        './lib/rtrim': 203,
-        './lib/stripLow': 204,
-        './lib/toBoolean': 205,
-        './lib/toDate': 206,
-        './lib/toFloat': 207,
-        './lib/toInt': 208,
-        './lib/trim': 209,
-        './lib/unescape': 210,
-        './lib/util/toString': 213,
-        './lib/whitelist': 214
+        './lib/blacklist': 154,
+        './lib/contains': 155,
+        './lib/equals': 156,
+        './lib/escape': 157,
+        './lib/isAfter': 158,
+        './lib/isAlpha': 159,
+        './lib/isAlphanumeric': 160,
+        './lib/isAscii': 161,
+        './lib/isBase64': 162,
+        './lib/isBefore': 163,
+        './lib/isBoolean': 164,
+        './lib/isByteLength': 165,
+        './lib/isCreditCard': 166,
+        './lib/isCurrency': 167,
+        './lib/isDataURI': 168,
+        './lib/isDate': 169,
+        './lib/isDecimal': 170,
+        './lib/isDivisibleBy': 171,
+        './lib/isEmail': 172,
+        './lib/isFQDN': 173,
+        './lib/isFloat': 174,
+        './lib/isFullWidth': 175,
+        './lib/isHalfWidth': 176,
+        './lib/isHexColor': 177,
+        './lib/isHexadecimal': 178,
+        './lib/isIP': 179,
+        './lib/isISBN': 180,
+        './lib/isISIN': 181,
+        './lib/isISO8601': 182,
+        './lib/isIn': 183,
+        './lib/isInt': 184,
+        './lib/isJSON': 185,
+        './lib/isLength': 186,
+        './lib/isLowercase': 187,
+        './lib/isMACAddress': 188,
+        './lib/isMD5': 189,
+        './lib/isMobilePhone': 190,
+        './lib/isMongoId': 191,
+        './lib/isMultibyte': 192,
+        './lib/isNull': 193,
+        './lib/isNumeric': 194,
+        './lib/isSurrogatePair': 195,
+        './lib/isURL': 196,
+        './lib/isUUID': 197,
+        './lib/isUppercase': 198,
+        './lib/isVariableWidth': 199,
+        './lib/isWhitelisted': 200,
+        './lib/ltrim': 201,
+        './lib/matches': 202,
+        './lib/normalizeEmail': 203,
+        './lib/rtrim': 204,
+        './lib/stripLow': 205,
+        './lib/toBoolean': 206,
+        './lib/toDate': 207,
+        './lib/toFloat': 208,
+        './lib/toInt': 209,
+        './lib/trim': 210,
+        './lib/unescape': 211,
+        './lib/util/toString': 214,
+        './lib/whitelist': 215
       }
     ],
-    152: [
+    153: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43242,7 +43468,7 @@
       },
       {}
     ],
-    153: [
+    154: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43258,9 +43484,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    154: [
+    155: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43279,11 +43505,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 212,
+        './util/toString': 214
       }
     ],
-    155: [
+    156: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43299,9 +43525,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    156: [
+    157: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43317,9 +43543,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    157: [
+    158: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43341,11 +43567,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 207,
+        './util/assertString': 212
       }
     ],
-    158: [
+    159: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43367,11 +43593,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 153,
+        './util/assertString': 212
       }
     ],
-    159: [
+    160: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43393,11 +43619,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 153,
+        './util/assertString': 212
       }
     ],
-    160: [
+    161: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43416,9 +43642,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    161: [
+    162: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43440,9 +43666,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    162: [
+    163: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43464,11 +43690,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 207,
+        './util/assertString': 212
       }
     ],
-    163: [
+    164: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43489,9 +43715,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    164: [
+    165: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43524,9 +43750,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    165: [
+    166: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43568,9 +43794,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    166: [
+    167: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43642,11 +43868,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    167: [
+    168: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43664,9 +43890,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    168: [
+    169: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43755,11 +43981,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 181,
-        './util/assertString': 211
+        './isISO8601': 182,
+        './util/assertString': 212
       }
     ],
-    169: [
+    170: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43776,9 +44002,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    170: [
+    171: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43797,11 +44023,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 207,
-        './util/assertString': 211
+        './toFloat': 208,
+        './util/assertString': 212
       }
     ],
-    171: [
+    172: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43869,13 +44095,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 164,
-        './isFQDN': 172,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isByteLength': 165,
+        './isFQDN': 173,
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    172: [
+    173: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43927,11 +44153,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    173: [
+    174: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43952,9 +44178,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    174: [
+    175: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43971,9 +44197,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    175: [
+    176: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43990,9 +44216,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    176: [
+    177: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44009,9 +44235,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    177: [
+    178: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44028,9 +44254,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    178: [
+    179: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44103,9 +44329,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    179: [
+    180: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44161,9 +44387,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    180: [
+    181: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44205,9 +44431,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    181: [
+    182: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44225,9 +44451,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    182: [
+    183: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44265,11 +44491,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 212,
+        './util/toString': 214
       }
     ],
-    183: [
+    184: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44294,9 +44520,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    184: [
+    185: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44322,9 +44548,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    185: [
+    186: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44358,9 +44584,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    186: [
+    187: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44376,9 +44602,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    187: [
+    188: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44395,9 +44621,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    188: [
+    189: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44414,9 +44640,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    189: [
+    190: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44476,9 +44702,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    190: [
+    191: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44497,11 +44723,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 177,
-        './util/assertString': 211
+        './isHexadecimal': 178,
+        './util/assertString': 212
       }
     ],
-    191: [
+    192: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44520,9 +44746,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    192: [
+    193: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44538,9 +44764,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    193: [
+    194: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44557,9 +44783,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    194: [
+    195: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44576,9 +44802,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    195: [
+    196: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44694,13 +44920,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 172,
-        './isIP': 178,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isFQDN': 173,
+        './isIP': 179,
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    196: [
+    197: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44724,9 +44950,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    197: [
+    198: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44742,9 +44968,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    198: [
+    199: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44763,12 +44989,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 174,
-        './isHalfWidth': 175,
-        './util/assertString': 211
+        './isFullWidth': 175,
+        './isHalfWidth': 176,
+        './util/assertString': 212
       }
     ],
-    199: [
+    200: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44789,9 +45015,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    200: [
+    201: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44808,9 +45034,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    201: [
+    202: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44829,9 +45055,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    202: [
+    203: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44875,11 +45101,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 171,
-        './util/merge': 212
+        './isEmail': 172,
+        './util/merge': 213
       }
     ],
-    203: [
+    204: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44900,9 +45126,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    204: [
+    205: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44922,11 +45148,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 153,
-        './util/assertString': 211
+        './blacklist': 154,
+        './util/assertString': 212
       }
     ],
-    205: [
+    206: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44945,9 +45171,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    206: [
+    207: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44964,9 +45190,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    207: [
+    208: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44982,9 +45208,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    208: [
+    209: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45000,9 +45226,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    209: [
+    210: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45020,11 +45246,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 200,
-        './rtrim': 203
+        './ltrim': 201,
+        './rtrim': 204
       }
     ],
-    210: [
+    211: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45040,9 +45266,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    211: [
+    212: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45056,7 +45282,7 @@
       },
       {}
     ],
-    212: [
+    213: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45075,7 +45301,7 @@
       },
       {}
     ],
-    213: [
+    214: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45101,7 +45327,7 @@
       },
       {}
     ],
-    214: [
+    215: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45117,9 +45343,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    215: [
+    216: [
       function (require, module, exports) {
         module.exports = extend;
         var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -45138,7 +45364,7 @@
       },
       {}
     ],
-    216: [
+    217: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -45187,7 +45413,7 @@
       },
       {}
     ],
-    217: [
+    218: [
       function (require, module, exports) {
         /*jshint maxlen: false*/
         var validator = require('validator');
@@ -45326,9 +45552,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 151 }
+      { 'validator': 152 }
     ],
-    218: [
+    219: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), Report = require('./Report'), Utils = require('./Utils');
@@ -45865,12 +46091,12 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 218,
+        './Report': 221,
+        './Utils': 225
       }
     ],
-    219: [
+    220: [
       function (require, module, exports) {
         // Number.isFinite polyfill
         // http://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.isfinite
@@ -45891,7 +46117,7 @@
       },
       {}
     ],
-    220: [
+    221: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -46068,13 +46294,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 216,
-        './Utils': 224,
-        '_process': 115,
-        'lodash.get': 108
+        './Errors': 217,
+        './Utils': 225,
+        '_process': 116,
+        'lodash.get': 109
       }
     ],
-    221: [
+    222: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -46216,13 +46442,13 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 220,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224
+        './Report': 221,
+        './SchemaCompilation': 223,
+        './SchemaValidation': 224,
+        './Utils': 225
       }
     ],
-    222: [
+    223: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -46469,12 +46695,12 @@
         };
       },
       {
-        './Report': 220,
-        './SchemaCache': 221,
-        './Utils': 224
+        './Report': 221,
+        './SchemaCache': 222,
+        './Utils': 225
       }
     ],
-    223: [
+    224: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -47238,13 +47464,13 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 218,
+        './JsonValidation': 219,
+        './Report': 221,
+        './Utils': 225
       }
     ],
-    224: [
+    225: [
       function (require, module, exports) {
         'use strict';
         exports.isAbsoluteUri = function (uri) {
@@ -47450,7 +47676,7 @@
       },
       {}
     ],
-    225: [
+    226: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -47747,21 +47973,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Polyfills': 219,
-        './Report': 220,
-        './SchemaCache': 221,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224,
-        './schemas/hyper-schema.json': 226,
-        './schemas/schema.json': 227,
-        '_process': 115,
-        'lodash.get': 108
+        './FormatValidators': 218,
+        './JsonValidation': 219,
+        './Polyfills': 220,
+        './Report': 221,
+        './SchemaCache': 222,
+        './SchemaCompilation': 223,
+        './SchemaValidation': 224,
+        './Utils': 225,
+        './schemas/hyper-schema.json': 227,
+        './schemas/schema.json': 228,
+        '_process': 116,
+        'lodash.get': 109
       }
     ],
-    226: [
+    227: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -47879,7 +48105,7 @@
       },
       {}
     ],
-    227: [
+    228: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -57130,7 +57356,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
 'use strict';
 if (!Array.prototype.find) {
   Array.prototype.find = function (predicate) {
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0, len = this.length; i < len; i++) {
       var item = this[i];
       if (predicate(item)) {
         return item;
@@ -57141,7 +57367,7 @@ if (!Array.prototype.find) {
 }
 if (!Array.prototype.includes) {
   Array.prototype.includes = function (value) {
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0, len = this.length; i < len; i++) {
       var item = this[i];
       if (item === value) {
         return true;
@@ -58267,7 +58493,7 @@ if (!String.prototype.endsWith) {
       }
       function groupByLine(annotations) {
         var lines = [];
-        for (var i = 0; i < annotations.length; ++i) {
+        for (var i = 0, len = annotations.length; i < len; ++i) {
           var annotation = annotations[i], line = annotation.line || 1;
           (lines[line] || (lines[line] = [])).push(annotation);
         }
@@ -58365,18 +58591,9 @@ if (!String.prototype.endsWith) {
           return $q.when(fn.apply(this, arguments));
         };
       }
-      function expandApiToJSON(api, expandFlag) {
-        api = api.expand ? api.expand(expandFlag) : api;
-        var apiJSON = api.toJSON(jsonOptions);
-        if (api.uses && api.uses()) {
-          apiJSON.uses = {};
-          api.uses().forEach(function (usesItem) {
-            var libraryAST = usesItem.ast();
-            libraryAST = libraryAST.expand ? libraryAST.expand() : libraryAST;
-            apiJSON.uses[usesItem.key()] = libraryAST.toJSON(jsonOptions);
-          });
-        }
-        return apiJSON;
+      function expandApiToJSON(api) {
+        api = api.expand ? api.expand(true) : api;
+        return api.toJSON(jsonOptions);
       }
       /**
        * @param  {String}   path
@@ -59308,8 +59525,13 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     });
   };
   this.getFileContentAsync = function (file) {
-    if (file.loaded && file.doc) {
-      return Promise.resolve(file.doc.getValue());
+    if (file.loaded) {
+      if (file.doc) {
+        return Promise.resolve(file.doc.getValue());
+      }
+      if (file.contents) {
+        return Promise.resolve(file.contents);
+      }
     }
     var getFileContent = function (file) {
       return file.contents;
@@ -59515,6 +59737,96 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 ]);
 (function () {
   'use strict';
+  angular.module('ramlEditorApp').factory('ramlExpander', [
+    '$q',
+    'jsTraverse',
+    function mockingServiceUtils($q, jsTraverse) {
+      return { expandRaml: expandRaml };
+      // ---
+      function retrieveType(raml, typeName) {
+        if (!raml.types) {
+          return;
+        }
+        var object = raml.types.filter(function (type) {
+            return type[typeName];
+          })[0];
+        return object ? object[typeName] : object;
+      }
+      function replaceTypeIfExists(raml, type, value) {
+        var expandedType = retrieveType(raml, type);
+        if (expandedType) {
+          for (var key in expandedType) {
+            if (expandedType.hasOwnProperty(key)) {
+              if ([
+                  'example',
+                  'examples'
+                ].includes(key) && value[key]) {
+                return;
+              }
+              value[key] = expandedType[key];
+            }
+          }
+        }
+      }
+      function dereferenceTypes(raml) {
+        jsTraverse.traverse(raml).forEach(function (value) {
+          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
+            var type = value.type[0];
+            replaceTypeIfExists(raml, type, value);
+          }
+        });
+      }
+      function extractArrayType(arrayNode) {
+        if (arrayNode.items.type) {
+          return arrayNode.items.type[0];
+        }
+        return arrayNode.items;
+      }
+      function isNotObject(value) {
+        return value === null || typeof value !== 'object';
+      }
+      function dereferenceTypesInArrays(raml) {
+        jsTraverse.traverse(raml).forEach(function (value) {
+          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
+            var type = extractArrayType(value);
+            if (isNotObject(value.items)) {
+              value.items = {};
+            }
+            replaceTypeIfExists(raml, type, value.items);
+            if (!value.examples && !value.example) {
+              generateArrayExampleIfPossible(value);
+            }
+          }
+        });
+      }
+      function generateArrayExampleIfPossible(arrayNode) {
+        var examples = getExampleList(arrayNode.items);
+        if (examples.length === 0) {
+          return;
+        }
+        arrayNode.example = examples;
+      }
+      function getExampleList(node) {
+        if (node.examples) {
+          return node.examples.map(function (example) {
+            return example.structuredValue;
+          });
+        }
+        if (node.example) {
+          return [node.example];
+        }
+        return [];
+      }
+      function expandRaml(raml) {
+        dereferenceTypes(raml);
+        dereferenceTypesInArrays(raml);
+      }
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
   function FileSystem() {
   }
   FileSystem.prototype = {
@@ -59537,19 +59849,17 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       throw 'Not implemented: FileSystem rename invoked with [source=' + source + '] and [destination=' + destination + ']';
     }
   };
-  angular.module('fs').factory('fileSystem', [
-    '$injector',
-    'config',
-    function ($injector, config) {
-      var fsFactory = config.get('fsFactory');
-      var hasFsFactory = fsFactory && $injector.has(fsFactory);
-      if (!hasFsFactory) {
-        config.set('fsFactory', fsFactory = 'localStorageFileSystem');
-      }
-      return $injector.get(fsFactory);
-    }
-  ]);
-  ;
+  angular.module('fs').provider('fileSystem', function fileSystemProvider() {
+    this.hasFactory = false;
+    this.setFileSystemFactory = function (fileSystemFactory) {
+      this.$get = fileSystemFactory;
+      this.hasFactory = true;
+    };
+    this.$get = function () {
+      return new FileSystem();
+    };
+    return this;
+  });
 }());
 (function () {
   'use strict';
@@ -59714,6 +60024,280 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
+  function localStorageFileSystemFactory($window, $q, $prompt, $timeout, localStorageHelper, FOLDER) {
+    function fileNotFoundMessage(path) {
+      return 'file with path="' + path + '" does not exist';
+    }
+    function addChildren(entry, fn) {
+      if (entry.type === FOLDER) {
+        entry.children = fn(entry.path);
+      }
+    }
+    function findFolder(path) {
+      var entries = [];
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() === path.toLowerCase()) {
+          addChildren(entry, findFiles);
+          entries.push(entry);
+        }
+      });
+      return entries.length > 0 ? entries[0] : null;
+    }
+    function findFiles(path) {
+      if (path.lastIndexOf('/') !== path.length - 1) {
+        path += '/';
+      }
+      var entries = [];
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.toLowerCase() !== path.toLowerCase() && extractParentPath(entry.path) + '/' === path) {
+          addChildren(entry, findFiles);
+          entries.push(entry);
+        }
+      });
+      return entries;
+    }
+    /**
+     *
+     * Save in localStorage entries.
+     *
+     * File structure are objects that contain the following attributes:
+     * * path: The full path (including the filename).
+     * * content: The content of the file (only valid for files).
+     * * isFolder: A flag that indicates whether is a folder or file.
+     */
+    var service = {};
+    var delay = 500;
+    service.supportsFolders = true;
+    function validatePath(path) {
+      if (path.indexOf('/') !== 0) {
+        return {
+          valid: false,
+          reason: 'Path should start with "/"'
+        };
+      }
+      return { valid: true };
+    }
+    function isValidParent(path) {
+      var parent = extractParentPath(path);
+      if (!localStorageHelper.has(parent) && parent !== '') {
+        return false;
+      }
+      return true;
+    }
+    function hasChildrens(path) {
+      var has = false;
+      localStorageHelper.forEach(function (entry) {
+        if (entry.path.indexOf(path + '/') === 0) {
+          has = true;
+        }
+      });
+      return has;
+    }
+    function extractNameFromPath(path) {
+      var pathInfo = validatePath(path);
+      if (!pathInfo.valid) {
+        throw 'Invalid Path!';
+      }
+      // When the path is ended in '/'
+      if (path.lastIndexOf('/') === path.length - 1) {
+        path = path.slice(0, -1);
+      }
+      return path.slice(path.lastIndexOf('/') + 1);
+    }
+    function extractParentPath(path) {
+      var pathInfo = validatePath(path);
+      if (!pathInfo.valid) {
+        throw 'Invalid Path!';
+      }
+      // When the path is ended in '/'
+      if (path.lastIndexOf('/') === path.length - 1) {
+        path = path.slice(0, -1);
+      }
+      return path.slice(0, path.lastIndexOf('/'));
+    }
+    /**
+     * List files found in a given path.
+     */
+    service.directory = function (path) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var isValidPath = validatePath(path);
+        if (!isValidPath.valid) {
+          deferred.reject(isValidPath.reason);
+          return deferred.promise;
+        }
+        if (!localStorageHelper.has('/')) {
+          localStorageHelper.set(path, {
+            path: '/',
+            name: '',
+            type: 'folder',
+            meta: { 'created': Math.round(new Date().getTime() / 1000) }
+          });
+        }
+        deferred.resolve(findFolder(path));
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Persist a file to an existing folder.
+     */
+    service.save = function (path, content) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var name = extractNameFromPath(path);
+        var entry = localStorageHelper.get(path);
+        if (!isValidParent(path)) {
+          deferred.reject(new Error('Parent folder does not exists: ' + path));
+          return deferred.promise;
+        }
+        var file = {};
+        if (entry) {
+          if (entry.type === FOLDER) {
+            deferred.reject('file has the same name as a folder');
+            return deferred.promise;
+          }
+          entry.content = content;
+          entry.meta.lastUpdated = Math.round(new Date().getTime() / 1000);
+          file = entry;
+        } else {
+          file = {
+            path: path,
+            name: name,
+            content: content,
+            type: 'file',
+            meta: { 'created': Math.round(new Date().getTime() / 1000) }
+          };
+        }
+        localStorageHelper.set(path, file);
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Create the folders contained in a path.
+     */
+    service.createFolder = function (path) {
+      var deferred = $q.defer();
+      var isValidPath = validatePath(path);
+      if (!isValidPath.valid) {
+        deferred.reject(isValidPath.reason);
+        return deferred.promise;
+      }
+      if (localStorageHelper.has(path)) {
+        deferred.reject(new Error('Folder already exists: ' + path));
+        return deferred.promise;
+      }
+      var parent = extractParentPath(path);
+      if (!localStorageHelper.has(parent)) {
+        deferred.reject(new Error('Parent folder does not exists: ' + path));
+        return deferred.promise;
+      }
+      $timeout(function () {
+        localStorageHelper.set(path, {
+          path: path,
+          name: extractNameFromPath(path),
+          type: 'folder',
+          meta: { 'created': Math.round(new Date().getTime() / 1000) }
+        });
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Loads the content of a file.
+     */
+    service.load = function (path) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var entry = localStorageHelper.get(path);
+        if (entry && entry.type === 'file') {
+          deferred.resolve(localStorageHelper.get(path).content);
+        } else {
+          deferred.reject(fileNotFoundMessage(path));
+        }
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Removes a file or directory.
+     */
+    service.remove = function (path) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var entry = localStorageHelper.get(path);
+        if (entry && entry.type === FOLDER && hasChildrens(path)) {
+          deferred.reject('folder not empty');
+          return deferred.promise;
+        }
+        localStorageHelper.remove(path);
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    /**
+     * Renames a file or directory
+     */
+    service.rename = function (source, destination) {
+      var deferred = $q.defer();
+      $timeout(function () {
+        var sourceEntry = localStorageHelper.get(source);
+        if (!sourceEntry) {
+          deferred.reject('Source file or folder does not exists.');
+          return deferred.promise;
+        }
+        var destinationEntry = localStorageHelper.get(destination);
+        if (destinationEntry) {
+          deferred.reject('File or folder already exists.');
+          return deferred.promise;
+        }
+        if (!isValidParent(destination)) {
+          deferred.reject('Destination folder does not exist.');
+          return deferred.promise;
+        }
+        sourceEntry.path = destination;
+        sourceEntry.name = extractNameFromPath(destination);
+        localStorageHelper.remove(destination);
+        localStorageHelper.remove(source);
+        localStorageHelper.set(destination, sourceEntry);
+        if (sourceEntry.type === FOLDER) {
+          // if (!isValidPath(destination)) {
+          //   deferred.reject('Destination is not a valid folder');
+          //   return deferred.promise;
+          // }
+          //move all child items
+          localStorageHelper.forEach(function (entry) {
+            if (entry.path.toLowerCase() !== source.toLowerCase() && entry.path.indexOf(source) === 0) {
+              var newPath = destination + entry.path.substring(source.length);
+              localStorageHelper.remove(entry.path);
+              entry.path = newPath;
+              localStorageHelper.set(newPath, entry);
+            }
+          });
+        }
+        deferred.resolve();
+      }, delay);
+      return deferred.promise;
+    };
+    service.exportFiles = function exportFiles() {
+      var jszip = new $window.JSZip();
+      localStorageHelper.forEach(function (item) {
+        // Skip root folder
+        if (item.path === '/') {
+          return;
+        }
+        // Skip meta files
+        if (item.name.slice(-5) === '.meta') {
+          return;
+        }
+        var path = item.path.slice(1);
+        // Remove starting slash
+        item.type === 'folder' ? jszip.folder(path) : jszip.file(path, item.content);
+      });
+      var fileName = $prompt('Please enter a ZIP file name:', 'api.zip');
+      fileName && $window.saveAs(jszip.generate({ type: 'blob' }), fileName);
+    };
+    return service;
+  }
   angular.module('fs').constant('LOCAL_PERSISTENCE_KEY', 'localStorageFilePersistence').constant('FOLDER', 'folder').factory('localStorageHelper', [
     'LOCAL_PERSISTENCE_KEY',
     function (LOCAL_PERSISTENCE_KEY) {
@@ -59750,289 +60334,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
       };
     }
-  ]).factory('localStorageFileSystem', [
-    '$window',
-    '$q',
-    '$prompt',
-    '$timeout',
-    'localStorageHelper',
-    'FOLDER',
-    function ($window, $q, $prompt, $timeout, localStorageHelper, FOLDER) {
-      function fileNotFoundMessage(path) {
-        return 'file with path="' + path + '" does not exist';
-      }
-      function addChildren(entry, fn) {
-        if (entry.type === FOLDER) {
-          entry.children = fn(entry.path);
-        }
-      }
-      function findFolder(path) {
-        var entries = [];
-        localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() === path.toLowerCase()) {
-            addChildren(entry, findFiles);
-            entries.push(entry);
-          }
-        });
-        return entries.length > 0 ? entries[0] : null;
-      }
-      function findFiles(path) {
-        if (path.lastIndexOf('/') !== path.length - 1) {
-          path += '/';
-        }
-        var entries = [];
-        localStorageHelper.forEach(function (entry) {
-          if (entry.path.toLowerCase() !== path.toLowerCase() && extractParentPath(entry.path) + '/' === path) {
-            addChildren(entry, findFiles);
-            entries.push(entry);
-          }
-        });
-        return entries;
-      }
-      /**
-       *
-       * Save in localStorage entries.
-       *
-       * File structure are objects that contain the following attributes:
-       * * path: The full path (including the filename).
-       * * content: The content of the file (only valid for files).
-       * * isFolder: A flag that indicates whether is a folder or file.
-       */
-      var service = {};
-      var delay = 500;
-      service.supportsFolders = true;
-      function validatePath(path) {
-        if (path.indexOf('/') !== 0) {
-          return {
-            valid: false,
-            reason: 'Path should start with "/"'
-          };
-        }
-        return { valid: true };
-      }
-      function isValidParent(path) {
-        var parent = extractParentPath(path);
-        if (!localStorageHelper.has(parent) && parent !== '') {
-          return false;
-        }
-        return true;
-      }
-      function hasChildrens(path) {
-        var has = false;
-        localStorageHelper.forEach(function (entry) {
-          if (entry.path.indexOf(path + '/') === 0) {
-            has = true;
-          }
-        });
-        return has;
-      }
-      function extractNameFromPath(path) {
-        var pathInfo = validatePath(path);
-        if (!pathInfo.valid) {
-          throw 'Invalid Path!';
-        }
-        // When the path is ended in '/'
-        if (path.lastIndexOf('/') === path.length - 1) {
-          path = path.slice(0, -1);
-        }
-        return path.slice(path.lastIndexOf('/') + 1);
-      }
-      function extractParentPath(path) {
-        var pathInfo = validatePath(path);
-        if (!pathInfo.valid) {
-          throw 'Invalid Path!';
-        }
-        // When the path is ended in '/'
-        if (path.lastIndexOf('/') === path.length - 1) {
-          path = path.slice(0, -1);
-        }
-        return path.slice(0, path.lastIndexOf('/'));
-      }
-      /**
-       * List files found in a given path.
-       */
-      service.directory = function (path) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var isValidPath = validatePath(path);
-          if (!isValidPath.valid) {
-            deferred.reject(isValidPath.reason);
-            return deferred.promise;
-          }
-          if (!localStorageHelper.has('/')) {
-            localStorageHelper.set(path, {
-              path: '/',
-              name: '',
-              type: 'folder',
-              meta: { 'created': Math.round(new Date().getTime() / 1000) }
-            });
-          }
-          deferred.resolve(findFolder(path));
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Persist a file to an existing folder.
-       */
-      service.save = function (path, content) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var name = extractNameFromPath(path);
-          var entry = localStorageHelper.get(path);
-          if (!isValidParent(path)) {
-            deferred.reject(new Error('Parent folder does not exists: ' + path));
-            return deferred.promise;
-          }
-          var file = {};
-          if (entry) {
-            if (entry.type === FOLDER) {
-              deferred.reject('file has the same name as a folder');
-              return deferred.promise;
-            }
-            entry.content = content;
-            entry.meta.lastUpdated = Math.round(new Date().getTime() / 1000);
-            file = entry;
-          } else {
-            file = {
-              path: path,
-              name: name,
-              content: content,
-              type: 'file',
-              meta: { 'created': Math.round(new Date().getTime() / 1000) }
-            };
-          }
-          localStorageHelper.set(path, file);
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Create the folders contained in a path.
-       */
-      service.createFolder = function (path) {
-        var deferred = $q.defer();
-        var isValidPath = validatePath(path);
-        if (!isValidPath.valid) {
-          deferred.reject(isValidPath.reason);
-          return deferred.promise;
-        }
-        if (localStorageHelper.has(path)) {
-          deferred.reject(new Error('Folder already exists: ' + path));
-          return deferred.promise;
-        }
-        var parent = extractParentPath(path);
-        if (!localStorageHelper.has(parent)) {
-          deferred.reject(new Error('Parent folder does not exists: ' + path));
-          return deferred.promise;
-        }
-        $timeout(function () {
-          localStorageHelper.set(path, {
-            path: path,
-            name: extractNameFromPath(path),
-            type: 'folder',
-            meta: { 'created': Math.round(new Date().getTime() / 1000) }
-          });
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Loads the content of a file.
-       */
-      service.load = function (path) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var entry = localStorageHelper.get(path);
-          if (entry && entry.type === 'file') {
-            deferred.resolve(localStorageHelper.get(path).content);
-          } else {
-            deferred.reject(fileNotFoundMessage(path));
-          }
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Removes a file or directory.
-       */
-      service.remove = function (path) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var entry = localStorageHelper.get(path);
-          if (entry && entry.type === FOLDER && hasChildrens(path)) {
-            deferred.reject('folder not empty');
-            return deferred.promise;
-          }
-          localStorageHelper.remove(path);
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      /**
-       * Renames a file or directory
-       */
-      service.rename = function (source, destination) {
-        var deferred = $q.defer();
-        $timeout(function () {
-          var sourceEntry = localStorageHelper.get(source);
-          if (!sourceEntry) {
-            deferred.reject('Source file or folder does not exists.');
-            return deferred.promise;
-          }
-          var destinationEntry = localStorageHelper.get(destination);
-          if (destinationEntry) {
-            deferred.reject('File or folder already exists.');
-            return deferred.promise;
-          }
-          if (!isValidParent(destination)) {
-            deferred.reject('Destination folder does not exist.');
-            return deferred.promise;
-          }
-          sourceEntry.path = destination;
-          sourceEntry.name = extractNameFromPath(destination);
-          localStorageHelper.remove(destination);
-          localStorageHelper.remove(source);
-          localStorageHelper.set(destination, sourceEntry);
-          if (sourceEntry.type === FOLDER) {
-            // if (!isValidPath(destination)) {
-            //   deferred.reject('Destination is not a valid folder');
-            //   return deferred.promise;
-            // }
-            //move all child items
-            localStorageHelper.forEach(function (entry) {
-              if (entry.path.toLowerCase() !== source.toLowerCase() && entry.path.indexOf(source) === 0) {
-                var newPath = destination + entry.path.substring(source.length);
-                localStorageHelper.remove(entry.path);
-                entry.path = newPath;
-                localStorageHelper.set(newPath, entry);
-              }
-            });
-          }
-          deferred.resolve();
-        }, delay);
-        return deferred.promise;
-      };
-      service.exportFiles = function exportFiles() {
-        var jszip = new $window.JSZip();
-        localStorageHelper.forEach(function (item) {
-          // Skip root folder
-          if (item.path === '/') {
-            return;
-          }
-          // Skip meta files
-          if (item.name.slice(-5) === '.meta') {
-            return;
-          }
-          var path = item.path.slice(1);
-          // Remove starting slash
-          item.type === 'folder' ? jszip.folder(path) : jszip.file(path, item.content);
-        });
-        var fileName = $prompt('Please enter a ZIP file name:', 'api.zip');
-        fileName && $window.saveAs(jszip.generate({ type: 'blob' }), fileName);
-      };
-      return service;
+  ]).factory('localStorageFileSystem', localStorageFileSystemFactory).config(function (fileSystemProvider) {
+    if (!fileSystemProvider.hasFactory) {
+      fileSystemProvider.setFileSystemFactory(localStorageFileSystemFactory);
     }
-  ]);
-  ;
+  });
 }());
 (function () {
   'use strict';
@@ -60069,83 +60375,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return $q.all(promises);
         });
       }
-      function retrieveType(raml, typeName) {
-        if (!raml.types) {
-          return;
-        }
-        var object = raml.types.filter(function (type) {
-            return type[typeName];
-          })[0];
-        return object ? object[typeName] : object;
-      }
-      function replaceTypeIfExists(raml, type, value) {
-        var expandedType = retrieveType(raml, type);
-        if (expandedType) {
-          for (var key in expandedType) {
-            if (expandedType.hasOwnProperty(key)) {
-              if ([
-                  'example',
-                  'examples'
-                ].includes(key) && value[key]) {
-                return;
-              }
-              value[key] = expandedType[key];
-            }
-          }
-        }
-      }
-      function dereferenceTypes(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
-            var type = value.type[0];
-            replaceTypeIfExists(raml, type, value);
-          }
-        });
-      }
-      function extractArrayType(arrayNode) {
-        if (arrayNode.items.type) {
-          return arrayNode.items.type[0];
-        }
-        return arrayNode.items;
-      }
-      function isNotObject(value) {
-        return value === null || typeof value !== 'object';
-      }
-      function dereferenceTypesInArrays(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
-            var type = extractArrayType(value);
-            if (isNotObject(value.items)) {
-              value.items = {};
-            }
-            replaceTypeIfExists(raml, type, value.items);
-            if (!value.examples && !value.example) {
-              generateArrayExampleIfPossible(value);
-            }
-          }
-        });
-      }
-      function generateArrayExampleIfPossible(arrayNode) {
-        var examples = getExampleList(arrayNode.items);
-        if (examples.length === 0) {
-          return;
-        }
-        arrayNode.example = examples;
-      }
-      function getExampleList(node) {
-        if (node.examples) {
-          return node.examples.map(function (example) {
-            return example.structuredValue;
-          });
-        }
-        if (node.example) {
-          return [node.example];
-        }
-        return [];
-      }
       function dereference(raml) {
-        dereferenceTypes(raml);
-        dereferenceTypesInArrays(raml);
         return dereferenceJsons(raml);
       }
       // ---
@@ -60184,7 +60414,23 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
         return url;
       };
+      function cleanBaseUri(mock) {
+        var baseUri = mock.baseUri;
+        var mocksQuantity = baseUri.match(/mocks/g).length;
+        if (mocksQuantity > 1) {
+          var mocks = 'mocks/';
+          for (var i = mocksQuantity; i > 1; i--) {
+            var from = baseUri.indexOf(mocks);
+            var to = baseUri.indexOf('/', from + mocks.length);
+            baseUri = baseUri.substring(0, from) + baseUri.substring(to + 1, baseUri.length);
+          }
+        }
+        mock.baseUri = baseUri;
+      }
       self.simplifyMock = function simplifyMock(mock) {
+        if (mock.baseUri) {
+          cleanBaseUri(mock);
+        }
         return {
           id: mock.id,
           baseUri: mock.baseUri,
@@ -61337,6 +61583,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApplyWrapper',
     'debounce',
     'ramlParserAdapter',
+    'ramlExpander',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -61347,7 +61594,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlExpander, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -61461,24 +61708,21 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return;
         }
         $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function success(api) {
-          // hack: we have to make a full copy of an object because console modifies
-          // it later and makes it unusable for mocking service
           var raml = ramlParserAdapter.expandApiToJSON(api);
-          var ramlExpanded = ramlParserAdapter.expandApiToJSON(api, true);
+          ramlExpander.expandRaml(raml);
           $scope.fileBrowser.selectedFile.raml = raml;
-          $scope.fileBrowser.selectedFile.ramlExpanded = ramlExpanded;
-          $rootScope.$broadcast('event:raml-parsed', raml, ramlExpanded);
-          // a success, but with warnings
-          if (api.errors().length > 0) {
-            $rootScope.$broadcast('event:raml-parser-error', { parserErrors: api.errors() });
+          $rootScope.$broadcast('event:raml-parsed', raml);
+          // a success, but with warnings (takes to long... skip for now until improvements on parser)
+          var errors = api.errors();
+          if (errors.length > 0) {
+            $rootScope.$broadcast('event:raml-parser-error', { parserErrors: errors });
           }
         }), safeApplyWrapper($scope, function failure(error) {
           $rootScope.$broadcast('event:raml-parser-error', error);
         }));
       });
-      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml, ramlExpanded) {
+      $scope.$on('event:raml-parsed', safeApplyWrapper($scope, function onRamlParser(event, raml) {
         $scope.raml = raml;
-        $scope.ramlExpanded = ramlExpanded;
         $scope.title = raml && raml.title;
         $scope.version = raml && raml.version;
         $scope.currentError = undefined;
@@ -61841,13 +62085,17 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         $scope.enabled = !!mock;
       }
       function getMock() {
-        loading(mockingService.getMock($scope.fileBrowser.selectedFile).then(setMock));
+        loading(mockingService.getMock($scope.fileBrowser.selectedFile).then(setMock).then(function () {
+          if ($scope.mock) {
+            addBaseUri();
+          }
+        }));
       }
       function createMock() {
-        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.ramlExpanded).then(setMock).then(addBaseUri));
+        loading(mockingService.createMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml).then(setMock).then(addBaseUri));
       }
       function updateMock() {
-        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.ramlExpanded).then(setMock);
+        mockingService.updateMock($scope.fileBrowser.selectedFile, $scope.fileBrowser.selectedFile.raml).then(setMock);
         ;
       }
       function deleteMock() {
@@ -62709,10 +62957,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   angular.module('ramlEditorApp').directive('ramlEditorSaveAllButton', [
     '$rootScope',
     'ramlRepository',
-    '$window',
-    '$timeout',
     '$q',
-    function ramlEditorSaveAllButton($rootScope, ramlRepository, $window, $timeout, $q) {
+    function ramlEditorSaveAllButton($rootScope, ramlRepository, $q) {
       return {
         restrict: 'E',
         template: '<li role="save-all-button" ng-click="saveAllFiles()">' + '<a><i class="fa fa-save"></i>&nbsp;Save All</a>' + '</li>',
@@ -62734,6 +62980,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               });
             });
           };
+          $rootScope.$on('event:save-all', function () {
+            scope.saveAllFiles();
+          });
         }
       };
     }
@@ -62812,7 +63061,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     function ramlEditorExportMenu(ramlRepository, subMenuService, ramlToSwagger, $window, $rootScope) {
       return {
         restrict: 'E',
-        templateUrl: 'views/menu/export-menu.tmpl.html',
+        template: '<li role="export-zip" ng-click="exportZipFiles()">' + '<a><i class="fa fa-download"></i>&nbsp;Export files</a>' + '</li>',
         link: function (scope) {
           function saveFile(yaml, name) {
             var blob = new Blob([yaml], { type: 'application/json;charset=utf-8' });
@@ -63360,16 +63609,16 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'swagger\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently supports Swagger v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/menu/export-menu.tmpl.html', '<a>\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;Swagger 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;Swagger 2.0 YAML</a></li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/export-menu.tmpl.html', '<a>\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;OAS 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;OAS 2.0 YAML</a></li>\n' + '</ul>\n');
     $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a role="raml-specification" href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>\n' + '  <li rile="context-menu-item"><a role="raml-website" href="http://raml.org" target="_blank">raml.org Website</a></li>\n' + '  <li role="context-menu-item"><a role="report-raml-bug" href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <li role="context-menu-item"><a role="raml-guide" href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>\n' + '  <li role="context-menu-item" ng-click="openHelpModal()"><a role="raml-about">About</a></li>\n' + '</ul>\n');
     $templateCache.put('views/menu/new-file-menu.tmpl.html', '<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">\n' + '  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">\n' + '    <a>\n' + '        &nbsp;Raml 1.0\n' + '        <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '\n' + '    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">\n' + '      <li role="new-raml-{{fragment.name}}" ng-repeat="fragment in notSorted(fragments)" ng-click="newFragmentFile(fragment.label)">\n' + '        <a>&nbsp;{{ fragment.name }}</a>\n' + '      </li>\n' + '    </ul>\n' + '  </li>\n' + '\n' + '  <li role="new-raml-0.8" ng-click="newFile(\'0.8\')">\n' + '    <a>&nbsp;Raml 0.8 API Spec</a>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '\n' + '\n' + '  <!--Uncomment to include export menu-->\n' + '\n' + '  <!--<li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">-->\n' + '  <raml-editor-export-menu></raml-editor-export-menu>\n' + '  <!--</li>-->\n' + '</ul>\n');
     $templateCache.put('views/menu/view-menu.tmpl.html', '<span class="menu-item-toggle" ng-click="openViewMenu($event)">\n' + '  <i class="fa fa-edit"></i>&nbsp;View\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showViewMenu">\n' + '  <li role="toogle-background" ng-click="toogleBackgroundColor()">\n' + '      <a>&nbsp;Toggle Background Color (ctrl+shift+t)</a>\n' + '  </li>\n' + '</ul>\n' + '\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p>\n' + '        Learn more\n' + '        <a ng-if="input.link" target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="ramlExpanded"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);
