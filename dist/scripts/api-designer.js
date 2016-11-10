@@ -5442,12 +5442,9 @@
           }
           this.exporter.type = toFormat;
         }
-        Converter.prototype.loadFile = function (filePath, cb) {
-          return this.importer.loadFile(filePath, cb);
-        };
         // todo unify api by returning a Promise like the loadData function
-        Converter.prototype.loadFileWithOptions = function (filePath, options, cb) {
-          return this.importer.loadFileWithOptions(filePath, options, cb);
+        Converter.prototype.loadFile = function (filePath, cb, options) {
+          return this.importer.loadFile(filePath, cb, options);
         };
         Converter.prototype.loadData = function (rawData, options) {
           var me = this;
@@ -8780,20 +8777,12 @@
             break;
           }
         };
-        RAML.prototype.loadFile = function (filePath, cb) {
-          return this.loadFileWithOptions(filePath, parseOptions, cb);
-        };
-        function apiWithOptions(api, options) {
-          if (options.expand)
-            return api.expand(false);
-          return api;
-        }
-        RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
+        RAML.prototype.loadFile = function (filePath, cb, options) {
           var me = this;
-          var mergedOptions = _.merge(parseOptions, options);
+          var mergedOptions = _.merge(parseOptions, options || {});
           parser.loadApi(filePath, mergedOptions).then(function (api) {
             try {
-              me.data = apiWithOptions(api, mergedOptions).toJSON(toJSONOptions);
+              me.data = api.expand(true).toJSON(toJSONOptions);
               cb();
             } catch (e) {
               cb(e);
@@ -8811,7 +8800,7 @@
               if (parsedData.name === 'Error') {
                 reject(error);
               } else {
-                me.data = apiWithOptions(parsedData, mergeOptions).toJSON(toJSONOptions);
+                me.data = parsedData.expand(true).toJSON(toJSONOptions);
                 resolve();
               }
             } catch (e) {
@@ -8971,12 +8960,9 @@
             return this.data !== null;
           }
         };
-        Importer.prototype.loadFile = function (path) {
-          throw new Error('loadFile method not implemented');
-        };
         // TODO unify api by returning a Promise like the loadData function
         // https://github.com/stoplightio/api-spec-converter/issues/16
-        Importer.prototype.loadFileWithOptions = function (path, options) {
+        Importer.prototype.loadFile = function (path) {
           throw new Error('loadFile method not implemented');
         };
         Importer.prototype.loadData = function (data) {
@@ -10148,11 +10134,7 @@
           });
         };
         // Load a swagger spec by local or remote file path
-        Swagger.prototype.loadFile = function (path, cb) {
-          return this._parseData(path, cb);
-        };
-        // Load a swagger spec by local or remote file path with given swagger parser options
-        Swagger.prototype.loadFileWithOptions = function (path, options, cb) {
+        Swagger.prototype.loadFile = function (path, cb, options) {
           return this._parseData(path, cb, options);
         };
         // Load a swagger spec by string data
