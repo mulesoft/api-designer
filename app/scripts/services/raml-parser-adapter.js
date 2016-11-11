@@ -64,7 +64,7 @@
             }
           }
         }).then(function(api) {
-          api = api.expand(true);
+          api = api.expand ? api.expand(true) : api;
           var raml = api.toJSON(jsonOptions);
           if (raml.specification) {
             ramlExpander.expandRaml(raml.specification);

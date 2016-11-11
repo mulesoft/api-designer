@@ -223,18 +223,19 @@
             var directorySeparator = '/';
             var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
             var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
-            var range = errorInfo.from.range;
+            var rangeFrom = rangePoint(errorInfo.from.range);
 
             tracingInfo = {
-              line : ((range && range.start.line) || 0) + 1,
-              column : (range && range.start.column) || 1,
+              line : rangeFrom.line,
+              column : rangeFrom.column,
               path : folderPath + errorInfo.from.path
             };
           }
 
+          var range = rangePoint(errorInfo.range);
           return {
-            line          : ((errorInfo.range && errorInfo.range.start.line) || 0) + 1,
-            column        : (errorInfo.range && errorInfo.range.start.column) || 1,
+            line          : range.line,
+            column        : range.column,
             message       : errorInfo.message,
             severity      : errorInfo.isWarning ? 'warning' : 'error',
             path          : tracingInfo.path,
@@ -243,6 +244,16 @@
           };
         }));
       }));
+
+      function rangePoint(range) {
+        if (range && range.start) {
+          return {line: 1 + range.start.line, column: range.start.column};
+        }
+        if (range && Array.isArray(range)) {
+          return {line: 1 + range[0], column: range[1]};
+        }
+        return {line: 1, column: 1};
+      }
 
       $scope.openHelp = function openHelp() {
         $modal.open({
