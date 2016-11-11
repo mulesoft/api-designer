@@ -60895,7 +60895,8 @@ if (!String.prototype.endsWith) {
             }
           }
         }).then(function (api) {
-          var raml = api.expand(true).toJSON(jsonOptions);
+          api = api.expand(true);
+          var raml = api.toJSON(jsonOptions);
           if (raml.specification) {
             ramlExpander.expandRaml(raml.specification);
           }
