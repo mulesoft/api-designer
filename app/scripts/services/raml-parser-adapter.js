@@ -2,16 +2,16 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .factory('ramlParserAdapter', function ramlParserAdapter($http, $q, $window) {
+    .factory('ramlParserAdapter', function ramlParserAdapter($http, $q, $window, ramlExpander) {
       var jsonOptions = {
         serializeMetadata: false,
-        dumpSchemaContents: true
+        dumpSchemaContents: true,
+        rootNodeDetails: true
       };
 
       return {
         loadPath: toQ(loadPath),
-        loadPathUnwrapped: loadPath,
-        expandApiToJSON: expandApiToJSON
+        loadPathUnwrapped: loadPath
       };
 
       // ---
@@ -30,11 +30,6 @@
         };
       }
 
-      function expandApiToJSON(api) {
-        api = api.expand ? api.expand(true) : api;
-        return api.toJSON(jsonOptions);
-      }
-
       /**
        * @param  {String}   path
        * @param  {Function} contentAsyncFn
@@ -45,7 +40,7 @@
         options = options || {};
         return RAML.Parser.loadApi(path, {
           attributeDefaults: true,
-          rejectOnErrors:    true,
+          rejectOnErrors:    false,
           fsResolver:        {
             contentAsync: contentAsyncFn,
             content:      content
@@ -68,6 +63,13 @@
                 });
             }
           }
+        }).then(function(api) {
+          api = api.expand(true);
+          var raml = api.toJSON(jsonOptions);
+          if (raml.specification) {
+            ramlExpander.expandRaml(raml.specification);
+          }
+          return raml;
         });
 
         // ---

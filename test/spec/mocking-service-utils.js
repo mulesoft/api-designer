@@ -1,14 +1,13 @@
 'use strict';
 
 describe('Raml Expander', function () {
-  var ramlParserAdapter, ramlExpander;
+  var ramlParserAdapter;
 
   angular.module('ramlExpanderTest', ['ramlEditorApp']);
   beforeEach(module('ramlExpanderTest'));
 
   beforeEach(inject(function ($injector) {
     ramlParserAdapter = $injector.get('ramlParserAdapter');
-    ramlExpander = $injector.get('ramlExpander');
   }));
 
   describe('Dereference raml', function () {
@@ -50,14 +49,11 @@ describe('Raml Expander', function () {
 
         return Promise.resolve(content ? content : '');
       }).then(function (api) {
-          var raml = ramlParserAdapter.expandApiToJSON(api, true);
-          raml.title.should.be.equal('My RAML');
-          raml.types[0]['lib.MyType'].name.should.be.equal('MyType');
-          raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('lib.MyType');
-          return raml;
-        }
-      ).then(function (raml) {
-        ramlExpander.expandRaml(raml);
+        var raml = api.specification;
+        raml.title.should.be.equal('My RAML');
+        raml.types[0]['lib.MyType'].name.should.be.equal('MyType');
+        // raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('lib.MyType');
+
         raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('object');
         raml.resources[0].methods[0].body['application/json'].properties.name.type[0].should.be.equal('string');
         raml.resources[0].methods[0].body['application/json'].properties.address.type[0].should.be.equal('string');
@@ -114,15 +110,12 @@ describe('Raml Expander', function () {
 
         return Promise.resolve(content ? content : '');
       }).then(function (api) {
-          var raml = ramlParserAdapter.expandApiToJSON(api, true);
-          raml.title.should.be.equal('My RAML');
-          raml.types[0]['lib.MyType'].name.should.be.equal('MyType');
-          raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('array');
-          raml.resources[0].methods[0].body['application/json'].items.should.be.equal('lib.MyType');
-          return raml;
-        }
-      ).then(function (raml) {
-        ramlExpander.expandRaml(raml);
+        var raml = api.specification;
+        raml.title.should.be.equal('My RAML');
+        raml.types[0]['lib.MyType'].name.should.be.equal('MyType');
+        // raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('array');
+        // raml.resources[0].methods[0].body['application/json'].items.should.be.equal('lib.MyType');
+
         raml.resources[0].methods[0].body['application/json'].type[0].should.be.equal('array');
         raml.resources[0].methods[0].body['application/json'].items.name.should.be.equal('MyType');
         raml.resources[0].methods[0].body['application/json'].items.examples[0].name.should.be.equal('A');

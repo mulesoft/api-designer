@@ -23,8 +23,8 @@ describe('RAML Parser adapter', function () {
       });
       loadPath.then(
         function (api) {
-          api.RAMLVersion().should.be.equal('RAML10');
-          api.title().should.be.equal('My RAML');
+          api.ramlVersion.should.be.equal('RAML10');
+          api.specification.title.should.be.equal('My RAML');
           done();
         }
       );
@@ -71,7 +71,7 @@ describe('RAML Parser adapter', function () {
 
       loadPath.then(
         function (api) {
-          var raml = ramlParserAdapter.expandApiToJSON(api, true);
+          var raml = api.specification;
           raml.title.should.be.equal('My RAML');
           raml.types[0]['lib.MyType'].name.should.be.equal('MyType');
           done();
