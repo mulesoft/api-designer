@@ -204,7 +204,7 @@
                 error.from = errorInfo;
                 return error;
               }
-              else {
+              else if (error.trace) {
                 var innerError = findError(error.trace, selectedFile);
                 if (innerError) {
                   innerError.from = error;
@@ -216,20 +216,33 @@
 
           if (needErrorPath) {
             var selectedFile = event.currentScope.fileBrowser.selectedFile;
-            errorInfo = findError(error.trace, selectedFile);
-            errorInfo.isWarning = error.isWarning;
-
             var selectedFilePath = selectedFile.path;
-            var directorySeparator = '/';
-            var lastDirectoryIndex = selectedFilePath.lastIndexOf(directorySeparator) + 1;
-            var folderPath = selectedFilePath.substring(selectedFilePath[0] === directorySeparator ? 1 : 0, lastDirectoryIndex);
-            var rangeFrom = rangePoint(errorInfo.from.range);
+            var lastDirectoryIndex = selectedFilePath.lastIndexOf('/') + 1;
+            var folderPath = selectedFilePath.substring(selectedFilePath[0] === '/' ? 1 : 0, lastDirectoryIndex);
 
-            tracingInfo = {
-              line : rangeFrom.line,
-              column : rangeFrom.column,
-              path : folderPath + errorInfo.from.path
-            };
+            errorInfo = findError(error.trace, selectedFile);
+            if (errorInfo) {
+              errorInfo.isWarning = error.isWarning;
+              var rangeFrom = rangePoint(errorInfo.from.range);
+
+              tracingInfo = {
+                line: rangeFrom.line,
+                column: rangeFrom.column,
+                path: folderPath + errorInfo.from.path
+              };
+            } else {
+              // should not happen... todo parser bug
+              errorInfo = {
+                message: error.message,
+                isWarning: error.isWarning
+              };
+              var traceRange = rangePoint(error.range);
+              tracingInfo = {
+                line : traceRange.line,
+                column : traceRange.column,
+                path : folderPath + error.path
+              };
+            }
           }
 
           var range = rangePoint(errorInfo.range);
