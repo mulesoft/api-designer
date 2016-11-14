@@ -63689,7 +63689,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               if (error.path === selectedFile.name) {
                 error.from = errorInfo;
                 return error;
-              } else {
+              } else if (error.trace) {
                 var innerError = findError(error.trace, selectedFile);
                 if (innerError) {
                   innerError.from = error;
@@ -63994,7 +63994,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         // try to find `baseUri` line
         while (node) {
           if (node.getKey() === 'baseUri') {
-            setLine(node.lineNumber, baseUri, '#');
+            if (node.getValue().text !== $scope.mock.baseUri) {
+              setLine(node.lineNumber, baseUri, '#');
+            }
             return;
           }
           node = node.getNextSibling();
