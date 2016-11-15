@@ -22,11 +22,12 @@
 
 
       function replaceTypeIfExists(raml, type, value) {
+        var valueHasExamples = value.example || value.examples;
         var expandedType = retrieveType(raml, type);
         if (expandedType) {
           for (var key in expandedType) {
             if (expandedType.hasOwnProperty(key)) {
-              if (['example', 'examples'].includes(key) && value[key]) { return; }
+              if (['example', 'examples'].includes(key) && valueHasExamples) { continue; }
               value[key] = expandedType[key];
             }
           }
