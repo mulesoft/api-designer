@@ -230,4 +230,46 @@ describe('mockingServiceClient', function () {
       $httpBackend.flush();
     });
   });
+
+  describe('simplifyMock', function () {
+    it('should exist', function () {
+      should.exist(mockingServiceClient.deleteMock);
+    });
+
+    it('should clean old absolute baseUri', function () {
+      var mock = {
+        baseUri: 'https://mocksvc.mulesoft.com/mocks/5993078a-9472-443e-b6aa-a1da9f4074d6'
+      };
+
+      var newMock  = mockingServiceClient.simplifyMock(mock);
+      newMock.baseUri.should.equal(mock.baseUri);
+    });
+
+    it('should clean old invalid absolute baseUri', function () {
+      var mock = {
+        baseUri: 'https://mocksvc.mulesoft.com/mocks/oldid/mocks/newid'
+      };
+
+      var newMock  = mockingServiceClient.simplifyMock(mock);
+      newMock.baseUri.should.equal('https://mocksvc.mulesoft.com/mocks/newid');
+    });
+
+    it('should clean old relative baseUri', function () {
+      var mock = {
+        baseUri: '/mocks/'
+      };
+
+      var newMock  = mockingServiceClient.simplifyMock(mock);
+      newMock.baseUri.should.equal(mock.baseUri);
+    });
+
+    it('should clean old invalid relative baseUri', function () {
+      var mock = {
+        baseUri: '/mocks/oldid/mocks/newid'
+      };
+
+      var newMock  = mockingServiceClient.simplifyMock(mock);
+      newMock.baseUri.should.equal('/mocks/newid');
+    });
+  });
 });
