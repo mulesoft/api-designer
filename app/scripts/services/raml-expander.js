@@ -12,14 +12,12 @@
 
       // ---
 
-
       function retrieveType(raml, typeName) {
         if (!raml.types) { return; }
 
         var object = raml.types.filter(function (type) { return type[typeName]; })[0];
         return object ? object[typeName] : object;
       }
-
 
       function replaceTypeIfExists(raml, type, value) {
         var valueHasExamples = value.example || value.examples;
@@ -84,8 +82,33 @@
         return [];
       }
 
+      function dereferenceSchemas(raml) {
+        jsTraverse.traverse(raml).forEach(function (value) {
+          if (this.path.slice(-2).join('.') === 'body.application/json' && value.schema) {
+            var schema = value.schema[0];
+            replaceSchemaIfExists(raml, schema, value);
+          }
+        });
+
+      }
+
+      function replaceSchemaIfExists(raml, schema, value) {
+        var expandedSchema = retrieveSchema(raml, schema);
+        if (expandedSchema) {
+          value.schema[0] = expandedSchema.type[0];
+        }
+      }
+
+      function retrieveSchema(raml, schemaName) {
+        if (!raml.schemas) { return; }
+
+        var object = raml.schemas.filter(function (schema) { return schema[schemaName]; })[0];
+        return object ? object[schemaName] : object;
+      }
+
       function expandRaml(raml) {
         dereferenceTypes(raml);
+        dereferenceSchemas(raml);
         dereferenceTypesInArrays(raml);
       }
 
