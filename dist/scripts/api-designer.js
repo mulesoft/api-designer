@@ -6306,6 +6306,10 @@
           this.hasExternalDocs = false;
           this.hasInfo = false;
           this.hasSummary = false;
+          this.hasCollectionFormat = false;
+          this.hasAllowEmptyValue = false;
+          this.hasExclusiveMaximum = false;
+          this.hasExclusiveMinimum = false;
         }
         RAML.prototype = new Exporter();
         RAML.prototype._mapSecurityScheme = function (slSecuritySchemes) {
@@ -6431,6 +6435,13 @@
               case 'default':
               case 'items':
               case 'format':
+              case 'maxItems':
+              case 'minItems':
+              case 'uniqueItems':
+              case '(oas-collectionFormat)':
+              case '(oas-allowEmptyValue)':
+              case '(oas-exclusiveMaximum)':
+              case '(oas-exclusiveMinimum)':
                 break;
               default:
                 //not supported types
@@ -6490,7 +6501,7 @@
             var resBody = responseData[i];
             if (!_.isEmpty(resBody.codes)) {
               var code = resBody.codes[0];
-              if (code === 'default' || parseInt(code) == 'NaN') {
+              if (code === 'default' || parseInt(code) == 'NaN' || _.startsWith(code, 'x-')) {
                 continue;
               }
               responses[code] = {};
@@ -6533,6 +6544,23 @@
               pathParams[key].format = prop.format;
             }
             pathParams[key].type = pathParams[key].type || 'string';
+            //annotation types
+            if (prop.hasOwnProperty('collectionFormat')) {
+              this.hasCollectionFormat = true;
+              pathParams[key]['(oas-collectionFormat)'] = prop.collectionFormat;
+            }
+            if (prop.hasOwnProperty('allowEmptyValue')) {
+              this.hasAllowEmptyValue = true;
+              pathParams[key]['(oas-allowEmptyValue)'] = prop.allowEmptyValue;
+            }
+            if (prop.hasOwnProperty('exclusiveMaximum')) {
+              this.hasExclusiveMaximum = true;
+              pathParams[key]['(oas-exclusiveMaximum)'] = prop.exclusiveMaximum;
+            }
+            if (prop.hasOwnProperty('exclusiveMinimum')) {
+              this.hasExclusiveMinimum = true;
+              pathParams[key]['(oas-exclusiveMinimum)'] = prop.exclusiveMinimum;
+            }
           }
           return this._validateParam(pathParams);
         };
@@ -6687,44 +6715,117 @@
           }
           return mt;
         }
+        RAML.prototype._annotationsSignature = function (ramlDef) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasCollectionFormat || this.hasAllowEmptyValue || this.hasExclusiveMaximum || this.hasExclusiveMinimum) {
+            if (!ramlDef.annotationTypes) {
+              ramlDef.annotationTypes = {};
+            }
+            if (this.hasTags) {
+              ramlDef.annotationTypes['oas-tags'] = 'string[]';
+            }
+            if (this.hasDeprecated) {
+              ramlDef.annotationTypes['oas-deprecated'] = 'boolean';
+            }
+            if (this.hasSummary) {
+              ramlDef.annotationTypes['oas-summary'] = 'string';
+            }
+            if (this.hasAllowEmptyValue) {
+              ramlDef.annotationTypes['oas-allowEmptyValue'] = 'boolean';
+            }
+            if (this.hasExclusiveMaximum) {
+              ramlDef.annotationTypes['oas-exclusiveMaximum'] = 'boolean';
+            }
+            if (this.hasExclusiveMinimum) {
+              ramlDef.annotationTypes['oas-exclusiveMinimum'] = 'boolean';
+            }
+            if (this.hasCollectionFormat) {
+              ramlDef.annotationTypes['oas-collectionFormat'] = 'string';
+            }
+            if (this.hasExternalDocs) {
+              ramlDef.annotationTypes['oas-externalDocs'] = {
+                properties: {
+                  'description?': 'string',
+                  'url': 'string'
+                }
+              };
+            }
+            if (this.hasInfo) {
+              ramlDef.annotationTypes['oas-info'] = {
+                properties: {
+                  'termsOfService?': 'string',
+                  'contact?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string',
+                      'email?': 'string'
+                    }
+                  },
+                  'license?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string'
+                    }
+                  }
+                }
+              };
+            }
+          }
+        };
         RAML.prototype._export = function () {
           var env = this.project.Environment;
           var ramlDef = new RAMLDefinition(this.project.Name, env);
           ramlDef.mediaType = this.mapMediaType(env.Consumes, env.Produces);
           this.description(ramlDef, this.project);
+          if (this.project.Environment.extensions) {
+            if (!ramlDef['(oas-info)']) {
+              ramlDef['(oas-info)'] = {};
+            }
+            this._addExtensions(ramlDef, ramlDef['(oas-info)'], this.project.Environment.extensions);
+          }
           if (this.project.Environment.ExternalDocs) {
             this.hasExternalDocs = true;
-            ramlDef['(externalDocs)'] = {
+            ramlDef['(oas-externalDocs)'] = {
               'description': this.project.Environment.ExternalDocs.description,
               'url': this.project.Environment.ExternalDocs.url
             };
+            if (this.project.Environment.ExternalDocs.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-externalDocs)'], this.project.Environment.ExternalDocs.extensions);
+            }
           }
           if (this.project.Environment.contactInfo || this.project.Environment.termsOfService || this.project.Environment.license) {
-            ramlDef['(info)'] = {};
+            if (!ramlDef['(oas-info)']) {
+              ramlDef['(oas-info)'] = {};
+            }
             this.hasInfo = true;
           }
           if (this.project.Environment.contactInfo) {
-            ramlDef['(info)'].contact = {};
+            ramlDef['(oas-info)'].contact = {};
             if (this.project.Environment.contactInfo.name) {
-              ramlDef['(info)'].contact.name = this.project.Environment.contactInfo.name;
+              ramlDef['(oas-info)'].contact.name = this.project.Environment.contactInfo.name;
             }
             if (this.project.Environment.contactInfo.url) {
-              ramlDef['(info)'].contact.url = this.project.Environment.contactInfo.url;
+              ramlDef['(oas-info)'].contact.url = this.project.Environment.contactInfo.url;
             }
             if (this.project.Environment.contactInfo.email) {
-              ramlDef['(info)'].contact.email = this.project.Environment.contactInfo.email;
+              ramlDef['(oas-info)'].contact.email = this.project.Environment.contactInfo.email;
+            }
+            if (this.project.Environment.contactInfo.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-info)'].contact, this.project.Environment.contactInfo.extensions);
             }
           }
           if (this.project.Environment.termsOfService) {
-            ramlDef['(info)'].termsOfService = this.project.Environment.termsOfService;
+            ramlDef['(oas-info)'].termsOfService = this.project.Environment.termsOfService;
           }
           if (this.project.Environment.license) {
-            ramlDef['(info)'].license = {};
+            ramlDef['(oas-info)'].license = {};
             if (this.project.Environment.license.name) {
-              ramlDef['(info)'].license.name = this.project.Environment.license.name;
+              ramlDef['(oas-info)'].license.name = this.project.Environment.license.name;
             }
             if (this.project.Environment.license.url) {
-              ramlDef['(info)'].license.url = this.project.Environment.license.url;
+              ramlDef['(oas-info)'].license.url = this.project.Environment.license.url;
+            }
+            if (this.project.Environment.license.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-info)'].license, this.project.Environment.license.extensions);
             }
           }
           var docs = this._mapTextSections(this.project.Texts);
@@ -6736,6 +6837,13 @@
           var securitySchemes = this._mapSecurityScheme(slSecuritySchemes);
           if (!_.isEmpty(securitySchemes)) {
             ramlDef.securitySchemes = securitySchemes;
+          }
+          if (!_.isEmpty(this.project.endpointExtensions)) {
+            if (!ramlDef['(oas-paths)']) {
+              ramlDef['(oas-paths)'] = {};
+            }
+            this._addExtensions(ramlDef, ramlDef['(oas-paths)'], this.project.endpointExtensions);
+            ramlDef.annotationTypes['oas-paths'] = 'any';
           }
           var endpoints = this.project.Endpoints;
           // Collect endpoints ids from environment resourcesOrder
@@ -6751,13 +6859,16 @@
               continue;
             var endpoint = endpoints[i];
             var method = {};
+            if (endpoint.extensions) {
+              this._addExtensions(ramlDef, method, endpoint.extensions);
+            }
             this.setMethodDisplayName(method, endpoint.operationId || endpoint.Name);
             if (endpoint.Description) {
               method.description = endpoint.Description;
             }
             if (endpoint.Summary) {
               this.hasSummary = true;
-              method['(summary)'] = endpoint.Summary;
+              method['(oas-summary)'] = endpoint.Summary;
             }
             var protocols = mapProtocols(endpoint.protocols);
             if (!_.isEmpty(protocols)) {
@@ -6815,60 +6926,24 @@
             ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method);
             if (endpoint.Tags && !_.isEmpty(endpoint.Tags)) {
               this.hasTags = true;
-              method['(tags)'] = endpoint.Tags;
+              method['(oas-tags)'] = endpoint.Tags;
             }
             if (endpoint.Deprecated) {
               this.hasDeprecated = true;
-              method['(deprecated)'] = endpoint.Deprecated;
+              method['(oas-deprecated)'] = endpoint.Deprecated;
             }
             if (endpoint.ExternalDocs) {
               this.hasExternalDocs = true;
-              method['(externalDocs)'] = {
+              method['(oas-externalDocs)'] = {
                 'description': endpoint.ExternalDocs.description,
                 'url': endpoint.ExternalDocs.url
               };
             }
-          }
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary) {
-            ramlDef.annotationTypes = {};
-            if (this.hasTags) {
-              ramlDef.annotationTypes.tags = 'string[]';
-            }
-            if (this.hasDeprecated) {
-              ramlDef.annotationTypes.deprecated = 'boolean';
-            }
-            if (this.hasSummary) {
-              ramlDef.annotationTypes.summary = 'string';
-            }
-            if (this.hasExternalDocs) {
-              ramlDef.annotationTypes.externalDocs = {
-                properties: {
-                  'description?': 'string',
-                  'url': 'string'
-                }
-              };
-            }
-            if (this.hasInfo) {
-              ramlDef.annotationTypes.info = {
-                properties: {
-                  'termsOfService?': 'string',
-                  'contact?': {
-                    properties: {
-                      'name?': 'string',
-                      'url?': 'string',
-                      'email?': 'string'
-                    }
-                  },
-                  'license?': {
-                    properties: {
-                      'name?': 'string',
-                      'url?': 'string'
-                    }
-                  }
-                }
-              };
+            if (endpoint.responses.extensions) {
+              this._addExtensions(ramlDef, method.responses, endpoint.responses.extensions);
             }
           }
+          this._annotationsSignature(ramlDef);
           if (this.project.Schemas && this.project.Schemas.length > 0) {
             this.addSchema(ramlDef, this.mapSchema(this.project.Schemas));
           }
@@ -6881,7 +6956,19 @@
               delete ramlDef[field];
             }
           }
+          this._addExtensions(ramlDef, ramlDef, this.project.extensions);
           this.data = ramlDef;
+        };
+        RAML.prototype._addExtensions = function (ramlDef, ramlObject, extensions) {
+          for (var key in extensions) {
+            if (!extensions.hasOwnProperty(key))
+              continue;
+            ramlObject['(oas-' + key + ')'] = extensions[key];
+            if (!ramlDef.annotationTypes) {
+              ramlDef.annotationTypes = {};
+            }
+            ramlDef.annotationTypes['oas-' + key] = 'any';
+          }
         };
         RAML.prototype._unescapeYamlIncludes = function (yaml) {
           var start = yaml.indexOf('\'!include ');
@@ -7245,6 +7332,21 @@
             if (!body.properties.hasOwnProperty(i))
               continue;
             var property = body.properties[i];
+            if (property.hasOwnProperty('allowEmptyValue')) {
+              this.hasAllowEmptyValue = true;
+              property['(oas-allowEmptyValue)'] = property.allowEmptyValue;
+              delete property.allowEmptyValue;
+            }
+            if (property.hasOwnProperty('exclusiveMaximum')) {
+              this.hasExclusiveMaximum = true;
+              property['(oas-exclusiveMaximum)'] = property.exclusiveMaximum;
+              delete property.exclusiveMaximum;
+            }
+            if (property.hasOwnProperty('exclusiveMinimum')) {
+              this.hasExclusiveMinimum = true;
+              property['(oas-exclusiveMinimum)'] = property.exclusiveMinimum;
+              delete property.exclusiveMinimum;
+            }
             property.required = false;
           }
           if (bodyData.required && bodyData.required.length > 0) {
@@ -8230,7 +8332,15 @@
             'minLength',
             'pattern',
             'enum',
-            'format'
+            'format',
+            'collectionFormat',
+            'allowEmptyValue',
+            'exclusiveMaximum',
+            'exclusiveMinimum',
+            'maxItems',
+            'minItems',
+            'uniqueItems',
+            'required'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -8284,7 +8394,10 @@
             'enum',
             'multipleOf',
             'items',
-            'format'
+            'format',
+            'collectionFormat',
+            'allowEmptyValue',
+            'required'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -10068,6 +10181,10 @@
             res.codes.push(String(code));
             data.push(res);
           }
+          var extensions = this._getExtensionsFrom(responseBody);
+          if (!_.isEmpty(extensions)) {
+            data.extensions = extensions;
+          }
           return data;
         };
         Swagger.prototype._mapRequestHeaders = function (params, skipParameterRefs) {
@@ -10200,6 +10317,9 @@
           for (var path in this.data.paths) {
             if (!this.data.paths.hasOwnProperty(path))
               continue;
+            if (_.startsWith(path, 'x-'))
+              continue;
+            //avoid custom extensions
             var methods = this.data.paths[path];
             var pathParams = {};
             if (methods.parameters) {
@@ -10215,6 +10335,10 @@
                 continue;
               }
               var endpoint = new Endpoint(currentMethod.summary || '');
+              var extensions = this._getExtensionsFrom(currentMethodResolved);
+              if (!_.isEmpty(extensions)) {
+                endpoint.extensions = extensions;
+              }
               endpoint.Method = method;
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
@@ -10412,6 +10536,50 @@
           }
           return _.values(traits);
         };
+        Swagger.prototype._getExtensionsFrom = function (object) {
+          var result = {};
+          for (var key in object) {
+            if (!object.hasOwnProperty(key))
+              continue;
+            if (_.startsWith(key, 'x-'))
+              result[key] = object[key];
+          }
+          return result;
+        };
+        Swagger.prototype._createExtensions = function () {
+          this.project.extensions = this._getExtensionsFrom(this.data);
+          if (this.data.info) {
+            var infoExtensions = this._getExtensionsFrom(this.data.info);
+            if (!_.isEmpty(infoExtensions)) {
+              this.project.Environment.extensions = infoExtensions;
+            }
+          }
+          if (this.data.info.contact) {
+            var contactExtensions = this._getExtensionsFrom(this.data.info.contact);
+            if (!_.isEmpty(contactExtensions)) {
+              this.project.Environment.contactInfo.extensions = contactExtensions;
+            }
+          }
+          if (this.data.info.license) {
+            var licenseExtensions = this._getExtensionsFrom(this.data.info.license);
+            if (!_.isEmpty(licenseExtensions)) {
+              this.project.Environment.license.extensions = licenseExtensions;
+            }
+          }
+          if (this.data.externalDocs) {
+            var externalDocsExtensions = this._getExtensionsFrom(this.data.externalDocs);
+            if (!_.isEmpty(externalDocsExtensions)) {
+              this.project.Environment.ExternalDocs.extensions = externalDocsExtensions;
+            }
+          }
+          if (this.data.paths) {
+            var endpointExtensions = this._getExtensionsFrom(this.data.paths);
+            if (!_.isEmpty(endpointExtensions)) {
+              this.project.endpointExtensions = {};
+              this.project.endpointExtensions = endpointExtensions;
+            }
+          }
+        };
         Swagger.prototype._import = function () {
           this.project = new Project(this.data.info.title);
           this.project.Description = this.data.info.description || '';
@@ -10473,6 +10641,7 @@
               continue;
             this.project.addSchema(schemas[i]);
           }
+          this._createExtensions();
         };
         module.exports = Swagger;
       },
@@ -14742,7 +14911,7 @@
             if (tag.slice(0, 2) === '!!') {
               tag = 'tag:yaml.org,2002:' + tag.slice(2);
             }
-            type = schema.compiledTypeMap[tag];
+            type = schema.compiledTypeMap['fallback'][tag];
             if (type && _hasOwnProperty.call(type.styleAliases, style)) {
               style = type.styleAliases[style];
             }
@@ -15680,8 +15849,9 @@
               captureSegment(state, captureStart, state.position, true);
               ch = state.input.charCodeAt(++state.position);
               if (ch === 39) {
-                captureStart = captureEnd = state.position;
+                captureStart = state.position;
                 state.position++;
+                captureEnd = state.position;
               } else {
                 return true;
               }
@@ -16286,8 +16456,8 @@
                   break;
                 }
               }
-            } else if (_hasOwnProperty.call(state.typeMap, state.tag)) {
-              type = state.typeMap[state.tag];
+            } else if (_hasOwnProperty.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
+              type = state.typeMap[state.kind || 'fallback'][state.tag];
               if (state.result !== null && type.kind !== state.kind) {
                 throwError(state, 'unacceptable node kind for !<' + state.tag + '> tag; it should be "' + type.kind + '", not "' + state.kind + '"');
               }
@@ -16516,7 +16686,7 @@
           });
           schema[name].forEach(function (currentType) {
             result.forEach(function (previousType, previousIndex) {
-              if (previousType.tag === currentType.tag) {
+              if (previousType.tag === currentType.tag && previousType.kind === currentType.kind) {
                 exclude.push(previousIndex);
               }
             });
@@ -16527,9 +16697,14 @@
           });
         }
         function compileMap() {
-          var result = {}, index, length;
+          var result = {
+              scalar: {},
+              sequence: {},
+              mapping: {},
+              fallback: {}
+            }, index, length;
           function collectType(type) {
-            result[type.tag] = type;
+            result[type.kind][type.tag] = result['fallback'][type.tag] = type;
           }
           for (index = 0, length = arguments.length; index < length; index += 1) {
             arguments[index].forEach(collectType);
@@ -37830,6 +38005,9 @@
           /*<replacement>*/
           var isArray = require('isarray');
           /*</replacement>*/
+          /*<replacement>*/
+          var Duplex;
+          /*</replacement>*/
           Readable.ReadableState = ReadableState;
           /*<replacement>*/
           var EE = require('events').EventEmitter;
@@ -37871,6 +38049,8 @@
           var StringDecoder;
           util.inherits(Readable, Stream);
           function prependListener(emitter, event, fn) {
+            // Sadly this is not cacheable as some libraries bundle their own
+            // event emitter implementation with them.
             if (typeof emitter.prependListener === 'function') {
               return emitter.prependListener(event, fn);
             } else {
@@ -37889,7 +38069,6 @@
                 ];
             }
           }
-          var Duplex;
           function ReadableState(options, stream) {
             Duplex = Duplex || require('./_stream_duplex');
             options = options || {};
@@ -37947,7 +38126,6 @@
               this.encoding = options.encoding;
             }
           }
-          var Duplex;
           function Readable(options) {
             Duplex = Duplex || require('./_stream_duplex');
             if (!(this instanceof Readable))
@@ -38261,7 +38439,7 @@
           // for virtual (non-string, non-buffer) streams, "length" is somewhat
           // arbitrary, and perhaps not very meaningful.
           Readable.prototype._read = function (n) {
-            this.emit('error', new Error('not implemented'));
+            this.emit('error', new Error('_read() is not implemented'));
           };
           Readable.prototype.pipe = function (dest, pipeOpts) {
             var src = this;
@@ -38425,16 +38603,16 @@
               state.pipes = null;
               state.pipesCount = 0;
               state.flowing = false;
-              for (var _i = 0; _i < len; _i++) {
-                dests[_i].emit('unpipe', this);
+              for (var i = 0; i < len; i++) {
+                dests[i].emit('unpipe', this);
               }
               return this;
             }
             // try to find the right one.
-            var i = indexOf(state.pipes, dest);
-            if (i === -1)
+            var index = indexOf(state.pipes, dest);
+            if (index === -1)
               return this;
-            state.pipes.splice(i, 1);
+            state.pipes.splice(index, 1);
             state.pipesCount -= 1;
             if (state.pipesCount === 1)
               state.pipes = state.pipes[0];
@@ -38820,7 +38998,6 @@
             return new Transform(options);
           Duplex.call(this, options);
           this._transformState = new TransformState(this);
-          // when the writable side finishes, then flush out anything remaining.
           var stream = this;
           // start out asking for a readable event once data is transformed.
           this._readableState.needReadable = true;
@@ -38834,10 +39011,11 @@
             if (typeof options.flush === 'function')
               this._flush = options.flush;
           }
+          // When the writable side finishes, then flush out anything remaining.
           this.once('prefinish', function () {
             if (typeof this._flush === 'function')
-              this._flush(function (er) {
-                done(stream, er);
+              this._flush(function (er, data) {
+                done(stream, er, data);
               });
             else
               done(stream);
@@ -38858,7 +39036,7 @@
         // an error, then that'll put the hurt on the whole operation.  If you
         // never call cb(), then you'll never get another chunk.
         Transform.prototype._transform = function (chunk, encoding, cb) {
-          throw new Error('Not implemented');
+          throw new Error('_transform() is not implemented');
         };
         Transform.prototype._write = function (chunk, encoding, cb) {
           var ts = this._transformState;
@@ -38885,9 +39063,11 @@
             ts.needTransform = true;
           }
         };
-        function done(stream, er) {
+        function done(stream, er, data) {
           if (er)
             return stream.emit('error', er);
+          if (data !== null && data !== undefined)
+            stream.push(data);
           // if there's nothing in the write buffer, then that means
           // that nothing more will ever be provided
           var ws = stream._writableState;
@@ -38922,6 +39102,9 @@
               'v0.9.'
             ].indexOf(process.version.slice(0, 5)) > -1 ? setImmediate : processNextTick;
           /*</replacement>*/
+          /*<replacement>*/
+          var Duplex;
+          /*</replacement>*/
           Writable.WritableState = WritableState;
           /*<replacement>*/
           var util = require('core-util-is');
@@ -38955,7 +39138,6 @@
             this.callback = cb;
             this.next = null;
           }
-          var Duplex;
           function WritableState(options, stream) {
             Duplex = Duplex || require('./_stream_duplex');
             options = options || {};
@@ -38972,6 +39154,7 @@
             this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
             // cast to ints.
             this.highWaterMark = ~~this.highWaterMark;
+            // drain event flag.
             this.needDrain = false;
             // at the start of calling end()
             this.ending = false;
@@ -39029,7 +39212,7 @@
             // one allocated and free to use, and we maintain at most two
             this.corkedRequestsFree = new CorkedRequest(this);
           }
-          WritableState.prototype.getBuffer = function writableStateGetBuffer() {
+          WritableState.prototype.getBuffer = function getBuffer() {
             var current = this.bufferedRequest;
             var out = [];
             while (current) {
@@ -39048,13 +39231,34 @@
             } catch (_) {
             }
           }());
-          var Duplex;
+          // Test _writableState for inheritance to account for Duplex streams,
+          // whose prototype chain only points to Readable.
+          var realHasInstance;
+          if (typeof Symbol === 'function' && Symbol.hasInstance) {
+            realHasInstance = Function.prototype[Symbol.hasInstance];
+            Object.defineProperty(Writable, Symbol.hasInstance, {
+              value: function (object) {
+                if (realHasInstance.call(this, object))
+                  return true;
+                return object && object._writableState instanceof WritableState;
+              }
+            });
+          } else {
+            realHasInstance = function (object) {
+              return object instanceof this;
+            };
+          }
           function Writable(options) {
             Duplex = Duplex || require('./_stream_duplex');
-            // Writable ctor is applied to Duplexes, though they're not
-            // instanceof Writable, they're instanceof Readable.
-            if (!(this instanceof Writable) && !(this instanceof Duplex))
+            // Writable ctor is applied to Duplexes, too.
+            // `realHasInstance` is necessary because using plain `instanceof`
+            // would return false, as no `_writableState` property is attached.
+            // Trying to use the custom `instanceof` for Writable here will also break the
+            // Node.js LazyTransform implementation, which has a non-trivial getter for
+            // `_writableState` that would lead to infinite recursion.
+            if (!realHasInstance.call(Writable, this) && !(this instanceof Duplex)) {
               return new Writable(options);
+            }
             this._writableState = new WritableState(options, this);
             // legacy.
             this.writable = true;
@@ -39301,7 +39505,7 @@
             state.bufferProcessing = false;
           }
           Writable.prototype._write = function (chunk, encoding, cb) {
-            cb(new Error('not implemented'));
+            cb(new Error('_write() is not implemented'));
           };
           Writable.prototype._writev = null;
           Writable.prototype.end = function (chunk, encoding, cb) {
