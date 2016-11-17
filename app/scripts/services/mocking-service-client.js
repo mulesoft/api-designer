@@ -22,7 +22,7 @@
 
       function cleanBaseUri(mock) {
         var baseUri       = mock.baseUri;
-        var mocksQuantity = baseUri.match(/mocks/g).length;
+        var mocksQuantity = baseUri.match(/mocks\//g).length;
 
         if (mocksQuantity > 1) {
           var mocks = 'mocks/';
