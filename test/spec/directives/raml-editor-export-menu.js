@@ -1,7 +1,7 @@
 describe('ramlEditorExportMenu', function() {
   'use strict';
 
-  var scope, el, repository, swaggerConverter;
+  var scope, el, repository;
 
   function compileExportMenu() {
     el = compileTemplate('<raml-editor-export-menu></raml-editor-export-menu>', scope);
@@ -22,14 +22,13 @@ describe('ramlEditorExportMenu', function() {
   angular.module('exportMenuTest', ['ramlEditorApp', 'testFs', 'utils']);
   beforeEach(module('exportMenuTest'));
 
-  beforeEach(inject(function($rootScope, ramlRepository, ramlToSwagger) {
+  beforeEach(inject(function($rootScope, ramlRepository) {
     scope = $rootScope.$new();
     scope.fileBrowser = {};
     scope.fileBrowser.currentTarget = {
       path: '/mockFile.raml'
     };
     repository = ramlRepository;
-    swaggerConverter = ramlToSwagger;
     compileExportMenu();
   }));
 
@@ -39,12 +38,10 @@ describe('ramlEditorExportMenu', function() {
   });
 
   describe('export', function() {
-    var zip, json, yaml;
+    var zip;
 
     beforeEach(function() {
       zip = sinon.spy(repository, 'exportFiles');
-      json = sinon.spy(swaggerConverter, 'json');
-      yaml = sinon.spy(swaggerConverter, 'yaml');
     });
 
     it('export to zip', function() {
