@@ -150,8 +150,7 @@ describe('RAML Editor Main Controller', function () {
         }
       };
 
-      var error = {
-        parserErrors: [{
+      var errors = [{
           'code': 11,
           'message': 'Required property "type" is missing',
           'path': 'libraries/album_simple.raml',
@@ -208,12 +207,11 @@ describe('RAML Editor Main Controller', function () {
               ]
             }
           ]
-        }]
-      };
+        }];
       should.not.exist(scope.currentError);
 
       // Act
-      $rootScope.$broadcast('event:raml-parser-error', error);
+      $rootScope.$broadcast('event:raml-parser-error', errors);
 
       // Assert
       annotationsToDisplay.length.should.be.equal(1);

@@ -8,7 +8,7 @@ describe('ramlEditorExportMenu', function() {
   }
 
   function exportZip() {
-    return angular.element(el[0].children[0]).triggerHandler('click');
+    return angular.element(el[0].children[1].children[0]).triggerHandler('click');
   }
 
   function exportJson() {
