@@ -23,9 +23,9 @@ describe('ramlEditorProjectButton', function() {
     angular.element(editor[0].children[1].children[0]).triggerHandler('mouseleave');
   }
 
-  // function openExportSubMenu() {
-  //   angular.element(editor[0].children[1].children[5]).triggerHandler('mouseenter');
-  // }
+  function openExportSubMenu() {
+    angular.element(editor[0].children[1].children[5]).triggerHandler('mouseenter');
+  }
 
   function projectItem(name) {
     return Array.prototype.slice.call(editor.children().children()).filter(function(child) {
@@ -110,11 +110,11 @@ describe('ramlEditorProjectButton', function() {
       hasImportItem().should.be.true;
     });
 
-    // it('export menu is an item', function() {
-    //   sinon.spy(submenuService, 'openSubMenu');
-    //
-    //   openExportSubMenu();
-    //   submenuService.openSubMenu.should.have.been.called;
-    // });
+    it('export menu is an item', function() {
+      sinon.spy(submenuService, 'openSubMenu');
+
+      openExportSubMenu();
+      submenuService.openSubMenu.should.have.been.called;
+    });
   });
 });

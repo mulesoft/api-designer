@@ -11,13 +11,13 @@ describe('ramlEditorExportMenu', function() {
     return angular.element(el[0].children[0]).triggerHandler('click');
   }
 
-  // function exportJson() {
-  //   return angular.element(el[0].children[1].children[1]).triggerHandler('click');
-  // }
-  //
-  // function exportYaml() {
-  //   return angular.element(el[0].children[1].children[2]).triggerHandler('click');
-  // }
+  function exportJson() {
+    return angular.element(el[0].children[1].children[1]).triggerHandler('click');
+  }
+
+  function exportYaml() {
+    return angular.element(el[0].children[1].children[2]).triggerHandler('click');
+  }
 
   angular.module('exportMenuTest', ['ramlEditorApp', 'testFs', 'utils']);
   beforeEach(module('exportMenuTest'));
@@ -52,14 +52,14 @@ describe('ramlEditorExportMenu', function() {
       zip.should.have.been.called;
     });
 
-    // it('export to JSON', function() {
-    //   exportJson();
-    //   json.should.have.been.called;
-    // });
-    //
-    // it('export to YAML', function() {
-    //   exportYaml();
-    //   yaml.should.have.been.called;
-    // });
+    it('export to JSON', function() {
+      exportJson();
+      json.should.have.been.called;
+    });
+
+    it('export to YAML', function() {
+      exportYaml();
+      yaml.should.have.been.called;
+    });
   });
 });
