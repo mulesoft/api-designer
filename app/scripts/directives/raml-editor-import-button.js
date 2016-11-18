@@ -8,7 +8,10 @@
     ) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="importFile()"><i class="fa fa-cloud-download"></i> Import</span>',
+        template:
+          '<li role="import-button" ng-click="importFile()">' +
+            '<a><i class="fa fa-cloud-download"></i> Import</a>' +
+          '</li>',
         link:     function (scope) {
           scope.importFile = function importFile() {
             return importModal.open();

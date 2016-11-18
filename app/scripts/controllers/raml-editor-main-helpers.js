@@ -5,6 +5,7 @@
     .factory('ramlEditorMainHelpers', function ramlEditorMainHelpers() {
       return {
         isRamlFile:          isRamlFile,
+        isApiDefinition:     isApiDefinition,
         isApiDefinitionLike: isApiDefinitionLike
       };
 

@@ -375,11 +375,11 @@
           });
       };
 
-      service.generateFile = function generateFile(parent, name) {
+      service.generateFile = function generateFile(parent, name, ramlVersion, fragmentLabel) {
         return service.createFile(parent, name)
           .then(function (file) {
             if (file.extension === 'raml') {
-              file.contents = ramlSnippets.getEmptyRaml();
+              file.contents = ramlSnippets.getEmptyRaml(ramlVersion, fragmentLabel);
             }
 
             $rootScope.$broadcast('event:raml-editor-file-generated', file);

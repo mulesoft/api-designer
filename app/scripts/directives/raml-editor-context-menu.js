@@ -10,6 +10,7 @@
       ramlRepository,
       newFileService,
       newFolderService,
+      subMenuService,
       scroll
     ) {
       function createActions(target) {
@@ -22,8 +23,14 @@
 
         var newFileAction = {
           label: 'New File',
-          execute: function execute() {
-            return newFileService.prompt(target);
+          fragments: newFileService.files['1.0'],
+          execute: function execute(fragmentLabel) {
+            if (fragmentLabel) {
+              return newFileService.prompt(target, '1.0', fragmentLabel);
+            }
+          },
+          newFile: function newFile() {
+            return newFileService.prompt(target, '0.8');
           }
         };
 
@@ -107,6 +114,16 @@
         restrict:    'E',
         templateUrl: 'views/raml-editor-context-menu.tmpl.html',
         link:         function link(scope, element) {
+          scope.openFileMenu = function (action) {
+            if (action.label === 'New File') {
+              subMenuService.openSubMenu(scope, 'showFileMenu');
+            }
+          };
+
+          scope.closeFileMenu = function () {
+            scope.showFileMenu = false;
+          };
+
           function positionMenu(element, event) {
             var top           = event.pageY;
             var left          = event.pageX;
@@ -122,7 +139,10 @@
             }, 0);
           }
 
-          function close() {
+          function close(e) {
+            if (e && e.target.firstChild.nodeValue.match('New File')) {
+              return;
+            }
             scroll.enable();
             scope.$apply(function () {
               delete contextMenuController.target;

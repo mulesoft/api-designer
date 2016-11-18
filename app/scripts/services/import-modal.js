@@ -98,24 +98,27 @@
       }
 
       function importSwaggerZip (mode) {
-        $scope.importing = true;
-
+				$scope.importing = true;
+	
         return swaggerToRAML.zip(mode.value)
           .then(function (contents) {
-            var filename = extractFileName(mode.value.name, 'raml');
-
-            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+						var filename = extractFileName(mode.value.name, 'raml');
+	
+            return importService.createFile(
+              $scope.rootDirectory, filename, contents
+            );
           })
-          .then(function () {
-            return $modalInstance.close(true);
-          })
-          .catch(function (err) {
-            broadcastError('Failed to parse Swagger: ' + err.message);
-          })
-          .finally(function () {
-            $scope.importing = false;
-          });
-      }
+        .then(function () {
+          $rootScope.$broadcast('event:save-all');
+					return $modalInstance.close(true);
+				})
+				.catch(function (err) {
+					broadcastError('Failed to parse Swagger: ' + err.message);
+				})
+				.finally(function () {
+					$scope.importing = false;
+				});
+			}
 
       $scope.options = [
         {
@@ -155,7 +158,12 @@
           return;
         }
 
+        try {
         return $scope.mode.callback($scope.mode);
+        } catch (err) {
+          $scope.importing = false;
+          broadcastError(err);
+        }
       };
 
       /**

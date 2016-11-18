@@ -77,12 +77,12 @@ module.exports = function(config) {
     ],
 
     preprocessors: {
-      'app/scripts/**/*.js': ['coverage']
+      'app/scripts/**/*.js': 'coverage'
     },
 
     coverageReporter: {
-      type: 'html',
-      dir: 'coverage/'
+      type: "lcov",
+      dir: "coverage/"
     },
 
     // web server port

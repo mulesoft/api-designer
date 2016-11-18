@@ -1,0 +1,18 @@
+<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">
+  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">
+    <a>
+        &nbsp;Raml 1.0
+        <i class="submenu-icon fa fa-caret-right"></i>
+    </a>
+
+    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">
+      <li role="new-raml-{{fragment.name}}" ng-repeat="fragment in notSorted(fragments)" ng-click="newFragmentFile(fragment.label)">
+        <a>&nbsp;{{ fragment.name }}</a>
+      </li>
+    </ul>
+  </li>
+
+  <li role="new-raml-0.8" ng-click="newFile('0.8')">
+    <a>&nbsp;Raml 0.8 API Spec</a>
+  </li>
+</ul>
