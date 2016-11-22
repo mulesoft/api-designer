@@ -3,21 +3,67 @@
 
   angular.module('ramlEditorApp')
     .directive('ramlEditorExportMenu', function ramlEditorExportMenu(
-      ramlRepository) {
-        return {
-          restrict: 'E',
-          template:
-          '<li role="export-zip" ng-click="exportZipFiles()">' +
-            '<a><i class="fa fa-download"></i>&nbsp;Export files</a>' +
-          '</li>',
-          link: function (scope) {
+      ramlRepository,
+      subMenuService,
+      ramlToSwagger,
+      $window,
+      $rootScope) {
+      return {
+        restrict: 'E',
+        templateUrl: 'views/menu/export-menu.tmpl.html',
+        link: function (scope) {
+          scope.xOasExport = scope.xOasExport || window.location.search.indexOf('x-oas-export=true') > -1;
 
-            scope.exportZipFiles = function exportZipFiles() {
-              ramlRepository.exportFiles();
-            };
-
+          function saveFile(yaml, name) {
+            var blob = new Blob([yaml], {type: 'application/json;charset=utf-8'});
+            $window.saveAs(blob, name);
           }
-        };
 
+          function broadcastError(msg) {
+            return $rootScope.$broadcast('event:notification', {
+              message: msg,
+              expires: true,
+              level: 'error'
+            });
+          }
+
+          function replaceExtension (path, ext) {
+            var index = path.lastIndexOf('.');
+            if (index > -1) {
+              path = path.substr(0, index);
+            }
+            return path + '.' + ext;
+          }
+
+          scope.openExportMenu = function () {
+            subMenuService.openSubMenu(scope, 'showExportMenu');
+          };
+
+          scope.closeExportMenu = function () {
+            scope.showExportMenu = false;
+          };
+
+          scope.exportZipFiles = function exportZipFiles() {
+            ramlRepository.exportFiles();
+          };
+
+          scope.exportJsonFiles = function exportJsonFiles() {
+            ramlToSwagger.json().then(function (convert) {
+              var lines = JSON.stringify(convert.contents, null, 2);
+              saveFile(lines, replaceExtension(convert.name, 'json'));
+            }).catch(function (error) {
+              broadcastError(error);
+            });
+          };
+
+          scope.exportYamlFiles = function exportYamlFiles() {
+            ramlToSwagger.yaml().then(function (convert) {
+              saveFile(convert.contents, replaceExtension(convert.name, 'yaml'));
+            }).catch(function (error) {
+              broadcastError(error);
+            });
+          };
+        }
+      };
     });
 })();

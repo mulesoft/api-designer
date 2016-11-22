@@ -13,8 +13,7 @@
             templateUrl: 'views/import-modal.html',
             controller:  'ImportController'
           })
-          .result
-          ;
+          .result;
       };
 
       return self;
@@ -81,7 +80,7 @@
         $scope.importing = true;
 
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.convert(mode.value)
+        return swaggerToRAML.url(mode.value)
           .then(function (contents) {
             var filename = extractFileName(mode.value, 'raml');
             return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
@@ -97,19 +96,23 @@
           });
       }
 
-      function importSwaggerZip (mode) {
+      function importSwaggerFile (mode) {
 				$scope.importing = true;
 	
-        return swaggerToRAML.zip(mode.value)
-          .then(function (contents) {
+				var importSwaggerPromise;
+				if (importService.isZip(mode.value)) {
+					importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
+						$rootScope.$broadcast('event:save-all');
+					});
+				} else {
+					importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
 						var filename = extractFileName(mode.value.name, 'raml');
-	
-            return importService.createFile(
-              $scope.rootDirectory, filename, contents
-            );
-          })
+						return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+					});
+				}
+
+        return importSwaggerPromise
         .then(function () {
-          $rootScope.$broadcast('event:save-all');
 					return $modalInstance.close(true);
 				})
 				.catch(function (err) {
@@ -122,19 +125,22 @@
 
       $scope.options = [
         {
-          name: 'file',
+          name: 'RAML file',
           type: 'file',
+          spec: 'RAML',
           callback: importFile
         },
         {
-          name: 'Swagger spec',
-          type: 'swagger',
-          callback: importSwagger
+          name: 'OAS file',
+          type: 'file',
+          spec: 'OAS',
+          callback: importSwaggerFile
         },
         {
-          name: 'Swagger .zip',
-          type: 'zip',
-          callback: importSwaggerZip
+          name: 'OAS spec',
+          type: 'url',
+          spec: 'OAS',
+          callback: importSwagger
         }
       ];
 

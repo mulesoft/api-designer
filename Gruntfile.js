@@ -333,6 +333,17 @@ module.exports = function (grunt) {
     },
 
     browserify: {
+      apiSpecTransformer: {
+        options: {
+          transform: ['browserify-global-shim'],
+          browserifyOptions: {
+            standalone: 'apiSpecTransformer'
+          }
+        },
+        files: {
+          '.tmp/api-spec-transformer/api-spec-transformer.js': 'node_modules/api-spec-transformer/index.js'
+        }
+      },
       jsTraverse: {
         options: {
           browserifyOptions: {
@@ -375,6 +386,7 @@ module.exports = function (grunt) {
   grunt.registerTask('server', [
     'jshint-once',
     'browserify:jsTraverse',
+    'browserify:apiSpecTransformer',
     'less-and-autoprefixer',
     'connect:livereload',
     'open',
@@ -386,6 +398,7 @@ module.exports = function (grunt) {
     'clean:build',
     'browserify:jsTraverse',
     'browserify:ramlSuggestions',
+    'browserify:apiSpecTransformer',
     'useminPrepare',
     'less-and-autoprefixer',
     'ngtemplates',
