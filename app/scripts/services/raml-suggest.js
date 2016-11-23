@@ -204,6 +204,24 @@ angular.module('ramlEditorApp')
       return suggestion;
     }
 
+    function addTextSnippets(editor, suggestions) {
+      var ch = editor.getCursor().ch;
+      var addNewResource = ch === 0 || suggestions.find(function (s) {
+          return s.category === 'methods' ? s : null;
+        });
+
+      if (addNewResource) {
+        var spaces = '\n' + new Array(ch + 1).join(' ') + '  ';
+        return suggestions.concat({
+          text: '/newResource:' + spaces + 'displayName: resourceName' + spaces,
+          displayText: 'New Resource',
+          category: 'resources'
+        });
+      }
+
+      return suggestions;
+    }
+
     this.getSuggestions = function(homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
       var fsResolver = new FSResolver(homeDirectory, ramlRepository);
@@ -217,7 +235,8 @@ angular.module('ramlEditorApp')
           function () { return []; }
         )
         .then(function (suggestions) { return suggestions.map(beautifyCategoryName); })
-        .then(function (suggestions) { return suggestions.map(ensureTextFieldNotUndefined); });
+        .then(function (suggestions) { return suggestions.map(ensureTextFieldNotUndefined); })
+        .then(function (suggestions) { return addTextSnippets(editor, suggestions); });
     };
 
     // class methods
