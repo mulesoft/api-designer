@@ -6310,6 +6310,8 @@
           this.hasAllowEmptyValue = false;
           this.hasExclusiveMaximum = false;
           this.hasExclusiveMinimum = false;
+          this.hasSchemaTitle = false;
+          this.hasBodyName = false;
         }
         RAML.prototype = new Exporter();
         RAML.prototype._mapSecurityScheme = function (slSecuritySchemes) {
@@ -6460,11 +6462,15 @@
           switch (mimeType) {
           case 'application/json':
             body[mimeType] = this.mapBody(bodyData);
+            if (bodyData.name) {
+              this.hasBodyName = true;
+              body[mimeType]['(oas-body-name)'] = bodyData.name;
+            }
             break;
           case 'multipart/form-data':
           case 'application/x-www-form-urlencoded':
             var parsedBody = jsonHelper.parse(bodyData.body);
-            body[mimeType] = this.mapRequestBodyForm(parsedBody);
+            body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody));
             break;
           default:  //unsuported format
                     //TODO
@@ -6507,7 +6513,8 @@
               responses[code] = {};
               var type = mimeType;
               if (type) {
-                var body = this.mapBody(resBody);
+                var body = this.mapBody(resBody, type);
+                this.convertRequiredFromProperties(body);
                 if (!_.isEmpty(body)) {
                   responses[code].body = {};
                   responses[code]['body'][type] = body;
@@ -6614,12 +6621,16 @@
                 } else if (id == 'include') {
                   object.type = '!include ' + val;
                   delete object[id];
+                } else if (id === 'title') {
+                  object['(oas-schema-title)'] = val;
+                  this.hasSchemaTitle = true;
+                  delete object[id];
                 }
               } else if (val && typeof val === 'object') {
                 if (val.type == 'string') {
                   if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
                     object[id]['type'] = 'string';
-                    delete object[id].format;
+                    val['facets'] = { 'format': 'string' };
                   } else if (val.format == 'date') {
                     object[id]['type'] = 'date-only';
                     delete object[id].format;
@@ -6627,13 +6638,12 @@
                     object[id]['type'] = 'datetime';
                     object[id]['format'] = 'rfc3339';
                   } else {
-                    //remove invalid format.
-                    if (ramlHelper.getValidFormat.indexOf(val.format) < 0) {
-                      delete object[id].format;
+                    if (val.format && ramlHelper.getValidFormat.indexOf(val.format) < 0) {
+                      val['facets'] = { 'format': 'string' };
                     }
                   }
                   if (val.readOnly) {
-                    delete object[id].readOnly;
+                    val['facets'] = { 'readOnly?': 'boolean' };
                   }
                 } else {
                   object[id] = this.convertRefFromModel(val);
@@ -6652,58 +6662,50 @@
           var traits = this.initializeTraits();
           // var traits = [];
           // var traitMap = {};
-          for (var i in slTraits) {
-            if (!slTraits.hasOwnProperty(i))
-              continue;
-            var slTrait = slTraits[i], trait = {};
-            try {
-              var queryString = jsonHelper.parse(slTrait.request.queryString);
-              if (!jsonHelper.isEmptySchema(queryString)) {
-                trait.queryParameters = this._mapNamedParams(queryString);
-              }
-            } catch (e) {
-            }
-            try {
-              var headers = jsonHelper.parse(slTrait.request.headers);
-              if (!jsonHelper.isEmptySchema(headers)) {
-                trait.headers = this._mapNamedParams(headers);
-              }
-            } catch (e) {
-            }
-            try {
-              if (slTrait.responses && slTrait.responses.length) {
-                trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
-              }
-            } catch (e) {
-            }
-            this.addTrait(slTrait.name, trait, traits);  //   var traitKey = _.camelCase(slTrait.name);
-                                                         //   var newTrait = {};
-                                                         //   newTrait[traitKey] = trait;
-                                                         //   traits.push(newTrait);
-                                                         //   traitMap[traitKey] = trait;
-          }
+          // for (var i in slTraits) {
+          //   if (!slTraits.hasOwnProperty(i)) continue;
+          //   var slTrait = slTraits[i],
+          //       trait = {};
           //
-          // if (this.version() === '1.0') {
-          //   return traitMap;
+          // try {
+          //     var queryString = jsonHelper.parse(slTrait.request.queryString);
+          //     if (!jsonHelper.isEmptySchema(queryString)) {
+          //       trait.queryParameters = this._mapNamedParams(queryString);
+          //     }
+          // } catch(e) {}
+          //
+          // try {
+          //     var headers = jsonHelper.parse(slTrait.request.headers);
+          //     if (!jsonHelper.isEmptySchema(headers)) {
+          //       trait.headers = this._mapNamedParams(headers);
+          //     }
+          // } catch(e) {}
+          //
+          // try {
+          //     if (slTrait.responses && slTrait.responses.length) {
+          //       trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
+          //     }
+          // } catch(e) {}
+          //
+          // this.addTrait(slTrait.name, trait, traits);
+          //
           // }
           return traits;
         };
-        RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
-          var is = [];
-          for (var i in endpoint.traits) {
-            if (!endpoint.traits.hasOwnProperty(i))
-              continue;
-            var trait = _.find(slTraits, [
-                '_id',
-                endpoint.traits[i]
-              ]);
-            if (!trait) {
-              continue;
-            }
-            is.push(_.camelCase(trait.name));
-          }
-          return is;
-        };
+        // RAML.prototype._mapEndpointTraits = function(slTraits, endpoint) {
+        //   var is = [];
+        //
+        //   for (var i in endpoint.traits) {
+        //     if (!endpoint.traits.hasOwnProperty(i)) continue;
+        //     var trait = _.find(slTraits, ['_id', endpoint.traits[i]]);
+        //     if (!trait) {
+        //       continue;
+        //     }
+        //     is.push(_.camelCase(trait.name));
+        //   }
+        //
+        //   return is;
+        // };
         function getDefaultMimeType(mimeType, defMimeType) {
           var mt = mimeType && mimeType.length > 0 ? mimeType[0] : null;
           if (!mt) {
@@ -6716,37 +6718,62 @@
           return mt;
         }
         RAML.prototype._annotationsSignature = function (ramlDef) {
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasCollectionFormat || this.hasAllowEmptyValue || this.hasExclusiveMaximum || this.hasExclusiveMinimum) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasCollectionFormat || this.hasAllowEmptyValue || this.hasExclusiveMaximum || this.hasExclusiveMinimum || this.hasSchemaTitle || this.hasBodyName) {
             if (!ramlDef.annotationTypes) {
               ramlDef.annotationTypes = {};
             }
             if (this.hasTags) {
-              ramlDef.annotationTypes['oas-tags'] = 'string[]';
+              ramlDef.annotationTypes['oas-tags'] = {
+                type: 'string[]',
+                allowedTargets: 'Method'
+              };
             }
             if (this.hasDeprecated) {
-              ramlDef.annotationTypes['oas-deprecated'] = 'boolean';
+              ramlDef.annotationTypes['oas-deprecated'] = {
+                type: 'boolean',
+                allowedTargets: 'Method'
+              };
             }
             if (this.hasSummary) {
-              ramlDef.annotationTypes['oas-summary'] = 'string';
+              ramlDef.annotationTypes['oas-summary'] = {
+                type: 'string',
+                allowedTargets: 'Method'
+              };
             }
             if (this.hasAllowEmptyValue) {
-              ramlDef.annotationTypes['oas-allowEmptyValue'] = 'boolean';
+              ramlDef.annotationTypes['oas-allowEmptyValue'] = {
+                type: 'boolean',
+                allowedTargets: 'TypeDeclaration'
+              };
             }
             if (this.hasExclusiveMaximum) {
-              ramlDef.annotationTypes['oas-exclusiveMaximum'] = 'boolean';
+              ramlDef.annotationTypes['oas-exclusiveMaximum'] = {
+                type: 'boolean',
+                allowedTargets: 'TypeDeclaration'
+              };
             }
             if (this.hasExclusiveMinimum) {
-              ramlDef.annotationTypes['oas-exclusiveMinimum'] = 'boolean';
+              ramlDef.annotationTypes['oas-exclusiveMinimum'] = {
+                type: 'boolean',
+                allowedTargets: 'TypeDeclaration'
+              };
             }
             if (this.hasCollectionFormat) {
-              ramlDef.annotationTypes['oas-collectionFormat'] = 'string';
+              ramlDef.annotationTypes['oas-collectionFormat'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
+              };
             }
             if (this.hasExternalDocs) {
               ramlDef.annotationTypes['oas-externalDocs'] = {
                 properties: {
                   'description?': 'string',
                   'url': 'string'
-                }
+                },
+                allowedTargets: [
+                  'API',
+                  'Method'
+                ]
               };
             }
             if (this.hasInfo) {
@@ -6766,7 +6793,20 @@
                       'url?': 'string'
                     }
                   }
-                }
+                },
+                allowedTargets: 'API'
+              };
+            }
+            if (this.hasSchemaTitle) {
+              ramlDef.annotationTypes['oas-schema-title'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasBodyName) {
+              ramlDef.annotationTypes['oas-body-name'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
               };
             }
           }
@@ -6776,6 +6816,9 @@
           var ramlDef = new RAMLDefinition(this.project.Name, env);
           ramlDef.mediaType = this.mapMediaType(env.Consumes, env.Produces);
           this.description(ramlDef, this.project);
+          if (this.project.tags) {
+            this._addTags(ramlDef, this.project.tags);
+          }
           if (this.project.Environment.extensions) {
             if (!ramlDef['(oas-info)']) {
               ramlDef['(oas-info)'] = {};
@@ -6843,7 +6886,10 @@
               ramlDef['(oas-paths)'] = {};
             }
             this._addExtensions(ramlDef, ramlDef['(oas-paths)'], this.project.endpointExtensions);
-            ramlDef.annotationTypes['oas-paths'] = 'any';
+            ramlDef.annotationTypes['oas-paths'] = {
+              type: 'any',
+              allowedTargets: 'API'
+            };
           }
           var endpoints = this.project.Endpoints;
           // Collect endpoints ids from environment resourcesOrder
@@ -6874,10 +6920,10 @@
             if (!_.isEmpty(protocols)) {
               method.protocols = protocols;
             }
-            var is = this._mapEndpointTraits(this.project.Traits, endpoint);
-            if (is.length) {
-              method.is = is;
-            }
+            // var is = this._mapEndpointTraits(this.project.Traits, endpoint);
+            // if (is.length) {
+            //   method.is = is;
+            // }
             if (endpoint.Method.toLowerCase() === 'post' || endpoint.Method.toLowerCase() === 'put' || endpoint.Method.toLowerCase() === 'patch') {
               var mimeType = getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
               var body = this._mapRequestBody(endpoint.Body, mimeType);
@@ -6943,12 +6989,14 @@
               this._addExtensions(ramlDef, method.responses, endpoint.responses.extensions);
             }
           }
-          this._annotationsSignature(ramlDef);
           if (this.project.Schemas && this.project.Schemas.length > 0) {
             this.addSchema(ramlDef, this.mapSchema(this.project.Schemas));
           }
           if (this.project.Traits && this.project.Traits.length > 0) {
-            ramlDef.traits = this._mapTraits(this.project.Traits);
+            var traits = this._mapTraits(this.project.Traits);
+            if (!_.isEmpty(traits)) {
+              ramlDef.traits = traits;
+            }
           }
           // Clean empty field in definition
           for (var field in ramlDef) {
@@ -6956,8 +7004,38 @@
               delete ramlDef[field];
             }
           }
+          this._annotationsSignature(ramlDef);
           this._addExtensions(ramlDef, ramlDef, this.project.extensions);
           this.data = ramlDef;
+        };
+        RAML.prototype._addTags = function (ramlDef, tags) {
+          if (_.isEmpty(tags))
+            return;
+          ramlDef['(oas-tags-definition)'] = [];
+          if (!ramlDef.annotationTypes) {
+            ramlDef.annotationTypes = {};
+          }
+          ramlDef.annotationTypes['oas-tags-definition'] = {
+            type: 'array',
+            items: {
+              properties: {
+                name: 'string',
+                'description?': 'string',
+                'externalDocs?': {
+                  properties: {
+                    url: 'string',
+                    'description?': 'string'
+                  }
+                }
+              }
+            },
+            allowedTargets: 'API'
+          };
+          for (var key in tags) {
+            if (!tags.hasOwnProperty(key))
+              continue;
+            ramlDef['(oas-tags-definition)'].push(tags[key]);
+          }
         };
         RAML.prototype._addExtensions = function (ramlDef, ramlObject, extensions) {
           for (var key in extensions) {
@@ -6988,6 +7066,37 @@
             throw Error('RAML doesn not support ' + format + ' format');
           }
         };
+        RAML.prototype.convertRequiredFromProperties = function (object) {
+          if (!object)
+            return object;
+          for (var id in object.properties) {
+            if (!object.properties.hasOwnProperty(id))
+              continue;
+            var property = object.properties[id];
+            if (property.properties) {
+              this.convertRequiredFromProperties(property);
+            }
+            if (!this.checkRequiredProperty(object, id)) {
+              property.required = false;
+            }
+          }
+          delete object.required;
+        };
+        RAML.prototype.checkRequiredProperty = function (object, paramName) {
+          if (!object.required)
+            return false;
+          if (object.required && object.required.length > 0) {
+            for (var j in object.required) {
+              if (!object.required.hasOwnProperty(j))
+                continue;
+              var requiredParam = object.required[j];
+              if (requiredParam === paramName) {
+                return true;
+              }
+            }
+          }
+          return false;
+        };
         RAML.prototype.description = function (ramlDef, project) {
           throw new Error('description method not implemented');
         };
@@ -6997,7 +7106,7 @@
         RAML.prototype.mapAuthorizationGrants = function (flow) {
           throw new Error('mapAuthorizationGrants method not implemented');
         };
-        RAML.prototype.mapBody = function (bodyData) {
+        RAML.prototype.mapBody = function (bodyData, type) {
           throw new Error('mapBody method not implemented');
         };
         RAML.prototype.mapRequestBodyForm = function (bodyData) {
@@ -7214,7 +7323,7 @@
           }
           return body;
         };
-        RAML08.prototype.mapBody = function (bodyData) {
+        RAML08.prototype.mapBody = function (bodyData, type) {
           var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body))) };
           var example = jsonHelper.format(bodyData.example);
           if (!_.isEmpty(example)) {
@@ -7312,11 +7421,14 @@
           }
           return ag;
         };
-        RAML10.prototype.mapBody = function (bodyData) {
+        RAML10.prototype.mapBody = function (bodyData, type) {
           var body = jsonHelper.parse(bodyData.body);
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
             result.example = jsonHelper.parse(bodyData.example);
+            if (result.example[type]) {
+              result.example = result.example[type];
+            }
           }
           return result;
         };
@@ -7432,23 +7544,7 @@
           return results;
         };
         RAML10.prototype.mapSchemaProperties = function (definition) {
-          for (var k in definition.properties) {
-            if (!definition.properties.hasOwnProperty(k))
-              continue;
-            var property = definition.properties[k];
-            property.required = false;
-          }
-          if (definition.required && definition.required.length > 0) {
-            for (var j in definition.required) {
-              if (!definition.required.hasOwnProperty(j))
-                continue;
-              var requiredParam = definition.required[j];
-              if (definition['properties'][requiredParam]) {
-                delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
-              }
-            }
-            delete definition.required;
-          }
+          this.convertRequiredFromProperties(definition);
           if (definition.additionalProperties) {
             definition.properties['//'] = definition.additionalProperties;
             delete definition.additionalProperties;
@@ -9034,6 +9130,22 @@
             throw e;
           }
         };
+        RAML.prototype.convertRequiredFromProperties = function (object) {
+          if (!object)
+            return object;
+          for (var id in object.properties) {
+            if (!object.properties.hasOwnProperty(id))
+              continue;
+            var param = object.properties[id];
+            if (!param.hasOwnProperty('required') || param.required == true) {
+              if (!object.required) {
+                object.required = [];
+              }
+              object.required.push(id);
+              delete param.required;
+            }
+          }
+        };
         RAML.prototype.description = function (project, data) {
           throw new Error('description method not implemented');
         };
@@ -9536,6 +9648,7 @@
               switch (data.mimeType) {
               case 'application/json':
                 data.body = { 'properties': this.convertRefToModel(mimeType.properties) };
+                this.convertRequiredFromProperties(data.body);
                 break;
               case 'multipart/form-data':
               case 'application/x-www-form-urlencoded':
@@ -9950,7 +10063,7 @@
         function Swagger() {
           this.dereferencedAPI = null;
         }
-        var referenceRegex = /\/(parameters|responses)\//i;
+        var referenceRegex = /\/(parameters|responses)\/(.+)/i;
         function needDeReferenced(param) {
           if (!param || !param.$ref) {
             return false;
@@ -10115,6 +10228,9 @@
             case 'body':
               mapExample(param.schema, data);
               data.body = param.schema;
+              if (param.name) {
+                data.name = param.name;
+              }
               break;
             default:
               var prop = {};
@@ -10134,58 +10250,69 @@
           }
           return data;
         };
-        Swagger.prototype._mapResponseBody = function (responseBody, skipParameterRefs, resolvedResponses, $refs) {
+        Swagger.prototype._mapResponseBody = function (responses, skipParameterRefs, resolvedResponses, $refs) {
           var data = [];
-          for (var code in responseBody) {
-            if (!responseBody.hasOwnProperty(code))
+          for (var code in responses) {
+            if (!responses.hasOwnProperty(code))
               continue;
             var res = {
                 body: {},
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || _.includes($refs, responseBody[code].$ref))) {
+            var response = responses[code];
+            if (skipParameterRefs && needDeReferenced(response) && (response.$ref.match(/trait/) || _.includes($refs, response.$ref))) {
               continue;
             }
-            // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
-            if (needDeReferenced(responseBody[code]) && resolvedResponses) {
-              schema = resolvedResponses[code].schema;
-              description = jsonHelper.stringify(resolvedResponses[code].description || '');
+            var needBeReferenced = needDeReferenced(response);
+            if (needBeReferenced && resolvedResponses) {
+              var resolvedResponse = this._getResponses(response, resolvedResponses[code]);
+              var schema = resolvedResponse.schema;
+              description = jsonHelper.stringify(resolvedResponse.description || '');
               res.body = schema;
-            } else if (responseBody[code].schema) {
-              var schema = responseBody[code].schema;
-              if (needDeReferenced(responseBody[code].schema)) {
+            } else if (response.schema) {
+              var schema = response.schema;
+              if (needDeReferenced(response.schema)) {
                 description = jsonHelper.stringify(resolvedResponses[code].description || '');
                 schema = resolvedResponses[code].schema;
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples') && !_.isEmpty(responseBody[code].examples)) {
-              var examples = responseBody[code].examples;
-              if (_.isArray(examples)) {
-                for (var t in examples) {
-                  if (!examples.hasOwnProperty(t))
-                    continue;
-                  if (t === resType) {
-                    res.example = jsonHelper.stringify(examples[t], 4);
-                  }
-                }
-              } else {
-                res.example = jsonHelper.stringify(examples, 4);
-              }
-            }
-            if (responseBody[code].hasOwnProperty('headers') && !_.isEmpty(responseBody[code].headers)) {
-              res.headers = { properties: responseBody[code].headers };
-            }
-            res.description = jsonHelper.stringify(description || responseBody[code].description || '');
+            this._mapResponseExample(needBeReferenced ? resolvedResponses[code] : response, res);
+            this._mapResponseHeaders(needBeReferenced ? resolvedResponses[code] : response, res);
+            this._mapResponseDescription(needBeReferenced ? resolvedResponses[code] : response, description, res);
             res.codes.push(String(code));
             data.push(res);
           }
-          var extensions = this._getExtensionsFrom(responseBody);
+          var extensions = this._getExtensionsFrom(responses);
           if (!_.isEmpty(extensions)) {
             data.extensions = extensions;
           }
           return data;
+        };
+        Swagger.prototype._mapResponseDescription = function (responseBody, description, res) {
+          res.description = jsonHelper.stringify(description || responseBody.description || '');
+        };
+        Swagger.prototype._mapResponseHeaders = function (responseBody, res) {
+          if (responseBody.hasOwnProperty('headers') && !_.isEmpty(responseBody.headers)) {
+            res.headers = { properties: responseBody.headers };
+          }
+        };
+        Swagger.prototype._mapResponseExample = function (responseBody, res) {
+          if (responseBody.hasOwnProperty('examples') && !_.isEmpty(responseBody.examples)) {
+            var examples = responseBody.examples;
+            if (_.isArray(examples)) {
+              for (var t in examples) {
+                if (!examples.hasOwnProperty(t))
+                  continue;
+                if (t === resType) {
+                  res.example = jsonHelper.stringify(examples[t], 4);
+                }
+              }
+            } else {
+              res.example = jsonHelper.stringify(examples, 4);
+            }
+          }
         };
         Swagger.prototype._mapRequestHeaders = function (params, skipParameterRefs) {
           var data = {
@@ -10313,6 +10440,58 @@
           traits = traits.concat(this._mapEndpointTrait(responses));
           return _.uniq(traits);
         };
+        Swagger.prototype._getParams = function (params, resolvedParameters, condition) {
+          if (_.isEmpty(params))
+            return params;
+          var result = [];
+          for (var id in params) {
+            if (!params.hasOwnProperty(id))
+              continue;
+            var param = params[id];
+            if (!condition(param)) {
+              continue;
+            }
+            var deReferenced = needDeReferenced(param);
+            var isFilePath = this._isFilePath(param);
+            if ((deReferenced || isFilePath) && resolvedParameters) {
+              if (isFilePath) {
+                param = resolvedParameters[id];
+              } else {
+                var paramName = deReferenced[deReferenced.length - 1];
+                param = this.data.parameters[paramName];
+                if (param.$ref) {
+                  param = resolvedParameters[id];
+                }
+              }
+            }
+            result.push(param);
+          }
+          return result;
+        };
+        Swagger.prototype._getResponses = function (response, resolvedResponse) {
+          var result;
+          var deReferenced = needDeReferenced(response);
+          var isFilePath = this._isFilePath(response);
+          if ((deReferenced || isFilePath) && resolvedResponse) {
+            if (isFilePath) {
+              result = resolvedResponse;
+            } else {
+              var responseName = deReferenced[deReferenced.length - 1];
+              result = this.data.responses[responseName];
+              if (result.$ref) {
+                result = resolvedResponse;
+              }
+            }
+          }
+          return result;
+        };
+        Swagger.prototype._isFilePath = function (param) {
+          if (!param || !param.$ref) {
+            return false;
+          }
+          var filePath = param.$ref.split('#')[0];
+          return filePath.split('.').length == 2;
+        };
         Swagger.prototype._mapEndpoints = function (consumes, produces) {
           for (var path in this.data.paths) {
             if (!this.data.paths.hasOwnProperty(path))
@@ -10320,12 +10499,15 @@
             if (_.startsWith(path, 'x-'))
               continue;
             //avoid custom extensions
-            var methods = this.data.paths[path];
+            var methods = this.data.paths[path].hasOwnProperty('$ref') ? this.dereferencedAPI.paths[path] : this.data.paths[path];
             var pathParams = {};
             if (methods.parameters) {
               var resolvedPathParames = this.dereferencedAPI ? this.dereferencedAPI.paths[path].parameters : methods.parameters;
               pathParams = this._mapURIParams(methods.parameters, resolvedPathParames);
             }
+            var globalParams = this._getParams(methods.parameters, resolvedPathParames, function (param) {
+                return !(param.in && param.in == 'path');
+              });
             for (var method in methods) {
               if (!methods.hasOwnProperty(method))
                 continue;
@@ -10358,7 +10540,9 @@
               //     reqType = this.findDefaultMimeType(currentMethod.consumes);
               //   }
               // }
-              var params = currentMethod.parameters;
+              var params = _.union(this._getParams(currentMethod.parameters, currentMethodResolved.parameters, function (param) {
+                  return true;
+                }), globalParams);
               var c = [];
               if (_.some(params, { 'in': 'body' })) {
                 c.push('application/json');
@@ -10386,7 +10570,7 @@
                 }
               }
               if (endpoint.Method.toLowerCase() !== 'get' && endpoint.Method.toLowerCase() !== 'head') {
-                var body = this._mapRequestBody(currentMethod.parameters, currentMethodResolved.parameters);
+                var body = this._mapRequestBody(params, currentMethodResolved.parameters);
                 if (body) {
                   endpoint.Body = body;
                 }
@@ -10398,10 +10582,10 @@
               //map path params
               endpoint.PathParams = pathParams;
               //map headers
-              endpoint.Headers = this._mapRequestHeaders(currentMethod.parameters, true);
+              endpoint.Headers = this._mapRequestHeaders(params, true);
               //map query string
               // endpoint.QueryString = this._mapQueryString(currentMethod.parameters, true);
-              endpoint.QueryString = this._mapQueryString(currentMethodResolved.parameters, true);
+              endpoint.QueryString = this._mapQueryString(params, true);
               //map response body
               // if (_.isArray(currentMethod.produces)) {
               //   if (_.isEmpty(currentMethod.produces)) {
@@ -10583,6 +10767,7 @@
         Swagger.prototype._import = function () {
           this.project = new Project(this.data.info.title);
           this.project.Description = this.data.info.description || '';
+          this.project.tags = this.data.tags;
           var protocol = 'http';
           if (this.data.schemes && this.data.schemes.length > 0) {
             this.project.Environment.Protocols = this.data.schemes;
@@ -59891,6 +60076,21 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       suggestion.text = suggestion.text || suggestion.displayText || '';
       return suggestion;
     }
+    function addTextSnippets(editor, suggestions) {
+      var ch = editor.getCursor().ch;
+      var addNewResource = ch === 0 || suggestions.find(function (s) {
+          return s.category === 'methods' ? s : null;
+        });
+      if (addNewResource) {
+        var spaces = '\n' + new Array(ch + 1).join(' ') + '  ';
+        return suggestions.concat({
+          text: '/newResource:' + spaces + 'displayName: resourceName' + spaces,
+          displayText: 'New Resource',
+          category: 'resources'
+        });
+      }
+      return suggestions;
+    }
     this.getSuggestions = function (homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
       var fsResolver = new FSResolver(homeDirectory, ramlRepository);
@@ -59904,6 +60104,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return suggestions.map(beautifyCategoryName);
       }).then(function (suggestions) {
         return suggestions.map(ensureTextFieldNotUndefined);
+      }).then(function (suggestions) {
+        return addTextSnippets(editor, suggestions);
       });
     };
     // class methods
@@ -60789,7 +60991,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           templateUrl: 'views/import-modal.html',
           controller: 'ImportController'
         }).result;
-        ;
       };
       return self;
     }
@@ -60798,10 +60999,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$modalInstance',
     'swaggerToRAML',
     '$q',
+    '$window',
     '$rootScope',
     'importService',
     'ramlRepository',
-    function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $rootScope, importService, ramlRepository) {
+    function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $window, $rootScope, importService, ramlRepository) {
       $scope.importing = false;
       $scope.rootDirectory = ramlRepository.getByPath('/');
       // Handles <input type="file" onchange="angular.element(this).scope().handleFileSelect(this)">
@@ -60844,7 +61046,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       function importSwagger(mode) {
         $scope.importing = true;
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.url(mode.value).then(function (contents) {
+        var proxy = $window.RAML.Settings.proxy || '';
+        var url = proxy + mode.value;
+        return swaggerToRAML.url(url).then(function (contents) {
           var filename = extractFileName(mode.value, 'raml');
           return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
         }).then(function () {

@@ -23,6 +23,7 @@
       $modalInstance,
       swaggerToRAML,
       $q,
+      $window,
       $rootScope,
       importService,
       ramlRepository
@@ -80,7 +81,9 @@
         $scope.importing = true;
 
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.url(mode.value)
+        var proxy = $window.RAML.Settings.proxy || '';
+        var url = proxy + mode.value;
+        return swaggerToRAML.url(url)
           .then(function (contents) {
             var filename = extractFileName(mode.value, 'raml');
             return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
