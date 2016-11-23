@@ -5476,7 +5476,7 @@
       {
         './exporters/index': 15,
         './importers/index': 26,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     3: [
@@ -7140,7 +7140,7 @@
         '../utils/json': 34,
         './exporter': 14,
         'js-yaml': 57,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     14: [
@@ -7377,7 +7377,7 @@
       {
         '../utils/json': 34,
         './baseraml': 13,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     17: [
@@ -7579,7 +7579,7 @@
       {
         '../utils/json': 34,
         './baseraml': 13,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     18: [
@@ -7698,7 +7698,7 @@
       {
         './exporter': 14,
         './swagger': 19,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     19: [
@@ -8352,9 +8352,9 @@
         '../utils/strings.js': 35,
         '../utils/url': 36,
         './exporter': 14,
-        'lodash': 110,
-        'swagger-parser': 140,
-        'url': 147
+        'lodash': 111,
+        'swagger-parser': 141,
+        'url': 148
       }
     ],
     20: [
@@ -8467,7 +8467,7 @@
           }
         };
       },
-      { 'lodash': 110 }
+      { 'lodash': 111 }
     ],
     22: [
       function (require, module, exports) {
@@ -8659,7 +8659,7 @@
         './stoplightx': 31,
         './swagger': 32,
         'fs': 40,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     24: [
@@ -9166,8 +9166,8 @@
         '../helpers/raml': 21,
         '../utils/json': 34,
         './importer': 25,
-        'lodash': 110,
-        'url': 147
+        'lodash': 111,
+        'url': 148
       }
     ],
     25: [
@@ -9527,7 +9527,7 @@
         '../utils/url': 36,
         './importer': 25,
         'fs': 40,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     28: [
@@ -9849,7 +9849,7 @@
         '../entities/schema': 7,
         '../utils/json': 34,
         './baseraml': 24,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     30: [
@@ -10054,7 +10054,7 @@
         './importer': 25,
         './swagger': 32,
         'fs': 40,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     32: [
@@ -10839,8 +10839,8 @@
         '../utils/json': 34,
         './importer': 25,
         'js-yaml': 57,
-        'lodash': 110,
-        'swagger-parser': 140
+        'lodash': 111,
+        'swagger-parser': 141
       }
     ],
     33: [
@@ -10973,7 +10973,7 @@
       },
       {
         'json-schema-compatibility': 87,
-        'lodash': 110
+        'lodash': 111
       }
     ],
     35: [
@@ -10997,7 +10997,7 @@
           }
         };
       },
-      { 'lodash': 110 }
+      { 'lodash': 111 }
     ],
     36: [
       function (require, module, exports) {
@@ -11029,7 +11029,7 @@
         };
       },
       {
-        'lodash': 110,
+        'lodash': 111,
         'request': 38
       }
     ],
@@ -13227,7 +13227,7 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 116 }
+      { '_process': 117 }
     ],
     46: [
       function (require, module, exports) {
@@ -13630,7 +13630,7 @@
           return val;
         }
       },
-      { 'ms': 111 }
+      { 'ms': 112 }
     ],
     49: [
       function (require, module, exports) {
@@ -14450,7 +14450,7 @@
           }));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 116 }
+      { '_process': 117 }
     ],
     50: [
       function (require, module, exports) {
@@ -14744,7 +14744,7 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 134 }
+      { 'http': 135 }
     ],
     53: [
       function (require, module, exports) {
@@ -18401,7 +18401,7 @@
         './ref': 98,
         './util/debug': 103,
         './util/url': 106,
-        'ono': 114
+        'ono': 115
       }
     ],
     90: [
@@ -18667,7 +18667,7 @@
         './util/url': 106,
         './util/yaml': 107,
         'call-me-maybe': 45,
-        'ono': 114
+        'ono': 115
       }
     ],
     91: [
@@ -18877,7 +18877,7 @@
         './util/plugins': 104,
         './util/promise': 105,
         './util/url': 106,
-        'ono': 114
+        'ono': 115
       }
     ],
     93: [
@@ -19220,7 +19220,7 @@
       {
         './ref': 98,
         './util/url': 106,
-        'ono': 114
+        'ono': 115
       }
     ],
     98: [
@@ -19614,7 +19614,7 @@
       {
         './ref': 98,
         './util/url': 106,
-        'ono': 114
+        'ono': 115
       }
     ],
     100: [
@@ -19759,7 +19759,7 @@
         '../util/promise': 105,
         '../util/url': 106,
         'fs': 40,
-        'ono': 114
+        'ono': 115
       }
     ],
     102: [
@@ -19870,11 +19870,11 @@
         '../util/debug': 103,
         '../util/promise': 105,
         '../util/url': 106,
-        '_process': 116,
+        '_process': 117,
         'buffer': 42,
-        'http': 134,
+        'http': 135,
         'https': 52,
-        'ono': 114
+        'ono': 115
       }
     ],
     103: [
@@ -20241,8 +20241,8 @@
         }.call(this, require('_process')));
       },
       {
-        '_process': 116,
-        'url': 147
+        '_process': 117,
+        'url': 148
       }
     ],
     107: [
@@ -20283,7 +20283,7 @@
       },
       {
         'js-yaml': 57,
-        'ono': 114
+        'ono': 115
       }
     ],
     108: [
@@ -21142,8 +21142,1420 @@
       function (require, module, exports) {
         (function (global) {
           /**
+ * lodash (Custom Build) <https://lodash.com/>
+ * Build: `lodash modularize exports="npm" -o ./`
+ * Copyright jQuery Foundation and other contributors <https://jquery.org/>
+ * Released under MIT license <https://lodash.com/license>
+ * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
+ * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
+ */
+          /** Used as the size to enable large array optimizations. */
+          var LARGE_ARRAY_SIZE = 200;
+          /** Used to stand-in for `undefined` hash values. */
+          var HASH_UNDEFINED = '__lodash_hash_undefined__';
+          /** Used to compose bitmasks for comparison styles. */
+          var UNORDERED_COMPARE_FLAG = 1, PARTIAL_COMPARE_FLAG = 2;
+          /** Used as references for various `Number` constants. */
+          var MAX_SAFE_INTEGER = 9007199254740991;
+          /** `Object#toString` result references. */
+          var argsTag = '[object Arguments]', arrayTag = '[object Array]', boolTag = '[object Boolean]', dateTag = '[object Date]', errorTag = '[object Error]', funcTag = '[object Function]', genTag = '[object GeneratorFunction]', mapTag = '[object Map]', numberTag = '[object Number]', objectTag = '[object Object]', promiseTag = '[object Promise]', regexpTag = '[object RegExp]', setTag = '[object Set]', stringTag = '[object String]', symbolTag = '[object Symbol]', weakMapTag = '[object WeakMap]';
+          var arrayBufferTag = '[object ArrayBuffer]', dataViewTag = '[object DataView]', float32Tag = '[object Float32Array]', float64Tag = '[object Float64Array]', int8Tag = '[object Int8Array]', int16Tag = '[object Int16Array]', int32Tag = '[object Int32Array]', uint8Tag = '[object Uint8Array]', uint8ClampedTag = '[object Uint8ClampedArray]', uint16Tag = '[object Uint16Array]', uint32Tag = '[object Uint32Array]';
+          /**
+ * Used to match `RegExp`
+ * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
+ */
+          var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
+          /** Used to detect host constructors (Safari). */
+          var reIsHostCtor = /^\[object .+?Constructor\]$/;
+          /** Used to detect unsigned integer values. */
+          var reIsUint = /^(?:0|[1-9]\d*)$/;
+          /** Used to identify `toStringTag` values of typed arrays. */
+          var typedArrayTags = {};
+          typedArrayTags[float32Tag] = typedArrayTags[float64Tag] = typedArrayTags[int8Tag] = typedArrayTags[int16Tag] = typedArrayTags[int32Tag] = typedArrayTags[uint8Tag] = typedArrayTags[uint8ClampedTag] = typedArrayTags[uint16Tag] = typedArrayTags[uint32Tag] = true;
+          typedArrayTags[argsTag] = typedArrayTags[arrayTag] = typedArrayTags[arrayBufferTag] = typedArrayTags[boolTag] = typedArrayTags[dataViewTag] = typedArrayTags[dateTag] = typedArrayTags[errorTag] = typedArrayTags[funcTag] = typedArrayTags[mapTag] = typedArrayTags[numberTag] = typedArrayTags[objectTag] = typedArrayTags[regexpTag] = typedArrayTags[setTag] = typedArrayTags[stringTag] = typedArrayTags[weakMapTag] = false;
+          /** Detect free variable `global` from Node.js. */
+          var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+          /** Detect free variable `self`. */
+          var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+          /** Used as a reference to the global object. */
+          var root = freeGlobal || freeSelf || Function('return this')();
+          /** Detect free variable `exports`. */
+          var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
+          /** Detect free variable `module`. */
+          var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
+          /** Detect the popular CommonJS extension `module.exports`. */
+          var moduleExports = freeModule && freeModule.exports === freeExports;
+          /** Detect free variable `process` from Node.js. */
+          var freeProcess = moduleExports && freeGlobal.process;
+          /** Used to access faster Node.js helpers. */
+          var nodeUtil = function () {
+              try {
+                return freeProcess && freeProcess.binding('util');
+              } catch (e) {
+              }
+            }();
+          /* Node.js helper references. */
+          var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
+          /**
+ * A specialized version of `_.some` for arrays without support for iteratee
+ * shorthands.
+ *
+ * @private
+ * @param {Array} [array] The array to iterate over.
+ * @param {Function} predicate The function invoked per iteration.
+ * @returns {boolean} Returns `true` if any element passes the predicate check,
+ *  else `false`.
+ */
+          function arraySome(array, predicate) {
+            var index = -1, length = array ? array.length : 0;
+            while (++index < length) {
+              if (predicate(array[index], index, array)) {
+                return true;
+              }
+            }
+            return false;
+          }
+          /**
+ * The base implementation of `_.times` without support for iteratee shorthands
+ * or max array length checks.
+ *
+ * @private
+ * @param {number} n The number of times to invoke `iteratee`.
+ * @param {Function} iteratee The function invoked per iteration.
+ * @returns {Array} Returns the array of results.
+ */
+          function baseTimes(n, iteratee) {
+            var index = -1, result = Array(n);
+            while (++index < n) {
+              result[index] = iteratee(index);
+            }
+            return result;
+          }
+          /**
+ * The base implementation of `_.unary` without support for storing metadata.
+ *
+ * @private
+ * @param {Function} func The function to cap arguments for.
+ * @returns {Function} Returns the new capped function.
+ */
+          function baseUnary(func) {
+            return function (value) {
+              return func(value);
+            };
+          }
+          /**
+ * Gets the value at `key` of `object`.
+ *
+ * @private
+ * @param {Object} [object] The object to query.
+ * @param {string} key The key of the property to get.
+ * @returns {*} Returns the property value.
+ */
+          function getValue(object, key) {
+            return object == null ? undefined : object[key];
+          }
+          /**
+ * Checks if `value` is a host object in IE < 9.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
+ */
+          function isHostObject(value) {
+            // Many host objects are `Object` objects that can coerce to strings
+            // despite having improperly defined `toString` methods.
+            var result = false;
+            if (value != null && typeof value.toString != 'function') {
+              try {
+                result = !!(value + '');
+              } catch (e) {
+              }
+            }
+            return result;
+          }
+          /**
+ * Converts `map` to its key-value pairs.
+ *
+ * @private
+ * @param {Object} map The map to convert.
+ * @returns {Array} Returns the key-value pairs.
+ */
+          function mapToArray(map) {
+            var index = -1, result = Array(map.size);
+            map.forEach(function (value, key) {
+              result[++index] = [
+                key,
+                value
+              ];
+            });
+            return result;
+          }
+          /**
+ * Creates a unary function that invokes `func` with its argument transformed.
+ *
+ * @private
+ * @param {Function} func The function to wrap.
+ * @param {Function} transform The argument transform.
+ * @returns {Function} Returns the new function.
+ */
+          function overArg(func, transform) {
+            return function (arg) {
+              return func(transform(arg));
+            };
+          }
+          /**
+ * Converts `set` to an array of its values.
+ *
+ * @private
+ * @param {Object} set The set to convert.
+ * @returns {Array} Returns the values.
+ */
+          function setToArray(set) {
+            var index = -1, result = Array(set.size);
+            set.forEach(function (value) {
+              result[++index] = value;
+            });
+            return result;
+          }
+          /** Used for built-in method references. */
+          var arrayProto = Array.prototype, funcProto = Function.prototype, objectProto = Object.prototype;
+          /** Used to detect overreaching core-js shims. */
+          var coreJsData = root['__core-js_shared__'];
+          /** Used to detect methods masquerading as native. */
+          var maskSrcKey = function () {
+              var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+              return uid ? 'Symbol(src)_1.' + uid : '';
+            }();
+          /** Used to resolve the decompiled source of functions. */
+          var funcToString = funcProto.toString;
+          /** Used to check objects for own properties. */
+          var hasOwnProperty = objectProto.hasOwnProperty;
+          /**
+ * Used to resolve the
+ * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+ * of values.
+ */
+          var objectToString = objectProto.toString;
+          /** Used to detect if a method is native. */
+          var reIsNative = RegExp('^' + funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&').replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$');
+          /** Built-in value references. */
+          var Symbol = root.Symbol, Uint8Array = root.Uint8Array, propertyIsEnumerable = objectProto.propertyIsEnumerable, splice = arrayProto.splice;
+          /* Built-in method references for those with the same name as other `lodash` methods. */
+          var nativeKeys = overArg(Object.keys, Object);
+          /* Built-in method references that are verified to be native. */
+          var DataView = getNative(root, 'DataView'), Map = getNative(root, 'Map'), Promise = getNative(root, 'Promise'), Set = getNative(root, 'Set'), WeakMap = getNative(root, 'WeakMap'), nativeCreate = getNative(Object, 'create');
+          /** Used to detect maps, sets, and weakmaps. */
+          var dataViewCtorString = toSource(DataView), mapCtorString = toSource(Map), promiseCtorString = toSource(Promise), setCtorString = toSource(Set), weakMapCtorString = toSource(WeakMap);
+          /** Used to convert symbols to primitives and strings. */
+          var symbolProto = Symbol ? Symbol.prototype : undefined, symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
+          /**
+ * Creates a hash object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function Hash(entries) {
+            var index = -1, length = entries ? entries.length : 0;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the hash.
+ *
+ * @private
+ * @name clear
+ * @memberOf Hash
+ */
+          function hashClear() {
+            this.__data__ = nativeCreate ? nativeCreate(null) : {};
+          }
+          /**
+ * Removes `key` and its value from the hash.
+ *
+ * @private
+ * @name delete
+ * @memberOf Hash
+ * @param {Object} hash The hash to modify.
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function hashDelete(key) {
+            return this.has(key) && delete this.__data__[key];
+          }
+          /**
+ * Gets the hash value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Hash
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function hashGet(key) {
+            var data = this.__data__;
+            if (nativeCreate) {
+              var result = data[key];
+              return result === HASH_UNDEFINED ? undefined : result;
+            }
+            return hasOwnProperty.call(data, key) ? data[key] : undefined;
+          }
+          /**
+ * Checks if a hash value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Hash
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function hashHas(key) {
+            var data = this.__data__;
+            return nativeCreate ? data[key] !== undefined : hasOwnProperty.call(data, key);
+          }
+          /**
+ * Sets the hash `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Hash
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the hash instance.
+ */
+          function hashSet(key, value) {
+            var data = this.__data__;
+            data[key] = nativeCreate && value === undefined ? HASH_UNDEFINED : value;
+            return this;
+          }
+          // Add methods to `Hash`.
+          Hash.prototype.clear = hashClear;
+          Hash.prototype['delete'] = hashDelete;
+          Hash.prototype.get = hashGet;
+          Hash.prototype.has = hashHas;
+          Hash.prototype.set = hashSet;
+          /**
+ * Creates an list cache object.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function ListCache(entries) {
+            var index = -1, length = entries ? entries.length : 0;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the list cache.
+ *
+ * @private
+ * @name clear
+ * @memberOf ListCache
+ */
+          function listCacheClear() {
+            this.__data__ = [];
+          }
+          /**
+ * Removes `key` and its value from the list cache.
+ *
+ * @private
+ * @name delete
+ * @memberOf ListCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function listCacheDelete(key) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            if (index < 0) {
+              return false;
+            }
+            var lastIndex = data.length - 1;
+            if (index == lastIndex) {
+              data.pop();
+            } else {
+              splice.call(data, index, 1);
+            }
+            return true;
+          }
+          /**
+ * Gets the list cache value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf ListCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function listCacheGet(key) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            return index < 0 ? undefined : data[index][1];
+          }
+          /**
+ * Checks if a list cache value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf ListCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function listCacheHas(key) {
+            return assocIndexOf(this.__data__, key) > -1;
+          }
+          /**
+ * Sets the list cache `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf ListCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the list cache instance.
+ */
+          function listCacheSet(key, value) {
+            var data = this.__data__, index = assocIndexOf(data, key);
+            if (index < 0) {
+              data.push([
+                key,
+                value
+              ]);
+            } else {
+              data[index][1] = value;
+            }
+            return this;
+          }
+          // Add methods to `ListCache`.
+          ListCache.prototype.clear = listCacheClear;
+          ListCache.prototype['delete'] = listCacheDelete;
+          ListCache.prototype.get = listCacheGet;
+          ListCache.prototype.has = listCacheHas;
+          ListCache.prototype.set = listCacheSet;
+          /**
+ * Creates a map cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function MapCache(entries) {
+            var index = -1, length = entries ? entries.length : 0;
+            this.clear();
+            while (++index < length) {
+              var entry = entries[index];
+              this.set(entry[0], entry[1]);
+            }
+          }
+          /**
+ * Removes all key-value entries from the map.
+ *
+ * @private
+ * @name clear
+ * @memberOf MapCache
+ */
+          function mapCacheClear() {
+            this.__data__ = {
+              'hash': new Hash(),
+              'map': new (Map || ListCache)(),
+              'string': new Hash()
+            };
+          }
+          /**
+ * Removes `key` and its value from the map.
+ *
+ * @private
+ * @name delete
+ * @memberOf MapCache
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function mapCacheDelete(key) {
+            return getMapData(this, key)['delete'](key);
+          }
+          /**
+ * Gets the map value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf MapCache
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function mapCacheGet(key) {
+            return getMapData(this, key).get(key);
+          }
+          /**
+ * Checks if a map value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf MapCache
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function mapCacheHas(key) {
+            return getMapData(this, key).has(key);
+          }
+          /**
+ * Sets the map `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf MapCache
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the map cache instance.
+ */
+          function mapCacheSet(key, value) {
+            getMapData(this, key).set(key, value);
+            return this;
+          }
+          // Add methods to `MapCache`.
+          MapCache.prototype.clear = mapCacheClear;
+          MapCache.prototype['delete'] = mapCacheDelete;
+          MapCache.prototype.get = mapCacheGet;
+          MapCache.prototype.has = mapCacheHas;
+          MapCache.prototype.set = mapCacheSet;
+          /**
+ *
+ * Creates an array cache object to store unique values.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [values] The values to cache.
+ */
+          function SetCache(values) {
+            var index = -1, length = values ? values.length : 0;
+            this.__data__ = new MapCache();
+            while (++index < length) {
+              this.add(values[index]);
+            }
+          }
+          /**
+ * Adds `value` to the array cache.
+ *
+ * @private
+ * @name add
+ * @memberOf SetCache
+ * @alias push
+ * @param {*} value The value to cache.
+ * @returns {Object} Returns the cache instance.
+ */
+          function setCacheAdd(value) {
+            this.__data__.set(value, HASH_UNDEFINED);
+            return this;
+          }
+          /**
+ * Checks if `value` is in the array cache.
+ *
+ * @private
+ * @name has
+ * @memberOf SetCache
+ * @param {*} value The value to search for.
+ * @returns {number} Returns `true` if `value` is found, else `false`.
+ */
+          function setCacheHas(value) {
+            return this.__data__.has(value);
+          }
+          // Add methods to `SetCache`.
+          SetCache.prototype.add = SetCache.prototype.push = setCacheAdd;
+          SetCache.prototype.has = setCacheHas;
+          /**
+ * Creates a stack cache object to store key-value pairs.
+ *
+ * @private
+ * @constructor
+ * @param {Array} [entries] The key-value pairs to cache.
+ */
+          function Stack(entries) {
+            this.__data__ = new ListCache(entries);
+          }
+          /**
+ * Removes all key-value entries from the stack.
+ *
+ * @private
+ * @name clear
+ * @memberOf Stack
+ */
+          function stackClear() {
+            this.__data__ = new ListCache();
+          }
+          /**
+ * Removes `key` and its value from the stack.
+ *
+ * @private
+ * @name delete
+ * @memberOf Stack
+ * @param {string} key The key of the value to remove.
+ * @returns {boolean} Returns `true` if the entry was removed, else `false`.
+ */
+          function stackDelete(key) {
+            return this.__data__['delete'](key);
+          }
+          /**
+ * Gets the stack value for `key`.
+ *
+ * @private
+ * @name get
+ * @memberOf Stack
+ * @param {string} key The key of the value to get.
+ * @returns {*} Returns the entry value.
+ */
+          function stackGet(key) {
+            return this.__data__.get(key);
+          }
+          /**
+ * Checks if a stack value for `key` exists.
+ *
+ * @private
+ * @name has
+ * @memberOf Stack
+ * @param {string} key The key of the entry to check.
+ * @returns {boolean} Returns `true` if an entry for `key` exists, else `false`.
+ */
+          function stackHas(key) {
+            return this.__data__.has(key);
+          }
+          /**
+ * Sets the stack `key` to `value`.
+ *
+ * @private
+ * @name set
+ * @memberOf Stack
+ * @param {string} key The key of the value to set.
+ * @param {*} value The value to set.
+ * @returns {Object} Returns the stack cache instance.
+ */
+          function stackSet(key, value) {
+            var cache = this.__data__;
+            if (cache instanceof ListCache) {
+              var pairs = cache.__data__;
+              if (!Map || pairs.length < LARGE_ARRAY_SIZE - 1) {
+                pairs.push([
+                  key,
+                  value
+                ]);
+                return this;
+              }
+              cache = this.__data__ = new MapCache(pairs);
+            }
+            cache.set(key, value);
+            return this;
+          }
+          // Add methods to `Stack`.
+          Stack.prototype.clear = stackClear;
+          Stack.prototype['delete'] = stackDelete;
+          Stack.prototype.get = stackGet;
+          Stack.prototype.has = stackHas;
+          Stack.prototype.set = stackSet;
+          /**
+ * Creates an array of the enumerable property names of the array-like `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @param {boolean} inherited Specify returning inherited property names.
+ * @returns {Array} Returns the array of property names.
+ */
+          function arrayLikeKeys(value, inherited) {
+            // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+            // Safari 9 makes `arguments.length` enumerable in strict mode.
+            var result = isArray(value) || isArguments(value) ? baseTimes(value.length, String) : [];
+            var length = result.length, skipIndexes = !!length;
+            for (var key in value) {
+              if ((inherited || hasOwnProperty.call(value, key)) && !(skipIndexes && (key == 'length' || isIndex(key, length)))) {
+                result.push(key);
+              }
+            }
+            return result;
+          }
+          /**
+ * Gets the index at which the `key` is found in `array` of key-value pairs.
+ *
+ * @private
+ * @param {Array} array The array to inspect.
+ * @param {*} key The key to search for.
+ * @returns {number} Returns the index of the matched value, else `-1`.
+ */
+          function assocIndexOf(array, key) {
+            var length = array.length;
+            while (length--) {
+              if (eq(array[length][0], key)) {
+                return length;
+              }
+            }
+            return -1;
+          }
+          /**
+ * The base implementation of `getTag`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+          function baseGetTag(value) {
+            return objectToString.call(value);
+          }
+          /**
+ * The base implementation of `_.isEqual` which supports partial comparisons
+ * and tracks traversed objects.
+ *
+ * @private
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @param {Function} [customizer] The function to customize comparisons.
+ * @param {boolean} [bitmask] The bitmask of comparison flags.
+ *  The bitmask may be composed of the following flags:
+ *     1 - Unordered comparison
+ *     2 - Partial comparison
+ * @param {Object} [stack] Tracks traversed `value` and `other` objects.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ */
+          function baseIsEqual(value, other, customizer, bitmask, stack) {
+            if (value === other) {
+              return true;
+            }
+            if (value == null || other == null || !isObject(value) && !isObjectLike(other)) {
+              return value !== value && other !== other;
+            }
+            return baseIsEqualDeep(value, other, baseIsEqual, customizer, bitmask, stack);
+          }
+          /**
+ * A specialized version of `baseIsEqual` for arrays and objects which performs
+ * deep comparisons and tracks traversed objects enabling objects with circular
+ * references to be compared.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Function} [customizer] The function to customize comparisons.
+ * @param {number} [bitmask] The bitmask of comparison flags. See `baseIsEqual`
+ *  for more details.
+ * @param {Object} [stack] Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+          function baseIsEqualDeep(object, other, equalFunc, customizer, bitmask, stack) {
+            var objIsArr = isArray(object), othIsArr = isArray(other), objTag = arrayTag, othTag = arrayTag;
+            if (!objIsArr) {
+              objTag = getTag(object);
+              objTag = objTag == argsTag ? objectTag : objTag;
+            }
+            if (!othIsArr) {
+              othTag = getTag(other);
+              othTag = othTag == argsTag ? objectTag : othTag;
+            }
+            var objIsObj = objTag == objectTag && !isHostObject(object), othIsObj = othTag == objectTag && !isHostObject(other), isSameTag = objTag == othTag;
+            if (isSameTag && !objIsObj) {
+              stack || (stack = new Stack());
+              return objIsArr || isTypedArray(object) ? equalArrays(object, other, equalFunc, customizer, bitmask, stack) : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
+            }
+            if (!(bitmask & PARTIAL_COMPARE_FLAG)) {
+              var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'), othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
+              if (objIsWrapped || othIsWrapped) {
+                var objUnwrapped = objIsWrapped ? object.value() : object, othUnwrapped = othIsWrapped ? other.value() : other;
+                stack || (stack = new Stack());
+                return equalFunc(objUnwrapped, othUnwrapped, customizer, bitmask, stack);
+              }
+            }
+            if (!isSameTag) {
+              return false;
+            }
+            stack || (stack = new Stack());
+            return equalObjects(object, other, equalFunc, customizer, bitmask, stack);
+          }
+          /**
+ * The base implementation of `_.isNative` without bad shim checks.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a native function,
+ *  else `false`.
+ */
+          function baseIsNative(value) {
+            if (!isObject(value) || isMasked(value)) {
+              return false;
+            }
+            var pattern = isFunction(value) || isHostObject(value) ? reIsNative : reIsHostCtor;
+            return pattern.test(toSource(value));
+          }
+          /**
+ * The base implementation of `_.isTypedArray` without Node.js optimizations.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ */
+          function baseIsTypedArray(value) {
+            return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[objectToString.call(value)];
+          }
+          /**
+ * The base implementation of `_.keys` which doesn't treat sparse arrays as dense.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ */
+          function baseKeys(object) {
+            if (!isPrototype(object)) {
+              return nativeKeys(object);
+            }
+            var result = [];
+            for (var key in Object(object)) {
+              if (hasOwnProperty.call(object, key) && key != 'constructor') {
+                result.push(key);
+              }
+            }
+            return result;
+          }
+          /**
+ * A specialized version of `baseIsEqualDeep` for arrays with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Array} array The array to compare.
+ * @param {Array} other The other array to compare.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
+ *  for more details.
+ * @param {Object} stack Tracks traversed `array` and `other` objects.
+ * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
+ */
+          function equalArrays(array, other, equalFunc, customizer, bitmask, stack) {
+            var isPartial = bitmask & PARTIAL_COMPARE_FLAG, arrLength = array.length, othLength = other.length;
+            if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
+              return false;
+            }
+            // Assume cyclic values are equal.
+            var stacked = stack.get(array);
+            if (stacked && stack.get(other)) {
+              return stacked == other;
+            }
+            var index = -1, result = true, seen = bitmask & UNORDERED_COMPARE_FLAG ? new SetCache() : undefined;
+            stack.set(array, other);
+            stack.set(other, array);
+            // Ignore non-index properties.
+            while (++index < arrLength) {
+              var arrValue = array[index], othValue = other[index];
+              if (customizer) {
+                var compared = isPartial ? customizer(othValue, arrValue, index, other, array, stack) : customizer(arrValue, othValue, index, array, other, stack);
+              }
+              if (compared !== undefined) {
+                if (compared) {
+                  continue;
+                }
+                result = false;
+                break;
+              }
+              // Recursively compare arrays (susceptible to call stack limits).
+              if (seen) {
+                if (!arraySome(other, function (othValue, othIndex) {
+                    if (!seen.has(othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+                      return seen.add(othIndex);
+                    }
+                  })) {
+                  result = false;
+                  break;
+                }
+              } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+                result = false;
+                break;
+              }
+            }
+            stack['delete'](array);
+            stack['delete'](other);
+            return result;
+          }
+          /**
+ * A specialized version of `baseIsEqualDeep` for comparing objects of
+ * the same `toStringTag`.
+ *
+ * **Note:** This function only supports comparing values with tags of
+ * `Boolean`, `Date`, `Error`, `Number`, `RegExp`, or `String`.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {string} tag The `toStringTag` of the objects to compare.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
+ *  for more details.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+          function equalByTag(object, other, tag, equalFunc, customizer, bitmask, stack) {
+            switch (tag) {
+            case dataViewTag:
+              if (object.byteLength != other.byteLength || object.byteOffset != other.byteOffset) {
+                return false;
+              }
+              object = object.buffer;
+              other = other.buffer;
+            case arrayBufferTag:
+              if (object.byteLength != other.byteLength || !equalFunc(new Uint8Array(object), new Uint8Array(other))) {
+                return false;
+              }
+              return true;
+            case boolTag:
+            case dateTag:
+            case numberTag:
+              // Coerce booleans to `1` or `0` and dates to milliseconds.
+              // Invalid dates are coerced to `NaN`.
+              return eq(+object, +other);
+            case errorTag:
+              return object.name == other.name && object.message == other.message;
+            case regexpTag:
+            case stringTag:
+              // Coerce regexes to strings and treat strings, primitives and objects,
+              // as equal. See http://www.ecma-international.org/ecma-262/7.0/#sec-regexp.prototype.tostring
+              // for more details.
+              return object == other + '';
+            case mapTag:
+              var convert = mapToArray;
+            case setTag:
+              var isPartial = bitmask & PARTIAL_COMPARE_FLAG;
+              convert || (convert = setToArray);
+              if (object.size != other.size && !isPartial) {
+                return false;
+              }
+              // Assume cyclic values are equal.
+              var stacked = stack.get(object);
+              if (stacked) {
+                return stacked == other;
+              }
+              bitmask |= UNORDERED_COMPARE_FLAG;
+              // Recursively compare objects (susceptible to call stack limits).
+              stack.set(object, other);
+              var result = equalArrays(convert(object), convert(other), equalFunc, customizer, bitmask, stack);
+              stack['delete'](object);
+              return result;
+            case symbolTag:
+              if (symbolValueOf) {
+                return symbolValueOf.call(object) == symbolValueOf.call(other);
+              }
+            }
+            return false;
+          }
+          /**
+ * A specialized version of `baseIsEqualDeep` for objects with support for
+ * partial deep comparisons.
+ *
+ * @private
+ * @param {Object} object The object to compare.
+ * @param {Object} other The other object to compare.
+ * @param {Function} equalFunc The function to determine equivalents of values.
+ * @param {Function} customizer The function to customize comparisons.
+ * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
+ *  for more details.
+ * @param {Object} stack Tracks traversed `object` and `other` objects.
+ * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
+ */
+          function equalObjects(object, other, equalFunc, customizer, bitmask, stack) {
+            var isPartial = bitmask & PARTIAL_COMPARE_FLAG, objProps = keys(object), objLength = objProps.length, othProps = keys(other), othLength = othProps.length;
+            if (objLength != othLength && !isPartial) {
+              return false;
+            }
+            var index = objLength;
+            while (index--) {
+              var key = objProps[index];
+              if (!(isPartial ? key in other : hasOwnProperty.call(other, key))) {
+                return false;
+              }
+            }
+            // Assume cyclic values are equal.
+            var stacked = stack.get(object);
+            if (stacked && stack.get(other)) {
+              return stacked == other;
+            }
+            var result = true;
+            stack.set(object, other);
+            stack.set(other, object);
+            var skipCtor = isPartial;
+            while (++index < objLength) {
+              key = objProps[index];
+              var objValue = object[key], othValue = other[key];
+              if (customizer) {
+                var compared = isPartial ? customizer(othValue, objValue, key, other, object, stack) : customizer(objValue, othValue, key, object, other, stack);
+              }
+              // Recursively compare objects (susceptible to call stack limits).
+              if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, customizer, bitmask, stack) : compared)) {
+                result = false;
+                break;
+              }
+              skipCtor || (skipCtor = key == 'constructor');
+            }
+            if (result && !skipCtor) {
+              var objCtor = object.constructor, othCtor = other.constructor;
+              // Non `Object` object instances with different constructors are not equal.
+              if (objCtor != othCtor && ('constructor' in object && 'constructor' in other) && !(typeof objCtor == 'function' && objCtor instanceof objCtor && typeof othCtor == 'function' && othCtor instanceof othCtor)) {
+                result = false;
+              }
+            }
+            stack['delete'](object);
+            stack['delete'](other);
+            return result;
+          }
+          /**
+ * Gets the data for `map`.
+ *
+ * @private
+ * @param {Object} map The map to query.
+ * @param {string} key The reference key.
+ * @returns {*} Returns the map data.
+ */
+          function getMapData(map, key) {
+            var data = map.__data__;
+            return isKeyable(key) ? data[typeof key == 'string' ? 'string' : 'hash'] : data.map;
+          }
+          /**
+ * Gets the native function at `key` of `object`.
+ *
+ * @private
+ * @param {Object} object The object to query.
+ * @param {string} key The key of the method to get.
+ * @returns {*} Returns the function if it's native, else `undefined`.
+ */
+          function getNative(object, key) {
+            var value = getValue(object, key);
+            return baseIsNative(value) ? value : undefined;
+          }
+          /**
+ * Gets the `toStringTag` of `value`.
+ *
+ * @private
+ * @param {*} value The value to query.
+ * @returns {string} Returns the `toStringTag`.
+ */
+          var getTag = baseGetTag;
+          // Fallback for data views, maps, sets, and weak maps in IE 11,
+          // for data views in Edge < 14, and promises in Node.js.
+          if (DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag || Map && getTag(new Map()) != mapTag || Promise && getTag(Promise.resolve()) != promiseTag || Set && getTag(new Set()) != setTag || WeakMap && getTag(new WeakMap()) != weakMapTag) {
+            getTag = function (value) {
+              var result = objectToString.call(value), Ctor = result == objectTag ? value.constructor : undefined, ctorString = Ctor ? toSource(Ctor) : undefined;
+              if (ctorString) {
+                switch (ctorString) {
+                case dataViewCtorString:
+                  return dataViewTag;
+                case mapCtorString:
+                  return mapTag;
+                case promiseCtorString:
+                  return promiseTag;
+                case setCtorString:
+                  return setTag;
+                case weakMapCtorString:
+                  return weakMapTag;
+                }
+              }
+              return result;
+            };
+          }
+          /**
+ * Checks if `value` is a valid array-like index.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @param {number} [length=MAX_SAFE_INTEGER] The upper bounds of a valid index.
+ * @returns {boolean} Returns `true` if `value` is a valid index, else `false`.
+ */
+          function isIndex(value, length) {
+            length = length == null ? MAX_SAFE_INTEGER : length;
+            return !!length && (typeof value == 'number' || reIsUint.test(value)) && (value > -1 && value % 1 == 0 && value < length);
+          }
+          /**
+ * Checks if `value` is suitable for use as unique object key.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is suitable, else `false`.
+ */
+          function isKeyable(value) {
+            var type = typeof value;
+            return type == 'string' || type == 'number' || type == 'symbol' || type == 'boolean' ? value !== '__proto__' : value === null;
+          }
+          /**
+ * Checks if `func` has its source masked.
+ *
+ * @private
+ * @param {Function} func The function to check.
+ * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+ */
+          function isMasked(func) {
+            return !!maskSrcKey && maskSrcKey in func;
+          }
+          /**
+ * Checks if `value` is likely a prototype object.
+ *
+ * @private
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a prototype, else `false`.
+ */
+          function isPrototype(value) {
+            var Ctor = value && value.constructor, proto = typeof Ctor == 'function' && Ctor.prototype || objectProto;
+            return value === proto;
+          }
+          /**
+ * Converts `func` to its source code.
+ *
+ * @private
+ * @param {Function} func The function to process.
+ * @returns {string} Returns the source code.
+ */
+          function toSource(func) {
+            if (func != null) {
+              try {
+                return funcToString.call(func);
+              } catch (e) {
+              }
+              try {
+                return func + '';
+              } catch (e) {
+              }
+            }
+            return '';
+          }
+          /**
+ * Performs a
+ * [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
+ * comparison between two values to determine if they are equivalent.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.eq(object, object);
+ * // => true
+ *
+ * _.eq(object, other);
+ * // => false
+ *
+ * _.eq('a', 'a');
+ * // => true
+ *
+ * _.eq('a', Object('a'));
+ * // => false
+ *
+ * _.eq(NaN, NaN);
+ * // => true
+ */
+          function eq(value, other) {
+            return value === other || value !== value && other !== other;
+          }
+          /**
+ * Checks if `value` is likely an `arguments` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArguments(function() { return arguments; }());
+ * // => true
+ *
+ * _.isArguments([1, 2, 3]);
+ * // => false
+ */
+          function isArguments(value) {
+            // Safari 8.1 makes `arguments.callee` enumerable in strict mode.
+            return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') && (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
+          }
+          /**
+ * Checks if `value` is classified as an `Array` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array, else `false`.
+ * @example
+ *
+ * _.isArray([1, 2, 3]);
+ * // => true
+ *
+ * _.isArray(document.body.children);
+ * // => false
+ *
+ * _.isArray('abc');
+ * // => false
+ *
+ * _.isArray(_.noop);
+ * // => false
+ */
+          var isArray = Array.isArray;
+          /**
+ * Checks if `value` is array-like. A value is considered array-like if it's
+ * not a function and has a `value.length` that's an integer greater than or
+ * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
+ * @example
+ *
+ * _.isArrayLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLike(document.body.children);
+ * // => true
+ *
+ * _.isArrayLike('abc');
+ * // => true
+ *
+ * _.isArrayLike(_.noop);
+ * // => false
+ */
+          function isArrayLike(value) {
+            return value != null && isLength(value.length) && !isFunction(value);
+          }
+          /**
+ * This method is like `_.isArrayLike` except that it also checks if `value`
+ * is an object.
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an array-like object,
+ *  else `false`.
+ * @example
+ *
+ * _.isArrayLikeObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isArrayLikeObject(document.body.children);
+ * // => true
+ *
+ * _.isArrayLikeObject('abc');
+ * // => false
+ *
+ * _.isArrayLikeObject(_.noop);
+ * // => false
+ */
+          function isArrayLikeObject(value) {
+            return isObjectLike(value) && isArrayLike(value);
+          }
+          /**
+ * Performs a deep comparison between two values to determine if they are
+ * equivalent.
+ *
+ * **Note:** This method supports comparing arrays, array buffers, booleans,
+ * date objects, error objects, maps, numbers, `Object` objects, regexes,
+ * sets, strings, symbols, and typed arrays. `Object` objects are compared
+ * by their own, not inherited, enumerable properties. Functions and DOM
+ * nodes are **not** supported.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to compare.
+ * @param {*} other The other value to compare.
+ * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
+ * @example
+ *
+ * var object = { 'a': 1 };
+ * var other = { 'a': 1 };
+ *
+ * _.isEqual(object, other);
+ * // => true
+ *
+ * object === other;
+ * // => false
+ */
+          function isEqual(value, other) {
+            return baseIsEqual(value, other);
+          }
+          /**
+ * Checks if `value` is classified as a `Function` object.
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+ * @example
+ *
+ * _.isFunction(_);
+ * // => true
+ *
+ * _.isFunction(/abc/);
+ * // => false
+ */
+          function isFunction(value) {
+            // The use of `Object#toString` avoids issues with the `typeof` operator
+            // in Safari 8-9 which returns 'object' for typed array and other constructors.
+            var tag = isObject(value) ? objectToString.call(value) : '';
+            return tag == funcTag || tag == genTag;
+          }
+          /**
+ * Checks if `value` is a valid array-like length.
+ *
+ * **Note:** This method is loosely based on
+ * [`ToLength`](http://ecma-international.org/ecma-262/7.0/#sec-tolength).
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a valid length, else `false`.
+ * @example
+ *
+ * _.isLength(3);
+ * // => true
+ *
+ * _.isLength(Number.MIN_VALUE);
+ * // => false
+ *
+ * _.isLength(Infinity);
+ * // => false
+ *
+ * _.isLength('3');
+ * // => false
+ */
+          function isLength(value) {
+            return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
+          }
+          /**
+ * Checks if `value` is the
+ * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
+ * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
+ *
+ * @static
+ * @memberOf _
+ * @since 0.1.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is an object, else `false`.
+ * @example
+ *
+ * _.isObject({});
+ * // => true
+ *
+ * _.isObject([1, 2, 3]);
+ * // => true
+ *
+ * _.isObject(_.noop);
+ * // => true
+ *
+ * _.isObject(null);
+ * // => false
+ */
+          function isObject(value) {
+            var type = typeof value;
+            return !!value && (type == 'object' || type == 'function');
+          }
+          /**
+ * Checks if `value` is object-like. A value is object-like if it's not `null`
+ * and has a `typeof` result of "object".
+ *
+ * @static
+ * @memberOf _
+ * @since 4.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is object-like, else `false`.
+ * @example
+ *
+ * _.isObjectLike({});
+ * // => true
+ *
+ * _.isObjectLike([1, 2, 3]);
+ * // => true
+ *
+ * _.isObjectLike(_.noop);
+ * // => false
+ *
+ * _.isObjectLike(null);
+ * // => false
+ */
+          function isObjectLike(value) {
+            return !!value && typeof value == 'object';
+          }
+          /**
+ * Checks if `value` is classified as a typed array.
+ *
+ * @static
+ * @memberOf _
+ * @since 3.0.0
+ * @category Lang
+ * @param {*} value The value to check.
+ * @returns {boolean} Returns `true` if `value` is a typed array, else `false`.
+ * @example
+ *
+ * _.isTypedArray(new Uint8Array);
+ * // => true
+ *
+ * _.isTypedArray([]);
+ * // => false
+ */
+          var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
+          /**
+ * Creates an array of the own enumerable property names of `object`.
+ *
+ * **Note:** Non-object values are coerced to objects. See the
+ * [ES spec](http://ecma-international.org/ecma-262/7.0/#sec-object.keys)
+ * for more details.
+ *
+ * @static
+ * @since 0.1.0
+ * @memberOf _
+ * @category Object
+ * @param {Object} object The object to query.
+ * @returns {Array} Returns the array of property names.
+ * @example
+ *
+ * function Foo() {
+ *   this.a = 1;
+ *   this.b = 2;
+ * }
+ *
+ * Foo.prototype.c = 3;
+ *
+ * _.keys(new Foo);
+ * // => ['a', 'b'] (iteration order is not guaranteed)
+ *
+ * _.keys('hi');
+ * // => ['0', '1']
+ */
+          function keys(object) {
+            return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
+          }
+          module.exports = isEqual;
+        }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
+      },
+      {}
+    ],
+    111: [
+      function (require, module, exports) {
+        (function (global) {
+          /**
  * @license
- * lodash <https://lodash.com/>
+ * Lodash <https://lodash.com/>
  * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
@@ -21154,21 +22566,23 @@
             /** Used as a safe reference for `undefined` in pre-ES5 environments. */
             var undefined;
             /** Used as the semantic version number. */
-            var VERSION = '4.16.6';
+            var VERSION = '4.17.2';
             /** Used as the size to enable large array optimizations. */
             var LARGE_ARRAY_SIZE = 200;
             /** Error message constants. */
-            var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://github.com/es-shims.', FUNC_ERROR_TEXT = 'Expected a function';
+            var CORE_ERROR_TEXT = 'Unsupported core-js use. Try https://npms.io/search?q=ponyfill.', FUNC_ERROR_TEXT = 'Expected a function';
             /** Used to stand-in for `undefined` hash values. */
             var HASH_UNDEFINED = '__lodash_hash_undefined__';
             /** Used as the maximum memoize cache size. */
             var MAX_MEMOIZE_SIZE = 500;
             /** Used as the internal argument placeholder. */
             var PLACEHOLDER = '__lodash_placeholder__';
+            /** Used to compose bitmasks for cloning. */
+            var CLONE_DEEP_FLAG = 1, CLONE_FLAT_FLAG = 2, CLONE_SYMBOLS_FLAG = 4;
+            /** Used to compose bitmasks for value comparisons. */
+            var COMPARE_PARTIAL_FLAG = 1, COMPARE_UNORDERED_FLAG = 2;
             /** Used to compose bitmasks for function metadata. */
-            var BIND_FLAG = 1, BIND_KEY_FLAG = 2, CURRY_BOUND_FLAG = 4, CURRY_FLAG = 8, CURRY_RIGHT_FLAG = 16, PARTIAL_FLAG = 32, PARTIAL_RIGHT_FLAG = 64, ARY_FLAG = 128, REARG_FLAG = 256, FLIP_FLAG = 512;
-            /** Used to compose bitmasks for comparison styles. */
-            var UNORDERED_COMPARE_FLAG = 1, PARTIAL_COMPARE_FLAG = 2;
+            var WRAP_BIND_FLAG = 1, WRAP_BIND_KEY_FLAG = 2, WRAP_CURRY_BOUND_FLAG = 4, WRAP_CURRY_FLAG = 8, WRAP_CURRY_RIGHT_FLAG = 16, WRAP_PARTIAL_FLAG = 32, WRAP_PARTIAL_RIGHT_FLAG = 64, WRAP_ARY_FLAG = 128, WRAP_REARG_FLAG = 256, WRAP_FLIP_FLAG = 512;
             /** Used as default options for `_.truncate`. */
             var DEFAULT_TRUNC_LENGTH = 30, DEFAULT_TRUNC_OMISSION = '...';
             /** Used to detect hot functions by number of calls within a span of milliseconds. */
@@ -21183,39 +22597,39 @@
             var wrapFlags = [
                 [
                   'ary',
-                  ARY_FLAG
+                  WRAP_ARY_FLAG
                 ],
                 [
                   'bind',
-                  BIND_FLAG
+                  WRAP_BIND_FLAG
                 ],
                 [
                   'bindKey',
-                  BIND_KEY_FLAG
+                  WRAP_BIND_KEY_FLAG
                 ],
                 [
                   'curry',
-                  CURRY_FLAG
+                  WRAP_CURRY_FLAG
                 ],
                 [
                   'curryRight',
-                  CURRY_RIGHT_FLAG
+                  WRAP_CURRY_RIGHT_FLAG
                 ],
                 [
                   'flip',
-                  FLIP_FLAG
+                  WRAP_FLIP_FLAG
                 ],
                 [
                   'partial',
-                  PARTIAL_FLAG
+                  WRAP_PARTIAL_FLAG
                 ],
                 [
                   'partialRight',
-                  PARTIAL_RIGHT_FLAG
+                  WRAP_PARTIAL_RIGHT_FLAG
                 ],
                 [
                   'rearg',
-                  REARG_FLAG
+                  WRAP_REARG_FLAG
                 ]
               ];
             /** `Object#toString` result references. */
@@ -21266,9 +22680,9 @@
             /** Used to match unescaped characters in compiled string literals. */
             var reUnescapedString = /['\n\r\u2028\u2029\\]/g;
             /** Used to compose unicode character classes. */
-            var rsAstralRange = '\\ud800-\\udfff', rsComboMarksRange = '\\u0300-\\u036f\\ufe20-\\ufe23', rsComboSymbolsRange = '\\u20d0-\\u20f0', rsDingbatRange = '\\u2700-\\u27bf', rsLowerRange = 'a-z\\xdf-\\xf6\\xf8-\\xff', rsMathOpRange = '\\xac\\xb1\\xd7\\xf7', rsNonCharRange = '\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf', rsPunctuationRange = '\\u2000-\\u206f', rsSpaceRange = ' \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000', rsUpperRange = 'A-Z\\xc0-\\xd6\\xd8-\\xde', rsVarRange = '\\ufe0e\\ufe0f', rsBreakRange = rsMathOpRange + rsNonCharRange + rsPunctuationRange + rsSpaceRange;
+            var rsAstralRange = '\\ud800-\\udfff', rsComboMarksRange = '\\u0300-\\u036f', reComboHalfMarksRange = '\\ufe20-\\ufe2f', rsComboSymbolsRange = '\\u20d0-\\u20ff', rsComboRange = rsComboMarksRange + reComboHalfMarksRange + rsComboSymbolsRange, rsDingbatRange = '\\u2700-\\u27bf', rsLowerRange = 'a-z\\xdf-\\xf6\\xf8-\\xff', rsMathOpRange = '\\xac\\xb1\\xd7\\xf7', rsNonCharRange = '\\x00-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\xbf', rsPunctuationRange = '\\u2000-\\u206f', rsSpaceRange = ' \\t\\x0b\\f\\xa0\\ufeff\\n\\r\\u2028\\u2029\\u1680\\u180e\\u2000\\u2001\\u2002\\u2003\\u2004\\u2005\\u2006\\u2007\\u2008\\u2009\\u200a\\u202f\\u205f\\u3000', rsUpperRange = 'A-Z\\xc0-\\xd6\\xd8-\\xde', rsVarRange = '\\ufe0e\\ufe0f', rsBreakRange = rsMathOpRange + rsNonCharRange + rsPunctuationRange + rsSpaceRange;
             /** Used to compose unicode capture groups. */
-            var rsApos = '[\'\u2019]', rsAstral = '[' + rsAstralRange + ']', rsBreak = '[' + rsBreakRange + ']', rsCombo = '[' + rsComboMarksRange + rsComboSymbolsRange + ']', rsDigits = '\\d+', rsDingbat = '[' + rsDingbatRange + ']', rsLower = '[' + rsLowerRange + ']', rsMisc = '[^' + rsAstralRange + rsBreakRange + rsDigits + rsDingbatRange + rsLowerRange + rsUpperRange + ']', rsFitz = '\\ud83c[\\udffb-\\udfff]', rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')', rsNonAstral = '[^' + rsAstralRange + ']', rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}', rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]', rsUpper = '[' + rsUpperRange + ']', rsZWJ = '\\u200d';
+            var rsApos = '[\'\u2019]', rsAstral = '[' + rsAstralRange + ']', rsBreak = '[' + rsBreakRange + ']', rsCombo = '[' + rsComboRange + ']', rsDigits = '\\d+', rsDingbat = '[' + rsDingbatRange + ']', rsLower = '[' + rsLowerRange + ']', rsMisc = '[^' + rsAstralRange + rsBreakRange + rsDigits + rsDingbatRange + rsLowerRange + rsUpperRange + ']', rsFitz = '\\ud83c[\\udffb-\\udfff]', rsModifier = '(?:' + rsCombo + '|' + rsFitz + ')', rsNonAstral = '[^' + rsAstralRange + ']', rsRegional = '(?:\\ud83c[\\udde6-\\uddff]){2}', rsSurrPair = '[\\ud800-\\udbff][\\udc00-\\udfff]', rsUpper = '[' + rsUpperRange + ']', rsZWJ = '\\u200d';
             /** Used to compose unicode regexes. */
             var rsMiscLower = '(?:' + rsLower + '|' + rsMisc + ')', rsMiscUpper = '(?:' + rsUpper + '|' + rsMisc + ')', rsOptContrLower = '(?:' + rsApos + '(?:d|ll|m|re|s|t|ve))?', rsOptContrUpper = '(?:' + rsApos + '(?:D|LL|M|RE|S|T|VE))?', reOptMod = rsModifier + '?', rsOptVar = '[' + rsVarRange + ']?', rsOptJoin = '(?:' + rsZWJ + '(?:' + [
                 rsNonAstral,
@@ -21314,7 +22728,7 @@
                 rsEmoji
               ].join('|'), 'g');
             /** Used to detect strings with [zero-width joiners or code points from the astral planes](http://eev.ee/blog/2015/09/12/dark-corners-of-unicode/). */
-            var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange + rsComboMarksRange + rsComboSymbolsRange + rsVarRange + ']');
+            var reHasUnicode = RegExp('[' + rsZWJ + rsAstralRange + rsComboRange + rsVarRange + ']');
             /** Used to detect strings that need a more robust regexp to match words. */
             var reHasUnicodeWord = /[a-z][A-Z]|[A-Z]{2,}[a-z]|[0-9][a-zA-Z]|[a-zA-Z][0-9]|[^a-zA-Z0-9 ]/;
             /** Used to assign default `context` object properties. */
@@ -21597,7 +23011,7 @@
             /** Used to access faster Node.js helpers. */
             var nodeUtil = function () {
                 try {
-                  return freeProcess && freeProcess.binding('util');
+                  return freeProcess && freeProcess.binding && freeProcess.binding('util');
                 } catch (e) {
                 }
               }();
@@ -23387,6 +24801,18 @@
                 return object && copyObject(source, keys(source), object);
               }
               /**
+     * The base implementation of `_.assignIn` without support for multiple sources
+     * or `customizer` functions.
+     *
+     * @private
+     * @param {Object} object The destination object.
+     * @param {Object} source The source object.
+     * @returns {Object} Returns `object`.
+     */
+              function baseAssignIn(object, source) {
+                return object && copyObject(source, keysIn(source), object);
+              }
+              /**
      * The base implementation of `assignValue` and `assignMergeValue` without
      * value checks.
      *
@@ -23412,7 +24838,7 @@
      *
      * @private
      * @param {Object} object The object to iterate over.
-     * @param {string[]} paths The property paths of elements to pick.
+     * @param {string[]} paths The property paths to pick.
      * @returns {Array} Returns the picked elements.
      */
               function baseAt(object, paths) {
@@ -23448,16 +24874,18 @@
      *
      * @private
      * @param {*} value The value to clone.
-     * @param {boolean} [isDeep] Specify a deep clone.
-     * @param {boolean} [isFull] Specify a clone including symbols.
+     * @param {boolean} bitmask The bitmask flags.
+     *  1 - Deep clone
+     *  2 - Flatten inherited properties
+     *  4 - Clone symbols
      * @param {Function} [customizer] The function to customize cloning.
      * @param {string} [key] The key of `value`.
      * @param {Object} [object] The parent object of `value`.
      * @param {Object} [stack] Tracks traversed objects and their clone counterparts.
      * @returns {*} Returns the cloned value.
      */
-              function baseClone(value, isDeep, isFull, customizer, key, object, stack) {
-                var result;
+              function baseClone(value, bitmask, customizer, key, object, stack) {
+                var result, isDeep = bitmask & CLONE_DEEP_FLAG, isFlat = bitmask & CLONE_FLAT_FLAG, isFull = bitmask & CLONE_SYMBOLS_FLAG;
                 if (customizer) {
                   result = object ? customizer(value, key, object, stack) : customizer(value);
                 }
@@ -23479,9 +24907,9 @@
                     return cloneBuffer(value, isDeep);
                   }
                   if (tag == objectTag || tag == argsTag || isFunc && !object) {
-                    result = initCloneObject(isFunc ? {} : value);
+                    result = isFlat || isFunc ? {} : initCloneObject(value);
                     if (!isDeep) {
-                      return copySymbols(value, baseAssign(result, value));
+                      return isFlat ? copySymbolsIn(value, baseAssignIn(result, value)) : copySymbols(value, baseAssign(result, value));
                     }
                   } else {
                     if (!cloneableTags[tag]) {
@@ -23497,14 +24925,15 @@
                   return stacked;
                 }
                 stack.set(value, result);
-                var props = isArr ? undefined : (isFull ? getAllKeys : keys)(value);
+                var keysFunc = isFull ? isFlat ? getAllKeysIn : getAllKeys : isFlat ? keysIn : keys;
+                var props = isArr ? undefined : keysFunc(value);
                 arrayEach(props || value, function (subValue, key) {
                   if (props) {
                     key = subValue;
                     subValue = value[key];
                   }
                   // Recursively populate clone (susceptible to call stack limits).
-                  assignValue(result, key, baseClone(subValue, isDeep, isFull, customizer, key, value, stack));
+                  assignValue(result, key, baseClone(subValue, bitmask, customizer, key, value, stack));
                 });
                 return result;
               }
@@ -23802,7 +25231,7 @@
      * @returns {*} Returns the resolved value.
      */
               function baseGet(object, path) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = 0, length = path.length;
                 while (object != null && index < length) {
                   object = object[toKey(path[index++])];
@@ -23954,12 +25383,9 @@
      * @returns {*} Returns the result of the invoked method.
      */
               function baseInvoke(object, path, args) {
-                if (!isKey(path, object)) {
-                  path = castPath(path);
-                  object = parent(object, path);
-                  path = last(path);
-                }
-                var func = object == null ? object : object[toKey(path)];
+                path = castPath(path, object);
+                object = parent(object, path);
+                var func = object == null ? object : object[toKey(last(path))];
                 return func == null ? undefined : apply(func, object, args);
               }
               /**
@@ -23999,22 +25425,21 @@
      * @private
      * @param {*} value The value to compare.
      * @param {*} other The other value to compare.
+     * @param {boolean} bitmask The bitmask flags.
+     *  1 - Unordered comparison
+     *  2 - Partial comparison
      * @param {Function} [customizer] The function to customize comparisons.
-     * @param {boolean} [bitmask] The bitmask of comparison flags.
-     *  The bitmask may be composed of the following flags:
-     *     1 - Unordered comparison
-     *     2 - Partial comparison
      * @param {Object} [stack] Tracks traversed `value` and `other` objects.
      * @returns {boolean} Returns `true` if the values are equivalent, else `false`.
      */
-              function baseIsEqual(value, other, customizer, bitmask, stack) {
+              function baseIsEqual(value, other, bitmask, customizer, stack) {
                 if (value === other) {
                   return true;
                 }
                 if (value == null || other == null || !isObject(value) && !isObjectLike(other)) {
                   return value !== value && other !== other;
                 }
-                return baseIsEqualDeep(value, other, baseIsEqual, customizer, bitmask, stack);
+                return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
               }
               /**
      * A specialized version of `baseIsEqual` for arrays and objects which performs
@@ -24024,14 +25449,13 @@
      * @private
      * @param {Object} object The object to compare.
      * @param {Object} other The other object to compare.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
+     * @param {Function} customizer The function to customize comparisons.
      * @param {Function} equalFunc The function to determine equivalents of values.
-     * @param {Function} [customizer] The function to customize comparisons.
-     * @param {number} [bitmask] The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
      * @param {Object} [stack] Tracks traversed `object` and `other` objects.
      * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
      */
-              function baseIsEqualDeep(object, other, equalFunc, customizer, bitmask, stack) {
+              function baseIsEqualDeep(object, other, bitmask, customizer, equalFunc, stack) {
                 var objIsArr = isArray(object), othIsArr = isArray(other), objTag = arrayTag, othTag = arrayTag;
                 if (!objIsArr) {
                   objTag = getTag(object);
@@ -24051,21 +25475,21 @@
                 }
                 if (isSameTag && !objIsObj) {
                   stack || (stack = new Stack());
-                  return objIsArr || isTypedArray(object) ? equalArrays(object, other, equalFunc, customizer, bitmask, stack) : equalByTag(object, other, objTag, equalFunc, customizer, bitmask, stack);
+                  return objIsArr || isTypedArray(object) ? equalArrays(object, other, bitmask, customizer, equalFunc, stack) : equalByTag(object, other, objTag, bitmask, customizer, equalFunc, stack);
                 }
-                if (!(bitmask & PARTIAL_COMPARE_FLAG)) {
+                if (!(bitmask & COMPARE_PARTIAL_FLAG)) {
                   var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'), othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
                   if (objIsWrapped || othIsWrapped) {
                     var objUnwrapped = objIsWrapped ? object.value() : object, othUnwrapped = othIsWrapped ? other.value() : other;
                     stack || (stack = new Stack());
-                    return equalFunc(objUnwrapped, othUnwrapped, customizer, bitmask, stack);
+                    return equalFunc(objUnwrapped, othUnwrapped, bitmask, customizer, stack);
                   }
                 }
                 if (!isSameTag) {
                   return false;
                 }
                 stack || (stack = new Stack());
-                return equalObjects(object, other, equalFunc, customizer, bitmask, stack);
+                return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
               }
               /**
      * The base implementation of `_.isMap` without Node.js optimizations.
@@ -24111,7 +25535,7 @@
                     if (customizer) {
                       var result = customizer(objValue, srcValue, key, object, source, stack);
                     }
-                    if (!(result === undefined ? baseIsEqual(srcValue, objValue, customizer, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG, stack) : result)) {
+                    if (!(result === undefined ? baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG, customizer, stack) : result)) {
                       return false;
                     }
                   }
@@ -24279,7 +25703,7 @@
                 }
                 return function (object) {
                   var objValue = get(object, path);
-                  return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual(srcValue, objValue, undefined, UNORDERED_COMPARE_FLAG | PARTIAL_COMPARE_FLAG);
+                  return objValue === undefined && objValue === srcValue ? hasIn(object, path) : baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG);
                 };
               }
               /**
@@ -24417,13 +25841,13 @@
      *
      * @private
      * @param {Object} object The source object.
-     * @param {string[]} props The property identifiers to pick.
+     * @param {string[]} paths The property paths to pick.
      * @returns {Object} Returns the new object.
      */
-              function basePick(object, props) {
+              function basePick(object, paths) {
                 object = Object(object);
-                return basePickBy(object, props, function (value, key) {
-                  return key in object;
+                return basePickBy(object, paths, function (value, path) {
+                  return hasIn(object, path);
                 });
               }
               /**
@@ -24431,16 +25855,16 @@
      *
      * @private
      * @param {Object} object The source object.
-     * @param {string[]} props The property identifiers to pick from.
+     * @param {string[]} paths The property paths to pick.
      * @param {Function} predicate The function invoked per property.
      * @returns {Object} Returns the new object.
      */
-              function basePickBy(object, props, predicate) {
-                var index = -1, length = props.length, result = {};
+              function basePickBy(object, paths, predicate) {
+                var index = -1, length = paths.length, result = {};
                 while (++index < length) {
-                  var key = props[index], value = object[key];
-                  if (predicate(value, key)) {
-                    baseAssignValue(result, key, value);
+                  var path = paths[index], value = baseGet(object, path);
+                  if (predicate(value, path)) {
+                    baseSet(result, castPath(path, object), value);
                   }
                 }
                 return result;
@@ -24504,13 +25928,8 @@
                     var previous = index;
                     if (isIndex(index)) {
                       splice.call(array, index, 1);
-                    } else if (!isKey(index, array)) {
-                      var path = castPath(index), object = parent(array, path);
-                      if (object != null) {
-                        delete object[toKey(last(path))];
-                      }
                     } else {
-                      delete array[toKey(index)];
+                      baseUnset(array, index);
                     }
                   }
                 }
@@ -24620,7 +26039,7 @@
                 if (!isObject(object)) {
                   return object;
                 }
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = -1, length = path.length, lastIndex = length - 1, nested = object;
                 while (nested != null && ++index < length) {
                   var key = toKey(path[index]), newValue = value;
@@ -24897,14 +26316,13 @@
      *
      * @private
      * @param {Object} object The object to modify.
-     * @param {Array|string} path The path of the property to unset.
+     * @param {Array|string} path The property path to unset.
      * @returns {boolean} Returns `true` if the property is deleted, else `false`.
      */
               function baseUnset(object, path) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 object = parent(object, path);
-                var key = toKey(last(path));
-                return !(object != null && hasOwnProperty.call(object, key)) || delete object[key];
+                return object == null || delete object[toKey(last(path))];
               }
               /**
      * The base implementation of `_.update`.
@@ -25023,10 +26441,14 @@
      *
      * @private
      * @param {*} value The value to inspect.
+     * @param {Object} [object] The object to query keys on.
      * @returns {Array} Returns the cast property path array.
      */
-              function castPath(value) {
-                return isArray(value) ? value : stringToPath(value);
+              function castPath(value, object) {
+                if (isArray(value)) {
+                  return value;
+                }
+                return isKey(value, object) ? [value] : stringToPath(toString(value));
               }
               /**
      * A `baseRest` alias which can be replaced with `identity` by module
@@ -25111,7 +26533,7 @@
      * @returns {Object} Returns the cloned map.
      */
               function cloneMap(map, isDeep, cloneFunc) {
-                var array = isDeep ? cloneFunc(mapToArray(map), true) : mapToArray(map);
+                var array = isDeep ? cloneFunc(mapToArray(map), CLONE_DEEP_FLAG) : mapToArray(map);
                 return arrayReduce(array, addMapEntry, new map.constructor());
               }
               /**
@@ -25136,7 +26558,7 @@
      * @returns {Object} Returns the cloned set.
      */
               function cloneSet(set, isDeep, cloneFunc) {
-                var array = isDeep ? cloneFunc(setToArray(set), true) : setToArray(set);
+                var array = isDeep ? cloneFunc(setToArray(set), CLONE_DEEP_FLAG) : setToArray(set);
                 return arrayReduce(array, addSetEntry, new set.constructor());
               }
               /**
@@ -25315,7 +26737,7 @@
                 return object;
               }
               /**
-     * Copies own symbol properties of `source` to `object`.
+     * Copies own symbols of `source` to `object`.
      *
      * @private
      * @param {Object} source The object to copy symbols from.
@@ -25324,6 +26746,17 @@
      */
               function copySymbols(source, object) {
                 return copyObject(source, getSymbols(source), object);
+              }
+              /**
+     * Copies own and inherited symbols of `source` to `object`.
+     *
+     * @private
+     * @param {Object} source The object to copy symbols from.
+     * @param {Object} [object={}] The object to copy symbols to.
+     * @returns {Object} Returns `object`.
+     */
+              function copySymbolsIn(source, object) {
+                return copyObject(source, getSymbolsIn(source), object);
               }
               /**
      * Creates a function like `_.groupBy`.
@@ -25419,7 +26852,7 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createBind(func, bitmask, thisArg) {
-                var isBind = bitmask & BIND_FLAG, Ctor = createCtor(func);
+                var isBind = bitmask & WRAP_BIND_FLAG, Ctor = createCtor(func);
                 function wrapper() {
                   var fn = this && this !== root && this instanceof wrapper ? Ctor : func;
                   return fn.apply(isBind ? thisArg : this, arguments);
@@ -25565,7 +26998,7 @@
                   while (++index < length) {
                     func = funcs[index];
                     var funcName = getFuncName(func), data = funcName == 'wrapper' ? getData(func) : undefined;
-                    if (data && isLaziable(data[0]) && data[1] == (ARY_FLAG | CURRY_FLAG | PARTIAL_FLAG | REARG_FLAG) && !data[4].length && data[9] == 1) {
+                    if (data && isLaziable(data[0]) && data[1] == (WRAP_ARY_FLAG | WRAP_CURRY_FLAG | WRAP_PARTIAL_FLAG | WRAP_REARG_FLAG) && !data[4].length && data[9] == 1) {
                       wrapper = wrapper[getFuncName(data[0])].apply(wrapper, data[3]);
                     } else {
                       wrapper = func.length == 1 && isLaziable(func) ? wrapper[funcName]() : wrapper.thru(func);
@@ -25604,7 +27037,7 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createHybrid(func, bitmask, thisArg, partials, holders, partialsRight, holdersRight, argPos, ary, arity) {
-                var isAry = bitmask & ARY_FLAG, isBind = bitmask & BIND_FLAG, isBindKey = bitmask & BIND_KEY_FLAG, isCurried = bitmask & (CURRY_FLAG | CURRY_RIGHT_FLAG), isFlip = bitmask & FLIP_FLAG, Ctor = isBindKey ? undefined : createCtor(func);
+                var isAry = bitmask & WRAP_ARY_FLAG, isBind = bitmask & WRAP_BIND_FLAG, isBindKey = bitmask & WRAP_BIND_KEY_FLAG, isCurried = bitmask & (WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG), isFlip = bitmask & WRAP_FLIP_FLAG, Ctor = isBindKey ? undefined : createCtor(func);
                 function wrapper() {
                   var length = arguments.length, args = Array(length), index = length;
                   while (index--) {
@@ -25736,7 +27169,7 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createPartial(func, bitmask, thisArg, partials) {
-                var isBind = bitmask & BIND_FLAG, Ctor = createCtor(func);
+                var isBind = bitmask & WRAP_BIND_FLAG, Ctor = createCtor(func);
                 function wrapper() {
                   var argsIndex = -1, argsLength = arguments.length, leftIndex = -1, leftLength = partials.length, args = Array(leftLength + argsLength), fn = this && this !== root && this instanceof wrapper ? Ctor : func;
                   while (++leftIndex < leftLength) {
@@ -25807,11 +27240,11 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createRecurry(func, bitmask, wrapFunc, placeholder, thisArg, partials, holders, argPos, ary, arity) {
-                var isCurry = bitmask & CURRY_FLAG, newHolders = isCurry ? holders : undefined, newHoldersRight = isCurry ? undefined : holders, newPartials = isCurry ? partials : undefined, newPartialsRight = isCurry ? undefined : partials;
-                bitmask |= isCurry ? PARTIAL_FLAG : PARTIAL_RIGHT_FLAG;
-                bitmask &= ~(isCurry ? PARTIAL_RIGHT_FLAG : PARTIAL_FLAG);
-                if (!(bitmask & CURRY_BOUND_FLAG)) {
-                  bitmask &= ~(BIND_FLAG | BIND_KEY_FLAG);
+                var isCurry = bitmask & WRAP_CURRY_FLAG, newHolders = isCurry ? holders : undefined, newHoldersRight = isCurry ? undefined : holders, newPartials = isCurry ? partials : undefined, newPartialsRight = isCurry ? undefined : partials;
+                bitmask |= isCurry ? WRAP_PARTIAL_FLAG : WRAP_PARTIAL_RIGHT_FLAG;
+                bitmask &= ~(isCurry ? WRAP_PARTIAL_RIGHT_FLAG : WRAP_PARTIAL_FLAG);
+                if (!(bitmask & WRAP_CURRY_BOUND_FLAG)) {
+                  bitmask &= ~(WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG);
                 }
                 var newData = [
                     func,
@@ -25893,17 +27326,16 @@
      * @private
      * @param {Function|string} func The function or method name to wrap.
      * @param {number} bitmask The bitmask flags.
-     *  The bitmask may be composed of the following flags:
-     *     1 - `_.bind`
-     *     2 - `_.bindKey`
-     *     4 - `_.curry` or `_.curryRight` of a bound function
-     *     8 - `_.curry`
-     *    16 - `_.curryRight`
-     *    32 - `_.partial`
-     *    64 - `_.partialRight`
-     *   128 - `_.rearg`
-     *   256 - `_.ary`
-     *   512 - `_.flip`
+     *    1 - `_.bind`
+     *    2 - `_.bindKey`
+     *    4 - `_.curry` or `_.curryRight` of a bound function
+     *    8 - `_.curry`
+     *   16 - `_.curryRight`
+     *   32 - `_.partial`
+     *   64 - `_.partialRight`
+     *  128 - `_.rearg`
+     *  256 - `_.ary`
+     *  512 - `_.flip`
      * @param {*} [thisArg] The `this` binding of `func`.
      * @param {Array} [partials] The arguments to be partially applied.
      * @param {Array} [holders] The `partials` placeholder indexes.
@@ -25913,19 +27345,19 @@
      * @returns {Function} Returns the new wrapped function.
      */
               function createWrap(func, bitmask, thisArg, partials, holders, argPos, ary, arity) {
-                var isBindKey = bitmask & BIND_KEY_FLAG;
+                var isBindKey = bitmask & WRAP_BIND_KEY_FLAG;
                 if (!isBindKey && typeof func != 'function') {
                   throw new TypeError(FUNC_ERROR_TEXT);
                 }
                 var length = partials ? partials.length : 0;
                 if (!length) {
-                  bitmask &= ~(PARTIAL_FLAG | PARTIAL_RIGHT_FLAG);
+                  bitmask &= ~(WRAP_PARTIAL_FLAG | WRAP_PARTIAL_RIGHT_FLAG);
                   partials = holders = undefined;
                 }
                 ary = ary === undefined ? ary : nativeMax(toInteger(ary), 0);
                 arity = arity === undefined ? arity : toInteger(arity);
                 length -= holders ? holders.length : 0;
-                if (bitmask & PARTIAL_RIGHT_FLAG) {
+                if (bitmask & WRAP_PARTIAL_RIGHT_FLAG) {
                   var partialsRight = partials, holdersRight = holders;
                   partials = holders = undefined;
                 }
@@ -25951,14 +27383,14 @@
                 partials = newData[3];
                 holders = newData[4];
                 arity = newData[9] = newData[9] == null ? isBindKey ? 0 : func.length : nativeMax(newData[9] - length, 0);
-                if (!arity && bitmask & (CURRY_FLAG | CURRY_RIGHT_FLAG)) {
-                  bitmask &= ~(CURRY_FLAG | CURRY_RIGHT_FLAG);
+                if (!arity && bitmask & (WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG)) {
+                  bitmask &= ~(WRAP_CURRY_FLAG | WRAP_CURRY_RIGHT_FLAG);
                 }
-                if (!bitmask || bitmask == BIND_FLAG) {
+                if (!bitmask || bitmask == WRAP_BIND_FLAG) {
                   var result = createBind(func, bitmask, thisArg);
-                } else if (bitmask == CURRY_FLAG || bitmask == CURRY_RIGHT_FLAG) {
+                } else if (bitmask == WRAP_CURRY_FLAG || bitmask == WRAP_CURRY_RIGHT_FLAG) {
                   result = createCurry(func, bitmask, arity);
-                } else if ((bitmask == PARTIAL_FLAG || bitmask == (BIND_FLAG | PARTIAL_FLAG)) && !holders.length) {
+                } else if ((bitmask == WRAP_PARTIAL_FLAG || bitmask == (WRAP_BIND_FLAG | WRAP_PARTIAL_FLAG)) && !holders.length) {
                   result = createPartial(func, bitmask, thisArg, partials);
                 } else {
                   result = createHybrid.apply(undefined, newData);
@@ -25973,15 +27405,14 @@
      * @private
      * @param {Array} array The array to compare.
      * @param {Array} other The other array to compare.
-     * @param {Function} equalFunc The function to determine equivalents of values.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
      * @param {Function} customizer The function to customize comparisons.
-     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
+     * @param {Function} equalFunc The function to determine equivalents of values.
      * @param {Object} stack Tracks traversed `array` and `other` objects.
      * @returns {boolean} Returns `true` if the arrays are equivalent, else `false`.
      */
-              function equalArrays(array, other, equalFunc, customizer, bitmask, stack) {
-                var isPartial = bitmask & PARTIAL_COMPARE_FLAG, arrLength = array.length, othLength = other.length;
+              function equalArrays(array, other, bitmask, customizer, equalFunc, stack) {
+                var isPartial = bitmask & COMPARE_PARTIAL_FLAG, arrLength = array.length, othLength = other.length;
                 if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
                   return false;
                 }
@@ -25990,7 +27421,7 @@
                 if (stacked && stack.get(other)) {
                   return stacked == other;
                 }
-                var index = -1, result = true, seen = bitmask & UNORDERED_COMPARE_FLAG ? new SetCache() : undefined;
+                var index = -1, result = true, seen = bitmask & COMPARE_UNORDERED_FLAG ? new SetCache() : undefined;
                 stack.set(array, other);
                 stack.set(other, array);
                 // Ignore non-index properties.
@@ -26009,14 +27440,14 @@
                   // Recursively compare arrays (susceptible to call stack limits).
                   if (seen) {
                     if (!arraySome(other, function (othValue, othIndex) {
-                        if (!cacheHas(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+                        if (!cacheHas(seen, othIndex) && (arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
                           return seen.push(othIndex);
                         }
                       })) {
                       result = false;
                       break;
                     }
-                  } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, customizer, bitmask, stack))) {
+                  } else if (!(arrValue === othValue || equalFunc(arrValue, othValue, bitmask, customizer, stack))) {
                     result = false;
                     break;
                   }
@@ -26036,14 +27467,13 @@
      * @param {Object} object The object to compare.
      * @param {Object} other The other object to compare.
      * @param {string} tag The `toStringTag` of the objects to compare.
-     * @param {Function} equalFunc The function to determine equivalents of values.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
      * @param {Function} customizer The function to customize comparisons.
-     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
+     * @param {Function} equalFunc The function to determine equivalents of values.
      * @param {Object} stack Tracks traversed `object` and `other` objects.
      * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
      */
-              function equalByTag(object, other, tag, equalFunc, customizer, bitmask, stack) {
+              function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
                 switch (tag) {
                 case dataViewTag:
                   if (object.byteLength != other.byteLength || object.byteOffset != other.byteOffset) {
@@ -26073,7 +27503,7 @@
                 case mapTag:
                   var convert = mapToArray;
                 case setTag:
-                  var isPartial = bitmask & PARTIAL_COMPARE_FLAG;
+                  var isPartial = bitmask & COMPARE_PARTIAL_FLAG;
                   convert || (convert = setToArray);
                   if (object.size != other.size && !isPartial) {
                     return false;
@@ -26083,10 +27513,10 @@
                   if (stacked) {
                     return stacked == other;
                   }
-                  bitmask |= UNORDERED_COMPARE_FLAG;
+                  bitmask |= COMPARE_UNORDERED_FLAG;
                   // Recursively compare objects (susceptible to call stack limits).
                   stack.set(object, other);
-                  var result = equalArrays(convert(object), convert(other), equalFunc, customizer, bitmask, stack);
+                  var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
                   stack['delete'](object);
                   return result;
                 case symbolTag:
@@ -26103,15 +27533,14 @@
      * @private
      * @param {Object} object The object to compare.
      * @param {Object} other The other object to compare.
-     * @param {Function} equalFunc The function to determine equivalents of values.
+     * @param {number} bitmask The bitmask flags. See `baseIsEqual` for more details.
      * @param {Function} customizer The function to customize comparisons.
-     * @param {number} bitmask The bitmask of comparison flags. See `baseIsEqual`
-     *  for more details.
+     * @param {Function} equalFunc The function to determine equivalents of values.
      * @param {Object} stack Tracks traversed `object` and `other` objects.
      * @returns {boolean} Returns `true` if the objects are equivalent, else `false`.
      */
-              function equalObjects(object, other, equalFunc, customizer, bitmask, stack) {
-                var isPartial = bitmask & PARTIAL_COMPARE_FLAG, objProps = keys(object), objLength = objProps.length, othProps = keys(other), othLength = othProps.length;
+              function equalObjects(object, other, bitmask, customizer, equalFunc, stack) {
+                var isPartial = bitmask & COMPARE_PARTIAL_FLAG, objProps = keys(object), objLength = objProps.length, othProps = keys(other), othLength = othProps.length;
                 if (objLength != othLength && !isPartial) {
                   return false;
                 }
@@ -26138,7 +27567,7 @@
                     var compared = isPartial ? customizer(othValue, objValue, key, other, object, stack) : customizer(objValue, othValue, key, object, other, stack);
                   }
                   // Recursively compare objects (susceptible to call stack limits).
-                  if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, customizer, bitmask, stack) : compared)) {
+                  if (!(compared === undefined ? objValue === othValue || equalFunc(objValue, othValue, bitmask, customizer, stack) : compared)) {
                     result = false;
                     break;
                   }
@@ -26308,7 +27737,7 @@
                 return result;
               }
               /**
-     * Creates an array of the own enumerable symbol properties of `object`.
+     * Creates an array of the own enumerable symbols of `object`.
      *
      * @private
      * @param {Object} object The object to query.
@@ -26316,8 +27745,7 @@
      */
               var getSymbols = nativeGetSymbols ? overArg(nativeGetSymbols, Object) : stubArray;
               /**
-     * Creates an array of the own and inherited enumerable symbol properties
-     * of `object`.
+     * Creates an array of the own and inherited enumerable symbols of `object`.
      *
      * @private
      * @param {Object} object The object to query.
@@ -26415,7 +27843,7 @@
      * @returns {boolean} Returns `true` if `path` exists, else `false`.
      */
               function hasPath(object, path, hasFunc) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = -1, length = path.length, result = false;
                 while (++index < length) {
                   var key = toKey(path[index]);
@@ -26702,17 +28130,17 @@
      * @returns {Array} Returns `data`.
      */
               function mergeData(data, source) {
-                var bitmask = data[1], srcBitmask = source[1], newBitmask = bitmask | srcBitmask, isCommon = newBitmask < (BIND_FLAG | BIND_KEY_FLAG | ARY_FLAG);
-                var isCombo = srcBitmask == ARY_FLAG && bitmask == CURRY_FLAG || srcBitmask == ARY_FLAG && bitmask == REARG_FLAG && data[7].length <= source[8] || srcBitmask == (ARY_FLAG | REARG_FLAG) && source[7].length <= source[8] && bitmask == CURRY_FLAG;
+                var bitmask = data[1], srcBitmask = source[1], newBitmask = bitmask | srcBitmask, isCommon = newBitmask < (WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG | WRAP_ARY_FLAG);
+                var isCombo = srcBitmask == WRAP_ARY_FLAG && bitmask == WRAP_CURRY_FLAG || srcBitmask == WRAP_ARY_FLAG && bitmask == WRAP_REARG_FLAG && data[7].length <= source[8] || srcBitmask == (WRAP_ARY_FLAG | WRAP_REARG_FLAG) && source[7].length <= source[8] && bitmask == WRAP_CURRY_FLAG;
                 // Exit early if metadata can't be merged.
                 if (!(isCommon || isCombo)) {
                   return data;
                 }
                 // Use source `thisArg` if available.
-                if (srcBitmask & BIND_FLAG) {
+                if (srcBitmask & WRAP_BIND_FLAG) {
                   data[2] = source[2];
                   // Set when currying a bound function.
-                  newBitmask |= bitmask & BIND_FLAG ? 0 : CURRY_BOUND_FLAG;
+                  newBitmask |= bitmask & WRAP_BIND_FLAG ? 0 : WRAP_CURRY_BOUND_FLAG;
                 }
                 // Compose partial arguments.
                 var value = source[3];
@@ -26734,7 +28162,7 @@
                   data[7] = value;
                 }
                 // Use source `ary` if it's smaller.
-                if (srcBitmask & ARY_FLAG) {
+                if (srcBitmask & WRAP_ARY_FLAG) {
                   data[8] = data[8] == null ? source[8] : nativeMin(data[8], source[8]);
                 }
                 // Use source `arity` if one is not provided.
@@ -26830,7 +28258,7 @@
      * @returns {*} Returns the parent value.
      */
               function parent(object, path) {
-                return path.length == 1 ? object : baseGet(object, baseSlice(path, 0, -1));
+                return path.length < 2 ? object : baseGet(object, baseSlice(path, 0, -1));
               }
               /**
      * Reorder `array` according to the specified indexes where the element at
@@ -26950,7 +28378,6 @@
      * @returns {Array} Returns the property path array.
      */
               var stringToPath = memoizeCapped(function (string) {
-                  string = toString(string);
                   var result = [];
                   if (reLeadingDot.test(string)) {
                     result.push('');
@@ -28886,7 +30313,7 @@
      * @memberOf _
      * @since 1.0.0
      * @category Seq
-     * @param {...(string|string[])} [paths] The property paths of elements to pick.
+     * @param {...(string|string[])} [paths] The property paths to pick.
      * @returns {Object} Returns the new `lodash` wrapper instance.
      * @example
      *
@@ -29521,10 +30948,9 @@
      * // => [['1', '2', '3'], ['4', '5', '6']]
      */
               var invokeMap = baseRest(function (collection, path, args) {
-                  var index = -1, isFunc = typeof path == 'function', isProp = isKey(path), result = isArrayLike(collection) ? Array(collection.length) : [];
+                  var index = -1, isFunc = typeof path == 'function', result = isArrayLike(collection) ? Array(collection.length) : [];
                   baseEach(collection, function (value) {
-                    var func = isFunc ? path : isProp && value != null ? value[path] : undefined;
-                    result[++index] = func ? apply(func, value, args) : baseInvoke(value, path, args);
+                    result[++index] = isFunc ? apply(path, value, args) : baseInvoke(value, path, args);
                   });
                   return result;
                 });
@@ -30056,7 +31482,7 @@
               function ary(func, n, guard) {
                 n = guard ? undefined : n;
                 n = func && n == null ? func.length : n;
-                return createWrap(func, ARY_FLAG, undefined, undefined, undefined, undefined, n);
+                return createWrap(func, WRAP_ARY_FLAG, undefined, undefined, undefined, undefined, n);
               }
               /**
      * Creates a function that invokes `func`, with the `this` binding and arguments
@@ -30127,10 +31553,10 @@
      * // => 'hi fred!'
      */
               var bind = baseRest(function (func, thisArg, partials) {
-                  var bitmask = BIND_FLAG;
+                  var bitmask = WRAP_BIND_FLAG;
                   if (partials.length) {
                     var holders = replaceHolders(partials, getHolder(bind));
-                    bitmask |= PARTIAL_FLAG;
+                    bitmask |= WRAP_PARTIAL_FLAG;
                   }
                   return createWrap(func, bitmask, thisArg, partials, holders);
                 });
@@ -30180,10 +31606,10 @@
      * // => 'hiya fred!'
      */
               var bindKey = baseRest(function (object, key, partials) {
-                  var bitmask = BIND_FLAG | BIND_KEY_FLAG;
+                  var bitmask = WRAP_BIND_FLAG | WRAP_BIND_KEY_FLAG;
                   if (partials.length) {
                     var holders = replaceHolders(partials, getHolder(bindKey));
-                    bitmask |= PARTIAL_FLAG;
+                    bitmask |= WRAP_PARTIAL_FLAG;
                   }
                   return createWrap(key, bitmask, object, partials, holders);
                 });
@@ -30230,7 +31656,7 @@
      */
               function curry(func, arity, guard) {
                 arity = guard ? undefined : arity;
-                var result = createWrap(func, CURRY_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
+                var result = createWrap(func, WRAP_CURRY_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
                 result.placeholder = curry.placeholder;
                 return result;
               }
@@ -30274,7 +31700,7 @@
      */
               function curryRight(func, arity, guard) {
                 arity = guard ? undefined : arity;
-                var result = createWrap(func, CURRY_RIGHT_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
+                var result = createWrap(func, WRAP_CURRY_RIGHT_FLAG, undefined, undefined, undefined, undefined, undefined, arity);
                 result.placeholder = curryRight.placeholder;
                 return result;
               }
@@ -30484,7 +31910,7 @@
      * // => ['d', 'c', 'b', 'a']
      */
               function flip(func) {
-                return createWrap(func, FLIP_FLAG);
+                return createWrap(func, WRAP_FLIP_FLAG);
               }
               /**
      * Creates a function that memoizes the result of `func`. If `resolver` is
@@ -30685,7 +32111,7 @@
      */
               var partial = baseRest(function (func, partials) {
                   var holders = replaceHolders(partials, getHolder(partial));
-                  return createWrap(func, PARTIAL_FLAG, undefined, partials, holders);
+                  return createWrap(func, WRAP_PARTIAL_FLAG, undefined, partials, holders);
                 });
               /**
      * This method is like `_.partial` except that partially applied arguments
@@ -30721,7 +32147,7 @@
      */
               var partialRight = baseRest(function (func, partials) {
                   var holders = replaceHolders(partials, getHolder(partialRight));
-                  return createWrap(func, PARTIAL_RIGHT_FLAG, undefined, partials, holders);
+                  return createWrap(func, WRAP_PARTIAL_RIGHT_FLAG, undefined, partials, holders);
                 });
               /**
      * Creates a function that invokes `func` with arguments arranged according
@@ -30746,7 +32172,7 @@
      * // => ['a', 'b', 'c']
      */
               var rearg = flatRest(function (func, indexes) {
-                  return createWrap(func, REARG_FLAG, undefined, undefined, undefined, indexes);
+                  return createWrap(func, WRAP_REARG_FLAG, undefined, undefined, undefined, indexes);
                 });
               /**
      * Creates a function that invokes `func` with the `this` binding of the
@@ -30997,7 +32423,7 @@
      * // => true
      */
               function clone(value) {
-                return baseClone(value, false, true);
+                return baseClone(value, CLONE_SYMBOLS_FLAG);
               }
               /**
      * This method is like `_.clone` except that it accepts `customizer` which
@@ -31032,7 +32458,7 @@
      */
               function cloneWith(value, customizer) {
                 customizer = typeof customizer == 'function' ? customizer : undefined;
-                return baseClone(value, false, true, customizer);
+                return baseClone(value, CLONE_SYMBOLS_FLAG, customizer);
               }
               /**
      * This method is like `_.clone` except that it recursively clones `value`.
@@ -31053,7 +32479,7 @@
      * // => false
      */
               function cloneDeep(value) {
-                return baseClone(value, true, true);
+                return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG);
               }
               /**
      * This method is like `_.cloneWith` except that it recursively clones `value`.
@@ -31085,7 +32511,7 @@
      */
               function cloneDeepWith(value, customizer) {
                 customizer = typeof customizer == 'function' ? customizer : undefined;
-                return baseClone(value, true, true, customizer);
+                return baseClone(value, CLONE_DEEP_FLAG | CLONE_SYMBOLS_FLAG, customizer);
               }
               /**
      * Checks if `object` conforms to `source` by invoking the predicate
@@ -31516,7 +32942,7 @@
               function isEqualWith(value, other, customizer) {
                 customizer = typeof customizer == 'function' ? customizer : undefined;
                 var result = customizer ? customizer(value, other) : undefined;
-                return result === undefined ? baseIsEqual(value, other, customizer) : !!result;
+                return result === undefined ? baseIsEqual(value, other, undefined, customizer) : !!result;
               }
               /**
      * Checks if `value` is an `Error`, `EvalError`, `RangeError`, `ReferenceError`,
@@ -32606,7 +34032,7 @@
      * @since 1.0.0
      * @category Object
      * @param {Object} object The object to iterate over.
-     * @param {...(string|string[])} [paths] The property paths of elements to pick.
+     * @param {...(string|string[])} [paths] The property paths to pick.
      * @returns {Array} Returns the picked values.
      * @example
      *
@@ -33303,15 +34729,16 @@
                 });
               /**
      * The opposite of `_.pick`; this method creates an object composed of the
-     * own and inherited enumerable string keyed properties of `object` that are
-     * not omitted.
+     * own and inherited enumerable property paths of `object` that are not omitted.
+     *
+     * **Note:** This method is considerably slower than `_.pick`.
      *
      * @static
      * @since 0.1.0
      * @memberOf _
      * @category Object
      * @param {Object} object The source object.
-     * @param {...(string|string[])} [props] The property identifiers to omit.
+     * @param {...(string|string[])} [paths] The property paths to omit.
      * @returns {Object} Returns the new object.
      * @example
      *
@@ -33320,12 +34747,26 @@
      * _.omit(object, ['a', 'c']);
      * // => { 'b': '2' }
      */
-              var omit = flatRest(function (object, props) {
+              var omit = flatRest(function (object, paths) {
+                  var result = {};
                   if (object == null) {
-                    return {};
+                    return result;
                   }
-                  props = arrayMap(props, toKey);
-                  return basePick(object, baseDifference(getAllKeysIn(object), props));
+                  var isDeep = false;
+                  paths = arrayMap(paths, function (path) {
+                    path = castPath(path, object);
+                    isDeep || (isDeep = path.length > 1);
+                    return path;
+                  });
+                  copyObject(object, getAllKeysIn(object), result);
+                  if (isDeep) {
+                    result = baseClone(result, CLONE_DEEP_FLAG | CLONE_FLAT_FLAG | CLONE_SYMBOLS_FLAG);
+                  }
+                  var length = paths.length;
+                  while (length--) {
+                    baseUnset(result, paths[length]);
+                  }
+                  return result;
                 });
               /**
      * The opposite of `_.pickBy`; this method creates an object composed of
@@ -33358,7 +34799,7 @@
      * @memberOf _
      * @category Object
      * @param {Object} object The source object.
-     * @param {...(string|string[])} [props] The property identifiers to pick.
+     * @param {...(string|string[])} [paths] The property paths to pick.
      * @returns {Object} Returns the new object.
      * @example
      *
@@ -33367,8 +34808,8 @@
      * _.pick(object, ['a', 'c']);
      * // => { 'a': 1, 'c': 3 }
      */
-              var pick = flatRest(function (object, props) {
-                  return object == null ? {} : basePick(object, arrayMap(props, toKey));
+              var pick = flatRest(function (object, paths) {
+                  return object == null ? {} : basePick(object, paths);
                 });
               /**
      * Creates an object composed of the `object` properties `predicate` returns
@@ -33389,7 +34830,16 @@
      * // => { 'a': 1, 'c': 3 }
      */
               function pickBy(object, predicate) {
-                return object == null ? {} : basePickBy(object, getAllKeysIn(object), getIteratee(predicate));
+                if (object == null) {
+                  return {};
+                }
+                var props = arrayMap(getAllKeysIn(object), function (prop) {
+                    return [prop];
+                  });
+                predicate = getIteratee(predicate);
+                return basePickBy(object, props, function (value, path) {
+                  return predicate(value, path[0]);
+                });
               }
               /**
      * This method is like `_.get` except that if the resolved value is a
@@ -33421,12 +34871,12 @@
      * // => 'default'
      */
               function result(object, path, defaultValue) {
-                path = isKey(path, object) ? [path] : castPath(path);
+                path = castPath(path, object);
                 var index = -1, length = path.length;
                 // Ensure the loop is entered when path is empty.
                 if (!length) {
-                  object = undefined;
                   length = 1;
+                  object = undefined;
                 }
                 while (++index < length) {
                   var value = object == null ? undefined : object[toKey(path[index])];
@@ -35009,7 +36459,7 @@
      * // => [{ 'a': 1, 'b': 2 }]
      */
               function conforms(source) {
-                return baseConforms(baseClone(source, true));
+                return baseConforms(baseClone(source, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that returns `value`.
@@ -35165,7 +36615,7 @@
      * // => ['def']
      */
               function iteratee(func) {
-                return baseIteratee(typeof func == 'function' ? func : baseClone(func, true));
+                return baseIteratee(typeof func == 'function' ? func : baseClone(func, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that performs a partial deep comparison between a given
@@ -35196,7 +36646,7 @@
      * // => [{ 'a': 4, 'b': 5, 'c': 6 }]
      */
               function matches(source) {
-                return baseMatches(baseClone(source, true));
+                return baseMatches(baseClone(source, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that performs a partial deep comparison between the
@@ -35225,7 +36675,7 @@
      * // => { 'a': 4, 'b': 5, 'c': 6 }
      */
               function matchesProperty(path, srcValue) {
-                return baseMatchesProperty(path, baseClone(srcValue, true));
+                return baseMatchesProperty(path, baseClone(srcValue, CLONE_DEEP_FLAG));
               }
               /**
      * Creates a function that invokes the method at `path` of a given object.
@@ -35753,7 +37203,7 @@
                 if (isArray(value)) {
                   return arrayMap(value, toKey);
                 }
-                return isSymbol(value) ? [value] : copyArray(stringToPath(value));
+                return isSymbol(value) ? [value] : copyArray(stringToPath(toString(value)));
               }
               /**
      * Generates a unique ID. If `prefix` is given, the ID is appended to it.
@@ -36609,7 +38059,7 @@
                   });
                 }
               });
-              realNames[createHybrid(undefined, BIND_KEY_FLAG).name] = [{
+              realNames[createHybrid(undefined, WRAP_BIND_KEY_FLAG).name] = [{
                   'name': 'wrapper',
                   'func': undefined
                 }];
@@ -36662,7 +38112,7 @@
       },
       {}
     ],
-    111: [
+    112: [
       function (require, module, exports) {
         /**
  * Helpers.
@@ -36784,7 +38234,7 @@
       },
       {}
     ],
-    112: [
+    113: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -36921,9 +38371,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 113 }
+      { './isArguments': 114 }
     ],
-    113: [
+    114: [
       function (require, module, exports) {
         'use strict';
         var toStr = Object.prototype.toString;
@@ -36938,7 +38388,7 @@
       },
       {}
     ],
-    114: [
+    115: [
       function (require, module, exports) {
         /**!
  * Ono v2.2.1
@@ -37144,9 +38594,9 @@
           }
         }
       },
-      { 'util': 151 }
+      { 'util': 152 }
     ],
-    115: [
+    116: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -37190,9 +38640,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 116 }
+      { '_process': 117 }
     ],
-    116: [
+    117: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -37366,7 +38816,7 @@
       },
       {}
     ],
-    117: [
+    118: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -37784,7 +39234,7 @@
       },
       {}
     ],
-    118: [
+    119: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37861,7 +39311,7 @@
       },
       {}
     ],
-    119: [
+    120: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37941,18 +39391,18 @@
       },
       {}
     ],
-    120: [
+    121: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 118,
-        './encode': 119
+        './decode': 119,
+        './encode': 120
       }
     ],
-    121: [
+    122: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -38058,26 +39508,26 @@
       {
         'events': 50,
         'inherits': 55,
-        'readable-stream/duplex.js': 123,
-        'readable-stream/passthrough.js': 130,
-        'readable-stream/readable.js': 131,
-        'readable-stream/transform.js': 132,
-        'readable-stream/writable.js': 133
+        'readable-stream/duplex.js': 124,
+        'readable-stream/passthrough.js': 131,
+        'readable-stream/readable.js': 132,
+        'readable-stream/transform.js': 133,
+        'readable-stream/writable.js': 134
       }
     ],
-    122: [
+    123: [
       function (require, module, exports) {
         arguments[4][43][0].apply(exports, arguments);
       },
       { 'dup': 43 }
     ],
-    123: [
+    124: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_duplex.js');
       },
-      { './lib/_stream_duplex.js': 124 }
+      { './lib/_stream_duplex.js': 125 }
     ],
-    124: [
+    125: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -38144,14 +39594,14 @@
         }
       },
       {
-        './_stream_readable': 126,
-        './_stream_writable': 128,
+        './_stream_readable': 127,
+        './_stream_writable': 129,
         'core-util-is': 46,
         'inherits': 55,
-        'process-nextick-args': 115
+        'process-nextick-args': 116
       }
     ],
-    125: [
+    126: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -38174,12 +39624,12 @@
         };
       },
       {
-        './_stream_transform': 127,
+        './_stream_transform': 128,
         'core-util-is': 46,
         'inherits': 55
       }
     ],
-    126: [
+    127: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -39086,21 +40536,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 124,
-        './internal/streams/BufferList': 129,
-        '_process': 116,
+        './_stream_duplex': 125,
+        './internal/streams/BufferList': 130,
+        '_process': 117,
         'buffer': 42,
         'buffer-shims': 41,
         'core-util-is': 46,
         'events': 50,
         'inherits': 55,
-        'isarray': 122,
-        'process-nextick-args': 115,
-        'string_decoder/': 138,
+        'isarray': 123,
+        'process-nextick-args': 116,
+        'string_decoder/': 139,
         'util': 39
       }
     ],
-    127: [
+    128: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -39265,12 +40715,12 @@
         }
       },
       {
-        './_stream_duplex': 124,
+        './_stream_duplex': 125,
         'core-util-is': 46,
         'inherits': 55
       }
     ],
-    128: [
+    129: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -39419,7 +40869,7 @@
           // Test _writableState for inheritance to account for Duplex streams,
           // whose prototype chain only points to Readable.
           var realHasInstance;
-          if (typeof Symbol === 'function' && Symbol.hasInstance) {
+          if (typeof Symbol === 'function' && Symbol.hasInstance && typeof Function.prototype[Symbol.hasInstance] === 'function') {
             realHasInstance = Function.prototype[Symbol.hasInstance];
             Object.defineProperty(Writable, Symbol.hasInstance, {
               value: function (object) {
@@ -39773,18 +41223,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 124,
-        '_process': 116,
+        './_stream_duplex': 125,
+        '_process': 117,
         'buffer': 42,
         'buffer-shims': 41,
         'core-util-is': 46,
         'events': 50,
         'inherits': 55,
-        'process-nextick-args': 115,
-        'util-deprecate': 148
+        'process-nextick-args': 116,
+        'util-deprecate': 149
       }
     ],
-    129: [
+    130: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -39865,13 +41315,13 @@
         'buffer-shims': 41
       }
     ],
-    130: [
+    131: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 125 }
+      { './lib/_stream_passthrough.js': 126 }
     ],
-    131: [
+    132: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -39893,27 +41343,27 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 124,
-        './lib/_stream_passthrough.js': 125,
-        './lib/_stream_readable.js': 126,
-        './lib/_stream_transform.js': 127,
-        './lib/_stream_writable.js': 128,
-        '_process': 116
+        './lib/_stream_duplex.js': 125,
+        './lib/_stream_passthrough.js': 126,
+        './lib/_stream_readable.js': 127,
+        './lib/_stream_transform.js': 128,
+        './lib/_stream_writable.js': 129,
+        '_process': 117
       }
-    ],
-    132: [
-      function (require, module, exports) {
-        module.exports = require('./lib/_stream_transform.js');
-      },
-      { './lib/_stream_transform.js': 127 }
     ],
     133: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_writable.js');
+        module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_writable.js': 128 }
+      { './lib/_stream_transform.js': 128 }
     ],
     134: [
+      function (require, module, exports) {
+        module.exports = require('./lib/_stream_writable.js');
+      },
+      { './lib/_stream_writable.js': 129 }
+    ],
+    135: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -39981,13 +41431,13 @@
         ];
       },
       {
-        './lib/request': 136,
+        './lib/request': 137,
         'builtin-status-codes': 44,
-        'url': 147,
-        'xtend': 216
+        'url': 148,
+        'xtend': 217
       }
     ],
-    135: [
+    136: [
       function (require, module, exports) {
         (function (global) {
           exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableByteStream);
@@ -40028,7 +41478,7 @@
       },
       {}
     ],
-    136: [
+    137: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           // var Base64 = require('Base64')
@@ -40277,18 +41727,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 135,
-        './response': 137,
-        '_process': 116,
+        './capability': 136,
+        './response': 138,
+        '_process': 117,
         'buffer': 42,
         'foreach': 51,
         'indexof': 54,
         'inherits': 55,
-        'object-keys': 112,
-        'stream': 121
+        'object-keys': 113,
+        'stream': 122
       }
     ],
-    137: [
+    138: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           var capability = require('./capability');
@@ -40455,15 +41905,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 135,
-        '_process': 116,
+        './capability': 136,
+        '_process': 117,
         'buffer': 42,
         'foreach': 51,
         'inherits': 55,
-        'stream': 121
+        'stream': 122
       }
     ],
-    138: [
+    139: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -40667,7 +42117,7 @@
       },
       { 'buffer': 42 }
     ],
-    139: [
+    140: [
       function (require, module, exports) {
         module.exports = [
           'get',
@@ -40681,7 +42131,7 @@
       },
       {}
     ],
-    140: [
+    141: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -40857,18 +42307,18 @@
         }
       },
       {
-        './options': 141,
-        './promise': 142,
-        './util': 143,
-        './validate-schema': 144,
-        './validate-spec': 145,
+        './options': 142,
+        './promise': 143,
+        './util': 144,
+        './validate-schema': 145,
+        './validate-spec': 146,
         'call-me-maybe': 45,
         'json-schema-ref-parser': 90,
         'json-schema-ref-parser/lib/dereference': 89,
-        'ono': 114
+        'ono': 115
       }
     ],
-    141: [
+    142: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -40894,10 +42344,10 @@
       },
       {
         'json-schema-ref-parser/lib/options': 91,
-        'util': 151
+        'util': 152
       }
     ],
-    142: [
+    143: [
       function (require, module, exports) {
         arguments[4][105][0].apply(exports, arguments);
       },
@@ -40906,7 +42356,7 @@
         'es6-promise': 49
       }
     ],
-    143: [
+    144: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -40925,10 +42375,10 @@
       },
       {
         'debug': 47,
-        'util': 151
+        'util': 152
       }
     ],
-    144: [
+    145: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -40983,13 +42433,13 @@
         }
       },
       {
-        './util': 143,
-        'ono': 114,
-        'swagger-schema-official/schema': 146,
-        'z-schema': 226
+        './util': 144,
+        'ono': 115,
+        'swagger-schema-official/schema': 147,
+        'z-schema': 227
       }
     ],
-    145: [
+    146: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -41234,12 +42684,12 @@
         }
       },
       {
-        './util': 143,
-        'ono': 114,
-        'swagger-methods': 139
+        './util': 144,
+        'ono': 115,
+        'swagger-methods': 140
       }
     ],
-    146: [
+    147: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -42217,7 +43667,7 @@
       },
       {}
     ],
-    147: [
+    148: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -42852,11 +44302,11 @@
         }
       },
       {
-        'punycode': 117,
-        'querystring': 120
+        'punycode': 118,
+        'querystring': 121
       }
     ],
-    148: [
+    149: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -42924,13 +44374,13 @@
       },
       {}
     ],
-    149: [
+    150: [
       function (require, module, exports) {
         arguments[4][55][0].apply(exports, arguments);
       },
       { 'dup': 55 }
     ],
-    150: [
+    151: [
       function (require, module, exports) {
         module.exports = function isBuffer(arg) {
           return arg && typeof arg === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
@@ -42938,7 +44388,7 @@
       },
       {}
     ],
-    151: [
+    152: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -43497,12 +44947,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 150,
-        '_process': 116,
-        'inherits': 149
+        './support/isBuffer': 151,
+        '_process': 117,
+        'inherits': 150
       }
     ],
-    152: [
+    153: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43697,69 +45147,69 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 154,
-        './lib/contains': 155,
-        './lib/equals': 156,
-        './lib/escape': 157,
-        './lib/isAfter': 158,
-        './lib/isAlpha': 159,
-        './lib/isAlphanumeric': 160,
-        './lib/isAscii': 161,
-        './lib/isBase64': 162,
-        './lib/isBefore': 163,
-        './lib/isBoolean': 164,
-        './lib/isByteLength': 165,
-        './lib/isCreditCard': 166,
-        './lib/isCurrency': 167,
-        './lib/isDataURI': 168,
-        './lib/isDate': 169,
-        './lib/isDecimal': 170,
-        './lib/isDivisibleBy': 171,
-        './lib/isEmail': 172,
-        './lib/isFQDN': 173,
-        './lib/isFloat': 174,
-        './lib/isFullWidth': 175,
-        './lib/isHalfWidth': 176,
-        './lib/isHexColor': 177,
-        './lib/isHexadecimal': 178,
-        './lib/isIP': 179,
-        './lib/isISBN': 180,
-        './lib/isISIN': 181,
-        './lib/isISO8601': 182,
-        './lib/isIn': 183,
-        './lib/isInt': 184,
-        './lib/isJSON': 185,
-        './lib/isLength': 186,
-        './lib/isLowercase': 187,
-        './lib/isMACAddress': 188,
-        './lib/isMD5': 189,
-        './lib/isMobilePhone': 190,
-        './lib/isMongoId': 191,
-        './lib/isMultibyte': 192,
-        './lib/isNull': 193,
-        './lib/isNumeric': 194,
-        './lib/isSurrogatePair': 195,
-        './lib/isURL': 196,
-        './lib/isUUID': 197,
-        './lib/isUppercase': 198,
-        './lib/isVariableWidth': 199,
-        './lib/isWhitelisted': 200,
-        './lib/ltrim': 201,
-        './lib/matches': 202,
-        './lib/normalizeEmail': 203,
-        './lib/rtrim': 204,
-        './lib/stripLow': 205,
-        './lib/toBoolean': 206,
-        './lib/toDate': 207,
-        './lib/toFloat': 208,
-        './lib/toInt': 209,
-        './lib/trim': 210,
-        './lib/unescape': 211,
-        './lib/util/toString': 214,
-        './lib/whitelist': 215
+        './lib/blacklist': 155,
+        './lib/contains': 156,
+        './lib/equals': 157,
+        './lib/escape': 158,
+        './lib/isAfter': 159,
+        './lib/isAlpha': 160,
+        './lib/isAlphanumeric': 161,
+        './lib/isAscii': 162,
+        './lib/isBase64': 163,
+        './lib/isBefore': 164,
+        './lib/isBoolean': 165,
+        './lib/isByteLength': 166,
+        './lib/isCreditCard': 167,
+        './lib/isCurrency': 168,
+        './lib/isDataURI': 169,
+        './lib/isDate': 170,
+        './lib/isDecimal': 171,
+        './lib/isDivisibleBy': 172,
+        './lib/isEmail': 173,
+        './lib/isFQDN': 174,
+        './lib/isFloat': 175,
+        './lib/isFullWidth': 176,
+        './lib/isHalfWidth': 177,
+        './lib/isHexColor': 178,
+        './lib/isHexadecimal': 179,
+        './lib/isIP': 180,
+        './lib/isISBN': 181,
+        './lib/isISIN': 182,
+        './lib/isISO8601': 183,
+        './lib/isIn': 184,
+        './lib/isInt': 185,
+        './lib/isJSON': 186,
+        './lib/isLength': 187,
+        './lib/isLowercase': 188,
+        './lib/isMACAddress': 189,
+        './lib/isMD5': 190,
+        './lib/isMobilePhone': 191,
+        './lib/isMongoId': 192,
+        './lib/isMultibyte': 193,
+        './lib/isNull': 194,
+        './lib/isNumeric': 195,
+        './lib/isSurrogatePair': 196,
+        './lib/isURL': 197,
+        './lib/isUUID': 198,
+        './lib/isUppercase': 199,
+        './lib/isVariableWidth': 200,
+        './lib/isWhitelisted': 201,
+        './lib/ltrim': 202,
+        './lib/matches': 203,
+        './lib/normalizeEmail': 204,
+        './lib/rtrim': 205,
+        './lib/stripLow': 206,
+        './lib/toBoolean': 207,
+        './lib/toDate': 208,
+        './lib/toFloat': 209,
+        './lib/toInt': 210,
+        './lib/trim': 211,
+        './lib/unescape': 212,
+        './lib/util/toString': 215,
+        './lib/whitelist': 216
       }
     ],
-    153: [
+    154: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43839,7 +45289,7 @@
       },
       {}
     ],
-    154: [
+    155: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43855,9 +45305,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    155: [
+    156: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43876,11 +45326,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 212,
-        './util/toString': 214
+        './util/assertString': 213,
+        './util/toString': 215
       }
     ],
-    156: [
+    157: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43896,9 +45346,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    157: [
+    158: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43914,9 +45364,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    158: [
+    159: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43938,11 +45388,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 207,
-        './util/assertString': 212
+        './toDate': 208,
+        './util/assertString': 213
       }
     ],
-    159: [
+    160: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43964,11 +45414,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 153,
-        './util/assertString': 212
+        './alpha': 154,
+        './util/assertString': 213
       }
     ],
-    160: [
+    161: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43990,11 +45440,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 153,
-        './util/assertString': 212
+        './alpha': 154,
+        './util/assertString': 213
       }
     ],
-    161: [
+    162: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44013,9 +45463,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    162: [
+    163: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44037,9 +45487,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    163: [
+    164: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44061,11 +45511,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 207,
-        './util/assertString': 212
+        './toDate': 208,
+        './util/assertString': 213
       }
     ],
-    164: [
+    165: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44086,9 +45536,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    165: [
+    166: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44121,9 +45571,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    166: [
+    167: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44165,9 +45615,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    167: [
+    168: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44239,11 +45689,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 212,
-        './util/merge': 213
+        './util/assertString': 213,
+        './util/merge': 214
       }
     ],
-    168: [
+    169: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44261,9 +45711,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    169: [
+    170: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44352,11 +45802,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 182,
-        './util/assertString': 212
+        './isISO8601': 183,
+        './util/assertString': 213
       }
     ],
-    170: [
+    171: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44373,9 +45823,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    171: [
+    172: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44394,11 +45844,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 208,
-        './util/assertString': 212
+        './toFloat': 209,
+        './util/assertString': 213
       }
     ],
-    172: [
+    173: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44466,13 +45916,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 165,
-        './isFQDN': 173,
-        './util/assertString': 212,
-        './util/merge': 213
+        './isByteLength': 166,
+        './isFQDN': 174,
+        './util/assertString': 213,
+        './util/merge': 214
       }
     ],
-    173: [
+    174: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44524,11 +45974,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 212,
-        './util/merge': 213
+        './util/assertString': 213,
+        './util/merge': 214
       }
     ],
-    174: [
+    175: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44549,9 +45999,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    175: [
+    176: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44568,9 +46018,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    176: [
+    177: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44587,9 +46037,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    177: [
+    178: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44606,9 +46056,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    178: [
+    179: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44625,9 +46075,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    179: [
+    180: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44700,9 +46150,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    180: [
+    181: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44758,9 +46208,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    181: [
+    182: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44802,9 +46252,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    182: [
+    183: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44822,9 +46272,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    183: [
+    184: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44862,11 +46312,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 212,
-        './util/toString': 214
+        './util/assertString': 213,
+        './util/toString': 215
       }
     ],
-    184: [
+    185: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44891,9 +46341,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    185: [
+    186: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44919,9 +46369,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    186: [
+    187: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44955,9 +46405,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    187: [
+    188: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44973,9 +46423,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    188: [
+    189: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44992,9 +46442,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    189: [
+    190: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45011,9 +46461,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    190: [
+    191: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45073,9 +46523,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    191: [
+    192: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45094,11 +46544,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 178,
-        './util/assertString': 212
+        './isHexadecimal': 179,
+        './util/assertString': 213
       }
     ],
-    192: [
+    193: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45117,9 +46567,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    193: [
+    194: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45135,9 +46585,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    194: [
+    195: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45154,9 +46604,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    195: [
+    196: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45173,9 +46623,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    196: [
+    197: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45291,13 +46741,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 173,
-        './isIP': 179,
-        './util/assertString': 212,
-        './util/merge': 213
+        './isFQDN': 174,
+        './isIP': 180,
+        './util/assertString': 213,
+        './util/merge': 214
       }
     ],
-    197: [
+    198: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45321,9 +46771,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    198: [
+    199: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45339,9 +46789,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    199: [
+    200: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45360,12 +46810,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 175,
-        './isHalfWidth': 176,
-        './util/assertString': 212
+        './isFullWidth': 176,
+        './isHalfWidth': 177,
+        './util/assertString': 213
       }
     ],
-    200: [
+    201: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45386,9 +46836,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    201: [
+    202: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45405,9 +46855,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    202: [
+    203: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45426,9 +46876,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    203: [
+    204: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45472,11 +46922,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 172,
-        './util/merge': 213
+        './isEmail': 173,
+        './util/merge': 214
       }
     ],
-    204: [
+    205: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45497,9 +46947,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    205: [
+    206: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45519,11 +46969,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 154,
-        './util/assertString': 212
+        './blacklist': 155,
+        './util/assertString': 213
       }
     ],
-    206: [
+    207: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45542,9 +46992,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    207: [
+    208: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45561,9 +47011,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    208: [
+    209: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45579,9 +47029,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    209: [
+    210: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45597,9 +47047,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    210: [
+    211: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45617,11 +47067,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 201,
-        './rtrim': 204
+        './ltrim': 202,
+        './rtrim': 205
       }
     ],
-    211: [
+    212: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45637,9 +47087,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    212: [
+    213: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45653,7 +47103,7 @@
       },
       {}
     ],
-    213: [
+    214: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45672,7 +47122,7 @@
       },
       {}
     ],
-    214: [
+    215: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45698,7 +47148,7 @@
       },
       {}
     ],
-    215: [
+    216: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45714,9 +47164,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 212 }
+      { './util/assertString': 213 }
     ],
-    216: [
+    217: [
       function (require, module, exports) {
         module.exports = extend;
         var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -45735,7 +47185,7 @@
       },
       {}
     ],
-    217: [
+    218: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -45784,7 +47234,7 @@
       },
       {}
     ],
-    218: [
+    219: [
       function (require, module, exports) {
         /*jshint maxlen: false*/
         var validator = require('validator');
@@ -45923,9 +47373,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 152 }
+      { 'validator': 153 }
     ],
-    219: [
+    220: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), Report = require('./Report'), Utils = require('./Utils');
@@ -46462,12 +47912,12 @@
         };
       },
       {
-        './FormatValidators': 218,
-        './Report': 221,
-        './Utils': 225
+        './FormatValidators': 219,
+        './Report': 222,
+        './Utils': 226
       }
     ],
-    220: [
+    221: [
       function (require, module, exports) {
         // Number.isFinite polyfill
         // http://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.isfinite
@@ -46488,7 +47938,7 @@
       },
       {}
     ],
-    221: [
+    222: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -46665,15 +48115,16 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 217,
-        './Utils': 225,
-        '_process': 116,
+        './Errors': 218,
+        './Utils': 226,
+        '_process': 117,
         'lodash.get': 109
       }
     ],
-    222: [
+    223: [
       function (require, module, exports) {
         'use strict';
+        var isequal = require('lodash.isequal');
         var Report = require('./Report');
         var SchemaCompilation = require('./SchemaCompilation');
         var SchemaValidation = require('./SchemaValidation');
@@ -46761,7 +48212,7 @@
         exports.getSchemaByReference = function (report, key) {
           var i = this.referenceCache.length;
           while (i--) {
-            if (this.referenceCache[i][0] === key) {
+            if (isequal(this.referenceCache[i][0], key)) {
               return this.referenceCache[i][1];
             }
           }
@@ -46813,13 +48264,14 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 221,
-        './SchemaCompilation': 223,
-        './SchemaValidation': 224,
-        './Utils': 225
+        './Report': 222,
+        './SchemaCompilation': 224,
+        './SchemaValidation': 225,
+        './Utils': 226,
+        'lodash.isequal': 110
       }
     ],
-    223: [
+    224: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -47066,12 +48518,12 @@
         };
       },
       {
-        './Report': 221,
-        './SchemaCache': 222,
-        './Utils': 225
+        './Report': 222,
+        './SchemaCache': 223,
+        './Utils': 226
       }
     ],
-    224: [
+    225: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -47835,13 +49287,13 @@
         };
       },
       {
-        './FormatValidators': 218,
-        './JsonValidation': 219,
-        './Report': 221,
-        './Utils': 225
+        './FormatValidators': 219,
+        './JsonValidation': 220,
+        './Report': 222,
+        './Utils': 226
       }
     ],
-    225: [
+    226: [
       function (require, module, exports) {
         'use strict';
         exports.isAbsoluteUri = function (uri) {
@@ -48047,7 +49499,7 @@
       },
       {}
     ],
-    226: [
+    227: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -48344,21 +49796,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 218,
-        './JsonValidation': 219,
-        './Polyfills': 220,
-        './Report': 221,
-        './SchemaCache': 222,
-        './SchemaCompilation': 223,
-        './SchemaValidation': 224,
-        './Utils': 225,
-        './schemas/hyper-schema.json': 227,
-        './schemas/schema.json': 228,
-        '_process': 116,
+        './FormatValidators': 219,
+        './JsonValidation': 220,
+        './Polyfills': 221,
+        './Report': 222,
+        './SchemaCache': 223,
+        './SchemaCompilation': 224,
+        './SchemaValidation': 225,
+        './Utils': 226,
+        './schemas/hyper-schema.json': 228,
+        './schemas/schema.json': 229,
+        '_process': 117,
         'lodash.get': 109
       }
     ],
-    227: [
+    228: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -48476,7 +49928,7 @@
       },
       {}
     ],
-    228: [
+    229: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -58938,82 +60390,6 @@ if (!String.prototype.endsWith) {
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('ramlParserAdapter', [
-    '$http',
-    '$q',
-    '$window',
-    'ramlExpander',
-    function ramlParserAdapter($http, $q, $window, ramlExpander) {
-      var jsonOptions = {
-          serializeMetadata: false,
-          dumpSchemaContents: true,
-          rootNodeDetails: true
-        };
-      return {
-        loadPath: toQ(loadPath),
-        loadPathUnwrapped: loadPath
-      };
-      // ---
-      function loadPath(path, contentAsyncFn, options) {
-        return loadApi(path, function contentAsync(path) {
-          return contentAsyncFn ? contentAsyncFn(path) : $q.reject(new Error('ramlParser: loadPath: contentAsync: ' + path + ': no such path'));
-        }, options);
-      }
-      // ---
-      function toQ(fn) {
-        return function toQWrapper() {
-          return $q.when(fn.apply(this, arguments));
-        };
-      }
-      /**
-       * @param  {String}   path
-       * @param  {Function} contentAsyncFn
-       * @param  {Object}   options
-       * @param  {Boolean}  options.bypassProxy
-       */
-      function loadApi(path, contentAsyncFn, options) {
-        options = options || {};
-        return RAML.Parser.loadApi(path, {
-          attributeDefaults: true,
-          rejectOnErrors: false,
-          fsResolver: {
-            contentAsync: contentAsyncFn,
-            content: content
-          },
-          httpResolver: {
-            getResourceAsync: function getResourceAsync(url) {
-              var settings = ($window.RAML || {}).Settings || {};
-              var proxy = (options.bypassProxy ? {} : settings).proxy || '';
-              var req = {
-                  method: 'GET',
-                  url: proxy + url,
-                  headers: { 'Accept': 'application/raml+yaml' },
-                  transformResponse: null
-                };
-              return $http(req).then(function (res) {
-                return { content: res.data };
-              });
-            }
-          }
-        }).then(function (api) {
-          api = api.expand ? api.expand(true) : api;
-          var raml = api.toJSON(jsonOptions);
-          if (raml.specification) {
-            ramlExpander.expandRaml(raml.specification);
-          }
-          return raml;
-        });
-        // ---
-        function content(path) {
-          throw new Error('ramlParser: loadPath: loadApi: content: ' + path + ': no such path');
-        }
-      }
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
   angular.module('raml').value('snippets', {
     options: [
       'options:',
@@ -60129,121 +61505,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     return this;
   }
 ]);
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').factory('ramlExpander', [
-    '$q',
-    'jsTraverse',
-    function mockingServiceUtils($q, jsTraverse) {
-      return { expandRaml: expandRaml };
-      // ---
-      function retrieveType(raml, typeName) {
-        if (!raml.types) {
-          return;
-        }
-        var object = raml.types.filter(function (type) {
-            return type[typeName];
-          })[0];
-        return object ? object[typeName] : object;
-      }
-      function replaceTypeIfExists(raml, type, value) {
-        var valueHasExamples = value.example || value.examples;
-        var expandedType = retrieveType(raml, type);
-        if (expandedType) {
-          for (var key in expandedType) {
-            if (expandedType.hasOwnProperty(key)) {
-              if ([
-                  'example',
-                  'examples'
-                ].includes(key) && valueHasExamples) {
-                continue;
-              }
-              value[key] = expandedType[key];
-            }
-          }
-        }
-      }
-      function dereferenceTypes(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
-            var type = value.type[0];
-            replaceTypeIfExists(raml, type, value);
-          }
-        });
-      }
-      function extractArrayType(arrayNode) {
-        if (arrayNode.items.type) {
-          return arrayNode.items.type[0];
-        }
-        return arrayNode.items;
-      }
-      function isNotObject(value) {
-        return value === null || typeof value !== 'object';
-      }
-      function dereferenceTypesInArrays(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
-            var type = extractArrayType(value);
-            if (isNotObject(value.items)) {
-              value.items = {};
-            }
-            replaceTypeIfExists(raml, type, value.items);
-            if (!value.examples && !value.example) {
-              generateArrayExampleIfPossible(value);
-            }
-          }
-        });
-      }
-      function generateArrayExampleIfPossible(arrayNode) {
-        var examples = getExampleList(arrayNode.items);
-        if (examples.length === 0) {
-          return;
-        }
-        arrayNode.example = examples;
-      }
-      function getExampleList(node) {
-        if (node.examples) {
-          return node.examples.map(function (example) {
-            return example.structuredValue;
-          });
-        }
-        if (node.example) {
-          return [node.example];
-        }
-        return [];
-      }
-      function dereferenceSchemas(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.schema) {
-            var schema = value.schema[0];
-            replaceSchemaIfExists(raml, schema, value);
-          }
-        });
-      }
-      function replaceSchemaIfExists(raml, schema, value) {
-        var expandedSchema = retrieveSchema(raml, schema);
-        if (expandedSchema) {
-          value.schema[0] = expandedSchema.type[0];
-        }
-      }
-      function retrieveSchema(raml, schemaName) {
-        if (!raml.schemas) {
-          return;
-        }
-        var object = raml.schemas.filter(function (schema) {
-            return schema[schemaName];
-          })[0];
-        return object ? object[schemaName] : object;
-      }
-      function expandRaml(raml) {
-        dereferenceTypes(raml);
-        dereferenceSchemas(raml);
-        dereferenceTypesInArrays(raml);
-      }
-    }
-  ]);
-  ;
-}());
 (function () {
   'use strict';
   function FileSystem() {
@@ -62006,7 +63267,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApply',
     'safeApplyWrapper',
     'debounce',
-    'ramlParserAdapter',
+    'ramlParser',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -62017,7 +63278,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParser, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -62104,7 +63365,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         updateFile();
       };
       $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParserAdapter.loadPath(location, function contentAsync(path) {
+        return ramlParser.loadPath(location, function contentAsync(path) {
           var file = ramlRepository.getByPath(path);
           if (file) {
             return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (file) {

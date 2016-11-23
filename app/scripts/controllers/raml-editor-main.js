@@ -4,7 +4,7 @@
   angular.module('ramlEditorApp')
     .constant('UPDATE_RESPONSIVENESS_INTERVAL', 800)
     .controller('ramlEditorMain', function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window,
-      safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror,
+      safeApply, safeApplyWrapper, debounce, ramlParser, ramlRepository, codeMirror,
       codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers
     ) {
       var editor, lineOfCurrentError, currentFile;
@@ -120,7 +120,7 @@
       };
 
       $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParserAdapter.loadPath(location, function contentAsync(path) {
+        return ramlParser.loadPath(location, function contentAsync(path) {
           var file = ramlRepository.getByPath(path);
 
           if (file) {
