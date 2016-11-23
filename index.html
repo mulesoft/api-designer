@@ -3,26 +3,37 @@ layout: default
 title: {{ site.name }}
 ---
 
-<!-- <h2>Branches</h2> -->
-<table>   
-	<thead>
-		<tr>
-			<th>Branch</th>
-			<th>Last Update</th>
-			<th>Preview</th>
-		</tr>
-	</thead>
-	<tbody>
-		{% assign branchs = site.branchs | sort: "date" | reverse %}
-		{% for branch in branchs %}
-		<tr>
-			<td><a href="{{site.repository}}/tree/{{branch.name}}">{{branch.name}}</td>
-			<td><a href="{{site.repository}}/commit/{{branch.sha}}">{{branch.date | date_to_string}}</a></td>
-			<td><a href="{{site.baseurl}}/dists/{{branch.folder}}/latest">Open</a></td>
-		</tr>
-		{% endfor %}		
-	</tbody>
-</table>
+<h2>Branches:</h2>
+<ul>
+{% assign branchs = site.branchs | sort: "order" %}
+{% for branch in branchs %}
+	{% if branch.branch != null  %}
+	<li>
+		{% if branch.href != null %}
+			<a href="{{branch.href}}">{{branch.label}}</a>
+		{% else  %}
+			<a href="http://rawgit.com/mulesoft/api-designer/{{branch.branch}}/dist/index.html#/?xDisableProxy=true">Latest {{branch.branch}}</a>
+		{% endif %}
+	</li>
+	{% endif %}
+{% endfor %}		
+</ul>
+
+<h2>Versions:</h2>
+<ul>
+{% assign tags = site.branchs | reverse %}
+{% for tag in tags %}
+	{% if tag.tag != null %}
+	<li>	
+		{% if branch.href != null %}
+			<a href="{{branch.href}}">{{branch.label}}</a>
+		{% else  %}
+			<a href="http://rawgit.com/mulesoft/api-designer/{{tag.tag}}/dist/index.html#/?xDisableProxy=true">{{tag.tag}}</a>
+		{% endif %}
+	</li>
+	{% endif %}
+{% endfor %}		
+</ul>
 
 <!-- 
 {% capture readme %}{% include_relative README.md %}{% endcapture %}

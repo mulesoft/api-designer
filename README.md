@@ -1,11 +1,28 @@
 ## Updating
 
-To update a brach:
+Inside the _branchs folder, add a `<my-branch>.md` file.
 
-1. Checkout the **gh-pages** branch of the **api-designer**
-2. Run **./update-branch.sh** branch-name
+To simply point to the branch:
+```
+---
+branch: qa
+order: 2
+---
+```
 
-```bash
-git clone -b gh-pages https://github.com/mulesoft/api-designer.git api-designer-site
-./update-branch.sh master
+To point to a tag:
+```
+---
+tag: v0.3.0
+---
+```
+
+To add a custom url:
+```
+---
+label: Latest develop with OAS export
+branch: develop
+order: 4
+href: http://rawgit.com/mulesoft/api-designer/develop/dist/index.html#/?xDisableProxy=true&xOasExport=true
+---
 ```
