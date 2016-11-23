@@ -211,11 +211,13 @@ angular.module('ramlEditorApp')
         }));
 
       if (addNewResource) {
-        var spaces = '\n' + new Array(ch + 1).join(' ') + '  ';
+        var prefix = addNewResource.replacementPrefix || '';
+        var spaces = '\n' + new Array(ch - prefix.length + 1).join(' ') + '  ';
         return suggestions.concat({
           text: '/newResource:' + spaces + 'displayName: resourceName' + spaces,
           displayText: 'New Resource',
-          category: 'resources'
+          category: 'resources',
+          replacementPrefix: prefix
         });
       }
 
