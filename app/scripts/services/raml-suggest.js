@@ -129,7 +129,7 @@ var EditorStateProvider = function (fsResolver, path, editor) {
 };
 
 angular.module('ramlEditorApp')
-  .factory('ramlSuggest', function (ramlRepository) {
+  .factory('ramlSuggest', function (ramlRepository, ramlEditorMainHelpers) {
 
     this.FSResolver = FSResolver;
 
@@ -210,7 +210,7 @@ angular.module('ramlEditorApp')
           return s.category === 'methods' ? s : null;
         }));
 
-      if (addNewResource) {
+      if (addNewResource && ramlEditorMainHelpers.isApiDefinition(editor.getValue())) {
         var prefix = addNewResource.replacementPrefix || '';
         var spaces = '\n' + new Array(ch - prefix.length + 1).join(' ') + '  ';
         return suggestions.concat({

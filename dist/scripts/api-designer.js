@@ -59929,7 +59929,8 @@ var EditorStateProvider = function (fsResolver, path, editor) {
 };
 angular.module('ramlEditorApp').factory('ramlSuggest', [
   'ramlRepository',
-  function (ramlRepository) {
+  'ramlEditorMainHelpers',
+  function (ramlRepository, ramlEditorMainHelpers) {
     this.FSResolver = FSResolver;
     this.EditorStateProvider = EditorStateProvider;
     function codemirrorHint(editor, suggestions) {
@@ -60007,7 +60008,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       var addNewResource = suggestions.length > 0 && (ch === 0 || suggestions.find(function (s) {
           return s.category === 'methods' ? s : null;
         }));
-      if (addNewResource) {
+      if (addNewResource && ramlEditorMainHelpers.isApiDefinition(editor.getValue())) {
         var prefix = addNewResource.replacementPrefix || '';
         var spaces = '\n' + new Array(ch - prefix.length + 1).join(' ') + '  ';
         return suggestions.concat({
