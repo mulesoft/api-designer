@@ -58,7 +58,6 @@ module.exports = function (grunt) {
   } catch (e) {
   }
 
-
   grunt.initConfig({
     yeoman: yeomanConfig,
 

@@ -115,15 +115,15 @@
 				}
 
         return importSwaggerPromise
-        .then(function () {
-					return $modalInstance.close(true);
-				})
-				.catch(function (err) {
-					broadcastError('Failed to parse Swagger: ' + err.message);
-				})
-				.finally(function () {
-					$scope.importing = false;
-				});
+          .then(function () {
+            return $modalInstance.close(true);
+          })
+          .catch(function (err) {
+            broadcastError('Failed to parse Swagger: ' + err.message);
+          })
+          .finally(function () {
+            $scope.importing = false;
+          });
 			}
 
       $scope.options = [

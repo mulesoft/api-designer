@@ -15,7 +15,6 @@
           menuRole : '@'
         },
         templateUrl:'views/menu/new-file-menu.tmpl.html',
-
         link:     function (scope) {
           scope.closeFragmentMenu = function () {
             scope.showFragmentMenu = false;

@@ -10,7 +10,7 @@
         restrict: 'E',
         template:
           '<li role="import-button" ng-click="importFile()">' +
-            '<a><i class="fa fa-cloud-download"></i> Import</a>' +
+            '<a><i class="fa fa-cloud-download"></i>&nbsp;Import</a>' +
           '</li>',
         link:     function (scope) {
           scope.importFile = function importFile() {
