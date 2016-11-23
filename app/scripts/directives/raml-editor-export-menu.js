@@ -7,12 +7,13 @@
       subMenuService,
       ramlToSwagger,
       $window,
+      $location,
       $rootScope) {
       return {
         restrict: 'E',
         templateUrl: 'views/menu/export-menu.tmpl.html',
         link: function (scope) {
-          scope.xOasExport = scope.xOasExport || window.location.search.indexOf('x-oas-export=true') > -1;
+          scope.xOasExport = scope.xOasExport || $location.search().xOasExport === 'true';
 
           function saveFile(yaml, name) {
             var blob = new Blob([yaml], {type: 'application/json;charset=utf-8'});

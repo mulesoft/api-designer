@@ -57717,9 +57717,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'dragAndDrop'
   ]).run([
     '$window',
-    function ($window) {
+    '$location',
+    function ($window, $location) {
       // Adding proxy settings for api console
-      $window.RAML.Settings.proxy = '/proxy/';
+      var disableProxy = $location.search().xDisableProxy === 'true';
+      $window.RAML.Settings.proxy = disableProxy ? '' : '/proxy/';
     }
   ]);
   ;
@@ -60078,9 +60080,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     }
     function addTextSnippets(editor, suggestions) {
       var ch = editor.getCursor().ch;
-      var addNewResource = ch === 0 || suggestions.find(function (s) {
+      var addNewResource = suggestions.length > 0 && (ch === 0 || suggestions.find(function (s) {
           return s.category === 'methods' ? s : null;
-        });
+        }));
       if (addNewResource) {
         var spaces = '\n' + new Array(ch + 1).join(' ') + '  ';
         return suggestions.concat({
@@ -63517,13 +63519,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'subMenuService',
     'ramlToSwagger',
     '$window',
+    '$location',
     '$rootScope',
-    function ramlEditorExportMenu(ramlRepository, subMenuService, ramlToSwagger, $window, $rootScope) {
+    function ramlEditorExportMenu(ramlRepository, subMenuService, ramlToSwagger, $window, $location, $rootScope) {
       return {
         restrict: 'E',
         templateUrl: 'views/menu/export-menu.tmpl.html',
         link: function (scope) {
-          scope.xOasExport = scope.xOasExport || window.location.search.indexOf('x-oas-export=true') > -1;
+          scope.xOasExport = scope.xOasExport || $location.search().xOasExport === 'true';
           function saveFile(yaml, name) {
             var blob = new Blob([yaml], { type: 'application/json;charset=utf-8' });
             $window.saveAs(blob, name);

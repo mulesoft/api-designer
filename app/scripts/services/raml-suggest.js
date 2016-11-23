@@ -206,9 +206,9 @@ angular.module('ramlEditorApp')
 
     function addTextSnippets(editor, suggestions) {
       var ch = editor.getCursor().ch;
-      var addNewResource = ch === 0 || suggestions.find(function (s) {
+      var addNewResource = suggestions.length > 0 && (ch === 0 || suggestions.find(function (s) {
           return s.category === 'methods' ? s : null;
-        });
+        }));
 
       if (addNewResource) {
         var spaces = '\n' + new Array(ch + 1).join(' ') + '  ';
