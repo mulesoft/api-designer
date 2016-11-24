@@ -8,7 +8,7 @@ describe('ramlEditorNewFolderButton', function() {
   }
 
   function clickNewFolderButton() {
-    angular.element(el[0].querySelector('[role="new-folder-button"]')).triggerHandler('click');
+    el.triggerHandler('click');
   }
 
   angular.module('newFolderButtonTest', ['ramlEditorApp', 'testFs', 'utils']);

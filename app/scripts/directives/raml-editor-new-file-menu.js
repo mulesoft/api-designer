@@ -8,6 +8,7 @@
     ) {
       return {
         restrict: 'E',
+        replace: true,
         scope: {
           showFileMenu: '=',
           showFragmentMenu: '=',

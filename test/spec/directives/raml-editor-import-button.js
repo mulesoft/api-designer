@@ -8,7 +8,7 @@ describe('ramlEditorImportButton', function() {
   }
 
   function clickImportFilesButton() {
-    angular.element(el[0].querySelector('[role="import-button"]')).triggerHandler('click');
+    el.triggerHandler('click');
   }
 
   angular.module('importButtonTest', ['ramlEditorApp', 'testFs', 'utils']);

@@ -8,6 +8,7 @@
     ) {
       return {
         restrict: 'E',
+        replace: true,
         template:
         '<li role="save-button" ng-click="saveFile()">' +
           '<a><i class="fa fa-save"></i>&nbsp;Save</a>' +

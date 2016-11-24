@@ -8,6 +8,7 @@
     ) {
       return {
         restrict: 'E',
+        replace: true,
         template:
           '<li role="import-button" ng-click="importFile()">' +
             '<a><i class="fa fa-cloud-download"></i>&nbsp;Import</a>' +

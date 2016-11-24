@@ -8,7 +8,7 @@ describe('ramlEditorSaveAllFilesButton', function() {
   }
 
   function clickSaveAllFileButton() {
-    angular.element(el[0].querySelector('[role="save-all-button"]')).triggerHandler('click');
+    el.triggerHandler('click');
   }
 
   beforeEach(module('ramlEditorApp'));

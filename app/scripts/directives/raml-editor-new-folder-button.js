@@ -7,6 +7,7 @@
     ) {
       return {
         restrict: 'E',
+        replace: true,
         template:
         '<li ng-show="supportsFolders" role="new-folder-button" ng-click="newFolder()">' +
           '<a><i class="fa fa-folder-open"></i>&nbsp;New Folder</a>' +

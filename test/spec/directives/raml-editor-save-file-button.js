@@ -12,13 +12,7 @@ describe('ramlEditorSaveFileButton', function() {
   }
 
   function clickSaveFileButton() {
-    angular.element(el[0].querySelector('[role="save-button"]')).triggerHandler('click');
-  }
-
-  function clickSaveAllFileButton() {
-    angular.element(el[0].querySelector('[role="save-all-button"]')).triggerHandler('click');
-    //angular.element(el[0].querySelector('[role="context-menu"]')).triggerHandler('click');
-    //angular.element(el[0].querySelector('[role="context-menu"]')).scope().$broadcast('event:save-all');
+    el.triggerHandler('click');
   }
 
   beforeEach(module('ramlEditorApp'));
@@ -92,7 +86,7 @@ describe('ramlEditorSaveFileButton', function() {
     }));
 
     it('calls saveFile on the ramlRepository', function() {
-      clickSaveAllFileButton();
+      clickSaveFileButton();
       ramlRepository.saveFile.should.have.been.calledWith(scope.fileBrowser.selectedFile);
     });
 
@@ -103,7 +97,7 @@ describe('ramlEditorSaveFileButton', function() {
 
     describe('when ramlRepository successfully saves', function() {
       beforeEach(inject(function($rootScope) {
-        clickSaveAllFileButton();
+        clickSaveFileButton();
         $rootScope.$digest();
       }));
 

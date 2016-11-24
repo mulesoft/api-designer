@@ -845,6 +845,11 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   margin-top: 2px;
   background: #c6c0c0;
 }
+[role="menu-dropdown"] > li:last-child > a:after,
+[role="menu-dropdown"] raml-editor-export-menu > a:after,
+[role="menu-dropdown"] raml-editor-export-menu > li > a:after {
+  background: none;
+}
 [role="menu-dropdown"] li:hover {
   color: white;
   background-color: #969494;
@@ -1342,7 +1347,7 @@ div[role=raml-editor] .menubar hr.line-with-linear-gradient {
 }
 div[role=raml-editor] .menubar .menu-item-context {
   position: absolute;
-  top: 106%;
+  top: 100%;
   left: 18%;
   margin-left: -18px;
   border: 1px solid black;

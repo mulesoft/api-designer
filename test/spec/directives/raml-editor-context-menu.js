@@ -16,15 +16,15 @@ describe('ramlEditorContextMenu', function() {
     document.body.appendChild(el[0]);
   }
 
-  function contextNewFileItemNamed(name) {
-    return Array.prototype.slice.call(el.children().children().children().children().children()).filter(function(child) {
-      return angular.element(child).text().indexOf(name) !== -1;
+  function findLink(text) {
+    return Array.prototype.slice.call(el.find('a')).filter(function(child) {
+      return child.text.indexOf(text) !== -1;
     })[0];
   }
 
-  function contextMenuItemNamed(name) {
-    return Array.prototype.slice.call(el.children().children()).filter(function(child) {
-      return angular.element(child).text().indexOf(name) !== -1;
+  function findListItem(text) {
+    return Array.prototype.slice.call(el.find('li')).filter(function(child) {
+      return angular.element(child).text().indexOf(text) !== -1;
     })[0];
   }
 
@@ -83,7 +83,7 @@ describe('ramlEditorContextMenu', function() {
 
       beforeEach(inject(function(ramlRepository) {
         saveFileSpy = sinon.spy(ramlRepository, 'saveFile');
-        var saveItem = contextMenuItemNamed('Save');
+        var saveItem = findListItem('Save');
 
         saveItem.dispatchEvent(events.click());
       }));
@@ -99,7 +99,7 @@ describe('ramlEditorContextMenu', function() {
       beforeEach(inject(function($window, confirmModal, ramlRepository) {
         removeItemStub = sandbox.stub(ramlRepository, 'remove');
         confirmStub = sandbox.stub(confirmModal, 'open');
-        removeItem = contextMenuItemNamed('Delete');
+        removeItem = findListItem('Delete');
       }));
 
       it('opens the confirmModal with the name of the file to delete', function() {
@@ -243,7 +243,7 @@ describe('ramlEditorContextMenu', function() {
       beforeEach(inject(function($window, confirmModal, ramlRepository) {
         removeItemStub = sandbox.stub(ramlRepository, 'remove');
         confirmStub = sandbox.stub(confirmModal, 'open');
-        removeItem = contextMenuItemNamed('Delete');
+        removeItem = findListItem('Delete');
       }));
 
       it('opens the confirmModal with the name of the file to delete', function() {
@@ -265,8 +265,8 @@ describe('ramlEditorContextMenu', function() {
       }));
 
       it('new raml 0.8 file', function() {
-        var newRaml = contextNewFileItemNamed('Raml 0.8 API Spec');
-        newRaml.children[0].dispatchEvent(events.click());
+        var newRaml = findLink('Raml 0.8 API Spec');
+        newRaml.dispatchEvent(events.click());
         promptStub.should.have.been.called;
       });
     });
@@ -276,7 +276,7 @@ describe('ramlEditorContextMenu', function() {
 
       beforeEach(inject(function($window, newFolderService) {
         promptStub = sandbox.stub(newFolderService, 'prompt');
-        newFolderItem = contextMenuItemNamed('New Folder');
+        newFolderItem = findListItem('New Folder');
       }));
 
       it('opens the confirmModal with the name of the file to delete', function() {

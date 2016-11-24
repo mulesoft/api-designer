@@ -7,8 +7,12 @@ describe('ramlEditorProjectButton', function() {
     editor = compileTemplate('<raml-editor-project-button></raml-editor-project-button>', scope);
   }
 
+  function findElement(selector) {
+    return angular.element(editor[0].querySelector(selector));
+  }
+
   function openProjectMenu() {
-    angular.element(editor[0].querySelector('[role="project-button"]')).triggerHandler('click');
+    findElement('[role="project-button"]').triggerHandler('click');
   }
 
   function isFileMenuOpened() {
@@ -16,20 +20,20 @@ describe('ramlEditorProjectButton', function() {
   }
 
   function openNewFileSubMenu() {
-    angular.element(editor[0].children[1].children[0]).triggerHandler('mouseenter');
+    findElement('[role="new-file"]').triggerHandler('mouseenter');
   }
 
   function closeNewFileSubMenu() {
-    angular.element(editor[0].children[1].children[0]).triggerHandler('mouseleave');
+    findElement('[role="new-file"]').triggerHandler('mouseleave');
   }
 
   function openExportSubMenu() {
-    angular.element(editor[0].children[1].children[5]).triggerHandler('mouseenter');
+    angular.element(editor.children()[1].querySelector('[ng-mouseenter="openExportMenu()"]')).triggerHandler('mouseenter');
   }
 
   function projectItem(name) {
-    return Array.prototype.slice.call(editor.children().children()).filter(function(child) {
-      return angular.element(child).text().indexOf(name) !== -1;
+    return Array.prototype.slice.call(editor.find('a')).filter(function(child) {
+      return child.text.indexOf(name) !== -1;
     })[0];
   }
 
