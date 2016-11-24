@@ -37,6 +37,10 @@
         return service.rootDirectory;
       };
 
+      service.exportFiles = function () {
+        return this;
+      };
+
       service.loadFile = function (file) {
         file.contents = file.name + ' content';
 

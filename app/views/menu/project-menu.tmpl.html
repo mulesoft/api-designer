@@ -1,0 +1,27 @@
+<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">
+  <i class="fa fa-cogs"></i>&nbsp;Project
+  <i class="menu-icon fa fa-caret-down"></i>
+</span>
+<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">
+  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">
+    <a>
+      <i class="fa fa-plus"></i>&nbsp;New File
+      <i class="submenu-icon fa fa-caret-right"></i>
+    </a>
+    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>
+  </li>
+
+  <raml-editor-new-folder-button></raml-editor-new-folder-button>
+
+  <raml-editor-save-file-button></raml-editor-save-file-button>
+
+  <raml-editor-save-all-button></raml-editor-save-all-button>
+
+  <raml-editor-import-button></raml-editor-import-button>
+
+  <raml-editor-export-menu ng-if="!xOasExport"></raml-editor-export-menu>
+
+  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="xOasExport && canExportFiles()">
+    <raml-editor-export-menu></raml-editor-export-menu>
+  </li>
+</ul>

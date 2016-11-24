@@ -5421,9 +5421,9 @@
       },
       {
         './lib/converter': 2,
-        './lib/exporters/index': 14,
-        './lib/formats': 19,
-        './lib/importers/index': 25
+        './lib/exporters/index': 15,
+        './lib/formats': 20,
+        './lib/importers/index': 26
       }
     ],
     2: [
@@ -5442,12 +5442,9 @@
           }
           this.exporter.type = toFormat;
         }
-        Converter.prototype.loadFile = function (filePath, cb) {
-          return this.importer.loadFile(filePath, cb);
-        };
         // todo unify api by returning a Promise like the loadData function
-        Converter.prototype.loadFileWithOptions = function (filePath, options, cb) {
-          return this.importer.loadFileWithOptions(filePath, options, cb);
+        Converter.prototype.loadFile = function (filePath, cb, options) {
+          return this.importer.loadFile(filePath, cb, options);
         };
         Converter.prototype.loadData = function (rawData, options) {
           var me = this;
@@ -5477,9 +5474,9 @@
         exports.Converter = Converter;
       },
       {
-        './exporters/index': 14,
-        './importers/index': 25,
-        'lodash': 109
+        './exporters/index': 15,
+        './importers/index': 26,
+        'lodash': 110
       }
     ],
     3: [
@@ -5673,8 +5670,8 @@
         module.exports = Endpoint;
       },
       {
-        '../utils/json': 33,
-        '../utils/strings': 34
+        '../utils/json': 34,
+        '../utils/strings': 35
       }
     ],
     4: [
@@ -5953,7 +5950,7 @@
         };
         module.exports = SavedEntry;
       },
-      { '../utils/json': 33 }
+      { '../utils/json': 34 }
     ],
     7: [
       function (require, module, exports) {
@@ -6063,6 +6060,66 @@
     ],
     9: [
       function (require, module, exports) {
+        function Method(method, methodResolved) {
+          this.method = method;
+          this.methodResolved = methodResolved;
+          this.summary = this.method.summary || this.methodResolved.summary;
+          this.tags = this.method.tags || this.methodResolved.tags;
+          this.description = this.method.description || this.methodResolved.description;
+          this.deprecated = this.method.deprecated || this.methodResolved.deprecated;
+          this.operationId = this.method.operationId || this.methodResolved.operationId;
+          this.externalDocs = this.method.externalDocs || this.methodResolved.externalDocs;
+          this.schemes = this.method.schemes || this.methodResolved.schemes;
+          this.parameters = this.method.parameters || this.methodResolved.parameters;
+          this.consumes = this.method.consumes || this.methodResolved.consumes;
+          this.produces = this.method.produces || this.methodResolved.produces;
+          this.responses = this.method.responses || this.methodResolved.responses;
+          this.security = this.method.security || this.methodResolved.security;
+        }
+        Method.prototype = {
+          get Summary() {
+            return this.summary;
+          },
+          get Tags() {
+            return this.tags;
+          },
+          get Description() {
+            return this.description;
+          },
+          get Deprecated() {
+            return this.deprecated;
+          },
+          get OperationId() {
+            return this.operationId;
+          },
+          get ExternalDocs() {
+            return this.externalDocs;
+          },
+          get Schemes() {
+            return this.schemes;
+          },
+          get Parameters() {
+            return this.parameters;
+          },
+          get Consumes() {
+            return this.consumes;
+          },
+          get Produces() {
+            return this.produces;
+          },
+          get Responses() {
+            return this.responses;
+          },
+          get Security() {
+            return this.security;
+          }
+        };
+        module.exports = Method;
+      },
+      {}
+    ],
+    10: [
+      function (require, module, exports) {
         var jsonHelper = require('../utils/json');
         function Test(name) {
           this._id = null;
@@ -6105,9 +6162,9 @@
         };
         module.exports = Test;
       },
-      { '../utils/json': 33 }
+      { '../utils/json': 34 }
     ],
-    10: [
+    11: [
       function (require, module, exports) {
         function Text(name) {
           this._id = null;
@@ -6154,7 +6211,7 @@
       },
       {}
     ],
-    11: [
+    12: [
       function (require, module, exports) {
         function UtilityFunction(name) {
           this.name = name;
@@ -6190,7 +6247,7 @@
       },
       {}
     ],
-    12: [
+    13: [
       function (require, module, exports) {
         var _ = require('lodash'), Exporter = require('./exporter'), ramlHelper = require('../helpers/raml'), jsonHelper = require('../utils/json'), YAML = require('js-yaml');
         function RAMLDefinition(title, env) {
@@ -6220,9 +6277,11 @@
               if (!method.uriParameters.hasOwnProperty(attrname))
                 continue;
               //uri not available, so check with displayName, which is same
-              var isURIParamExist = resource.displayName.split(attrname).length - 1;
-              if (isURIParamExist) {
-                resource.uriParameters[attrname] = method.uriParameters[attrname];
+              if (resource.displayName) {
+                var isURIParamExist = resource.displayName.split(attrname).length - 1;
+                if (isURIParamExist) {
+                  resource.uriParameters[attrname] = method.uriParameters[attrname];
+                }
               }
             }
             delete method.uriParameters;
@@ -6232,7 +6291,10 @@
           } else {
             var currentURI = '/' + methodURIs[0];
             if (!resource[currentURI]) {
-              resource[currentURI] = { displayName: methodURIs[0] };  //TODO uriParams?!?
+              resource[currentURI] = {};
+              if (!_.isEmpty(methodURIs[0])) {
+                resource[currentURI].displayName = methodURIs[0];
+              }  //TODO uriParams?!?
             }
             methodURIs.splice(0, 1);
             this.addMethod(resource[currentURI], methodURIs, methodKey, method);
@@ -6243,6 +6305,13 @@
           this.hasDeprecated = false;
           this.hasExternalDocs = false;
           this.hasInfo = false;
+          this.hasSummary = false;
+          this.hasCollectionFormat = false;
+          this.hasAllowEmptyValue = false;
+          this.hasExclusiveMaximum = false;
+          this.hasExclusiveMinimum = false;
+          this.hasSchemaTitle = false;
+          this.hasBodyName = false;
         }
         RAML.prototype = new Exporter();
         RAML.prototype._mapSecurityScheme = function (slSecuritySchemes) {
@@ -6326,7 +6395,8 @@
               'date',
               'boolean',
               'file',
-              'array'
+              'array',
+              'datetime'
             ];
           for (var key in params) {
             if (!params.hasOwnProperty(key))
@@ -6366,6 +6436,14 @@
               case 'repeat':
               case 'default':
               case 'items':
+              case 'format':
+              case 'maxItems':
+              case 'minItems':
+              case 'uniqueItems':
+              case '(oas-collectionFormat)':
+              case '(oas-allowEmptyValue)':
+              case '(oas-exclusiveMaximum)':
+              case '(oas-exclusiveMinimum)':
                 break;
               default:
                 //not supported types
@@ -6384,11 +6462,15 @@
           switch (mimeType) {
           case 'application/json':
             body[mimeType] = this.mapBody(bodyData);
+            if (bodyData.name) {
+              this.hasBodyName = true;
+              body[mimeType]['(oas-body-name)'] = bodyData.name;
+            }
             break;
           case 'multipart/form-data':
           case 'application/x-www-form-urlencoded':
             var parsedBody = jsonHelper.parse(bodyData.body);
-            body[mimeType] = this.mapRequestBodyForm(parsedBody);
+            body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody));
             break;
           default:  //unsuported format
                     //TODO
@@ -6402,10 +6484,11 @@
           if (!params || _.isEmpty(params.properties))
             return;
           var newParams = {};
-          for (var key in params.properties) {
-            if (!params.properties.hasOwnProperty(key))
+          var convertedParams = this.convertRefFromModel(params.properties);
+          for (var key in convertedParams) {
+            if (!convertedParams.hasOwnProperty(key))
               continue;
-            newParams[key] = ramlHelper.setParameterFields(params.properties[key], {});
+            newParams[key] = ramlHelper.setParameterFields(convertedParams[key], {});
             if (params.required && params.required.indexOf(key) > -1) {
               newParams[key].required = true;
             }
@@ -6424,21 +6507,24 @@
             var resBody = responseData[i];
             if (!_.isEmpty(resBody.codes)) {
               var code = resBody.codes[0];
-              if (code === 'default' || parseInt(code) == 'NaN') {
+              if (code === 'default' || parseInt(code) == 'NaN' || _.startsWith(code, 'x-')) {
                 continue;
               }
-              responses[code] = { body: {} };
+              responses[code] = {};
               var type = mimeType;
               if (type) {
-                responses[code]['body'][type] = this.mapBody(resBody);
-              } else {
-                responses[code] = {};
+                var body = this.mapBody(resBody, type);
+                this.convertRequiredFromProperties(body);
+                if (!_.isEmpty(body)) {
+                  responses[code].body = {};
+                  responses[code]['body'][type] = body;
+                }
               }
               if (resBody.description) {
                 responses[code]['description'] = resBody.description;
               }
               if (!jsonHelper.isEmptySchema(resBody.headers)) {
-                responses[code]['body'][type].headers = this._mapNamedParams(resBody.headers);
+                responses[code].headers = this._mapNamedParams(resBody.headers);
               }
             }
           }
@@ -6461,7 +6547,27 @@
             if (prop.items) {
               pathParams[key].items = prop.items;
             }
+            if (prop.format) {
+              pathParams[key].format = prop.format;
+            }
             pathParams[key].type = pathParams[key].type || 'string';
+            //annotation types
+            if (prop.hasOwnProperty('collectionFormat')) {
+              this.hasCollectionFormat = true;
+              pathParams[key]['(oas-collectionFormat)'] = prop.collectionFormat;
+            }
+            if (prop.hasOwnProperty('allowEmptyValue')) {
+              this.hasAllowEmptyValue = true;
+              pathParams[key]['(oas-allowEmptyValue)'] = prop.allowEmptyValue;
+            }
+            if (prop.hasOwnProperty('exclusiveMaximum')) {
+              this.hasExclusiveMaximum = true;
+              pathParams[key]['(oas-exclusiveMaximum)'] = prop.exclusiveMaximum;
+            }
+            if (prop.hasOwnProperty('exclusiveMinimum')) {
+              this.hasExclusiveMinimum = true;
+              pathParams[key]['(oas-exclusiveMinimum)'] = prop.exclusiveMinimum;
+            }
           }
           return this._validateParam(pathParams);
         };
@@ -6505,7 +6611,7 @@
                 if (val.indexOf('#/') == 0) {
                   object.type = val.replace('#/definitions/', '');
                 } else {
-                  object.type = '!include ' + val;
+                  object.type = '!include ' + val.replace('#/', '#');
                 }
                 delete object[id];
               } else if (typeof val === 'string') {
@@ -6515,23 +6621,29 @@
                 } else if (id == 'include') {
                   object.type = '!include ' + val;
                   delete object[id];
+                } else if (id === 'title') {
+                  object['(oas-schema-title)'] = val;
+                  this.hasSchemaTitle = true;
+                  delete object[id];
                 }
               } else if (val && typeof val === 'object') {
                 if (val.type == 'string') {
                   if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
-                    object[id] = { type: 'string' };
+                    object[id]['type'] = 'string';
+                    val['facets'] = { 'format': 'string' };
                   } else if (val.format == 'date') {
-                    object[id] = { type: 'date-only' };
+                    object[id]['type'] = 'date-only';
+                    delete object[id].format;
                   } else if (val.format == 'date-time') {
-                    object[id] = {
-                      type: 'datetime',
-                      format: 'rfc3339'
-                    };
+                    object[id]['type'] = 'datetime';
+                    object[id]['format'] = 'rfc3339';
                   } else {
-                    //remove invalid format.
-                    if (ramlHelper.getValidFormat.indexOf(val.format) < 0) {
-                      delete object[id].format;
+                    if (val.format && ramlHelper.getValidFormat.indexOf(val.format) < 0) {
+                      val['facets'] = { 'format': 'string' };
                     }
+                  }
+                  if (val.readOnly) {
+                    val['facets'] = { 'readOnly?': 'boolean' };
                   }
                 } else {
                   object[id] = this.convertRefFromModel(val);
@@ -6550,58 +6662,50 @@
           var traits = this.initializeTraits();
           // var traits = [];
           // var traitMap = {};
-          for (var i in slTraits) {
-            if (!slTraits.hasOwnProperty(i))
-              continue;
-            var slTrait = slTraits[i], trait = {};
-            try {
-              var queryString = jsonHelper.parse(slTrait.request.queryString);
-              if (!jsonHelper.isEmptySchema(queryString)) {
-                trait.queryParameters = this._mapNamedParams(queryString);
-              }
-            } catch (e) {
-            }
-            try {
-              var headers = jsonHelper.parse(slTrait.request.headers);
-              if (!jsonHelper.isEmptySchema(headers)) {
-                trait.headers = this._mapNamedParams(headers);
-              }
-            } catch (e) {
-            }
-            try {
-              if (slTrait.responses && slTrait.responses.length) {
-                trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
-              }
-            } catch (e) {
-            }
-            this.addTrait(slTrait.name, trait, traits);  //   var traitKey = _.camelCase(slTrait.name);
-                                                         //   var newTrait = {};
-                                                         //   newTrait[traitKey] = trait;
-                                                         //   traits.push(newTrait);
-                                                         //   traitMap[traitKey] = trait;
-          }
+          // for (var i in slTraits) {
+          //   if (!slTraits.hasOwnProperty(i)) continue;
+          //   var slTrait = slTraits[i],
+          //       trait = {};
           //
-          // if (this.version() === '1.0') {
-          //   return traitMap;
+          // try {
+          //     var queryString = jsonHelper.parse(slTrait.request.queryString);
+          //     if (!jsonHelper.isEmptySchema(queryString)) {
+          //       trait.queryParameters = this._mapNamedParams(queryString);
+          //     }
+          // } catch(e) {}
+          //
+          // try {
+          //     var headers = jsonHelper.parse(slTrait.request.headers);
+          //     if (!jsonHelper.isEmptySchema(headers)) {
+          //       trait.headers = this._mapNamedParams(headers);
+          //     }
+          // } catch(e) {}
+          //
+          // try {
+          //     if (slTrait.responses && slTrait.responses.length) {
+          //       trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
+          //     }
+          // } catch(e) {}
+          //
+          // this.addTrait(slTrait.name, trait, traits);
+          //
           // }
           return traits;
         };
-        RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
-          var is = [];
-          for (var i in endpoint.traits) {
-            if (!endpoint.traits.hasOwnProperty(i))
-              continue;
-            var trait = _.find(slTraits, [
-                '_id',
-                endpoint.traits[i]
-              ]);
-            if (!trait) {
-              continue;
-            }
-            is.push(_.camelCase(trait.name));
-          }
-          return is;
-        };
+        // RAML.prototype._mapEndpointTraits = function(slTraits, endpoint) {
+        //   var is = [];
+        //
+        //   for (var i in endpoint.traits) {
+        //     if (!endpoint.traits.hasOwnProperty(i)) continue;
+        //     var trait = _.find(slTraits, ['_id', endpoint.traits[i]]);
+        //     if (!trait) {
+        //       continue;
+        //     }
+        //     is.push(_.camelCase(trait.name));
+        //   }
+        //
+        //   return is;
+        // };
         function getDefaultMimeType(mimeType, defMimeType) {
           var mt = mimeType && mimeType.length > 0 ? mimeType[0] : null;
           if (!mt) {
@@ -6613,44 +6717,158 @@
           }
           return mt;
         }
+        RAML.prototype._annotationsSignature = function (ramlDef) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasCollectionFormat || this.hasAllowEmptyValue || this.hasExclusiveMaximum || this.hasExclusiveMinimum || this.hasSchemaTitle || this.hasBodyName) {
+            if (!ramlDef.annotationTypes) {
+              ramlDef.annotationTypes = {};
+            }
+            if (this.hasTags) {
+              ramlDef.annotationTypes['oas-tags'] = {
+                type: 'string[]',
+                allowedTargets: 'Method'
+              };
+            }
+            if (this.hasDeprecated) {
+              ramlDef.annotationTypes['oas-deprecated'] = {
+                type: 'boolean',
+                allowedTargets: 'Method'
+              };
+            }
+            if (this.hasSummary) {
+              ramlDef.annotationTypes['oas-summary'] = {
+                type: 'string',
+                allowedTargets: 'Method'
+              };
+            }
+            if (this.hasAllowEmptyValue) {
+              ramlDef.annotationTypes['oas-allowEmptyValue'] = {
+                type: 'boolean',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasExclusiveMaximum) {
+              ramlDef.annotationTypes['oas-exclusiveMaximum'] = {
+                type: 'boolean',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasExclusiveMinimum) {
+              ramlDef.annotationTypes['oas-exclusiveMinimum'] = {
+                type: 'boolean',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasCollectionFormat) {
+              ramlDef.annotationTypes['oas-collectionFormat'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasExternalDocs) {
+              ramlDef.annotationTypes['oas-externalDocs'] = {
+                properties: {
+                  'description?': 'string',
+                  'url': 'string'
+                },
+                allowedTargets: [
+                  'API',
+                  'Method'
+                ]
+              };
+            }
+            if (this.hasInfo) {
+              ramlDef.annotationTypes['oas-info'] = {
+                properties: {
+                  'termsOfService?': 'string',
+                  'contact?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string',
+                      'email?': 'string'
+                    }
+                  },
+                  'license?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string'
+                    }
+                  }
+                },
+                allowedTargets: 'API'
+              };
+            }
+            if (this.hasSchemaTitle) {
+              ramlDef.annotationTypes['oas-schema-title'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasBodyName) {
+              ramlDef.annotationTypes['oas-body-name'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+          }
+        };
         RAML.prototype._export = function () {
           var env = this.project.Environment;
           var ramlDef = new RAMLDefinition(this.project.Name, env);
           ramlDef.mediaType = this.mapMediaType(env.Consumes, env.Produces);
           this.description(ramlDef, this.project);
+          if (this.project.tags) {
+            this._addTags(ramlDef, this.project.tags);
+          }
+          if (this.project.Environment.extensions) {
+            if (!ramlDef['(oas-info)']) {
+              ramlDef['(oas-info)'] = {};
+            }
+            this._addExtensions(ramlDef, ramlDef['(oas-info)'], this.project.Environment.extensions);
+          }
           if (this.project.Environment.ExternalDocs) {
             this.hasExternalDocs = true;
-            ramlDef['(externalDocs)'] = {
+            ramlDef['(oas-externalDocs)'] = {
               'description': this.project.Environment.ExternalDocs.description,
               'url': this.project.Environment.ExternalDocs.url
             };
+            if (this.project.Environment.ExternalDocs.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-externalDocs)'], this.project.Environment.ExternalDocs.extensions);
+            }
           }
           if (this.project.Environment.contactInfo || this.project.Environment.termsOfService || this.project.Environment.license) {
-            ramlDef['(info)'] = {};
+            if (!ramlDef['(oas-info)']) {
+              ramlDef['(oas-info)'] = {};
+            }
             this.hasInfo = true;
           }
           if (this.project.Environment.contactInfo) {
-            ramlDef['(info)'].contact = {};
+            ramlDef['(oas-info)'].contact = {};
             if (this.project.Environment.contactInfo.name) {
-              ramlDef['(info)'].contact.name = this.project.Environment.contactInfo.name;
+              ramlDef['(oas-info)'].contact.name = this.project.Environment.contactInfo.name;
             }
             if (this.project.Environment.contactInfo.url) {
-              ramlDef['(info)'].contact.url = this.project.Environment.contactInfo.url;
+              ramlDef['(oas-info)'].contact.url = this.project.Environment.contactInfo.url;
             }
             if (this.project.Environment.contactInfo.email) {
-              ramlDef['(info)'].contact.email = this.project.Environment.contactInfo.email;
+              ramlDef['(oas-info)'].contact.email = this.project.Environment.contactInfo.email;
+            }
+            if (this.project.Environment.contactInfo.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-info)'].contact, this.project.Environment.contactInfo.extensions);
             }
           }
           if (this.project.Environment.termsOfService) {
-            ramlDef['(info)'].termsOfService = this.project.Environment.termsOfService;
+            ramlDef['(oas-info)'].termsOfService = this.project.Environment.termsOfService;
           }
           if (this.project.Environment.license) {
-            ramlDef['(info)'].license = {};
+            ramlDef['(oas-info)'].license = {};
             if (this.project.Environment.license.name) {
-              ramlDef['(info)'].license.name = this.project.Environment.license.name;
+              ramlDef['(oas-info)'].license.name = this.project.Environment.license.name;
             }
             if (this.project.Environment.license.url) {
-              ramlDef['(info)'].license.url = this.project.Environment.license.url;
+              ramlDef['(oas-info)'].license.url = this.project.Environment.license.url;
+            }
+            if (this.project.Environment.license.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-info)'].license, this.project.Environment.license.extensions);
             }
           }
           var docs = this._mapTextSections(this.project.Texts);
@@ -6662,6 +6880,16 @@
           var securitySchemes = this._mapSecurityScheme(slSecuritySchemes);
           if (!_.isEmpty(securitySchemes)) {
             ramlDef.securitySchemes = securitySchemes;
+          }
+          if (!_.isEmpty(this.project.endpointExtensions)) {
+            if (!ramlDef['(oas-paths)']) {
+              ramlDef['(oas-paths)'] = {};
+            }
+            this._addExtensions(ramlDef, ramlDef['(oas-paths)'], this.project.endpointExtensions);
+            ramlDef.annotationTypes['oas-paths'] = {
+              type: 'any',
+              allowedTargets: 'API'
+            };
           }
           var endpoints = this.project.Endpoints;
           // Collect endpoints ids from environment resourcesOrder
@@ -6677,24 +6905,38 @@
               continue;
             var endpoint = endpoints[i];
             var method = {};
+            if (endpoint.extensions) {
+              this._addExtensions(ramlDef, method, endpoint.extensions);
+            }
             this.setMethodDisplayName(method, endpoint.operationId || endpoint.Name);
             if (endpoint.Description) {
               method.description = endpoint.Description;
             }
             if (endpoint.Summary) {
-              method.description = endpoint.Summary + (method.description ? '. ' + method.description : '');
+              this.hasSummary = true;
+              method['(oas-summary)'] = endpoint.Summary;
             }
-            var is = this._mapEndpointTraits(this.project.Traits, endpoint);
-            if (is.length) {
-              method.is = is;
+            var protocols = mapProtocols(endpoint.protocols);
+            if (!_.isEmpty(protocols)) {
+              method.protocols = protocols;
             }
+            // var is = this._mapEndpointTraits(this.project.Traits, endpoint);
+            // if (is.length) {
+            //   method.is = is;
+            // }
             if (endpoint.Method.toLowerCase() === 'post' || endpoint.Method.toLowerCase() === 'put' || endpoint.Method.toLowerCase() === 'patch') {
               var mimeType = getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
-              method.body = this._mapRequestBody(endpoint.Body, mimeType);
+              var body = this._mapRequestBody(endpoint.Body, mimeType);
+              if (!_.isEmpty(body)) {
+                method.body = body;
+              }
             }
             method.headers = this._mapNamedParams(endpoint.Headers);
             var mimeType = getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
-            method.responses = this._mapResponseBody(endpoint.Responses, mimeType);
+            var responses = this._mapResponseBody(endpoint.Responses, mimeType);
+            if (!_.isEmpty(responses)) {
+              method.responses = responses;
+            }
             method.queryParameters = this._mapURIParams(endpoint.QueryString);
             method.uriParameters = this._mapURIParams(endpoint.PathParams);
             if (endpoint.securedBy) {
@@ -6730,62 +6972,31 @@
             ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method);
             if (endpoint.Tags && !_.isEmpty(endpoint.Tags)) {
               this.hasTags = true;
-              method['(tags)'] = endpoint.Tags;
+              method['(oas-tags)'] = endpoint.Tags;
             }
             if (endpoint.Deprecated) {
               this.hasDeprecated = true;
-              method['(deprecated)'] = endpoint.Deprecated;
+              method['(oas-deprecated)'] = endpoint.Deprecated;
             }
             if (endpoint.ExternalDocs) {
               this.hasExternalDocs = true;
-              method['(externalDocs)'] = {
+              method['(oas-externalDocs)'] = {
                 'description': endpoint.ExternalDocs.description,
                 'url': endpoint.ExternalDocs.url
               };
             }
-          }
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo) {
-            ramlDef.annotationTypes = {};
-            if (this.hasTags) {
-              ramlDef.annotationTypes.tags = 'string[]';
-            }
-            if (this.hasDeprecated) {
-              ramlDef.annotationTypes.deprecated = 'boolean';
-            }
-            if (this.hasExternalDocs) {
-              ramlDef.annotationTypes.externalDocs = {
-                properties: {
-                  'description?': 'string',
-                  'url': 'string'
-                }
-              };
-            }
-            if (this.hasInfo) {
-              ramlDef.annotationTypes.info = {
-                properties: {
-                  'termsOfService?': 'string',
-                  'contact?': {
-                    properties: {
-                      'name?': 'string',
-                      'url?': 'string',
-                      'email?': 'string'
-                    }
-                  },
-                  'license?': {
-                    properties: {
-                      'name?': 'string',
-                      'url?': 'string'
-                    }
-                  }
-                }
-              };
+            if (endpoint.responses.extensions) {
+              this._addExtensions(ramlDef, method.responses, endpoint.responses.extensions);
             }
           }
           if (this.project.Schemas && this.project.Schemas.length > 0) {
             this.addSchema(ramlDef, this.mapSchema(this.project.Schemas));
           }
           if (this.project.Traits && this.project.Traits.length > 0) {
-            ramlDef.traits = this._mapTraits(this.project.Traits);
+            var traits = this._mapTraits(this.project.Traits);
+            if (!_.isEmpty(traits)) {
+              ramlDef.traits = traits;
+            }
           }
           // Clean empty field in definition
           for (var field in ramlDef) {
@@ -6793,7 +7004,49 @@
               delete ramlDef[field];
             }
           }
+          this._annotationsSignature(ramlDef);
+          this._addExtensions(ramlDef, ramlDef, this.project.extensions);
           this.data = ramlDef;
+        };
+        RAML.prototype._addTags = function (ramlDef, tags) {
+          if (_.isEmpty(tags))
+            return;
+          ramlDef['(oas-tags-definition)'] = [];
+          if (!ramlDef.annotationTypes) {
+            ramlDef.annotationTypes = {};
+          }
+          ramlDef.annotationTypes['oas-tags-definition'] = {
+            type: 'array',
+            items: {
+              properties: {
+                name: 'string',
+                'description?': 'string',
+                'externalDocs?': {
+                  properties: {
+                    url: 'string',
+                    'description?': 'string'
+                  }
+                }
+              }
+            },
+            allowedTargets: 'API'
+          };
+          for (var key in tags) {
+            if (!tags.hasOwnProperty(key))
+              continue;
+            ramlDef['(oas-tags-definition)'].push(tags[key]);
+          }
+        };
+        RAML.prototype._addExtensions = function (ramlDef, ramlObject, extensions) {
+          for (var key in extensions) {
+            if (!extensions.hasOwnProperty(key))
+              continue;
+            ramlObject['(oas-' + key + ')'] = extensions[key];
+            if (!ramlDef.annotationTypes) {
+              ramlDef.annotationTypes = {};
+            }
+            ramlDef.annotationTypes['oas-' + key] = 'any';
+          }
         };
         RAML.prototype._unescapeYamlIncludes = function (yaml) {
           var start = yaml.indexOf('\'!include ');
@@ -6813,6 +7066,37 @@
             throw Error('RAML doesn not support ' + format + ' format');
           }
         };
+        RAML.prototype.convertRequiredFromProperties = function (object) {
+          if (!object)
+            return object;
+          for (var id in object.properties) {
+            if (!object.properties.hasOwnProperty(id))
+              continue;
+            var property = object.properties[id];
+            if (property.properties) {
+              this.convertRequiredFromProperties(property);
+            }
+            if (!this.checkRequiredProperty(object, id)) {
+              property.required = false;
+            }
+          }
+          delete object.required;
+        };
+        RAML.prototype.checkRequiredProperty = function (object, paramName) {
+          if (!object.required)
+            return false;
+          if (object.required && object.required.length > 0) {
+            for (var j in object.required) {
+              if (!object.required.hasOwnProperty(j))
+                continue;
+              var requiredParam = object.required[j];
+              if (requiredParam === paramName) {
+                return true;
+              }
+            }
+          }
+          return false;
+        };
         RAML.prototype.description = function (ramlDef, project) {
           throw new Error('description method not implemented');
         };
@@ -6822,7 +7106,7 @@
         RAML.prototype.mapAuthorizationGrants = function (flow) {
           throw new Error('mapAuthorizationGrants method not implemented');
         };
-        RAML.prototype.mapBody = function (bodyData) {
+        RAML.prototype.mapBody = function (bodyData, type) {
           throw new Error('mapBody method not implemented');
         };
         RAML.prototype.mapRequestBodyForm = function (bodyData) {
@@ -6852,14 +7136,14 @@
         module.exports = RAML;
       },
       {
-        '../helpers/raml': 20,
-        '../utils/json': 33,
-        './exporter': 13,
-        'js-yaml': 56,
-        'lodash': 109
+        '../helpers/raml': 21,
+        '../utils/json': 34,
+        './exporter': 14,
+        'js-yaml': 57,
+        'lodash': 110
       }
     ],
-    13: [
+    14: [
       function (require, module, exports) {
         var YAML = require('js-yaml'), Importer = require('../importers/index');
         function Exporter() {
@@ -6952,11 +7236,11 @@
         module.exports = Exporter;
       },
       {
-        '../importers/index': 25,
-        'js-yaml': 56
+        '../importers/index': 26,
+        'js-yaml': 57
       }
     ],
-    14: [
+    15: [
       function (require, module, exports) {
         var exporters = {
             Swagger: require('./swagger'),
@@ -6981,13 +7265,13 @@
         };
       },
       {
-        './raml08': 15,
-        './raml10': 16,
-        './stoplightx': 17,
-        './swagger': 18
+        './raml08': 16,
+        './raml10': 17,
+        './stoplightx': 18,
+        './swagger': 19
       }
     ],
-    15: [
+    16: [
       function (require, module, exports) {
         var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML08() {
@@ -7039,7 +7323,7 @@
           }
           return body;
         };
-        RAML08.prototype.mapBody = function (bodyData) {
+        RAML08.prototype.mapBody = function (bodyData, type) {
           var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body))) };
           var example = jsonHelper.format(bodyData.example);
           if (!_.isEmpty(example)) {
@@ -7078,7 +7362,7 @@
             return m;
           });
         };
-        RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
+        RAML08.prototype.setMethodDisplayName = function (method, displayName) {
         };
         RAML08.prototype.initializeTraits = function () {
           return [];
@@ -7091,12 +7375,12 @@
         module.exports = RAML08;
       },
       {
-        '../utils/json': 33,
-        './baseraml': 12,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 13,
+        'lodash': 110
       }
     ],
-    16: [
+    17: [
       function (require, module, exports) {
         var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML10() {
@@ -7137,11 +7421,14 @@
           }
           return ag;
         };
-        RAML10.prototype.mapBody = function (bodyData) {
+        RAML10.prototype.mapBody = function (bodyData, type) {
           var body = jsonHelper.parse(bodyData.body);
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
             result.example = jsonHelper.parse(bodyData.example);
+            if (result.example[type]) {
+              result.example = result.example[type];
+            }
           }
           return result;
         };
@@ -7157,6 +7444,21 @@
             if (!body.properties.hasOwnProperty(i))
               continue;
             var property = body.properties[i];
+            if (property.hasOwnProperty('allowEmptyValue')) {
+              this.hasAllowEmptyValue = true;
+              property['(oas-allowEmptyValue)'] = property.allowEmptyValue;
+              delete property.allowEmptyValue;
+            }
+            if (property.hasOwnProperty('exclusiveMaximum')) {
+              this.hasExclusiveMaximum = true;
+              property['(oas-exclusiveMaximum)'] = property.exclusiveMaximum;
+              delete property.exclusiveMaximum;
+            }
+            if (property.hasOwnProperty('exclusiveMinimum')) {
+              this.hasExclusiveMinimum = true;
+              property['(oas-exclusiveMinimum)'] = property.exclusiveMinimum;
+              delete property.exclusiveMinimum;
+            }
             property.required = false;
           }
           if (bodyData.required && bodyData.required.length > 0) {
@@ -7242,23 +7544,7 @@
           return results;
         };
         RAML10.prototype.mapSchemaProperties = function (definition) {
-          for (var k in definition.properties) {
-            if (!definition.properties.hasOwnProperty(k))
-              continue;
-            var property = definition.properties[k];
-            property.required = false;
-          }
-          if (definition.required && definition.required.length > 0) {
-            for (var j in definition.required) {
-              if (!definition.required.hasOwnProperty(j))
-                continue;
-              var requiredParam = definition.required[j];
-              if (definition['properties'][requiredParam]) {
-                delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
-              }
-            }
-            delete definition.required;
-          }
+          this.convertRequiredFromProperties(definition);
           if (definition.additionalProperties) {
             definition.properties['//'] = definition.additionalProperties;
             delete definition.additionalProperties;
@@ -7278,7 +7564,9 @@
           return securitySchemes;
         };
         RAML10.prototype.setMethodDisplayName = function (method, displayName) {
-          method.displayName = displayName;
+          if (displayName) {
+            method.displayName = displayName;
+          }
         };
         RAML10.prototype.initializeTraits = function () {
           return {};
@@ -7289,12 +7577,12 @@
         module.exports = RAML10;
       },
       {
-        '../utils/json': 33,
-        './baseraml': 12,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 13,
+        'lodash': 110
       }
     ],
-    17: [
+    18: [
       function (require, module, exports) {
         var Exporter = require('./exporter'), SwaggerExporter = require('./swagger'), _ = require('lodash');
         function StopLightX() {
@@ -7408,12 +7696,12 @@
         module.exports = StopLightX;
       },
       {
-        './exporter': 13,
-        './swagger': 18,
-        'lodash': 109
+        './exporter': 14,
+        './swagger': 19,
+        'lodash': 110
       }
     ],
-    18: [
+    19: [
       function (require, module, exports) {
         var Endpoint = require('../entities/endpoint'), Exporter = require('./exporter'), SwaggerParser = require('swagger-parser'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
         function Swagger() {
@@ -8059,17 +8347,17 @@
       {
         '../entities/endpoint': 3,
         '../entities/swagger/definition': 8,
-        '../helpers/swagger': 21,
-        '../utils/json.js': 33,
-        '../utils/strings.js': 34,
-        '../utils/url': 35,
-        './exporter': 13,
-        'lodash': 109,
-        'swagger-parser': 139,
-        'url': 146
+        '../helpers/swagger': 22,
+        '../utils/json.js': 34,
+        '../utils/strings.js': 35,
+        '../utils/url': 36,
+        './exporter': 14,
+        'lodash': 110,
+        'swagger-parser': 140,
+        'url': 147
       }
     ],
-    19: [
+    20: [
       function (require, module, exports) {
         var supportedFormats = {
             'POSTMAN': {
@@ -8105,7 +8393,7 @@
       },
       {}
     ],
-    20: [
+    21: [
       function (require, module, exports) {
         var _ = require('lodash');
         module.exports = {
@@ -8139,7 +8427,16 @@
             'maxLength',
             'minLength',
             'pattern',
-            'enum'
+            'enum',
+            'format',
+            'collectionFormat',
+            'allowEmptyValue',
+            'exclusiveMaximum',
+            'exclusiveMinimum',
+            'maxItems',
+            'minItems',
+            'uniqueItems',
+            'required'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -8170,9 +8467,9 @@
           }
         };
       },
-      { 'lodash': 109 }
+      { 'lodash': 110 }
     ],
-    21: [
+    22: [
       function (require, module, exports) {
         module.exports = {
           parameterMappings: {},
@@ -8193,7 +8490,10 @@
             'enum',
             'multipleOf',
             'items',
-            'format'
+            'format',
+            'collectionFormat',
+            'allowEmptyValue',
+            'required'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -8222,7 +8522,7 @@
       },
       {}
     ],
-    22: [
+    23: [
       function (require, module, exports) {
         var fs = require('fs'), _ = require('lodash'), Importer = require('./importer'), Swagger = require('./swagger'), RAML08 = require('./raml08'), RAML10 = require('./raml10'), Postman = require('./postman'), StopLightX = require('./stoplightx'), urlHelper = require('../utils/url');
         // Detect input format automatically
@@ -8351,18 +8651,18 @@
         module.exports = Auto;
       },
       {
-        '../utils/url': 35,
-        './importer': 24,
-        './postman': 26,
-        './raml08': 27,
-        './raml10': 28,
-        './stoplightx': 30,
-        './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        '../utils/url': 36,
+        './importer': 25,
+        './postman': 27,
+        './raml08': 28,
+        './raml10': 29,
+        './stoplightx': 31,
+        './swagger': 32,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    23: [
+    24: [
       function (require, module, exports) {
         var parser = window.RAML.Parser, Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
         var toJSONOptions = { serializeMetadata: false };
@@ -8686,15 +8986,12 @@
             break;
           }
         };
-        RAML.prototype.loadFile = function (filePath, cb) {
-          return this.loadFileWithOptions(filePath, parseOptions, cb);
-        };
-        RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
+        RAML.prototype.loadFile = function (filePath, cb, options) {
           var me = this;
-          var mergedOptions = _.merge(parseOptions, options);
+          var mergedOptions = _.merge(parseOptions, options || {});
           parser.loadApi(filePath, mergedOptions).then(function (api) {
             try {
-              me.data = api.expand(false).toJSON(toJSONOptions);
+              me.data = api.expand(true).toJSON(toJSONOptions);
               cb();
             } catch (e) {
               cb(e);
@@ -8707,11 +9004,12 @@
           var me = this;
           return new Promise(function (resolve, reject) {
             try {
-              var parsedData = parser.parseRAMLSync(data, _.merge(parseOptions, options));
+              var mergeOptions = _.merge(parseOptions, options);
+              var parsedData = parser.parseRAMLSync(data, mergeOptions);
               if (parsedData.name === 'Error') {
                 reject(error);
               } else {
-                me.data = parsedData.expand(false).toJSON(toJSONOptions);
+                me.data = parsedData.expand(true).toJSON(toJSONOptions);
                 resolve();
               }
             } catch (e) {
@@ -8832,6 +9130,22 @@
             throw e;
           }
         };
+        RAML.prototype.convertRequiredFromProperties = function (object) {
+          if (!object)
+            return object;
+          for (var id in object.properties) {
+            if (!object.properties.hasOwnProperty(id))
+              continue;
+            var param = object.properties[id];
+            if (!param.hasOwnProperty('required') || param.required == true) {
+              if (!object.required) {
+                object.required = [];
+              }
+              object.required.push(id);
+              delete param.required;
+            }
+          }
+        };
         RAML.prototype.description = function (project, data) {
           throw new Error('description method not implemented');
         };
@@ -8849,14 +9163,14 @@
       {
         '../entities/endpoint': 3,
         '../entities/project': 5,
-        '../helpers/raml': 20,
-        '../utils/json': 33,
-        './importer': 24,
-        'lodash': 109,
-        'url': 146
+        '../helpers/raml': 21,
+        '../utils/json': 34,
+        './importer': 25,
+        'lodash': 110,
+        'url': 147
       }
     ],
-    24: [
+    25: [
       function (require, module, exports) {
         function Importer() {
           this.data = null;
@@ -8871,12 +9185,9 @@
             return this.data !== null;
           }
         };
-        Importer.prototype.loadFile = function (path) {
-          throw new Error('loadFile method not implemented');
-        };
         // TODO unify api by returning a Promise like the loadData function
         // https://github.com/stoplightio/api-spec-converter/issues/16
-        Importer.prototype.loadFileWithOptions = function (path, options) {
+        Importer.prototype.loadFile = function (path) {
           throw new Error('loadFile method not implemented');
         };
         Importer.prototype.loadData = function (data) {
@@ -8924,7 +9235,7 @@
       },
       {}
     ],
-    25: [
+    26: [
       function (require, module, exports) {
         var importers = {
             Postman: require('./postman'),
@@ -8952,16 +9263,16 @@
         };
       },
       {
-        './auto': 22,
-        './postman': 26,
-        './raml08': 27,
-        './raml10': 28,
-        './stoplight': 29,
-        './stoplightx': 30,
-        './swagger': 31
+        './auto': 23,
+        './postman': 27,
+        './raml08': 28,
+        './raml10': 29,
+        './stoplight': 30,
+        './stoplightx': 31,
+        './swagger': 32
       }
     ],
-    26: [
+    27: [
       function (require, module, exports) {
         var fs = require('fs'), Endpoint = require('../entities/endpoint'), SavedEntry = require('../entities/savedEntry'), Importer = require('./importer'), Project = require('../entities/project'), urlHelper = require('../utils/url'), jsonHelper = require('../utils/json'), arrayHelper = require('../utils/array'), _ = require('lodash');
         function Postman() {
@@ -9211,15 +9522,15 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/savedEntry': 6,
-        '../utils/array': 32,
-        '../utils/json': 33,
-        '../utils/url': 35,
-        './importer': 24,
-        'fs': 39,
-        'lodash': 109
+        '../utils/array': 33,
+        '../utils/json': 34,
+        '../utils/url': 36,
+        './importer': 25,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    27: [
+    28: [
       function (require, module, exports) {
         var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), Text = require('../entities/text');
         function RAML08() {
@@ -9307,12 +9618,12 @@
       },
       {
         '../entities/schema': 7,
-        '../entities/text': 10,
-        '../utils/json': 33,
-        './baseraml': 23
+        '../entities/text': 11,
+        '../utils/json': 34,
+        './baseraml': 24
       }
     ],
-    28: [
+    29: [
       function (require, module, exports) {
         var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), _ = require('lodash');
         function RAML10() {
@@ -9337,6 +9648,7 @@
               switch (data.mimeType) {
               case 'application/json':
                 data.body = { 'properties': this.convertRefToModel(mimeType.properties) };
+                this.convertRequiredFromProperties(data.body);
                 break;
               case 'multipart/form-data':
               case 'application/x-www-form-urlencoded':
@@ -9403,6 +9715,9 @@
                   var param = definition.properties[paramName];
                   if (this.isArray(param)) {
                     properties.properties[paramName] = this.convertArray(param);
+                  } else if (this.isFacet(param)) {
+                    //check for facets
+                    properties.properties[paramName] = this.convertFacet(param);
                   } else {
                     properties.properties[paramName] = param;
                   }
@@ -9532,12 +9847,12 @@
       },
       {
         '../entities/schema': 7,
-        '../utils/json': 33,
-        './baseraml': 23,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 24,
+        'lodash': 110
       }
     ],
-    29: [
+    30: [
       function (require, module, exports) {
         var Endpoint = require('../entities/endpoint'), Project = require('../entities/project'), Schema = require('../entities/schema'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Importer = require('./importer'), jsonHelper = require('../utils/json'), fs = require('fs');
         function StopLight() {
@@ -9620,14 +9935,14 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/schema': 7,
-        '../entities/text': 10,
-        '../entities/utilityFunction': 11,
-        '../utils/json': 33,
-        './importer': 24,
-        'fs': 39
+        '../entities/text': 11,
+        '../entities/utilityFunction': 12,
+        '../utils/json': 34,
+        './importer': 25,
+        'fs': 40
       }
     ],
-    30: [
+    31: [
       function (require, module, exports) {
         var Swagger = require('./swagger'), Importer = require('./importer'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Test = require('../entities/test'), fs = require('fs'), _ = require('lodash');
         var prefix = 'x-stoplight';
@@ -9733,22 +10048,22 @@
         module.exports = StopLightX;
       },
       {
-        '../entities/test': 9,
-        '../entities/text': 10,
-        '../entities/utilityFunction': 11,
-        './importer': 24,
-        './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        '../entities/test': 10,
+        '../entities/text': 11,
+        '../entities/utilityFunction': 12,
+        './importer': 25,
+        './swagger': 32,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    31: [
+    32: [
       function (require, module, exports) {
-        var parser = require('swagger-parser'), Endpoint = require('../entities/endpoint'), Schema = require('../entities/schema'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), swaggerHelper = require('../helpers/swagger'), YAML = require('js-yaml'), _ = require('lodash');
+        var parser = require('swagger-parser'), Method = require('../entities/swagger/method'), Endpoint = require('../entities/endpoint'), Schema = require('../entities/schema'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), swaggerHelper = require('../helpers/swagger'), YAML = require('js-yaml'), _ = require('lodash');
         function Swagger() {
           this.dereferencedAPI = null;
         }
-        var referenceRegex = /\/(parameters|responses)\//i;
+        var referenceRegex = /\/(parameters|responses)\/(.+)/i;
         function needDeReferenced(param) {
           if (!param || !param.$ref) {
             return false;
@@ -9913,6 +10228,9 @@
             case 'body':
               mapExample(param.schema, data);
               data.body = param.schema;
+              if (param.name) {
+                data.name = param.name;
+              }
               break;
             default:
               var prop = {};
@@ -9932,52 +10250,69 @@
           }
           return data;
         };
-        Swagger.prototype._mapResponseBody = function (responseBody, skipParameterRefs, resolvedResponses, $refs) {
+        Swagger.prototype._mapResponseBody = function (responses, skipParameterRefs, resolvedResponses, $refs) {
           var data = [];
-          for (var code in responseBody) {
-            if (!responseBody.hasOwnProperty(code))
+          for (var code in responses) {
+            if (!responses.hasOwnProperty(code))
               continue;
             var res = {
                 body: {},
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || _.includes($refs, responseBody[code].$ref))) {
+            var response = responses[code];
+            if (skipParameterRefs && needDeReferenced(response) && (response.$ref.match(/trait/) || _.includes($refs, response.$ref))) {
               continue;
             }
-            // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
-            if (needDeReferenced(responseBody[code]) && resolvedResponses) {
-              schema = resolvedResponses[code].schema;
-              description = jsonHelper.stringify(resolvedResponses[code].description || '');
+            var needBeReferenced = needDeReferenced(response);
+            if (needBeReferenced && resolvedResponses) {
+              var resolvedResponse = this._getResponses(response, resolvedResponses[code]);
+              var schema = resolvedResponse.schema;
+              description = jsonHelper.stringify(resolvedResponse.description || '');
               res.body = schema;
-            } else if (responseBody[code].schema) {
-              var schema = responseBody[code].schema;
-              if (needDeReferenced(responseBody[code].schema)) {
+            } else if (response.schema) {
+              var schema = response.schema;
+              if (needDeReferenced(response.schema)) {
                 description = jsonHelper.stringify(resolvedResponses[code].description || '');
                 schema = resolvedResponses[code].schema;
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples') && !_.isEmpty(responseBody[code].examples)) {
-              var examples = responseBody[code].examples;
-              if (_.isArray(examples)) {
-                for (var t in examples) {
-                  if (!examples.hasOwnProperty(t))
-                    continue;
-                  if (t === resType) {
-                    res.example = jsonHelper.stringify(examples[t], 4);
-                  }
-                }
-              } else {
-                res.example = jsonHelper.stringify(examples, 4);
-              }
-            }
-            res.description = jsonHelper.stringify(description || responseBody[code].description || '');
-            res.body = res.body;
+            this._mapResponseExample(needBeReferenced ? resolvedResponses[code] : response, res);
+            this._mapResponseHeaders(needBeReferenced ? resolvedResponses[code] : response, res);
+            this._mapResponseDescription(needBeReferenced ? resolvedResponses[code] : response, description, res);
             res.codes.push(String(code));
             data.push(res);
           }
+          var extensions = this._getExtensionsFrom(responses);
+          if (!_.isEmpty(extensions)) {
+            data.extensions = extensions;
+          }
           return data;
+        };
+        Swagger.prototype._mapResponseDescription = function (responseBody, description, res) {
+          res.description = jsonHelper.stringify(description || responseBody.description || '');
+        };
+        Swagger.prototype._mapResponseHeaders = function (responseBody, res) {
+          if (responseBody.hasOwnProperty('headers') && !_.isEmpty(responseBody.headers)) {
+            res.headers = { properties: responseBody.headers };
+          }
+        };
+        Swagger.prototype._mapResponseExample = function (responseBody, res) {
+          if (responseBody.hasOwnProperty('examples') && !_.isEmpty(responseBody.examples)) {
+            var examples = responseBody.examples;
+            if (_.isArray(examples)) {
+              for (var t in examples) {
+                if (!examples.hasOwnProperty(t))
+                  continue;
+                if (t === resType) {
+                  res.example = jsonHelper.stringify(examples[t], 4);
+                }
+              }
+            } else {
+              res.example = jsonHelper.stringify(examples, 4);
+            }
+          }
         };
         Swagger.prototype._mapRequestHeaders = function (params, skipParameterRefs) {
           var data = {
@@ -10043,11 +10378,7 @@
           });
         };
         // Load a swagger spec by local or remote file path
-        Swagger.prototype.loadFile = function (path, cb) {
-          return this._parseData(path, cb);
-        };
-        // Load a swagger spec by local or remote file path with given swagger parser options
-        Swagger.prototype.loadFileWithOptions = function (path, options, cb) {
+        Swagger.prototype.loadFile = function (path, cb, options) {
           return this._parseData(path, cb, options);
         };
         // Load a swagger spec by string data
@@ -10109,25 +10440,87 @@
           traits = traits.concat(this._mapEndpointTrait(responses));
           return _.uniq(traits);
         };
+        Swagger.prototype._getParams = function (params, resolvedParameters, condition) {
+          if (_.isEmpty(params))
+            return params;
+          var result = [];
+          for (var id in params) {
+            if (!params.hasOwnProperty(id))
+              continue;
+            var param = params[id];
+            if (!condition(param)) {
+              continue;
+            }
+            var deReferenced = needDeReferenced(param);
+            var isFilePath = this._isFilePath(param);
+            if ((deReferenced || isFilePath) && resolvedParameters) {
+              if (isFilePath) {
+                param = resolvedParameters[id];
+              } else {
+                var paramName = deReferenced[deReferenced.length - 1];
+                param = this.data.parameters[paramName];
+                if (param.$ref) {
+                  param = resolvedParameters[id];
+                }
+              }
+            }
+            result.push(param);
+          }
+          return result;
+        };
+        Swagger.prototype._getResponses = function (response, resolvedResponse) {
+          var result;
+          var deReferenced = needDeReferenced(response);
+          var isFilePath = this._isFilePath(response);
+          if ((deReferenced || isFilePath) && resolvedResponse) {
+            if (isFilePath) {
+              result = resolvedResponse;
+            } else {
+              var responseName = deReferenced[deReferenced.length - 1];
+              result = this.data.responses[responseName];
+              if (result.$ref) {
+                result = resolvedResponse;
+              }
+            }
+          }
+          return result;
+        };
+        Swagger.prototype._isFilePath = function (param) {
+          if (!param || !param.$ref) {
+            return false;
+          }
+          var filePath = param.$ref.split('#')[0];
+          return filePath.split('.').length == 2;
+        };
         Swagger.prototype._mapEndpoints = function (consumes, produces) {
           for (var path in this.data.paths) {
             if (!this.data.paths.hasOwnProperty(path))
               continue;
-            var methods = this.data.paths[path];
+            if (_.startsWith(path, 'x-'))
+              continue;
+            //avoid custom extensions
+            var methods = this.data.paths[path].hasOwnProperty('$ref') ? this.dereferencedAPI.paths[path] : this.data.paths[path];
             var pathParams = {};
             if (methods.parameters) {
               var resolvedPathParames = this.dereferencedAPI ? this.dereferencedAPI.paths[path].parameters : methods.parameters;
               pathParams = this._mapURIParams(methods.parameters, resolvedPathParames);
             }
+            var globalParams = this._getParams(methods.parameters, resolvedPathParames, function (param) {
+                return !(param.in && param.in == 'path');
+              });
             for (var method in methods) {
               if (!methods.hasOwnProperty(method))
                 continue;
-              var currentMethod = methods[method];
-              var currentMethodResolved = this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : currentMethod;
+              var currentMethod = new Method(methods[method], this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method]);
+              var currentMethodResolved = this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method];
               if (method === 'parameters') {
                 continue;
               }
               var endpoint = new Endpoint(currentMethod.summary || '');
+              var extensions = this._getExtensionsFrom(currentMethodResolved);
+              if (!_.isEmpty(extensions)) {
+                endpoint.extensions = extensions;
+              }
               endpoint.Method = method;
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
@@ -10136,6 +10529,9 @@
               endpoint.Deprecated = currentMethod.deprecated;
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
+              if (currentMethod.schemes) {
+                endpoint.protocols = currentMethod.schemes;
+              }
               //map request body
               // if (_.isArray(currentMethod.consumes)) {
               //   if (_.isEmpty(currentMethod.consumes)) {
@@ -10144,7 +10540,9 @@
               //     reqType = this.findDefaultMimeType(currentMethod.consumes);
               //   }
               // }
-              var params = currentMethod.parameters;
+              var params = _.union(this._getParams(currentMethod.parameters, currentMethodResolved.parameters, function (param) {
+                  return true;
+                }), globalParams);
               var c = [];
               if (_.some(params, { 'in': 'body' })) {
                 c.push('application/json');
@@ -10172,7 +10570,7 @@
                 }
               }
               if (endpoint.Method.toLowerCase() !== 'get' && endpoint.Method.toLowerCase() !== 'head') {
-                var body = this._mapRequestBody(currentMethod.parameters, currentMethodResolved.parameters);
+                var body = this._mapRequestBody(params, currentMethodResolved.parameters);
                 if (body) {
                   endpoint.Body = body;
                 }
@@ -10184,10 +10582,10 @@
               //map path params
               endpoint.PathParams = pathParams;
               //map headers
-              endpoint.Headers = this._mapRequestHeaders(currentMethod.parameters, true);
+              endpoint.Headers = this._mapRequestHeaders(params, true);
               //map query string
               // endpoint.QueryString = this._mapQueryString(currentMethod.parameters, true);
-              endpoint.QueryString = this._mapQueryString(currentMethodResolved.parameters, true);
+              endpoint.QueryString = this._mapQueryString(params, true);
               //map response body
               // if (_.isArray(currentMethod.produces)) {
               //   if (_.isEmpty(currentMethod.produces)) {
@@ -10322,9 +10720,54 @@
           }
           return _.values(traits);
         };
+        Swagger.prototype._getExtensionsFrom = function (object) {
+          var result = {};
+          for (var key in object) {
+            if (!object.hasOwnProperty(key))
+              continue;
+            if (_.startsWith(key, 'x-'))
+              result[key] = object[key];
+          }
+          return result;
+        };
+        Swagger.prototype._createExtensions = function () {
+          this.project.extensions = this._getExtensionsFrom(this.data);
+          if (this.data.info) {
+            var infoExtensions = this._getExtensionsFrom(this.data.info);
+            if (!_.isEmpty(infoExtensions)) {
+              this.project.Environment.extensions = infoExtensions;
+            }
+          }
+          if (this.data.info.contact) {
+            var contactExtensions = this._getExtensionsFrom(this.data.info.contact);
+            if (!_.isEmpty(contactExtensions)) {
+              this.project.Environment.contactInfo.extensions = contactExtensions;
+            }
+          }
+          if (this.data.info.license) {
+            var licenseExtensions = this._getExtensionsFrom(this.data.info.license);
+            if (!_.isEmpty(licenseExtensions)) {
+              this.project.Environment.license.extensions = licenseExtensions;
+            }
+          }
+          if (this.data.externalDocs) {
+            var externalDocsExtensions = this._getExtensionsFrom(this.data.externalDocs);
+            if (!_.isEmpty(externalDocsExtensions)) {
+              this.project.Environment.ExternalDocs.extensions = externalDocsExtensions;
+            }
+          }
+          if (this.data.paths) {
+            var endpointExtensions = this._getExtensionsFrom(this.data.paths);
+            if (!_.isEmpty(endpointExtensions)) {
+              this.project.endpointExtensions = {};
+              this.project.endpointExtensions = endpointExtensions;
+            }
+          }
+        };
         Swagger.prototype._import = function () {
           this.project = new Project(this.data.info.title);
           this.project.Description = this.data.info.description || '';
+          this.project.tags = this.data.tags;
           var protocol = 'http';
           if (this.data.schemes && this.data.schemes.length > 0) {
             this.project.Environment.Protocols = this.data.schemes;
@@ -10383,6 +10826,7 @@
               continue;
             this.project.addSchema(schemas[i]);
           }
+          this._createExtensions();
         };
         module.exports = Swagger;
       },
@@ -10390,15 +10834,16 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/schema': 7,
-        '../helpers/swagger': 21,
-        '../utils/json': 33,
-        './importer': 24,
-        'js-yaml': 56,
-        'lodash': 109,
-        'swagger-parser': 139
+        '../entities/swagger/method': 9,
+        '../helpers/swagger': 22,
+        '../utils/json': 34,
+        './importer': 25,
+        'js-yaml': 57,
+        'lodash': 110,
+        'swagger-parser': 140
       }
     ],
-    32: [
+    33: [
       function (require, module, exports) {
         module.exports = {
           groupBy: function groupBy(array, f) {
@@ -10416,7 +10861,7 @@
       },
       {}
     ],
-    33: [
+    34: [
       function (require, module, exports) {
         var _ = require('lodash'), jsonSchemaConverter = require('json-schema-compatibility');
         module.exports = {
@@ -10527,11 +10972,11 @@
         };
       },
       {
-        'json-schema-compatibility': 86,
-        'lodash': 109
+        'json-schema-compatibility': 87,
+        'lodash': 110
       }
     ],
-    34: [
+    35: [
       function (require, module, exports) {
         var _ = require('lodash');
         module.exports = {
@@ -10552,9 +10997,9 @@
           }
         };
       },
-      { 'lodash': 109 }
+      { 'lodash': 110 }
     ],
-    35: [
+    36: [
       function (require, module, exports) {
         var request = require('request');
         var _ = require('lodash');
@@ -10584,11 +11029,11 @@
         };
       },
       {
-        'lodash': 109,
-        'request': 37
+        'lodash': 110,
+        'request': 38
       }
     ],
-    36: [
+    37: [
       function (require, module, exports) {
         var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
         ;
@@ -10695,7 +11140,7 @@
       },
       {}
     ],
-    37: [
+    38: [
       function (require, module, exports) {
         // Browser Request
         //
@@ -11142,18 +11587,18 @@
       },
       {}
     ],
-    38: [
+    39: [
       function (require, module, exports) {
       },
       {}
     ],
-    39: [
-      function (require, module, exports) {
-        arguments[4][38][0].apply(exports, arguments);
-      },
-      { 'dup': 38 }
-    ],
     40: [
+      function (require, module, exports) {
+        arguments[4][39][0].apply(exports, arguments);
+      },
+      { 'dup': 39 }
+    ],
+    41: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -11264,9 +11709,9 @@
           };
         }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    41: [
+    42: [
       function (require, module, exports) {
         (function (global) {
           /*!
@@ -12679,12 +13124,12 @@
         }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        'base64-js': 36,
-        'ieee754': 52,
-        'isarray': 42
+        'base64-js': 37,
+        'ieee754': 53,
+        'isarray': 43
       }
     ],
-    42: [
+    43: [
       function (require, module, exports) {
         var toString = {}.toString;
         module.exports = Array.isArray || function (arr) {
@@ -12693,7 +13138,7 @@
       },
       {}
     ],
-    43: [
+    44: [
       function (require, module, exports) {
         module.exports = {
           '100': 'Continue',
@@ -12757,7 +13202,7 @@
       },
       {}
     ],
-    44: [
+    45: [
       function (require, module, exports) {
         (function (process, global) {
           'use strict';
@@ -12782,9 +13227,9 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    45: [
+    46: [
       function (require, module, exports) {
         (function (Buffer) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -12874,9 +13319,9 @@
           }
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
-      { '../../is-buffer/index.js': 55 }
+      { '../../is-buffer/index.js': 56 }
     ],
-    46: [
+    47: [
       function (require, module, exports) {
         /**
  * This is the web browser implementation of `debug()`.
@@ -13015,9 +13460,9 @@
           }
         }
       },
-      { './debug': 47 }
+      { './debug': 48 }
     ],
-    47: [
+    48: [
       function (require, module, exports) {
         /**
  * This is the common logic for both the Node.js and web browser
@@ -13185,9 +13630,9 @@
           return val;
         }
       },
-      { 'ms': 110 }
+      { 'ms': 111 }
     ],
-    48: [
+    49: [
       function (require, module, exports) {
         (function (process, global) {
           /*!
@@ -14005,9 +14450,9 @@
           }));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    49: [
+    50: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -14258,7 +14703,7 @@
       },
       {}
     ],
-    50: [
+    51: [
       function (require, module, exports) {
         var hasOwn = Object.prototype.hasOwnProperty;
         var toString = Object.prototype.toString;
@@ -14282,7 +14727,7 @@
       },
       {}
     ],
-    51: [
+    52: [
       function (require, module, exports) {
         var http = require('http');
         var https = module.exports;
@@ -14299,9 +14744,9 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 133 }
+      { 'http': 134 }
     ],
-    52: [
+    53: [
       function (require, module, exports) {
         exports.read = function (buffer, offset, isLE, mLen, nBytes) {
           var e, m;
@@ -14383,7 +14828,7 @@
       },
       {}
     ],
-    53: [
+    54: [
       function (require, module, exports) {
         var indexOf = [].indexOf;
         module.exports = function (arr, obj) {
@@ -14398,7 +14843,7 @@
       },
       {}
     ],
-    54: [
+    55: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -14427,7 +14872,7 @@
       },
       {}
     ],
-    55: [
+    56: [
       function (require, module, exports) {
         /*!
  * Determine if an object is a Buffer
@@ -14450,15 +14895,15 @@
       },
       {}
     ],
-    56: [
+    57: [
       function (require, module, exports) {
         'use strict';
         var yaml = require('./lib/js-yaml.js');
         module.exports = yaml;
       },
-      { './lib/js-yaml.js': 57 }
+      { './lib/js-yaml.js': 58 }
     ],
-    57: [
+    58: [
       function (require, module, exports) {
         'use strict';
         var loader = require('./js-yaml/loader');
@@ -14493,19 +14938,19 @@
         module.exports.addConstructor = deprecated('addConstructor');
       },
       {
-        './js-yaml/dumper': 59,
-        './js-yaml/exception': 60,
-        './js-yaml/loader': 61,
-        './js-yaml/schema': 63,
-        './js-yaml/schema/core': 64,
-        './js-yaml/schema/default_full': 65,
-        './js-yaml/schema/default_safe': 66,
-        './js-yaml/schema/failsafe': 67,
-        './js-yaml/schema/json': 68,
-        './js-yaml/type': 69
+        './js-yaml/dumper': 60,
+        './js-yaml/exception': 61,
+        './js-yaml/loader': 62,
+        './js-yaml/schema': 64,
+        './js-yaml/schema/core': 65,
+        './js-yaml/schema/default_full': 66,
+        './js-yaml/schema/default_safe': 67,
+        './js-yaml/schema/failsafe': 68,
+        './js-yaml/schema/json': 69,
+        './js-yaml/type': 70
       }
     ],
-    58: [
+    59: [
       function (require, module, exports) {
         'use strict';
         function isNothing(subject) {
@@ -14551,7 +14996,7 @@
       },
       {}
     ],
-    59: [
+    60: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-use-before-define*/
@@ -14651,7 +15096,7 @@
             if (tag.slice(0, 2) === '!!') {
               tag = 'tag:yaml.org,2002:' + tag.slice(2);
             }
-            type = schema.compiledTypeMap[tag];
+            type = schema.compiledTypeMap['fallback'][tag];
             if (type && _hasOwnProperty.call(type.styleAliases, style)) {
               style = type.styleAliases[style];
             }
@@ -15186,13 +15631,13 @@
         module.exports.safeDump = safeDump;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 59,
+        './exception': 61,
+        './schema/default_full': 66,
+        './schema/default_safe': 67
       }
     ],
-    60: [
+    61: [
       function (require, module, exports) {
         // YAML error class. http://stackoverflow.com/questions/8458984
         //
@@ -15228,7 +15673,7 @@
       },
       {}
     ],
-    61: [
+    62: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len,no-use-before-define*/
@@ -15589,8 +16034,9 @@
               captureSegment(state, captureStart, state.position, true);
               ch = state.input.charCodeAt(++state.position);
               if (ch === 39) {
-                captureStart = captureEnd = state.position;
+                captureStart = state.position;
                 state.position++;
+                captureEnd = state.position;
               } else {
                 return true;
               }
@@ -16195,8 +16641,8 @@
                   break;
                 }
               }
-            } else if (_hasOwnProperty.call(state.typeMap, state.tag)) {
-              type = state.typeMap[state.tag];
+            } else if (_hasOwnProperty.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
+              type = state.typeMap[state.kind || 'fallback'][state.tag];
               if (state.result !== null && type.kind !== state.kind) {
                 throwError(state, 'unacceptable node kind for !<' + state.tag + '> tag; it should be "' + type.kind + '", not "' + state.kind + '"');
               }
@@ -16346,14 +16792,14 @@
         module.exports.safeLoad = safeLoad;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './mark': 62,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 59,
+        './exception': 61,
+        './mark': 63,
+        './schema/default_full': 66,
+        './schema/default_safe': 67
       }
     ],
-    62: [
+    63: [
       function (require, module, exports) {
         'use strict';
         var common = require('./common');
@@ -16409,9 +16855,9 @@
         };
         module.exports = Mark;
       },
-      { './common': 58 }
+      { './common': 59 }
     ],
-    63: [
+    64: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len*/
@@ -16425,7 +16871,7 @@
           });
           schema[name].forEach(function (currentType) {
             result.forEach(function (previousType, previousIndex) {
-              if (previousType.tag === currentType.tag) {
+              if (previousType.tag === currentType.tag && previousType.kind === currentType.kind) {
                 exclude.push(previousIndex);
               }
             });
@@ -16436,9 +16882,14 @@
           });
         }
         function compileMap() {
-          var result = {}, index, length;
+          var result = {
+              scalar: {},
+              sequence: {},
+              mapping: {},
+              fallback: {}
+            }, index, length;
           function collectType(type) {
-            result[type.tag] = type;
+            result[type.kind][type.tag] = result['fallback'][type.tag] = type;
           }
           for (index = 0, length = arguments.length; index < length; index += 1) {
             arguments[index].forEach(collectType);
@@ -16493,12 +16944,12 @@
         module.exports = Schema;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './type': 69
+        './common': 59,
+        './exception': 61,
+        './type': 70
       }
     ],
-    64: [
+    65: [
       function (require, module, exports) {
         // Standard YAML's Core schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2804923
@@ -16510,11 +16961,11 @@
         module.exports = new Schema({ include: [require('./json')] });
       },
       {
-        '../schema': 63,
-        './json': 68
+        '../schema': 64,
+        './json': 69
       }
     ],
-    65: [
+    66: [
       function (require, module, exports) {
         // JS-YAML's default schema for `load` function.
         // It is not described in the YAML specification.
@@ -16535,14 +16986,14 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/js/function': 74,
-        '../type/js/regexp': 75,
-        '../type/js/undefined': 76,
-        './default_safe': 66
+        '../schema': 64,
+        '../type/js/function': 75,
+        '../type/js/regexp': 76,
+        '../type/js/undefined': 77,
+        './default_safe': 67
       }
     ],
-    66: [
+    67: [
       function (require, module, exports) {
         // JS-YAML's default schema for `safeLoad` function.
         // It is not described in the YAML specification.
@@ -16566,17 +17017,17 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/binary': 70,
-        '../type/merge': 78,
-        '../type/omap': 80,
-        '../type/pairs': 81,
-        '../type/set': 83,
-        '../type/timestamp': 85,
-        './core': 64
+        '../schema': 64,
+        '../type/binary': 71,
+        '../type/merge': 79,
+        '../type/omap': 81,
+        '../type/pairs': 82,
+        '../type/set': 84,
+        '../type/timestamp': 86,
+        './core': 65
       }
     ],
-    67: [
+    68: [
       function (require, module, exports) {
         // Standard YAML's Failsafe schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2802346
@@ -16591,13 +17042,13 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/map': 77,
-        '../type/seq': 82,
-        '../type/str': 84
+        '../schema': 64,
+        '../type/map': 78,
+        '../type/seq': 83,
+        '../type/str': 85
       }
     ],
-    68: [
+    69: [
       function (require, module, exports) {
         // Standard YAML's JSON schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2803231
@@ -16618,15 +17069,15 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/bool': 71,
-        '../type/float': 72,
-        '../type/int': 73,
-        '../type/null': 79,
-        './failsafe': 67
+        '../schema': 64,
+        '../type/bool': 72,
+        '../type/float': 73,
+        '../type/int': 74,
+        '../type/null': 80,
+        './failsafe': 68
       }
     ],
-    69: [
+    70: [
       function (require, module, exports) {
         'use strict';
         var YAMLException = require('./exception');
@@ -16683,9 +17134,9 @@
         }
         module.exports = Type;
       },
-      { './exception': 60 }
+      { './exception': 61 }
     ],
-    70: [
+    71: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-bitwise*/
@@ -16790,9 +17241,9 @@
           represent: representYamlBinary
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    71: [
+    72: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16827,9 +17278,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    72: [
+    73: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -16919,11 +17370,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 59,
+        '../type': 70
       }
     ],
-    73: [
+    74: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -17090,11 +17541,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 59,
+        '../type': 70
       }
     ],
-    74: [
+    75: [
       function (require, module, exports) {
         'use strict';
         var esprima;
@@ -17157,9 +17608,9 @@
           represent: representJavascriptFunction
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    75: [
+    76: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -17213,9 +17664,9 @@
           represent: representJavascriptRegExp
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    76: [
+    77: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -17240,9 +17691,9 @@
           represent: representJavascriptUndefined
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    77: [
+    78: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17253,9 +17704,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    78: [
+    79: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17267,9 +17718,9 @@
           resolve: resolveYamlMerge
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    79: [
+    80: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17307,9 +17758,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    80: [
+    81: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17350,9 +17801,9 @@
           construct: constructYamlOmap
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    81: [
+    82: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17397,9 +17848,9 @@
           construct: constructYamlPairs
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    82: [
+    83: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17410,9 +17861,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    83: [
+    84: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17438,9 +17889,9 @@
           construct: constructYamlSet
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    84: [
+    85: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17451,9 +17902,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    85: [
+    86: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17523,9 +17974,9 @@
           represent: representYamlTimestamp
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    86: [
+    87: [
       function (require, module, exports) {
         var JsonSchemaCompatability = function () {
             function convert3to4Type(types, always) {
@@ -17634,7 +18085,7 @@
       },
       {}
     ],
-    87: [
+    88: [
       function (require, module, exports) {
         /** !
  * JSON Schema $Ref Parser v3.1.2
@@ -17812,13 +18263,13 @@
         }
       },
       {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106
       }
     ],
-    88: [
+    89: [
       function (require, module, exports) {
         'use strict';
         var $Ref = require('./ref'), Pointer = require('./pointer'), ono = require('ono'), debug = require('./util/debug'), url = require('./util/url');
@@ -17946,14 +18397,14 @@
         }
       },
       {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105,
-        'ono': 113
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    89: [
+    90: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18205,21 +18656,21 @@
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
       {
-        '../../is-buffer/index.js': 55,
-        './bundle': 87,
-        './dereference': 88,
-        './options': 90,
-        './parse': 91,
-        './refs': 98,
-        './resolve-external': 99,
-        './util/promise': 104,
-        './util/url': 105,
-        './util/yaml': 106,
-        'call-me-maybe': 44,
-        'ono': 113
+        '../../is-buffer/index.js': 56,
+        './bundle': 88,
+        './dereference': 89,
+        './options': 91,
+        './parse': 92,
+        './refs': 99,
+        './resolve-external': 100,
+        './util/promise': 105,
+        './util/url': 106,
+        './util/yaml': 107,
+        'call-me-maybe': 45,
+        'ono': 114
       }
     ],
-    90: [
+    91: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -18287,16 +18738,16 @@
         }
       },
       {
-        './parsers/binary': 92,
-        './parsers/json': 93,
-        './parsers/text': 94,
-        './parsers/yaml': 95,
-        './resolvers/file': 100,
-        './resolvers/http': 101,
-        './validators/z-schema': 107
+        './parsers/binary': 93,
+        './parsers/json': 94,
+        './parsers/text': 95,
+        './parsers/yaml': 96,
+        './resolvers/file': 101,
+        './resolvers/http': 102,
+        './validators/z-schema': 108
       }
     ],
-    91: [
+    92: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18421,15 +18872,15 @@
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
       {
-        '../../is-buffer/index.js': 55,
-        './util/debug': 102,
-        './util/plugins': 103,
-        './util/promise': 104,
-        './util/url': 105,
-        'ono': 113
+        '../../is-buffer/index.js': 56,
+        './util/debug': 103,
+        './util/plugins': 104,
+        './util/promise': 105,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    92: [
+    93: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18452,9 +18903,9 @@
           };
         }.call(this, require('buffer').Buffer));
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    93: [
+    94: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18485,11 +18936,11 @@
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
       {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104
+        '../../../is-buffer/index.js': 56,
+        '../util/promise': 105
       }
     ],
-    94: [
+    95: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18514,9 +18965,9 @@
           };
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
-      { '../../../is-buffer/index.js': 55 }
+      { '../../../is-buffer/index.js': 56 }
     ],
-    95: [
+    96: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18547,12 +18998,12 @@
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
       {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104,
-        '../util/yaml': 106
+        '../../../is-buffer/index.js': 56,
+        '../util/promise': 105,
+        '../util/yaml': 107
       }
     ],
-    96: [
+    97: [
       function (require, module, exports) {
         'use strict';
         module.exports = Pointer;
@@ -18767,12 +19218,12 @@
         }
       },
       {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
+        './ref': 98,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    97: [
+    98: [
       function (require, module, exports) {
         'use strict';
         module.exports = $Ref;
@@ -18984,9 +19435,9 @@
           }
         };
       },
-      { './pointer': 96 }
+      { './pointer': 97 }
     ],
-    98: [
+    99: [
       function (require, module, exports) {
         'use strict';
         var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
@@ -19161,12 +19612,12 @@
         }
       },
       {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
+        './ref': 98,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    99: [
+    100: [
       function (require, module, exports) {
         'use strict';
         var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
@@ -19262,15 +19713,15 @@
         }
       },
       {
-        './parse': 91,
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/promise': 104,
-        './util/url': 105
+        './parse': 92,
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/promise': 105,
+        './util/url': 106
       }
     ],
-    100: [
+    101: [
       function (require, module, exports) {
         'use strict';
         var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
@@ -19304,14 +19755,14 @@
         };
       },
       {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        'fs': 39,
-        'ono': 113
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        'fs': 40,
+        'ono': 114
       }
     ],
-    101: [
+    102: [
       function (require, module, exports) {
         (function (process, Buffer) {
           'use strict';
@@ -19416,17 +19867,17 @@
         }.call(this, require('_process'), require('buffer').Buffer));
       },
       {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        '_process': 115,
-        'buffer': 41,
-        'http': 133,
-        'https': 51,
-        'ono': 113
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        '_process': 116,
+        'buffer': 42,
+        'http': 134,
+        'https': 52,
+        'ono': 114
       }
     ],
-    102: [
+    103: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug');
@@ -19437,9 +19888,9 @@
  */
         module.exports = debug('json-schema-ref-parser');
       },
-      { 'debug': 46 }
+      { 'debug': 47 }
     ],
-    103: [
+    104: [
       function (require, module, exports) {
         'use strict';
         var Promise = require('./promise'), debug = require('./debug');
@@ -19579,19 +20030,19 @@
         }
       },
       {
-        './debug': 102,
-        './promise': 104
+        './debug': 103,
+        './promise': 105
       }
     ],
-    104: [
+    105: [
       function (require, module, exports) {
         'use strict';
         /** @type {Promise} **/
         module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
       },
-      { 'es6-promise': 48 }
+      { 'es6-promise': 49 }
     ],
-    105: [
+    106: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -19790,11 +20241,11 @@
         }.call(this, require('_process')));
       },
       {
-        '_process': 115,
-        'url': 146
+        '_process': 116,
+        'url': 147
       }
     ],
-    106: [
+    107: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -19831,11 +20282,11 @@
         };
       },
       {
-        'js-yaml': 56,
-        'ono': 113
+        'js-yaml': 57,
+        'ono': 114
       }
     ],
-    107: [
+    108: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -19850,7 +20301,7 @@
       },
       {}
     ],
-    108: [
+    109: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -20687,7 +21138,7 @@
       },
       {}
     ],
-    109: [
+    110: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -36211,7 +36662,7 @@
       },
       {}
     ],
-    110: [
+    111: [
       function (require, module, exports) {
         /**
  * Helpers.
@@ -36333,7 +36784,7 @@
       },
       {}
     ],
-    111: [
+    112: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -36470,9 +36921,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 112 }
+      { './isArguments': 113 }
     ],
-    112: [
+    113: [
       function (require, module, exports) {
         'use strict';
         var toStr = Object.prototype.toString;
@@ -36487,7 +36938,7 @@
       },
       {}
     ],
-    113: [
+    114: [
       function (require, module, exports) {
         /**!
  * Ono v2.2.1
@@ -36693,9 +37144,9 @@
           }
         }
       },
-      { 'util': 150 }
+      { 'util': 151 }
     ],
-    114: [
+    115: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -36739,9 +37190,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    115: [
+    116: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -36915,7 +37366,7 @@
       },
       {}
     ],
-    116: [
+    117: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -37333,7 +37784,7 @@
       },
       {}
     ],
-    117: [
+    118: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37410,7 +37861,7 @@
       },
       {}
     ],
-    118: [
+    119: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37490,18 +37941,18 @@
       },
       {}
     ],
-    119: [
+    120: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 117,
-        './encode': 118
+        './decode': 118,
+        './encode': 119
       }
     ],
-    120: [
+    121: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37605,28 +38056,28 @@
         };
       },
       {
-        'events': 49,
-        'inherits': 54,
-        'readable-stream/duplex.js': 122,
-        'readable-stream/passthrough.js': 129,
-        'readable-stream/readable.js': 130,
-        'readable-stream/transform.js': 131,
-        'readable-stream/writable.js': 132
+        'events': 50,
+        'inherits': 55,
+        'readable-stream/duplex.js': 123,
+        'readable-stream/passthrough.js': 130,
+        'readable-stream/readable.js': 131,
+        'readable-stream/transform.js': 132,
+        'readable-stream/writable.js': 133
       }
-    ],
-    121: [
-      function (require, module, exports) {
-        arguments[4][42][0].apply(exports, arguments);
-      },
-      { 'dup': 42 }
     ],
     122: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_duplex.js');
+        arguments[4][43][0].apply(exports, arguments);
       },
-      { './lib/_stream_duplex.js': 123 }
+      { 'dup': 43 }
     ],
     123: [
+      function (require, module, exports) {
+        module.exports = require('./lib/_stream_duplex.js');
+      },
+      { './lib/_stream_duplex.js': 124 }
+    ],
+    124: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -37693,14 +38144,14 @@
         }
       },
       {
-        './_stream_readable': 125,
-        './_stream_writable': 127,
-        'core-util-is': 45,
-        'inherits': 54,
-        'process-nextick-args': 114
+        './_stream_readable': 126,
+        './_stream_writable': 128,
+        'core-util-is': 46,
+        'inherits': 55,
+        'process-nextick-args': 115
       }
     ],
-    124: [
+    125: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -37723,12 +38174,12 @@
         };
       },
       {
-        './_stream_transform': 126,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_transform': 127,
+        'core-util-is': 46,
+        'inherits': 55
       }
     ],
-    125: [
+    126: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -38635,21 +39086,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        './internal/streams/BufferList': 128,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'isarray': 121,
-        'process-nextick-args': 114,
-        'string_decoder/': 137,
-        'util': 38
+        './_stream_duplex': 124,
+        './internal/streams/BufferList': 129,
+        '_process': 116,
+        'buffer': 42,
+        'buffer-shims': 41,
+        'core-util-is': 46,
+        'events': 50,
+        'inherits': 55,
+        'isarray': 122,
+        'process-nextick-args': 115,
+        'string_decoder/': 138,
+        'util': 39
       }
     ],
-    126: [
+    127: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -38814,12 +39265,12 @@
         }
       },
       {
-        './_stream_duplex': 123,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_duplex': 124,
+        'core-util-is': 46,
+        'inherits': 55
       }
     ],
-    127: [
+    128: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -39322,18 +39773,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'process-nextick-args': 114,
-        'util-deprecate': 147
+        './_stream_duplex': 124,
+        '_process': 116,
+        'buffer': 42,
+        'buffer-shims': 41,
+        'core-util-is': 46,
+        'events': 50,
+        'inherits': 55,
+        'process-nextick-args': 115,
+        'util-deprecate': 148
       }
     ],
-    128: [
+    129: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -39410,17 +39861,17 @@
         };
       },
       {
-        'buffer': 41,
-        'buffer-shims': 40
+        'buffer': 42,
+        'buffer-shims': 41
       }
     ],
-    129: [
+    130: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 124 }
+      { './lib/_stream_passthrough.js': 125 }
     ],
-    130: [
+    131: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -39442,27 +39893,27 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 123,
-        './lib/_stream_passthrough.js': 124,
-        './lib/_stream_readable.js': 125,
-        './lib/_stream_transform.js': 126,
-        './lib/_stream_writable.js': 127,
-        '_process': 115
+        './lib/_stream_duplex.js': 124,
+        './lib/_stream_passthrough.js': 125,
+        './lib/_stream_readable.js': 126,
+        './lib/_stream_transform.js': 127,
+        './lib/_stream_writable.js': 128,
+        '_process': 116
       }
-    ],
-    131: [
-      function (require, module, exports) {
-        module.exports = require('./lib/_stream_transform.js');
-      },
-      { './lib/_stream_transform.js': 126 }
     ],
     132: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_writable.js');
+        module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_writable.js': 127 }
+      { './lib/_stream_transform.js': 127 }
     ],
     133: [
+      function (require, module, exports) {
+        module.exports = require('./lib/_stream_writable.js');
+      },
+      { './lib/_stream_writable.js': 128 }
+    ],
+    134: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -39530,13 +39981,13 @@
         ];
       },
       {
-        './lib/request': 135,
-        'builtin-status-codes': 43,
-        'url': 146,
-        'xtend': 215
+        './lib/request': 136,
+        'builtin-status-codes': 44,
+        'url': 147,
+        'xtend': 216
       }
     ],
-    134: [
+    135: [
       function (require, module, exports) {
         (function (global) {
           exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableByteStream);
@@ -39577,7 +40028,7 @@
       },
       {}
     ],
-    135: [
+    136: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           // var Base64 = require('Base64')
@@ -39826,18 +40277,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        './response': 136,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'indexof': 53,
-        'inherits': 54,
-        'object-keys': 111,
-        'stream': 120
+        './capability': 135,
+        './response': 137,
+        '_process': 116,
+        'buffer': 42,
+        'foreach': 51,
+        'indexof': 54,
+        'inherits': 55,
+        'object-keys': 112,
+        'stream': 121
       }
     ],
-    136: [
+    137: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           var capability = require('./capability');
@@ -40004,15 +40455,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'inherits': 54,
-        'stream': 120
+        './capability': 135,
+        '_process': 116,
+        'buffer': 42,
+        'foreach': 51,
+        'inherits': 55,
+        'stream': 121
       }
     ],
-    137: [
+    138: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -40214,9 +40665,9 @@
           this.charLength = this.charReceived ? 3 : 0;
         }
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    138: [
+    139: [
       function (require, module, exports) {
         module.exports = [
           'get',
@@ -40230,7 +40681,7 @@
       },
       {}
     ],
-    139: [
+    140: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -40406,18 +40857,18 @@
         }
       },
       {
-        './options': 140,
-        './promise': 141,
-        './util': 142,
-        './validate-schema': 143,
-        './validate-spec': 144,
-        'call-me-maybe': 44,
-        'json-schema-ref-parser': 89,
-        'json-schema-ref-parser/lib/dereference': 88,
-        'ono': 113
+        './options': 141,
+        './promise': 142,
+        './util': 143,
+        './validate-schema': 144,
+        './validate-spec': 145,
+        'call-me-maybe': 45,
+        'json-schema-ref-parser': 90,
+        'json-schema-ref-parser/lib/dereference': 89,
+        'ono': 114
       }
     ],
-    140: [
+    141: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -40442,20 +40893,20 @@
         util.inherits(ParserOptions, $RefParserOptions);
       },
       {
-        'json-schema-ref-parser/lib/options': 90,
-        'util': 150
-      }
-    ],
-    141: [
-      function (require, module, exports) {
-        arguments[4][104][0].apply(exports, arguments);
-      },
-      {
-        'dup': 104,
-        'es6-promise': 48
+        'json-schema-ref-parser/lib/options': 91,
+        'util': 151
       }
     ],
     142: [
+      function (require, module, exports) {
+        arguments[4][105][0].apply(exports, arguments);
+      },
+      {
+        'dup': 105,
+        'es6-promise': 49
+      }
+    ],
+    143: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -40473,11 +40924,11 @@
         exports.swaggerParamRegExp = /\{([^\/}]+)}/g;
       },
       {
-        'debug': 46,
-        'util': 150
+        'debug': 47,
+        'util': 151
       }
     ],
-    143: [
+    144: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -40532,13 +40983,13 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-schema-official/schema': 145,
-        'z-schema': 225
+        './util': 143,
+        'ono': 114,
+        'swagger-schema-official/schema': 146,
+        'z-schema': 226
       }
     ],
-    144: [
+    145: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -40783,12 +41234,12 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-methods': 138
+        './util': 143,
+        'ono': 114,
+        'swagger-methods': 139
       }
     ],
-    145: [
+    146: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -41766,7 +42217,7 @@
       },
       {}
     ],
-    146: [
+    147: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -42401,11 +42852,11 @@
         }
       },
       {
-        'punycode': 116,
-        'querystring': 119
+        'punycode': 117,
+        'querystring': 120
       }
     ],
-    147: [
+    148: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -42473,13 +42924,13 @@
       },
       {}
     ],
-    148: [
-      function (require, module, exports) {
-        arguments[4][54][0].apply(exports, arguments);
-      },
-      { 'dup': 54 }
-    ],
     149: [
+      function (require, module, exports) {
+        arguments[4][55][0].apply(exports, arguments);
+      },
+      { 'dup': 55 }
+    ],
+    150: [
       function (require, module, exports) {
         module.exports = function isBuffer(arg) {
           return arg && typeof arg === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
@@ -42487,7 +42938,7 @@
       },
       {}
     ],
-    150: [
+    151: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -43046,12 +43497,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 149,
-        '_process': 115,
-        'inherits': 148
+        './support/isBuffer': 150,
+        '_process': 116,
+        'inherits': 149
       }
     ],
-    151: [
+    152: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43246,69 +43697,69 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 153,
-        './lib/contains': 154,
-        './lib/equals': 155,
-        './lib/escape': 156,
-        './lib/isAfter': 157,
-        './lib/isAlpha': 158,
-        './lib/isAlphanumeric': 159,
-        './lib/isAscii': 160,
-        './lib/isBase64': 161,
-        './lib/isBefore': 162,
-        './lib/isBoolean': 163,
-        './lib/isByteLength': 164,
-        './lib/isCreditCard': 165,
-        './lib/isCurrency': 166,
-        './lib/isDataURI': 167,
-        './lib/isDate': 168,
-        './lib/isDecimal': 169,
-        './lib/isDivisibleBy': 170,
-        './lib/isEmail': 171,
-        './lib/isFQDN': 172,
-        './lib/isFloat': 173,
-        './lib/isFullWidth': 174,
-        './lib/isHalfWidth': 175,
-        './lib/isHexColor': 176,
-        './lib/isHexadecimal': 177,
-        './lib/isIP': 178,
-        './lib/isISBN': 179,
-        './lib/isISIN': 180,
-        './lib/isISO8601': 181,
-        './lib/isIn': 182,
-        './lib/isInt': 183,
-        './lib/isJSON': 184,
-        './lib/isLength': 185,
-        './lib/isLowercase': 186,
-        './lib/isMACAddress': 187,
-        './lib/isMD5': 188,
-        './lib/isMobilePhone': 189,
-        './lib/isMongoId': 190,
-        './lib/isMultibyte': 191,
-        './lib/isNull': 192,
-        './lib/isNumeric': 193,
-        './lib/isSurrogatePair': 194,
-        './lib/isURL': 195,
-        './lib/isUUID': 196,
-        './lib/isUppercase': 197,
-        './lib/isVariableWidth': 198,
-        './lib/isWhitelisted': 199,
-        './lib/ltrim': 200,
-        './lib/matches': 201,
-        './lib/normalizeEmail': 202,
-        './lib/rtrim': 203,
-        './lib/stripLow': 204,
-        './lib/toBoolean': 205,
-        './lib/toDate': 206,
-        './lib/toFloat': 207,
-        './lib/toInt': 208,
-        './lib/trim': 209,
-        './lib/unescape': 210,
-        './lib/util/toString': 213,
-        './lib/whitelist': 214
+        './lib/blacklist': 154,
+        './lib/contains': 155,
+        './lib/equals': 156,
+        './lib/escape': 157,
+        './lib/isAfter': 158,
+        './lib/isAlpha': 159,
+        './lib/isAlphanumeric': 160,
+        './lib/isAscii': 161,
+        './lib/isBase64': 162,
+        './lib/isBefore': 163,
+        './lib/isBoolean': 164,
+        './lib/isByteLength': 165,
+        './lib/isCreditCard': 166,
+        './lib/isCurrency': 167,
+        './lib/isDataURI': 168,
+        './lib/isDate': 169,
+        './lib/isDecimal': 170,
+        './lib/isDivisibleBy': 171,
+        './lib/isEmail': 172,
+        './lib/isFQDN': 173,
+        './lib/isFloat': 174,
+        './lib/isFullWidth': 175,
+        './lib/isHalfWidth': 176,
+        './lib/isHexColor': 177,
+        './lib/isHexadecimal': 178,
+        './lib/isIP': 179,
+        './lib/isISBN': 180,
+        './lib/isISIN': 181,
+        './lib/isISO8601': 182,
+        './lib/isIn': 183,
+        './lib/isInt': 184,
+        './lib/isJSON': 185,
+        './lib/isLength': 186,
+        './lib/isLowercase': 187,
+        './lib/isMACAddress': 188,
+        './lib/isMD5': 189,
+        './lib/isMobilePhone': 190,
+        './lib/isMongoId': 191,
+        './lib/isMultibyte': 192,
+        './lib/isNull': 193,
+        './lib/isNumeric': 194,
+        './lib/isSurrogatePair': 195,
+        './lib/isURL': 196,
+        './lib/isUUID': 197,
+        './lib/isUppercase': 198,
+        './lib/isVariableWidth': 199,
+        './lib/isWhitelisted': 200,
+        './lib/ltrim': 201,
+        './lib/matches': 202,
+        './lib/normalizeEmail': 203,
+        './lib/rtrim': 204,
+        './lib/stripLow': 205,
+        './lib/toBoolean': 206,
+        './lib/toDate': 207,
+        './lib/toFloat': 208,
+        './lib/toInt': 209,
+        './lib/trim': 210,
+        './lib/unescape': 211,
+        './lib/util/toString': 214,
+        './lib/whitelist': 215
       }
     ],
-    152: [
+    153: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43388,7 +43839,7 @@
       },
       {}
     ],
-    153: [
+    154: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43404,9 +43855,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    154: [
+    155: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43425,11 +43876,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 212,
+        './util/toString': 214
       }
     ],
-    155: [
+    156: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43445,9 +43896,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    156: [
+    157: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43463,9 +43914,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    157: [
+    158: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43487,11 +43938,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 207,
+        './util/assertString': 212
       }
     ],
-    158: [
+    159: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43513,11 +43964,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 153,
+        './util/assertString': 212
       }
     ],
-    159: [
+    160: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43539,11 +43990,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 153,
+        './util/assertString': 212
       }
     ],
-    160: [
+    161: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43562,9 +44013,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    161: [
+    162: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43586,9 +44037,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    162: [
+    163: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43610,11 +44061,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 207,
+        './util/assertString': 212
       }
     ],
-    163: [
+    164: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43635,9 +44086,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    164: [
+    165: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43670,9 +44121,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    165: [
+    166: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43714,9 +44165,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    166: [
+    167: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43788,11 +44239,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    167: [
+    168: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43810,9 +44261,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    168: [
+    169: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43901,11 +44352,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 181,
-        './util/assertString': 211
+        './isISO8601': 182,
+        './util/assertString': 212
       }
     ],
-    169: [
+    170: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43922,9 +44373,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    170: [
+    171: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43943,11 +44394,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 207,
-        './util/assertString': 211
+        './toFloat': 208,
+        './util/assertString': 212
       }
     ],
-    171: [
+    172: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44015,13 +44466,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 164,
-        './isFQDN': 172,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isByteLength': 165,
+        './isFQDN': 173,
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    172: [
+    173: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44073,11 +44524,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    173: [
+    174: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44098,9 +44549,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    174: [
+    175: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44117,9 +44568,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    175: [
+    176: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44136,9 +44587,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    176: [
+    177: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44155,9 +44606,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    177: [
+    178: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44174,9 +44625,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    178: [
+    179: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44249,9 +44700,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    179: [
+    180: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44307,9 +44758,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    180: [
+    181: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44351,9 +44802,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    181: [
+    182: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44371,9 +44822,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    182: [
+    183: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44411,11 +44862,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 212,
+        './util/toString': 214
       }
     ],
-    183: [
+    184: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44440,9 +44891,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    184: [
+    185: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44468,9 +44919,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    185: [
+    186: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44504,9 +44955,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    186: [
+    187: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44522,9 +44973,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    187: [
+    188: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44541,9 +44992,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    188: [
+    189: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44560,9 +45011,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    189: [
+    190: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44622,9 +45073,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    190: [
+    191: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44643,11 +45094,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 177,
-        './util/assertString': 211
+        './isHexadecimal': 178,
+        './util/assertString': 212
       }
     ],
-    191: [
+    192: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44666,9 +45117,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    192: [
+    193: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44684,9 +45135,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    193: [
+    194: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44703,9 +45154,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    194: [
+    195: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44722,9 +45173,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    195: [
+    196: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44840,13 +45291,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 172,
-        './isIP': 178,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isFQDN': 173,
+        './isIP': 179,
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    196: [
+    197: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44870,9 +45321,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    197: [
+    198: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44888,9 +45339,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    198: [
+    199: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44909,12 +45360,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 174,
-        './isHalfWidth': 175,
-        './util/assertString': 211
+        './isFullWidth': 175,
+        './isHalfWidth': 176,
+        './util/assertString': 212
       }
     ],
-    199: [
+    200: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44935,9 +45386,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    200: [
+    201: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44954,9 +45405,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    201: [
+    202: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44975,9 +45426,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    202: [
+    203: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45021,11 +45472,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 171,
-        './util/merge': 212
+        './isEmail': 172,
+        './util/merge': 213
       }
     ],
-    203: [
+    204: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45046,9 +45497,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    204: [
+    205: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45068,11 +45519,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 153,
-        './util/assertString': 211
+        './blacklist': 154,
+        './util/assertString': 212
       }
     ],
-    205: [
+    206: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45091,9 +45542,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    206: [
+    207: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45110,9 +45561,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    207: [
+    208: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45128,9 +45579,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    208: [
+    209: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45146,9 +45597,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    209: [
+    210: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45166,11 +45617,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 200,
-        './rtrim': 203
+        './ltrim': 201,
+        './rtrim': 204
       }
     ],
-    210: [
+    211: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45186,9 +45637,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    211: [
+    212: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45202,7 +45653,7 @@
       },
       {}
     ],
-    212: [
+    213: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45221,7 +45672,7 @@
       },
       {}
     ],
-    213: [
+    214: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45247,7 +45698,7 @@
       },
       {}
     ],
-    214: [
+    215: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45263,9 +45714,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    215: [
+    216: [
       function (require, module, exports) {
         module.exports = extend;
         var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -45284,7 +45735,7 @@
       },
       {}
     ],
-    216: [
+    217: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -45333,7 +45784,7 @@
       },
       {}
     ],
-    217: [
+    218: [
       function (require, module, exports) {
         /*jshint maxlen: false*/
         var validator = require('validator');
@@ -45472,9 +45923,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 151 }
+      { 'validator': 152 }
     ],
-    218: [
+    219: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), Report = require('./Report'), Utils = require('./Utils');
@@ -46011,12 +46462,12 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 218,
+        './Report': 221,
+        './Utils': 225
       }
     ],
-    219: [
+    220: [
       function (require, module, exports) {
         // Number.isFinite polyfill
         // http://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.isfinite
@@ -46037,7 +46488,7 @@
       },
       {}
     ],
-    220: [
+    221: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -46214,13 +46665,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 216,
-        './Utils': 224,
-        '_process': 115,
-        'lodash.get': 108
+        './Errors': 217,
+        './Utils': 225,
+        '_process': 116,
+        'lodash.get': 109
       }
     ],
-    221: [
+    222: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -46362,13 +46813,13 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 220,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224
+        './Report': 221,
+        './SchemaCompilation': 223,
+        './SchemaValidation': 224,
+        './Utils': 225
       }
     ],
-    222: [
+    223: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -46615,12 +47066,12 @@
         };
       },
       {
-        './Report': 220,
-        './SchemaCache': 221,
-        './Utils': 224
+        './Report': 221,
+        './SchemaCache': 222,
+        './Utils': 225
       }
     ],
-    223: [
+    224: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -47384,13 +47835,13 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 218,
+        './JsonValidation': 219,
+        './Report': 221,
+        './Utils': 225
       }
     ],
-    224: [
+    225: [
       function (require, module, exports) {
         'use strict';
         exports.isAbsoluteUri = function (uri) {
@@ -47596,7 +48047,7 @@
       },
       {}
     ],
-    225: [
+    226: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -47893,21 +48344,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Polyfills': 219,
-        './Report': 220,
-        './SchemaCache': 221,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224,
-        './schemas/hyper-schema.json': 226,
-        './schemas/schema.json': 227,
-        '_process': 115,
-        'lodash.get': 108
+        './FormatValidators': 218,
+        './JsonValidation': 219,
+        './Polyfills': 220,
+        './Report': 221,
+        './SchemaCache': 222,
+        './SchemaCompilation': 223,
+        './SchemaValidation': 224,
+        './Utils': 225,
+        './schemas/hyper-schema.json': 227,
+        './schemas/schema.json': 228,
+        '_process': 116,
+        'lodash.get': 109
       }
     ],
-    226: [
+    227: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -48025,7 +48476,7 @@
       },
       {}
     ],
-    227: [
+    228: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
@@ -48186,2358 +48637,6 @@
     ]
   }, {}, [1])(1);
 }));
-!function (e) {
-  if ('object' == typeof exports && 'undefined' != typeof module)
-    module.exports = e();
-  else if ('function' == typeof define && define.amd)
-    define([], e);
-  else {
-    var f;
-    'undefined' != typeof window ? f = window : 'undefined' != typeof global ? f = global : 'undefined' != typeof self && (f = self), f.ramlObjectToRaml = e();
-  }
-}(function () {
-  var define, module, exports;
-  return function e(t, n, r) {
-    function s(o, u) {
-      if (!n[o]) {
-        if (!t[o]) {
-          var a = typeof require == 'function' && require;
-          if (!u && a)
-            return a(o, !0);
-          if (i)
-            return i(o, !0);
-          var f = new Error('Cannot find module \'' + o + '\'');
-          throw f.code = 'MODULE_NOT_FOUND', f;
-        }
-        var l = n[o] = { exports: {} };
-        t[o][0].call(l.exports, function (e) {
-          var n = t[o][1][e];
-          return s(n ? n : e);
-        }, l, l.exports, e, t, n, r);
-      }
-      return n[o].exports;
-    }
-    var i = typeof require == 'function' && require;
-    for (var o = 0; o < r.length; o++)
-      s(r[o]);
-    return s;
-  }({
-    1: [
-      function (require, module, exports) {
-        var is = require('../utils/is');
-        /**
- * Sanitize documentation for RAML.
- *
- * @param  {Array} documentation
- * @return {Array}
- */
-        module.exports = function (documentation) {
-          return documentation.filter(function (document) {
-            return is.string(document.title) && is.string(document.content);
-          }).map(function (document) {
-            return {
-              title: document.title,
-              content: document.content
-            };
-          });
-        };
-      },
-      { '../utils/is': 12 }
-    ],
-    2: [
-      function (require, module, exports) {
-        var extend = require('xtend/mutable');
-        var is = require('../utils/is');
-        var sanitizeSchemas = require('./schemas');
-        var sanitizeParameters = require('./parameters');
-        var sanitizeDocumentation = require('./documentation');
-        var sanitizeSecuritySchemes = require('./security-schemes');
-        var sanitizeResources = require('./resources');
-        var sanitizeResourceTypes = require('./resource-types');
-        var sanitizeTraits = require('./traits');
-        /**
- * Transform a RAML object into a YAML compatible structure.
- *
- * @param  {Object} input
- * @return {Object}
- */
-        module.exports = function (input) {
-          var output = {};
-          if (is.string(input.title)) {
-            output.title = input.title;
-          }
-          if (is.string(input.version) || is.number(input.version)) {
-            output.version = input.version;
-          }
-          if (is.string(input.mediaType)) {
-            output.mediaType = input.mediaType;
-          }
-          if (is.string(input.baseUri)) {
-            output.baseUri = input.baseUri;
-          }
-          if (is.object(input.baseUriParameters)) {
-            output.baseUriParameters = sanitizeParameters(input.baseUriParameters);
-          }
-          if (is.array(input.documentation)) {
-            output.documentation = sanitizeDocumentation(input.documentation);
-          }
-          if (is.array(input.securitySchemes)) {
-            output.securitySchemes = sanitizeSecuritySchemes(input.securitySchemes);
-          }
-          if (is.array(input.schemas)) {
-            output.schemas = sanitizeSchemas(input.schemas);
-          }
-          if (is.array(input.resourceTypes)) {
-            output.resourceTypes = sanitizeResourceTypes(input.resourceTypes);
-          }
-          if (is.array(input.traits)) {
-            output.traits = sanitizeTraits(input.traits);
-          }
-          if (is.array(input.resources)) {
-            extend(output, sanitizeResources(input.resources));
-          }
-          return output;
-        };
-      },
-      {
-        '../utils/is': 12,
-        './documentation': 1,
-        './parameters': 3,
-        './resource-types': 4,
-        './resources': 5,
-        './schemas': 7,
-        './security-schemes': 8,
-        './traits': 10,
-        'xtend/mutable': 18
-      }
-    ],
-    3: [
-      function (require, module, exports) {
-        var extend = require('xtend/mutable');
-        var is = require('../utils/is');
-        /**
- * Map of valid types.
- *
- * @type {Object}
- */
-        var TYPES = {
-            string: true,
-            number: true,
-            integer: true,
-            date: true,
-            boolean: true,
-            file: true
-          };
-        /**
- * Sanitize a single parameter representation.
- *
- * @param  {Object} param
- * @param  {String} key
- * @return {Object}
- */
-        var sanitizeParameter = function (param, key) {
-          var obj = {};
-          // Avoid unneccessary display names.
-          if (is.string(param.displayName) && key !== param.displayName) {
-            obj.displayName = param.displayName;
-          }
-          if (is.string(param.type) && TYPES.hasOwnProperty(param.type)) {
-            obj.type = param.type;
-          }
-          if (is.string(param.description)) {
-            obj.description = param.description;
-          }
-          if (is.array(param.enum)) {
-            obj.enum = param.enum;
-          }
-          if (is.string(param.pattern)) {
-            obj.pattern = param.pattern;
-          }
-          if (is.number(param.minLength)) {
-            obj.minLength = param.minLength;
-          }
-          if (is.number(param.maxLength)) {
-            obj.maxLength = param.maxLength;
-          }
-          if (is.number(param.minimum)) {
-            obj.minimum = param.minimum;
-          }
-          if (is.number(param.maximum)) {
-            obj.maximum = param.maximum;
-          }
-          if (param.example != null && is.primitive(param.example)) {
-            obj.example = param.example;
-          }
-          if (param.default != null && is.primitive(param.default)) {
-            obj.default = param.default;
-          }
-          if (is.boolean(param.repeat)) {
-            obj.repeat = param.repeat;
-          }
-          if (is.boolean(param.required)) {
-            obj.required = param.required;
-          }
-          return obj;
-        };
-        /**
- * Sanitize parameters and ensure the object structure is correct.
- *
- * @param  {Object} params
- * @return {Object}
- */
-        module.exports = function (params) {
-          var obj = {};
-          Object.keys(params).forEach(function (key) {
-            var param = params[key];
-            if (is.array(param)) {
-              return obj[key] = param.map(sanitizeParameter);
-            }
-            obj[key] = sanitizeParameter(param, key);
-          });
-          return obj;
-        };
-      },
-      {
-        '../utils/is': 12,
-        'xtend/mutable': 18
-      }
-    ],
-    4: [
-      function (require, module, exports) {
-        var is = require('../utils/is');
-        var sanitizeTrait = require('./trait');
-        /**
- * Escape characters used inside a method name for the regexp.
- *
- * @param  {String} str
- * @return {String}
- */
-        var escape = function (str) {
-          return str.replace(/([\-])/g, '\\$1');
-        };
-        /**
- * Check if the key is potentially a method name.
- *
- * @type {RegExp}
- */
-        var METHOD_KEY_REGEXP = /^(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS)\??$/i;
-        /**
- * Sanitize resource types suitable for RAML.
- *
- * @param  {Array} resourceTypes
- * @return {Array}
- */
-        module.exports = function (resourceTypes) {
-          var array = [];
-          resourceTypes.forEach(function (resourceTypeMap) {
-            Object.keys(resourceTypeMap).forEach(function (type) {
-              var obj = {};
-              var child = obj[type] = {};
-              var resourceType = resourceTypeMap[type];
-              Object.keys(resourceType).forEach(function (key) {
-                var value = resourceType[key];
-                var keys = [
-                    'type',
-                    'usage',
-                    'description'
-                  ];
-                if (METHOD_KEY_REGEXP.test(key)) {
-                  child[key] = value == null ? value : sanitizeTrait(value);
-                }
-                // Allow usage and description strings alongside methods.
-                if (~keys.indexOf(key) && is.string(value)) {
-                  child[key] = value;
-                }
-              });
-              array.push(obj);
-            });
-          });
-          return array;
-        };
-      },
-      {
-        '../utils/is': 12,
-        './trait': 9
-      }
-    ],
-    5: [
-      function (require, module, exports) {
-        var extend = require('xtend/mutable');
-        var is = require('../utils/is');
-        var sanitizeTrait = require('./trait');
-        var sanitizeParameters = require('./parameters');
-        /**
- * Sanitize a method into RAML structure for stringification.
- *
- * @param  {Object} method
- * @return {Object}
- */
-        var sanitizeMethods = function (methods) {
-          var obj = {};
-          methods.forEach(function (method) {
-            var child = obj[method.method.toLowerCase()] = {};
-            if (is.array(method.is)) {
-              child.is = method.is;
-            }
-            extend(child, sanitizeTrait(method));
-          });
-          return obj;
-        };
-        /**
- * Sanitize the resources array to the correct RAML structure.
- *
- * @param  {Array}  resources
- * @return {Object}
- */
-        module.exports = function sanitizeResources(resources) {
-          var obj = {};
-          resources.forEach(function (resource) {
-            var child = obj;
-            if (resource.relativeUri) {
-              child = obj[resource.relativeUri] = obj[resource.relativeUri] || {};
-            }
-            if (resource.uriParameters) {
-              child.uriParameters = sanitizeParameters(resource.uriParameters);
-            }
-            if (is.string(resource.type) || is.object(resource.type)) {
-              child.type = resource.type;
-            }
-            if (is.array(resource.methods)) {
-              extend(child, sanitizeMethods(resource.methods));
-            }
-            if (is.array(resource.resources)) {
-              extend(child, sanitizeResources(resource.resources));
-            }
-          });
-          return obj;
-        };
-      },
-      {
-        '../utils/is': 12,
-        './parameters': 3,
-        './trait': 9,
-        'xtend/mutable': 18
-      }
-    ],
-    6: [
-      function (require, module, exports) {
-        /**
- * Sanitize the responses object.
- *
- * @param  {Object} responses
- * @return {Object}
- */
-        module.exports = function (responses) {
-          var obj = {};
-          Object.keys(responses).forEach(function (code) {
-            if (!/^\d{3}$/.test(code)) {
-              return;
-            }
-            obj[code] = responses[code];
-          });
-          return obj;
-        };
-      },
-      {}
-    ],
-    7: [
-      function (require, module, exports) {
-        var is = require('../utils/is');
-        /**
- * Map the schemas array of objects into a standard array.
- *
- * @param  {Array} schemas
- * @return {Array}
- */
-        module.exports = function (schemas) {
-          var array = [];
-          // Iterate over the schema array and object and make it one schema per index.
-          schemas.forEach(function (schemaMap) {
-            Object.keys(schemaMap).forEach(function (key) {
-              if (!is.string(schemaMap[key])) {
-                return;
-              }
-              var obj = {};
-              obj[key] = schemaMap[key];
-              array.push(obj);
-            });
-          });
-          return array;
-        };
-      },
-      { '../utils/is': 12 }
-    ],
-    8: [
-      function (require, module, exports) {
-        var is = require('../utils/is');
-        var sanitizeTrait = require('./trait');
-        /**
- * Map of valid authentication types.
- *
- * @type {Object}
- */
-        var AUTH_TYPES = {
-            'Basic Authentication': true,
-            'Digest Authentication': true,
-            'OAuth 1.0': true,
-            'OAuth 2.0': true
-          };
-        /**
- * Sanitize security schemes.
- *
- * @param  {Array} securitySchemes
- * @return {Array}
- */
-        module.exports = function (securitySchemes) {
-          var array = [];
-          securitySchemes.forEach(function (schemeMap) {
-            Object.keys(schemeMap).forEach(function (key) {
-              var scheme = schemeMap[key];
-              if (!AUTH_TYPES[scheme.type] && !/^x-/i.test(scheme.type)) {
-                return;
-              }
-              var obj = {};
-              var data = obj[key] = { type: scheme.type };
-              if (is.string(scheme.description)) {
-                data.description = scheme.description;
-              }
-              if (is.object(scheme.describedBy)) {
-                data.describedBy = sanitizeTrait(scheme.describedBy);
-              }
-              if (is.object(scheme.settings)) {
-                data.settings = scheme.settings;
-              }
-              array.push(obj);
-            });
-          });
-          return array;
-        };
-      },
-      {
-        '../utils/is': 12,
-        './trait': 9
-      }
-    ],
-    9: [
-      function (require, module, exports) {
-        var is = require('../utils/is');
-        var sanitizeResponses = require('./responses');
-        var sanitizeParameters = require('./parameters');
-        /**
- * Sanitize a trait-like object.
- *
- * @param  {Object} trait
- * @return {Object}
- */
-        module.exports = function (trait) {
-          var obj = {};
-          if (is.string(trait.usage)) {
-            obj.usage = trait.usage;
-          }
-          if (is.string(trait.description)) {
-            obj.description = trait.description;
-          }
-          if (is.object(trait.headers)) {
-            obj.headers = sanitizeParameters(trait.headers);
-          }
-          if (is.object(trait.queryParameters)) {
-            obj.queryParameters = sanitizeParameters(trait.queryParameters);
-          }
-          if (is.object(trait.body)) {
-            obj.body = trait.body;
-          }
-          if (is.object(trait.responses)) {
-            obj.responses = sanitizeResponses(trait.responses);
-          }
-          return obj;
-        };
-      },
-      {
-        '../utils/is': 12,
-        './parameters': 3,
-        './responses': 6
-      }
-    ],
-    10: [
-      function (require, module, exports) {
-        var sanitizeTrait = require('./trait');
-        /**
- * Sanitize traits into an array of keyed maps.
- *
- * @param  {Array} traits
- * @return {Array}
- */
-        module.exports = function (traits) {
-          var array = [];
-          traits.forEach(function (traitMap) {
-            Object.keys(traitMap).forEach(function (key) {
-              var obj = {};
-              obj[key] = sanitizeTrait(traitMap[key]);
-              array.push(obj);
-            });
-          });
-          return array;
-        };
-      },
-      { './trait': 9 }
-    ],
-    11: [
-      function (require, module, exports) {
-        var extend = require('xtend/mutable');
-        var indent = require('indent-string');
-        var repeat = require('repeat-string');
-        var length = require('string-length');
-        var is = require('./utils/is');
-        var toString = Function.prototype.call.bind(Object.prototype.toString);
-        /**
- * Map of characters to escape character sequences.
- *
- * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L39-L55
- *
- * @type {Object}
- */
-        var ESCAPE_SEQUENCES = {};
-        ESCAPE_SEQUENCES[0] = '\\0';
-        ESCAPE_SEQUENCES[7] = '\\a';
-        ESCAPE_SEQUENCES[8] = '\\b';
-        ESCAPE_SEQUENCES[9] = '\\t';
-        ESCAPE_SEQUENCES[10] = '\\n';
-        ESCAPE_SEQUENCES[11] = '\\v';
-        ESCAPE_SEQUENCES[12] = '\\f';
-        ESCAPE_SEQUENCES[13] = '\\r';
-        ESCAPE_SEQUENCES[27] = '\\e';
-        ESCAPE_SEQUENCES[34] = '\\"';
-        ESCAPE_SEQUENCES[92] = '\\\\';
-        ESCAPE_SEQUENCES[133] = '\\N';
-        ESCAPE_SEQUENCES[160] = '\\_';
-        ESCAPE_SEQUENCES[8232] = '\\L';
-        ESCAPE_SEQUENCES[8233] = '\\P';
-        /**
- * Quickly check wheter a character code needs to be quoted within a string.
- *
- * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L14-L36
- *
- * @type {Object}
- */
-        var QUOTED_CHARACTERS = {};
-        QUOTED_CHARACTERS[9] = true;
-        /* Tab */
-        QUOTED_CHARACTERS[10] = true;
-        /* LF */
-        QUOTED_CHARACTERS[13] = true;
-        /* CR */
-        QUOTED_CHARACTERS[33] = true;
-        /* ! */
-        QUOTED_CHARACTERS[34] = true;
-        /* " */
-        QUOTED_CHARACTERS[35] = true;
-        /* # */
-        QUOTED_CHARACTERS[37] = true;
-        /* % */
-        QUOTED_CHARACTERS[38] = true;
-        /* & */
-        QUOTED_CHARACTERS[39] = true;
-        /* ' */
-        QUOTED_CHARACTERS[42] = true;
-        /* * */
-        // QUOTED_CHARACTERS[0x2C] = true; /* , */
-        // QUOTED_CHARACTERS[0x3A] = true; /* : */
-        QUOTED_CHARACTERS[62] = true;
-        /* > */
-        QUOTED_CHARACTERS[64] = true;
-        /* @ */
-        QUOTED_CHARACTERS[91] = true;
-        /* [ */
-        QUOTED_CHARACTERS[93] = true;
-        /* ] */
-        QUOTED_CHARACTERS[96] = true;
-        /* ` */
-        QUOTED_CHARACTERS[123] = true;
-        /* { */
-        QUOTED_CHARACTERS[124] = true;
-        /* | */
-        QUOTED_CHARACTERS[125] = true;
-        /* } */
-        /**
- * Check if numbers match the YAML number pattern.
- *
- * Reference: https://github.com/nodeca/js-yaml/blob/6030fa6c389aaf14545222f7fa27e86359ca3a3b/lib/js-yaml/type/float.js#L6-L11
- *
- * @type {RegExp}
- */
-        var NUMBER_REGEXP = new RegExp('^(?:[-+]?(?:[0-9][0-9_]*)' + '|[-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+][0-9]+)?' + '|\\.[0-9_]+(?:[eE][-+][0-9]+)?' + '|[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*' + '|[-+]?\\.(?:inf|Inf|INF)' + '|\\.(?:nan|NaN|NAN))$');
-        /**
- * Encode a character code in hex form.
- *
- * Reference: https://github.com/nodeca/js-yaml/blob/7bbbb863c9c696311d149693a34f4dec20616cc2/lib/js-yaml/dumper.js#L95-L114
- *
- * @param  {Number} charCode
- * @return {String}
- */
-        var encodeHex = function (charCode) {
-          var string = charCode.toString(16).toUpperCase();
-          var handle;
-          var length;
-          if (charCode <= 255) {
-            handle = 'x';
-            length = 2;
-          } else if (charCode <= 65535) {
-            handle = 'u';
-            length = 4;
-          } else if (charCode <= 4294967295) {
-            handle = 'U';
-            length = 8;
-          } else {
-            throw new Error('Character code within a string may not be greater than 0xFFFFFFFF');
-          }
-          return '\\' + handle + repeat('0', length - string.length) + string;
-        };
-        /**
- * Return whether a character code needs to be escaped.
- *
- * @param  {Number}  charCode
- * @return {Boolean}
- */
-        var requiresEscape = function (charCode) {
-          return ESCAPE_SEQUENCES[charCode] || !(32 <= charCode && charCode <= 126 || 133 === charCode || 160 <= charCode && charCode <= 55295 || 57344 <= charCode && charCode <= 65533 || 65536 <= charCode && charCode <= 1114111);
-        };
-        /**
- * Check whether a string requires quotes in RAML.
- *
- * @param  {String}  str
- * @return {Boolean}
- */
-        var requiresQuotes = function (str) {
-          // Empty strings require quotes.
-          if (length(str) === 0) {
-            return true;
-          }
-          // Check whether it's surrounded by spaces or starts with `-` or `?`.
-          if (/^[ \-?]| $/.test(str) || NUMBER_REGEXP.test(str)) {
-            return true;
-          }
-          for (var i = 0; i < str.length; i++) {
-            var charCode = str.charCodeAt(i);
-            if (requiresEscape(charCode)) {
-              return true;
-            }
-            if (QUOTED_CHARACTERS[charCode]) {
-              return true;
-            }
-          }
-          return false;
-        };
-        /**
- * Escape a string to be wrapped in quotes.
- *
- * @param  {String} str
- * @return {String}
- */
-        var escapeString = function (str) {
-          return str.split('').map(function (character) {
-            var charCode = character.charCodeAt(0);
-            if (requiresEscape(charCode)) {
-              return ESCAPE_SEQUENCES[charCode] || escapeHex(charCode);
-            }
-            return character;
-          }).join('');
-        };
-        /**
- * Wrap a string in quotes and escape.
- *
- * @param  {String} str
- * @return {String}
- */
-        var wrapString = function (str) {
-          return '"' + escapeString(str) + '"';
-        };
-        /**
- * Stringify a string into RAML.
- *
- * @param  {String} str
- * @return {String}
- */
-        var stringifyString = function (str) {
-          if (requiresQuotes(str)) {
-            return wrapString(str);
-          }
-          return str;
-        };
-        /**
- * Check whether an inline RAML array can be rendered with the max length.
- *
- * @param  {Array}   array
- * @param  {Number}  length
- * @param  {Object}  opts
- * @return {Boolean}
- */
-        var arrayWithinLength = function (array, maxLength, opts) {
-          // Empty arrays must always be true.
-          if (!array.length) {
-            return true;
-          }
-          // Surrounding brackets and every comma separator - "[ ... ]".
-          var total = 4 + (array.length - 1) * 2;
-          return array.every(function (value) {
-            if (!is.primitive(value)) {
-              return false;
-            }
-            total += length(stringify(value, 0, opts));
-            return total < maxLength;
-          });
-        };
-        /**
- * Stringify an array using the inline RAML format.
- *
- * @param  {Array}  array
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringifyArrayInline = function (array, level, opts) {
-          if (!array.length) {
-            return '[]';
-          }
-          return '[ ' + array.map(function (value) {
-            if (is.string(value) && value.indexOf(':') > -1) {
-              return wrapString(value);
-            }
-            return stringify(value, level, opts);
-          }).join(', ') + ' ]';
-        };
-        /**
- * Check whether a string fits within the designated width.
- *
- * @param  {String}  str
- * @param  {Number}  maxLength
- * @param  {Object}  opts
- * @return {Boolean}
- */
-        var stringWithinLength = function (str, maxLength, opts) {
-          if (/\r?\n/.test(str)) {
-            return false;
-          }
-          return length(stringifyString(str)) < maxLength;
-        };
-        /**
- * Stringify a string into RAML with support for multiple lines.
- *
- * @param  {String} str
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringifyStringMultiLine = function (str, level, opts) {
-          return indent(str, opts.indent, level);
-        };
-        /**
- * Generalized property stringification.
- *
- * @param  {String} prefix
- * @param  {*}      value
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringifyProperty = function (prefix, value, level, opts) {
-          var maxLength = opts.maxLength - length(prefix) - 1;
-          // Empty values can stay empty in RAML.
-          if (value == null) {
-            return prefix;
-          }
-          // Check whether the array can fit using inline representation.
-          if (is.array(value) && arrayWithinLength(value, maxLength, opts)) {
-            return prefix + ' ' + stringifyArrayInline(value, level + 1, opts);
-          }
-          // Check whether strings should be on a single line.
-          if (is.string(value) && !stringWithinLength(value, maxLength, opts)) {
-            return prefix + ' |\n' + stringifyStringMultiLine(value, level + 1, opts);
-          }
-          // Inline object representation when empty.
-          if (is.object(value) && !Object.keys(value).length) {
-            return prefix + ' {}';
-          }
-          // All other primitives will fit inline.
-          if (is.primitive(value)) {
-            return prefix + ' ' + stringify(value, level + 1, opts);
-          }
-          return prefix + '\n' + stringify(value, level + 1, opts);
-        };
-        /**
- * Stringify an object property for RAML.
- *
- * @param  {String} key
- * @param  {*}      value
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringifyObjectProperty = function (key, value, level, opts) {
-          var prefix = repeat(opts.indent, level) + key + ':';
-          return stringifyProperty(prefix, value, level, opts);
-        };
-        /**
- * Stringify an object for RAML.
- *
- * @param  {Object} obj
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringifyObject = function (obj, level, opts) {
-          var keys = Object.keys(obj);
-          return keys.map(function (key) {
-            return stringifyObjectProperty(key, obj[key], level, opts);
-          }).join('\n');
-        };
-        /**
- * Stringify an array property for RAML.
- *
- * @param  {*}      value
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringifyArrayProperty = function (value, level, opts) {
-          var prefix = repeat(opts.indent, level) + '-';
-          // Represent objects inline with the array token. E.g. "- schema: test".
-          if (is.object(value)) {
-            return prefix + ' ' + stringify(value, level + 1, opts).replace(/^ +/, '');
-          }
-          if (is.string(value) && value.indexOf(':') > -1) {
-            return prefix + ' ' + wrapString(value);
-          }
-          return stringifyProperty(prefix, value, level, opts);
-        };
-        /**
- * Stringify an array for RAML.
- *
- * @param  {Array}  array
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringifyArray = function (array, level, opts) {
-          return array.map(function (value) {
-            return stringifyArrayProperty(value, level, opts);
-          }).join('\n');
-        };
-        /**
- * Map of types to stringify.
- *
- * @type {Object}
- */
-        var TYPES = {
-            '[object String]': stringifyString,
-            '[object Object]': stringifyObject,
-            '[object Array]': stringifyArray,
-            '[object Number]': String,
-            '[object Boolean]': String
-          };
-        /**
- * Stringify any JavaScript type.
- *
- * @param  {*}      input
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        var stringify = function (input, level, opts) {
-          var type = toString(input);
-          if (!TYPES[type]) {
-            return '';
-          }
-          return TYPES[type](input, level, opts);
-        };
-        /**
- * Stringify JavaScript to a YAML (RAML) string.
- *
- * @param  {*}      input
- * @param  {Number} level
- * @param  {Object} opts
- * @return {String}
- */
-        module.exports = function (input, opts) {
-          return stringify(input, 0, extend({
-            indent: '  ',
-            maxLength: 80
-          }, opts));
-        };
-      },
-      {
-        './utils/is': 12,
-        'indent-string': 13,
-        'repeat-string': 14,
-        'string-length': 15,
-        'xtend/mutable': 18
-      }
-    ],
-    12: [
-      function (require, module, exports) {
-        var is = exports;
-        var _toString = Object.prototype.toString;
-        [
-          'String',
-          'Number',
-          'Boolean',
-          'RegExp',
-          'Object',
-          'Array',
-          'Function',
-          'Null',
-          'Undefined'
-        ].forEach(function (instance) {
-          var name = instance.charAt(0).toLowerCase() + instance.substr(1);
-          var type = '[object ' + instance + ']';
-          is[name] = function (value) {
-            return _toString.call(value) === type;
-          };
-        });
-        /**
- * Map of primitive types.
- *
- * @type {Object}
- */
-        var PRIMITIVES = {
-            '[object Number]': true,
-            '[object String]': true,
-            '[object Boolean]': true,
-            '[object Null]': true,
-            '[object Undefined]': true
-          };
-        /**
- * Check whether a value is a primitive JavaScript type.
- *
- * @param  {*}       value
- * @return {Boolean}
- */
-        is.primitive = function (value) {
-          return !!PRIMITIVES[_toString.call(value)];
-        };
-      },
-      {}
-    ],
-    13: [
-      function (require, module, exports) {
-        'use strict';
-        var repeatString = require('repeat-string');
-        module.exports = function (str, indent, count) {
-          if (typeof str !== 'string' || typeof indent !== 'string') {
-            throw new TypeError('`string` and `indent` should be strings');
-          }
-          if (count != null && typeof count !== 'number') {
-            throw new TypeError('`count` should be a number');
-          }
-          indent = count > 1 ? repeatString(indent, count) : indent;
-          return str.replace(/^(?!\s*$)/gm, indent);
-        };
-      },
-      { 'repeat-string': 14 }
-    ],
-    14: [
-      function (require, module, exports) {
-        module.exports = function (str, count) {
-          if (count < 1) {
-            return '';
-          }
-          var result = '';
-          while (count > 0) {
-            if (count & 1) {
-              result += str;
-            }
-            count >>= 1;
-            str += str;
-          }
-          return result;
-        };
-      },
-      {}
-    ],
-    15: [
-      function (require, module, exports) {
-        'use strict';
-        var stripAnsi = require('strip-ansi');
-        var reAstral = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
-        module.exports = function (str) {
-          return stripAnsi(str).replace(reAstral, ' ').length;
-        };
-      },
-      { 'strip-ansi': 16 }
-    ],
-    16: [
-      function (require, module, exports) {
-        'use strict';
-        var ansiRegex = require('ansi-regex')();
-        module.exports = function (str) {
-          return typeof str === 'string' ? str.replace(ansiRegex, '') : str;
-        };
-      },
-      { 'ansi-regex': 17 }
-    ],
-    17: [
-      function (require, module, exports) {
-        'use strict';
-        module.exports = function () {
-          return /(?:(?:\u001b\[)|\u009b)(?:(?:[0-9]{1,3})?(?:(?:;[0-9]{0,3})*)?[A-M|f-m])|\u001b[A-M]/g;
-        };
-      },
-      {}
-    ],
-    18: [
-      function (require, module, exports) {
-        module.exports = extend;
-        function extend(target) {
-          for (var i = 1; i < arguments.length; i++) {
-            var source = arguments[i];
-            for (var key in source) {
-              if (source.hasOwnProperty(key)) {
-                target[key] = source[key];
-              }
-            }
-          }
-          return target;
-        }
-      },
-      {}
-    ],
-    19: [
-      function (require, module, exports) {
-        var sanitize = require('./lib/sanitize');
-        var stringify = require('./lib/stringify');
-        /**
- * Transform a RAML object into a RAML string.
- *
- * @param  {Object} obj
- * @return {String}
- */
-        module.exports = function (obj) {
-          return '#%RAML 0.8\n' + stringify(sanitize(obj));
-        };
-      },
-      {
-        './lib/sanitize': 2,
-        './lib/stringify': 11
-      }
-    ]
-  }, {}, [19])(19);
-});
-!function (e) {
-  if ('object' == typeof exports && 'undefined' != typeof module)
-    module.exports = e();
-  else if ('function' == typeof define && define.amd)
-    define([], e);
-  else {
-    var f;
-    'undefined' != typeof window ? f = window : 'undefined' != typeof global ? f = global : 'undefined' != typeof self && (f = self), f.swaggerToRamlObject = e();
-  }
-}(function () {
-  var define, module, exports;
-  return function e(t, n, r) {
-    function s(o, u) {
-      if (!n[o]) {
-        if (!t[o]) {
-          var a = typeof require == 'function' && require;
-          if (!u && a)
-            return a(o, !0);
-          if (i)
-            return i(o, !0);
-          var f = new Error('Cannot find module \'' + o + '\'');
-          throw f.code = 'MODULE_NOT_FOUND', f;
-        }
-        var l = n[o] = { exports: {} };
-        t[o][0].call(l.exports, function (e) {
-          var n = t[o][1][e];
-          return s(n ? n : e);
-        }, l, l.exports, e, t, n, r);
-      }
-      return n[o].exports;
-    }
-    var i = typeof require == 'function' && require;
-    for (var o = 0; o < r.length; o++)
-      s(r[o]);
-    return s;
-  }({
-    1: [
-      function (require, module, exports) {
-        var extend = require('extend');
-        var camelCase = require('camel-case');
-        var getVersion = require('./utils/version');
-        var compareVersion = require('./utils/version-equal');
-        /**
- * Map of valid param types to raml types.
- *
- * @type {Object}
- */
-        var PARAM_TYPE_MAP = {
-            string: { type: 'string' },
-            number: { type: 'number' },
-            integer: { type: 'integer' },
-            boolean: { type: 'boolean' },
-            File: { type: 'file' },
-            array: { repeat: true }
-          };
-        /**
- * Map of valid param types to json schema types.
- *
- * @type {Object}
- */
-        var JSON_TYPE_MAP = {
-            string: { type: 'string' },
-            number: { type: 'number' },
-            integer: { type: 'integer' },
-            boolean: { type: 'boolean' },
-            array: { type: 'array' },
-            object: { type: 'object' }
-          };
-        /**
- * Map of valid formats to their properties.
- *
- * @type {Object}
- */
-        var PARAM_FORMAT_MAP = {
-            int32: {
-              type: 'integer',
-              minimum: -2147483648,
-              maximum: 2147483647
-            },
-            int64: {
-              type: 'integer',
-              minimum: -9223372036854776000,
-              maximum: 9223372036854776000
-            },
-            date: { type: 'date' },
-            'date-time': { type: 'date' }
-          };
-        /**
- * Url-encoded form content type.
- *
- * @type {String}
- */
-        var URL_ENCODED_MIME = 'application/x-www-form-urlencoded';
-        /**
- * Content type for multipart form uploads.
- *
- * @type {String}
- */
-        var MULTI_PART_MIME = 'multipart/form-data';
-        /**
- * Location of the spec on api declarations.
- *
- * @type {String}
- */
-        var API_SPEC_URI = 'https://github.com/wordnik/swagger-spec' + '/blob/master/versions/1.2.md#52-api-declaration';
-        /**
- * Expose the converter function.
- */
-        module.exports = convertApiDeclaration;
-        /**
- * Convert an api declaration into RAML.
- *
- * @param  {Object} declaration
- * @param  {Object} ramlObject
- * @return {Object}
- */
-        function convertApiDeclaration(declaration, ramlObject) {
-          var version = getVersion(declaration);
-          if (version >= 2) {
-            throw new Error('Swagger ' + version.toFixed(1) + ' is not supported');
-          }
-          // Verify the api declaration is valid.
-          if (!declaration.basePath || !declaration.apis) {
-            throw new Error('Must be a valid api declaration: ' + API_SPEC_URI);
-          }
-          ramlObject = ramlObject || {};
-          // Check if the api version is still the same.
-          if (!compareVersion(declaration.apiVersion, ramlObject.version)) {
-            throw new Error('The api version has changed: ' + ramlObject.version + ' -> ' + declaration.apiVersion);
-          } else if (!ramlObject.version) {
-            ramlObject.version = declaration.apiVersion;
-          }
-          addBasePath(declaration.basePath, ramlObject);
-          convertApis(declaration, ramlObject);
-          return ramlObject;
-        }
-        /**
- * Set the base path from the api declaration on the raml object.
- *
- * @param  {String} basePath
- * @param  {Object} ramlObject
- * @return {Object}
- */
-        function addBasePath(basePath, ramlObject) {
-          // If a base uri has not been set yet, set it here.
-          if (!ramlObject.baseUri) {
-            ramlObject.baseUri = basePath;
-            return ramlObject;
-          }
-          // If the base path changes for some reason, throw an error. In the future,
-          // we may want to refactor the resource tree with new prefixes.
-          if (ramlObject.baseUri !== basePath) {
-            throw new Error('The base uri has changed: ' + ramlObject.baseUri + ' -> ' + basePath);
-          }
-          return ramlObject;
-        }
-        /**
- * Convert an array of apis into a raml resource.
- *
- * @param  {Object} declaration
- * @param  {Object} ramlObject
- * @return {Object}
- */
-        function convertApis(declaration, ramlObject) {
-          var relativeUri = declaration.resourcePath;
-          var ramlResources = ramlObject.resources = ramlObject.resources || [];
-          var ramlResource = findResource(ramlResources, relativeUri);
-          declaration.apis.forEach(function (api) {
-            var path = api.path;
-            var resource = ramlResource;
-            // I assume this will always occur based on the Swagger specs I've seen.
-            if (path.substr(0, relativeUri.length) === relativeUri) {
-              path = path.substr(relativeUri.length);
-              // If no raml resource exists, create it.
-              if (!ramlResource) {
-                resource = ramlResource = { relativeUri: relativeUri };
-                ramlResources.push(resource);
-              }
-              // Only create a new subresource when the path has changed.
-              if (path !== '') {
-                resource = { relativeUri: path };
-                ramlResource.resources = ramlResource.resources || [];
-                ramlResource.resources.push(resource);
-              }
-            } else {
-              ramlResources.push(resource = { relativeUri: path });
-            }
-            // Alias the api description onto the new raml resource.
-            if (api.description) {
-              resource.description = api.description;
-            }
-            return convertOperations(api.operations, declaration, resource);
-          });
-          return ramlResource;
-        }
-        /**
- * Find a resource by uri in an array of resources.
- *
- * @param  {Array}  resources
- * @param  {String} uri
- * @return {Object}
- */
-        function findResource(resources, uri) {
-          var matchingResource;
-          resources.some(function (resource) {
-            if (resource.relativeUri === uri) {
-              matchingResource = resource;
-              return true;
-            }
-          });
-          return matchingResource;
-        }
-        /**
- * Convert an array of swagger operations for a raml resource.
- *
- * @param  {Object} operations
- * @param  {Object} declaration
- * @param  {Object} ramlResource
- * @return {Object}
- */
-        function convertOperations(operations, declaration, ramlResource) {
-          ramlResource.methods = ramlResource.methods || [];
-          operations.forEach(function (operation) {
-            if (!operation.method) {
-              throw new Error('Expected the operation to have a method defined');
-            }
-            // Initialise the method object. This assumes the same method name has not
-            // already been used.
-            var method = { method: operation.method };
-            if (operation.nickname) {
-              method.displayName = operation.nickname;
-            }
-            if (operation.notes || operation.summary) {
-              method.description = operation.notes || operation.summary;
-            }
-            if (operation.deprecated === 'true' || operation.deprecated === true) {
-              if (!method.description) {
-                method.description = '';
-              } else {
-                method.description += '\n\n';
-              }
-              method.description += 'This method has been deprecated.';
-            }
-            convertParameters(operation, declaration, method, ramlResource);
-            convertResponseMessages(operation, declaration, method);
-            ramlResource.methods.push(method);
-          });
-          return ramlResource;
-        }
-        /**
- * Convert response messages into the raml object.
- *
- * @param  {Object} operation
- * @param  {Object} declaration
- * @param  {Object} method
- * @return {Object}
- */
-        function convertResponseMessages(operation, declaration, method) {
-          if (!operation.responseMessages || !operation.responseMessages.length) {
-            return method;
-          }
-          // Initialise the responses object.
-          var responses = method.responses = method.responses || {};
-          var produces = operation.produces || declaration.produces || [];
-          // Alias all response messages.
-          operation.responseMessages.forEach(function (response) {
-            responses[response.code] = { description: response.message };
-            // Adds the produces mime types to the reponses object.
-            if (produces.length) {
-              responses[response.code].body = {};
-              produces.forEach(function (mime) {
-                if (response.responseModel && CONVERT_MODEL_TO_SCHEMA[mime]) {
-                  responses[response.code].body[mime] = { schema: CONVERT_MODEL_TO_SCHEMA[mime](response.responseModel, declaration) };
-                  return;
-                }
-                responses[response.code].body[mime] = null;
-              });
-            }
-          });
-          return method;
-        }
-        /**
- * Checks whether a uri parameter is valid.
- *
- * @param  {String}  name
- * @return {Boolean}
- */
-        function isValidUriParameterName(name) {
-          return /^(?:[\w\.]|%\d{2})*$/.test(name);
-        }
-        /**
- * Correct resource uri parameters to be valid.
- *
- * @param  {Object} ramlResource
- * @return {Object}
- */
-        function sanitizeUriParameterNames(ramlResource) {
-          /**
-   * Replace uri parameters with valid names.
-   *
-   * @param  {String} match
-   * @param  {String} name
-   * @return {String}
-   */
-          function replaceParameters(match, name) {
-            if (isValidUriParameterName(name)) {
-              return match;
-            }
-            // Camelize invalid parameter names. Purely stylistic over the
-            // alternative of using percent-encoding.
-            var updatedName = camelCase(name);
-            var uriParameters = ramlResource.uriParameters;
-            // Move the uri parameter definition.
-            if (uriParameters[name]) {
-              uriParameters[updatedName] = uriParameters[name];
-              delete uriParameters[name];
-            }
-            return '{' + updatedName + '}';
-          }
-          ramlResource.relativeUri = ramlResource.relativeUri.replace(/\{([^\}]+)\}/g, replaceParameters);
-          return ramlResource;
-        }
-        /**
- * Convert swagger operation parameters for a raml method.
- *
- * @param  {Array}  operation
- * @param  {Object} declaration
- * @param  {Object} ramlMethod
- * @param  {Object} ramlResource
- * @return {Object}
- */
-        function convertParameters(operation, declaration, ramlMethod, ramlResource) {
-          var consumes = operation.consumes || declaration.consumes || [];
-          var parameters = groupParameters(operation.parameters);
-          // Path parameters are more applicable to the resource than the method.
-          if (parameters.path) {
-            ramlResource.uriParameters = convertParametersToRaml(parameters.path, declaration);
-            sanitizeUriParameterNames(ramlResource);
-          }
-          // Add query parameters to the current method.
-          if (parameters.query) {
-            ramlMethod.queryParameters = convertParametersToRaml(parameters.query, declaration);
-          }
-          // Add headers to the current method.
-          if (parameters.header) {
-            ramlMethod.headers = convertParametersToRaml(parameters.header, declaration);
-          }
-          // Convert the body parameters before attempting the form.
-          if (parameters.body) {
-            convertBodyParameters(parameters.body, consumes, declaration, ramlMethod);
-          }
-          // Convert the form parameter into something that works better
-          if (parameters.form) {
-            convertFormParameters(parameters.form, consumes, declaration, ramlMethod);
-          }
-          return ramlMethod;
-        }
-        /**
- * Map of parameter mime types to conversion functions.
- *
- * @type {Object}
- */
-        var CONVERT_PARAMS_TO_SCHEMA = {
-            'application/xml': null,
-            'application/json': convertParameterToJsonSchema
-          };
-        /**
- * Map of model mime types to conversion functions.
- *
- * @type {Object}
- */
-        var CONVERT_MODEL_TO_SCHEMA = {
-            'application/xml': null,
-            'application/json': convertModelToJsonSchema
-          };
-        /**
- * Convert body parameters inline into raml schemas.
- *
- * @param  {Array}  params
- * @param  {Array}  consumes
- * @param  {Object} declaration
- * @param  {Object} ramlMethod
- * @return {Object}
- */
-        function convertBodyParameters(params, consumes, declaration, ramlMethod) {
-          ramlMethod.body = ramlMethod.body || {};
-          if (params.length > 1) {
-            throw new Error('Found ' + param.length + ' parameters for body type');
-          }
-          // Iterate over the consumes object and convert known types.
-          params.forEach(function (param) {
-            consumes.forEach(function (mime) {
-              if (CONVERT_PARAMS_TO_SCHEMA[mime]) {
-                return ramlMethod.body[mime] = { schema: CONVERT_PARAMS_TO_SCHEMA[mime](param, declaration) };
-              }
-              ramlMethod.body[mime] = null;
-            });
-          });
-          return ramlMethod;
-        }
-        /**
- * Convert form parameters inline and mutate the raml method.
- *
- * @param  {Array}  params
- * @param  {Array}  consumes
- * @param  {Object} declaration
- * @param  {Object} ramlMethod
- * @return {Object}
- */
-        function convertFormParameters(params, consumes, declaration, ramlMethod) {
-          var multiPart = consumes.indexOf(MULTI_PART_MIME) > -1;
-          var urlEncoded = consumes.indexOf(URL_ENCODED_MIME) > -1;
-          var ramlParams = convertParametersToRaml(params, declaration);
-          // Enforce multipart if the parameters contain a file type.
-          if (!multiPart) {
-            multiPart = params.some(function (param) {
-              return param.type === 'File';
-            });
-          }
-          // Initialise the body to an object, if it hasn't already been.
-          ramlMethod.body = ramlMethod.body || {};
-          // Alias the object based on the consumes type.
-          if (multiPart && urlEncoded) {
-            ramlMethod.body[MULTI_PART_MIME] = { formParameters: ramlParams };
-            ramlMethod.body[URL_ENCODED_MIME] = { formParameters: ramlParams };
-          } else if (multiPart) {
-            ramlMethod.body[MULTI_PART_MIME] = { formParameters: ramlParams };
-          } else {
-            ramlMethod.body[URL_ENCODED_MIME] = { formParameters: ramlParams };
-          }
-          return ramlMethod;
-        }
-        /**
- * Group parameters by types.
- *
- * @param  {Array}  parameters
- * @return {Object}
- */
-        function groupParameters(parameters) {
-          var groups = {};
-          Object.keys(parameters).forEach(function (key) {
-            var parameter = parameters[key];
-            var type = parameter.paramType;
-            var group = groups[type] = groups[type] || [];
-            group.push(parameter);
-          });
-          return groups;
-        }
-        /**
- * Convert an array of swagger parameters to the resource path.
- *
- * @param  {Array}  params
- * @param  {Object} declaration
- * @return {Object}
- */
-        function convertParametersToRaml(params, declaration) {
-          var ramlParams = {};
-          params.forEach(function (param) {
-            ramlParams[param.name] = convertParameter(param, declaration);
-          });
-          return ramlParams;
-        }
-        /**
- * Convert a single parameter to raml style.
- *
- * @param  {Object} param
- * @param  {Object} declaration
- * @return {Object}
- */
-        function convertParameter(param, declaration) {
-          var ramlParameter = {};
-          // Extend the parameter information based on the type.
-          if (param.type && PARAM_TYPE_MAP[param.type]) {
-            extend(ramlParameter, PARAM_TYPE_MAP[param.type]);
-          } else {
-          }
-          // Extend the parameter with defaults set by the format.
-          if (PARAM_FORMAT_MAP[param.format]) {
-            extend(ramlParameter, PARAM_FORMAT_MAP[param.format]);
-          }
-          if (typeof param.description === 'string') {
-            ramlParameter.description = param.description;
-          }
-          if (typeof param.required === 'boolean') {
-            ramlParameter.required = param.required;
-          }
-          if (param.defaultValue) {
-            ramlParameter.default = param.defaultValue;
-          }
-          if (Array.isArray(param.enum)) {
-            ramlParameter.enum = param.enum;
-          }
-          if (typeof param.minimum === 'number') {
-            ramlParameter.minimum = param.minimum;
-          }
-          if (typeof param.maximum === 'number') {
-            ramlParameter.maximum = param.maximum;
-          }
-          return ramlParameter;
-        }
-        /**
- * Convert a model to a JSON schema object.
- *
- * @param  {String} name
- * @param  {Object} declaration
- * @return {Object}
- */
-        function convertModelToJson(name, declaration) {
-          var schema = {};
-          var model = declaration.models[name];
-          // Unfortunately, it is possible that the model has not been documented.
-          if (!model) {
-            return;
-          }
-          // Find potential parent models.
-          Object.keys(declaration.models).some(function (key) {
-            var model = declaration.models[key];
-            if (!model || !model.subTypes || !model.subTypes.indexOf(name)) {
-              return false;
-            }
-            // Find and compile the parent schema.
-            var parentSchema = convertParameterToJson(key, declaration);
-            extend(schema, parentSchema);
-            schema.properties = extend({}, parentSchema.properties);
-            return true;
-          });
-          // Compile child properties into expected objects.
-          Object.keys(model.properties || {}).forEach(function (key) {
-            var property = model.properties[key];
-            var properties = schema.properties = schema.properties || {};
-            properties[key] = convertParameterToJson(property, declaration);
-          });
-          return schema;
-        }
-        /**
- * Convert a parameter into JSON schema object.
- *
- * @param  {Object} param
- * @param  {Object} declaration
- * @return {Object}
- */
-        function convertParameterToJson(param, declaration) {
-          var schema = {};
-          if (param.type && JSON_TYPE_MAP[param.type]) {
-            extend(schema, JSON_TYPE_MAP[param.type]);
-          } else if (param.$ref || param.type) {
-            // Extend the current schema with model meta data.
-            extend(schema, convertModelToJson(param.$ref || param.type, declaration));
-          }
-          // Iterate over the allowed JSON schema properties in Swagger and set.
-          [
-            'description',
-            'defaultValue',
-            'enum',
-            'minimum',
-            'maximum',
-            'items',
-            'required',
-            'uniqueItems'
-          ].forEach(function (key) {
-            if (param[key] == null) {
-              return;
-            }
-            // Handle sub-items different and convert the types.
-            if (key === 'items') {
-              return schema[key] = convertParameterToJson(param[key], declaration);
-            }
-            schema[key] = param[key];
-          });
-          return schema;
-        }
-        /**
- * Convert a parameter to JSON.
- *
- * @param  {Object} param
- * @param  {Object} declaration
- * @return {String}
- */
-        function convertParameterToJsonSchema(param, declaration) {
-          var schema = extend({ $schema: 'http://json-schema.org/draft-04/schema#' }, convertParameterToJson(param, declaration));
-          return JSON.stringify(schema, null, 2);
-        }
-        /**
- * Convert a model to JSON.
- *
- * @param  {String} name
- * @param  {Object} declaration
- * @return {String}
- */
-        function convertModelToJsonSchema(name, declaration) {
-          var schema = extend({ $schema: 'http://json-schema.org/draft-04/schema#' }, convertModelToJson(name, declaration));
-          return JSON.stringify(schema, null, 2);
-        }
-      },
-      {
-        './utils/version': 7,
-        './utils/version-equal': 6,
-        'camel-case': 8,
-        'extend': 13
-      }
-    ],
-    2: [
-      function (require, module, exports) {
-        /**
- * Expose the parse module.
- */
-        module.exports = parse;
-        /**
- * Parse the content based on the file name.
- *
- * @param  {String} content
- * @return {Object}
- */
-        function parse(content) {
-          var result = JSON.parse(content);
-          if (!result.swaggerVersion) {
-            throw new Error('Swagger version is required');
-          }
-          return result;
-        }
-      },
-      {}
-    ],
-    3: [
-      function (require, module, exports) {
-        var getVersion = require('./utils/version');
-        /**
- * Map swagger documentation keys into title-cased strings.
- *
- * @type {Object}
- */
-        var DOCUMENTATION_NAME_MAP = {
-            description: 'Description',
-            termsOfServiceUrl: 'Terms of Service URL',
-            contact: 'Contact',
-            license: 'License',
-            licenseUrl: 'License URL'
-          };
-        /**
- * Map of Swagger OAuth 2.0 grant types to the RAML equivalents.
- *
- * @type {Object}
- */
-        var GRANT_TYPE_MAP = {
-            implicit: 'token',
-            authorization_code: 'code'
-          };
-        /**
- * Map of ways to pass API keys in Swagger to RAML properties.
- * @type {Object}
- */
-        var API_KEY_PASS_AS_MAP = {
-            header: 'headers',
-            query: 'queryParameters'
-          };
-        /**
- * Location of the swagger spec on resource listings.
- *
- * @type {String}
- */
-        var RESOURCE_SPEC_URI = 'https://github.com/wordnik/swagger-spec' + '/blob/master/versions/1.2.md#51-resource-listing';
-        /**
- * Expose the converter.
- */
-        module.exports = convertResourceListing;
-        /**
- * Convert a resource listing into a base raml object.
- *
- * @param  {Object} resource
- * @param  {Object} ramlObject
- * @return {Object}
- */
-        function convertResourceListing(resource, ramlObject) {
-          var version = getVersion(resource);
-          if (version >= 2) {
-            throw new Error('Swagger ' + version.toFixed(1) + ' is not supported');
-          }
-          if (!resource.apis) {
-            throw new Error('Must be a valid resource listing: ' + RESOURCE_SPEC_URI);
-          }
-          ramlObject = ramlObject || {};
-          if (resource.apiVersion) {
-            ramlObject.version = resource.apiVersion;
-          }
-          convertInfo(resource.info, ramlObject);
-          convertAuthorizations(resource.authorizations, ramlObject);
-          return ramlObject;
-        }
-        /**
- * Attach information from the swagger spec to the raml object.
- *
- * @param  {Object} info
- * @param  {Object} ramlObject
- * @return {Object}
- */
-        function convertInfo(info, ramlObject) {
-          if (!info) {
-            return ramlObject;
-          }
-          var documentation = Object.keys(DOCUMENTATION_NAME_MAP).filter(function (key) {
-              return info[key];
-            }).map(function (key) {
-              return {
-                title: DOCUMENTATION_NAME_MAP[key],
-                content: info[key]
-              };
-            });
-          if (info.title) {
-            ramlObject.title = info.title;
-          }
-          if (documentation.length) {
-            ramlObject.documentation = documentation;
-          }
-          return ramlObject;
-        }
-        /**
- * Convert swagger authorizations into raml object format.
- *
- * @param  {Object} authorizations
- * @param  {Object} ramlObject
- * @return {Object}
- */
-        function convertAuthorizations(authorizations, ramlObject) {
-          if (!authorizations) {
-            return ramlObject;
-          }
-          ramlObject.securitySchemes = Object.keys(authorizations).map(function (key) {
-            var data = {};
-            data[key] = convertAuthorization(authorizations[key]);
-            return data;
-          });
-          return ramlObject;
-        }
-        /**
- * Convert a single swagger authorization object into something compatible
- * with raml.
- *
- * @param  {Object} authorization
- * @return {Object}
- */
-        function convertAuthorization(authorization) {
-          if (authorization.type === 'oauth2') {
-            return convertOAuth2(authorization);
-          }
-          if (authorization.type === 'apiKey') {
-            return convertApiKey(authorization);
-          }
-          if (authorization.type === 'basicAuth') {
-            return convertBasicAuth(authorization);
-          }
-        }
-        /**
- * Convert the OAuth 2.0 authorization from swagger into raml object.
- *
- * @param  {Object} authorization
- * @return {Object}
- */
-        function convertOAuth2(authorization) {
-          var ramlAuth = {
-              type: 'OAuth 2.0',
-              settings: { authorizationGrants: [] }
-            };
-          var implicit = authorization.grantTypes.implicit;
-          var authCode = authorization.grantTypes.authorization_code;
-          var description = [];
-          var authSettings = ramlAuth.settings;
-          // Map scopes to the RAML object.
-          if (authorization.scopes && authorization.scopes.length) {
-            var scopeDescriptions = [];
-            authSettings.scopes = authorization.scopes.map(function (scope) {
-              var name = scope.scope;
-              if (scope.description) {
-                scopeDescriptions.push('* ' + name + ' - ' + scope.description);
-              }
-              return name;
-            });
-            // Push the scope descriptions onto the primary description.
-            if (scopeDescriptions.length) {
-              description.push('Available scopes: ');
-              description.push(scopeDescriptions.join('\n'));
-            }
-          }
-          // Map grant types into the raml object.
-          Object.keys(authorization.grantTypes).forEach(function (grantType) {
-            authSettings.authorizationGrants.push(GRANT_TYPE_MAP[grantType]);
-          });
-          if (implicit) {
-            if (implicit.loginEndpoint && implicit.loginEndpoint.url) {
-              authSettings.authorizationUri = implicit.loginEndpoint.url;
-            }
-            // Add a manual description if the token name is non-standard.
-            if (implicit.tokenName && implicit.tokenName !== 'access_token') {
-              description.push('The token grant uses "' + implicit.tokenName + '" as the token name.');
-            }
-          }
-          if (authCode) {
-            var tokenEndpoint = authCode.tokenEndpoint;
-            var tokenRequestEndpoint = authCode.tokenRequestEndpoint;
-            var clientIdName = tokenRequestEndpoint.clientIdName;
-            var clientSecretName = tokenRequestEndpoint.clientSecretName;
-            var tokenName = tokenEndpoint.tokenName;
-            authSettings.accessTokenUri = tokenEndpoint.url;
-            authSettings.authorizationUri = tokenRequestEndpoint.url;
-            if (clientIdName && clientIdName !== 'client_id') {
-              description.push('The code grant uses "' + clientIdName + '" as the parameter for ' + 'passing the client id.');
-            }
-            if (clientSecretName && clientSecretName !== 'client_secret') {
-              description.push('The code grant uses "' + clientSecretName + '" as the parameter ' + 'for passing the client secret.');
-            }
-            if (tokenName && tokenName !== 'access_code') {
-              description.push('The code grant uses "' + tokenName + '" as the parameter for ' + 'passing the authorization token.');
-            }
-          }
-          // Add the description to the object if options are available.
-          if (description.length) {
-            ramlAuth.description = description.join('\n\n');
-          }
-          return ramlAuth;
-        }
-        /**
- * Convert the API key definition in Swagger to a RAML object.
- *
- * @param  {Object} authorization
- * @return {Object}
- */
-        function convertApiKey(authorization) {
-          var ramlAuth = {
-              type: 'x-api-key',
-              describedBy: {}
-            };
-          var describedBy = API_KEY_PASS_AS_MAP[authorization.passAs];
-          // If the described by property is valid,
-          if (describedBy) {
-            var description = ramlAuth.describedBy[describedBy] = {};
-            // Set the correct parameter on the `describedBy` object.
-            description[authorization.keyname] = {
-              type: 'string',
-              description: 'Used to send a valid API key for authentication.'
-            };
-          }
-          return ramlAuth;
-        }
-        /**
- * Convert the basic auth definition in Swagger to a RAML object.
- *
- * @param  {Object} authorization
- * @return {Object}
- */
-        function convertBasicAuth(authorization) {
-          return { type: 'Basic Authentication' };
-        }
-      },
-      { './utils/version': 7 }
-    ],
-    4: [
-      function (require, module, exports) {
-        /**
- * Export the resource listing check.
- */
-        module.exports = isResourceListing;
-        /**
- * Check whether an object is a resource listing.
- *
- * @param  {Object}  resource
- * @return {Boolean}
- */
-        function isResourceListing(resource) {
-          return !resource.basePath;
-        }
-      },
-      {}
-    ],
-    5: [
-      function (require, module, exports) {
-        /**
- * Export the resolve function.
- */
-        module.exports = resolve;
-        /**
- * Resolve a series of path segments.
- *
- * @return {String}
- */
-        function resolve() {
-          var parts = Array.prototype.reduce.call(arguments, function (path, segment) {
-              var parts = splitSegment(segment);
-              if (hasProtocol(segment)) {
-                return parts;
-              }
-              return path.concat(parts);
-            }, []);
-          var index = 0;
-          while (index < parts.length) {
-            var part = parts[index];
-            if (part === '' || part === '.') {
-              parts.splice(index, 1);
-            } else if (part === '..') {
-              parts.splice(index - 1, 2);
-              index--;
-            } else {
-              index++;
-            }
-          }
-          return parts.join('/');
-        }
-        /**
- * Split a path into parts.
- *
- * @param  {String} segment
- * @return {Array}
- */
-        function splitSegment(segment) {
-          if (!hasProtocol(segment)) {
-            return segment.replace(/^\/+/, '').split(/\/+/g);
-          }
-          var proto = segment.match(/^\w+:\/\//)[0];
-          var index = segment.substr(proto.length).indexOf('/');
-          // No URL path.
-          if (index === -1) {
-            return [segment];
-          }
-          var pathIndex = proto.length + index;
-          var parts = splitSegment(segment.substr(pathIndex));
-          var origin = segment.substr(0, pathIndex);
-          return [origin].concat(parts);
-        }
-        /**
- * Check if the path begins with a protocol.
- *
- * @param  {String}  path
- * @return {Boolean}
- */
-        function hasProtocol(path) {
-          return /^\w+:\/\//.test(path);
-        }
-        /**
- * Check if a path is absolute.
- *
- * @param  {String}  path
- * @return {Boolean}
- */
-        function isAbsolute(path) {
-          return /^\//.test(path);
-        }
-      },
-      {}
-    ],
-    6: [
-      function (require, module, exports) {
-        /**
- * Export the function.
- */
-        module.exports = versionEqual;
-        /**
- * Check whether the new version is the same as the previous version.
- *
- * @param  {String}  currentVersion
- * @param  {String}  newVersion
- * @return {Boolean}
- */
-        function versionEqual(currentVersion, newVersion) {
-          // Allow the new version to be empty.
-          if (newVersion == null) {
-            return true;
-          }
-          var newVersionNumber = Number(newVersion);
-          var currentVersionNumber = Number(currentVersion);
-          // If both are valid numbers, compare as numbers.
-          if (newVersionNumber && currentVersionNumber) {
-            return newVersionNumber === currentVersionNumber;
-          }
-          // Compare directly as strings.
-          return currentVersion === newVersion;
-        }
-      },
-      {}
-    ],
-    7: [
-      function (require, module, exports) {
-        /**
- * Export version function.
- */
-        module.exports = version;
-        /**
- * Retrieve the Swagger version from a specification.
- *
- * @param  {Object} declaration
- * @return {Number}
- */
-        function version(declaration) {
-          return parseFloat(declaration.swaggerVersion || declaration.swagger);
-        }
-      },
-      {}
-    ],
-    8: [
-      function (require, module, exports) {
-        var sentence = require('sentence-case');
-        /**
- * Camel case a string.
- *
- * @param  {String} string
- * @return {String}
- */
-        module.exports = function (string) {
-          return sentence(string).replace(/(\d) (?=\d)/g, '$1_').replace(/ (\w)/g, function (_, $1) {
-            return $1.toUpperCase();
-          });
-        };
-      },
-      { 'sentence-case': 9 }
-    ],
-    9: [
-      function (require, module, exports) {
-        var NON_WORD_REGEXP = require('./vendor/non-word-regexp.js');
-        var CAMEL_CASE_REGEXP = require('./vendor/camel-case-regexp.js');
-        var TRAILING_DIGIT_REGEXP = require('./vendor/trailing-digit-regexp.js');
-        /**
- * Sentence case a string.
- *
- * @param  {String} str
- * @return {String}
- */
-        module.exports = function (str) {
-          if (str == null) {
-            return '';
-          }
-          return String(str).replace(CAMEL_CASE_REGEXP, '$1 $2').replace(TRAILING_DIGIT_REGEXP, '$1 $2').replace(NON_WORD_REGEXP, ' ').replace(/^ | $/g, '').toLowerCase();
-        };
-      },
-      {
-        './vendor/camel-case-regexp.js': 10,
-        './vendor/non-word-regexp.js': 11,
-        './vendor/trailing-digit-regexp.js': 12
-      }
-    ],
-    10: [
-      function (require, module, exports) {
-        module.exports = /([\u0061-\u007A\u00B5\u00DF-\u00F6\u00F8-\u00FF\u0101\u0103\u0105\u0107\u0109\u010B\u010D\u010F\u0111\u0113\u0115\u0117\u0119\u011B\u011D\u011F\u0121\u0123\u0125\u0127\u0129\u012B\u012D\u012F\u0131\u0133\u0135\u0137\u0138\u013A\u013C\u013E\u0140\u0142\u0144\u0146\u0148\u0149\u014B\u014D\u014F\u0151\u0153\u0155\u0157\u0159\u015B\u015D\u015F\u0161\u0163\u0165\u0167\u0169\u016B\u016D\u016F\u0171\u0173\u0175\u0177\u017A\u017C\u017E-\u0180\u0183\u0185\u0188\u018C\u018D\u0192\u0195\u0199-\u019B\u019E\u01A1\u01A3\u01A5\u01A8\u01AA\u01AB\u01AD\u01B0\u01B4\u01B6\u01B9\u01BA\u01BD-\u01BF\u01C6\u01C9\u01CC\u01CE\u01D0\u01D2\u01D4\u01D6\u01D8\u01DA\u01DC\u01DD\u01DF\u01E1\u01E3\u01E5\u01E7\u01E9\u01EB\u01ED\u01EF\u01F0\u01F3\u01F5\u01F9\u01FB\u01FD\u01FF\u0201\u0203\u0205\u0207\u0209\u020B\u020D\u020F\u0211\u0213\u0215\u0217\u0219\u021B\u021D\u021F\u0221\u0223\u0225\u0227\u0229\u022B\u022D\u022F\u0231\u0233-\u0239\u023C\u023F\u0240\u0242\u0247\u0249\u024B\u024D\u024F-\u0293\u0295-\u02AF\u0371\u0373\u0377\u037B-\u037D\u0390\u03AC-\u03CE\u03D0\u03D1\u03D5-\u03D7\u03D9\u03DB\u03DD\u03DF\u03E1\u03E3\u03E5\u03E7\u03E9\u03EB\u03ED\u03EF-\u03F3\u03F5\u03F8\u03FB\u03FC\u0430-\u045F\u0461\u0463\u0465\u0467\u0469\u046B\u046D\u046F\u0471\u0473\u0475\u0477\u0479\u047B\u047D\u047F\u0481\u048B\u048D\u048F\u0491\u0493\u0495\u0497\u0499\u049B\u049D\u049F\u04A1\u04A3\u04A5\u04A7\u04A9\u04AB\u04AD\u04AF\u04B1\u04B3\u04B5\u04B7\u04B9\u04BB\u04BD\u04BF\u04C2\u04C4\u04C6\u04C8\u04CA\u04CC\u04CE\u04CF\u04D1\u04D3\u04D5\u04D7\u04D9\u04DB\u04DD\u04DF\u04E1\u04E3\u04E5\u04E7\u04E9\u04EB\u04ED\u04EF\u04F1\u04F3\u04F5\u04F7\u04F9\u04FB\u04FD\u04FF\u0501\u0503\u0505\u0507\u0509\u050B\u050D\u050F\u0511\u0513\u0515\u0517\u0519\u051B\u051D\u051F\u0521\u0523\u0525\u0527\u0561-\u0587\u1D00-\u1D2B\u1D6B-\u1D77\u1D79-\u1D9A\u1E01\u1E03\u1E05\u1E07\u1E09\u1E0B\u1E0D\u1E0F\u1E11\u1E13\u1E15\u1E17\u1E19\u1E1B\u1E1D\u1E1F\u1E21\u1E23\u1E25\u1E27\u1E29\u1E2B\u1E2D\u1E2F\u1E31\u1E33\u1E35\u1E37\u1E39\u1E3B\u1E3D\u1E3F\u1E41\u1E43\u1E45\u1E47\u1E49\u1E4B\u1E4D\u1E4F\u1E51\u1E53\u1E55\u1E57\u1E59\u1E5B\u1E5D\u1E5F\u1E61\u1E63\u1E65\u1E67\u1E69\u1E6B\u1E6D\u1E6F\u1E71\u1E73\u1E75\u1E77\u1E79\u1E7B\u1E7D\u1E7F\u1E81\u1E83\u1E85\u1E87\u1E89\u1E8B\u1E8D\u1E8F\u1E91\u1E93\u1E95-\u1E9D\u1E9F\u1EA1\u1EA3\u1EA5\u1EA7\u1EA9\u1EAB\u1EAD\u1EAF\u1EB1\u1EB3\u1EB5\u1EB7\u1EB9\u1EBB\u1EBD\u1EBF\u1EC1\u1EC3\u1EC5\u1EC7\u1EC9\u1ECB\u1ECD\u1ECF\u1ED1\u1ED3\u1ED5\u1ED7\u1ED9\u1EDB\u1EDD\u1EDF\u1EE1\u1EE3\u1EE5\u1EE7\u1EE9\u1EEB\u1EED\u1EEF\u1EF1\u1EF3\u1EF5\u1EF7\u1EF9\u1EFB\u1EFD\u1EFF-\u1F07\u1F10-\u1F15\u1F20-\u1F27\u1F30-\u1F37\u1F40-\u1F45\u1F50-\u1F57\u1F60-\u1F67\u1F70-\u1F7D\u1F80-\u1F87\u1F90-\u1F97\u1FA0-\u1FA7\u1FB0-\u1FB4\u1FB6\u1FB7\u1FBE\u1FC2-\u1FC4\u1FC6\u1FC7\u1FD0-\u1FD3\u1FD6\u1FD7\u1FE0-\u1FE7\u1FF2-\u1FF4\u1FF6\u1FF7\u210A\u210E\u210F\u2113\u212F\u2134\u2139\u213C\u213D\u2146-\u2149\u214E\u2184\u2C30-\u2C5E\u2C61\u2C65\u2C66\u2C68\u2C6A\u2C6C\u2C71\u2C73\u2C74\u2C76-\u2C7B\u2C81\u2C83\u2C85\u2C87\u2C89\u2C8B\u2C8D\u2C8F\u2C91\u2C93\u2C95\u2C97\u2C99\u2C9B\u2C9D\u2C9F\u2CA1\u2CA3\u2CA5\u2CA7\u2CA9\u2CAB\u2CAD\u2CAF\u2CB1\u2CB3\u2CB5\u2CB7\u2CB9\u2CBB\u2CBD\u2CBF\u2CC1\u2CC3\u2CC5\u2CC7\u2CC9\u2CCB\u2CCD\u2CCF\u2CD1\u2CD3\u2CD5\u2CD7\u2CD9\u2CDB\u2CDD\u2CDF\u2CE1\u2CE3\u2CE4\u2CEC\u2CEE\u2CF3\u2D00-\u2D25\u2D27\u2D2D\uA641\uA643\uA645\uA647\uA649\uA64B\uA64D\uA64F\uA651\uA653\uA655\uA657\uA659\uA65B\uA65D\uA65F\uA661\uA663\uA665\uA667\uA669\uA66B\uA66D\uA681\uA683\uA685\uA687\uA689\uA68B\uA68D\uA68F\uA691\uA693\uA695\uA697\uA723\uA725\uA727\uA729\uA72B\uA72D\uA72F-\uA731\uA733\uA735\uA737\uA739\uA73B\uA73D\uA73F\uA741\uA743\uA745\uA747\uA749\uA74B\uA74D\uA74F\uA751\uA753\uA755\uA757\uA759\uA75B\uA75D\uA75F\uA761\uA763\uA765\uA767\uA769\uA76B\uA76D\uA76F\uA771-\uA778\uA77A\uA77C\uA77F\uA781\uA783\uA785\uA787\uA78C\uA78E\uA791\uA793\uA7A1\uA7A3\uA7A5\uA7A7\uA7A9\uA7FA\uFB00-\uFB06\uFB13-\uFB17\uFF41-\uFF5A])([\u0041-\u005A\u00C0-\u00D6\u00D8-\u00DE\u0100\u0102\u0104\u0106\u0108\u010A\u010C\u010E\u0110\u0112\u0114\u0116\u0118\u011A\u011C\u011E\u0120\u0122\u0124\u0126\u0128\u012A\u012C\u012E\u0130\u0132\u0134\u0136\u0139\u013B\u013D\u013F\u0141\u0143\u0145\u0147\u014A\u014C\u014E\u0150\u0152\u0154\u0156\u0158\u015A\u015C\u015E\u0160\u0162\u0164\u0166\u0168\u016A\u016C\u016E\u0170\u0172\u0174\u0176\u0178\u0179\u017B\u017D\u0181\u0182\u0184\u0186\u0187\u0189-\u018B\u018E-\u0191\u0193\u0194\u0196-\u0198\u019C\u019D\u019F\u01A0\u01A2\u01A4\u01A6\u01A7\u01A9\u01AC\u01AE\u01AF\u01B1-\u01B3\u01B5\u01B7\u01B8\u01BC\u01C4\u01C7\u01CA\u01CD\u01CF\u01D1\u01D3\u01D5\u01D7\u01D9\u01DB\u01DE\u01E0\u01E2\u01E4\u01E6\u01E8\u01EA\u01EC\u01EE\u01F1\u01F4\u01F6-\u01F8\u01FA\u01FC\u01FE\u0200\u0202\u0204\u0206\u0208\u020A\u020C\u020E\u0210\u0212\u0214\u0216\u0218\u021A\u021C\u021E\u0220\u0222\u0224\u0226\u0228\u022A\u022C\u022E\u0230\u0232\u023A\u023B\u023D\u023E\u0241\u0243-\u0246\u0248\u024A\u024C\u024E\u0370\u0372\u0376\u0386\u0388-\u038A\u038C\u038E\u038F\u0391-\u03A1\u03A3-\u03AB\u03CF\u03D2-\u03D4\u03D8\u03DA\u03DC\u03DE\u03E0\u03E2\u03E4\u03E6\u03E8\u03EA\u03EC\u03EE\u03F4\u03F7\u03F9\u03FA\u03FD-\u042F\u0460\u0462\u0464\u0466\u0468\u046A\u046C\u046E\u0470\u0472\u0474\u0476\u0478\u047A\u047C\u047E\u0480\u048A\u048C\u048E\u0490\u0492\u0494\u0496\u0498\u049A\u049C\u049E\u04A0\u04A2\u04A4\u04A6\u04A8\u04AA\u04AC\u04AE\u04B0\u04B2\u04B4\u04B6\u04B8\u04BA\u04BC\u04BE\u04C0\u04C1\u04C3\u04C5\u04C7\u04C9\u04CB\u04CD\u04D0\u04D2\u04D4\u04D6\u04D8\u04DA\u04DC\u04DE\u04E0\u04E2\u04E4\u04E6\u04E8\u04EA\u04EC\u04EE\u04F0\u04F2\u04F4\u04F6\u04F8\u04FA\u04FC\u04FE\u0500\u0502\u0504\u0506\u0508\u050A\u050C\u050E\u0510\u0512\u0514\u0516\u0518\u051A\u051C\u051E\u0520\u0522\u0524\u0526\u0531-\u0556\u10A0-\u10C5\u10C7\u10CD\u1E00\u1E02\u1E04\u1E06\u1E08\u1E0A\u1E0C\u1E0E\u1E10\u1E12\u1E14\u1E16\u1E18\u1E1A\u1E1C\u1E1E\u1E20\u1E22\u1E24\u1E26\u1E28\u1E2A\u1E2C\u1E2E\u1E30\u1E32\u1E34\u1E36\u1E38\u1E3A\u1E3C\u1E3E\u1E40\u1E42\u1E44\u1E46\u1E48\u1E4A\u1E4C\u1E4E\u1E50\u1E52\u1E54\u1E56\u1E58\u1E5A\u1E5C\u1E5E\u1E60\u1E62\u1E64\u1E66\u1E68\u1E6A\u1E6C\u1E6E\u1E70\u1E72\u1E74\u1E76\u1E78\u1E7A\u1E7C\u1E7E\u1E80\u1E82\u1E84\u1E86\u1E88\u1E8A\u1E8C\u1E8E\u1E90\u1E92\u1E94\u1E9E\u1EA0\u1EA2\u1EA4\u1EA6\u1EA8\u1EAA\u1EAC\u1EAE\u1EB0\u1EB2\u1EB4\u1EB6\u1EB8\u1EBA\u1EBC\u1EBE\u1EC0\u1EC2\u1EC4\u1EC6\u1EC8\u1ECA\u1ECC\u1ECE\u1ED0\u1ED2\u1ED4\u1ED6\u1ED8\u1EDA\u1EDC\u1EDE\u1EE0\u1EE2\u1EE4\u1EE6\u1EE8\u1EEA\u1EEC\u1EEE\u1EF0\u1EF2\u1EF4\u1EF6\u1EF8\u1EFA\u1EFC\u1EFE\u1F08-\u1F0F\u1F18-\u1F1D\u1F28-\u1F2F\u1F38-\u1F3F\u1F48-\u1F4D\u1F59\u1F5B\u1F5D\u1F5F\u1F68-\u1F6F\u1FB8-\u1FBB\u1FC8-\u1FCB\u1FD8-\u1FDB\u1FE8-\u1FEC\u1FF8-\u1FFB\u2102\u2107\u210B-\u210D\u2110-\u2112\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u2130-\u2133\u213E\u213F\u2145\u2183\u2C00-\u2C2E\u2C60\u2C62-\u2C64\u2C67\u2C69\u2C6B\u2C6D-\u2C70\u2C72\u2C75\u2C7E-\u2C80\u2C82\u2C84\u2C86\u2C88\u2C8A\u2C8C\u2C8E\u2C90\u2C92\u2C94\u2C96\u2C98\u2C9A\u2C9C\u2C9E\u2CA0\u2CA2\u2CA4\u2CA6\u2CA8\u2CAA\u2CAC\u2CAE\u2CB0\u2CB2\u2CB4\u2CB6\u2CB8\u2CBA\u2CBC\u2CBE\u2CC0\u2CC2\u2CC4\u2CC6\u2CC8\u2CCA\u2CCC\u2CCE\u2CD0\u2CD2\u2CD4\u2CD6\u2CD8\u2CDA\u2CDC\u2CDE\u2CE0\u2CE2\u2CEB\u2CED\u2CF2\uA640\uA642\uA644\uA646\uA648\uA64A\uA64C\uA64E\uA650\uA652\uA654\uA656\uA658\uA65A\uA65C\uA65E\uA660\uA662\uA664\uA666\uA668\uA66A\uA66C\uA680\uA682\uA684\uA686\uA688\uA68A\uA68C\uA68E\uA690\uA692\uA694\uA696\uA722\uA724\uA726\uA728\uA72A\uA72C\uA72E\uA732\uA734\uA736\uA738\uA73A\uA73C\uA73E\uA740\uA742\uA744\uA746\uA748\uA74A\uA74C\uA74E\uA750\uA752\uA754\uA756\uA758\uA75A\uA75C\uA75E\uA760\uA762\uA764\uA766\uA768\uA76A\uA76C\uA76E\uA779\uA77B\uA77D\uA77E\uA780\uA782\uA784\uA786\uA78B\uA78D\uA790\uA792\uA7A0\uA7A2\uA7A4\uA7A6\uA7A8\uA7AA\uFF21-\uFF3A\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
-      },
-      {}
-    ],
-    11: [
-      function (require, module, exports) {
-        module.exports = /[^\u0041-\u005A\u0061-\u007A\u00AA\u00B5\u00BA\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u0527\u0531-\u0556\u0559\u0561-\u0587\u05D0-\u05EA\u05F0-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u08A0\u08A2-\u08AC\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0977\u0979-\u097F\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C33\u0C35-\u0C39\u0C3D\u0C58\u0C59\u0C60\u0C61\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D05-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D60\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E87\u0E88\u0E8A\u0E8D\u0E94-\u0E97\u0E99-\u0E9F\u0EA1-\u0EA3\u0EA5\u0EA7\u0EAA\u0EAB\u0EAD-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F4\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u1700-\u170C\u170E-\u1711\u1720-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1877\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191C\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19C1-\u19C7\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4B\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1CE9-\u1CEC\u1CEE-\u1CF1\u1CF5\u1CF6\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2183\u2184\u2C00-\u2C2E\u2C30-\u2C5E\u2C60-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2E2F\u3005\u3006\u3031-\u3035\u303B\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312D\u3131-\u318E\u31A0-\u31BA\u31F0-\u31FF\u3400-\u4DB5\u4E00-\u9FCC\uA000-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA697\uA6A0-\uA6E5\uA717-\uA71F\uA722-\uA788\uA78B-\uA78E\uA790-\uA793\uA7A0-\uA7AA\uA7F8-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA80-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uABC0-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19]+/g;
-      },
-      {}
-    ],
-    12: [
-      function (require, module, exports) {
-        module.exports = /([\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])([^\u0030-\u0039\u00B2\u00B3\u00B9\u00BC-\u00BE\u0660-\u0669\u06F0-\u06F9\u07C0-\u07C9\u0966-\u096F\u09E6-\u09EF\u09F4-\u09F9\u0A66-\u0A6F\u0AE6-\u0AEF\u0B66-\u0B6F\u0B72-\u0B77\u0BE6-\u0BF2\u0C66-\u0C6F\u0C78-\u0C7E\u0CE6-\u0CEF\u0D66-\u0D75\u0E50-\u0E59\u0ED0-\u0ED9\u0F20-\u0F33\u1040-\u1049\u1090-\u1099\u1369-\u137C\u16EE-\u16F0\u17E0-\u17E9\u17F0-\u17F9\u1810-\u1819\u1946-\u194F\u19D0-\u19DA\u1A80-\u1A89\u1A90-\u1A99\u1B50-\u1B59\u1BB0-\u1BB9\u1C40-\u1C49\u1C50-\u1C59\u2070\u2074-\u2079\u2080-\u2089\u2150-\u2182\u2185-\u2189\u2460-\u249B\u24EA-\u24FF\u2776-\u2793\u2CFD\u3007\u3021-\u3029\u3038-\u303A\u3192-\u3195\u3220-\u3229\u3248-\u324F\u3251-\u325F\u3280-\u3289\u32B1-\u32BF\uA620-\uA629\uA6E6-\uA6EF\uA830-\uA835\uA8D0-\uA8D9\uA900-\uA909\uA9D0-\uA9D9\uAA50-\uAA59\uABF0-\uABF9\uFF10-\uFF19])/g;
-      },
-      {}
-    ],
-    13: [
-      function (require, module, exports) {
-        var hasOwn = Object.prototype.hasOwnProperty;
-        var toString = Object.prototype.toString;
-        var undefined;
-        var isPlainObject = function isPlainObject(obj) {
-          'use strict';
-          if (!obj || toString.call(obj) !== '[object Object]' || obj.nodeType || obj.setInterval) {
-            return false;
-          }
-          var has_own_constructor = hasOwn.call(obj, 'constructor');
-          var has_is_property_of_method = obj.constructor && obj.constructor.prototype && hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
-          // Not own constructor property must be Object
-          if (obj.constructor && !has_own_constructor && !has_is_property_of_method) {
-            return false;
-          }
-          // Own properties are enumerated firstly, so to speed up,
-          // if last one is own, then all properties are own.
-          var key;
-          for (key in obj) {
-          }
-          return key === undefined || hasOwn.call(obj, key);
-        };
-        module.exports = function extend() {
-          'use strict';
-          var options, name, src, copy, copyIsArray, clone, target = arguments[0], i = 1, length = arguments.length, deep = false;
-          // Handle a deep copy situation
-          if (typeof target === 'boolean') {
-            deep = target;
-            target = arguments[1] || {};
-            // skip the boolean and the target
-            i = 2;
-          } else if (typeof target !== 'object' && typeof target !== 'function' || target == undefined) {
-            target = {};
-          }
-          for (; i < length; ++i) {
-            // Only deal with non-null/undefined values
-            if ((options = arguments[i]) != null) {
-              // Extend the base object
-              for (name in options) {
-                src = target[name];
-                copy = options[name];
-                // Prevent never-ending loop
-                if (target === copy) {
-                  continue;
-                }
-                // Recurse if we're merging plain objects or arrays
-                if (deep && copy && (isPlainObject(copy) || (copyIsArray = Array.isArray(copy)))) {
-                  if (copyIsArray) {
-                    copyIsArray = false;
-                    clone = src && Array.isArray(src) ? src : [];
-                  } else {
-                    clone = src && isPlainObject(src) ? src : {};
-                  }
-                  // Never move original objects, clone them
-                  target[name] = extend(deep, clone, copy);  // Don't bring in undefined values
-                } else if (copy !== undefined) {
-                  target[name] = copy;
-                }
-              }
-            }
-          }
-          // Return the modified object
-          return target;
-        };
-      },
-      {}
-    ],
-    14: [
-      function (require, module, exports) {
-        var parse = require('./lib/parse');
-        var resolve = require('./lib/utils/resolve');
-        var isResourceListing = require('./lib/utils/is-resource-listing');
-        var convertApiDeclaration = require('./lib/api-declaration');
-        var convertResourceListing = require('./lib/resource-listing');
-        /**
- * Expose the swagger to raml object converter module.
- */
-        module.exports = swaggerToRamlObject;
-        module.exports.files = swaggerFilesToRamlObject;
-        /**
- * Convert swagger to a raml object by loading the file.
- *
- * @param {String}   filename
- * @param {Function} filereader
- * @param {Function} done
- */
-        function swaggerToRamlObject(filename, filereader, done) {
-          var read = wrapFileReader(filereader);
-          return read(filename, wrapContents(function (result) {
-            if (!isResourceListing(result)) {
-              return done(null, convertApiDeclaration(result));
-            }
-            // Parse the initial resource listing to start reading more resources.
-            var resources = extractResources(result, filename);
-            var ramlObject = convertResourceListing(result);
-            function success(results) {
-              results.forEach(function (contents) {
-                convertApiDeclaration(contents, ramlObject);
-              });
-              return done(null, ramlObject);
-            }
-            return async(resources, read, wrapContents(success, done));
-          }, done));
-        }
-        /**
- * Generate RAML from an array of Swagger files.
- *
- * @param {Array}    files
- * @param {Function} filereader
- * @param {Function} done
- */
-        function swaggerFilesToRamlObject(files, filereader, done) {
-          return async(files, filereader, wrapContents(function (results) {
-            var fileMap = {};
-            // Parse all the files and ignore non-parsable files (non-Swagger, etc.)
-            results.forEach(function (contents, index) {
-              var filename = files[index];
-              var result;
-              try {
-                result = parse(contents);
-              } catch (e) {
-                return;
-              }
-              fileMap[filename] = result;
-            });
-            var keys = Object.keys(fileMap);
-            var rootFileName = keys[0];
-            if (keys.length > 1) {
-              rootFileName = findResourceListing(fileMap);
-              if (!rootFileName) {
-                throw new TypeError('Unable to determine entry file (Swagger resource listing)');
-              }
-            }
-            var resourceListing = fileMap[rootFileName];
-            if (!isResourceListing(resourceListing)) {
-              return done(null, convertApiDeclaration(resourceListing));
-            }
-            var read = wrapFileReader(filereader);
-            var resources = extractResources(resourceListing, rootFileName);
-            var ramlObject = convertResourceListing(resourceListing);
-            function readfile(filename, done) {
-              if (fileMap.hasOwnProperty(filename)) {
-                return done(null, fileMap[filename]);
-              }
-              return read(filename, done);
-            }
-            function success(results) {
-              results.forEach(function (contents) {
-                convertApiDeclaration(contents, ramlObject);
-              });
-              return done(null, ramlObject);
-            }
-            return async(resources, readfile, wrapContents(success, done));
-          }, done));
-        }
-        /**
- * Extract API resources from a resource listing.
- *
- * @param  {Object} resourceListing
- * @param  {String} filename
- * @return {Array}
- */
-        function extractResources(resourceListing, filename) {
-          return resourceListing.apis.map(function (api) {
-            return resolve(filename, api.path);
-          });
-        }
-        /**
- * Find a valid resource listing file out of an object.
- *
- * @param  {Object} files
- * @return {String}
- */
-        function findResourceListing(files) {
-          var resourceListings = Object.keys(files).filter(function (key) {
-              return isResourceListing(files[key]);
-            });
-          if (resourceListings.length > 1) {
-            throw new Error('Multiple resource listings found');
-          }
-          return resourceListings[0];
-        }
-        /**
- * Run a function on an array of items asynchonrously.
- *
- * @param {Array}    items
- * @param {Function} fn
- * @param {Function} done
- */
-        function async(items, fn, done) {
-          var count = 0;
-          var length = items.length;
-          var results = [];
-          var errored = false;
-          items.forEach(function (item, index) {
-            // Call the async function with the item and callback.
-            fn(item, function (err, result) {
-              if (errored) {
-                return;
-              }
-              if (err) {
-                errored = true;
-                return done(err);
-              }
-              count++;
-              results[index] = result;
-              if (count === length) {
-                return done(null, results);
-              }
-            });
-          });
-        }
-        /**
- * Wrap the file reader functionality with parsing.
- *
- * @param  {Function} fn
- * @return {Function}
- */
-        function wrapFileReader(fn) {
-          return function (filename, done) {
-            return fn(filename, function (err, result) {
-              if (err) {
-                return done(err);
-              }
-              try {
-                return done(null, parse(result));
-              } catch (e) {
-                return done(e);
-              }
-            });
-          };
-        }
-        /**
- * Wrap the response from a file reader with parse ability.
- *
- * @param  {Function} resolve
- * @param  {Function} reject
- * @return {Function}
- */
-        function wrapContents(resolve, reject) {
-          return function (err, result) {
-            if (err) {
-              return reject(err);
-            }
-            try {
-              return resolve(result);
-            } catch (e) {
-              return reject(e);
-            }
-          };
-        }
-      },
-      {
-        './lib/api-declaration': 1,
-        './lib/parse': 2,
-        './lib/resource-listing': 3,
-        './lib/utils/is-resource-listing': 4,
-        './lib/utils/resolve': 5
-      }
-    ]
-  }, {}, [14])(14);
-});
 // CodeMirror is the only global var we claim
 window.CodeMirror = function () {
   'use strict';
@@ -59618,9 +57717,11 @@ if (!CodeMirror.mimeModes.hasOwnProperty('text/html'))
     'dragAndDrop'
   ]).run([
     '$window',
-    function ($window) {
+    '$location',
+    function ($window, $location) {
       // Adding proxy settings for api console
-      $window.RAML.Settings.proxy = '/proxy/';
+      var disableProxy = $location.search().xDisableProxy === 'true';
+      $window.RAML.Settings.proxy = disableProxy ? '' : '/proxy/';
     }
   ]);
   ;
@@ -60837,82 +58938,6 @@ if (!String.prototype.endsWith) {
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').factory('ramlParserAdapter', [
-    '$http',
-    '$q',
-    '$window',
-    'ramlExpander',
-    function ramlParserAdapter($http, $q, $window, ramlExpander) {
-      var jsonOptions = {
-          serializeMetadata: false,
-          dumpSchemaContents: true,
-          rootNodeDetails: true
-        };
-      return {
-        loadPath: toQ(loadPath),
-        loadPathUnwrapped: loadPath
-      };
-      // ---
-      function loadPath(path, contentAsyncFn, options) {
-        return loadApi(path, function contentAsync(path) {
-          return contentAsyncFn ? contentAsyncFn(path) : $q.reject(new Error('ramlParser: loadPath: contentAsync: ' + path + ': no such path'));
-        }, options);
-      }
-      // ---
-      function toQ(fn) {
-        return function toQWrapper() {
-          return $q.when(fn.apply(this, arguments));
-        };
-      }
-      /**
-       * @param  {String}   path
-       * @param  {Function} contentAsyncFn
-       * @param  {Object}   options
-       * @param  {Boolean}  options.bypassProxy
-       */
-      function loadApi(path, contentAsyncFn, options) {
-        options = options || {};
-        return RAML.Parser.loadApi(path, {
-          attributeDefaults: true,
-          rejectOnErrors: false,
-          fsResolver: {
-            contentAsync: contentAsyncFn,
-            content: content
-          },
-          httpResolver: {
-            getResourceAsync: function getResourceAsync(url) {
-              var settings = ($window.RAML || {}).Settings || {};
-              var proxy = (options.bypassProxy ? {} : settings).proxy || '';
-              var req = {
-                  method: 'GET',
-                  url: proxy + url,
-                  headers: { 'Accept': 'application/raml+yaml' },
-                  transformResponse: null
-                };
-              return $http(req).then(function (res) {
-                return { content: res.data };
-              });
-            }
-          }
-        }).then(function (api) {
-          api = api.expand ? api.expand(true) : api;
-          var raml = api.toJSON(jsonOptions);
-          if (raml.specification) {
-            ramlExpander.expandRaml(raml.specification);
-          }
-          return raml;
-        });
-        // ---
-        function content(path) {
-          throw new Error('ramlParser: loadPath: loadApi: content: ' + path + ': no such path');
-        }
-      }
-    }
-  ]);
-  ;
-}());
-(function () {
-  'use strict';
   angular.module('raml').value('snippets', {
     options: [
       'options:',
@@ -60961,11 +58986,71 @@ if (!String.prototype.endsWith) {
     'snippets',
     function (snippets) {
       var service = {};
-      service.getEmptyRaml = function () {
-        return [
-          '#%RAML 1.0',
-          'title:'
-        ].join('\n');
+      var emptyValues = [];
+      var extendValue = ['extends'];
+      var fragments = [
+          {
+            label: 'Trait',
+            keyValues: emptyValues
+          },
+          {
+            label: 'ResourceType',
+            keyValues: emptyValues
+          },
+          {
+            label: 'Library',
+            keyValues: ['usage']
+          },
+          {
+            label: 'Overlay',
+            keyValues: extendValue
+          },
+          {
+            label: 'Extension',
+            keyValues: extendValue
+          },
+          {
+            label: 'DataType',
+            keyValues: emptyValues
+          },
+          {
+            label: 'DocumentationItem',
+            keyValues: [
+              'title',
+              'content'
+            ]
+          },
+          {
+            label: 'NamedExample',
+            keyValues: ['value']
+          },
+          {
+            label: 'AnnotationTypeDeclaration',
+            keyValues: emptyValues
+          },
+          {
+            label: 'SecurityScheme',
+            keyValues: ['type']
+          },
+          {
+            label: '',
+            keyValues: ['title']
+          }
+        ];
+      function getRequiredValuesForFragment(typedFragment) {
+        return fragments.find(function (fragment) {
+          return fragment.label === typedFragment;
+        }).keyValues;
+      }
+      service.getEmptyRaml = function (ramlVersion, fragmentLabel) {
+        var version = ramlVersion ? ramlVersion : '1.0';
+        var type = fragmentLabel ? ' ' + fragmentLabel : '';
+        var requiredValues = getRequiredValuesForFragment(fragmentLabel ? fragmentLabel : '');
+        var ramlContent = ['#%RAML ' + version + type];
+        requiredValues.forEach(function (value) {
+          ramlContent.push(value + ':');
+        });
+        return ramlContent.join('\n');
       };
       service.getSnippet = function getSnippet(suggestion) {
         var key = suggestion.key;
@@ -61612,10 +59697,10 @@ if (!String.prototype.endsWith) {
           return file;
         });
       };
-      service.generateFile = function generateFile(parent, name) {
+      service.generateFile = function generateFile(parent, name, ramlVersion, fragmentLabel) {
         return service.createFile(parent, name).then(function (file) {
           if (file.extension === 'raml') {
-            file.contents = ramlSnippets.getEmptyRaml();
+            file.contents = ramlSnippets.getEmptyRaml(ramlVersion, fragmentLabel);
           }
           $rootScope.$broadcast('event:raml-editor-file-generated', file);
           return file;
@@ -61844,7 +59929,8 @@ var EditorStateProvider = function (fsResolver, path, editor) {
 };
 angular.module('ramlEditorApp').factory('ramlSuggest', [
   'ramlRepository',
-  function (ramlRepository) {
+  'ramlEditorMainHelpers',
+  function (ramlRepository, ramlEditorMainHelpers) {
     this.FSResolver = FSResolver;
     this.EditorStateProvider = EditorStateProvider;
     function codemirrorHint(editor, suggestions) {
@@ -61917,6 +60003,23 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       suggestion.text = suggestion.text || suggestion.displayText || '';
       return suggestion;
     }
+    function addTextSnippets(editor, suggestions) {
+      var ch = editor.getCursor().ch;
+      var addNewResource = suggestions.length > 0 && (ch === 0 || suggestions.find(function (s) {
+          return s.category === 'methods' ? s : null;
+        }));
+      if (addNewResource && ramlEditorMainHelpers.isApiDefinition(editor.getValue())) {
+        var prefix = addNewResource.replacementPrefix || '';
+        var spaces = '\n' + new Array(ch - prefix.length + 1).join(' ') + '  ';
+        return suggestions.concat({
+          text: '/newResource:' + spaces + 'displayName: resourceName' + spaces,
+          displayText: 'New Resource',
+          category: 'resources',
+          replacementPrefix: prefix
+        });
+      }
+      return suggestions;
+    }
     this.getSuggestions = function (homeDirectory, currentFile, editor) {
       var ramlSuggestions = RAML.Suggestions;
       var fsResolver = new FSResolver(homeDirectory, ramlRepository);
@@ -61930,6 +60033,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return suggestions.map(beautifyCategoryName);
       }).then(function (suggestions) {
         return suggestions.map(ensureTextFieldNotUndefined);
+      }).then(function (suggestions) {
+        return addTextSnippets(editor, suggestions);
       });
     };
     // class methods
@@ -61951,96 +60056,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     return this;
   }
 ]);
-(function () {
-  'use strict';
-  angular.module('ramlEditorApp').factory('ramlExpander', [
-    '$q',
-    'jsTraverse',
-    function mockingServiceUtils($q, jsTraverse) {
-      return { expandRaml: expandRaml };
-      // ---
-      function retrieveType(raml, typeName) {
-        if (!raml.types) {
-          return;
-        }
-        var object = raml.types.filter(function (type) {
-            return type[typeName];
-          })[0];
-        return object ? object[typeName] : object;
-      }
-      function replaceTypeIfExists(raml, type, value) {
-        var expandedType = retrieveType(raml, type);
-        if (expandedType) {
-          for (var key in expandedType) {
-            if (expandedType.hasOwnProperty(key)) {
-              if ([
-                  'example',
-                  'examples'
-                ].includes(key) && value[key]) {
-                return;
-              }
-              value[key] = expandedType[key];
-            }
-          }
-        }
-      }
-      function dereferenceTypes(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type) {
-            var type = value.type[0];
-            replaceTypeIfExists(raml, type, value);
-          }
-        });
-      }
-      function extractArrayType(arrayNode) {
-        if (arrayNode.items.type) {
-          return arrayNode.items.type[0];
-        }
-        return arrayNode.items;
-      }
-      function isNotObject(value) {
-        return value === null || typeof value !== 'object';
-      }
-      function dereferenceTypesInArrays(raml) {
-        jsTraverse.traverse(raml).forEach(function (value) {
-          if (this.path.slice(-2).join('.') === 'body.application/json' && value.type && value.type[0] === 'array') {
-            var type = extractArrayType(value);
-            if (isNotObject(value.items)) {
-              value.items = {};
-            }
-            replaceTypeIfExists(raml, type, value.items);
-            if (!value.examples && !value.example) {
-              generateArrayExampleIfPossible(value);
-            }
-          }
-        });
-      }
-      function generateArrayExampleIfPossible(arrayNode) {
-        var examples = getExampleList(arrayNode.items);
-        if (examples.length === 0) {
-          return;
-        }
-        arrayNode.example = examples;
-      }
-      function getExampleList(node) {
-        if (node.examples) {
-          return node.examples.map(function (example) {
-            return example.structuredValue;
-          });
-        }
-        if (node.example) {
-          return [node.example];
-        }
-        return [];
-      }
-      function expandRaml(raml) {
-        dereferenceTypes(raml);
-        dereferenceTypesInArrays(raml);
-      }
-    }
-  ]);
-  ;
-}());
 (function () {
   'use strict';
   function FileSystem() {
@@ -62083,15 +60098,97 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'ramlRepository',
     'newNameModal',
     '$rootScope',
-    function newFolderService(ramlRepository, newNameModal, $rootScope) {
+    'generateName',
+    function newFolderService(ramlRepository, newNameModal, $rootScope, generateName) {
       var self = this;
-      self.prompt = function prompt(target) {
+      var specUrl = 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md#';
+      self.files = {
+        '0.8': {
+          '': {
+            label: '',
+            name: 'API Spec',
+            description: 'RAML 0.8 API Spec.',
+            spec: 'https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md'
+          }
+        },
+        '1.0': {
+          '': {
+            label: '',
+            name: 'API Spec',
+            description: 'RAML 1.0 API Spec.',
+            spec: specUrl + 'the-root-of-the-document'
+          },
+          'Trait': {
+            label: 'Trait',
+            name: 'Trait',
+            description: 'Define a single trait with common characteristics for methods.',
+            spec: specUrl + 'resource-types-and-traits'
+          },
+          'ResourceType': {
+            label: 'ResourceType',
+            name: 'Resource Type',
+            description: 'Define a single resource type with common characteristics for resources.',
+            spec: specUrl + 'resource-types-and-traits'
+          },
+          'Library': {
+            label: 'Library',
+            name: 'Library',
+            description: 'Define a collection of data type declarations, resource type declarations, trait declarations, and security scheme declarations into modular, externalized, reusable groups.',
+            spec: specUrl + 'libraries'
+          },
+          'Overlay': {
+            label: 'Overlay',
+            name: 'Overlay',
+            description: 'Define an overlay that adds or overrides nodes of a RAML API definition while preserving its behavioral, functional aspects.',
+            spec: specUrl + 'overlays'
+          },
+          'Extension': {
+            label: 'Extension',
+            name: 'Extension',
+            description: 'Define an extension that adds or modifies nodes of a RAML API definition.',
+            spec: specUrl + 'extensions'
+          },
+          'DataType': {
+            label: 'DataType',
+            name: 'Type',
+            description: 'Define a single data type declaration.',
+            spec: specUrl + '#raml-data-types'
+          },
+          'DocumentationItem': {
+            label: 'DocumentationItem',
+            name: 'User Documentation',
+            description: 'Define a single page documentation item.',
+            spec: specUrl + 'user-documentation'
+          },
+          'NamedExample': {
+            label: 'NamedExample',
+            name: 'Example',
+            description: 'Define a single example for a given data type.',
+            spec: specUrl + 'defining-examples-in-raml'
+          },
+          'AnnotationTypeDeclaration': {
+            label: 'AnnotationTypeDeclaration',
+            name: 'Annotation',
+            description: 'Define a single annotation type declaration that describes additional metadata that can be applied to any RAML node.',
+            spec: specUrl + 'annotations'
+          },
+          'SecurityScheme': {
+            label: 'SecurityScheme',
+            name: 'Security Scheme',
+            description: 'Define a single security scheme that describes the mechanism to secure data access, identify requests, and determine access level and data visibility.',
+            spec: specUrl + 'security-schemes'
+          }
+        }
+      };
+      function nameSuggestion(target, fragment, fragmentLabel) {
+        var names = target.children.map(function (file) {
+            return file.name;
+          });
+        var defaultName = (fragment.label !== '' ? fragmentLabel : 'api') + '-';
+        return generateName(names, defaultName, 'raml');
+      }
+      self.prompt = function prompt(target, ramlVersion, fragmentLabel) {
         var parent = target.isDirectory ? target : ramlRepository.getParent(target);
-        var title = 'Add a new file';
-        var message = [
-            'For a new RAML spec, be sure to name your file <something>.raml; ',
-            'For files to be !included, feel free to use an extension or not.'
-          ].join('');
         var validations = [{
               message: 'That file name is already taken.',
               validate: function (input) {
@@ -62099,10 +60196,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 return !ramlRepository.getByPath(path);
               }
             }];
-        return newNameModal.open(message, '', validations, title).then(function (name) {
+        var label = fragmentLabel ? fragmentLabel : '';
+        var fragment = self.files[ramlVersion][label];
+        var suggestedName = nameSuggestion(target, fragment, fragmentLabel);
+        var title = 'Add new ' + fragment.name + ' file';
+        return newNameModal.open(fragment.description, suggestedName, validations, title, fragment.spec).then(function (name) {
           // Need to catch errors from `generateFile`, otherwise
           // `newNameModel.open` will error random modal close strings.
-          return ramlRepository.generateFile(parent, name).catch(function (err) {
+          return ramlRepository.generateFile(parent, name, ramlVersion, label).catch(function (err) {
             return $rootScope.$broadcast('event:notification', {
               message: err.message,
               expires: true,
@@ -62110,6 +60211,15 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             });
           });
         });
+      };
+      self.newFragmentFile = function newFragmentFile(homeDirectory, fragmentType) {
+        if (fragmentType === '') {
+          return self.prompt(homeDirectory, '1.0');
+        }
+        return self.prompt(homeDirectory, '1.0', fragmentType);
+      };
+      self.newFile = function newFile(homeDirectory, version) {
+        return self.prompt(homeDirectory, version);
       };
       return self;
     }
@@ -62678,6 +60788,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         });
         scope[subMenuName] = true;
       };
+      this.openSubMenu = function (scope, subMenuName) {
+        scope[subMenuName] = true;
+      };
     }
   ]);
 }());
@@ -62692,7 +60805,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           templateUrl: 'views/import-modal.html',
           controller: 'ImportController'
         }).result;
-        ;
       };
       return self;
     }
@@ -62701,10 +60813,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$modalInstance',
     'swaggerToRAML',
     '$q',
+    '$window',
     '$rootScope',
     'importService',
     'ramlRepository',
-    function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $rootScope, importService, ramlRepository) {
+    function ConfirmController($scope, $modalInstance, swaggerToRAML, $q, $window, $rootScope, importService, ramlRepository) {
       $scope.importing = false;
       $scope.rootDirectory = ramlRepository.getByPath('/');
       // Handles <input type="file" onchange="angular.element(this).scope().handleFileSelect(this)">
@@ -62747,7 +60860,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       function importSwagger(mode) {
         $scope.importing = true;
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.convert(mode.value).then(function (contents) {
+        var proxy = $window.RAML.Settings.proxy || '';
+        var url = proxy + mode.value;
+        return swaggerToRAML.url(url).then(function (contents) {
           var filename = extractFileName(mode.value, 'raml');
           return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
         }).then(function () {
@@ -62758,12 +60873,20 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           $scope.importing = false;
         });
       }
-      function importSwaggerZip(mode) {
+      function importSwaggerFile(mode) {
         $scope.importing = true;
-        return swaggerToRAML.zip(mode.value).then(function (contents) {
-          var filename = extractFileName(mode.value.name, 'raml');
-          return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
-        }).then(function () {
+        var importSwaggerPromise;
+        if (importService.isZip(mode.value)) {
+          importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
+            $rootScope.$broadcast('event:save-all');
+          });
+        } else {
+          importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
+            var filename = extractFileName(mode.value.name, 'raml');
+            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+          });
+        }
+        return importSwaggerPromise.then(function () {
           return $modalInstance.close(true);
         }).catch(function (err) {
           broadcastError('Failed to parse Swagger: ' + err.message);
@@ -62773,19 +60896,22 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       }
       $scope.options = [
         {
-          name: 'file',
+          name: 'RAML file',
           type: 'file',
+          spec: 'RAML',
           callback: importFile
         },
         {
-          name: 'Swagger spec',
-          type: 'swagger',
-          callback: importSwagger
+          name: 'OAS file',
+          type: 'file',
+          spec: 'OAS',
+          callback: importSwaggerFile
         },
         {
-          name: 'Swagger .zip',
-          type: 'zip',
-          callback: importSwaggerZip
+          name: 'OAS spec',
+          type: 'url',
+          spec: 'OAS',
+          callback: importSwagger
         }
       ];
       $scope.mode = $scope.options[0];
@@ -62802,7 +60928,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         if (form.$invalid || $scope.importing) {
           return;
         }
-        return $scope.mode.callback($scope.mode);
+        try {
+          return $scope.mode.callback($scope.mode);
+        } catch (err) {
+          $scope.importing = false;
+          broadcastError(err);
+        }
       };
       /**
        * Extract a usable filename from a path.
@@ -62879,7 +61010,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$modal',
     function newNameModal($modal) {
       var self = this;
-      self.open = function open(message, defaultName, validations, title) {
+      self.open = function open(message, defaultName, validations, title, link) {
         return $modal.open({
           templateUrl: 'views/new-name-modal.html',
           controller: 'NewNameController',
@@ -62896,6 +61027,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             },
             validations: function validationsResolver() {
               return validations;
+            },
+            link: function linkResolver() {
+              return link;
             }
           }
         }).result;
@@ -62910,11 +61044,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'defaultName',
     'validations',
     'title',
-    function NewNameController($modalInstance, $scope, message, defaultName, validations, title) {
+    'link',
+    function NewNameController($modalInstance, $scope, message, defaultName, validations, title, link) {
       $scope.input = {
         newName: defaultName,
         message: message,
-        title: title
+        title: title,
+        link: link
       };
       $scope.validationErrorMessage = '';
       $scope.isValid = function isValid(value) {
@@ -62939,7 +61075,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   ]);
   ;
 }());
-/* global swaggerToRamlObject, ramlObjectToRaml */
 (function () {
   'use strict';
   angular.module('ramlEditorApp').service('swaggerToRAML', [
@@ -62947,52 +61082,195 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$q',
     '$http',
     'importService',
-    function swaggerToRAML($window, $q, $http, importService) {
+    'apiSpecTransformer',
+    function swaggerToRAML($window, $q, $http, importService, apiSpecTransformer) {
       var self = this;
-      var proxy = $window.RAML.Settings.proxy || '';
-      function reader(filename, done) {
-        if (!/^https?\:\/\//.test(filename)) {
-          return done(new Error('Invalid file location: ' + filename));
+      function replaceExtension(path, ext) {
+        var index = path.lastIndexOf('.');
+        if (index > -1) {
+          path = path.substr(0, index);
         }
-        return $http.get(proxy + filename, { transformResponse: false }).then(function (response) {
-          return done(null, response.data);
-        }).catch(function (err) {
-          return done(new Error(err.data));
-        });
+        return path + '.' + ext;
       }
-      function parseResult(deferred) {
-        return function (err, result) {
-          if (err) {
-            return deferred.reject(err);
-          }
+      function ramlConverter() {
+        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.SWAGGER, apiSpecTransformer.Formats.RAML10);
+      }
+      function doConvert(error, converter, deferred) {
+        if (error) {
+          deferred.reject(error);
+        }
+        try {
+          converter.convert('yaml', function (err, result) {
+            if (err) {
+              return deferred.reject(err);
+            }
+            return deferred.resolve(result);
+          });
+        } catch (err) {
+          deferred.reject(err);
+        }
+      }
+      function convertData(content, deferred, options) {
+        var converter = ramlConverter();
+        converter.loadData(content, options).then(function (error) {
+          doConvert(error, converter, deferred);
+        }).catch(deferred.reject);
+        return deferred;
+      }
+      function convertZip(root, contents) {
+        var decimalRegexp = /^\d+\.\d+$/;
+        var swaggerYamlRegexp = /swagger\s*:\s*"{0,1}\d+\.\d+"{0,1}/;
+        function isSwaggerSpec(text) {
           try {
-            return deferred.resolve(ramlObjectToRaml(result));
-          } catch (e) {
-            return deferred.reject(e);
+            var parsedData = JSON.parse(text);
+            return decimalRegexp.test(parsedData.swagger);
+          } catch (err) {
+            // Possibly YAML Data
+            return swaggerYamlRegexp.test(text);
           }
+        }
+        var converter = function (files, name, deferred) {
+          var content = files[name];
+          // leave files that are not swagger unmodified
+          if (!isSwaggerSpec(content)) {
+            return deferred.resolve({
+              name: name,
+              content: content
+            });
+          }
+          // custom fileResolver to take in memory files from the zip
+          var fileResolver = {
+              canRead: function (path) {
+                return this.read(path) != null;
+              },
+              read: function (path) {
+                var url = path.url.replace(window.location.origin + '/', '');
+                for (var filename in files) {
+                  if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
+                    return files[filename];
+                  }
+                }
+                return null;
+              }
+            };
+          // convert main swagger spec
+          convertData(content, $q.defer(), {
+            resolve: {
+              file: fileResolver,
+              http: fileResolver
+            }
+          }).promise.then(function (convertedData) {
+            deferred.resolve({
+              name: replaceExtension(name, 'raml'),
+              content: convertedData
+            });
+          });
+          return deferred.promise;
         };
+        return importService.importZip(root, contents, converter);
       }
-      self.convert = function convert(url) {
+      self.url = function convert(url) {
+        // fetch and convert single file
         var deferred = $q.defer();
-        swaggerToRamlObject(url, reader, parseResult(deferred));
+        var converter = ramlConverter();
+        try {
+          converter.loadFile(url, function (error) {
+            doConvert(error, converter, deferred);
+          });
+        } catch (err) {
+          deferred.reject(err);
+        }
         return deferred.promise;
       };
-      self.zip = function zip(file) {
+      self.file = function zip(file) {
         var deferred = $q.defer();
-        if (!importService.isZip(file)) {
-          deferred.reject(new Error('Invalid zip file'));
-        } else {
-          importService.readFile(file).then(function (contents) {
-            var files = importService.parseZip(contents);
-            swaggerToRamlObject.files(Object.keys(files), function (filename, done) {
-              if (files.hasOwnProperty(filename)) {
-                return done(null, files[filename]);
-              }
-              return reader(filename, done);
-            }, parseResult(deferred));
-          });
-        }
+        importService.readFile(file).then(function (contents) {
+          convertData(contents, deferred);
+        }).catch(deferred.reject);
         return deferred.promise;
+      };
+      self.zip = function zip(rootDirectory, file) {
+        var deferred = $q.defer();
+        importService.readFile(file).then(function (contents) {
+          convertZip(rootDirectory, contents).then(deferred.resolve).catch(deferred.reject);
+        }).catch(deferred.reject);
+        return deferred.promise;
+      };
+      return self;
+    }
+  ]);
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').service('ramlToSwagger', [
+    '$q',
+    'ramlRepository',
+    'ramlEditorMainHelpers',
+    'apiSpecTransformer',
+    function ramlToSwagger($q, ramlRepository, ramlEditorMainHelpers, apiSpecTransformer) {
+      var self = this;
+      function findRootRaml() {
+        var defer = $q.defer();
+        var rootDirectory = ramlRepository.getByPath('/');
+        findRootRamlRecursive(rootDirectory, defer);
+        return defer.promise;
+      }
+      function loadFile(file, defer) {
+        (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: file.path })).then(function (loadedFile) {
+          if (ramlEditorMainHelpers.isApiDefinition(loadedFile.contents)) {
+            defer.resolve(loadedFile);
+          }
+        });
+      }
+      function findRootRamlRecursive(directory, defer) {
+        for (var i = 0; i < directory.children.length; i++) {
+          var child = directory.children[i];
+          if (child.isDirectory) {
+            findRootRamlRecursive(child, defer);
+          } else {
+            loadFile(child, defer);
+          }
+        }
+      }
+      function swaggerConverter() {
+        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.RAML10, apiSpecTransformer.Formats.SWAGGER);
+      }
+      function doConvert(converter, file, format, deferred) {
+        try {
+          converter.convert(format, function (err, result) {
+            if (err) {
+              return deferred.reject(err);
+            }
+            return deferred.resolve({
+              name: file.name,
+              contents: result
+            });
+          });
+        } catch (err) {
+          deferred.reject(err);
+        }
+      }
+      function convertData(file, format, deferred, options) {
+        var converter = swaggerConverter();
+        converter.loadData(file.contents, options).then(function () {
+          doConvert(converter, file, format, deferred);
+        }).catch(deferred.reject);
+        return deferred;
+      }
+      function toSwagger(format) {
+        var deferred = $q.defer();
+        findRootRaml().then(function (rootRaml) {
+          convertData(rootRaml, format, deferred);
+        }).catch(function (err) {
+          deferred.reject(err);
+        });
+        return deferred.promise;
+      }
+      self.json = function json() {
+        return toSwagger('json');
+      };
+      self.yaml = function yaml() {
+        return toSwagger('yaml');
       };
       return self;
     }
@@ -63017,7 +61295,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       self.mergeFile = function (directory, file) {
         // Import every other file as normal.
         if (!self.isZip(file)) {
-          return self.importFile(directory, file);
+          return self.importFile(directory, file).then(ramlRepository.saveFile);
         }
         return self.readFile(file).then(function (contents) {
           return self.mergeZip(directory, contents);
@@ -63135,6 +61413,17 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         return promiseChain(imports);
       };
       /**
+       * Create and save file.
+       *
+       * @param  {Object}  directory
+       * @param  {String}  name
+       * @param  {String}  content
+       * @return {Promise}
+       */
+      self.createAndSaveFile = function (directory, name, content) {
+        return self.createFile(directory, name, content).then(ramlRepository.saveFile);
+      };
+      /**
        * Create a file in the filesystem.
        *
        * @param  {Object}  directory
@@ -63174,8 +61463,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
                 }
                 // Mark the file as dirty.
                 file.dirty = true;
-                return file;
               }
+              return file;
             });
             ;
           }
@@ -63264,11 +61553,12 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        *
        * @param  {Object}  directory
        * @param  {String}  contents
+       * @param  {Function}  converter
        * @return {Promise}
        */
-      self.importZip = function (directory, contents) {
+      self.importZip = function (directory, contents, converter) {
         var files = self.parseZip(contents);
-        return importZipFiles(directory, files);
+        return importZipFiles(directory, files, converter);
       };
       /**
        * Import a single file at specific path.
@@ -63295,12 +61585,22 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
        *
        * @param  {Object}  directory
        * @param  {Object}  files
+       * @param  {Function}  converter
        * @return {Promise}
        */
-      function importZipFiles(directory, files) {
+      function importZipFiles(directory, files, converter) {
         var imports = Object.keys(files).filter(canImport).map(function (name) {
             return function () {
-              return self.createFile(directory, name, files[name]);
+              if (!converter) {
+                return self.createFile(directory, name, files[name]);
+              } else {
+                // convert content before importing file
+                var defer = $q.defer();
+                converter(files, name, defer);
+                return defer.promise.then(function (file) {
+                  return self.createFile(directory, file.name, file.content);
+                });
+              }
             };
           });
         return promiseChain(imports);
@@ -63518,7 +61818,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'safeApply',
     'safeApplyWrapper',
     'debounce',
-    'ramlParserAdapter',
+    'ramlParser',
     'ramlRepository',
     'codeMirror',
     'codeMirrorErrors',
@@ -63529,7 +61829,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'mockingServiceClient',
     '$q',
     'ramlEditorMainHelpers',
-    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParserAdapter, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
+    function (UPDATE_RESPONSIVENESS_INTERVAL, $scope, $rootScope, $timeout, $window, safeApply, safeApplyWrapper, debounce, ramlParser, ramlRepository, codeMirror, codeMirrorErrors, config, $prompt, $confirm, $modal, mockingServiceClient, $q, ramlEditorMainHelpers) {
       var editor, lineOfCurrentError, currentFile;
       function extractCurrentFileLabel(file) {
         var label = '';
@@ -63616,7 +61916,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         updateFile();
       };
       $scope.loadRaml = function loadRaml(definition, location) {
-        return ramlParserAdapter.loadPath(location, function contentAsync(path) {
+        return ramlParser.loadPath(location, function contentAsync(path) {
           var file = ramlRepository.getByPath(path);
           if (file) {
             return (file.loaded ? $q.when(file) : ramlRepository.loadFile({ path: path })).then(function (file) {
@@ -63839,6 +62139,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
   angular.module('ramlEditorApp').factory('ramlEditorMainHelpers', function ramlEditorMainHelpers() {
     return {
       isRamlFile: isRamlFile,
+      isApiDefinition: isApiDefinition,
       isApiDefinitionLike: isApiDefinitionLike
     };
     // ---
@@ -64355,7 +62656,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             }
             $timeout(function () {
               element[0].focus();
-            });
+            }, 100);
           });
         }
       };
@@ -64467,8 +62768,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'ramlRepository',
     'newFileService',
     'newFolderService',
+    'subMenuService',
     'scroll',
-    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, newFileService, newFolderService, scroll) {
+    function ramlEditorContextMenu($injector, $window, confirmModal, newNameModal, ramlRepository, newFileService, newFolderService, subMenuService, scroll) {
       function createActions(target) {
         var saveAction = {
             label: 'Save',
@@ -64478,8 +62780,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           };
         var newFileAction = {
             label: 'New File',
-            execute: function execute() {
-              return newFileService.prompt(target);
+            fragments: newFileService.files['1.0'],
+            execute: function execute(fragmentLabel) {
+              if (fragmentLabel) {
+                return newFileService.prompt(target, '1.0', fragmentLabel);
+              }
+            },
+            newFile: function newFile() {
+              return newFileService.prompt(target, '0.8');
             }
           };
         var newFolderAction = {
@@ -64550,6 +62858,14 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         restrict: 'E',
         templateUrl: 'views/raml-editor-context-menu.tmpl.html',
         link: function link(scope, element) {
+          scope.openFileMenu = function (action) {
+            if (action.label === 'New File') {
+              subMenuService.openSubMenu(scope, 'showFileMenu');
+            }
+          };
+          scope.closeFileMenu = function () {
+            scope.showFileMenu = false;
+          };
           function positionMenu(element, event) {
             var top = event.pageY;
             var left = event.pageX;
@@ -64562,7 +62878,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               }
             }, 0);
           }
-          function close() {
+          function close(e) {
+            if (e && e.target.firstChild.nodeValue.match('New File')) {
+              return;
+            }
             scroll.enable();
             scope.$apply(function () {
               delete contextMenuController.target;
@@ -64859,29 +63178,40 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorProjectButton', [
+    '$timeout',
+    '$window',
+    'subMenuService',
+    function ramlEditorProjectButton($timeout, $window, subMenuService) {
+      return {
+        restrict: 'E',
+        templateUrl: 'views/menu/project-menu.tmpl.html',
+        link: function (scope) {
+          scope.openProjectMenu = function () {
+            subMenuService.open(scope, 'showProjectMenu');
+          };
+          scope.openFileMenu = function () {
+            subMenuService.openSubMenu(scope, 'showFileMenu');
+          };
+          scope.closeFileMenu = function () {
+            scope.showFileMenu = false;
+          };
+        }
+      };
+    }
+  ]);
+}());
+(function () {
+  'use strict';
   angular.module('ramlEditorApp').directive('ramlEditorSaveFileButton', [
     '$rootScope',
     'ramlRepository',
-    '$window',
-    '$timeout',
-    '$q',
-    'subMenuService',
-    function ramlEditorSaveFileButton($rootScope, ramlRepository, $window, $timeout, $q, subMenuService) {
+    function ramlEditorSaveFileButton($rootScope, ramlRepository) {
       return {
         restrict: 'E',
-        template: [
-          '<span role="save-button" ng-click="saveFile()"><i class="fa fa-save"></i>&nbsp;Save</span>',
-          '<span class="menu-item-toggle" ng-click="openContextMenu($event)">',
-          '  <i class="fa fa-caret-down"></i>',
-          '</span>',
-          '<ul role="context-menu" class="menu-item-context" ng-show="contextMenuOpen">',
-          '  <li role="context-menu-item" ng-click="saveAllFiles()">Save All</li>',
-          '</ul>'
-        ].join('\n'),
+        replace: true,
+        template: '<li role="save-button" ng-click="saveFile()">' + '<a><i class="fa fa-save"></i>&nbsp;Save</a>' + '</li>',
         link: function (scope) {
-          scope.openContextMenu = function () {
-            subMenuService.open(scope, 'contextMenuOpen');
-          };
           scope.saveFile = function saveFile() {
             var file = scope.fileBrowser.selectedFile;
             return ramlRepository.saveFile(file).then(function success() {
@@ -64891,6 +63221,24 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               });
             });
           };
+        }
+      };
+    }
+  ]);
+  ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorSaveAllButton', [
+    '$rootScope',
+    'ramlRepository',
+    '$q',
+    function ramlEditorSaveAllButton($rootScope, ramlRepository, $q) {
+      return {
+        restrict: 'E',
+        replace: true,
+        template: '<li role="save-all-button" ng-click="saveAllFiles()">' + '<a><i class="fa fa-save"></i>&nbsp;Save All</a>' + '</li>',
+        link: function (scope) {
           scope.saveAllFiles = function saveAllFiles() {
             var promises = [];
             scope.homeDirectory.forEachChildDo(function (file) {
@@ -64908,7 +63256,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               });
             });
           };
-          scope.$on('event:save-all', function () {
+          $rootScope.$on('event:save-all', function () {
             scope.saveAllFiles();
           });
         }
@@ -64924,7 +63272,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     function ramlEditorNewFolderButton(newFolderService) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="newFolder()"><i class="fa fa-folder-open"></i>&nbsp;New Folder</span>',
+        replace: true,
+        template: '<li ng-show="supportsFolders" role="new-folder-button" ng-click="newFolder()">' + '<a><i class="fa fa-folder-open"></i>&nbsp;New Folder</a>' + '</li>',
         link: function (scope) {
           scope.newFolder = function newFolder() {
             return newFolderService.prompt(scope.homeDirectory);
@@ -64937,15 +63286,41 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorNewFileButton', [
+  angular.module('ramlEditorApp').directive('ramlEditorNewFileMenu', [
     'newFileService',
-    function ramlEditorNewFileButton(newFileService) {
+    'subMenuService',
+    function ramlEditorNewFileMenu(newFileService, subMenuService) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="newFile()"><i class="fa fa-plus"></i>&nbsp;New File</span>',
+        replace: true,
+        scope: {
+          showFileMenu: '=',
+          showFragmentMenu: '=',
+          openFileMenuCondition: '@',
+          menuRole: '@'
+        },
+        templateUrl: 'views/menu/new-file-menu.tmpl.html',
         link: function (scope) {
-          scope.newFile = function newFile() {
-            return newFileService.prompt(scope.homeDirectory);
+          scope.closeFragmentMenu = function () {
+            scope.showFragmentMenu = false;
+          };
+          scope.openFragmentMenu = function () {
+            subMenuService.openSubMenu(scope, 'showFragmentMenu');
+            scope.fragments = newFileService.files['1.0'];
+          };
+          scope.newFragmentFile = function newFragmentFile(fragmentType) {
+            return newFileService.newFragmentFile(scope.$parent.homeDirectory, fragmentType);
+          };
+          scope.newFile = function newFile(version) {
+            return newFileService.newFile(scope.$parent.homeDirectory, version);
+          };
+          scope.notSorted = function (fragments) {
+            if (!fragments) {
+              return [];
+            }
+            return Object.keys(fragments).map(function (f) {
+              return fragments[f];
+            });
           };
         }
       };
@@ -64955,22 +63330,65 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorExportFilesButton', [
-    '$rootScope',
+  angular.module('ramlEditorApp').directive('ramlEditorExportMenu', [
     'ramlRepository',
-    function ramlEditorExportFilesButton($rootScope, ramlRepository) {
+    'subMenuService',
+    'ramlToSwagger',
+    '$window',
+    '$location',
+    '$rootScope',
+    function ramlEditorExportMenu(ramlRepository, subMenuService, ramlToSwagger, $window, $location, $rootScope) {
       return {
         restrict: 'E',
-        template: '<span role="export-button" ng-click="exportFiles()"><i class="fa fa-download"></i>&nbsp;Export files</span>',
+        templateUrl: 'views/menu/export-menu.tmpl.html',
         link: function (scope) {
-          scope.exportFiles = function exportFiles() {
+          scope.xOasExport = scope.xOasExport || $location.search().xOasExport === 'true';
+          function saveFile(yaml, name) {
+            var blob = new Blob([yaml], { type: 'application/json;charset=utf-8' });
+            $window.saveAs(blob, name);
+          }
+          function broadcastError(msg) {
+            return $rootScope.$broadcast('event:notification', {
+              message: msg,
+              expires: true,
+              level: 'error'
+            });
+          }
+          function replaceExtension(path, ext) {
+            var index = path.lastIndexOf('.');
+            if (index > -1) {
+              path = path.substr(0, index);
+            }
+            return path + '.' + ext;
+          }
+          scope.openExportMenu = function () {
+            subMenuService.openSubMenu(scope, 'showExportMenu');
+          };
+          scope.closeExportMenu = function () {
+            scope.showExportMenu = false;
+          };
+          scope.exportZipFiles = function exportZipFiles() {
             ramlRepository.exportFiles();
+          };
+          scope.exportJsonFiles = function exportJsonFiles() {
+            ramlToSwagger.json().then(function (convert) {
+              var lines = JSON.stringify(convert.contents, null, 2);
+              saveFile(lines, replaceExtension(convert.name, 'json'));
+            }).catch(function (error) {
+              broadcastError(error);
+            });
+          };
+          scope.exportYamlFiles = function exportYamlFiles() {
+            ramlToSwagger.yaml().then(function (convert) {
+              saveFile(convert.contents, replaceExtension(convert.name, 'yaml'));
+            }).catch(function (error) {
+              broadcastError(error);
+            });
           };
         }
       };
     }
   ]);
-  ;
 }());
 (function () {
   'use strict';
@@ -64980,7 +63398,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     function ramlEditorImportButton($injector, importModal) {
       return {
         restrict: 'E',
-        template: '<span role="new-button" ng-click="importFile()"><i class="fa fa-cloud-download"></i> Import</span>',
+        replace: true,
+        template: '<li role="import-button" ng-click="importFile()">' + '<a><i class="fa fa-cloud-download"></i>&nbsp;Import</a>' + '</li>',
         link: function (scope) {
           scope.importFile = function importFile() {
             return importModal.open();
@@ -64990,6 +63409,29 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     }
   ]);
   ;
+}());
+(function () {
+  'use strict';
+  angular.module('ramlEditorApp').directive('ramlEditorViewButton', [
+    '$timeout',
+    '$window',
+    'subMenuService',
+    '$rootScope',
+    function ramlEditorViewButton($timeout, $window, subMenuService, $rootScope) {
+      return {
+        restrict: 'E',
+        templateUrl: 'views/menu/view-menu.tmpl.html',
+        link: function (scope) {
+          scope.openViewMenu = function () {
+            subMenuService.open(scope, 'showViewMenu');
+          };
+          scope.toogleBackgroundColor = function () {
+            $rootScope.$broadcast('event:toggle-theme');
+          };
+        }
+      };
+    }
+  ]);
 }());
 (function () {
   'use strict';
@@ -65446,14 +63888,18 @@ angular.module('ramlEditorApp').run([
   function ($templateCache) {
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="text" ng-model="mode.value" class="form-control" required ng-switch-when="swagger" placeholder="http://example.swagger.wordnik.com/api/api-docs">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '\n' + '        <input id="zip" name="zip" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="zip" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'swagger\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required">Please provide a URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'zip\'">\n' + '      <p class="help-block" ng-show="form.zip.$error.required">Please select a zip to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type !== \'file\'">\n' + '      <p>Note: Currently only supports Swagger v1.2</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="url" placeholder="http://petstore.swagger.io/v2/swagger.json">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'url\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.spec === \'OAS\'">\n' + '      <p>Note: Currently supports OAS (Swagger) v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '</span>\n' + '<span class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="context-menu" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a href="http://raml.org" target="_blank">About RAML</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-08/raml-08.md" target="_blank">Language Spec (0.8)</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">Language Spec (1.0)</a></li>\n' + '  <li role="context-menu-item"><a href="http://raml.org/docs.html" target="_blank">Tutorial</a></li>\n' + '  <li role="context-menu-item"><a href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <hr class="line-with-linear-gradient">\n' + '  <li role="context-menu-item" ng-click="openHelpModal()">About API Designer</li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/export-menu.tmpl.html', '<li ng-if="!xOasExport" role="export-zip" ng-click="exportZipFiles()">\n' + '  <a><i class="fa fa-download"></i>&nbsp;Export files</a>\n' + '</li>\n' + '\n' + '<a ng-if="xOasExport">\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul ng-if="xOasExport" role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;OAS 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;OAS 2.0 YAML</a></li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a role="raml-specification" href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>\n' + '  <li rile="context-menu-item"><a role="raml-website" href="http://raml.org" target="_blank">raml.org Website</a></li>\n' + '  <li role="context-menu-item"><a role="report-raml-bug" href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <li role="context-menu-item"><a role="raml-guide" href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>\n' + '  <li role="context-menu-item" ng-click="openHelpModal()"><a role="raml-about">About</a></li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/new-file-menu.tmpl.html', '<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">\n' + '  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">\n' + '    <a>\n' + '        &nbsp;Raml 1.0\n' + '        <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '\n' + '    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">\n' + '      <li role="new-raml-{{fragment.name}}" ng-repeat="fragment in notSorted(fragments)" ng-click="newFragmentFile(fragment.label)">\n' + '        <a>&nbsp;{{ fragment.name }}</a>\n' + '      </li>\n' + '    </ul>\n' + '  </li>\n' + '\n' + '  <li role="new-raml-0.8" ng-click="newFile(\'0.8\')">\n' + '    <a>&nbsp;Raml 0.8 API Spec</a>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '  <raml-editor-export-menu ng-if="!xOasExport"></raml-editor-export-menu>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="xOasExport && canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/view-menu.tmpl.html', '<span class="menu-item-toggle" ng-click="openViewMenu($event)">\n' + '  <i class="fa fa-edit"></i>&nbsp;View\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showViewMenu">\n' + '  <li role="toogle-background" ng-click="toogleBackgroundColor()">\n' + '      <a>&nbsp;Toggle Background Color</a>\n' + '  </li>\n' + '</ul>\n' + '\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
-    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>{{input.message}}</p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-repeat="action in actions" ng-click="action.execute()">{{ action.label }}</li>\n' + '</ul>\n');
+    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p>\n' + '        Learn more\n' + '        <a ng-if="input.link" target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
-    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-new-file-button></raml-editor-new-file-button>\n' + '    </li>\n' + '    <li ng-show="supportsFolders" class="menu-item menu-item-ll">\n' + '      <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-import-button></raml-editor-import-button>\n' + '    </li>\n' + '    <li ng-show="canExportFiles()" class="menu-item menu-item-ll">\n' + '      <raml-editor-export-files-button></raml-editor-export-files-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
+    $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-shelf.tmpl.html', '<ul role="sections" ng-controller="ramlEditorShelf">\n' + '  <li role="section" ng-repeat="category in model.categories | orderBy:orderSections" class="{{category.name | dasherize}}">\n' + '    {{category.name}}&nbsp;({{category.items.length}})\n' + '    <ul role="items">\n' + '      <li ng-repeat="item in category.items" ng-click="itemClick(item)"><i class="fa fa-reply"></i><span>{{item.title}}</span></li>\n' + '    </ul>\n' + '  </li>\n' + '</ul>\n');
   }
 ]);

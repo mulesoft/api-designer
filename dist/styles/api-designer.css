@@ -808,11 +808,76 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
   padding: 2px 5px;
 }
 [role="context-menu"] li:hover {
-  background: #1e4f6a;
-  color: #DDD;
+  color: white;
+  background-color: #969494;
 }
-[role="context-menu-item"] {
+[role="context-menu"] .submenu-item {
+  margin-left: 138px;
+  margin-top: -21px;
+  left: inherit !important;
+}
+[role="menu-dropdown"] {
+  z-index: 2000;
+  list-style: none;
+  border-top: 1px solid #AAA;
+  background-color: #EEE;
+  color: #666;
+  padding: 3px 0;
+  min-width: 145px;
+  font-size: 13px;
+  border-radius: 2px;
+  box-shadow: 3px 3px 10px 0 rgba(0, 0, 0, 0.25);
+  opacity: 0.95;
+}
+[role="menu-dropdown"] i {
+  width: 18px;
+}
+[role="menu-dropdown"] li {
+  padding: 8px 5px 0 5px;
+}
+[role="menu-dropdown"] li > a {
+  width: 100%;
+}
+[role="menu-dropdown"] li a:after {
+  content: "";
+  display: block;
+  height: 1px;
+  margin-top: 2px;
+  background: #c6c0c0;
+}
+[role="menu-dropdown"] > li:last-child > a:after,
+[role="menu-dropdown"] raml-editor-export-menu > a:after,
+[role="menu-dropdown"] raml-editor-export-menu > li > a:after {
+  background: none;
+}
+[role="menu-dropdown"] li:hover {
+  color: white;
+  background-color: #969494;
+}
+[role="menu-dropdown"] [role="new-button"] {
+  white-space: nowrap;
+}
+[role="menu-dropdown"] .submenu-icon {
+  float: right;
+}
+[role="menu-dropdown"] .submenu-item {
+  top: inherit !important;
+  left: 112% !important;
+}
+[role="menu-dropdown"] .submenu-item {
+  margin-top: -29px;
+}
+[role="menu-item"] i,
+[role="menu-item"] span {
   cursor: pointer;
+}
+[role="context-menu-item"] .submenu-item {
+  top: inherit;
+  left: 15%;
+}
+[role="context-menu-item"] .subsubmenu-item {
+  top: inherit;
+  left: 30%;
 }
 
 /* CodeMirror Overrides */
@@ -1122,6 +1187,9 @@ div.CodeMirror {
 .modal-body p {
   margin: 0 0 10px;
 }
+.modal-body .fa-external-link {
+  margin-left: 4px;
+}
 label {
   font-weight: bold;
   margin: 0;
@@ -1264,10 +1332,12 @@ div[role=raml-editor] .menubar > li {
 div[role=raml-editor] .menubar > li span {
   float: left;
   padding: 5px 10px;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 }
 div[role=raml-editor] .menubar .menu-item-toggle {
   padding-left: 5px;
+}
+div[role=raml-editor] .menubar .menu-icon {
+  padding-left: 8px;
 }
 div[role=raml-editor] .menubar hr.line-with-linear-gradient {
   border: 0;
@@ -1277,13 +1347,16 @@ div[role=raml-editor] .menubar hr.line-with-linear-gradient {
 }
 div[role=raml-editor] .menubar .menu-item-context {
   position: absolute;
-  top: 70%;
-  left: 100%;
-  margin-left: -15px;
+  top: 100%;
+  left: 18%;
+  margin-left: -18px;
+  border: 1px solid black;
 }
 div[role=raml-editor] .menubar .menu-item-context a {
   color: inherit;
   text-decoration: none;
+  display: block;
+  white-space: nowrap;
 }
 div[role=raml-editor] .menubar .menu-item {
   position: relative;
@@ -1334,24 +1407,24 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field {
   background: #333;
   position: relative;
   border-radius: 50px;
-  box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.5), 0px 1px 0px rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .field:after {
   content: 'OFF';
   color: #000;
   position: absolute;
-  top: 0px;
+  top: 0;
   right: 3px;
   z-index: 0;
   font-size: 0.7em;
   font-weight: bold;
-  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.15);
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.15);
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .field:before {
   content: 'ON';
   color: #00bf00;
   position: absolute;
-  top: 0px;
+  top: 0;
   left: 3px;
   z-index: 0;
   font-size: 0.7em;
@@ -1372,7 +1445,7 @@ div[role=raml-editor] .menubar .menu-item-mocking-service .field label {
   border-radius: 50px;
   -webkit-transition: all .4s ease;
   transition: all .4s ease;
-  box-shadow: 0px 2px 5px 0px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.3);
 }
 div[role=raml-editor] .menubar .menu-item-mocking-service .field input[type=checkbox] {
   visibility: hidden;

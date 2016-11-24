@@ -13,8 +13,7 @@
             templateUrl: 'views/import-modal.html',
             controller:  'ImportController'
           })
-          .result
-          ;
+          .result;
       };
 
       return self;
@@ -24,6 +23,7 @@
       $modalInstance,
       swaggerToRAML,
       $q,
+      $window,
       $rootScope,
       importService,
       ramlRepository
@@ -81,7 +81,9 @@
         $scope.importing = true;
 
         // Attempt to import from a Swagger definition.
-        return swaggerToRAML.convert(mode.value)
+        var proxy = $window.RAML.Settings.proxy || '';
+        var url = proxy + mode.value;
+        return swaggerToRAML.url(url)
           .then(function (contents) {
             var filename = extractFileName(mode.value, 'raml');
             return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
@@ -97,15 +99,22 @@
           });
       }
 
-      function importSwaggerZip (mode) {
-        $scope.importing = true;
+      function importSwaggerFile (mode) {
+				$scope.importing = true;
+	
+				var importSwaggerPromise;
+				if (importService.isZip(mode.value)) {
+					importSwaggerPromise = swaggerToRAML.zip($scope.rootDirectory, mode.value).then(function () {
+						$rootScope.$broadcast('event:save-all');
+					});
+				} else {
+					importSwaggerPromise = swaggerToRAML.file(mode.value).then(function (contents) {
+						var filename = extractFileName(mode.value.name, 'raml');
+						return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
+					});
+				}
 
-        return swaggerToRAML.zip(mode.value)
-          .then(function (contents) {
-            var filename = extractFileName(mode.value.name, 'raml');
-
-            return importService.createAndSaveFile($scope.rootDirectory, filename, contents);
-          })
+        return importSwaggerPromise
           .then(function () {
             return $modalInstance.close(true);
           })
@@ -115,23 +124,26 @@
           .finally(function () {
             $scope.importing = false;
           });
-      }
+			}
 
       $scope.options = [
         {
-          name: 'file',
+          name: 'RAML file',
           type: 'file',
+          spec: 'RAML',
           callback: importFile
         },
         {
-          name: 'Swagger spec',
-          type: 'swagger',
-          callback: importSwagger
+          name: 'OAS file',
+          type: 'file',
+          spec: 'OAS',
+          callback: importSwaggerFile
         },
         {
-          name: 'Swagger .zip',
-          type: 'zip',
-          callback: importSwaggerZip
+          name: 'OAS spec',
+          type: 'url',
+          spec: 'OAS',
+          callback: importSwagger
         }
       ];
 
@@ -155,7 +167,12 @@
           return;
         }
 
+        try {
         return $scope.mode.callback($scope.mode);
+        } catch (err) {
+          $scope.importing = false;
+          broadcastError(err);
+        }
       };
 
       /**

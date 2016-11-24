@@ -7,7 +7,7 @@
     ) {
       var self = this;
 
-      self.open = function open(message, defaultName, validations, title) {
+      self.open = function open(message, defaultName, validations, title, link) {
         return $modal
           .open({
             templateUrl: 'views/new-name-modal.html',
@@ -17,7 +17,8 @@
               message:     function messageResolver () { return message; },
               title:       function titleResolver () { return title; },
               defaultName: function defaultNameResolver () { return defaultName; },
-              validations: function validationsResolver () { return validations; }
+              validations: function validationsResolver () { return validations; },
+              link:        function linkResolver () { return link; }
             }
           })
           .result
@@ -32,12 +33,14 @@
       message,
       defaultName,
       validations,
-      title
+      title,
+      link
     ) {
       $scope.input = {
         newName: defaultName,
         message: message,
-        title:   title
+        title:   title,
+        link:    link
       };
       $scope.validationErrorMessage = '';
 

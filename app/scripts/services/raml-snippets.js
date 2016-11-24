@@ -20,11 +20,42 @@
     .factory('ramlSnippets', function (snippets) {
       var service = {};
 
-      service.getEmptyRaml = function () {
-        return [
-          '#%RAML 1.0',
-          'title:'
-        ].join('\n');
+      var emptyValues = [];
+      var extendValue = ['extends'];
+      var fragments =
+       [
+          {label: 'Trait', keyValues: emptyValues},
+          {label: 'ResourceType', keyValues: emptyValues},
+          {label: 'Library', keyValues: ['usage']},
+          {label: 'Overlay', keyValues: extendValue},
+          {label: 'Extension', keyValues: extendValue},
+          {label: 'DataType', keyValues: emptyValues},
+          {label: 'DocumentationItem', keyValues: ['title', 'content']},
+          {label: 'NamedExample', keyValues: ['value']},
+          {label: 'AnnotationTypeDeclaration', keyValues: emptyValues},
+          {label: 'SecurityScheme', keyValues: ['type']},
+          {label: '', keyValues: ['title']}
+        ];
+
+      function getRequiredValuesForFragment(typedFragment) {
+        return fragments.find(function (fragment) {
+          return fragment.label === typedFragment;
+        }).keyValues;
+      }
+
+      service.getEmptyRaml = function (ramlVersion, fragmentLabel) {
+        var version = ramlVersion ? ramlVersion : '1.0';
+        var type    = fragmentLabel ? ' ' + fragmentLabel : '';
+
+        var requiredValues = getRequiredValuesForFragment(fragmentLabel ? fragmentLabel : '');
+
+        var ramlContent = ['#%RAML ' + version + type];
+
+        requiredValues.forEach(function(value) {
+          ramlContent.push(value + ':');
+        });
+
+        return ramlContent.join('\n');
       };
 
       service.getSnippet = function getSnippet(suggestion) {

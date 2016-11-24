@@ -7,17 +7,12 @@ describe('ramlEditorSaveFileButton', function() {
     el = compileTemplate('<raml-editor-save-file-button></raml-editor-save-file-button>', scope);
   }
 
+  function compileSaveAllFileButton() {
+    el = compileTemplate('<raml-editor-save-all-button></raml-editor-save-all-button>', scope);
+  }
+
   function clickSaveFileButton() {
-    angular.element(el[0].querySelector('[role="save-button"]')).triggerHandler('click');
-  }
-
-  function clickSaveAllFileButton() {
-    //angular.element(el[0].querySelector('[role="context-menu"]')).triggerHandler('click');
-    angular.element(el[0].querySelector('[role="context-menu"]')).scope().$broadcast('event:save-all');
-  }
-
-  function clickOpenSubMenuButton() {
-    angular.element(el[0].querySelector('[class="menu-item-toggle"]')).triggerHandler('click');
+    el.triggerHandler('click');
   }
 
   beforeEach(module('ramlEditorApp'));
@@ -80,20 +75,29 @@ describe('ramlEditorSaveFileButton', function() {
     });
   });
 
-  describe('on save all click', function() {
-    var saveFileSpy, broadcastSpy;
+  describe('on click save all', function() {
+    var saveFileSpy, broadcastSpy, rootScope;
 
     beforeEach(inject(function($rootScope) {
+      rootScope = $rootScope;
       broadcastSpy = sandbox.spy($rootScope, '$broadcast');
       saveFileSpy = sandbox.stub(ramlRepository, 'saveFile').returns(promise.resolved());
-      compileSaveFileButton();
+      compileSaveAllFileButton();
     }));
+
+    it('calls saveFile on the ramlRepository', function() {
+      clickSaveFileButton();
+      ramlRepository.saveFile.should.have.been.calledWith(scope.fileBrowser.selectedFile);
+    });
+
+    it('is the same as event:save-all broadcast', function() {
+      rootScope.$broadcast('event:save-all');
+      ramlRepository.saveFile.should.have.been.calledWith(scope.fileBrowser.selectedFile);
+    });
 
     describe('when ramlRepository successfully saves', function() {
       beforeEach(inject(function($rootScope) {
-        clickOpenSubMenuButton();
-        $rootScope.$digest();
-        clickSaveAllFileButton();
+        clickSaveFileButton();
         $rootScope.$digest();
       }));
 

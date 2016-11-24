@@ -1,0 +1,14 @@
+<li ng-if="!xOasExport" role="export-zip" ng-click="exportZipFiles()">
+  <a><i class="fa fa-download"></i>&nbsp;Export files</a>
+</li>
+
+<a ng-if="xOasExport">
+  <i class="fa fa-plus"></i>&nbsp;Export
+  <i class="submenu-icon fa fa-caret-right"></i>
+</a>
+
+<ul ng-if="xOasExport" role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">
+  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>
+  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;OAS 2.0 JSON</a></li>
+  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;OAS 2.0 YAML</a></li>
+</ul>
