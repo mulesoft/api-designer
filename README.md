@@ -16,7 +16,7 @@
 
 ## API Designer online
 
-There is an online preview version of the API Designer, open the last stable version [here](http://mulesoft.github.io/api-designer/dists/master/latest/) or check out a [different branch](http://mulesoft.github.io/api-designer/).
+There is an online preview version of the API Designer, check it out a [different branch](http://mulesoft.github.io/api-designer/).
 
 ## Running Locally
 
