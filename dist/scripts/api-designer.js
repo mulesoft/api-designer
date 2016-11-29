@@ -61110,13 +61110,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           deferred.reject(err);
         }
       }
-      function convertData(content, deferred, options) {
-        var converter = ramlConverter();
-        converter.loadData(content, options).then(function (error) {
-          doConvert(error, converter, deferred);
-        }).catch(deferred.reject);
-        return deferred;
-      }
       function convertZip(root, contents) {
         var decimalRegexp = /^\d+\.\d+$/;
         var swaggerYamlRegexp = /swagger\s*:\s*"{0,1}\d+\.\d+"{0,1}/;
@@ -61129,7 +61122,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             return swaggerYamlRegexp.test(text);
           }
         }
-        var converter = function (files, name, deferred) {
+        function converte(files, name, deferred) {
           var content = files[name];
           // leave files that are not swagger unmodified
           if (!isSwaggerSpec(content)) {
@@ -61140,34 +61133,39 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           }
           // custom fileResolver to take in memory files from the zip
           var fileResolver = {
-              canRead: function (path) {
-                return this.read(path) != null;
+              canRead: function (url) {
+                return this.read(url) != null;
               },
-              read: function (path) {
-                var url = path.url.replace(window.location.origin + '/', '');
-                for (var filename in files) {
-                  if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
-                    return files[filename];
-                  }
+              read: function (url) {
+                var path = url.url.replace(window.location.origin + '/', '');
+                var fullPath = Object.keys(files).find(function (file) {
+                    return file.indexOf(path) > -1;
+                  });
+                if (!fullPath) {
+                  throw new Error('Could not load content for file ' + path);
                 }
-                return null;
+                return files[fullPath];
               }
             };
           // convert main swagger spec
-          convertData(content, $q.defer(), {
+          var deferredConverter = $q.defer();
+          var converter = ramlConverter();
+          converter.loadFile(name, function (error) {
+            doConvert(error, converter, deferredConverter);
+          }, {
             resolve: {
               file: fileResolver,
               http: fileResolver
             }
-          }).promise.then(function (convertedData) {
+          });
+          return deferredConverter.promise.then(function (convertedData) {
             deferred.resolve({
               name: replaceExtension(name, 'raml'),
               content: convertedData
             });
           });
-          return deferred.promise;
-        };
-        return importService.importZip(root, contents, converter);
+        }
+        return importService.importZip(root, contents, converte);
       }
       self.url = function convert(url) {
         // fetch and convert single file
@@ -61184,8 +61182,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       };
       self.file = function zip(file) {
         var deferred = $q.defer();
-        importService.readFile(file).then(function (contents) {
-          convertData(contents, deferred);
+        importService.readFile(file).then(function (content) {
+          var converter = ramlConverter();
+          converter.loadData(content).then(function (error) {
+            doConvert(error, converter, deferred);
+          }).catch(deferred.reject);
         }).catch(deferred.reject);
         return deferred.promise;
       };
