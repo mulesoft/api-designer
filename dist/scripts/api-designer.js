@@ -1681,7 +1681,7 @@
           });
         return finalPromise;
       }
-      function getSuggestions(request, provider, preParsedAst) {
+      function getSuggestions(request, provider, preParsedAst, project) {
         if (preParsedAst === void 0) {
           preParsedAst = undefined;
         }
@@ -1694,7 +1694,7 @@
           var offset = request.content.getOffset();
           var text = request.content.getText();
           var kind = completionKind(request);
-          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider);
+          var node = preParsedAst ? preParsedAst : getAstNode(request, provider.contentProvider, true, true, project);
           var hlnode = node;
           if (kind === parserApi.search.LocationKind.DIRECTIVE_COMPLETION) {
             return [{ text: 'include' }];
@@ -2088,7 +2088,7 @@
       function completionKind(request) {
         return parserApi.search.determineCompletionKind(request.content.getText(), request.content.getOffset());
       }
-      function getAstNode(request, contentProvider, clearLastChar, allowNull) {
+      function getAstNode(request, contentProvider, clearLastChar, allowNull, oldProject) {
         if (clearLastChar === void 0) {
           clearLastChar = true;
         }
@@ -2096,7 +2096,7 @@
           allowNull = true;
         }
         var newProjectId = contentProvider.contentDirName(request.content);
-        var project = parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
+        var project = oldProject || parserApi.project.createProject(newProjectId, contentProvider.fsResolver);
         var offset = request.content.getOffset();
         var text = request.content.getText();
         var kind = completionKind(request);
@@ -3159,7 +3159,8 @@
         var parsedExample = search.parseStructuredExample(node, contentType);
         if (!parsedExample)
           return [];
-        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request));
+        var project = node && node.lowLevel() && node.lowLevel().unit() && node.lowLevel().unit().project();
+        return getSuggestions(request, provider, findASTNodeByOffset(parsedExample, request), project);
       }
       function postProcess(providerSuggestions, request) {
         var prepared = postProcess1(providerSuggestions, request);
@@ -5420,9 +5421,9 @@
       },
       {
         './lib/converter': 2,
-        './lib/exporters/index': 14,
-        './lib/formats': 19,
-        './lib/importers/index': 25
+        './lib/exporters/index': 15,
+        './lib/formats': 20,
+        './lib/importers/index': 26
       }
     ],
     2: [
@@ -5441,12 +5442,9 @@
           }
           this.exporter.type = toFormat;
         }
-        Converter.prototype.loadFile = function (filePath, cb) {
-          return this.importer.loadFile(filePath, cb);
-        };
         // todo unify api by returning a Promise like the loadData function
-        Converter.prototype.loadFileWithOptions = function (filePath, options, cb) {
-          return this.importer.loadFileWithOptions(filePath, options, cb);
+        Converter.prototype.loadFile = function (filePath, cb, options) {
+          return this.importer.loadFile(filePath, cb, options);
         };
         Converter.prototype.loadData = function (rawData, options) {
           var me = this;
@@ -5476,9 +5474,9 @@
         exports.Converter = Converter;
       },
       {
-        './exporters/index': 14,
-        './importers/index': 25,
-        'lodash': 109
+        './exporters/index': 15,
+        './importers/index': 26,
+        'lodash': 110
       }
     ],
     3: [
@@ -5672,8 +5670,8 @@
         module.exports = Endpoint;
       },
       {
-        '../utils/json': 33,
-        '../utils/strings': 34
+        '../utils/json': 34,
+        '../utils/strings': 35
       }
     ],
     4: [
@@ -5802,6 +5800,7 @@
           this.traits = [];
           this.tests = [];
           this.savedEntries = [];
+          this.pathParamsRef = {};
         }
         Project.prototype = {
           set Description(desc) {
@@ -5875,6 +5874,12 @@
           },
           loadSLData: function (slData) {
             this.Description = slData.description;
+          },
+          addPathParamRef: function (path, paramName) {
+            this.pathParamsRef[path] = paramName;
+          },
+          getPathParamRef: function (path) {
+            return this.pathParamsRef[path];
           }
         };
         module.exports = Project;
@@ -5952,7 +5957,7 @@
         };
         module.exports = SavedEntry;
       },
-      { '../utils/json': 33 }
+      { '../utils/json': 34 }
     ],
     7: [
       function (require, module, exports) {
@@ -6062,6 +6067,66 @@
     ],
     9: [
       function (require, module, exports) {
+        function Method(method, methodResolved) {
+          this.method = method;
+          this.methodResolved = methodResolved;
+          this.summary = this.method.summary || this.methodResolved.summary;
+          this.tags = this.method.tags || this.methodResolved.tags;
+          this.description = this.method.description || this.methodResolved.description;
+          this.deprecated = this.method.deprecated || this.methodResolved.deprecated;
+          this.operationId = this.method.operationId || this.methodResolved.operationId;
+          this.externalDocs = this.method.externalDocs || this.methodResolved.externalDocs;
+          this.schemes = this.method.schemes || this.methodResolved.schemes;
+          this.parameters = this.method.parameters || this.methodResolved.parameters;
+          this.consumes = this.method.consumes || this.methodResolved.consumes;
+          this.produces = this.method.produces || this.methodResolved.produces;
+          this.responses = this.method.responses || this.methodResolved.responses;
+          this.security = this.method.security || this.methodResolved.security;
+        }
+        Method.prototype = {
+          get Summary() {
+            return this.summary;
+          },
+          get Tags() {
+            return this.tags;
+          },
+          get Description() {
+            return this.description;
+          },
+          get Deprecated() {
+            return this.deprecated;
+          },
+          get OperationId() {
+            return this.operationId;
+          },
+          get ExternalDocs() {
+            return this.externalDocs;
+          },
+          get Schemes() {
+            return this.schemes;
+          },
+          get Parameters() {
+            return this.parameters;
+          },
+          get Consumes() {
+            return this.consumes;
+          },
+          get Produces() {
+            return this.produces;
+          },
+          get Responses() {
+            return this.responses;
+          },
+          get Security() {
+            return this.security;
+          }
+        };
+        module.exports = Method;
+      },
+      {}
+    ],
+    10: [
+      function (require, module, exports) {
         var jsonHelper = require('../utils/json');
         function Test(name) {
           this._id = null;
@@ -6104,9 +6169,9 @@
         };
         module.exports = Test;
       },
-      { '../utils/json': 33 }
+      { '../utils/json': 34 }
     ],
-    10: [
+    11: [
       function (require, module, exports) {
         function Text(name) {
           this._id = null;
@@ -6153,7 +6218,7 @@
       },
       {}
     ],
-    11: [
+    12: [
       function (require, module, exports) {
         function UtilityFunction(name) {
           this.name = name;
@@ -6189,7 +6254,7 @@
       },
       {}
     ],
-    12: [
+    13: [
       function (require, module, exports) {
         var _ = require('lodash'), Exporter = require('./exporter'), ramlHelper = require('../helpers/raml'), jsonHelper = require('../utils/json'), YAML = require('js-yaml');
         function RAMLDefinition(title, env) {
@@ -6206,7 +6271,7 @@
             this.protocols = protocols;
           }
         }
-        RAMLDefinition.prototype.addMethod = function (resource, methodURIs, methodKey, method) {
+        RAMLDefinition.prototype.addMethod = function (resource, methodURIs, methodKey, method, pathParamsRef) {
           if (!methodURIs)
             return;
           if (methodURIs.length <= 0) {
@@ -6219,22 +6284,30 @@
               if (!method.uriParameters.hasOwnProperty(attrname))
                 continue;
               //uri not available, so check with displayName, which is same
-              var isURIParamExist = resource.displayName.split(attrname).length - 1;
-              if (isURIParamExist) {
-                resource.uriParameters[attrname] = method.uriParameters[attrname];
+              if (resource.displayName) {
+                var isURIParamExist = resource.displayName.split(attrname).length - 1;
+                if (isURIParamExist) {
+                  resource.uriParameters[attrname] = method.uriParameters[attrname];
+                }
               }
             }
             delete method.uriParameters;
             if (_.isEmpty(resource.uriParameters))
               delete resource.uriParameters;
             resource[methodKey] = method;
+            if (!_.isEmpty(pathParamsRef)) {
+              resource.is = pathParamsRef;
+            }
           } else {
             var currentURI = '/' + methodURIs[0];
             if (!resource[currentURI]) {
-              resource[currentURI] = { displayName: methodURIs[0] };  //TODO uriParams?!?
+              resource[currentURI] = {};
+              if (!_.isEmpty(methodURIs[0])) {
+                resource[currentURI].displayName = methodURIs[0];
+              }  //TODO uriParams?!?
             }
             methodURIs.splice(0, 1);
-            this.addMethod(resource[currentURI], methodURIs, methodKey, method);
+            this.addMethod(resource[currentURI], methodURIs, methodKey, method, pathParamsRef);
           }
         };
         function RAML() {
@@ -6242,6 +6315,10 @@
           this.hasDeprecated = false;
           this.hasExternalDocs = false;
           this.hasInfo = false;
+          this.hasSummary = false;
+          this.hasSchemaTitle = false;
+          this.hasBodyName = false;
+          this.hasResponsesDefault = false;
         }
         RAML.prototype = new Exporter();
         RAML.prototype._mapSecurityScheme = function (slSecuritySchemes) {
@@ -6325,7 +6402,8 @@
               'date',
               'boolean',
               'file',
-              'array'
+              'array',
+              'datetime'
             ];
           for (var key in params) {
             if (!params.hasOwnProperty(key))
@@ -6353,7 +6431,7 @@
                 break;
               case 'minimum':
               case 'maximum':
-                var typeLowercase = params[key].type.toLowerCase();
+                var typeLowercase = _.toLower(params[key].type);
                 if (typeLowercase !== 'integer' && typeLowercase !== 'number') {
                   delete params[key][prop];
                 }
@@ -6365,6 +6443,15 @@
               case 'repeat':
               case 'default':
               case 'items':
+              case 'format':
+              case 'maxItems':
+              case 'minItems':
+              case 'uniqueItems':
+              case 'collectionFormat':
+              case 'allowEmptyValue':
+              case 'exclusiveMaximum':
+              case 'exclusiveMinimum':
+              case 'facets':
                 break;
               default:
                 //not supported types
@@ -6383,11 +6470,15 @@
           switch (mimeType) {
           case 'application/json':
             body[mimeType] = this.mapBody(bodyData);
+            if (bodyData.name) {
+              this.hasBodyName = true;
+              body[mimeType]['(oas-body-name)'] = bodyData.name;
+            }
             break;
           case 'multipart/form-data':
           case 'application/x-www-form-urlencoded':
             var parsedBody = jsonHelper.parse(bodyData.body);
-            body[mimeType] = this.mapRequestBodyForm(parsedBody);
+            body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody));
             break;
           default:  //unsuported format
                     //TODO
@@ -6401,10 +6492,11 @@
           if (!params || _.isEmpty(params.properties))
             return;
           var newParams = {};
-          for (var key in params.properties) {
-            if (!params.properties.hasOwnProperty(key))
+          var convertedParams = this.convertRefFromModel(params.properties);
+          for (var key in convertedParams) {
+            if (!convertedParams.hasOwnProperty(key))
               continue;
-            newParams[key] = ramlHelper.setParameterFields(params.properties[key], {});
+            newParams[key] = ramlHelper.setParameterFields(convertedParams[key], {});
             if (params.required && params.required.indexOf(key) > -1) {
               newParams[key].required = true;
             }
@@ -6423,21 +6515,26 @@
             var resBody = responseData[i];
             if (!_.isEmpty(resBody.codes)) {
               var code = resBody.codes[0];
-              if (code === 'default' || parseInt(code) == 'NaN') {
+              if (parseInt(code) == 'NaN' || _.startsWith(code, 'x-')) {
                 continue;
               }
-              responses[code] = { body: {} };
+              responses[code] = {};
               var type = mimeType;
-              if (type) {
-                responses[code]['body'][type] = this.mapBody(resBody);
-              } else {
-                responses[code] = {};
+              var body = this.mapBody(resBody, type);
+              this.convertRequiredFromProperties(body);
+              if (!_.isEmpty(body)) {
+                responses[code].body = {};
+                if (type) {
+                  responses[code]['body'][type] = body;
+                } else {
+                  responses[code]['body'] = body;
+                }
               }
               if (resBody.description) {
                 responses[code]['description'] = resBody.description;
               }
               if (!jsonHelper.isEmptySchema(resBody.headers)) {
-                responses[code]['body'][type].headers = this._mapNamedParams(resBody.headers);
+                responses[code].headers = this._mapNamedParams(resBody.headers);
               }
             }
           }
@@ -6460,18 +6557,23 @@
             if (prop.items) {
               pathParams[key].items = prop.items;
             }
+            if (prop.format) {
+              pathParams[key].format = prop.format;
+            }
             pathParams[key].type = pathParams[key].type || 'string';
+            //facets
+            this._addFacetsDeclaration(prop, pathParams[key]);
           }
           return this._validateParam(pathParams);
         };
         function mapProtocols(protocols) {
           var validProtocols = [];
           for (var i in protocols) {
-            if (!protocols.hasOwnProperty(i) || protocols[i].toLowerCase() != 'http' && protocols[i].toLowerCase() != 'https') {
+            if (!protocols.hasOwnProperty(i) || _.toLower(protocols[i]) != 'http' && _.toLower(protocols[i]) != 'https') {
               //RAML incompatible formats( 'ws' etc)
               continue;
             }
-            validProtocols.push(protocols[i].toUpperCase());
+            validProtocols.push(_.toUpper(protocols[i]));
           }
           return validProtocols;
         }
@@ -6504,7 +6606,7 @@
                 if (val.indexOf('#/') == 0) {
                   object.type = val.replace('#/definitions/', '');
                 } else {
-                  object.type = '!include ' + val;
+                  object.type = '!include ' + val.replace('#/', '#');
                 }
                 delete object[id];
               } else if (typeof val === 'string') {
@@ -6514,23 +6616,34 @@
                 } else if (id == 'include') {
                   object.type = '!include ' + val;
                   delete object[id];
+                } else if (id === 'title') {
+                  object['(oas-schema-title)'] = val;
+                  this.hasSchemaTitle = true;
+                  delete object[id];
+                } else if (id === 'collectionFormat') {
+                  if (!object.facets) {
+                    object.facets = {};
+                  }
+                  object.facets['collectionFormat'] = 'string';
                 }
               } else if (val && typeof val === 'object') {
                 if (val.type == 'string') {
                   if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
-                    object[id] = { type: 'string' };
+                    object[id]['type'] = 'string';
+                    val['facets'] = { 'format': 'string' };
                   } else if (val.format == 'date') {
-                    object[id] = { type: 'date-only' };
+                    object[id]['type'] = 'date-only';
+                    delete object[id].format;
                   } else if (val.format == 'date-time') {
-                    object[id] = {
-                      type: 'datetime',
-                      format: 'rfc3339'
-                    };
+                    object[id]['type'] = 'datetime';
+                    object[id]['format'] = 'rfc3339';
                   } else {
-                    //remove invalid format.
-                    if (ramlHelper.getValidFormat.indexOf(val.format) < 0) {
-                      delete object[id].format;
+                    if (val.format && ramlHelper.getValidFormat.indexOf(val.format) < 0) {
+                      val['facets'] = { 'format': 'string' };
                     }
+                  }
+                  if (val.readOnly) {
+                    val['facets'] = { 'readOnly?': 'boolean' };
                   }
                 } else {
                   object[id] = this.convertRefFromModel(val);
@@ -6538,42 +6651,104 @@
               } else if (id === '$ref') {
                 object.type = val.replace('#/definitions/', '');
                 delete object[id];
+              } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum' || id === 'allowEmptyValue' || id === 'collectionFormat') {
+                if (!object.facets) {
+                  object.facets = {};
+                }
+                if (id === 'exclusiveMinimum') {
+                  object.facets['exclusiveMinimum'] = 'boolean';
+                }
+                if (id === 'exclusiveMaximum') {
+                  object.facets['exclusiveMaximum'] = 'boolean';
+                }
+                if (id === 'allowEmptyValue') {
+                  object.facets['allowEmptyValue'] = 'boolean';
+                }
+                if (id === 'collectionFormat') {
+                  object.facets['collectionFormat'] = 'string';
+                }
               }
             }
           }
           return object;
         };
-        RAML.prototype._mapTraits = function (slTraits, mimeType) {
-          var traits = [];
+        RAML.prototype._addFacetsDeclaration = function (property, target) {
+          if (property.hasOwnProperty('collectionFormat') || property.hasOwnProperty('allowEmptyValue') || property.hasOwnProperty('exclusiveMaximum') || property.hasOwnProperty('exclusiveMinimum')) {
+            if (!target['facets']) {
+              target['facets'] = {};
+            }
+            if (property.hasOwnProperty('collectionFormat')) {
+              target['facets']['collectionFormat'] = 'string';
+            }
+            if (property.hasOwnProperty('allowEmptyValue')) {
+              target['facets']['allowEmptyValue'] = 'boolean';
+            }
+            if (property.hasOwnProperty('exclusiveMaximum')) {
+              target['facets']['exclusiveMaximum'] = 'boolean';
+            }
+            if (property.hasOwnProperty('exclusiveMinimum')) {
+              target['facets']['exclusiveMinimum'] = 'boolean';
+            }
+          }
+        };
+        RAML.prototype._mapParametersTraits = function (slTraits) {
+          var traits = this.initializeTraits();
           for (var i in slTraits) {
             if (!slTraits.hasOwnProperty(i))
               continue;
-            var slTrait = slTraits[i], trait = {};
+            var slTrait = slTraits[i];
+            var trait = {};
             try {
-              var queryString = JSON.parse(slTrait.request.queryString);
+              var queryString = jsonHelper.parse(slTrait.request.queryString);
               if (!jsonHelper.isEmptySchema(queryString)) {
                 trait.queryParameters = this._mapNamedParams(queryString);
               }
             } catch (e) {
             }
             try {
-              var headers = JSON.parse(slTrait.request.headers);
+              var headers = jsonHelper.parse(slTrait.request.headers);
               if (!jsonHelper.isEmptySchema(headers)) {
                 trait.headers = this._mapNamedParams(headers);
               }
             } catch (e) {
             }
             try {
-              if (slTrait.responses && slTrait.responses.length) {
-                trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
+              var formData = jsonHelper.parse(slTrait.request.formData);
+              if (!jsonHelper.isEmptySchema(formData)) {
+                trait.body = this._mapRequestBody(formData, 'multipart/form-data');
               }
             } catch (e) {
             }
-            var newTrait = {};
-            newTrait[_.camelCase(slTrait.name)] = trait;
-            traits.push(newTrait);
+            try {
+              var body = jsonHelper.parse(slTrait.request.body);
+              if (!jsonHelper.isEmptySchema(body)) {
+                trait.body = this._mapRequestBody(body, 'application/json');
+              }
+            } catch (e) {
+            }
+            if (!_.isEmpty(slTrait.responses)) {
+              //ignore responses as traits
+              continue;
+            }
+            this.addTrait(slTrait.name, trait, traits);
           }
           return traits;
+        };
+        RAML.prototype._mapResponsesTraits = function (slTraits, mimeType) {
+          var responses = {};
+          for (var i in slTraits) {
+            if (!slTraits.hasOwnProperty(i))
+              continue;
+            var slTrait = slTraits[i];
+            try {
+              if (slTrait.responses && slTrait.responses.length) {
+                var response = this._mapResponseBody(slTrait.responses, mimeType);
+                responses[slTrait.name] = response['200'];
+              }
+            } catch (e) {
+            }
+          }
+          return responses;
         };
         RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
           var is = [];
@@ -6602,44 +6777,137 @@
           }
           return mt;
         }
+        RAML.prototype._annotationsSignature = function (ramlDef) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasSchemaTitle || this.hasBodyName || this.hasResponsesDefault) {
+            if (!ramlDef.annotationTypes) {
+              ramlDef.annotationTypes = {};
+            }
+            if (this.hasTags) {
+              ramlDef.annotationTypes['oas-tags'] = {
+                type: 'string[]',
+                allowedTargets: 'Method'
+              };
+            }
+            if (this.hasDeprecated) {
+              ramlDef.annotationTypes['oas-deprecated'] = {
+                type: 'boolean',
+                allowedTargets: 'Method'
+              };
+            }
+            if (this.hasSummary) {
+              ramlDef.annotationTypes['oas-summary'] = {
+                type: 'string',
+                allowedTargets: 'Method'
+              };
+            }
+            if (this.hasExternalDocs) {
+              ramlDef.annotationTypes['oas-externalDocs'] = {
+                properties: {
+                  'description?': 'string',
+                  'url': 'string'
+                },
+                allowedTargets: [
+                  'API',
+                  'Method'
+                ]
+              };
+            }
+            if (this.hasInfo) {
+              ramlDef.annotationTypes['oas-info'] = {
+                properties: {
+                  'termsOfService?': 'string',
+                  'contact?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string',
+                      'email?': 'string'
+                    }
+                  },
+                  'license?': {
+                    properties: {
+                      'name?': 'string',
+                      'url?': 'string'
+                    }
+                  }
+                },
+                allowedTargets: 'API'
+              };
+            }
+            if (this.hasSchemaTitle) {
+              ramlDef.annotationTypes['oas-schema-title'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasBodyName) {
+              ramlDef.annotationTypes['oas-body-name'] = {
+                type: 'string',
+                allowedTargets: 'TypeDeclaration'
+              };
+            }
+            if (this.hasResponsesDefault) {
+              ramlDef.annotationTypes['oas-responses-default'] = 'any';
+            }
+          }
+        };
         RAML.prototype._export = function () {
           var env = this.project.Environment;
           var ramlDef = new RAMLDefinition(this.project.Name, env);
           ramlDef.mediaType = this.mapMediaType(env.Consumes, env.Produces);
           this.description(ramlDef, this.project);
+          if (this.project.tags) {
+            this._addTags(ramlDef, this.project.tags);
+          }
+          if (this.project.Environment.extensions) {
+            if (!ramlDef['(oas-info)']) {
+              ramlDef['(oas-info)'] = {};
+            }
+            this._addExtensions(ramlDef, ramlDef['(oas-info)'], this.project.Environment.extensions);
+          }
           if (this.project.Environment.ExternalDocs) {
             this.hasExternalDocs = true;
-            ramlDef['(externalDocs)'] = {
+            ramlDef['(oas-externalDocs)'] = {
               'description': this.project.Environment.ExternalDocs.description,
               'url': this.project.Environment.ExternalDocs.url
             };
+            if (this.project.Environment.ExternalDocs.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-externalDocs)'], this.project.Environment.ExternalDocs.extensions);
+            }
           }
           if (this.project.Environment.contactInfo || this.project.Environment.termsOfService || this.project.Environment.license) {
-            ramlDef['(info)'] = {};
+            if (!ramlDef['(oas-info)']) {
+              ramlDef['(oas-info)'] = {};
+            }
             this.hasInfo = true;
           }
           if (this.project.Environment.contactInfo) {
-            ramlDef['(info)'].contact = {};
+            ramlDef['(oas-info)'].contact = {};
             if (this.project.Environment.contactInfo.name) {
-              ramlDef['(info)'].contact.name = this.project.Environment.contactInfo.name;
+              ramlDef['(oas-info)'].contact.name = this.project.Environment.contactInfo.name;
             }
             if (this.project.Environment.contactInfo.url) {
-              ramlDef['(info)'].contact.url = this.project.Environment.contactInfo.url;
+              ramlDef['(oas-info)'].contact.url = this.project.Environment.contactInfo.url;
             }
             if (this.project.Environment.contactInfo.email) {
-              ramlDef['(info)'].contact.email = this.project.Environment.contactInfo.email;
+              ramlDef['(oas-info)'].contact.email = this.project.Environment.contactInfo.email;
+            }
+            if (this.project.Environment.contactInfo.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-info)'].contact, this.project.Environment.contactInfo.extensions);
             }
           }
           if (this.project.Environment.termsOfService) {
-            ramlDef['(info)'].termsOfService = this.project.Environment.termsOfService;
+            ramlDef['(oas-info)'].termsOfService = this.project.Environment.termsOfService;
           }
           if (this.project.Environment.license) {
-            ramlDef['(info)'].license = {};
+            ramlDef['(oas-info)'].license = {};
             if (this.project.Environment.license.name) {
-              ramlDef['(info)'].license.name = this.project.Environment.license.name;
+              ramlDef['(oas-info)'].license.name = this.project.Environment.license.name;
             }
             if (this.project.Environment.license.url) {
-              ramlDef['(info)'].license.url = this.project.Environment.license.url;
+              ramlDef['(oas-info)'].license.url = this.project.Environment.license.url;
+            }
+            if (this.project.Environment.license.extensions) {
+              this._addExtensions(ramlDef, ramlDef['(oas-info)'].license, this.project.Environment.license.extensions);
             }
           }
           var docs = this._mapTextSections(this.project.Texts);
@@ -6651,6 +6919,16 @@
           var securitySchemes = this._mapSecurityScheme(slSecuritySchemes);
           if (!_.isEmpty(securitySchemes)) {
             ramlDef.securitySchemes = securitySchemes;
+          }
+          if (!_.isEmpty(this.project.endpointExtensions)) {
+            if (!ramlDef['(oas-paths)']) {
+              ramlDef['(oas-paths)'] = {};
+            }
+            this._addExtensions(ramlDef, ramlDef['(oas-paths)'], this.project.endpointExtensions);
+            ramlDef.annotationTypes['oas-paths'] = {
+              type: 'any',
+              allowedTargets: 'API'
+            };
           }
           var endpoints = this.project.Endpoints;
           // Collect endpoints ids from environment resourcesOrder
@@ -6666,24 +6944,45 @@
               continue;
             var endpoint = endpoints[i];
             var method = {};
+            if (endpoint.extensions) {
+              this._addExtensions(ramlDef, method, endpoint.extensions);
+            }
             this.setMethodDisplayName(method, endpoint.operationId || endpoint.Name);
             if (endpoint.Description) {
               method.description = endpoint.Description;
             }
             if (endpoint.Summary) {
-              method.description = endpoint.Summary + '. ' + method.description;
+              this.hasSummary = true;
+              method['(oas-summary)'] = endpoint.Summary;
+            }
+            var protocols = mapProtocols(endpoint.protocols);
+            if (!_.isEmpty(protocols)) {
+              method.protocols = protocols;
             }
             var is = this._mapEndpointTraits(this.project.Traits, endpoint);
             if (is.length) {
               method.is = is;
             }
-            if (endpoint.Method.toLowerCase() === 'post' || endpoint.Method.toLowerCase() === 'put' || endpoint.Method.toLowerCase() === 'patch') {
+            if (_.toLower(endpoint.Method) === 'post' || _.toLower(endpoint.Method) === 'put' || _.toLower(endpoint.Method) === 'patch') {
               var mimeType = getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
-              method.body = this._mapRequestBody(endpoint.Body, mimeType);
+              var body = this._mapRequestBody(endpoint.Body, mimeType);
+              if (!_.isEmpty(body)) {
+                method.body = body;
+              }
             }
             method.headers = this._mapNamedParams(endpoint.Headers);
             var mimeType = getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
-            method.responses = this._mapResponseBody(endpoint.Responses, mimeType);
+            var responses = this._mapResponseBody(endpoint.Responses, mimeType);
+            if (!_.isEmpty(responses)) {
+              if (responses.default) {
+                this.hasResponsesDefault = true;
+                method['(oas-responses-default)'] = responses.default;
+                delete responses.default;
+              }
+              if (!_.isEmpty(responses)) {
+                method.responses = responses;
+              }
+            }
             method.queryParameters = this._mapURIParams(endpoint.QueryString);
             method.uriParameters = this._mapURIParams(endpoint.PathParams);
             if (endpoint.securedBy) {
@@ -6716,65 +7015,45 @@
             }
             var uriParts = endpoint.Path.split('/');
             uriParts.splice(0, 1);
-            ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method);
+            ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method, this.project.getPathParamRef(endpoint.Path));
             if (endpoint.Tags && !_.isEmpty(endpoint.Tags)) {
               this.hasTags = true;
-              method['(tags)'] = endpoint.Tags;
+              method['(oas-tags)'] = endpoint.Tags;
             }
             if (endpoint.Deprecated) {
               this.hasDeprecated = true;
-              method['(deprecated)'] = endpoint.Deprecated;
+              method['(oas-deprecated)'] = endpoint.Deprecated;
             }
             if (endpoint.ExternalDocs) {
               this.hasExternalDocs = true;
-              method['(externalDocs)'] = {
+              method['(oas-externalDocs)'] = {
                 'description': endpoint.ExternalDocs.description,
                 'url': endpoint.ExternalDocs.url
               };
             }
-          }
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo) {
-            ramlDef.annotationTypes = {};
-            if (this.hasTags) {
-              ramlDef.annotationTypes.tags = 'string[]';
-            }
-            if (this.hasDeprecated) {
-              ramlDef.annotationTypes.deprecated = 'boolean';
-            }
-            if (this.hasExternalDocs) {
-              ramlDef.annotationTypes.externalDocs = {
-                properties: {
-                  'description?': 'string',
-                  'url': 'string'
-                }
-              };
-            }
-            if (this.hasInfo) {
-              ramlDef.annotationTypes.info = {
-                properties: {
-                  'termsOfService?': 'string',
-                  'contact?': {
-                    properties: {
-                      'name?': 'string',
-                      'url?': 'string',
-                      'email?': 'string'
-                    }
-                  },
-                  'license?': {
-                    properties: {
-                      'name?': 'string',
-                      'url?': 'string'
-                    }
-                  }
-                }
-              };
+            if (endpoint.responses.extensions) {
+              this._addExtensions(ramlDef, method.responses, endpoint.responses.extensions);
             }
           }
           if (this.project.Schemas && this.project.Schemas.length > 0) {
             this.addSchema(ramlDef, this.mapSchema(this.project.Schemas));
           }
           if (this.project.Traits && this.project.Traits.length > 0) {
-            ramlDef.traits = this._mapTraits(this.project.Traits);
+            var traits = this._mapParametersTraits(this.project.Traits);
+            if (!_.isEmpty(traits)) {
+              ramlDef.traits = traits;
+            }
+          }
+          //export responses
+          if (this.project.Traits && this.project.Traits.length > 0) {
+            var responses = this._mapResponsesTraits(this.project.Traits);
+            if (!_.isEmpty(responses)) {
+              ramlDef['(oas-responses)'] = responses;
+              if (!ramlDef.annotationTypes) {
+                ramlDef.annotationTypes = {};
+              }
+              ramlDef.annotationTypes['oas-responses'] = 'any';
+            }
           }
           // Clean empty field in definition
           for (var field in ramlDef) {
@@ -6782,7 +7061,49 @@
               delete ramlDef[field];
             }
           }
+          this._annotationsSignature(ramlDef);
+          this._addExtensions(ramlDef, ramlDef, this.project.extensions);
           this.data = ramlDef;
+        };
+        RAML.prototype._addTags = function (ramlDef, tags) {
+          if (_.isEmpty(tags))
+            return;
+          ramlDef['(oas-tags-definition)'] = [];
+          if (!ramlDef.annotationTypes) {
+            ramlDef.annotationTypes = {};
+          }
+          ramlDef.annotationTypes['oas-tags-definition'] = {
+            type: 'array',
+            items: {
+              properties: {
+                name: 'string',
+                'description?': 'string',
+                'externalDocs?': {
+                  properties: {
+                    url: 'string',
+                    'description?': 'string'
+                  }
+                }
+              }
+            },
+            allowedTargets: 'API'
+          };
+          for (var key in tags) {
+            if (!tags.hasOwnProperty(key))
+              continue;
+            ramlDef['(oas-tags-definition)'].push(tags[key]);
+          }
+        };
+        RAML.prototype._addExtensions = function (ramlDef, ramlObject, extensions) {
+          for (var key in extensions) {
+            if (!extensions.hasOwnProperty(key))
+              continue;
+            ramlObject['(oas-' + key + ')'] = extensions[key];
+            if (!ramlDef.annotationTypes) {
+              ramlDef.annotationTypes = {};
+            }
+            ramlDef.annotationTypes['oas-' + key] = 'any';
+          }
         };
         RAML.prototype._unescapeYamlIncludes = function (yaml) {
           var start = yaml.indexOf('\'!include ');
@@ -6796,11 +7117,42 @@
         RAML.prototype._getData = function (format) {
           switch (format) {
           case 'yaml':
-            var yaml = this._unescapeYamlIncludes(YAML.dump(JSON.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
+            var yaml = this._unescapeYamlIncludes(YAML.dump(jsonHelper.parse(JSON.stringify(this.Data)), { lineWidth: -1 }));
             return '#%RAML ' + this.version() + '\n' + yaml;
           default:
             throw Error('RAML doesn not support ' + format + ' format');
           }
+        };
+        RAML.prototype.convertRequiredFromProperties = function (object) {
+          if (!object)
+            return object;
+          for (var id in object.properties) {
+            if (!object.properties.hasOwnProperty(id))
+              continue;
+            var property = object.properties[id];
+            if (property.properties) {
+              this.convertRequiredFromProperties(property);
+            }
+            if (!this.checkRequiredProperty(object, id)) {
+              property.required = false;
+            }
+          }
+          delete object.required;
+        };
+        RAML.prototype.checkRequiredProperty = function (object, paramName) {
+          if (!object.required)
+            return false;
+          if (object.required && object.required.length > 0) {
+            for (var j in object.required) {
+              if (!object.required.hasOwnProperty(j))
+                continue;
+              var requiredParam = object.required[j];
+              if (requiredParam === paramName) {
+                return true;
+              }
+            }
+          }
+          return false;
         };
         RAML.prototype.description = function (ramlDef, project) {
           throw new Error('description method not implemented');
@@ -6811,7 +7163,7 @@
         RAML.prototype.mapAuthorizationGrants = function (flow) {
           throw new Error('mapAuthorizationGrants method not implemented');
         };
-        RAML.prototype.mapBody = function (bodyData) {
+        RAML.prototype.mapBody = function (bodyData, type) {
           throw new Error('mapBody method not implemented');
         };
         RAML.prototype.mapRequestBodyForm = function (bodyData) {
@@ -6832,17 +7184,23 @@
         RAML.prototype.setMethodDisplayName = function (method, displayName) {
           throw new Error('setMethodDisplayName method not implemented');
         };
+        RAML.prototype.initializeTraits = function () {
+          throw new Error('initializeTraits method not implemented');
+        };
+        RAML.prototype.addTrait = function (id, trait, traits) {
+          throw new Error('addTrait method not implemented');
+        };
         module.exports = RAML;
       },
       {
-        '../helpers/raml': 20,
-        '../utils/json': 33,
-        './exporter': 13,
-        'js-yaml': 56,
-        'lodash': 109
+        '../helpers/raml': 21,
+        '../utils/json': 34,
+        './exporter': 14,
+        'js-yaml': 57,
+        'lodash': 110
       }
     ],
-    13: [
+    14: [
       function (require, module, exports) {
         var YAML = require('js-yaml'), Importer = require('../importers/index');
         function Exporter() {
@@ -6935,11 +7293,11 @@
         module.exports = Exporter;
       },
       {
-        '../importers/index': 25,
-        'js-yaml': 56
+        '../importers/index': 26,
+        'js-yaml': 57
       }
     ],
-    14: [
+    15: [
       function (require, module, exports) {
         var exporters = {
             Swagger: require('./swagger'),
@@ -6964,13 +7322,13 @@
         };
       },
       {
-        './raml08': 15,
-        './raml10': 16,
-        './stoplightx': 17,
-        './swagger': 18
+        './raml08': 16,
+        './raml10': 17,
+        './stoplightx': 18,
+        './swagger': 19
       }
     ],
-    15: [
+    16: [
       function (require, module, exports) {
         var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML08() {
@@ -7022,7 +7380,7 @@
           }
           return body;
         };
-        RAML08.prototype.mapBody = function (bodyData) {
+        RAML08.prototype.mapBody = function (bodyData, type) {
           var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body))) };
           var example = jsonHelper.format(bodyData.example);
           if (!_.isEmpty(example)) {
@@ -7061,17 +7419,25 @@
             return m;
           });
         };
-        RAML08.prototype.setMethodDisplayName = function (merthod, displayName) {
+        RAML08.prototype.setMethodDisplayName = function (method, displayName) {
+        };
+        RAML08.prototype.initializeTraits = function () {
+          return [];
+        };
+        RAML08.prototype.addTrait = function (id, trait, traits) {
+          var newTrait = {};
+          newTrait[_.camelCase(id)] = trait;
+          traits.push(newTrait);
         };
         module.exports = RAML08;
       },
       {
-        '../utils/json': 33,
-        './baseraml': 12,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 13,
+        'lodash': 110
       }
     ],
-    16: [
+    17: [
       function (require, module, exports) {
         var _ = require('lodash'), RAML = require('./baseraml'), jsonHelper = require('../utils/json');
         function RAML10() {
@@ -7112,11 +7478,14 @@
           }
           return ag;
         };
-        RAML10.prototype.mapBody = function (bodyData) {
+        RAML10.prototype.mapBody = function (bodyData, type) {
           var body = jsonHelper.parse(bodyData.body);
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
-            result.example = jsonHelper.format(bodyData.example);
+            result.example = jsonHelper.parse(bodyData.example);
+            if (type && result.example[type]) {
+              result.example = result.example[type];
+            }
           }
           return result;
         };
@@ -7133,6 +7502,8 @@
               continue;
             var property = body.properties[i];
             property.required = false;
+            //facets
+            this._addFacetsDeclaration(property, property);
           }
           if (bodyData.required && bodyData.required.length > 0) {
             for (var j in bodyData.required) {
@@ -7165,6 +7536,7 @@
           return object;
         };
         RAML10.prototype.convertAllOfAttribute = function (definition) {
+          var result = {};
           var allOfTypes = [];
           if (!definition.allOf)
             return definition;
@@ -7173,16 +7545,14 @@
               continue;
             var allOf = definition.allOf[j];
             if (allOf.properties) {
-              definition = this.mapSchemaProperties(allOf);
-              break;
-            }
-            if (allOf.type) {
+              result = this.mapSchemaProperties(allOf);
+            } else if (allOf.type) {
               allOfTypes.push(allOf.type);
             }
           }
-          definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-          delete definition.allOf;
-          return definition;
+          result.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
+          delete result.allOf;
+          return result;
         };
         RAML10.prototype.mapSchema = function (slSchemas) {
           var results = {};
@@ -7198,31 +7568,24 @@
                 definition = this.mapSchemaProperties(definition);
               }
             }
+            if (definition.additionalProperties) {
+              if (!definition.properties) {
+                definition.properties = {};
+              }
+              definition.properties['//'] = definition.additionalProperties;
+              delete definition.additionalProperties;
+            }
             if (schema.example) {
-              definition.example = jsonHelper.parse(schema.example);
+              definition.example = jsonHelper.parse(schema.example);  // var example = jsonHelper.parse(schema.example);
+                                                                      // if (!_.isEmpty(example)) {
+                                                                      // 	definition.example = example;
             }
             results[schema.NameSpace] = definition;
           }
           return results;
         };
         RAML10.prototype.mapSchemaProperties = function (definition) {
-          for (var k in definition.properties) {
-            if (!definition.properties.hasOwnProperty(k))
-              continue;
-            var property = definition.properties[k];
-            property.required = false;
-          }
-          if (definition.required && definition.required.length > 0) {
-            for (var j in definition.required) {
-              if (!definition.required.hasOwnProperty(j))
-                continue;
-              var requiredParam = definition.required[j];
-              if (definition['properties'][requiredParam]) {
-                delete definition['properties'][requiredParam].required;  // definition['properties'][requiredParam].required = true;
-              }
-            }
-            delete definition.required;
-          }
+          this.convertRequiredFromProperties(definition);
           if (definition.additionalProperties) {
             definition.properties['//'] = definition.additionalProperties;
             delete definition.additionalProperties;
@@ -7242,17 +7605,25 @@
           return securitySchemes;
         };
         RAML10.prototype.setMethodDisplayName = function (method, displayName) {
-          method.displayName = displayName;
+          if (displayName) {
+            method.displayName = displayName;
+          }
+        };
+        RAML10.prototype.initializeTraits = function () {
+          return {};
+        };
+        RAML10.prototype.addTrait = function (id, trait, traits) {
+          traits[_.camelCase(id)] = trait;
         };
         module.exports = RAML10;
       },
       {
-        '../utils/json': 33,
-        './baseraml': 12,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 13,
+        'lodash': 110
       }
     ],
-    17: [
+    18: [
       function (require, module, exports) {
         var Exporter = require('./exporter'), SwaggerExporter = require('./swagger'), _ = require('lodash');
         function StopLightX() {
@@ -7366,12 +7737,12 @@
         module.exports = StopLightX;
       },
       {
-        './exporter': 13,
-        './swagger': 18,
-        'lodash': 109
+        './exporter': 14,
+        './swagger': 19,
+        'lodash': 110
       }
     ],
-    18: [
+    19: [
       function (require, module, exports) {
         var Endpoint = require('../entities/endpoint'), Exporter = require('./exporter'), SwaggerParser = require('swagger-parser'), jsonHelper = require('../utils/json.js'), stringHelper = require('../utils/strings.js'), urlHelper = require('../utils/url'), SwaggerDefinition = require('../entities/swagger/definition'), swaggerHelper = require('../helpers/swagger'), _ = require('lodash'), url = require('url');
         function Swagger() {
@@ -7627,6 +7998,7 @@
             if (!_.isEmpty(prop.description)) {
               param.description = prop.description;
             }
+            this._addPatternedObjects(prop, param);
             parameters.push(param);
           }
           return parameters;
@@ -7678,7 +8050,7 @@
           return result;
         };
         Swagger.prototype._mapRequestBody = function (slRequestBody, requestTypes) {
-          if (!slRequestBody.body) {
+          if (_.isEmpty(slRequestBody.body)) {
             return [];
           }
           var result = [], body = jsonHelper.parse(slRequestBody.body) || {};
@@ -7690,7 +8062,7 @@
             //make sure body isn't empty
             var regex = /\"type\":[ ]*\"file\"|\"type\":[ ]*\"binary\"/;
             //export as formData only if schema includes file type property
-            if (slRequestBody.body.match(regex) || [
+            if (slRequestBody.body.match(regex) || !_.isEmpty(requestTypes) && [
                 'multipart/form-data',
                 'application/x-www-form-urlencoded'
               ].indexOf(requestTypes[0]) !== -1) {
@@ -7852,9 +8224,7 @@
               swaggerDef.paths[endpoint.Path] = params.length ? { parameters: params } : {};
             }
             parameters = parameters.concat(this._mapQueryString(endpoint.QueryString));
-            if (!_.isEmpty(requestTypes)) {
-              parameters = parameters.concat(this._mapRequestBody(endpoint.Body, requestTypes));
-            }
+            parameters = parameters.concat(this._mapRequestBody(endpoint.Body, requestTypes));
             parameters = parameters.concat(this._mapRequestHeaders(endpoint.Headers));
             parameters = parameters.concat(this._mapEndpointTraitParameters(endpoint, parameters));
             parameters = this._validateParameters(parameters);
@@ -7880,6 +8250,17 @@
               if (!_.isEmpty(security)) {
                 swaggerDef.paths[endpoint.Path][endpoint.Method]['security'] = security;
               }
+            }
+            this._addPatternedObjects(endpoint, swaggerDef.paths[endpoint.Path][endpoint.Method]);
+          }
+        };
+        Swagger.prototype._addPatternedObjects = function (source, target) {
+          for (var key in source) {
+            if (!source.hasOwnProperty(key))
+              continue;
+            var value = source[key];
+            if (_.startsWith(key, 'x-')) {
+              target[key] = value;
             }
           }
         };
@@ -7937,6 +8318,9 @@
           if (hostUrl.path && hostUrl.path !== '/') {
             swaggerDef.BasePath = urlHelper.join(hostUrl.path, env.BasePath);
           }
+          if (this._isTemplateUri(swaggerDef.basePath)) {
+            this._convertToTemplateUri(swaggerDef);
+          }
           if (Array.isArray(env.Protocols) && !_.isEmpty(env.Protocols)) {
             var filteredSchemes = [];
             env.Protocols.map(function (p) {
@@ -7950,6 +8334,14 @@
           } else {
             delete swaggerDef.schemes;
           }
+        };
+        Swagger.prototype._isTemplateUri = function (uri) {
+          var decodeUri = decodeURI(uri);
+          return decodeUri.indexOf('{') !== -1 || decodeUri.indexOf('}') !== -1;
+        };
+        Swagger.prototype._convertToTemplateUri = function (swaggerDef) {
+          swaggerDef['x-basePath'] = decodeURI(swaggerDef.basePath);
+          delete swaggerDef.basePath;
         };
         Swagger.prototype._export = function () {
           //TODO
@@ -7994,17 +8386,17 @@
       {
         '../entities/endpoint': 3,
         '../entities/swagger/definition': 8,
-        '../helpers/swagger': 21,
-        '../utils/json.js': 33,
-        '../utils/strings.js': 34,
-        '../utils/url': 35,
-        './exporter': 13,
-        'lodash': 109,
-        'swagger-parser': 139,
-        'url': 146
+        '../helpers/swagger': 22,
+        '../utils/json.js': 34,
+        '../utils/strings.js': 35,
+        '../utils/url': 36,
+        './exporter': 14,
+        'lodash': 110,
+        'swagger-parser': 140,
+        'url': 147
       }
     ],
-    19: [
+    20: [
       function (require, module, exports) {
         var supportedFormats = {
             'POSTMAN': {
@@ -8040,7 +8432,7 @@
       },
       {}
     ],
-    20: [
+    21: [
       function (require, module, exports) {
         var _ = require('lodash');
         module.exports = {
@@ -8074,7 +8466,17 @@
             'maxLength',
             'minLength',
             'pattern',
-            'enum'
+            'enum',
+            'format',
+            'collectionFormat',
+            'allowEmptyValue',
+            'exclusiveMaximum',
+            'exclusiveMinimum',
+            'maxItems',
+            'minItems',
+            'uniqueItems',
+            'required',
+            'facets'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -8096,7 +8498,7 @@
                   } catch (e) {
                   }
                 }
-                if (!target[prop] || _.isArray(target[prop]) && _.isEmpty(target[prop])) {
+                if (!target.hasOwnProperty(prop) || _.isArray(target[prop]) && _.isEmpty(target[prop])) {
                   delete target[prop];
                 }
               }
@@ -8105,9 +8507,9 @@
           }
         };
       },
-      { 'lodash': 109 }
+      { 'lodash': 110 }
     ],
-    21: [
+    22: [
       function (require, module, exports) {
         module.exports = {
           parameterMappings: {},
@@ -8128,7 +8530,10 @@
             'enum',
             'multipleOf',
             'items',
-            'format'
+            'format',
+            'collectionFormat',
+            'allowEmptyValue',
+            'required'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -8157,7 +8562,7 @@
       },
       {}
     ],
-    22: [
+    23: [
       function (require, module, exports) {
         var fs = require('fs'), _ = require('lodash'), Importer = require('./importer'), Swagger = require('./swagger'), RAML08 = require('./raml08'), RAML10 = require('./raml10'), Postman = require('./postman'), StopLightX = require('./stoplightx'), urlHelper = require('../utils/url');
         // Detect input format automatically
@@ -8286,18 +8691,18 @@
         module.exports = Auto;
       },
       {
-        '../utils/url': 35,
-        './importer': 24,
-        './postman': 26,
-        './raml08': 27,
-        './raml10': 28,
-        './stoplightx': 30,
-        './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        '../utils/url': 36,
+        './importer': 25,
+        './postman': 27,
+        './raml08': 28,
+        './raml10': 29,
+        './stoplightx': 31,
+        './swagger': 32,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    23: [
+    24: [
       function (require, module, exports) {
         var parser = window.RAML.Parser, Endpoint = require('../entities/endpoint'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), ramlHelper = require('../helpers/raml'), url = require('url'), _ = require('lodash');
         var toJSONOptions = { serializeMetadata: false };
@@ -8419,6 +8824,7 @@
               description: key.displayName || key.description || '',
               type: key.type || 'string'
             };
+            this._addAnnotations(key, pathParams.properties[key.name]);
           }
           return pathParams;
         };
@@ -8437,7 +8843,7 @@
               result.example = jsonHelper.stringify(result.example, 4);
             }
             if (response.description) {
-              result.description = response.description;
+              result.description = jsonHelper.stringify(response.description);
             }
             data.push(result);
           }
@@ -8459,18 +8865,23 @@
         RAML.prototype.isValidRefValue = function (value) {
           return typeof value === 'string' && ramlHelper.getScalarTypes.indexOf(value) < 0 && value !== 'object';
         };
-        // from type=type1 to ref=type1
+        // from type=type1 & schema=type1 to ref=type1
         RAML.prototype.convertRefToModel = function (object) {
+          // if the object is a string, that means it's a direct ref/type
+          if (typeof object === 'string') {
+            return { $ref: '#/definitions/' + object };
+          }
           for (var id in object) {
+            var isType = id == 'type';
             if (!object.hasOwnProperty(id))
               continue;
-            if (id == 'type' && _.isArray(object[id]) && object[id].length == 1) {
+            if (isType && _.isArray(object[id]) && object[id].length == 1) {
               object[id] = object[id][0];
             }
             var val = object[id];
             if (!val)
               continue;
-            if (id == 'type' && this.isValidRefValues(val)) {
+            if (isType && this.isValidRefValues(val)) {
               object.ref = val;
               delete object[id];
             } else if (typeof val === 'object') {
@@ -8488,7 +8899,12 @@
                 //delete garbage
                 delete object[id];
               } else {
-                object[id] = this.convertRefToModel(val);
+                if (id == 'xml') {
+                  //no process xml object
+                  object[id] = val;
+                } else {
+                  object[id] = this.convertRefToModel(val);
+                }
               }
             } else if (id == 'name') {
               //delete garbage
@@ -8529,7 +8945,7 @@
             var endpoint = new Endpoint(summary);
             endpoint.Method = method.method;
             endpoint.Path = baseURI + resource.relativeUri;
-            endpoint.Description = method.description ? method.description : '';
+            endpoint.Description = method.description ? jsonHelper.stringify(method.description) : '';
             endpoint.SetOperationId(method.displayName, endpoint.Method, endpoint.Path);
             if (method.body) {
               var c = this.mapMimeTypes(method.body, this.data.mediaType);
@@ -8555,7 +8971,7 @@
               endpoint.Responses = this._mapResponseBody(method.responses);
             }
             endpoint.traits = [];
-            var isMethod = method.is;
+            var isMethod = method.is || resource.is;
             if (isMethod) {
               if (isMethod instanceof Array) {
                 endpoint.traits = isMethod;
@@ -8582,6 +8998,8 @@
                 }
               }
             }
+            //add annotations
+            this._addAnnotations(method, endpoint);
             //TODO endpoint security
             this.project.addEndpoint(endpoint);
           }
@@ -8608,20 +9026,16 @@
             break;
           }
         };
-        RAML.prototype.loadFile = function (filePath, cb) {
+        RAML.prototype.loadFile = function (filePath, cb, options) {
           var me = this;
-          parser.loadApi(filePath, parseOptions).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
-          }, function (error) {
-            cb(error);
-          });
-        };
-        RAML.prototype.loadFileWithOptions = function (filePath, options, cb) {
-          var me = this;
-          parser.loadApi(filePath, _.merge(parseOptions, options)).then(function (api) {
-            me.data = api.toJSON(toJSONOptions);
-            cb();
+          var mergedOptions = _.merge(parseOptions, options || {});
+          parser.loadApi(filePath, mergedOptions).then(function (api) {
+            try {
+              me.data = api.expand(true).toJSON(toJSONOptions);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
           }, function (error) {
             cb(error);
           });
@@ -8630,15 +9044,15 @@
           var me = this;
           return new Promise(function (resolve, reject) {
             try {
-              var parsedData = parser.parseRAMLSync(data, _.merge(parseOptions, options));
+              var mergeOptions = _.merge(parseOptions, options);
+              var parsedData = parser.parseRAMLSync(data, mergeOptions);
               if (parsedData.name === 'Error') {
                 reject(error);
               } else {
-                me.data = parsedData.toJSON(toJSONOptions);
+                me.data = parsedData.expand(true).toJSON(toJSONOptions);
                 resolve();
               }
             } catch (e) {
-              console.error('raml#loadData', e, data, options);
               reject(e);
             }
           });
@@ -8666,7 +9080,7 @@
                   responses: []
                 };
               if (!_.isEmpty(trait.usage)) {
-                slTrait.description = trait.usage;
+                slTrait.description = jsonHelper.stringify(trait.usage);
               } else {
                 delete slTrait.description;
               }
@@ -8685,6 +9099,20 @@
             }
           }
           return slTraits;
+        };
+        RAML.prototype._addAnnotations = function (source, target) {
+          if (!source.annotations)
+            return;
+          var annotations = source.annotations;
+          for (var i in annotations) {
+            if (!annotations.hasOwnProperty(i))
+              continue;
+            var value = annotations[i];
+            var key = 'x-annotation-' + value.name;
+            target[key] = value.structuredValue;
+          }
+          if (target.annotations)
+            delete target.annotations;
         };
         RAML.prototype._import = function () {
           try {
@@ -8725,8 +9153,10 @@
             }
             this.project.Environment.SecuritySchemes = this._mapSecuritySchemes(this.data.securitySchemes);
             var resources = this.data.resources;
-            for (var i = 0; i < resources.length; i++) {
-              this._mapEndpoint(resources[i], '', {});
+            if (!_.isEmpty(resources)) {
+              for (var i = 0; i < resources.length; i++) {
+                this._mapEndpoint(resources[i], '', {});
+              }
             }
             var schemas = this._mapSchema(this.getSchema(this.data));
             for (var s in schemas) {
@@ -8738,6 +9168,22 @@
           } catch (e) {
             console.error('raml#import', e);
             throw e;
+          }
+        };
+        RAML.prototype.convertRequiredFromProperties = function (object) {
+          if (!object)
+            return object;
+          for (var id in object.properties) {
+            if (!object.properties.hasOwnProperty(id))
+              continue;
+            var param = object.properties[id];
+            if (!param.hasOwnProperty('required') || param.required == true) {
+              if (!object.required) {
+                object.required = [];
+              }
+              object.required.push(id);
+              delete param.required;
+            }
           }
         };
         RAML.prototype.description = function (project, data) {
@@ -8757,14 +9203,14 @@
       {
         '../entities/endpoint': 3,
         '../entities/project': 5,
-        '../helpers/raml': 20,
-        '../utils/json': 33,
-        './importer': 24,
-        'lodash': 109,
-        'url': 146
+        '../helpers/raml': 21,
+        '../utils/json': 34,
+        './importer': 25,
+        'lodash': 110,
+        'url': 147
       }
     ],
-    24: [
+    25: [
       function (require, module, exports) {
         function Importer() {
           this.data = null;
@@ -8779,12 +9225,9 @@
             return this.data !== null;
           }
         };
-        Importer.prototype.loadFile = function (path) {
-          throw new Error('loadFile method not implemented');
-        };
         // TODO unify api by returning a Promise like the loadData function
         // https://github.com/stoplightio/api-spec-converter/issues/16
-        Importer.prototype.loadFileWithOptions = function (path, options) {
+        Importer.prototype.loadFile = function (path) {
           throw new Error('loadFile method not implemented');
         };
         Importer.prototype.loadData = function (data) {
@@ -8832,7 +9275,7 @@
       },
       {}
     ],
-    25: [
+    26: [
       function (require, module, exports) {
         var importers = {
             Postman: require('./postman'),
@@ -8860,16 +9303,16 @@
         };
       },
       {
-        './auto': 22,
-        './postman': 26,
-        './raml08': 27,
-        './raml10': 28,
-        './stoplight': 29,
-        './stoplightx': 30,
-        './swagger': 31
+        './auto': 23,
+        './postman': 27,
+        './raml08': 28,
+        './raml10': 29,
+        './stoplight': 30,
+        './stoplightx': 31,
+        './swagger': 32
       }
     ],
-    26: [
+    27: [
       function (require, module, exports) {
         var fs = require('fs'), Endpoint = require('../entities/endpoint'), SavedEntry = require('../entities/savedEntry'), Importer = require('./importer'), Project = require('../entities/project'), urlHelper = require('../utils/url'), jsonHelper = require('../utils/json'), arrayHelper = require('../utils/array'), _ = require('lodash');
         function Postman() {
@@ -9119,15 +9562,15 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/savedEntry': 6,
-        '../utils/array': 32,
-        '../utils/json': 33,
-        '../utils/url': 35,
-        './importer': 24,
-        'fs': 39,
-        'lodash': 109
+        '../utils/array': 33,
+        '../utils/json': 34,
+        '../utils/url': 36,
+        './importer': 25,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    27: [
+    28: [
       function (require, module, exports) {
         var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), Text = require('../entities/text');
         function RAML08() {
@@ -9215,12 +9658,12 @@
       },
       {
         '../entities/schema': 7,
-        '../entities/text': 10,
-        '../utils/json': 33,
-        './baseraml': 23
+        '../entities/text': 11,
+        '../utils/json': 34,
+        './baseraml': 24
       }
     ],
-    28: [
+    29: [
       function (require, module, exports) {
         var RAML = require('./baseraml'), Schema = require('../entities/schema'), jsonHelper = require('../utils/json'), _ = require('lodash');
         function RAML10() {
@@ -9245,6 +9688,7 @@
               switch (data.mimeType) {
               case 'application/json':
                 data.body = { 'properties': this.convertRefToModel(mimeType.properties) };
+                this.convertRequiredFromProperties(data.body);
                 break;
               case 'multipart/form-data':
               case 'application/x-www-form-urlencoded':
@@ -9294,65 +9738,77 @@
               var sd = new Schema(schemaName);
               sd.Name = schemaName;
               var definition = schemData[i][schemaName];
-              var data = null;
+              var properties = null;
+              var result = definition;
               if (definition.properties && !_.isEmpty(definition.properties)) {
-                data = {
+                properties = {
                   properties: {},
                   type: 'object',
                   required: []
                 };
                 if (definition.description) {
-                  data.description = definition.description;
+                  properties.description = jsonHelper.stringify(definition.description);
                 }
                 for (var paramName in definition.properties) {
                   if (!definition.properties.hasOwnProperty(paramName))
                     continue;
                   var param = definition.properties[paramName];
-                  data.properties[paramName] = param;
+                  if (this.isArray(param)) {
+                    properties.properties[paramName] = this.convertArray(param);
+                  } else if (this.isFacet(param)) {
+                    //check for facets
+                    properties.properties[paramName] = this.convertFacet(param);
+                  } else {
+                    properties.properties[paramName] = param;
+                  }
+                  //add annotations
+                  this._addAnnotations(param, properties.properties[paramName]);
                   if (param.hasOwnProperty('required')) {
                     if (param.required == true) {
-                      data['required'].push(paramName);
+                      properties['required'].push(paramName);
                     }
                     delete param.required;
                   } else {
                     //required true by default.
-                    data['required'].push(paramName);
+                    properties['required'].push(paramName);
                   }
                 }
-                if (data.required && data.required.length == 0) {
-                  delete data.required;
+                if (properties.required && properties.required.length == 0) {
+                  delete properties.required;
                 }
               }
               if (definition.type && definition.type != 'object') {
                 //type
-                if (data) {
+                if (properties) {
                   //type and properties
-                  definition.allOf = definition.type;
-                  definition.allOf.push(data);
-                  delete definition.type;
-                  delete definition.properties;
+                  result.allOf = definition.type;
+                  result.allOf.push(properties);
+                  delete result.type;
+                  delete result.properties;
                 } else {
                   if (_.isArray(definition.type) && definition.type.length > 1) {
-                    definition.allOf = definition.type;
-                    delete definition.type;
+                    result.allOf = definition.type;
+                    delete result.type;
                   } else if (this.isArray(definition)) {
                     //check for array
                     //convert array
-                    definition = this.convertArray(definition);
+                    result = this.convertArray(definition);
                   } else if (this.isFacet(definition)) {
                     //check for facets
-                    definition = this.convertFacet(definition);
+                    result = this.convertFacet(definition);
                   } else if (this.isFixedFacet(definition)) {
-                    definition = this.convertFixedFacet(definition);
+                    result = this.convertFixedFacet(definition);
                   } else {
-                    definition = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
+                    result = jsonHelper.parse(_.isArray(definition.type) ? definition.type[0] : definition.type);
                   }
                 }
               } else {
                 //only properties
-                definition = data;
+                result = properties;
               }
-              sd.Definition = this.convertRefToModel(definition);
+              //add annotations
+              this._addAnnotations(definition, result);
+              sd.Definition = this.convertRefToModel(result);
               schemas.push(sd);
             }
           }
@@ -9369,16 +9825,28 @@
           return definition.fixedFacets;
         };
         RAML10.prototype.convertArray = function (definition) {
-          var items;
           if (definition.items.type) {
-            items = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
+            definition.items.type = _.isArray(definition.items.type) ? definition.items.type[0] : definition.items.type;
           } else {
-            items = definition.items;
+            var items = definition.items;
+            if (this.isRamlArray(items)) {
+              definition.items = this.convertArray(this.convertRamlArray(definition.items));
+            } else {
+              definition.items = {};
+              definition.items.type = items;
+            }
           }
-          definition.items = {};
-          definition.items.type = items;
           definition.type = 'array';
           return definition;
+        };
+        RAML10.prototype.isRamlArray = function (object) {
+          return _.endsWith(object, '[]');
+        };
+        RAML10.prototype.convertRamlArray = function (object) {
+          return {
+            type: 'array',
+            items: { type: _.replace(object, '[]', '') }
+          };
         };
         RAML10.prototype.convertFacet = function (definition) {
           var facets = definition.facets;
@@ -9419,12 +9887,12 @@
       },
       {
         '../entities/schema': 7,
-        '../utils/json': 33,
-        './baseraml': 23,
-        'lodash': 109
+        '../utils/json': 34,
+        './baseraml': 24,
+        'lodash': 110
       }
     ],
-    29: [
+    30: [
       function (require, module, exports) {
         var Endpoint = require('../entities/endpoint'), Project = require('../entities/project'), Schema = require('../entities/schema'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Importer = require('./importer'), jsonHelper = require('../utils/json'), fs = require('fs');
         function StopLight() {
@@ -9507,14 +9975,14 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/schema': 7,
-        '../entities/text': 10,
-        '../entities/utilityFunction': 11,
-        '../utils/json': 33,
-        './importer': 24,
-        'fs': 39
+        '../entities/text': 11,
+        '../entities/utilityFunction': 12,
+        '../utils/json': 34,
+        './importer': 25,
+        'fs': 40
       }
     ],
-    30: [
+    31: [
       function (require, module, exports) {
         var Swagger = require('./swagger'), Importer = require('./importer'), UtilityFunction = require('../entities/utilityFunction'), Text = require('../entities/text'), Test = require('../entities/test'), fs = require('fs'), _ = require('lodash');
         var prefix = 'x-stoplight';
@@ -9620,22 +10088,22 @@
         module.exports = StopLightX;
       },
       {
-        '../entities/test': 9,
-        '../entities/text': 10,
-        '../entities/utilityFunction': 11,
-        './importer': 24,
-        './swagger': 31,
-        'fs': 39,
-        'lodash': 109
+        '../entities/test': 10,
+        '../entities/text': 11,
+        '../entities/utilityFunction': 12,
+        './importer': 25,
+        './swagger': 32,
+        'fs': 40,
+        'lodash': 110
       }
     ],
-    31: [
+    32: [
       function (require, module, exports) {
-        var parser = require('swagger-parser'), Endpoint = require('../entities/endpoint'), Schema = require('../entities/schema'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), swaggerHelper = require('../helpers/swagger'), YAML = require('js-yaml'), _ = require('lodash');
+        var parser = require('swagger-parser'), Method = require('../entities/swagger/method'), Endpoint = require('../entities/endpoint'), Schema = require('../entities/schema'), Importer = require('./importer'), Project = require('../entities/project'), jsonHelper = require('../utils/json'), swaggerHelper = require('../helpers/swagger'), YAML = require('js-yaml'), _ = require('lodash');
         function Swagger() {
           this.dereferencedAPI = null;
         }
-        var referenceRegex = /\/(parameters|responses)\//i;
+        var referenceRegex = /\/(parameters|responses)\/(.+)/i;
         function needDeReferenced(param) {
           if (!param || !param.$ref) {
             return false;
@@ -9800,6 +10268,9 @@
             case 'body':
               mapExample(param.schema, data);
               data.body = param.schema;
+              if (param.name) {
+                data.name = param.name;
+              }
               break;
             default:
               var prop = {};
@@ -9810,7 +10281,7 @@
               data.body.properties[param.name] = prop;
             }
             if (param.description) {
-              data.description = param.description;
+              data.description = jsonHelper.stringify(param.description);
             }
           }
           //remove required field if doesn't have anything inside it
@@ -9819,48 +10290,69 @@
           }
           return data;
         };
-        Swagger.prototype._mapResponseBody = function (responseBody, skipParameterRefs, resolvedResponses, $refs) {
+        Swagger.prototype._mapResponseBody = function (responses, skipParameterRefs, resolvedResponses, $refs) {
           var data = [];
-          for (var code in responseBody) {
-            if (!responseBody.hasOwnProperty(code))
+          for (var code in responses) {
+            if (!responses.hasOwnProperty(code))
               continue;
             var res = {
                 body: {},
                 example: '',
                 codes: []
               }, description = '';
-            if (skipParameterRefs && needDeReferenced(responseBody[code]) && (responseBody[code].$ref.match(/trait/) || $refs.exists(responseBody[code].$ref))) {
+            var response = responses[code];
+            if (skipParameterRefs && needDeReferenced(response) && (response.$ref.match(/trait/) || _.includes($refs, response.$ref))) {
               continue;
             }
-            // TODO: Once stoplight support headers, then support headers from swagger spec in responses.
-            if (needDeReferenced(responseBody[code]) && resolvedResponses) {
-              schema = resolvedResponses[code].schema;
-              description = resolvedResponses[code].description || '';
+            var needBeReferenced = needDeReferenced(response);
+            if (needBeReferenced && resolvedResponses) {
+              var resolvedResponse = this._getResponses(response, resolvedResponses[code]);
+              var schema = resolvedResponse.schema;
+              description = jsonHelper.stringify(resolvedResponse.description || '');
               res.body = schema;
-            } else if (responseBody[code].schema) {
-              var schema = responseBody[code].schema;
-              if (needDeReferenced(responseBody[code].schema)) {
-                description = resolvedResponses[code].description || '';
+            } else if (response.schema) {
+              var schema = response.schema;
+              if (needDeReferenced(response.schema)) {
+                description = jsonHelper.stringify(resolvedResponses[code].description || '');
                 schema = resolvedResponses[code].schema;
               }
               res.body = schema;
             }
-            if (responseBody[code].hasOwnProperty('examples') && _.isEmpty(responseBody[code].examples)) {
-              var examples = responseBody[code].examples;
-              res.example = jsonHelper.stringify(examples[0], 4);  // TODO: Once stoplight supports multiple examples, support them here.
-                                                                   // for(var t in examples) {
-                                                                   //   if (!examples.hasOwnProperty(t)) continue;
-                                                                   //   if (t === resType) {
-                                                                   //     res.example = jsonHelper.stringify(examples[t], 4);
-                                                                   //   }
-                                                                   // }
-            }
-            res.description = description || responseBody[code].description || '';
-            res.body = res.body;
+            this._mapResponseExample(needBeReferenced ? resolvedResponses[code] : response, res);
+            this._mapResponseHeaders(needBeReferenced ? resolvedResponses[code] : response, res);
+            this._mapResponseDescription(needBeReferenced ? resolvedResponses[code] : response, description, res);
             res.codes.push(String(code));
             data.push(res);
           }
+          var extensions = this._getExtensionsFrom(responses);
+          if (!_.isEmpty(extensions)) {
+            data.extensions = extensions;
+          }
           return data;
+        };
+        Swagger.prototype._mapResponseDescription = function (responseBody, description, res) {
+          res.description = jsonHelper.stringify(description || responseBody.description || '');
+        };
+        Swagger.prototype._mapResponseHeaders = function (responseBody, res) {
+          if (responseBody.hasOwnProperty('headers') && !_.isEmpty(responseBody.headers)) {
+            res.headers = { properties: responseBody.headers };
+          }
+        };
+        Swagger.prototype._mapResponseExample = function (responseBody, res) {
+          if (responseBody.hasOwnProperty('examples') && !_.isEmpty(responseBody.examples)) {
+            var examples = responseBody.examples;
+            if (_.isArray(examples)) {
+              for (var t in examples) {
+                if (!examples.hasOwnProperty(t))
+                  continue;
+                if (t === resType) {
+                  res.example = jsonHelper.stringify(examples[t], 4);
+                }
+              }
+            } else {
+              res.example = jsonHelper.stringify(examples, 4);
+            }
+          }
         };
         Swagger.prototype._mapRequestHeaders = function (params, skipParameterRefs) {
           var data = {
@@ -9926,11 +10418,7 @@
           });
         };
         // Load a swagger spec by local or remote file path
-        Swagger.prototype.loadFile = function (path, cb) {
-          return this._parseData(path, cb);
-        };
-        // Load a swagger spec by local or remote file path with given swagger parser options
-        Swagger.prototype.loadFileWithOptions = function (path, options, cb) {
+        Swagger.prototype.loadFile = function (path, cb, options) {
           return this._parseData(path, cb, options);
         };
         // Load a swagger spec by string data
@@ -9969,7 +10457,7 @@
           }
           return mimeTypes[0];
         };
-        Swagger.prototype._mapEndpointTrait = function (params) {
+        Swagger.prototype._mapEndpointTrait = function (params, resolvedParameters) {
           var traits = [];
           for (var i in params) {
             if (!params.hasOwnProperty(i))
@@ -9982,6 +10470,9 @@
             if (traitParts[0] === 'trait') {
               name = traitParts[1];
             }
+            if (resolvedParameters && resolvedParameters[name] && resolvedParameters[name].in && resolvedParameters[name].in === 'path') {
+              continue;
+            }
             traits.push(name);
           }
           return traits;
@@ -9989,36 +10480,101 @@
         Swagger.prototype._mapEndpointTraits = function (params, responses) {
           var traits = [];
           traits = traits.concat(this._mapEndpointTrait(params));
-          traits = traits.concat(this._mapEndpointTrait(responses));
+          // traits = traits.concat(this._mapEndpointTrait(responses));
           return _.uniq(traits);
+        };
+        Swagger.prototype._getParams = function (params, resolvedParameters, condition) {
+          if (_.isEmpty(params))
+            return params;
+          var result = [];
+          for (var id in params) {
+            if (!params.hasOwnProperty(id))
+              continue;
+            var param = params[id];
+            if (condition && !condition(param)) {
+              continue;
+            }
+            var deReferenced = needDeReferenced(param);
+            if (deReferenced && deReferenced.length)
+              continue;
+            var isFilePath = this._isFilePath(param);
+            if (isFilePath && resolvedParameters) {
+              param = resolvedParameters[id];
+            }
+            result.push(param);
+          }
+          return result;
+        };
+        Swagger.prototype._getResponses = function (response, resolvedResponse) {
+          var result;
+          var deReferenced = needDeReferenced(response);
+          var isFilePath = this._isFilePath(response);
+          if ((deReferenced || isFilePath) && resolvedResponse) {
+            if (isFilePath) {
+              result = resolvedResponse;
+            } else {
+              var responseName = deReferenced[deReferenced.length - 1];
+              result = this.data.responses[responseName];
+              if (result.$ref) {
+                result = resolvedResponse;
+              }
+            }
+          }
+          return result;
+        };
+        Swagger.prototype._isFilePath = function (param) {
+          if (!param || !param.$ref) {
+            return false;
+          }
+          var filePath = param.$ref.split('#')[0];
+          return filePath.split('.').length == 2;
         };
         Swagger.prototype._mapEndpoints = function (consumes, produces) {
           for (var path in this.data.paths) {
             if (!this.data.paths.hasOwnProperty(path))
               continue;
-            var methods = this.data.paths[path];
-            var pathParams = {};
+            if (_.startsWith(path, 'x-'))
+              continue;
+            //avoid custom extensions
+            var methods = this.data.paths[path].hasOwnProperty('$ref') ? this.dereferencedAPI.paths[path] : this.data.paths[path];
+            var resolvedPathParames = {};
+            var globalParamsURI = {};
+            var pathParamRef = [];
+            var globalParamsNonURI = [];
             if (methods.parameters) {
-              var resolvedPathParames = this.dereferencedAPI ? this.dereferencedAPI.paths[path].parameters : methods.parameters;
-              pathParams = this._mapURIParams(methods.parameters, resolvedPathParames);
+              resolvedPathParames = this.dereferencedAPI ? this.dereferencedAPI.paths[path].parameters : methods.parameters;
+              globalParamsURI = this._mapURIParams(methods.parameters, resolvedPathParames);
+              pathParamRef = this._mapEndpointTrait(methods.parameters, this.dereferencedAPI.parameters);
+              if (!_.isEmpty(pathParamRef)) {
+                this.project.addPathParamRef(path, pathParamRef);
+              }
+              globalParamsNonURI = this._getParams(methods.parameters, resolvedPathParames, function (param) {
+                return !(param.in && param.in == 'path');
+              });
             }
             for (var method in methods) {
               if (!methods.hasOwnProperty(method))
                 continue;
-              var currentMethod = methods[method];
-              var currentMethodResolved = this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : currentMethod;
-              if (method === 'parameters') {
+              if (method === 'parameters')
                 continue;
-              }
+              var currentMethod = new Method(methods[method], this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method]);
+              var currentMethodResolved = this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method];
               var endpoint = new Endpoint(currentMethod.summary || '');
+              var extensions = this._getExtensionsFrom(currentMethodResolved);
+              if (!_.isEmpty(extensions)) {
+                endpoint.extensions = extensions;
+              }
               endpoint.Method = method;
               endpoint.Path = path;
               endpoint.Tags = currentMethod.tags || [];
               endpoint.Summary = (currentMethod.summary || '').substring(0, 139);
-              endpoint.Description = currentMethod.description || currentMethod.summary;
+              endpoint.Description = jsonHelper.stringify(currentMethod.description);
               endpoint.Deprecated = currentMethod.deprecated;
               endpoint.SetOperationId(currentMethod.operationId, method, path);
               endpoint.ExternalDocs = currentMethod.externalDocs;
+              if (currentMethod.schemes) {
+                endpoint.protocols = currentMethod.schemes;
+              }
               //map request body
               // if (_.isArray(currentMethod.consumes)) {
               //   if (_.isEmpty(currentMethod.consumes)) {
@@ -10027,7 +10583,7 @@
               //     reqType = this.findDefaultMimeType(currentMethod.consumes);
               //   }
               // }
-              var params = currentMethod.parameters;
+              var params = _.union(globalParamsNonURI, this._getParams(currentMethod.parameters, currentMethodResolved.parameters));
               var c = [];
               if (_.some(params, { 'in': 'body' })) {
                 c.push('application/json');
@@ -10055,7 +10611,7 @@
                 }
               }
               if (endpoint.Method.toLowerCase() !== 'get' && endpoint.Method.toLowerCase() !== 'head') {
-                var body = this._mapRequestBody(currentMethod.parameters, currentMethodResolved.parameters);
+                var body = this._mapRequestBody(params, currentMethodResolved.parameters);
                 if (body) {
                   endpoint.Body = body;
                 }
@@ -10063,14 +10619,13 @@
               // this needs to happen before the mappings below, because param/response $refs will be removed after those mappings
               endpoint.traits = this._mapEndpointTraits(currentMethod.parameters, currentMethod.responses);
               //if path params are defined in this level
-              pathParams = _.merge(pathParams, this._mapURIParams(currentMethod.parameters, currentMethodResolved.parameters));
               //map path params
-              endpoint.PathParams = pathParams;
+              endpoint.PathParams = _.merge(globalParamsURI, this._mapURIParams(currentMethod.parameters, currentMethodResolved.parameters));
               //map headers
-              endpoint.Headers = this._mapRequestHeaders(currentMethod.parameters, true);
+              endpoint.Headers = this._mapRequestHeaders(params, true);
               //map query string
               // endpoint.QueryString = this._mapQueryString(currentMethod.parameters, true);
-              endpoint.QueryString = this._mapQueryString(currentMethodResolved.parameters, true);
+              endpoint.QueryString = this._mapQueryString(params, true);
               //map response body
               // if (_.isArray(currentMethod.produces)) {
               //   if (_.isEmpty(currentMethod.produces)) {
@@ -10133,7 +10688,7 @@
           }
         };
         Swagger.prototype._mapTraits = function (parameters, responses) {
-          var traits = {}, queryParams = {}, headerParams = {}, traitResponses = {};
+          var traits = {}, queryParams = {}, headerParams = {}, formDataParams = {}, bodyParams = {}, traitResponses = {};
           for (var k in parameters) {
             if (!parameters.hasOwnProperty(k))
               continue;
@@ -10149,6 +10704,14 @@
             case 'header':
               headerParams[name] = headerParams[name] || [];
               headerParams[name].push(param);
+              break;
+            case 'formData':
+              formDataParams[name] = formDataParams[name] || [];
+              formDataParams[name].push(param);
+              break;
+            case 'body':
+              bodyParams[name] = bodyParams[name] || [];
+              bodyParams[name].push(param);
               break;
             }
           }
@@ -10191,6 +10754,30 @@
             trait.request.headers = this._mapRequestHeaders(headerParams[k]);
             traits[k] = trait;
           }
+          for (var k in formDataParams) {
+            if (!formDataParams.hasOwnProperty(k))
+              continue;
+            var trait = traits[k] || {
+                _id: k,
+                name: k,
+                request: {},
+                responses: []
+              };
+            trait.request.formData = this._mapRequestBody(formDataParams[k]);
+            traits[k] = trait;
+          }
+          for (var k in bodyParams) {
+            if (!bodyParams.hasOwnProperty(k))
+              continue;
+            var trait = traits[k] || {
+                _id: k,
+                name: k,
+                request: {},
+                responses: []
+              };
+            trait.request.body = this._mapRequestBody(bodyParams[k]);
+            traits[k] = trait;
+          }
           for (var k in traitResponses) {
             if (!traitResponses.hasOwnProperty(k))
               continue;
@@ -10205,9 +10792,54 @@
           }
           return _.values(traits);
         };
+        Swagger.prototype._getExtensionsFrom = function (object) {
+          var result = {};
+          for (var key in object) {
+            if (!object.hasOwnProperty(key))
+              continue;
+            if (_.startsWith(key, 'x-'))
+              result[key] = object[key];
+          }
+          return result;
+        };
+        Swagger.prototype._createExtensions = function () {
+          this.project.extensions = this._getExtensionsFrom(this.data);
+          if (this.data.info) {
+            var infoExtensions = this._getExtensionsFrom(this.data.info);
+            if (!_.isEmpty(infoExtensions)) {
+              this.project.Environment.extensions = infoExtensions;
+            }
+          }
+          if (this.data.info.contact) {
+            var contactExtensions = this._getExtensionsFrom(this.data.info.contact);
+            if (!_.isEmpty(contactExtensions)) {
+              this.project.Environment.contactInfo.extensions = contactExtensions;
+            }
+          }
+          if (this.data.info.license) {
+            var licenseExtensions = this._getExtensionsFrom(this.data.info.license);
+            if (!_.isEmpty(licenseExtensions)) {
+              this.project.Environment.license.extensions = licenseExtensions;
+            }
+          }
+          if (this.data.externalDocs) {
+            var externalDocsExtensions = this._getExtensionsFrom(this.data.externalDocs);
+            if (!_.isEmpty(externalDocsExtensions)) {
+              this.project.Environment.ExternalDocs.extensions = externalDocsExtensions;
+            }
+          }
+          if (this.data.paths) {
+            var endpointExtensions = this._getExtensionsFrom(this.data.paths);
+            if (!_.isEmpty(endpointExtensions)) {
+              this.project.endpointExtensions = {};
+              this.project.endpointExtensions = endpointExtensions;
+            }
+          }
+        };
         Swagger.prototype._import = function () {
           this.project = new Project(this.data.info.title);
           this.project.Description = this.data.info.description || '';
+          this.project.tags = this.data.tags;
           var protocol = 'http';
           if (this.data.schemes && this.data.schemes.length > 0) {
             this.project.Environment.Protocols = this.data.schemes;
@@ -10266,6 +10898,7 @@
               continue;
             this.project.addSchema(schemas[i]);
           }
+          this._createExtensions();
         };
         module.exports = Swagger;
       },
@@ -10273,15 +10906,16 @@
         '../entities/endpoint': 3,
         '../entities/project': 5,
         '../entities/schema': 7,
-        '../helpers/swagger': 21,
-        '../utils/json': 33,
-        './importer': 24,
-        'js-yaml': 56,
-        'lodash': 109,
-        'swagger-parser': 139
+        '../entities/swagger/method': 9,
+        '../helpers/swagger': 22,
+        '../utils/json': 34,
+        './importer': 25,
+        'js-yaml': 57,
+        'lodash': 110,
+        'swagger-parser': 140
       }
     ],
-    32: [
+    33: [
       function (require, module, exports) {
         module.exports = {
           groupBy: function groupBy(array, f) {
@@ -10299,7 +10933,7 @@
       },
       {}
     ],
-    33: [
+    34: [
       function (require, module, exports) {
         var _ = require('lodash'), jsonSchemaConverter = require('json-schema-compatibility');
         module.exports = {
@@ -10410,11 +11044,11 @@
         };
       },
       {
-        'json-schema-compatibility': 86,
-        'lodash': 109
+        'json-schema-compatibility': 87,
+        'lodash': 110
       }
     ],
-    34: [
+    35: [
       function (require, module, exports) {
         var _ = require('lodash');
         module.exports = {
@@ -10435,9 +11069,9 @@
           }
         };
       },
-      { 'lodash': 109 }
+      { 'lodash': 110 }
     ],
-    35: [
+    36: [
       function (require, module, exports) {
         var request = require('request');
         var _ = require('lodash');
@@ -10467,11 +11101,11 @@
         };
       },
       {
-        'lodash': 109,
-        'request': 37
+        'lodash': 110,
+        'request': 38
       }
     ],
-    36: [
+    37: [
       function (require, module, exports) {
         var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
         ;
@@ -10578,7 +11212,7 @@
       },
       {}
     ],
-    37: [
+    38: [
       function (require, module, exports) {
         // Browser Request
         //
@@ -11025,18 +11659,18 @@
       },
       {}
     ],
-    38: [
+    39: [
       function (require, module, exports) {
       },
       {}
     ],
-    39: [
-      function (require, module, exports) {
-        arguments[4][38][0].apply(exports, arguments);
-      },
-      { 'dup': 38 }
-    ],
     40: [
+      function (require, module, exports) {
+        arguments[4][39][0].apply(exports, arguments);
+      },
+      { 'dup': 39 }
+    ],
+    41: [
       function (require, module, exports) {
         (function (global) {
           'use strict';
@@ -11147,9 +11781,9 @@
           };
         }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    41: [
+    42: [
       function (require, module, exports) {
         (function (global) {
           /*!
@@ -12562,12 +13196,12 @@
         }.call(this, typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        'base64-js': 36,
-        'ieee754': 52,
-        'isarray': 42
+        'base64-js': 37,
+        'ieee754': 53,
+        'isarray': 43
       }
     ],
-    42: [
+    43: [
       function (require, module, exports) {
         var toString = {}.toString;
         module.exports = Array.isArray || function (arr) {
@@ -12576,7 +13210,7 @@
       },
       {}
     ],
-    43: [
+    44: [
       function (require, module, exports) {
         module.exports = {
           '100': 'Continue',
@@ -12640,7 +13274,7 @@
       },
       {}
     ],
-    44: [
+    45: [
       function (require, module, exports) {
         (function (process, global) {
           'use strict';
@@ -12665,9 +13299,9 @@
           };
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    45: [
+    46: [
       function (require, module, exports) {
         (function (Buffer) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -12757,9 +13391,9 @@
           }
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
-      { '../../is-buffer/index.js': 55 }
+      { '../../is-buffer/index.js': 56 }
     ],
-    46: [
+    47: [
       function (require, module, exports) {
         /**
  * This is the web browser implementation of `debug()`.
@@ -12898,9 +13532,9 @@
           }
         }
       },
-      { './debug': 47 }
+      { './debug': 48 }
     ],
-    47: [
+    48: [
       function (require, module, exports) {
         /**
  * This is the common logic for both the Node.js and web browser
@@ -13068,9 +13702,9 @@
           return val;
         }
       },
-      { 'ms': 110 }
+      { 'ms': 111 }
     ],
-    48: [
+    49: [
       function (require, module, exports) {
         (function (process, global) {
           /*!
@@ -13888,9 +14522,9 @@
           }));
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    49: [
+    50: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -14141,7 +14775,7 @@
       },
       {}
     ],
-    50: [
+    51: [
       function (require, module, exports) {
         var hasOwn = Object.prototype.hasOwnProperty;
         var toString = Object.prototype.toString;
@@ -14165,7 +14799,7 @@
       },
       {}
     ],
-    51: [
+    52: [
       function (require, module, exports) {
         var http = require('http');
         var https = module.exports;
@@ -14182,9 +14816,9 @@
           return http.request.call(this, params, cb);
         };
       },
-      { 'http': 133 }
+      { 'http': 134 }
     ],
-    52: [
+    53: [
       function (require, module, exports) {
         exports.read = function (buffer, offset, isLE, mLen, nBytes) {
           var e, m;
@@ -14266,7 +14900,7 @@
       },
       {}
     ],
-    53: [
+    54: [
       function (require, module, exports) {
         var indexOf = [].indexOf;
         module.exports = function (arr, obj) {
@@ -14281,7 +14915,7 @@
       },
       {}
     ],
-    54: [
+    55: [
       function (require, module, exports) {
         if (typeof Object.create === 'function') {
           // implementation from standard node.js 'util' module
@@ -14310,7 +14944,7 @@
       },
       {}
     ],
-    55: [
+    56: [
       function (require, module, exports) {
         /*!
  * Determine if an object is a Buffer
@@ -14333,15 +14967,15 @@
       },
       {}
     ],
-    56: [
+    57: [
       function (require, module, exports) {
         'use strict';
         var yaml = require('./lib/js-yaml.js');
         module.exports = yaml;
       },
-      { './lib/js-yaml.js': 57 }
+      { './lib/js-yaml.js': 58 }
     ],
-    57: [
+    58: [
       function (require, module, exports) {
         'use strict';
         var loader = require('./js-yaml/loader');
@@ -14376,19 +15010,19 @@
         module.exports.addConstructor = deprecated('addConstructor');
       },
       {
-        './js-yaml/dumper': 59,
-        './js-yaml/exception': 60,
-        './js-yaml/loader': 61,
-        './js-yaml/schema': 63,
-        './js-yaml/schema/core': 64,
-        './js-yaml/schema/default_full': 65,
-        './js-yaml/schema/default_safe': 66,
-        './js-yaml/schema/failsafe': 67,
-        './js-yaml/schema/json': 68,
-        './js-yaml/type': 69
+        './js-yaml/dumper': 60,
+        './js-yaml/exception': 61,
+        './js-yaml/loader': 62,
+        './js-yaml/schema': 64,
+        './js-yaml/schema/core': 65,
+        './js-yaml/schema/default_full': 66,
+        './js-yaml/schema/default_safe': 67,
+        './js-yaml/schema/failsafe': 68,
+        './js-yaml/schema/json': 69,
+        './js-yaml/type': 70
       }
     ],
-    58: [
+    59: [
       function (require, module, exports) {
         'use strict';
         function isNothing(subject) {
@@ -14434,7 +15068,7 @@
       },
       {}
     ],
-    59: [
+    60: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-use-before-define*/
@@ -14534,7 +15168,7 @@
             if (tag.slice(0, 2) === '!!') {
               tag = 'tag:yaml.org,2002:' + tag.slice(2);
             }
-            type = schema.compiledTypeMap[tag];
+            type = schema.compiledTypeMap['fallback'][tag];
             if (type && _hasOwnProperty.call(type.styleAliases, style)) {
               style = type.styleAliases[style];
             }
@@ -15069,13 +15703,13 @@
         module.exports.safeDump = safeDump;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 59,
+        './exception': 61,
+        './schema/default_full': 66,
+        './schema/default_safe': 67
       }
     ],
-    60: [
+    61: [
       function (require, module, exports) {
         // YAML error class. http://stackoverflow.com/questions/8458984
         //
@@ -15111,7 +15745,7 @@
       },
       {}
     ],
-    61: [
+    62: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len,no-use-before-define*/
@@ -15472,8 +16106,9 @@
               captureSegment(state, captureStart, state.position, true);
               ch = state.input.charCodeAt(++state.position);
               if (ch === 39) {
-                captureStart = captureEnd = state.position;
+                captureStart = state.position;
                 state.position++;
+                captureEnd = state.position;
               } else {
                 return true;
               }
@@ -16078,8 +16713,8 @@
                   break;
                 }
               }
-            } else if (_hasOwnProperty.call(state.typeMap, state.tag)) {
-              type = state.typeMap[state.tag];
+            } else if (_hasOwnProperty.call(state.typeMap[state.kind || 'fallback'], state.tag)) {
+              type = state.typeMap[state.kind || 'fallback'][state.tag];
               if (state.result !== null && type.kind !== state.kind) {
                 throwError(state, 'unacceptable node kind for !<' + state.tag + '> tag; it should be "' + type.kind + '", not "' + state.kind + '"');
               }
@@ -16229,14 +16864,14 @@
         module.exports.safeLoad = safeLoad;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './mark': 62,
-        './schema/default_full': 65,
-        './schema/default_safe': 66
+        './common': 59,
+        './exception': 61,
+        './mark': 63,
+        './schema/default_full': 66,
+        './schema/default_safe': 67
       }
     ],
-    62: [
+    63: [
       function (require, module, exports) {
         'use strict';
         var common = require('./common');
@@ -16292,9 +16927,9 @@
         };
         module.exports = Mark;
       },
-      { './common': 58 }
+      { './common': 59 }
     ],
-    63: [
+    64: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable max-len*/
@@ -16308,7 +16943,7 @@
           });
           schema[name].forEach(function (currentType) {
             result.forEach(function (previousType, previousIndex) {
-              if (previousType.tag === currentType.tag) {
+              if (previousType.tag === currentType.tag && previousType.kind === currentType.kind) {
                 exclude.push(previousIndex);
               }
             });
@@ -16319,9 +16954,14 @@
           });
         }
         function compileMap() {
-          var result = {}, index, length;
+          var result = {
+              scalar: {},
+              sequence: {},
+              mapping: {},
+              fallback: {}
+            }, index, length;
           function collectType(type) {
-            result[type.tag] = type;
+            result[type.kind][type.tag] = result['fallback'][type.tag] = type;
           }
           for (index = 0, length = arguments.length; index < length; index += 1) {
             arguments[index].forEach(collectType);
@@ -16376,12 +17016,12 @@
         module.exports = Schema;
       },
       {
-        './common': 58,
-        './exception': 60,
-        './type': 69
+        './common': 59,
+        './exception': 61,
+        './type': 70
       }
     ],
-    64: [
+    65: [
       function (require, module, exports) {
         // Standard YAML's Core schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2804923
@@ -16393,11 +17033,11 @@
         module.exports = new Schema({ include: [require('./json')] });
       },
       {
-        '../schema': 63,
-        './json': 68
+        '../schema': 64,
+        './json': 69
       }
     ],
-    65: [
+    66: [
       function (require, module, exports) {
         // JS-YAML's default schema for `load` function.
         // It is not described in the YAML specification.
@@ -16418,14 +17058,14 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/js/function': 74,
-        '../type/js/regexp': 75,
-        '../type/js/undefined': 76,
-        './default_safe': 66
+        '../schema': 64,
+        '../type/js/function': 75,
+        '../type/js/regexp': 76,
+        '../type/js/undefined': 77,
+        './default_safe': 67
       }
     ],
-    66: [
+    67: [
       function (require, module, exports) {
         // JS-YAML's default schema for `safeLoad` function.
         // It is not described in the YAML specification.
@@ -16449,17 +17089,17 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/binary': 70,
-        '../type/merge': 78,
-        '../type/omap': 80,
-        '../type/pairs': 81,
-        '../type/set': 83,
-        '../type/timestamp': 85,
-        './core': 64
+        '../schema': 64,
+        '../type/binary': 71,
+        '../type/merge': 79,
+        '../type/omap': 81,
+        '../type/pairs': 82,
+        '../type/set': 84,
+        '../type/timestamp': 86,
+        './core': 65
       }
     ],
-    67: [
+    68: [
       function (require, module, exports) {
         // Standard YAML's Failsafe schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2802346
@@ -16474,13 +17114,13 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/map': 77,
-        '../type/seq': 82,
-        '../type/str': 84
+        '../schema': 64,
+        '../type/map': 78,
+        '../type/seq': 83,
+        '../type/str': 85
       }
     ],
-    68: [
+    69: [
       function (require, module, exports) {
         // Standard YAML's JSON schema.
         // http://www.yaml.org/spec/1.2/spec.html#id2803231
@@ -16501,15 +17141,15 @@
         });
       },
       {
-        '../schema': 63,
-        '../type/bool': 71,
-        '../type/float': 72,
-        '../type/int': 73,
-        '../type/null': 79,
-        './failsafe': 67
+        '../schema': 64,
+        '../type/bool': 72,
+        '../type/float': 73,
+        '../type/int': 74,
+        '../type/null': 80,
+        './failsafe': 68
       }
     ],
-    69: [
+    70: [
       function (require, module, exports) {
         'use strict';
         var YAMLException = require('./exception');
@@ -16566,9 +17206,9 @@
         }
         module.exports = Type;
       },
-      { './exception': 60 }
+      { './exception': 61 }
     ],
-    70: [
+    71: [
       function (require, module, exports) {
         'use strict';
         /*eslint-disable no-bitwise*/
@@ -16673,9 +17313,9 @@
           represent: representYamlBinary
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    71: [
+    72: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -16710,9 +17350,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    72: [
+    73: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -16802,11 +17442,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 59,
+        '../type': 70
       }
     ],
-    73: [
+    74: [
       function (require, module, exports) {
         'use strict';
         var common = require('../common');
@@ -16973,11 +17613,11 @@
         });
       },
       {
-        '../common': 58,
-        '../type': 69
+        '../common': 59,
+        '../type': 70
       }
     ],
-    74: [
+    75: [
       function (require, module, exports) {
         'use strict';
         var esprima;
@@ -17040,9 +17680,9 @@
           represent: representJavascriptFunction
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    75: [
+    76: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -17096,9 +17736,9 @@
           represent: representJavascriptRegExp
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    76: [
+    77: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../../type');
@@ -17123,9 +17763,9 @@
           represent: representJavascriptUndefined
         });
       },
-      { '../../type': 69 }
+      { '../../type': 70 }
     ],
-    77: [
+    78: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17136,9 +17776,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    78: [
+    79: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17150,9 +17790,9 @@
           resolve: resolveYamlMerge
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    79: [
+    80: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17190,9 +17830,9 @@
           defaultStyle: 'lowercase'
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    80: [
+    81: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17233,9 +17873,9 @@
           construct: constructYamlOmap
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    81: [
+    82: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17280,9 +17920,9 @@
           construct: constructYamlPairs
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    82: [
+    83: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17293,9 +17933,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    83: [
+    84: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17321,9 +17961,9 @@
           construct: constructYamlSet
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    84: [
+    85: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17334,9 +17974,9 @@
           }
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    85: [
+    86: [
       function (require, module, exports) {
         'use strict';
         var Type = require('../type');
@@ -17406,9 +18046,9 @@
           represent: representYamlTimestamp
         });
       },
-      { '../type': 69 }
+      { '../type': 70 }
     ],
-    86: [
+    87: [
       function (require, module, exports) {
         var JsonSchemaCompatability = function () {
             function convert3to4Type(types, always) {
@@ -17517,7 +18157,7 @@
       },
       {}
     ],
-    87: [
+    88: [
       function (require, module, exports) {
         /** !
  * JSON Schema $Ref Parser v3.1.2
@@ -17695,13 +18335,13 @@
         }
       },
       {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106
       }
     ],
-    88: [
+    89: [
       function (require, module, exports) {
         'use strict';
         var $Ref = require('./ref'), Pointer = require('./pointer'), ono = require('ono'), debug = require('./util/debug'), url = require('./util/url');
@@ -17829,14 +18469,14 @@
         }
       },
       {
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/url': 105,
-        'ono': 113
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    89: [
+    90: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18088,21 +18728,21 @@
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
       {
-        '../../is-buffer/index.js': 55,
-        './bundle': 87,
-        './dereference': 88,
-        './options': 90,
-        './parse': 91,
-        './refs': 98,
-        './resolve-external': 99,
-        './util/promise': 104,
-        './util/url': 105,
-        './util/yaml': 106,
-        'call-me-maybe': 44,
-        'ono': 113
+        '../../is-buffer/index.js': 56,
+        './bundle': 88,
+        './dereference': 89,
+        './options': 91,
+        './parse': 92,
+        './refs': 99,
+        './resolve-external': 100,
+        './util/promise': 105,
+        './util/url': 106,
+        './util/yaml': 107,
+        'call-me-maybe': 45,
+        'ono': 114
       }
     ],
-    90: [
+    91: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -18170,16 +18810,16 @@
         }
       },
       {
-        './parsers/binary': 92,
-        './parsers/json': 93,
-        './parsers/text': 94,
-        './parsers/yaml': 95,
-        './resolvers/file': 100,
-        './resolvers/http': 101,
-        './validators/z-schema': 107
+        './parsers/binary': 93,
+        './parsers/json': 94,
+        './parsers/text': 95,
+        './parsers/yaml': 96,
+        './resolvers/file': 101,
+        './resolvers/http': 102,
+        './validators/z-schema': 108
       }
     ],
-    91: [
+    92: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18304,15 +18944,15 @@
         }.call(this, { 'isBuffer': require('../../is-buffer/index.js') }));
       },
       {
-        '../../is-buffer/index.js': 55,
-        './util/debug': 102,
-        './util/plugins': 103,
-        './util/promise': 104,
-        './util/url': 105,
-        'ono': 113
+        '../../is-buffer/index.js': 56,
+        './util/debug': 103,
+        './util/plugins': 104,
+        './util/promise': 105,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    92: [
+    93: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18335,9 +18975,9 @@
           };
         }.call(this, require('buffer').Buffer));
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    93: [
+    94: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18368,11 +19008,11 @@
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
       {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104
+        '../../../is-buffer/index.js': 56,
+        '../util/promise': 105
       }
     ],
-    94: [
+    95: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18397,9 +19037,9 @@
           };
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
-      { '../../../is-buffer/index.js': 55 }
+      { '../../../is-buffer/index.js': 56 }
     ],
-    95: [
+    96: [
       function (require, module, exports) {
         (function (Buffer) {
           'use strict';
@@ -18430,12 +19070,12 @@
         }.call(this, { 'isBuffer': require('../../../is-buffer/index.js') }));
       },
       {
-        '../../../is-buffer/index.js': 55,
-        '../util/promise': 104,
-        '../util/yaml': 106
+        '../../../is-buffer/index.js': 56,
+        '../util/promise': 105,
+        '../util/yaml': 107
       }
     ],
-    96: [
+    97: [
       function (require, module, exports) {
         'use strict';
         module.exports = Pointer;
@@ -18650,12 +19290,12 @@
         }
       },
       {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
+        './ref': 98,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    97: [
+    98: [
       function (require, module, exports) {
         'use strict';
         module.exports = $Ref;
@@ -18867,9 +19507,9 @@
           }
         };
       },
-      { './pointer': 96 }
+      { './pointer': 97 }
     ],
-    98: [
+    99: [
       function (require, module, exports) {
         'use strict';
         var ono = require('ono'), $Ref = require('./ref'), url = require('./util/url');
@@ -19044,12 +19684,12 @@
         }
       },
       {
-        './ref': 97,
-        './util/url': 105,
-        'ono': 113
+        './ref': 98,
+        './util/url': 106,
+        'ono': 114
       }
     ],
-    99: [
+    100: [
       function (require, module, exports) {
         'use strict';
         var Promise = require('./util/promise'), $Ref = require('./ref'), Pointer = require('./pointer'), parse = require('./parse'), debug = require('./util/debug'), url = require('./util/url');
@@ -19145,15 +19785,15 @@
         }
       },
       {
-        './parse': 91,
-        './pointer': 96,
-        './ref': 97,
-        './util/debug': 102,
-        './util/promise': 104,
-        './util/url': 105
+        './parse': 92,
+        './pointer': 97,
+        './ref': 98,
+        './util/debug': 103,
+        './util/promise': 105,
+        './util/url': 106
       }
     ],
-    100: [
+    101: [
       function (require, module, exports) {
         'use strict';
         var fs = require('fs'), ono = require('ono'), Promise = require('../util/promise'), url = require('../util/url'), debug = require('../util/debug');
@@ -19187,14 +19827,14 @@
         };
       },
       {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        'fs': 39,
-        'ono': 113
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        'fs': 40,
+        'ono': 114
       }
     ],
-    101: [
+    102: [
       function (require, module, exports) {
         (function (process, Buffer) {
           'use strict';
@@ -19299,17 +19939,17 @@
         }.call(this, require('_process'), require('buffer').Buffer));
       },
       {
-        '../util/debug': 102,
-        '../util/promise': 104,
-        '../util/url': 105,
-        '_process': 115,
-        'buffer': 41,
-        'http': 133,
-        'https': 51,
-        'ono': 113
+        '../util/debug': 103,
+        '../util/promise': 105,
+        '../util/url': 106,
+        '_process': 116,
+        'buffer': 42,
+        'http': 134,
+        'https': 52,
+        'ono': 114
       }
     ],
-    102: [
+    103: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug');
@@ -19320,9 +19960,9 @@
  */
         module.exports = debug('json-schema-ref-parser');
       },
-      { 'debug': 46 }
+      { 'debug': 47 }
     ],
-    103: [
+    104: [
       function (require, module, exports) {
         'use strict';
         var Promise = require('./promise'), debug = require('./debug');
@@ -19462,19 +20102,19 @@
         }
       },
       {
-        './debug': 102,
-        './promise': 104
+        './debug': 103,
+        './promise': 105
       }
     ],
-    104: [
+    105: [
       function (require, module, exports) {
         'use strict';
         /** @type {Promise} **/
         module.exports = typeof Promise === 'function' ? Promise : require('es6-promise').Promise;
       },
-      { 'es6-promise': 48 }
+      { 'es6-promise': 49 }
     ],
-    105: [
+    106: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -19673,11 +20313,11 @@
         }.call(this, require('_process')));
       },
       {
-        '_process': 115,
-        'url': 146
+        '_process': 116,
+        'url': 147
       }
     ],
-    106: [
+    107: [
       function (require, module, exports) {
         /* eslint lines-around-comment: [2, {beforeBlockComment: false}] */
         'use strict';
@@ -19714,11 +20354,11 @@
         };
       },
       {
-        'js-yaml': 56,
-        'ono': 113
+        'js-yaml': 57,
+        'ono': 114
       }
     ],
-    107: [
+    108: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -19733,7 +20373,7 @@
       },
       {}
     ],
-    108: [
+    109: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -20570,7 +21210,7 @@
       },
       {}
     ],
-    109: [
+    110: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -36094,7 +36734,7 @@
       },
       {}
     ],
-    110: [
+    111: [
       function (require, module, exports) {
         /**
  * Helpers.
@@ -36216,7 +36856,7 @@
       },
       {}
     ],
-    111: [
+    112: [
       function (require, module, exports) {
         'use strict';
         // modified from https://github.com/es-shims/es5-shim
@@ -36353,9 +36993,9 @@
         };
         module.exports = keysShim;
       },
-      { './isArguments': 112 }
+      { './isArguments': 113 }
     ],
-    112: [
+    113: [
       function (require, module, exports) {
         'use strict';
         var toStr = Object.prototype.toString;
@@ -36370,7 +37010,7 @@
       },
       {}
     ],
-    113: [
+    114: [
       function (require, module, exports) {
         /**!
  * Ono v2.2.1
@@ -36576,9 +37216,9 @@
           }
         }
       },
-      { 'util': 150 }
+      { 'util': 151 }
     ],
-    114: [
+    115: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -36622,9 +37262,9 @@
           }
         }.call(this, require('_process')));
       },
-      { '_process': 115 }
+      { '_process': 116 }
     ],
-    115: [
+    116: [
       function (require, module, exports) {
         // shim for using process in browser
         var process = module.exports = {};
@@ -36798,7 +37438,7 @@
       },
       {}
     ],
-    116: [
+    117: [
       function (require, module, exports) {
         (function (global) {
           /*! https://mths.be/punycode v1.4.1 by @mathias */
@@ -37216,7 +37856,7 @@
       },
       {}
     ],
-    117: [
+    118: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37293,7 +37933,7 @@
       },
       {}
     ],
-    118: [
+    119: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37373,18 +38013,18 @@
       },
       {}
     ],
-    119: [
+    120: [
       function (require, module, exports) {
         'use strict';
         exports.decode = exports.parse = require('./decode');
         exports.encode = exports.stringify = require('./encode');
       },
       {
-        './decode': 117,
-        './encode': 118
+        './decode': 118,
+        './encode': 119
       }
     ],
-    120: [
+    121: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -37488,28 +38128,28 @@
         };
       },
       {
-        'events': 49,
-        'inherits': 54,
-        'readable-stream/duplex.js': 122,
-        'readable-stream/passthrough.js': 129,
-        'readable-stream/readable.js': 130,
-        'readable-stream/transform.js': 131,
-        'readable-stream/writable.js': 132
+        'events': 50,
+        'inherits': 55,
+        'readable-stream/duplex.js': 123,
+        'readable-stream/passthrough.js': 130,
+        'readable-stream/readable.js': 131,
+        'readable-stream/transform.js': 132,
+        'readable-stream/writable.js': 133
       }
-    ],
-    121: [
-      function (require, module, exports) {
-        arguments[4][42][0].apply(exports, arguments);
-      },
-      { 'dup': 42 }
     ],
     122: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_duplex.js');
+        arguments[4][43][0].apply(exports, arguments);
       },
-      { './lib/_stream_duplex.js': 123 }
+      { 'dup': 43 }
     ],
     123: [
+      function (require, module, exports) {
+        module.exports = require('./lib/_stream_duplex.js');
+      },
+      { './lib/_stream_duplex.js': 124 }
+    ],
+    124: [
       function (require, module, exports) {
         // a duplex stream is just a stream that is both readable and writable.
         // Since JS doesn't have multiple prototypal inheritance, this class
@@ -37576,14 +38216,14 @@
         }
       },
       {
-        './_stream_readable': 125,
-        './_stream_writable': 127,
-        'core-util-is': 45,
-        'inherits': 54,
-        'process-nextick-args': 114
+        './_stream_readable': 126,
+        './_stream_writable': 128,
+        'core-util-is': 46,
+        'inherits': 55,
+        'process-nextick-args': 115
       }
     ],
-    124: [
+    125: [
       function (require, module, exports) {
         // a passthrough stream.
         // basically just the most minimal sort of Transform stream.
@@ -37606,12 +38246,12 @@
         };
       },
       {
-        './_stream_transform': 126,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_transform': 127,
+        'core-util-is': 46,
+        'inherits': 55
       }
     ],
-    125: [
+    126: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -37621,6 +38261,9 @@
           /*</replacement>*/
           /*<replacement>*/
           var isArray = require('isarray');
+          /*</replacement>*/
+          /*<replacement>*/
+          var Duplex;
           /*</replacement>*/
           Readable.ReadableState = ReadableState;
           /*<replacement>*/
@@ -37663,6 +38306,8 @@
           var StringDecoder;
           util.inherits(Readable, Stream);
           function prependListener(emitter, event, fn) {
+            // Sadly this is not cacheable as some libraries bundle their own
+            // event emitter implementation with them.
             if (typeof emitter.prependListener === 'function') {
               return emitter.prependListener(event, fn);
             } else {
@@ -37681,7 +38326,6 @@
                 ];
             }
           }
-          var Duplex;
           function ReadableState(options, stream) {
             Duplex = Duplex || require('./_stream_duplex');
             options = options || {};
@@ -37739,7 +38383,6 @@
               this.encoding = options.encoding;
             }
           }
-          var Duplex;
           function Readable(options) {
             Duplex = Duplex || require('./_stream_duplex');
             if (!(this instanceof Readable))
@@ -38053,7 +38696,7 @@
           // for virtual (non-string, non-buffer) streams, "length" is somewhat
           // arbitrary, and perhaps not very meaningful.
           Readable.prototype._read = function (n) {
-            this.emit('error', new Error('not implemented'));
+            this.emit('error', new Error('_read() is not implemented'));
           };
           Readable.prototype.pipe = function (dest, pipeOpts) {
             var src = this;
@@ -38217,16 +38860,16 @@
               state.pipes = null;
               state.pipesCount = 0;
               state.flowing = false;
-              for (var _i = 0; _i < len; _i++) {
-                dests[_i].emit('unpipe', this);
+              for (var i = 0; i < len; i++) {
+                dests[i].emit('unpipe', this);
               }
               return this;
             }
             // try to find the right one.
-            var i = indexOf(state.pipes, dest);
-            if (i === -1)
+            var index = indexOf(state.pipes, dest);
+            if (index === -1)
               return this;
-            state.pipes.splice(i, 1);
+            state.pipes.splice(index, 1);
             state.pipesCount -= 1;
             if (state.pipesCount === 1)
               state.pipes = state.pipes[0];
@@ -38515,21 +39158,21 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        './internal/streams/BufferList': 128,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'isarray': 121,
-        'process-nextick-args': 114,
-        'string_decoder/': 137,
-        'util': 38
+        './_stream_duplex': 124,
+        './internal/streams/BufferList': 129,
+        '_process': 116,
+        'buffer': 42,
+        'buffer-shims': 41,
+        'core-util-is': 46,
+        'events': 50,
+        'inherits': 55,
+        'isarray': 122,
+        'process-nextick-args': 115,
+        'string_decoder/': 138,
+        'util': 39
       }
     ],
-    126: [
+    127: [
       function (require, module, exports) {
         // a transform stream is a readable/writable stream where you do
         // something with the data.  Sometimes it's called a "filter",
@@ -38612,7 +39255,6 @@
             return new Transform(options);
           Duplex.call(this, options);
           this._transformState = new TransformState(this);
-          // when the writable side finishes, then flush out anything remaining.
           var stream = this;
           // start out asking for a readable event once data is transformed.
           this._readableState.needReadable = true;
@@ -38626,10 +39268,11 @@
             if (typeof options.flush === 'function')
               this._flush = options.flush;
           }
+          // When the writable side finishes, then flush out anything remaining.
           this.once('prefinish', function () {
             if (typeof this._flush === 'function')
-              this._flush(function (er) {
-                done(stream, er);
+              this._flush(function (er, data) {
+                done(stream, er, data);
               });
             else
               done(stream);
@@ -38650,7 +39293,7 @@
         // an error, then that'll put the hurt on the whole operation.  If you
         // never call cb(), then you'll never get another chunk.
         Transform.prototype._transform = function (chunk, encoding, cb) {
-          throw new Error('Not implemented');
+          throw new Error('_transform() is not implemented');
         };
         Transform.prototype._write = function (chunk, encoding, cb) {
           var ts = this._transformState;
@@ -38677,9 +39320,11 @@
             ts.needTransform = true;
           }
         };
-        function done(stream, er) {
+        function done(stream, er, data) {
           if (er)
             return stream.emit('error', er);
+          if (data !== null && data !== undefined)
+            stream.push(data);
           // if there's nothing in the write buffer, then that means
           // that nothing more will ever be provided
           var ws = stream._writableState;
@@ -38692,12 +39337,12 @@
         }
       },
       {
-        './_stream_duplex': 123,
-        'core-util-is': 45,
-        'inherits': 54
+        './_stream_duplex': 124,
+        'core-util-is': 46,
+        'inherits': 55
       }
     ],
-    127: [
+    128: [
       function (require, module, exports) {
         (function (process) {
           // A bit simpler than readable streams.
@@ -38713,6 +39358,9 @@
               'v0.10',
               'v0.9.'
             ].indexOf(process.version.slice(0, 5)) > -1 ? setImmediate : processNextTick;
+          /*</replacement>*/
+          /*<replacement>*/
+          var Duplex;
           /*</replacement>*/
           Writable.WritableState = WritableState;
           /*<replacement>*/
@@ -38747,7 +39395,6 @@
             this.callback = cb;
             this.next = null;
           }
-          var Duplex;
           function WritableState(options, stream) {
             Duplex = Duplex || require('./_stream_duplex');
             options = options || {};
@@ -38764,6 +39411,7 @@
             this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
             // cast to ints.
             this.highWaterMark = ~~this.highWaterMark;
+            // drain event flag.
             this.needDrain = false;
             // at the start of calling end()
             this.ending = false;
@@ -38821,7 +39469,7 @@
             // one allocated and free to use, and we maintain at most two
             this.corkedRequestsFree = new CorkedRequest(this);
           }
-          WritableState.prototype.getBuffer = function writableStateGetBuffer() {
+          WritableState.prototype.getBuffer = function getBuffer() {
             var current = this.bufferedRequest;
             var out = [];
             while (current) {
@@ -38840,13 +39488,34 @@
             } catch (_) {
             }
           }());
-          var Duplex;
+          // Test _writableState for inheritance to account for Duplex streams,
+          // whose prototype chain only points to Readable.
+          var realHasInstance;
+          if (typeof Symbol === 'function' && Symbol.hasInstance) {
+            realHasInstance = Function.prototype[Symbol.hasInstance];
+            Object.defineProperty(Writable, Symbol.hasInstance, {
+              value: function (object) {
+                if (realHasInstance.call(this, object))
+                  return true;
+                return object && object._writableState instanceof WritableState;
+              }
+            });
+          } else {
+            realHasInstance = function (object) {
+              return object instanceof this;
+            };
+          }
           function Writable(options) {
             Duplex = Duplex || require('./_stream_duplex');
-            // Writable ctor is applied to Duplexes, though they're not
-            // instanceof Writable, they're instanceof Readable.
-            if (!(this instanceof Writable) && !(this instanceof Duplex))
+            // Writable ctor is applied to Duplexes, too.
+            // `realHasInstance` is necessary because using plain `instanceof`
+            // would return false, as no `_writableState` property is attached.
+            // Trying to use the custom `instanceof` for Writable here will also break the
+            // Node.js LazyTransform implementation, which has a non-trivial getter for
+            // `_writableState` that would lead to infinite recursion.
+            if (!realHasInstance.call(Writable, this) && !(this instanceof Duplex)) {
               return new Writable(options);
+            }
             this._writableState = new WritableState(options, this);
             // legacy.
             this.writable = true;
@@ -39093,7 +39762,7 @@
             state.bufferProcessing = false;
           }
           Writable.prototype._write = function (chunk, encoding, cb) {
-            cb(new Error('not implemented'));
+            cb(new Error('_write() is not implemented'));
           };
           Writable.prototype._writev = null;
           Writable.prototype.end = function (chunk, encoding, cb) {
@@ -39176,18 +39845,18 @@
         }.call(this, require('_process')));
       },
       {
-        './_stream_duplex': 123,
-        '_process': 115,
-        'buffer': 41,
-        'buffer-shims': 40,
-        'core-util-is': 45,
-        'events': 49,
-        'inherits': 54,
-        'process-nextick-args': 114,
-        'util-deprecate': 147
+        './_stream_duplex': 124,
+        '_process': 116,
+        'buffer': 42,
+        'buffer-shims': 41,
+        'core-util-is': 46,
+        'events': 50,
+        'inherits': 55,
+        'process-nextick-args': 115,
+        'util-deprecate': 148
       }
     ],
-    128: [
+    129: [
       function (require, module, exports) {
         'use strict';
         var Buffer = require('buffer').Buffer;
@@ -39264,17 +39933,17 @@
         };
       },
       {
-        'buffer': 41,
-        'buffer-shims': 40
+        'buffer': 42,
+        'buffer-shims': 41
       }
     ],
-    129: [
+    130: [
       function (require, module, exports) {
         module.exports = require('./lib/_stream_passthrough.js');
       },
-      { './lib/_stream_passthrough.js': 124 }
+      { './lib/_stream_passthrough.js': 125 }
     ],
-    130: [
+    131: [
       function (require, module, exports) {
         (function (process) {
           var Stream = function () {
@@ -39296,27 +39965,27 @@
         }.call(this, require('_process')));
       },
       {
-        './lib/_stream_duplex.js': 123,
-        './lib/_stream_passthrough.js': 124,
-        './lib/_stream_readable.js': 125,
-        './lib/_stream_transform.js': 126,
-        './lib/_stream_writable.js': 127,
-        '_process': 115
+        './lib/_stream_duplex.js': 124,
+        './lib/_stream_passthrough.js': 125,
+        './lib/_stream_readable.js': 126,
+        './lib/_stream_transform.js': 127,
+        './lib/_stream_writable.js': 128,
+        '_process': 116
       }
-    ],
-    131: [
-      function (require, module, exports) {
-        module.exports = require('./lib/_stream_transform.js');
-      },
-      { './lib/_stream_transform.js': 126 }
     ],
     132: [
       function (require, module, exports) {
-        module.exports = require('./lib/_stream_writable.js');
+        module.exports = require('./lib/_stream_transform.js');
       },
-      { './lib/_stream_writable.js': 127 }
+      { './lib/_stream_transform.js': 127 }
     ],
     133: [
+      function (require, module, exports) {
+        module.exports = require('./lib/_stream_writable.js');
+      },
+      { './lib/_stream_writable.js': 128 }
+    ],
+    134: [
       function (require, module, exports) {
         var ClientRequest = require('./lib/request');
         var extend = require('xtend');
@@ -39384,13 +40053,13 @@
         ];
       },
       {
-        './lib/request': 135,
-        'builtin-status-codes': 43,
-        'url': 146,
-        'xtend': 215
+        './lib/request': 136,
+        'builtin-status-codes': 44,
+        'url': 147,
+        'xtend': 216
       }
     ],
-    134: [
+    135: [
       function (require, module, exports) {
         (function (global) {
           exports.fetch = isFunction(global.fetch) && isFunction(global.ReadableByteStream);
@@ -39431,7 +40100,7 @@
       },
       {}
     ],
-    135: [
+    136: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           // var Base64 = require('Base64')
@@ -39680,18 +40349,18 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        './response': 136,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'indexof': 53,
-        'inherits': 54,
-        'object-keys': 111,
-        'stream': 120
+        './capability': 135,
+        './response': 137,
+        '_process': 116,
+        'buffer': 42,
+        'foreach': 51,
+        'indexof': 54,
+        'inherits': 55,
+        'object-keys': 112,
+        'stream': 121
       }
     ],
-    136: [
+    137: [
       function (require, module, exports) {
         (function (process, global, Buffer) {
           var capability = require('./capability');
@@ -39858,15 +40527,15 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}, require('buffer').Buffer));
       },
       {
-        './capability': 134,
-        '_process': 115,
-        'buffer': 41,
-        'foreach': 50,
-        'inherits': 54,
-        'stream': 120
+        './capability': 135,
+        '_process': 116,
+        'buffer': 42,
+        'foreach': 51,
+        'inherits': 55,
+        'stream': 121
       }
     ],
-    137: [
+    138: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -40068,9 +40737,9 @@
           this.charLength = this.charReceived ? 3 : 0;
         }
       },
-      { 'buffer': 41 }
+      { 'buffer': 42 }
     ],
-    138: [
+    139: [
       function (require, module, exports) {
         module.exports = [
           'get',
@@ -40084,7 +40753,7 @@
       },
       {}
     ],
-    139: [
+    140: [
       function (require, module, exports) {
         /** !
  * Swagger Parser v4.0.0-beta.2
@@ -40260,18 +40929,18 @@
         }
       },
       {
-        './options': 140,
-        './promise': 141,
-        './util': 142,
-        './validate-schema': 143,
-        './validate-spec': 144,
-        'call-me-maybe': 44,
-        'json-schema-ref-parser': 89,
-        'json-schema-ref-parser/lib/dereference': 88,
-        'ono': 113
+        './options': 141,
+        './promise': 142,
+        './util': 143,
+        './validate-schema': 144,
+        './validate-spec': 145,
+        'call-me-maybe': 45,
+        'json-schema-ref-parser': 90,
+        'json-schema-ref-parser/lib/dereference': 89,
+        'ono': 114
       }
     ],
-    140: [
+    141: [
       function (require, module, exports) {
         'use strict';
         var $RefParserOptions = require('json-schema-ref-parser/lib/options'), util = require('util');
@@ -40296,20 +40965,20 @@
         util.inherits(ParserOptions, $RefParserOptions);
       },
       {
-        'json-schema-ref-parser/lib/options': 90,
-        'util': 150
-      }
-    ],
-    141: [
-      function (require, module, exports) {
-        arguments[4][104][0].apply(exports, arguments);
-      },
-      {
-        'dup': 104,
-        'es6-promise': 48
+        'json-schema-ref-parser/lib/options': 91,
+        'util': 151
       }
     ],
     142: [
+      function (require, module, exports) {
+        arguments[4][105][0].apply(exports, arguments);
+      },
+      {
+        'dup': 105,
+        'es6-promise': 49
+      }
+    ],
+    143: [
       function (require, module, exports) {
         'use strict';
         var debug = require('debug'), util = require('util');
@@ -40327,11 +40996,11 @@
         exports.swaggerParamRegExp = /\{([^\/}]+)}/g;
       },
       {
-        'debug': 46,
-        'util': 150
+        'debug': 47,
+        'util': 151
       }
     ],
-    143: [
+    144: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), ZSchema = require('z-schema'), swaggerSchema = require('swagger-schema-official/schema');
@@ -40386,13 +41055,13 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-schema-official/schema': 145,
-        'z-schema': 225
+        './util': 143,
+        'ono': 114,
+        'swagger-schema-official/schema': 146,
+        'z-schema': 226
       }
     ],
-    144: [
+    145: [
       function (require, module, exports) {
         'use strict';
         var util = require('./util'), ono = require('ono'), swaggerMethods = require('swagger-methods'), primitiveTypes = [
@@ -40637,12 +41306,12 @@
         }
       },
       {
-        './util': 142,
-        'ono': 113,
-        'swagger-methods': 138
+        './util': 143,
+        'ono': 114,
+        'swagger-methods': 139
       }
     ],
-    145: [
+    146: [
       function (require, module, exports) {
         module.exports = {
           'title': 'A JSON Schema for Swagger 2.0 API.',
@@ -41620,7 +42289,7 @@
       },
       {}
     ],
-    146: [
+    147: [
       function (require, module, exports) {
         // Copyright Joyent, Inc. and other Node contributors.
         //
@@ -42255,11 +42924,11 @@
         }
       },
       {
-        'punycode': 116,
-        'querystring': 119
+        'punycode': 117,
+        'querystring': 120
       }
     ],
-    147: [
+    148: [
       function (require, module, exports) {
         (function (global) {
           /**
@@ -42327,13 +42996,13 @@
       },
       {}
     ],
-    148: [
-      function (require, module, exports) {
-        arguments[4][54][0].apply(exports, arguments);
-      },
-      { 'dup': 54 }
-    ],
     149: [
+      function (require, module, exports) {
+        arguments[4][55][0].apply(exports, arguments);
+      },
+      { 'dup': 55 }
+    ],
+    150: [
       function (require, module, exports) {
         module.exports = function isBuffer(arg) {
           return arg && typeof arg === 'object' && typeof arg.copy === 'function' && typeof arg.fill === 'function' && typeof arg.readUInt8 === 'function';
@@ -42341,7 +43010,7 @@
       },
       {}
     ],
-    150: [
+    151: [
       function (require, module, exports) {
         (function (process, global) {
           // Copyright Joyent, Inc. and other Node contributors.
@@ -42900,12 +43569,12 @@
         }.call(this, require('_process'), typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : typeof window !== 'undefined' ? window : {}));
       },
       {
-        './support/isBuffer': 149,
-        '_process': 115,
-        'inherits': 148
+        './support/isBuffer': 150,
+        '_process': 116,
+        'inherits': 149
       }
     ],
-    151: [
+    152: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43100,69 +43769,69 @@
         module.exports = exports['default'];
       },
       {
-        './lib/blacklist': 153,
-        './lib/contains': 154,
-        './lib/equals': 155,
-        './lib/escape': 156,
-        './lib/isAfter': 157,
-        './lib/isAlpha': 158,
-        './lib/isAlphanumeric': 159,
-        './lib/isAscii': 160,
-        './lib/isBase64': 161,
-        './lib/isBefore': 162,
-        './lib/isBoolean': 163,
-        './lib/isByteLength': 164,
-        './lib/isCreditCard': 165,
-        './lib/isCurrency': 166,
-        './lib/isDataURI': 167,
-        './lib/isDate': 168,
-        './lib/isDecimal': 169,
-        './lib/isDivisibleBy': 170,
-        './lib/isEmail': 171,
-        './lib/isFQDN': 172,
-        './lib/isFloat': 173,
-        './lib/isFullWidth': 174,
-        './lib/isHalfWidth': 175,
-        './lib/isHexColor': 176,
-        './lib/isHexadecimal': 177,
-        './lib/isIP': 178,
-        './lib/isISBN': 179,
-        './lib/isISIN': 180,
-        './lib/isISO8601': 181,
-        './lib/isIn': 182,
-        './lib/isInt': 183,
-        './lib/isJSON': 184,
-        './lib/isLength': 185,
-        './lib/isLowercase': 186,
-        './lib/isMACAddress': 187,
-        './lib/isMD5': 188,
-        './lib/isMobilePhone': 189,
-        './lib/isMongoId': 190,
-        './lib/isMultibyte': 191,
-        './lib/isNull': 192,
-        './lib/isNumeric': 193,
-        './lib/isSurrogatePair': 194,
-        './lib/isURL': 195,
-        './lib/isUUID': 196,
-        './lib/isUppercase': 197,
-        './lib/isVariableWidth': 198,
-        './lib/isWhitelisted': 199,
-        './lib/ltrim': 200,
-        './lib/matches': 201,
-        './lib/normalizeEmail': 202,
-        './lib/rtrim': 203,
-        './lib/stripLow': 204,
-        './lib/toBoolean': 205,
-        './lib/toDate': 206,
-        './lib/toFloat': 207,
-        './lib/toInt': 208,
-        './lib/trim': 209,
-        './lib/unescape': 210,
-        './lib/util/toString': 213,
-        './lib/whitelist': 214
+        './lib/blacklist': 154,
+        './lib/contains': 155,
+        './lib/equals': 156,
+        './lib/escape': 157,
+        './lib/isAfter': 158,
+        './lib/isAlpha': 159,
+        './lib/isAlphanumeric': 160,
+        './lib/isAscii': 161,
+        './lib/isBase64': 162,
+        './lib/isBefore': 163,
+        './lib/isBoolean': 164,
+        './lib/isByteLength': 165,
+        './lib/isCreditCard': 166,
+        './lib/isCurrency': 167,
+        './lib/isDataURI': 168,
+        './lib/isDate': 169,
+        './lib/isDecimal': 170,
+        './lib/isDivisibleBy': 171,
+        './lib/isEmail': 172,
+        './lib/isFQDN': 173,
+        './lib/isFloat': 174,
+        './lib/isFullWidth': 175,
+        './lib/isHalfWidth': 176,
+        './lib/isHexColor': 177,
+        './lib/isHexadecimal': 178,
+        './lib/isIP': 179,
+        './lib/isISBN': 180,
+        './lib/isISIN': 181,
+        './lib/isISO8601': 182,
+        './lib/isIn': 183,
+        './lib/isInt': 184,
+        './lib/isJSON': 185,
+        './lib/isLength': 186,
+        './lib/isLowercase': 187,
+        './lib/isMACAddress': 188,
+        './lib/isMD5': 189,
+        './lib/isMobilePhone': 190,
+        './lib/isMongoId': 191,
+        './lib/isMultibyte': 192,
+        './lib/isNull': 193,
+        './lib/isNumeric': 194,
+        './lib/isSurrogatePair': 195,
+        './lib/isURL': 196,
+        './lib/isUUID': 197,
+        './lib/isUppercase': 198,
+        './lib/isVariableWidth': 199,
+        './lib/isWhitelisted': 200,
+        './lib/ltrim': 201,
+        './lib/matches': 202,
+        './lib/normalizeEmail': 203,
+        './lib/rtrim': 204,
+        './lib/stripLow': 205,
+        './lib/toBoolean': 206,
+        './lib/toDate': 207,
+        './lib/toFloat': 208,
+        './lib/toInt': 209,
+        './lib/trim': 210,
+        './lib/unescape': 211,
+        './lib/util/toString': 214,
+        './lib/whitelist': 215
       }
     ],
-    152: [
+    153: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43242,7 +43911,7 @@
       },
       {}
     ],
-    153: [
+    154: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43258,9 +43927,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    154: [
+    155: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43279,11 +43948,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 212,
+        './util/toString': 214
       }
     ],
-    155: [
+    156: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43299,9 +43968,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    156: [
+    157: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43317,9 +43986,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    157: [
+    158: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43341,11 +44010,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 207,
+        './util/assertString': 212
       }
     ],
-    158: [
+    159: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43367,11 +44036,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 153,
+        './util/assertString': 212
       }
     ],
-    159: [
+    160: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43393,11 +44062,11 @@
         module.exports = exports['default'];
       },
       {
-        './alpha': 152,
-        './util/assertString': 211
+        './alpha': 153,
+        './util/assertString': 212
       }
     ],
-    160: [
+    161: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43416,9 +44085,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    161: [
+    162: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43440,9 +44109,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    162: [
+    163: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43464,11 +44133,11 @@
         module.exports = exports['default'];
       },
       {
-        './toDate': 206,
-        './util/assertString': 211
+        './toDate': 207,
+        './util/assertString': 212
       }
     ],
-    163: [
+    164: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43489,9 +44158,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    164: [
+    165: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43524,9 +44193,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    165: [
+    166: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43568,9 +44237,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    166: [
+    167: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43642,11 +44311,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    167: [
+    168: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43664,9 +44333,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    168: [
+    169: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43755,11 +44424,11 @@
         module.exports = exports['default'];
       },
       {
-        './isISO8601': 181,
-        './util/assertString': 211
+        './isISO8601': 182,
+        './util/assertString': 212
       }
     ],
-    169: [
+    170: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43776,9 +44445,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    170: [
+    171: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43797,11 +44466,11 @@
         module.exports = exports['default'];
       },
       {
-        './toFloat': 207,
-        './util/assertString': 211
+        './toFloat': 208,
+        './util/assertString': 212
       }
     ],
-    171: [
+    172: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43869,13 +44538,13 @@
         module.exports = exports['default'];
       },
       {
-        './isByteLength': 164,
-        './isFQDN': 172,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isByteLength': 165,
+        './isFQDN': 173,
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    172: [
+    173: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43927,11 +44596,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/merge': 212
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    173: [
+    174: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43952,9 +44621,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    174: [
+    175: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43971,9 +44640,9 @@
           return fullWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    175: [
+    176: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -43990,9 +44659,9 @@
           return halfWidth.test(str);
         }
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    176: [
+    177: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44009,9 +44678,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    177: [
+    178: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44028,9 +44697,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    178: [
+    179: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44103,9 +44772,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    179: [
+    180: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44161,9 +44830,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    180: [
+    181: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44205,9 +44874,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    181: [
+    182: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44225,9 +44894,9 @@
         // from http://goo.gl/0ejHHW
         var iso8601 = exports.iso8601 = /^([\+-]?\d{4}(?!\d{2}\b))((-?)((0[1-9]|1[0-2])(\3([12]\d|0[1-9]|3[01]))?|W([0-4]\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\d|[12]\d{2}|3([0-5]\d|6[1-6])))([T\s]((([01]\d|2[0-3])((:?)[0-5]\d)?|24:?00)([\.,]\d+(?!:))?)?(\17[0-5]\d([\.,]\d+)?)?([zZ]|([\+-])([01]\d|2[0-3]):?([0-5]\d)?)?)?)?$/;  /* eslint-enable max-len */
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    182: [
+    183: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44265,11 +44934,11 @@
         module.exports = exports['default'];
       },
       {
-        './util/assertString': 211,
-        './util/toString': 213
+        './util/assertString': 212,
+        './util/toString': 214
       }
     ],
-    183: [
+    184: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44294,9 +44963,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    184: [
+    185: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44322,9 +44991,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    185: [
+    186: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44358,9 +45027,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    186: [
+    187: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44376,9 +45045,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    187: [
+    188: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44395,9 +45064,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    188: [
+    189: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44414,9 +45083,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    189: [
+    190: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44476,9 +45145,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    190: [
+    191: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44497,11 +45166,11 @@
         module.exports = exports['default'];
       },
       {
-        './isHexadecimal': 177,
-        './util/assertString': 211
+        './isHexadecimal': 178,
+        './util/assertString': 212
       }
     ],
-    191: [
+    192: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44520,9 +45189,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    192: [
+    193: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44538,9 +45207,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    193: [
+    194: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44557,9 +45226,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    194: [
+    195: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44576,9 +45245,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    195: [
+    196: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44694,13 +45363,13 @@
         module.exports = exports['default'];
       },
       {
-        './isFQDN': 172,
-        './isIP': 178,
-        './util/assertString': 211,
-        './util/merge': 212
+        './isFQDN': 173,
+        './isIP': 179,
+        './util/assertString': 212,
+        './util/merge': 213
       }
     ],
-    196: [
+    197: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44724,9 +45393,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    197: [
+    198: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44742,9 +45411,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    198: [
+    199: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44763,12 +45432,12 @@
         module.exports = exports['default'];
       },
       {
-        './isFullWidth': 174,
-        './isHalfWidth': 175,
-        './util/assertString': 211
+        './isFullWidth': 175,
+        './isHalfWidth': 176,
+        './util/assertString': 212
       }
     ],
-    199: [
+    200: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44789,9 +45458,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    200: [
+    201: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44808,9 +45477,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    201: [
+    202: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44829,9 +45498,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    202: [
+    203: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44875,11 +45544,11 @@
         module.exports = exports['default'];
       },
       {
-        './isEmail': 171,
-        './util/merge': 212
+        './isEmail': 172,
+        './util/merge': 213
       }
     ],
-    203: [
+    204: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44900,9 +45569,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    204: [
+    205: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44922,11 +45591,11 @@
         module.exports = exports['default'];
       },
       {
-        './blacklist': 153,
-        './util/assertString': 211
+        './blacklist': 154,
+        './util/assertString': 212
       }
     ],
-    205: [
+    206: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44945,9 +45614,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    206: [
+    207: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44964,9 +45633,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    207: [
+    208: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -44982,9 +45651,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    208: [
+    209: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45000,9 +45669,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    209: [
+    210: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45020,11 +45689,11 @@
         module.exports = exports['default'];
       },
       {
-        './ltrim': 200,
-        './rtrim': 203
+        './ltrim': 201,
+        './rtrim': 204
       }
     ],
-    210: [
+    211: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45040,9 +45709,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    211: [
+    212: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45056,7 +45725,7 @@
       },
       {}
     ],
-    212: [
+    213: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45075,7 +45744,7 @@
       },
       {}
     ],
-    213: [
+    214: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45101,7 +45770,7 @@
       },
       {}
     ],
-    214: [
+    215: [
       function (require, module, exports) {
         'use strict';
         Object.defineProperty(exports, '__esModule', { value: true });
@@ -45117,9 +45786,9 @@
         }
         module.exports = exports['default'];
       },
-      { './util/assertString': 211 }
+      { './util/assertString': 212 }
     ],
-    215: [
+    216: [
       function (require, module, exports) {
         module.exports = extend;
         var hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -45138,7 +45807,7 @@
       },
       {}
     ],
-    216: [
+    217: [
       function (require, module, exports) {
         'use strict';
         module.exports = {
@@ -45187,7 +45856,7 @@
       },
       {}
     ],
-    217: [
+    218: [
       function (require, module, exports) {
         /*jshint maxlen: false*/
         var validator = require('validator');
@@ -45326,9 +45995,9 @@
           };
         module.exports = FormatValidators;
       },
-      { 'validator': 151 }
+      { 'validator': 152 }
     ],
-    218: [
+    219: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), Report = require('./Report'), Utils = require('./Utils');
@@ -45865,12 +46534,12 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 218,
+        './Report': 221,
+        './Utils': 225
       }
     ],
-    219: [
+    220: [
       function (require, module, exports) {
         // Number.isFinite polyfill
         // http://people.mozilla.org/~jorendorff/es6-draft.html#sec-number.isfinite
@@ -45891,7 +46560,7 @@
       },
       {}
     ],
-    220: [
+    221: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -46068,13 +46737,13 @@
         }.call(this, require('_process')));
       },
       {
-        './Errors': 216,
-        './Utils': 224,
-        '_process': 115,
-        'lodash.get': 108
+        './Errors': 217,
+        './Utils': 225,
+        '_process': 116,
+        'lodash.get': 109
       }
     ],
-    221: [
+    222: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -46216,13 +46885,13 @@
         exports.getRemotePath = getRemotePath;
       },
       {
-        './Report': 220,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224
+        './Report': 221,
+        './SchemaCompilation': 223,
+        './SchemaValidation': 224,
+        './Utils': 225
       }
     ],
-    222: [
+    223: [
       function (require, module, exports) {
         'use strict';
         var Report = require('./Report');
@@ -46469,12 +47138,12 @@
         };
       },
       {
-        './Report': 220,
-        './SchemaCache': 221,
-        './Utils': 224
+        './Report': 221,
+        './SchemaCache': 222,
+        './Utils': 225
       }
     ],
-    223: [
+    224: [
       function (require, module, exports) {
         'use strict';
         var FormatValidators = require('./FormatValidators'), JsonValidation = require('./JsonValidation'), Report = require('./Report'), Utils = require('./Utils');
@@ -47238,13 +47907,13 @@
         };
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Report': 220,
-        './Utils': 224
+        './FormatValidators': 218,
+        './JsonValidation': 219,
+        './Report': 221,
+        './Utils': 225
       }
     ],
-    224: [
+    225: [
       function (require, module, exports) {
         'use strict';
         exports.isAbsoluteUri = function (uri) {
@@ -47450,7 +48119,7 @@
       },
       {}
     ],
-    225: [
+    226: [
       function (require, module, exports) {
         (function (process) {
           'use strict';
@@ -47747,21 +48416,21 @@
         }.call(this, require('_process')));
       },
       {
-        './FormatValidators': 217,
-        './JsonValidation': 218,
-        './Polyfills': 219,
-        './Report': 220,
-        './SchemaCache': 221,
-        './SchemaCompilation': 222,
-        './SchemaValidation': 223,
-        './Utils': 224,
-        './schemas/hyper-schema.json': 226,
-        './schemas/schema.json': 227,
-        '_process': 115,
-        'lodash.get': 108
+        './FormatValidators': 218,
+        './JsonValidation': 219,
+        './Polyfills': 220,
+        './Report': 221,
+        './SchemaCache': 222,
+        './SchemaCompilation': 223,
+        './SchemaValidation': 224,
+        './Utils': 225,
+        './schemas/hyper-schema.json': 227,
+        './schemas/schema.json': 228,
+        '_process': 116,
+        'lodash.get': 109
       }
     ],
-    226: [
+    227: [
       function (require, module, exports) {
         module.exports = {
           '$schema': 'http://json-schema.org/draft-04/hyper-schema#',
@@ -47879,7 +48548,7 @@
       },
       {}
     ],
-    227: [
+    228: [
       function (require, module, exports) {
         module.exports = {
           'id': 'http://json-schema.org/draft-04/schema#',
