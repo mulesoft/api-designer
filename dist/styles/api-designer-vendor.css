@@ -3631,7 +3631,7 @@ ol.raml-console-resources-container-no-title {
 }
 
 ol.raml-console-resources-container {
-  margin-top: 0;
+  margin-top: 0px;
 }
 
 .raml-console-resource-level-description {
@@ -3649,15 +3649,13 @@ ol.raml-console-resources-container {
 
 .raml-console-resource-response-jump {
   margin-top: 50px;
-  position: inherit;
+  position: absolute;
   margin-left: 10px;
-  margin-bottom: 5px;
-  float: left;
 }
 
 .raml-console-resource-menu {
   list-style: none;
-  padding-left: 0;
+  padding-left: 0px;
   margin-top: -5px;
 }
 
@@ -4062,7 +4060,7 @@ a.raml-console-resource-path-active {
 .raml-console-resource-heading-flag {
   position: relative;
   top: -1px;
-  padding: 0 3px;
+  padding: 0px 3px;
   border-radius: 3px;
   background: #e3e4e6;
 }
