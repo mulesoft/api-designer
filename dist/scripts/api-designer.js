@@ -59555,7 +59555,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             label: 'DataType',
             name: 'Type',
             description: 'Define a single data type declaration.',
-            spec: specUrl + '#raml-data-types'
+            spec: specUrl + 'raml-data-types'
           },
           'DocumentationItem': {
             label: 'DocumentationItem',
