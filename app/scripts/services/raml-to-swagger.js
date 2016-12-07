@@ -5,7 +5,11 @@
     .service('ramlToSwagger', function ramlToSwagger($q, ramlRepository, ramlEditorMainHelpers, apiSpecTransformer) {
       var self  = this;
 
-      function findRootRaml () {
+      function findRootRaml (selectedFile) {
+        if (selectedFile && ramlEditorMainHelpers.isApiDefinition(selectedFile.contents)) {
+          return $q.when(selectedFile);
+        }
+
         var defer = $q.defer();
         var rootDirectory = ramlRepository.getByPath('/');
         findRootRamlRecursive(rootDirectory, defer);
@@ -57,10 +61,10 @@
         return deferred;
       }
 
-      function toSwagger(format) {
+      function toSwagger(format, selectedFile) {
         var deferred = $q.defer();
 
-        findRootRaml().then(function (rootRaml) {
+        findRootRaml(selectedFile).then(function (rootRaml) {
           convertData(rootRaml, format, deferred);
         }).catch(function (err) {
           deferred.reject(err);
@@ -69,12 +73,12 @@
         return deferred.promise;
       }
 
-      self.json = function json() {
-        return toSwagger('json');
+      self.json = function json(selectedFile) {
+        return toSwagger('json', selectedFile);
       };
 
-      self.yaml = function yaml() {
-        return toSwagger('yaml');
+      self.yaml = function yaml(selectedFile) {
+        return toSwagger('yaml', selectedFile);
       };
 
       return self;

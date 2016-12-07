@@ -49,7 +49,8 @@
           };
 
           scope.exportJsonFiles = function exportJsonFiles() {
-            ramlToSwagger.json().then(function (convert) {
+            var selectedFile = scope.fileBrowser.selectedFile;
+            ramlToSwagger.json(selectedFile).then(function (convert) {
               var lines = JSON.stringify(convert.contents, null, 2);
               saveFile(lines, replaceExtension(convert.name, 'json'));
             }).catch(function (error) {
@@ -58,7 +59,8 @@
           };
 
           scope.exportYamlFiles = function exportYamlFiles() {
-            ramlToSwagger.yaml().then(function (convert) {
+            var selectedFile = scope.fileBrowser.selectedFile;
+            ramlToSwagger.yaml(selectedFile).then(function (convert) {
               saveFile(convert.contents, replaceExtension(convert.name, 'yaml'));
             }).catch(function (error) {
               broadcastError(error);
