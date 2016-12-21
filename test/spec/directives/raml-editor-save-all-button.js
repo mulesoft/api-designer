@@ -32,7 +32,9 @@ describe('ramlEditorSaveAllFilesButton', function() {
       }
     };
 
+    var ramlRepositoryElements = $injector.get('ramlRepositoryElements');
     ramlRepository = $injector.get('ramlRepository');
+    ramlRepository.rootFile = new ramlRepositoryElements.RamlDirectory('/', {}, scope.homeDirectory.children);
   }));
 
   afterEach(function() {
@@ -41,11 +43,11 @@ describe('ramlEditorSaveAllFilesButton', function() {
     sandbox.restore();
   });
 
-  describe('on save all click', function() {
-    var saveFileSpy, broadcastSpy;
+  describe('on "Save all" click', function() {
+    var saveFileSpy, rootScope;
 
     beforeEach(inject(function($rootScope) {
-      broadcastSpy = sandbox.spy($rootScope, '$broadcast');
+      rootScope = $rootScope;
       saveFileSpy = sandbox.stub(ramlRepository, 'saveFile').returns(promise.resolved());
       compileSaveFileButton();
     }));
@@ -56,10 +58,15 @@ describe('ramlEditorSaveAllFilesButton', function() {
         $rootScope.$digest();
       }));
 
-      it('broadcasts an event', function() {
-        broadcastSpy.should.have.been.calledWith('event:notification', {
-          message: 'All files saved.',
-          expires: true
+      it('broadcasts an event', function(done) {
+        sandbox.stub(rootScope, '$broadcast', function (type, content) {
+          rootScope.$broadcast.restore();
+
+          type.should.be.equal('event:notification');
+          content.message.should.be.equal('All files saved.');
+          content.expires.should.be.true();
+
+          done();
         });
       });
     });

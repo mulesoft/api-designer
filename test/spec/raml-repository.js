@@ -2,6 +2,7 @@
 
 describe('RAML Repository', function () {
   var $rootScope, $q, $timeout, ramlRepository, fileSystem, sandbox;
+  var RamlFile;
 
   beforeEach(module('fs'));
   beforeEach(function () {
@@ -16,6 +17,7 @@ describe('RAML Repository', function () {
     $timeout       = $injector.get('$timeout');
     fileSystem     = $injector.get('fileSystem');
     ramlRepository = $injector.get('ramlRepository');
+    RamlFile = $injector.get('ramlRepositoryElements').RamlFile;
     sandbox        = sinon.sandbox.create();
   }));
 
@@ -563,53 +565,38 @@ describe('RAML Repository', function () {
   });
 
   describe('saveFile', function () {
-    it('should update file state on success', function () {
+    it('should update file state on success', function (done) {
       // Arrange
-      var saveDeferred = $q.defer();
-      sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
-      var success = sinon.stub();
-      var fileMock = {
-        path: '/example.raml',
-        name: 'example.raml',
-        dirty: true
-      };
-      var file;
+      sinon.stub(fileSystem, 'save').returns(Promise.resolve());
+      var fileMock = new RamlFile('/example.raml', '', {dirty: true});
 
       // Act
-      ramlRepository.saveFile(fileMock).then(success);
+      ramlRepository.saveFile(fileMock)
+        .then(function(file) {
+          file.dirty.should.be.equal(false);
+          file.persisted.should.be.equal(true);
+          should.not.exist(file.error);
+          done();
+        });
 
-      saveDeferred.resolve();
       $rootScope.$apply();
-
-      // Assert
-      file = success.firstCall.args[0];
-      file.dirty.should.be.equal(false);
-      file.persisted.should.be.equal(true);
-      should.not.exist(file.error);
     });
 
-    it('should handle errors', function () {
+    it('should handle errors', function (done) {
       // Arrange
-      var saveDeferred = $q.defer();
-      sinon.stub(fileSystem, 'save').returns(saveDeferred.promise);
-      var error = sinon.stub();
-      var fileMock = {
-        path: '/example.raml',
-        name: 'example.raml',
-        dirty: true
-      };
       var errorData = {message: 'This is the error description'};
+      sinon.stub(fileSystem, 'save')
+        .returns(Promise.reject(errorData));
+      var fileMock = new RamlFile('/example.raml', '', {dirty: true});
 
       // Act
-      ramlRepository.saveFile(fileMock).then(function () {}, error);
+      ramlRepository.saveFile(fileMock)
+        .then(function () {}, function (error) {
+          error.should.be.equal(errorData);
+          done();
+        });
 
-      saveDeferred.reject(errorData);
       $rootScope.$apply();
-
-      // Assert
-      error.firstCall.args[0].should.be.equal(errorData);
-
-      fileMock.error.should.be.equal(errorData);
     });
   });
 

@@ -4,7 +4,8 @@
   angular.module('ramlEditorApp')
     .directive('ramlEditorSaveFileButton', function ramlEditorSaveFileButton(
       $rootScope,
-      ramlRepository
+      ramlRepository,
+      ramlRepositoryConfig
     ) {
       return {
         restrict: 'E',
@@ -18,11 +19,16 @@
             var file = scope.fileBrowser.selectedFile;
 
             return ramlRepository.saveFile(file)
-              .then(function success() {
+              .then(function success(file) {
                 $rootScope.$broadcast('event:notification', {
                   message: 'File saved.',
                   expires: true
                 });
+                if (ramlRepositoryConfig.reloadFilesOnSave){
+                  $rootScope.$broadcast('event:raml-editor-file-selected', file);
+                  file.dirty = false;
+                  file.persisted = true;
+                }
               });
           };
         }

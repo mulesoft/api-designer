@@ -353,6 +353,16 @@ module.exports = function (grunt) {
           '.tmp/js-traverse/js-traverse.js': 'node_modules/traverse/index.js'
         }
       },
+      es6Map: {
+        options: {
+          browserifyOptions: {
+            standalone: 'es6Map'
+          }
+        },
+        files: {
+          '.tmp/es6-map/index.js': 'node_modules/es6-map/index.js'
+        }
+      },
       ramlSuggestions: {
         files: {
            '.tmp/raml-suggestions/raml-suggestions.js': 'node_modules/raml-suggestions/dist/browser-main.js'
@@ -395,6 +405,7 @@ module.exports = function (grunt) {
   grunt.registerTask('build', [
     'jshint-once',
     'clean:build',
+    'browserify:es6Map',
     'browserify:jsTraverse',
     'browserify:ramlSuggestions',
     'browserify:apiSpecTransformer',

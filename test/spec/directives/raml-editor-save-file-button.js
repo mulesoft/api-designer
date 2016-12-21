@@ -36,7 +36,9 @@ describe('ramlEditorSaveFileButton', function() {
       }
     };
 
+    var ramlRepositoryElements = $injector.get('ramlRepositoryElements');
     ramlRepository = $injector.get('ramlRepository');
+    ramlRepository.rootFile = new ramlRepositoryElements.RamlDirectory('/', {}, scope.homeDirectory.children);
   }));
 
   afterEach(function() {
@@ -46,7 +48,7 @@ describe('ramlEditorSaveFileButton', function() {
   });
 
 
-  describe('on click', function() {
+  describe('on click "Save"', function() {
     var saveFileSpy, broadcastSpy;
 
     beforeEach(inject(function($rootScope) {
@@ -75,24 +77,24 @@ describe('ramlEditorSaveFileButton', function() {
     });
   });
 
-  describe('on click save all', function() {
+  describe('on click "Save all"', function() {
     var saveFileSpy, broadcastSpy, rootScope;
 
     beforeEach(inject(function($rootScope) {
       rootScope = $rootScope;
       broadcastSpy = sandbox.spy($rootScope, '$broadcast');
-      saveFileSpy = sandbox.stub(ramlRepository, 'saveFile').returns(promise.resolved());
+      saveFileSpy = sandbox.stub(ramlRepository, 'saveAllFiles').returns(promise.resolved());
       compileSaveAllFileButton();
     }));
 
     it('calls saveFile on the ramlRepository', function() {
       clickSaveFileButton();
-      ramlRepository.saveFile.should.have.been.calledWith(scope.fileBrowser.selectedFile);
+      ramlRepository.saveAllFiles.should.have.been.calledWith(scope.fileBrowser.selectedFile);
     });
 
     it('is the same as event:save-all broadcast', function() {
       rootScope.$broadcast('event:save-all');
-      ramlRepository.saveFile.should.have.been.calledWith(scope.fileBrowser.selectedFile);
+      ramlRepository.saveAllFiles.should.have.been.calledWith(scope.fileBrowser.selectedFile);
     });
 
     describe('when ramlRepository successfully saves', function() {

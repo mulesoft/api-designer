@@ -5,7 +5,7 @@
     .directive('ramlEditorSaveAllButton', function ramlEditorSaveAllButton(
       $rootScope,
       ramlRepository,
-      $q
+      ramlRepositoryConfig
     ) {
       return {
         restrict: 'E',
@@ -15,25 +15,22 @@
             '<a><i class="fa fa-save"></i>&nbsp;Save All</a>' +
           '</li>',
         link: function(scope) {
+
           scope.saveAllFiles = function saveAllFiles() {
-            var promises = [];
-
-            scope.homeDirectory.forEachChildDo(function (file) {
-              if (file.isDirectory) {
-                return;
-              }
-
-              if (file.dirty) {
-                return promises.push(ramlRepository.saveFile(file));
-              }
-            });
-
-            return $q.all(promises)
-              .then(function success() {
+            var file = scope.fileBrowser.selectedFile;
+            return ramlRepository.saveAllFiles(file)
+              .then(function success(file) {
                 $rootScope.$broadcast('event:notification', {
                   message: 'All files saved.',
                   expires: true
                 });
+
+                if (ramlRepositoryConfig.reloadFilesOnSave){
+                  console.log(scope.homeDirectory);
+                  $rootScope.$broadcast('event:raml-editor-file-selected', file);
+                  file.dirty = false;
+                  file.persisted = true;
+                }
               });
           };
 

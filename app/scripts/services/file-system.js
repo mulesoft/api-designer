@@ -99,6 +99,15 @@
     },
 
     /**
+     * Saves all contents to the proper paths. It creates the necessary folders if needed.
+     *
+     * Returns a promise that fulfills on success or rejects on fail.
+     */
+    saveAll: function (contents) {
+      throw 'Not implemented: FileSystem save all invoked with [contents=' + contents + ']';
+    },
+
+    /**
      * Creates a folder. Creates all the required previous folder levels if needed.
      *
      * Returns a promise that fulfills on success or rejects on fail.
