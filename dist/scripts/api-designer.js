@@ -5800,6 +5800,7 @@
           this.traits = [];
           this.tests = [];
           this.savedEntries = [];
+          this.pathParamsRef = {};
         }
         Project.prototype = {
           set Description(desc) {
@@ -5873,6 +5874,12 @@
           },
           loadSLData: function (slData) {
             this.Description = slData.description;
+          },
+          addPathParamRef: function (path, paramName) {
+            this.pathParamsRef[path] = paramName;
+          },
+          getPathParamRef: function (path) {
+            return this.pathParamsRef[path];
           }
         };
         module.exports = Project;
@@ -6264,7 +6271,7 @@
             this.protocols = protocols;
           }
         }
-        RAMLDefinition.prototype.addMethod = function (resource, methodURIs, methodKey, method) {
+        RAMLDefinition.prototype.addMethod = function (resource, methodURIs, methodKey, method, pathParamsRef) {
           if (!methodURIs)
             return;
           if (methodURIs.length <= 0) {
@@ -6288,6 +6295,9 @@
             if (_.isEmpty(resource.uriParameters))
               delete resource.uriParameters;
             resource[methodKey] = method;
+            if (!_.isEmpty(pathParamsRef)) {
+              resource.is = pathParamsRef;
+            }
           } else {
             var currentURI = '/' + methodURIs[0];
             if (!resource[currentURI]) {
@@ -6297,7 +6307,7 @@
               }  //TODO uriParams?!?
             }
             methodURIs.splice(0, 1);
-            this.addMethod(resource[currentURI], methodURIs, methodKey, method);
+            this.addMethod(resource[currentURI], methodURIs, methodKey, method, pathParamsRef);
           }
         };
         function RAML() {
@@ -6306,12 +6316,9 @@
           this.hasExternalDocs = false;
           this.hasInfo = false;
           this.hasSummary = false;
-          this.hasCollectionFormat = false;
-          this.hasAllowEmptyValue = false;
-          this.hasExclusiveMaximum = false;
-          this.hasExclusiveMinimum = false;
           this.hasSchemaTitle = false;
           this.hasBodyName = false;
+          this.hasResponsesDefault = false;
         }
         RAML.prototype = new Exporter();
         RAML.prototype._mapSecurityScheme = function (slSecuritySchemes) {
@@ -6424,7 +6431,7 @@
                 break;
               case 'minimum':
               case 'maximum':
-                var typeLowercase = params[key].type.toLowerCase();
+                var typeLowercase = _.toLower(params[key].type);
                 if (typeLowercase !== 'integer' && typeLowercase !== 'number') {
                   delete params[key][prop];
                 }
@@ -6440,10 +6447,11 @@
               case 'maxItems':
               case 'minItems':
               case 'uniqueItems':
-              case '(oas-collectionFormat)':
-              case '(oas-allowEmptyValue)':
-              case '(oas-exclusiveMaximum)':
-              case '(oas-exclusiveMinimum)':
+              case 'collectionFormat':
+              case 'allowEmptyValue':
+              case 'exclusiveMaximum':
+              case 'exclusiveMinimum':
+              case 'facets':
                 break;
               default:
                 //not supported types
@@ -6507,17 +6515,19 @@
             var resBody = responseData[i];
             if (!_.isEmpty(resBody.codes)) {
               var code = resBody.codes[0];
-              if (code === 'default' || parseInt(code) == 'NaN' || _.startsWith(code, 'x-')) {
+              if (parseInt(code) == 'NaN' || _.startsWith(code, 'x-')) {
                 continue;
               }
               responses[code] = {};
               var type = mimeType;
-              if (type) {
-                var body = this.mapBody(resBody, type);
-                this.convertRequiredFromProperties(body);
-                if (!_.isEmpty(body)) {
-                  responses[code].body = {};
+              var body = this.mapBody(resBody, type);
+              this.convertRequiredFromProperties(body);
+              if (!_.isEmpty(body)) {
+                responses[code].body = {};
+                if (type) {
                   responses[code]['body'][type] = body;
+                } else {
+                  responses[code]['body'] = body;
                 }
               }
               if (resBody.description) {
@@ -6551,34 +6561,19 @@
               pathParams[key].format = prop.format;
             }
             pathParams[key].type = pathParams[key].type || 'string';
-            //annotation types
-            if (prop.hasOwnProperty('collectionFormat')) {
-              this.hasCollectionFormat = true;
-              pathParams[key]['(oas-collectionFormat)'] = prop.collectionFormat;
-            }
-            if (prop.hasOwnProperty('allowEmptyValue')) {
-              this.hasAllowEmptyValue = true;
-              pathParams[key]['(oas-allowEmptyValue)'] = prop.allowEmptyValue;
-            }
-            if (prop.hasOwnProperty('exclusiveMaximum')) {
-              this.hasExclusiveMaximum = true;
-              pathParams[key]['(oas-exclusiveMaximum)'] = prop.exclusiveMaximum;
-            }
-            if (prop.hasOwnProperty('exclusiveMinimum')) {
-              this.hasExclusiveMinimum = true;
-              pathParams[key]['(oas-exclusiveMinimum)'] = prop.exclusiveMinimum;
-            }
+            //facets
+            this._addFacetsDeclaration(prop, pathParams[key]);
           }
           return this._validateParam(pathParams);
         };
         function mapProtocols(protocols) {
           var validProtocols = [];
           for (var i in protocols) {
-            if (!protocols.hasOwnProperty(i) || protocols[i].toLowerCase() != 'http' && protocols[i].toLowerCase() != 'https') {
+            if (!protocols.hasOwnProperty(i) || _.toLower(protocols[i]) != 'http' && _.toLower(protocols[i]) != 'https') {
               //RAML incompatible formats( 'ws' etc)
               continue;
             }
-            validProtocols.push(protocols[i].toUpperCase());
+            validProtocols.push(_.toUpper(protocols[i]));
           }
           return validProtocols;
         }
@@ -6625,6 +6620,11 @@
                   object['(oas-schema-title)'] = val;
                   this.hasSchemaTitle = true;
                   delete object[id];
+                } else if (id === 'collectionFormat') {
+                  if (!object.facets) {
+                    object.facets = {};
+                  }
+                  object.facets['collectionFormat'] = 'string';
                 }
               } else if (val && typeof val === 'object') {
                 if (val.type == 'string') {
@@ -6651,61 +6651,121 @@
               } else if (id === '$ref') {
                 object.type = val.replace('#/definitions/', '');
                 delete object[id];
-              } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum') {
-                delete object[id];
+              } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum' || id === 'allowEmptyValue' || id === 'collectionFormat') {
+                if (!object.facets) {
+                  object.facets = {};
+                }
+                if (id === 'exclusiveMinimum') {
+                  object.facets['exclusiveMinimum'] = 'boolean';
+                }
+                if (id === 'exclusiveMaximum') {
+                  object.facets['exclusiveMaximum'] = 'boolean';
+                }
+                if (id === 'allowEmptyValue') {
+                  object.facets['allowEmptyValue'] = 'boolean';
+                }
+                if (id === 'collectionFormat') {
+                  object.facets['collectionFormat'] = 'string';
+                }
               }
             }
           }
           return object;
         };
-        RAML.prototype._mapTraits = function (slTraits, mimeType) {
+        RAML.prototype._addFacetsDeclaration = function (property, target) {
+          if (property.hasOwnProperty('collectionFormat') || property.hasOwnProperty('allowEmptyValue') || property.hasOwnProperty('exclusiveMaximum') || property.hasOwnProperty('exclusiveMinimum')) {
+            if (!target['facets']) {
+              target['facets'] = {};
+            }
+            if (property.hasOwnProperty('collectionFormat')) {
+              target['facets']['collectionFormat'] = 'string';
+            }
+            if (property.hasOwnProperty('allowEmptyValue')) {
+              target['facets']['allowEmptyValue'] = 'boolean';
+            }
+            if (property.hasOwnProperty('exclusiveMaximum')) {
+              target['facets']['exclusiveMaximum'] = 'boolean';
+            }
+            if (property.hasOwnProperty('exclusiveMinimum')) {
+              target['facets']['exclusiveMinimum'] = 'boolean';
+            }
+          }
+        };
+        RAML.prototype._mapParametersTraits = function (slTraits) {
           var traits = this.initializeTraits();
-          // var traits = [];
-          // var traitMap = {};
-          // for (var i in slTraits) {
-          //   if (!slTraits.hasOwnProperty(i)) continue;
-          //   var slTrait = slTraits[i],
-          //       trait = {};
-          //
-          // try {
-          //     var queryString = jsonHelper.parse(slTrait.request.queryString);
-          //     if (!jsonHelper.isEmptySchema(queryString)) {
-          //       trait.queryParameters = this._mapNamedParams(queryString);
-          //     }
-          // } catch(e) {}
-          //
-          // try {
-          //     var headers = jsonHelper.parse(slTrait.request.headers);
-          //     if (!jsonHelper.isEmptySchema(headers)) {
-          //       trait.headers = this._mapNamedParams(headers);
-          //     }
-          // } catch(e) {}
-          //
-          // try {
-          //     if (slTrait.responses && slTrait.responses.length) {
-          //       trait.responses = this._mapResponseBody(slTrait.responses, mimeType);
-          //     }
-          // } catch(e) {}
-          //
-          // this.addTrait(slTrait.name, trait, traits);
-          //
-          // }
+          for (var i in slTraits) {
+            if (!slTraits.hasOwnProperty(i))
+              continue;
+            var slTrait = slTraits[i];
+            var trait = {};
+            try {
+              var queryString = jsonHelper.parse(slTrait.request.queryString);
+              if (!jsonHelper.isEmptySchema(queryString)) {
+                trait.queryParameters = this._mapNamedParams(queryString);
+              }
+            } catch (e) {
+            }
+            try {
+              var headers = jsonHelper.parse(slTrait.request.headers);
+              if (!jsonHelper.isEmptySchema(headers)) {
+                trait.headers = this._mapNamedParams(headers);
+              }
+            } catch (e) {
+            }
+            try {
+              var formData = jsonHelper.parse(slTrait.request.formData);
+              if (!jsonHelper.isEmptySchema(formData)) {
+                trait.body = this._mapRequestBody(formData, 'multipart/form-data');
+              }
+            } catch (e) {
+            }
+            try {
+              var body = jsonHelper.parse(slTrait.request.body);
+              if (!jsonHelper.isEmptySchema(body)) {
+                trait.body = this._mapRequestBody(body, 'application/json');
+              }
+            } catch (e) {
+            }
+            if (!_.isEmpty(slTrait.responses)) {
+              //ignore responses as traits
+              continue;
+            }
+            this.addTrait(slTrait.name, trait, traits);
+          }
           return traits;
         };
-        // RAML.prototype._mapEndpointTraits = function(slTraits, endpoint) {
-        //   var is = [];
-        //
-        //   for (var i in endpoint.traits) {
-        //     if (!endpoint.traits.hasOwnProperty(i)) continue;
-        //     var trait = _.find(slTraits, ['_id', endpoint.traits[i]]);
-        //     if (!trait) {
-        //       continue;
-        //     }
-        //     is.push(_.camelCase(trait.name));
-        //   }
-        //
-        //   return is;
-        // };
+        RAML.prototype._mapResponsesTraits = function (slTraits, mimeType) {
+          var responses = {};
+          for (var i in slTraits) {
+            if (!slTraits.hasOwnProperty(i))
+              continue;
+            var slTrait = slTraits[i];
+            try {
+              if (slTrait.responses && slTrait.responses.length) {
+                var response = this._mapResponseBody(slTrait.responses, mimeType);
+                responses[slTrait.name] = response['200'];
+              }
+            } catch (e) {
+            }
+          }
+          return responses;
+        };
+        RAML.prototype._mapEndpointTraits = function (slTraits, endpoint) {
+          var is = [];
+          for (var i in endpoint.traits) {
+            if (!endpoint.traits.hasOwnProperty(i))
+              continue;
+            var trait = _.find(slTraits, [
+                '_id',
+                endpoint.traits[i]
+              ]);
+            if (!trait) {
+              continue;
+            }
+            is.push(_.camelCase(trait.name));
+          }
+          return is;
+        };
         function getDefaultMimeType(mimeType, defMimeType) {
           var mt = mimeType && mimeType.length > 0 ? mimeType[0] : null;
           if (!mt) {
@@ -6718,7 +6778,7 @@
           return mt;
         }
         RAML.prototype._annotationsSignature = function (ramlDef) {
-          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasCollectionFormat || this.hasAllowEmptyValue || this.hasExclusiveMaximum || this.hasExclusiveMinimum || this.hasSchemaTitle || this.hasBodyName) {
+          if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasSchemaTitle || this.hasBodyName || this.hasResponsesDefault) {
             if (!ramlDef.annotationTypes) {
               ramlDef.annotationTypes = {};
             }
@@ -6738,30 +6798,6 @@
               ramlDef.annotationTypes['oas-summary'] = {
                 type: 'string',
                 allowedTargets: 'Method'
-              };
-            }
-            if (this.hasAllowEmptyValue) {
-              ramlDef.annotationTypes['oas-allowEmptyValue'] = {
-                type: 'boolean',
-                allowedTargets: 'TypeDeclaration'
-              };
-            }
-            if (this.hasExclusiveMaximum) {
-              ramlDef.annotationTypes['oas-exclusiveMaximum'] = {
-                type: 'boolean',
-                allowedTargets: 'TypeDeclaration'
-              };
-            }
-            if (this.hasExclusiveMinimum) {
-              ramlDef.annotationTypes['oas-exclusiveMinimum'] = {
-                type: 'boolean',
-                allowedTargets: 'TypeDeclaration'
-              };
-            }
-            if (this.hasCollectionFormat) {
-              ramlDef.annotationTypes['oas-collectionFormat'] = {
-                type: 'string',
-                allowedTargets: 'TypeDeclaration'
               };
             }
             if (this.hasExternalDocs) {
@@ -6808,6 +6844,9 @@
                 type: 'string',
                 allowedTargets: 'TypeDeclaration'
               };
+            }
+            if (this.hasResponsesDefault) {
+              ramlDef.annotationTypes['oas-responses-default'] = 'any';
             }
           }
         };
@@ -6920,11 +6959,11 @@
             if (!_.isEmpty(protocols)) {
               method.protocols = protocols;
             }
-            // var is = this._mapEndpointTraits(this.project.Traits, endpoint);
-            // if (is.length) {
-            //   method.is = is;
-            // }
-            if (endpoint.Method.toLowerCase() === 'post' || endpoint.Method.toLowerCase() === 'put' || endpoint.Method.toLowerCase() === 'patch') {
+            var is = this._mapEndpointTraits(this.project.Traits, endpoint);
+            if (is.length) {
+              method.is = is;
+            }
+            if (_.toLower(endpoint.Method) === 'post' || _.toLower(endpoint.Method) === 'put' || _.toLower(endpoint.Method) === 'patch') {
               var mimeType = getDefaultMimeType(endpoint.Consumes, ramlDef.mediaType);
               var body = this._mapRequestBody(endpoint.Body, mimeType);
               if (!_.isEmpty(body)) {
@@ -6935,7 +6974,14 @@
             var mimeType = getDefaultMimeType(endpoint.Produces, ramlDef.mediaType);
             var responses = this._mapResponseBody(endpoint.Responses, mimeType);
             if (!_.isEmpty(responses)) {
-              method.responses = responses;
+              if (responses.default) {
+                this.hasResponsesDefault = true;
+                method['(oas-responses-default)'] = responses.default;
+                delete responses.default;
+              }
+              if (!_.isEmpty(responses)) {
+                method.responses = responses;
+              }
             }
             method.queryParameters = this._mapURIParams(endpoint.QueryString);
             method.uriParameters = this._mapURIParams(endpoint.PathParams);
@@ -6969,7 +7015,7 @@
             }
             var uriParts = endpoint.Path.split('/');
             uriParts.splice(0, 1);
-            ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method);
+            ramlDef.addMethod(ramlDef, uriParts, endpoint.Method, method, this.project.getPathParamRef(endpoint.Path));
             if (endpoint.Tags && !_.isEmpty(endpoint.Tags)) {
               this.hasTags = true;
               method['(oas-tags)'] = endpoint.Tags;
@@ -6993,9 +7039,20 @@
             this.addSchema(ramlDef, this.mapSchema(this.project.Schemas));
           }
           if (this.project.Traits && this.project.Traits.length > 0) {
-            var traits = this._mapTraits(this.project.Traits);
+            var traits = this._mapParametersTraits(this.project.Traits);
             if (!_.isEmpty(traits)) {
               ramlDef.traits = traits;
+            }
+          }
+          //export responses
+          if (this.project.Traits && this.project.Traits.length > 0) {
+            var responses = this._mapResponsesTraits(this.project.Traits);
+            if (!_.isEmpty(responses)) {
+              ramlDef['(oas-responses)'] = responses;
+              if (!ramlDef.annotationTypes) {
+                ramlDef.annotationTypes = {};
+              }
+              ramlDef.annotationTypes['oas-responses'] = 'any';
             }
           }
           // Clean empty field in definition
@@ -7426,7 +7483,7 @@
           var result = this.convertAllOfToModel(this.convertRefFromModel(body));
           if (bodyData.example) {
             result.example = jsonHelper.parse(bodyData.example);
-            if (result.example[type]) {
+            if (type && result.example[type]) {
               result.example = result.example[type];
             }
           }
@@ -7444,22 +7501,9 @@
             if (!body.properties.hasOwnProperty(i))
               continue;
             var property = body.properties[i];
-            if (property.hasOwnProperty('allowEmptyValue')) {
-              this.hasAllowEmptyValue = true;
-              property['(oas-allowEmptyValue)'] = property.allowEmptyValue;
-              delete property.allowEmptyValue;
-            }
-            if (property.hasOwnProperty('exclusiveMaximum')) {
-              this.hasExclusiveMaximum = true;
-              property['(oas-exclusiveMaximum)'] = property.exclusiveMaximum;
-              delete property.exclusiveMaximum;
-            }
-            if (property.hasOwnProperty('exclusiveMinimum')) {
-              this.hasExclusiveMinimum = true;
-              property['(oas-exclusiveMinimum)'] = property.exclusiveMinimum;
-              delete property.exclusiveMinimum;
-            }
             property.required = false;
+            //facets
+            this._addFacetsDeclaration(property, property);
           }
           if (bodyData.required && bodyData.required.length > 0) {
             for (var j in bodyData.required) {
@@ -7508,9 +7552,6 @@
           }
           result.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
           delete result.allOf;
-          // definition.type = allOfTypes.length > 1 ? allOfTypes : allOfTypes[0];
-          //
-          // delete definition.allOf;
           return result;
         };
         RAML10.prototype.mapSchema = function (slSchemas) {
@@ -8009,7 +8050,7 @@
           return result;
         };
         Swagger.prototype._mapRequestBody = function (slRequestBody, requestTypes) {
-          if (!slRequestBody.body) {
+          if (_.isEmpty(slRequestBody.body)) {
             return [];
           }
           var result = [], body = jsonHelper.parse(slRequestBody.body) || {};
@@ -8021,7 +8062,7 @@
             //make sure body isn't empty
             var regex = /\"type\":[ ]*\"file\"|\"type\":[ ]*\"binary\"/;
             //export as formData only if schema includes file type property
-            if (slRequestBody.body.match(regex) || [
+            if (slRequestBody.body.match(regex) || !_.isEmpty(requestTypes) && [
                 'multipart/form-data',
                 'application/x-www-form-urlencoded'
               ].indexOf(requestTypes[0]) !== -1) {
@@ -8183,9 +8224,7 @@
               swaggerDef.paths[endpoint.Path] = params.length ? { parameters: params } : {};
             }
             parameters = parameters.concat(this._mapQueryString(endpoint.QueryString));
-            if (!_.isEmpty(requestTypes)) {
-              parameters = parameters.concat(this._mapRequestBody(endpoint.Body, requestTypes));
-            }
+            parameters = parameters.concat(this._mapRequestBody(endpoint.Body, requestTypes));
             parameters = parameters.concat(this._mapRequestHeaders(endpoint.Headers));
             parameters = parameters.concat(this._mapEndpointTraitParameters(endpoint, parameters));
             parameters = this._validateParameters(parameters);
@@ -8436,7 +8475,8 @@
             'maxItems',
             'minItems',
             'uniqueItems',
-            'required'
+            'required',
+            'facets'
           ],
           setParameterFields: function (source, target) {
             for (var prop in source) {
@@ -8458,7 +8498,7 @@
                   } catch (e) {
                   }
                 }
-                if (!target[prop] || _.isArray(target[prop]) && _.isEmpty(target[prop])) {
+                if (!target.hasOwnProperty(prop) || _.isArray(target[prop]) && _.isEmpty(target[prop])) {
                   delete target[prop];
                 }
               }
@@ -10417,7 +10457,7 @@
           }
           return mimeTypes[0];
         };
-        Swagger.prototype._mapEndpointTrait = function (params) {
+        Swagger.prototype._mapEndpointTrait = function (params, resolvedParameters) {
           var traits = [];
           for (var i in params) {
             if (!params.hasOwnProperty(i))
@@ -10430,6 +10470,9 @@
             if (traitParts[0] === 'trait') {
               name = traitParts[1];
             }
+            if (resolvedParameters && resolvedParameters[name] && resolvedParameters[name].in && resolvedParameters[name].in === 'path') {
+              continue;
+            }
             traits.push(name);
           }
           return traits;
@@ -10437,7 +10480,7 @@
         Swagger.prototype._mapEndpointTraits = function (params, responses) {
           var traits = [];
           traits = traits.concat(this._mapEndpointTrait(params));
-          traits = traits.concat(this._mapEndpointTrait(responses));
+          // traits = traits.concat(this._mapEndpointTrait(responses));
           return _.uniq(traits);
         };
         Swagger.prototype._getParams = function (params, resolvedParameters, condition) {
@@ -10448,21 +10491,15 @@
             if (!params.hasOwnProperty(id))
               continue;
             var param = params[id];
-            if (!condition(param)) {
+            if (condition && !condition(param)) {
               continue;
             }
             var deReferenced = needDeReferenced(param);
+            if (deReferenced && deReferenced.length)
+              continue;
             var isFilePath = this._isFilePath(param);
-            if ((deReferenced || isFilePath) && resolvedParameters) {
-              if (isFilePath) {
-                param = resolvedParameters[id];
-              } else {
-                var paramName = deReferenced[deReferenced.length - 1];
-                param = this.data.parameters[paramName];
-                if (param.$ref) {
-                  param = resolvedParameters[id];
-                }
-              }
+            if (isFilePath && resolvedParameters) {
+              param = resolvedParameters[id];
             }
             result.push(param);
           }
@@ -10500,22 +10537,28 @@
               continue;
             //avoid custom extensions
             var methods = this.data.paths[path].hasOwnProperty('$ref') ? this.dereferencedAPI.paths[path] : this.data.paths[path];
-            var pathParams = {};
+            var resolvedPathParames = {};
+            var globalParamsURI = {};
+            var pathParamRef = [];
+            var globalParamsNonURI = [];
             if (methods.parameters) {
-              var resolvedPathParames = this.dereferencedAPI ? this.dereferencedAPI.paths[path].parameters : methods.parameters;
-              pathParams = this._mapURIParams(methods.parameters, resolvedPathParames);
-            }
-            var globalParams = this._getParams(methods.parameters, resolvedPathParames, function (param) {
+              resolvedPathParames = this.dereferencedAPI ? this.dereferencedAPI.paths[path].parameters : methods.parameters;
+              globalParamsURI = this._mapURIParams(methods.parameters, resolvedPathParames);
+              pathParamRef = this._mapEndpointTrait(methods.parameters, this.dereferencedAPI.parameters);
+              if (!_.isEmpty(pathParamRef)) {
+                this.project.addPathParamRef(path, pathParamRef);
+              }
+              globalParamsNonURI = this._getParams(methods.parameters, resolvedPathParames, function (param) {
                 return !(param.in && param.in == 'path');
               });
+            }
             for (var method in methods) {
               if (!methods.hasOwnProperty(method))
                 continue;
+              if (method === 'parameters')
+                continue;
               var currentMethod = new Method(methods[method], this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method]);
               var currentMethodResolved = this.dereferencedAPI ? this.dereferencedAPI.paths[path][method] : methods[method];
-              if (method === 'parameters') {
-                continue;
-              }
               var endpoint = new Endpoint(currentMethod.summary || '');
               var extensions = this._getExtensionsFrom(currentMethodResolved);
               if (!_.isEmpty(extensions)) {
@@ -10540,9 +10583,7 @@
               //     reqType = this.findDefaultMimeType(currentMethod.consumes);
               //   }
               // }
-              var params = _.union(this._getParams(currentMethod.parameters, currentMethodResolved.parameters, function (param) {
-                  return true;
-                }), globalParams);
+              var params = _.union(globalParamsNonURI, this._getParams(currentMethod.parameters, currentMethodResolved.parameters));
               var c = [];
               if (_.some(params, { 'in': 'body' })) {
                 c.push('application/json');
@@ -10578,9 +10619,8 @@
               // this needs to happen before the mappings below, because param/response $refs will be removed after those mappings
               endpoint.traits = this._mapEndpointTraits(currentMethod.parameters, currentMethod.responses);
               //if path params are defined in this level
-              pathParams = _.merge(pathParams, this._mapURIParams(currentMethod.parameters, currentMethodResolved.parameters));
               //map path params
-              endpoint.PathParams = pathParams;
+              endpoint.PathParams = _.merge(globalParamsURI, this._mapURIParams(currentMethod.parameters, currentMethodResolved.parameters));
               //map headers
               endpoint.Headers = this._mapRequestHeaders(params, true);
               //map query string
@@ -10648,7 +10688,7 @@
           }
         };
         Swagger.prototype._mapTraits = function (parameters, responses) {
-          var traits = {}, queryParams = {}, headerParams = {}, traitResponses = {};
+          var traits = {}, queryParams = {}, headerParams = {}, formDataParams = {}, bodyParams = {}, traitResponses = {};
           for (var k in parameters) {
             if (!parameters.hasOwnProperty(k))
               continue;
@@ -10664,6 +10704,14 @@
             case 'header':
               headerParams[name] = headerParams[name] || [];
               headerParams[name].push(param);
+              break;
+            case 'formData':
+              formDataParams[name] = formDataParams[name] || [];
+              formDataParams[name].push(param);
+              break;
+            case 'body':
+              bodyParams[name] = bodyParams[name] || [];
+              bodyParams[name].push(param);
               break;
             }
           }
@@ -10704,6 +10752,30 @@
                 responses: []
               };
             trait.request.headers = this._mapRequestHeaders(headerParams[k]);
+            traits[k] = trait;
+          }
+          for (var k in formDataParams) {
+            if (!formDataParams.hasOwnProperty(k))
+              continue;
+            var trait = traits[k] || {
+                _id: k,
+                name: k,
+                request: {},
+                responses: []
+              };
+            trait.request.formData = this._mapRequestBody(formDataParams[k]);
+            traits[k] = trait;
+          }
+          for (var k in bodyParams) {
+            if (!bodyParams.hasOwnProperty(k))
+              continue;
+            var trait = traits[k] || {
+                _id: k,
+                name: k,
+                request: {},
+                responses: []
+              };
+            trait.request.body = this._mapRequestBody(bodyParams[k]);
             traits[k] = trait;
           }
           for (var k in traitResponses) {
@@ -61829,7 +61901,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             label: 'DataType',
             name: 'Type',
             description: 'Define a single data type declaration.',
-            spec: specUrl + '#raml-data-types'
+            spec: specUrl + 'raml-data-types'
           },
           'DocumentationItem': {
             label: 'DocumentationItem',
@@ -62787,13 +62859,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           deferred.reject(err);
         }
       }
-      function convertData(content, deferred, options) {
-        var converter = ramlConverter();
-        converter.loadData(content, options).then(function (error) {
-          doConvert(error, converter, deferred);
-        }).catch(deferred.reject);
-        return deferred;
-      }
       function convertZip(root, contents) {
         var decimalRegexp = /^\d+\.\d+$/;
         var swaggerYamlRegexp = /swagger\s*:\s*"{0,1}\d+\.\d+"{0,1}/;
@@ -62806,7 +62871,7 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             return swaggerYamlRegexp.test(text);
           }
         }
-        var converter = function (files, name, deferred) {
+        function converte(files, name, deferred) {
           var content = files[name];
           // leave files that are not swagger unmodified
           if (!isSwaggerSpec(content)) {
@@ -62817,34 +62882,39 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           }
           // custom fileResolver to take in memory files from the zip
           var fileResolver = {
-              canRead: function (path) {
-                return this.read(path) != null;
+              canRead: function (url) {
+                return this.read(url) != null;
               },
-              read: function (path) {
-                var url = path.url.replace(window.location.origin + '/', '');
-                for (var filename in files) {
-                  if (files.hasOwnProperty(filename) && filename.indexOf(url) > -1) {
-                    return files[filename];
-                  }
+              read: function (url) {
+                var path = url.url.replace(window.location.origin + '/', '');
+                var fullPath = Object.keys(files).find(function (file) {
+                    return file.indexOf(path) > -1;
+                  });
+                if (!fullPath) {
+                  throw new Error('Could not load content for file ' + path);
                 }
-                return null;
+                return files[fullPath];
               }
             };
           // convert main swagger spec
-          convertData(content, $q.defer(), {
+          var deferredConverter = $q.defer();
+          var converter = ramlConverter();
+          converter.loadFile(name, function (error) {
+            doConvert(error, converter, deferredConverter);
+          }, {
             resolve: {
               file: fileResolver,
               http: fileResolver
             }
-          }).promise.then(function (convertedData) {
+          });
+          return deferredConverter.promise.then(function (convertedData) {
             deferred.resolve({
               name: replaceExtension(name, 'raml'),
               content: convertedData
             });
           });
-          return deferred.promise;
-        };
-        return importService.importZip(root, contents, converter);
+        }
+        return importService.importZip(root, contents, converte);
       }
       self.url = function convert(url) {
         // fetch and convert single file
@@ -62861,8 +62931,11 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       };
       self.file = function zip(file) {
         var deferred = $q.defer();
-        importService.readFile(file).then(function (contents) {
-          convertData(contents, deferred);
+        importService.readFile(file).then(function (content) {
+          var converter = ramlConverter();
+          converter.loadData(content).then(function (error) {
+            doConvert(error, converter, deferred);
+          }).catch(deferred.reject);
         }).catch(deferred.reject);
         return deferred.promise;
       };
@@ -62886,7 +62959,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     'apiSpecTransformer',
     function ramlToSwagger($q, ramlRepository, ramlEditorMainHelpers, apiSpecTransformer) {
       var self = this;
-      function findRootRaml() {
+      function findRootRaml(selectedFile) {
+        if (selectedFile && ramlEditorMainHelpers.isApiDefinition(selectedFile.contents)) {
+          return $q.when(selectedFile);
+        }
         var defer = $q.defer();
         var rootDirectory = ramlRepository.getByPath('/');
         findRootRamlRecursive(rootDirectory, defer);
@@ -62934,20 +63010,20 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }).catch(deferred.reject);
         return deferred;
       }
-      function toSwagger(format) {
+      function toSwagger(format, selectedFile) {
         var deferred = $q.defer();
-        findRootRaml().then(function (rootRaml) {
+        findRootRaml(selectedFile).then(function (rootRaml) {
           convertData(rootRaml, format, deferred);
         }).catch(function (err) {
           deferred.reject(err);
         });
         return deferred.promise;
       }
-      self.json = function json() {
-        return toSwagger('json');
+      self.json = function json(selectedFile) {
+        return toSwagger('json', selectedFile);
       };
-      self.yaml = function yaml() {
-        return toSwagger('yaml');
+      self.yaml = function yaml(selectedFile) {
+        return toSwagger('yaml', selectedFile);
       };
       return self;
     }
@@ -63610,6 +63686,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       $scope.clearErrorMarks = function clearErrorMarks() {
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
+        $scope.currentErrorCount = 0;
+        $scope.currentWarningCount = 0;
       };
       $scope.$on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
@@ -63620,16 +63698,18 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return;
         }
         $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function completeParse(api) {
-          var success = true;
           var issues = api.errors;
           // errors and warnings
           if (issues && issues.length > 0) {
             $rootScope.$broadcast('event:raml-parser-error', issues);
-            success = issues.filter(function (issue) {
-              return !issue.isWarning;
-            }).length === 0;
+            $scope.currentWarningCount = issues.reduce(function (count, issue) {
+              return issue.isWarning ? count + 1 : count;
+            }, 0);
+            $scope.currentErrorCount = issues.reduce(function (count, issue) {
+              return !issue.isWarning ? count + 1 : count;
+            }, 0);
           }
-          if (success) {
+          if ($scope.currentErrorCount === 0) {
             var raml = api.specification;
             $scope.fileBrowser.selectedFile.raml = raml;
             $rootScope.$broadcast('event:raml-parsed', raml);
@@ -63759,7 +63839,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         config.set('shelf.collapsed', $scope.shelf.collapsed);
       };
       $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
-        return extractCurrentFileLabel(currentFile);
+        var result = extractCurrentFileLabel(currentFile);
+        if ($scope.currentErrorCount) {
+          result += ' (' + $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error') + ')';
+        } else if ($scope.currentWarningCount) {
+          result += ' (' + $scope.currentWarningCount + ' ' + ($scope.currentWarningCount > 1 ? 'warnings' : 'warning') + ')';
+        }
+        return result;
       };
       $scope.$on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme($scope.theme === 'dark' ? 'light' : 'dark');
@@ -65048,7 +65134,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             ramlRepository.exportFiles();
           };
           scope.exportJsonFiles = function exportJsonFiles() {
-            ramlToSwagger.json().then(function (convert) {
+            var selectedFile = scope.fileBrowser.selectedFile;
+            ramlToSwagger.json(selectedFile).then(function (convert) {
               var lines = JSON.stringify(convert.contents, null, 2);
               saveFile(lines, replaceExtension(convert.name, 'json'));
             }).catch(function (error) {
@@ -65056,7 +65143,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             });
           };
           scope.exportYamlFiles = function exportYamlFiles() {
-            ramlToSwagger.yaml().then(function (convert) {
+            var selectedFile = scope.fileBrowser.selectedFile;
+            ramlToSwagger.yaml(selectedFile).then(function (convert) {
               saveFile(convert.contents, replaceExtension(convert.name, 'yaml'));
             }).catch(function (error) {
               broadcastError(error);
@@ -65243,10 +65331,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
             dragElm.css('z-index', 9999);
             scope.$element.after(hiddenPlaceElm);
             dragElm.append(scope.$element.clone().html(scope.$element.children()[0].innerHTML));
-            $document.find('body').append(dragElm);
+            var fileBrowserElement = $document.find('raml-editor-file-browser');
+            fileBrowserElement.append(dragElm);
+            var left = eventObj.pageX - pos.offsetX - fileBrowserElement.offset().left;
+            var top = eventObj.pageY - pos.offsetY - fileBrowserElement.offset().top;
             dragElm.css({
-              'left': eventObj.pageX - pos.offsetX + 'px',
-              'top': eventObj.pageY - pos.offsetY + 'px'
+              'left': left + 'px',
+              'top': top + 'px'
             });
             elements = { dragging: dragElm };
             scope.$element.addClass('drag-elm');
@@ -65282,8 +65373,9 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               } else if ($window.document.selection) {
                 $window.document.selection.empty();
               }
-              leftElmPos = eventObj.pageX - pos.offsetX;
-              topElmPos = eventObj.pageY - pos.offsetY;
+              var fileBrowserElement = $document.find('raml-editor-file-browser');
+              leftElmPos = eventObj.pageX - pos.offsetX - fileBrowserElement.offset().left;
+              topElmPos = eventObj.pageY - pos.offsetY - fileBrowserElement.offset().top;
               boundingRect = {
                 left: leftElmPos,
                 right: leftElmPos + dragElm[0].scrollWidth + 5,
@@ -65573,7 +65665,7 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '  <raml-editor-export-menu ng-if="!xOasExport"></raml-editor-export-menu>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="xOasExport && canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/menu/view-menu.tmpl.html', '<span class="menu-item-toggle" ng-click="openViewMenu($event)">\n' + '  <i class="fa fa-edit"></i>&nbsp;View\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showViewMenu">\n' + '  <li role="toogle-background" ng-click="toogleBackgroundColor()">\n' + '      <a>&nbsp;Toggle Background Color</a>\n' + '  </li>\n' + '</ul>\n' + '\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
-    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p>\n' + '        Learn more\n' + '        <a ng-if="input.link" target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p ng-if="input.link">\n' + '        Learn more\n' + '        <a target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/raml-editor-context-menu.tmpl.html', '<ul role="context-menu" ng-show="opened">\n' + '  <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">\n' + '    {{ action.label }}\n' + '    <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>\n' + '    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/raml-editor-file-browser.tmpl.html', '<raml-editor-context-menu></raml-editor-context-menu>\n' + '\n' + '<script type="text/ng-template" id="file-item.html">\n' + '  <div ui-tree-handle class="file-item" ng-right-click="fileBrowser.showContextMenu($event, node)" ng-click="fileBrowser.select(node)"\n' + '    ng-class="{currentfile: fileBrowser.currentTarget.path === node.path && !isDragging,\n' + '      dirty: node.dirty,\n' + '      geared: fileBrowser.contextMenuOpenedFor(node),\n' + '      directory: node.isDirectory,\n' + '      \'no-drop\': fileBrowser.cursorState === \'no\',\n' + '      copy: fileBrowser.cursorState === \'ok\'}"\n' + '    ng-drop="node.isDirectory && fileBrowser.dropFile($event, node)">\n' + '    <span class="file-name" ng-click="toggleFolderCollapse(node)">\n' + '      <i class="fa icon fa-caret-right fa-fw" ng-if="node.isDirectory" ng-class="{\'fa-rotate-90\': !collapsed}"></i>\n' + '      <i class="fa icon fa-fw" ng-class="{\'fa-folder-o\': node.isDirectory, \'fa-file-text-o\': !node.isDirectory}"></i>\n' + '      &nbsp;{{node.name}}\n' + '    </span>\n' + '    <i class="fa fa-cog" ng-click="fileBrowser.showContextMenu($event, node)" ng-class="{hidden: isDragging}" data-nodrag></i>\n' + '  </div>\n' + '\n' + '  <ul ui-tree-nodes ng-if="node.isDirectory" ng-class="{hidden: collapsed}" ng-model="node.children">\n' + '    <li ui-tree-node ng-repeat="node in node.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed" data-path="{{node.path}}">\n' + '    </li>\n' + '  </ul>\n' + '</script>\n' + '\n' + '<div ui-tree="fileTreeOptions" ng-model="homeDirectory" class="file-list" data-drag-delay="300" data-empty-place-holder-enabled="false" ng-drop="fileBrowser.dropFile($event, homeDirectory)" ng-right-click="fileBrowser.showContextMenu($event, homeDirectory)">\n' + '  <ul ui-tree-nodes ng-model="homeDirectory.children" id="tree-root">\n' + '    <ui-tree-dummy-node class="top"></ui-tree-dummy-node>\n' + '    <li ui-tree-node ng-repeat="node in homeDirectory.children" ng-include="\'file-item.html\'" data-collapsed="node.collapsed"\n' + '     data-path="{{node.path}}"\n' + '     ng-drag-enter="node.collapsed = false"\n' + '     ng-drag-leave="node.collapsed = true"></li>\n' + '    <ui-tree-dummy-node class="bottom" ng-click="fileBrowser.select(homeDirectory)"></ui-tree-dummy-node>\n' + '  </ul>\n' + '</div>\n');
     $templateCache.put('views/raml-editor-main.tmpl.html', '<div role="raml-editor" class="{{theme}}">\n' + '  <div role="notifications" ng-controller="notifications" class="hidden" ng-class="{hidden: !shouldDisplayNotifications, error: level === \'error\'}">\n' + '    {{message}}\n' + '    <i class="fa" ng-class="{\'fa-check\': level === \'info\', \'fa-warning\': level === \'error\'}" ng-click="hideNotifications()"></i>\n' + '  </div>\n' + '\n' + '  <header>\n' + '    <h1>\n' + '      <strong>API</strong> Designer\n' + '    </h1>\n' + '\n' + '    <a role="logo" target="_blank" href="http://mulesoft.com"></a>\n' + '  </header>\n' + '\n' + '  <ul class="menubar">\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-project-button></raml-editor-project-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-view-button></raml-editor-view-button>\n' + '    </li>\n' + '    <li class="menu-item menu-item-ll">\n' + '      <raml-editor-help-button></raml-editor-help-button>\n' + '    </li>\n' + '    <li class="spacer file-absolute-path">{{getSelectedFileAbsolutePath()}}</li>\n' + '    <li class="menu-item menu-item-fr menu-item-mocking-service" ng-show="getIsMockingServiceVisible()" ng-controller="mockingServiceController" ng-click="toggleMockingService()">\n' + '      <div class="title">Mocking Service</div>\n' + '      <div class="field-wrapper" ng-class="{loading: loading}">\n' + '        <i class="fa fa-spin fa-spinner" ng-if="loading"></i>\n' + '        <div class="field" ng-if="!loading">\n' + '          <input type="checkbox" value="None" id="mockingServiceEnabled" ng-checked="enabled" ng-click="$event.preventDefault()" />\n' + '          <label for="mockingServiceEnabled"></label>\n' + '        </div>\n' + '      </div>\n' + '    </li>\n' + '  </ul>\n' + '\n' + '  <div role="flexColumns">\n' + '    <raml-editor-file-browser role="browser"></raml-editor-file-browser>\n' + '\n' + '    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>\n' + '\n' + '    <div role="editor" ng-class="{error: currentError}">\n' + '      <div id="code" role="code"></div>\n' + '\n' + '      <div role="shelf" ng-show="getIsShelfVisible()" ng-class="{expanded: !shelf.collapsed}">\n' + '        <div role="shelf-tab" ng-click="toggleShelf()">\n' + '          <i class="fa fa-inbox fa-lg"></i><i class="fa" ng-class="shelf.collapsed ? \'fa-caret-up\' : \'fa-caret-down\'"></i>\n' + '        </div>\n' + '\n' + '        <div role="shelf-container" ng-show="!shelf.collapsed" ng-include src="\'views/raml-editor-shelf.tmpl.html\'"></div>\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>\n' + '\n' + '    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">\n' + '      <raml-console\n' + '        raml="raml"\n' + '        options="{\n' + '          singleView: true,\n' + '          disableThemeSwitcher: true,\n' + '          disableRamlClientGenerator: true,\n' + '          disableTitle: true\n' + '        }"\n' + '        style="padding: 0; margin-top: 0;"></raml-console>\n' + '    </div>\n' + '  </div>\n' + '</div>\n');
