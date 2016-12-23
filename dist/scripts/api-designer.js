@@ -62009,6 +62009,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       $scope.clearErrorMarks = function clearErrorMarks() {
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
+        $scope.currentErrorCount = 0;
+        $scope.currentWarningCount = 0;
       };
       $scope.$on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
@@ -62019,16 +62021,18 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return;
         }
         $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function completeParse(api) {
-          var success = true;
           var issues = api.errors;
           // errors and warnings
           if (issues && issues.length > 0) {
             $rootScope.$broadcast('event:raml-parser-error', issues);
-            success = issues.filter(function (issue) {
-              return !issue.isWarning;
-            }).length === 0;
+            $scope.currentWarningCount = issues.reduce(function (count, issue) {
+              return issue.isWarning ? count + 1 : count;
+            }, 0);
+            $scope.currentErrorCount = issues.reduce(function (count, issue) {
+              return !issue.isWarning ? count + 1 : count;
+            }, 0);
           }
-          if (success) {
+          if ($scope.currentErrorCount === 0) {
             var raml = api.specification;
             $scope.fileBrowser.selectedFile.raml = raml;
             $rootScope.$broadcast('event:raml-parsed', raml);
@@ -62158,7 +62162,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         config.set('shelf.collapsed', $scope.shelf.collapsed);
       };
       $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
-        return extractCurrentFileLabel(currentFile);
+        var result = extractCurrentFileLabel(currentFile);
+        if ($scope.currentErrorCount) {
+          result += ' (' + $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error') + ')';
+        } else if ($scope.currentWarningCount) {
+          result += ' (' + $scope.currentWarningCount + ' ' + ($scope.currentWarningCount > 1 ? 'warnings' : 'warning') + ')';
+        }
+        return result;
       };
       $scope.$on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme($scope.theme === 'dark' ? 'light' : 'dark');
