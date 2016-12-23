@@ -1,138 +1,144 @@
 /* CodeMirror Overrides */
+@import "colors.less";
 
-div.CodeMirror {
-  font-size: 12px;
-  position: absolute;
-}
+div[role=editor] {
 
-.CodeMirror-foldgutter {
-  width: 15px;
-}
+  div.CodeMirror {
+    font-size: 12px;
+    position: absolute !important;
+  }
 
-.CodeMirror-foldgutter-open,
-.CodeMirror-foldgutter-folded {
-  color: #555;
-  cursor: pointer;
-}
+  .CodeMirror-foldgutter {
+    width: 15px;
+  }
 
-.CodeMirror-foldgutter-open:after {
-  content: "\25BE";
-}
+  .CodeMirror-foldgutter-open,
+  .CodeMirror-foldgutter-folded {
+    color: #555;
+    cursor: pointer;
+  }
 
-.CodeMirror-foldgutter-folded:after {
-  content: "\25B8";
-}
+  .CodeMirror-foldgutter-open:after {
+    content: "\25BE";
+  }
 
-.cm-s-solarized.CodeMirror,
-.cm-s-solarized .CodeMirror-gutters {
-  background-image: none;
-}
+  .CodeMirror-foldgutter-folded:after {
+    content: "\25B8";
+  }
 
-.cm-s-solarized.cm-s-dark {
-  background-color: rgb(24,25,29);
-}
+  .cm-s-solarized.CodeMirror,
+  .cm-s-solarized .CodeMirror-gutters {
+    background-image: none;
+  }
 
-.cm-s-solarized.cm-s-dark .CodeMirror-gutters {
-  background-color: rgb(20,21,25);
-}
+  .cm-s-solarized.cm-s-dark {
+    background-color: @light-black;
+  }
 
-.CodeMirror-code .CodeMirror-hint-ghost {
-  color: #777
-}
+  .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+    background-color: @light-black;
+  }
 
-.CodeMirror-hints {
-  background-color: rgba(19,33,40,1);
-  border-radius: 0;
-  transition: ease-in 0.1s;
-}
+  .CodeMirror-code .CodeMirror-hint-ghost {
+    color: #777
+  }
 
-.CodeMirror-hint {
-  background-color: rgb(19,33,40,0.8);
-  border-radius: 0;
-  color: gray;
-  max-width: 100%;
-}
+  .CodeMirror-hints {
+    background-color: rgba(19,33,40,1);
+    border-radius: 0;
+    transition: ease-in 0.1s;
+  }
 
-.CodeMirror-hint-active {
-  background-color: #9b225c !important;
-  border-radius: 0;
-  color: white;
-  transition: background-color 0.1s;
-}
+  .CodeMirror-hint {
+    background-color: rgb(19,33,40,0.8);
+    border-radius: 0;
+    color: gray;
+    max-width: 100%;
+  }
 
-.CodeMirror-hint div {
-  float: left;
-}
+  .CodeMirror-hint-active {
+    background-color: #9b225c !important;
+    border-radius: 0;
+    color: white;
+    transition: background-color 0.1s;
+  }
 
-.CodeMirror-hint div.category {
-  float: right;
-  font-size: 10px;
-  padding-left: 10px;
-}
+  .CodeMirror-hint div {
+    float: left;
+  }
 
-.cm-s-solarized {
-  .cm-indent, .cm-indent-incomplete {
-    &::before {
-      content: " ";
-      position: absolute;
-      height: 100%;
-      border-right: 1px solid rgba(255,255,255,0.15);
+  .CodeMirror-hint div.category {
+    float: right;
+    font-size: 10px;
+    padding-left: 10px;
+  }
+
+  .cm-s-solarized {
+    .cm-indent, .cm-indent-incomplete {
+      &::before {
+        content: " ";
+        position: absolute;
+        height: 100%;
+        border-right: 1px solid rgba(255,255,255,0.15);
+      }
     }
   }
 }
 
 /* CodeMirror Overrides (Light) */
 [role="raml-editor"].light {
-  .CodeMirror-code .CodeMirror-hint-ghost {
-    color: #bbb
-  }
-
-  .CodeMirror-hints {
-    background-color: white;
-  }
-
-  .CodeMirror-hint {
-    background-color: white;
-  }
-
-  div.cm-s-solarized.cm-s-dark {
-    text-shadow: #fefefe 0 1px;
-    background-color: white;
-  }
-
-  .cm-s-solarized.CodeMirror {
-    box-shadow: none;
-  }
-
-  div[role=tab-box],
-  div[role=tab].active div[role=tab-box] {
-    background-color: white;
-    border: 1px solid #555;
-  }
-
-  div[role=tab].active {
-    text-shadow: #eee 0 1px;
-  }
-
-  .cm-s-solarized.cm-s-dark {
-    .CodeMirror-gutters {
-      background-color: rgb(241, 241, 241);
-      border-right: 1px solid #999;
+  div[role=editor] {
+    .CodeMirror-code .CodeMirror-hint-ghost {
+      color: #bbb
     }
 
-    .CodeMirror-linenumber {
+    .CodeMirror-hints {
+      background-color: white;
+    }
+
+    .CodeMirror-hint {
+      background-color: white;
+    }
+
+    div.cm-s-solarized.cm-s-dark {
       text-shadow: #fefefe 0 1px;
+      background-color: white;
     }
 
-    .CodeMirror-selected {
-      background-color: #ddd;
+    .cm-s-solarized.CodeMirror {
+      box-shadow: none;
     }
-  }
 
-  .cm-s-solarized {
-    .cm-indent, .cm-indent-incomplete {
-      &::before {
-        border-right-color: rgba(0,0,0,0.15);
+    div[role=tab-box],
+    div[role=tab].active div[role=tab-box] {
+      background-color: white;
+      border: 1px solid #555;
+    }
+
+    div[role=tab].active {
+      text-shadow: #eee 0 1px;
+    }
+
+    .cm-s-solarized.cm-s-dark {
+      .CodeMirror-gutters {
+        background-color: rgb(241, 241, 241);
+        border-right: 1px solid #999;
+      }
+
+      .CodeMirror-linenumber {
+        text-shadow: #fefefe 0 1px;
+      }
+
+      .CodeMirror-selected {
+        background-color: #ddd;
+      }
+    }
+
+    .cm-s-solarized {
+      .cm-indent, .cm-indent-incomplete {
+        &::before {
+          border-right-color: rgba(0, 0, 0, 0.15);
+        }
       }
     }
   }

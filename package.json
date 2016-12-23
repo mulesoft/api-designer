@@ -59,6 +59,7 @@
   },
   "scripts": {
     "build": "grunt build",
+    "server": "grunt server",
     "grunt": "grunt",
     "prepublish": "npm run build",
     "test": "grunt test"

@@ -15,8 +15,6 @@
     <link rel="stylesheet" href="vendor/styles/show-hint.css">
 
     <link rel="stylesheet" href="bower_components/angular-ui-tree/dist/angular-ui-tree.min.css">
-
-    <link rel="stylesheet" href="bower_components/api-console/dist/styles/api-console-light-theme.css">
     <!-- endbuild -->
 
     <!-- build:css({.,.tmp,app}) styles/api-designer.css -->
@@ -30,6 +28,8 @@
     <link rel="stylesheet" href="styles/modal.css">
     <link rel="stylesheet" href="styles/menubar.css">
     <!-- endbuild -->
+
+    <link rel="import" href="bower_components/api-console-raml/api-console-raml.html">
   </head>
   <body ng-app="ramlEditorApp">
     <div class="container">
@@ -42,46 +42,24 @@
       which isn't enough for API Console to work properly
     -->
     <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/velocity/velocity.js"></script>
 
     <script src="bower_components/angular/angular.js"></script>
     <script src="bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="bower_components/angular-ui-tree/dist/angular-ui-tree.js"></script>
-    <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
     <script src="bower_components/es5-shim/es5-shim.js"></script>
 
     <script src="bower_components/raml-1-parser/raml-json-validation.js"></script>
     <script src="bower_components/raml-1-parser/raml-xml-validation.js"></script>
     <script src="bower_components/raml-1-parser/raml-1-parser.js"></script>
 
-    <script src="bower_components/resolve-url/resolve-url.js"></script>
     <script src="bower_components/jszip/jszip.js"></script>
     <script src="bower_components/jszip/jszip-load.js"></script>
     <script src="bower_components/jszip/jszip-deflate.js"></script>
     <script src="bower_components/jszip/jszip-inflate.js"></script>
-
-    <script src="bower_components/marked/lib/marked.js"></script>
-    <script src="bower_components/highlightjs/highlight.pack.js"></script>
-    <script src="bower_components/vkbeautify/vkbeautify.js"></script>
-    <script src="bower_components/crypto-js/rollups/hmac-sha1.js"></script>
-    <script src="bower_components/crypto-js/components/enc-base64.js"></script>
-    <script src="bower_components/codemirror/lib/codemirror.js"></script>
-    <script src="bower_components/codemirror/mode/javascript/javascript.js"></script>
-    <script src="bower_components/codemirror/mode/xml/xml.js"></script>
-    <script src="bower_components/codemirror/mode/yaml/yaml.js"></script>
-    <script src="bower_components/codemirror/addon/dialog/dialog.js"></script>
-    <script src="bower_components/codemirror/addon/search/search.js"></script>
-    <script src="bower_components/codemirror/addon/search/searchcursor.js"></script>
-    <script src="bower_components/codemirror/addon/lint/lint.js"></script>
-    <script src="bower_components/angular-ui-codemirror/ui-codemirror.js"></script>
-    <script src="bower_components/angular-marked/angular-marked.js"></script>
-    <script src="bower_components/angular-highlightjs/angular-highlightjs.js"></script>
-    <script src="bower_components/slug/slug.js"></script>
-    <script src="bower_components/FileSaver/FileSaver.js"></script>
-    <script src="bower_components/raml-client-generator/dist/raml-client-generator.js"></script>
-    <script src="bower_components/api-console/dist/scripts/api-console.js"></script>
     <script src="bower_components/file-saver.js/FileSaver.js"></script>
     <script src="bower_components/json-schema-ref-parser/dist/ref-parser.js"></script>
+
+    <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
     <!-- endbuild -->
 
     <!-- build:js({.,.tmp,app}) scripts/api-designer.js -->
@@ -98,10 +76,13 @@
     <script src="vendor/scripts/overlay.js"></script>
     <script src="vendor/scripts/show-hint.js"></script>
     <script src="vendor/scripts/xml.js"></script>
+    <script src="vendor/scripts/meta.js"></script>
 
     <script src="scripts/app.js"></script>
     <script src="scripts/polyfills/array-polyfills.js"></script>
     <script src="scripts/polyfills/string-polyfills.js"></script>
+    <script src="scripts/services/console-request-manager.js"></script>
+    <script src="scripts/services/raml-parser.js"></script>
     <script src="scripts/services/utils.js"></script>
     <script src="scripts/services/config.js"></script>
     <script src="scripts/services/lightweight-dom.js"></script>

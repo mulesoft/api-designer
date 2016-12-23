@@ -37,6 +37,10 @@
           return splitter[getCollapseTarget(splitter)]();
         }
 
+        function getTargetProp(splitter) {
+          return splitter.attr('ng-splitter-prop');
+        }
+
         function getNonCollapseTargetEl(splitter) {
           return splitter[{next: 'prev', prev: 'next'}[getCollapseTarget(splitter)]]();
         }
@@ -53,7 +57,7 @@
           var minWidth = getMinWidth(splitter);
 
           if(typeof minWidth === 'undefined' || size >= minWidth) {
-            getCollapseTargetEl(splitter).css('min-width', Math.max(0, size) + 'px');
+            getCollapseTargetEl(splitter).css(getTargetProp(splitter) === 'width' ? 'width' : 'min-width', Math.max(0, size) + 'px');
           }
 
           return Math.max(0, size);

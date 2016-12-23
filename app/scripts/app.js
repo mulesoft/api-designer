@@ -1,14 +1,16 @@
 (function () {
   'use strict';
 
+  // Namespaces
+  RAML.Settings = RAML.Settings || {
+      proxy: false
+  };
+
   angular.module('ramlEditorApp', [
     // angular-ui
     'ui.bootstrap.modal',
     'ui.bootstrap.tpls',
     'ui.tree',
-
-    // console
-    'ramlConsoleApp',
 
     // project
     'codeMirror',

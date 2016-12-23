@@ -38,7 +38,7 @@
   <div role="flexColumns">
     <raml-editor-file-browser role="browser"></raml-editor-file-browser>
 
-    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev"><div class="split split-left">&nbsp;</div></div>
+    <div id="browserAndEditor" ng-splitter="vertical" ng-splitter-collapse-target="prev" ng-splitter-prop="min-width"><div class="split split-left">&nbsp;</div></div>
 
     <div role="editor" ng-class="{error: currentError}">
       <div id="code" role="code"></div>
@@ -52,18 +52,8 @@
       </div>
     </div>
 
-    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-min-width="470"><div class="split split-right">&nbsp;</div></div>
+    <div id="consoleAndEditor" ng-show="getIsConsoleVisible()" ng-splitter="vertical" ng-splitter-collapse-target="next" ng-splitter-prop="width"><div class="split split-right">&nbsp;</div></div>
 
-    <div ng-show="getIsConsoleVisible()" role="preview-wrapper" class="raml-console-embedded">
-      <raml-console
-        raml="raml"
-        options="{
-          singleView: true,
-          disableThemeSwitcher: true,
-          disableRamlClientGenerator: true,
-          disableTitle: true
-        }"
-        style="padding: 0; margin-top: 0;"></raml-console>
-    </div>
+    <api-console-raml raml='{{raml}}' ng-show="getIsConsoleVisible()" narrow></api-console-raml>
   </div>
 </div>
