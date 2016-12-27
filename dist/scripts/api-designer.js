@@ -61203,26 +61203,36 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               content: content
             });
           }
+          function toAbsolute(path) {
+            if (path.indexOf('http') !== 0) {
+              return 'http://zip/' + path;
+            }
+            return path;
+          }
+          function toRelative(path) {
+            if (path.indexOf('http://zip/') === 0) {
+              return path.substring('http://zip/'.length);
+            }
+            return path;
+          }
           // custom fileResolver to take in memory files from the zip
           var fileResolver = {
               canRead: function (url) {
                 return this.read(url) != null;
               },
               read: function (url) {
-                var path = url.url.replace(window.location.origin + '/', '');
-                var fullPath = Object.keys(files).find(function (file) {
-                    return file.indexOf(path) > -1;
-                  });
-                if (!fullPath) {
+                var path = toRelative(url.url);
+                var content = files[path];
+                if (!content) {
                   throw new Error('Could not load content for file ' + path);
                 }
-                return files[fullPath];
+                return content;
               }
             };
           // convert main swagger spec
           var deferredConverter = $q.defer();
           var converter = ramlConverter();
-          converter.loadFile(name, function (error) {
+          converter.loadFile(toAbsolute(name), function (error) {
             doConvert(error, converter, deferredConverter);
           }, {
             resolve: {
