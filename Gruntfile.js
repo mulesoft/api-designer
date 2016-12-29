@@ -332,15 +332,15 @@ module.exports = function (grunt) {
     },
 
     browserify: {
-      apiSpecTransformer: {
+      oasRamlConverter: {
         options: {
-          transform: ['browserify-global-shim'],
+          transform: ['browserify-global-shim', 'babelify'],
           browserifyOptions: {
-            standalone: 'apiSpecTransformer'
+            standalone: 'oasRamlConverter'
           }
         },
         files: {
-          '.tmp/api-spec-transformer/api-spec-transformer.js': 'node_modules/api-spec-transformer/index.js'
+          '.tmp/oas-raml-converter/oas-raml-converter.js': 'node_modules/oas-raml-converter/index.js'
         }
       },
       jsTraverse: {
@@ -385,7 +385,7 @@ module.exports = function (grunt) {
   grunt.registerTask('server', [
     'jshint-once',
     'browserify:jsTraverse',
-    'browserify:apiSpecTransformer',
+    'browserify:oasRamlConverter',
     'less-and-autoprefixer',
     'connect:livereload',
     'open',
@@ -397,7 +397,7 @@ module.exports = function (grunt) {
     'clean:build',
     'browserify:jsTraverse',
     'browserify:ramlSuggestions',
-    'browserify:apiSpecTransformer',
+    'browserify:oasRamlConverter',
     'useminPrepare',
     'less-and-autoprefixer',
     'ngtemplates',

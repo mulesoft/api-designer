@@ -22,9 +22,11 @@
     "yargs": "~3.11.0"
   },
   "devDependencies": {
-    "api-spec-transformer": "git://github.com/mulesoft/api-spec-converter/#v0.0.7",
+    "oas-raml-converter": "^0.0.8",
     "browser-request": "^0.3.3",
     "browserify-global-shim": "^1.0.3",
+    "babel-preset-latest": "^6.16.0",
+    "babelify": "^7.3.0",
     "chai": "~1.10.0",
     "connect-livereload": "~0.3.2",
     "grunt": "~0.4.5",
