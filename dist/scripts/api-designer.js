@@ -64442,26 +64442,30 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
               content: content
             });
           }
+          function toAbsolute(path) {
+            return path.indexOf('http') !== 0 ? 'http://zip/' + path : path;
+          }
+          function toRelative(path) {
+            return path.indexOf('http://zip/') === 0 ? path.substring('http://zip/'.length) : path;
+          }
           // custom fileResolver to take in memory files from the zip
           var fileResolver = {
               canRead: function (url) {
                 return this.read(url) != null;
               },
               read: function (url) {
-                var path = url.url.replace(window.location.origin + '/', '');
-                var fullPath = Object.keys(files).find(function (file) {
-                    return file.indexOf(path) > -1;
-                  });
-                if (!fullPath) {
+                var path = toRelative(url.url);
+                var content = files[path];
+                if (!content) {
                   throw new Error('Could not load content for file ' + path);
                 }
-                return files[fullPath];
+                return content;
               }
             };
           // convert main swagger spec
           var deferredConverter = $q.defer();
           var converter = ramlConverter();
-          converter.loadFile(name, function (error) {
+          converter.loadFile(toAbsolute(name), function (error) {
             doConvert(error, converter, deferredConverter);
           }, {
             resolve: {
@@ -65248,6 +65252,8 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       $scope.clearErrorMarks = function clearErrorMarks() {
         codeMirrorErrors.clearAnnotations();
         $scope.hasErrors = false;
+        $scope.currentErrorCount = 0;
+        $scope.currentWarningCount = 0;
       };
       $scope.$on('event:file-updated', function onFileUpdated() {
         $scope.clearErrorMarks();
@@ -65258,16 +65264,18 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
           return;
         }
         $scope.loadRaml(file.contents, file.path).then(safeApplyWrapper($scope, function completeParse(api) {
-          var success = true;
           var issues = api.errors;
           // errors and warnings
           if (issues && issues.length > 0) {
             $rootScope.$broadcast('event:raml-parser-error', issues);
-            success = issues.filter(function (issue) {
-              return !issue.isWarning;
-            }).length === 0;
+            $scope.currentWarningCount = issues.reduce(function (count, issue) {
+              return issue.isWarning ? count + 1 : count;
+            }, 0);
+            $scope.currentErrorCount = issues.reduce(function (count, issue) {
+              return !issue.isWarning ? count + 1 : count;
+            }, 0);
           }
-          if (success) {
+          if ($scope.currentErrorCount === 0) {
             var raml = api.specification;
             $scope.fileBrowser.selectedFile.raml = raml;
             $rootScope.$broadcast('event:raml-parsed', raml);
@@ -65397,7 +65405,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         config.set('shelf.collapsed', $scope.shelf.collapsed);
       };
       $scope.getSelectedFileAbsolutePath = function getSelectedFileAbsolutePath() {
-        return extractCurrentFileLabel(currentFile);
+        var result = extractCurrentFileLabel(currentFile);
+        if ($scope.currentErrorCount) {
+          result += ' (' + $scope.currentErrorCount + ' ' + ($scope.currentErrorCount > 1 ? 'errors' : 'error') + ')';
+        } else if ($scope.currentWarningCount) {
+          result += ' (' + $scope.currentWarningCount + ' ' + ($scope.currentWarningCount > 1 ? 'warnings' : 'warning') + ')';
+        }
+        return result;
       };
       $scope.$on('event:toggle-theme', function onToggleTheme() {
         $window.setTheme($scope.theme === 'dark' ? 'light' : 'dark');
