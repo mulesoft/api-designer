@@ -35392,10 +35392,10 @@
               {
                 key: 'convertFile',
                 value: function convertFile(file, options) {
-                  var me = this;
+                  var _this = this;
                   return new Promise(function (resolve, reject) {
-                    me.loadFile(file, options).then(function () {
-                      me.convert(options.format || me.format, options).then(resolve).catch(reject);
+                    _this.loadFile(file, options).then(function () {
+                      _this.convert(_this._format(options), options).then(resolve).catch(reject);
                     }).catch(reject);
                   });
                 }
@@ -35403,10 +35403,10 @@
               {
                 key: 'convertData',
                 value: function convertData(json, options) {
-                  var me = this;
+                  var _this2 = this;
                   return new Promise(function (resolve, reject) {
-                    me.loadData(json, options).then(function () {
-                      me.convert(options.format || me.format, options).then(resolve).catch(reject);
+                    _this2.loadData(json, options).then(function () {
+                      _this2.convert(_this2._format(options), options).then(resolve).catch(reject);
                     }).catch(reject);
                   });
                 }
@@ -35420,28 +35420,30 @@
               {
                 key: 'loadData',
                 value: function loadData(rawData, options) {
-                  var me = this;
+                  var _this3 = this;
                   return new Promise(function (resolve, reject) {
-                    me.importer.loadData(rawData, options).then(resolve).catch(reject);
+                    _this3.importer.loadData(rawData, options).then(resolve).catch(reject);
                   });
                 }
               },
               {
                 key: 'convert',
                 value: function convert(format, options) {
-                  var me = this;
+                  var _this4 = this;
                   return new Promise(function (resolve, reject) {
                     try {
-                      me.exporter.loadProject(me.importer.import());
-                      me.exporter.export(format, options).then(function (exportedData) {
-                        resolve(exportedData);
-                      }).catch(function (err) {
-                        reject(err);
-                      });
+                      _this4.exporter.loadProject(_this4.importer.import());
+                      _this4.exporter.export(format, options).then(resolve).catch(reject);
                     } catch (e) {
                       reject(e);
                     }
                   });
+                }
+              },
+              {
+                key: '_format',
+                value: function _format(options) {
+                  return options && options.format || this.format;
                 }
               }
             ]);
@@ -37206,7 +37208,8 @@
                             object['type'] = typeof val === 'undefined' ? 'undefined' : _typeof(val);
                           else if (object.hasOwnProperty('items') && object.type !== 'array')
                             object['type'] = 'array';
-                        }
+                        } else if (val.hasOwnProperty('additionalProperties'))
+                          val.type = 'object';
                         if (val.type == 'string') {
                           if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
                             object[id]['type'] = 'string';
@@ -37634,15 +37637,21 @@
                       if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object')
                         RAMLExporter._addInnerExtensions(ramlDef, value);
                     }
+                    for (var _i2 in method.responses) {
+                      if (!method.responses.hasOwnProperty(_i2))
+                        continue;
+                      var response = method.responses[_i2];
+                      RAMLExporter._addExampleExtensions(ramlDef, response.body);
+                    }
                   }
                   var schemas = this.project.Schemas;
                   if (schemas && schemas.length > 0) {
                     this.addSchema(ramlDef, this.mapSchema(schemas));
                   }
-                  for (var _i2 in schemas) {
-                    if (!schemas.hasOwnProperty(_i2))
+                  for (var _i3 in schemas) {
+                    if (!schemas.hasOwnProperty(_i3))
                       continue;
-                    var schema = schemas[_i2];
+                    var schema = schemas[_i3];
                     if ((typeof schema === 'undefined' ? 'undefined' : _typeof(schema)) === 'object') {
                       var object = schema.definition;
                       RAMLExporter._addInnerExtensions(ramlDef, object);
@@ -38005,7 +38014,7 @@
                       continue;
                     ramlDef['(oas-tags-definition)'].push(tags[key]);
                   }
-                }
+                }  // allowedTargets?
               },
               {
                 key: '_addExtensions',
@@ -38015,32 +38024,51 @@
                       continue;
                     if (ramlObject.hasOwnProperty(key))
                       delete ramlObject[key];
-                    ramlObject['(oas-' + key + ')'] = extensions[key];
-                    if (!ramlDef.annotationTypes) {
+                    var annotationKey = key === 'example' ? 'responses-'.concat(key) : key;
+                    ramlObject['(oas-' + annotationKey + ')'] = extensions[key];
+                    if (!ramlDef.annotationTypes)
                       ramlDef.annotationTypes = {};
+                    if (!ramlDef.annotationTypes.hasOwnProperty('oas-' + annotationKey)) {
+                      switch (key) {
+                      case 'example':
+                        ramlDef.annotationTypes['oas-' + annotationKey] = {
+                          type: 'string',
+                          allowedTargets: 'TypeDeclaration'
+                        };
+                        break;
+                      case 'externalDocs':
+                        ramlDef.annotationTypes['oas-' + annotationKey] = {
+                          properties: {
+                            'description?': 'string',
+                            'url': 'string'
+                          },
+                          allowedTargets: [
+                            'API',
+                            'Method',
+                            'TypeDeclaration'
+                          ]
+                        };
+                        break;
+                      default:
+                        ramlDef.annotationTypes['oas-' + key] = 'any';
+                        break;
+                      }
                     }
-                    ramlDef.annotationTypes['oas-' + key] = 'any';
                   }
                 }
               },
               {
-                key: '_addExternalDocExtension',
-                value: function _addExternalDocExtension(ramlDef, ramlObject, externalDoc) {
-                  if (ramlObject.hasOwnProperty('externalDocs'))
-                    delete ramlObject['externalDocs'];
-                  ramlObject['(oas-externalDocs)'] = externalDoc;
-                  if (!ramlDef.annotationTypes.hasOwnProperty('oas-externalDocs')) {
-                    ramlDef.annotationTypes['oas-externalDocs'] = {
-                      properties: {
-                        'description?': 'string',
-                        'url': 'string'
-                      },
-                      allowedTargets: [
-                        'API',
-                        'Method',
-                        'TypeDeclaration'
-                      ]
-                    };
+                key: '_addExampleExtensions',
+                value: function _addExampleExtensions(ramlDef, object) {
+                  for (var key in object) {
+                    if (!object.hasOwnProperty(key))
+                      continue;
+                    var type = object[key];
+                    if (!type.hasOwnProperty('example'))
+                      continue;
+                    var value = type['example'];
+                    if (typeof value === 'string')
+                      RAMLExporter._addExtensions(ramlDef, type, { 'example': value });
                   }
                 }
               },
@@ -38078,7 +38106,7 @@
                       continue;
                     var value = object[key];
                     if (key === 'externalDocs')
-                      RAMLExporter._addExternalDocExtension(ramlDef, object, value);
+                      RAMLExporter._addExtensions(ramlDef, object, { 'externalDocs': value });
                     else if ((typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object')
                       innerObjects[key] = value;
                   }
@@ -38205,7 +38233,7 @@
                                 importer.import();
                                 resolve(exportedData);
                               } catch (err) {
-                                resolve(exportedData, err);
+                                reject(err);
                               }
                             }).catch(reject);
                           }());
@@ -38633,7 +38661,7 @@
                   if (bodyData.example) {
                     result.example = jsonHelper.parse(bodyData.example);
                     if (type && result.example[type]) {
-                      result.example = result.example[type];
+                      result.example = jsonHelper.parse(result.example[type]);
                     }
                   }
                   return result;
@@ -40471,6 +40499,7 @@
                 key: '_mapQueryString',
                 value: function _mapQueryString(queryString) {
                   var result = queryString;
+                  delete result.typePropertyKind;
                   if (queryString.type) {
                     result['x-raml-type'] = _.isArray(queryString.type) && queryString.type.length == 1 ? queryString.type[0] : queryString.type;
                     queryString.type = 'string';
@@ -41030,10 +41059,11 @@
                       return object;
                     }
                   }
+                  delete object.typePropertyKind;
                   for (var id in object) {
-                    var isType = id == 'type';
                     if (!object.hasOwnProperty(id))
                       continue;
+                    var isType = id == 'type';
                     if (isType && _.isArray(object[id]) && object[id].length == 1) {
                       object[id] = object[id][0];
                     }
@@ -41081,6 +41111,8 @@
                       if (id == 'structuredExample' || id == 'fixedFacets') {
                         //delete garbage
                         delete object[id];
+                      } else if (id === 'items' && !val.type && val.hasOwnProperty('0')) {
+                        object.items = { ref: val[0] };
                       } else {
                         if (id == 'xml' || id === 'example') {
                           //no process xml object
@@ -42184,8 +42216,7 @@
                       if (RAML10Importer.isRamlArray(items)) {
                         definition.items = RAML10Importer.convertArray(RAML10Importer.convertRamlArray(definition.items));
                       } else {
-                        definition.items = {};
-                        definition.items.type = items;
+                        definition.items = { type: items };
                       }
                     }
                   } else {
@@ -42234,6 +42265,7 @@
                     facet[key] = _.isArray(facet.type) ? facet.type[0] : facet.type;
                     delete facet.name;
                     delete facet.type;
+                    delete facet.typePropertyKind;
                     result.push(facet);
                   }
                   definition['x-raml-facets'] = result;
@@ -72086,13 +72118,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
       self.url = function convert(url) {
         // fetch and convert single file
         var deferred = $q.defer();
-        ramlConverter().convertFile(url, { format: 'yaml' }).then(deferred.resolve).catch(deferred.reject);
+        ramlConverter().convertFile(url).then(deferred.resolve).catch(deferred.reject);
         return deferred.promise;
       };
-      self.file = function zip(file) {
+      self.file = function f(file) {
         var deferred = $q.defer();
         importService.readFile(file).then(function (content) {
-          ramlConverter().convertData(content, { format: 'yaml' }).then(deferred.resolve).catch(deferred.reject);
+          ramlConverter().convertData(content).then(deferred.resolve).catch(deferred.reject);
         }).catch(deferred.reject);
         return deferred.promise;
       };
@@ -74272,7 +74304,6 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         restrict: 'E',
         templateUrl: 'views/menu/export-menu.tmpl.html',
         link: function (scope) {
-          scope.xOasExport = scope.xOasExport || $location.search().xOasExport === 'true';
           function saveFile(yaml, name) {
             var blob = new Blob([yaml], { type: 'application/json;charset=utf-8' });
             $window.saveAs(blob, name);
@@ -74830,10 +74861,10 @@ angular.module('ramlEditorApp').run([
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="url" placeholder="http://petstore.swagger.io/v2/swagger.json">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'url\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.spec === \'OAS\'">\n' + '      <p>Note: Currently supports OAS (Swagger) v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/menu/export-menu.tmpl.html', '<li ng-if="!xOasExport" role="export-zip" ng-click="exportZipFiles()">\n' + '  <a><i class="fa fa-download"></i>&nbsp;Export files</a>\n' + '</li>\n' + '\n' + '<a ng-if="xOasExport">\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul ng-if="xOasExport" role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;OAS 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;OAS 2.0 YAML</a></li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/export-menu.tmpl.html', '<a>\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;OAS 2.0 JSON (beta)</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;OAS 2.0 YAML (beta)</a></li>\n' + '</ul>\n');
     $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a role="raml-specification" href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>\n' + '  <li rile="context-menu-item"><a role="raml-website" href="http://raml.org" target="_blank">raml.org Website</a></li>\n' + '  <li role="context-menu-item"><a role="report-raml-bug" href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <li role="context-menu-item"><a role="raml-guide" href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>\n' + '  <li role="context-menu-item" ng-click="openHelpModal()"><a role="raml-about">About</a></li>\n' + '</ul>\n');
     $templateCache.put('views/menu/new-file-menu.tmpl.html', '<ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="showFileMenu">\n' + '  <li role="context-menu-item" ng-mouseenter="openFragmentMenu()" ng-mouseleave="closeFragmentMenu()">\n' + '    <a>\n' + '        &nbsp;Raml 1.0\n' + '        <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '\n' + '    <ul role="{{menuRole}}" class="submenu-item menu-item-context" ng-show="{{ openFileMenuCondition }}">\n' + '      <li role="new-raml-{{fragment.name}}" ng-repeat="fragment in notSorted(fragments)" ng-click="newFragmentFile(fragment.label)">\n' + '        <a>&nbsp;{{ fragment.name }}</a>\n' + '      </li>\n' + '    </ul>\n' + '  </li>\n' + '\n' + '  <li role="new-raml-0.8" ng-click="newFile(\'0.8\')">\n' + '    <a>&nbsp;Raml 0.8 API Spec</a>\n' + '  </li>\n' + '</ul>\n');
-    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '  <raml-editor-export-menu ng-if="!xOasExport"></raml-editor-export-menu>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="xOasExport && canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
+    $templateCache.put('views/menu/project-menu.tmpl.html', '<span class="menu-item-toggle" role="project-button" ng-click="openProjectMenu($event)">\n' + '  <i class="fa fa-cogs"></i>&nbsp;Project\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showProjectMenu">\n' + '  <li role="new-file" ng-mouseenter="openFileMenu()" ng-mouseleave="closeFileMenu()">\n' + '    <a>\n' + '      <i class="fa fa-plus"></i>&nbsp;New File\n' + '      <i class="submenu-icon fa fa-caret-right"></i>\n' + '    </a>\n' + '    <raml-editor-new-file-menu show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="menu-dropdown"></raml-editor-new-file-menu>\n' + '  </li>\n' + '\n' + '  <raml-editor-new-folder-button></raml-editor-new-folder-button>\n' + '\n' + '  <raml-editor-save-file-button></raml-editor-save-file-button>\n' + '\n' + '  <raml-editor-save-all-button></raml-editor-save-all-button>\n' + '\n' + '  <raml-editor-import-button></raml-editor-import-button>\n' + '\n' + '  <li role="context-menu-item" class="submenu" ng-mouseenter="openExportMenu()" ng-mouseleave="closeExportMenu()" ng-show="canExportFiles()">\n' + '    <raml-editor-export-menu></raml-editor-export-menu>\n' + '  </li>\n' + '</ul>\n');
     $templateCache.put('views/menu/view-menu.tmpl.html', '<span class="menu-item-toggle" ng-click="openViewMenu($event)">\n' + '  <i class="fa fa-edit"></i>&nbsp;View\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="showViewMenu">\n' + '  <li role="toogle-background" ng-click="toogleBackgroundColor()">\n' + '      <a>&nbsp;Toggle Background Color</a>\n' + '  </li>\n' + '</ul>\n' + '\n');
     $templateCache.put('views/modal/help.html', '<div class="modal-header">\n' + '    <h3>About</h3>\n' + '</div>\n' + '\n' + '<div class="modal-body">\n' + '    <p>\n' + '        The API Designer for RAML is built by MuleSoft, and is a web-based editor designed to help you author RAML specifications for your APIs.\n' + '        <br />\n' + '        <br />\n' + '        RAML is a human-and-machine readable modeling language for REST APIs, backed by a workgroup of industry leaders.\n' + '    </p>\n' + '\n' + '    <p>\n' + '        To learn more about the RAML specification and other tools which support RAML, please visit <a href="http://www.raml.org" target="_blank">http://www.raml.org</a>.\n' + '        <br />\n' + '        <br />\n' + '        For specific questions, or to get help from the community, head to the community forum at <a href="http://forums.raml.org" target="_blank">http://forums.raml.org</a>.\n' + '    </p>\n' + '</div>\n');
     $templateCache.put('views/new-name-modal.html', '<form name="form" novalidate ng-submit="submit(form)">\n' + '  <div class="modal-header">\n' + '    <h3>{{input.title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <!-- name -->\n' + '    <div class="form-group" ng-class="{\'has-error\': form.$submitted && form.name.$invalid}">\n' + '      <p>\n' + '        {{input.message}}\n' + '      </p>\n' + '      <p ng-if="input.link">\n' + '        Learn more\n' + '        <a target="_blank" href="{{input.link}}">\n' + '          <i class="fa fa-external-link"></i>\n' + '        </a>\n' + '      </p>\n' + '      <!-- label -->\n' + '      <label for="name" class="control-label required-field-label">Name</label>\n' + '\n' + '      <!-- input -->\n' + '      <input id="name" name="name" type="text"\n' + '             ng-model="input.newName" class="form-control"\n' + '             ng-validate="isValid($value)"\n' + '             ng-maxlength="64" ng-auto-focus="true" value="{{input.suggestedName}}" required>\n' + '\n' + '      <!-- error -->\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.required">Please provide a name.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.maxlength">Name must be shorter than 64 characters.</p>\n' + '      <p class="help-block" ng-show="form.$submitted && form.name.$error.validate">{{validationErrorMessage}}</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Cancel</button>\n' + '    <button type="submit" class="btn btn-primary">OK</button>\n' + '  </div>\n' + '</form>\n');

@@ -81,14 +81,14 @@
       self.url = function convert(url) {
         // fetch and convert single file
         var deferred = $q.defer();
-        ramlConverter().convertFile(url, {format:'yaml'}).then(deferred.resolve).catch(deferred.reject);
+        ramlConverter().convertFile(url).then(deferred.resolve).catch(deferred.reject);
         return deferred.promise;
       };
 
-      self.file = function zip(file) {
+      self.file = function f(file) {
         var deferred = $q.defer();
         importService.readFile(file).then(function (content) {
-          ramlConverter().convertData(content, {format:'yaml'}).then(deferred.resolve).catch(deferred.reject);
+          ramlConverter().convertData(content).then(deferred.resolve).catch(deferred.reject);
         }).catch(deferred.reject);
         return deferred.promise;
       };

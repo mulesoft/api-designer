@@ -25,7 +25,6 @@ describe('ramlEditorExportMenu', function() {
 
   beforeEach(inject(function($rootScope, ramlRepository, ramlToSwagger) {
     scope = $rootScope.$new();
-    scope.xOasExport = true;
     scope.fileBrowser = {};
     scope.fileBrowser.currentTarget = {
       path: '/mockFile.raml'
