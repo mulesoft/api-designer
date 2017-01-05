@@ -58,6 +58,7 @@ describe('ramlEditorProjectButton', function() {
   beforeEach(inject(function($rootScope, $injector) {
     sandbox = sinon.sandbox.create();
     scope = $rootScope.$new();
+    scope.xOasExport = true;
     submenuService = $injector.get('subMenuService');
     newFolderService =  $injector.get('newFolderService');
   }));
