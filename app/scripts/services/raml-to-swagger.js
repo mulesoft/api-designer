@@ -2,10 +2,14 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .service('ramlToSwagger', function ramlToSwagger($q, ramlRepository, ramlEditorMainHelpers, apiSpecTransformer) {
+    .service('ramlToSwagger', function ramlToSwagger($q, $window, ramlRepository, ramlEditorMainHelpers, oasRamlConverter) {
       var self  = this;
 
-      function findRootRaml () {
+      function findRootRaml (selectedFile) {
+        if (selectedFile && ramlEditorMainHelpers.isApiDefinition(selectedFile.contents)) {
+          return $q.when(selectedFile);
+        }
+
         var defer = $q.defer();
         var rootDirectory = ramlRepository.getByPath('/');
         findRootRamlRecursive(rootDirectory, defer);
@@ -32,36 +36,41 @@
         }
       }
 
-      function swaggerConverter () {
-        return new apiSpecTransformer.Converter(apiSpecTransformer.Formats.RAML10, apiSpecTransformer.Formats.SWAGGER);
+      function swaggerConverter (file) {
+        var from = ramlEditorMainHelpers.isApiDefinitionV08(file.contents) ? oasRamlConverter.Formats.RAML08 : oasRamlConverter.Formats.RAML10;
+        return new oasRamlConverter.Converter(from, oasRamlConverter.Formats.SWAGGER);
       }
 
-      function doConvert (converter, file, format, deferred) {
-        try {
-          converter.convert(format, function (err, result) {
-            if (err) {
-              return deferred.reject(err);
+      function convertData(file, deferred, format) {
+        var options = {
+          format: format,
+          fsResolver: {
+            content: function content(path) {
+              throw new Error('ramlParser: loadPath: loadApi: content: ' + path + ': no such path');
+            },
+            contentAsync: function contentAsync(path) {
+              var file = ramlRepository.getByPath(path);
+              if (!file) {
+                return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
+              }
+
+              return (file.loaded ? $q.when(file) : ramlRepository.loadFile({path: path})).then(function (file) {
+                return file.contents;
+              });
             }
-            return deferred.resolve({name: file.name, contents: result});
-          });
-        } catch (err) {
-          deferred.reject(err);
-        }
-      }
+          }
+        };
 
-      function convertData (file, format, deferred, options) {
-        var converter = swaggerConverter();
-        converter.loadData(file.contents, options).then(function() {
-          doConvert(converter, file, format, deferred);
+        swaggerConverter(file).convertFile(file.path, options).then(function(result) {
+          deferred.resolve({name: file.name, path: file.path, contents: result});
         }).catch(deferred.reject);
-        return deferred;
       }
 
-      function toSwagger(format) {
+      function toSwagger(format, selectedFile) {
         var deferred = $q.defer();
 
-        findRootRaml().then(function (rootRaml) {
-          convertData(rootRaml, format, deferred);
+        findRootRaml(selectedFile).then(function (rootRaml) {
+          convertData(rootRaml, deferred, format);
         }).catch(function (err) {
           deferred.reject(err);
         });
@@ -69,12 +78,12 @@
         return deferred.promise;
       }
 
-      self.json = function json() {
-        return toSwagger('json');
+      self.json = function json(selectedFile) {
+        return toSwagger('json', selectedFile);
       };
 
-      self.yaml = function yaml() {
-        return toSwagger('yaml');
+      self.yaml = function yaml(selectedFile) {
+        return toSwagger('yaml', selectedFile);
       };
 
       return self;

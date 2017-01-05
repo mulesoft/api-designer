@@ -9,9 +9,9 @@
       <p>
         {{input.message}}
       </p>
-      <p>
+      <p ng-if="input.link">
         Learn more
-        <a ng-if="input.link" target="_blank" href="{{input.link}}">
+        <a target="_blank" href="{{input.link}}">
           <i class="fa fa-external-link"></i>
         </a>
       </p>

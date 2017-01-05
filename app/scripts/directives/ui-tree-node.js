@@ -116,10 +116,13 @@
 
               scope.$element.after(hiddenPlaceElm);
               dragElm.append(scope.$element.clone().html(scope.$element.children()[0].innerHTML));
-              $document.find('body').append(dragElm);
+              var fileBrowserElement = $document.find('raml-editor-file-browser');
+              fileBrowserElement.append(dragElm);
+              var left = eventObj.pageX - pos.offsetX - fileBrowserElement.offset().left;
+              var top = eventObj.pageY - pos.offsetY - fileBrowserElement.offset().top;
               dragElm.css({
-                'left' : eventObj.pageX - pos.offsetX + 'px',
-                'top'  : eventObj.pageY - pos.offsetY + 'px'
+                'left' : left + 'px',
+                'top'  : top + 'px'
               });
               elements = {
                 dragging: dragElm
@@ -167,8 +170,9 @@
                   $window.document.selection.empty();
                 }
 
-                leftElmPos = eventObj.pageX - pos.offsetX;
-                topElmPos  = eventObj.pageY - pos.offsetY;
+                var fileBrowserElement = $document.find('raml-editor-file-browser');
+                leftElmPos = eventObj.pageX - pos.offsetX - fileBrowserElement.offset().left;
+                topElmPos  = eventObj.pageY - pos.offsetY - fileBrowserElement.offset().top;
 
                 boundingRect = {
                   left:   leftElmPos,

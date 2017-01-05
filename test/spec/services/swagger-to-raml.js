@@ -5,7 +5,7 @@ describe('swaggerToRAML', function () {
   var $window;
   var $rootScope;
   var ramlRepository;
-  var apiSpecTransformer;
+  var oasRamlConverter;
   var importService;
   var swaggerToRAML;
   var $httpBackend;
@@ -18,7 +18,7 @@ describe('swaggerToRAML', function () {
     $window        = $injector.get('$window');
     $rootScope     = $injector.get('$rootScope');
     ramlRepository  = $injector.get('ramlRepository');
-    apiSpecTransformer  = $injector.get('apiSpecTransformer');
+    oasRamlConverter  = $injector.get('oasRamlConverter');
     importService  = $injector.get('importService');
     swaggerToRAML  = $injector.get('swaggerToRAML');
     $httpBackend   = $injector.get('$httpBackend');
