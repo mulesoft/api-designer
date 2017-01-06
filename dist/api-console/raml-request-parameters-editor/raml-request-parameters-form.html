@@ -1,0 +1,214 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-form/iron-form.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../marked-element/marked-element.html">
+<link rel="import" href="../markdown-styles/markdown-styles.html">
+<link rel="import" href="../iron-validatable-behavior/iron-validatable-behavior.html">
+<!--
+
+The `raml-request-parameters-form` element is responsible for displaying the form od URI / query
+parameters. It is meant to work with the `raml-request-parameters-editor`. See its docs to
+learn how to use this element.
+
+### Styling
+`<raml-request-parameters-form>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-request-parameters-form` | Mixin applied to the element | `{}`
+`--raml-request-parameters-editor-input-label-color` | Color of the paper input's labels | `rgba(0, 0, 0, 0.48)`
+`--raml-request-parameters-editor-predefined-label-color` | Color of the predefinied parameter name label | `rgba(0, 0, 0, 0.87)`
+`--raml-request-parameters-editor-docs-color` | Color of the documentation string below the input field. Note that it will appy also `marked-element` styles to this element | `rgba(0, 0, 0, 0.87)`
+`--raml-request-parameters-editor-predefined-row` | Mixin applied to each row of the form | `{}`
+`--form-label` | Mixin applied to the predefinied parameter name label | `{}`
+
+@group RAML Elements
+@element raml-request-parameters-form
+@demo demo/index.html
+-->
+<dom-module id="raml-request-parameters-form">
+  <template>
+    <style include="markdown-styles"></style>
+    <style>
+     :host {
+      display: block;
+      @apply(--raml-request-parameters-form);
+
+      --paper-input-container-label: {
+        color: var(--raml-request-parameters-editor-input-label-color, rgba(0, 0, 0, 0.48));
+      }
+    }
+
+    .predefined-row {
+      @apply(--layout-horizontal);
+      position: relative;
+      @apply(--raml-request-parameters-editor-predefined-row);
+    }
+
+    .predefined-row label {
+      display: block;
+      min-width: 120px;
+      @apply(--layout-horizontal);
+      @apply(--layout-end-justified);
+      @apply(--paper-font-body1);
+      font-size: 15px;
+      color: var(--raml-request-parameters-editor-predefined-label-color, rgba(0, 0, 0, 0.87));
+      text-align: right;
+      margin-right: 8px;
+      padding-top: 12px;
+      @apply(--form-label);
+    }
+
+    .param-value {
+      @apply(--layout-vertical);
+      @apply(--layout-flex);
+    }
+
+    .param-value .input {
+      @apply(--layout-horizontal);
+    }
+
+    paper-input {
+      width: 100%;
+    }
+
+    .docs {
+      @apply(--paper-font-common-base);
+      font-size: 13px;
+      font-weight: 200;
+      line-height: 24px;
+      color: var(--raml-request-parameters-editor-docs-color, rgba(0, 0, 0, 0.87));
+    }
+
+    .markdown-html p:first-child {
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    .markdown-html p:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    </style>
+    <form is="iron-form" id="form">
+      <template is="dom-repeat" items="{{parameters}}">
+        <div class="predefined-row">
+          <label class="label" for="rrpv-[[index]]" hidden="[[narrow]]">[[item.name]]<span hidden$="[[!item.required]]">*</span></label>
+          <div class="param-value">
+            <template is="dom-if" if="[[_computeIsEnum(item.enum)]]">
+              <paper-dropdown-menu no-label-float label="[[_computeInputLabel(item.*, narrow)]]" name="[[item.name]]" required id="rrpv-[[index]]">
+                <paper-listbox class="dropdown-content" attr-for-selected="data-value" selected="{{item.value}}">
+                  <template is="dom-repeat" items="[[item.enum]]">
+                    <paper-item data-value="[[item]]">[[item]]</paper-item>
+                  </template>
+                  <paper-item label=" ">(empty value)</paper-item>
+                </paper-listbox>
+              </paper-dropdown-menu>
+            </template>
+            <template is="dom-if" if="[[!_computeIsEnum(item.enum)]]">
+              <div class="input">
+                <paper-input no-label-float="[[!narrow]]" label="[[_computeInputLabel(item.*, narrow)]]" id="rrpv-[[index]]" value="{{item.value}}" required="[[item.required]]" pattern="[[item.pattern]]" name="[[item.name]]" auto-validate type="[[_computeInputType(item.type)]]" min="[[item.minimum]]" max="[[item.maximum]]"></paper-input>
+              </div>
+            </template>
+            <div class="docs" hidden$="[[!hasValue(item.description)]]">
+              <marked-element markdown="[[item.description]]">
+                <div class="markdown-html markdown-body"></div>
+              </marked-element>
+            </div>
+          </div>
+        </div>
+      </template>
+    </form>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-request-parameters-form',
+
+    behaviors: [Polymer.IronValidatableBehavior],
+
+    properties: {
+      // A list of parameters to display. It may be URI or query parameters array.
+      parameters: Array,
+      // If true then narrow layout will be applied.
+      narrow: Boolean
+    },
+
+    // Computes if given array item has enum values.
+    _computeIsEnum: function(itemEnum) {
+      return !!(itemEnum && itemEnum.length);
+    },
+    // Computes input type attribute based on item's type
+    _computeInputType(itemType) {
+      if (!itemType || itemType === 'text') {
+        return 'text';
+      }
+      switch (itemType) {
+        case 'number':
+        case 'integer':
+        case 'float':
+          return 'number';
+        default:
+          return 'text';
+      }
+    },
+    // Computes the name of the label to display in the input field.
+    _computeInputLabel: function(record, narrow) {
+      var object = record.base;
+      if (!object) {
+        return;
+      }
+      if (narrow) {
+        return object.name;
+      }
+      if (!!object.examples && object.examples.length && object.examples[0]) {
+        return 'Example: ' + object.examples[0];
+      }
+      return 'Param value';
+    },
+
+    /**
+     * Check if passed object is not empty.
+     * 0 (zero) returns true while empty string returns false.
+     *
+     * @return {Boolean} True/False depending if passed object has a value.
+     */
+    hasValue: function(obj) {
+      if (typeof obj === 'number' && obj === 0) {
+        return true;
+      }
+      if (typeof obj === 'boolean') {
+        return true;
+      }
+      return !!obj;
+    },
+
+    // Overidden from Polymer.IronValidatableBehavior. Will set the `invalid`
+    // attribute automatically, which should be used for styling.
+    _getValidity: function() {
+      return this.$.form.validate();
+    },
+    // Link to the form's serialize function.
+    serialize: function() {
+      return this.$.form.serialize();
+    }
+  });
+  </script>
+</dom-module>

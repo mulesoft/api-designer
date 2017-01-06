@@ -1,0 +1,160 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../marked-element/marked-element.html">
+<link rel="import" href="../prism-element/prism-theme-default.html">
+<link rel="import" href="../prism-element/prism-highlighter.html">
+<link rel="import" href="../markdown-styles/markdown-styles.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="docs-parameters-behavior.html">
+<link rel="import" href="docs-parameters-table-shared-styles.html">
+<link rel="import" href="structure-display.html">
+<!--
+`<docs-xml-parameters-table>` displays a documentation view for XML structured body.
+
+### Example
+```
+<docs-xml-parameters-table
+  type="[[ramlXmlType]]"></docs-xml-parameters-table>
+```
+
+### Styling
+`<docs-json-parameters-table>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--docs-xml-parameters-table` | Mixin applied to this elements | `{}`
+`--no-info-message` | A mixin applied to the "missing type" paragraph. | `{}`
+
+Use `paper-tabs`, `paper-tab` and `structure-display` mixins to style this element.
+
+@element docs-xml-parameters-table
+@demo demo/docs-body-parameters-table.html
+-->
+<dom-module id="docs-xml-parameters-table">
+  <template>
+    <style include="prism-theme-default"></style>
+    <style include="markdown-styles"></style>
+    <style include="docs-parameters-table-shared-styles"></style>
+    <style>
+    :host {
+      display: block;
+    }
+
+    #content {
+      display: none;
+    }
+
+    :host([has-type]) #content {
+      display: block;
+    }
+
+    :host([has-type]) .no-type {
+      display: none;
+    }
+
+    .no-type {
+      @apply(--no-info-message);
+    }
+    </style>
+    <prism-highlighter></prism-highlighter>
+    <p class="no-type">
+      This object doesn't have a type description.
+    </p>
+    <div id="content">
+      <template is="dom-if" if="[[!hasExamples]]" restamp="true">
+        <div>
+          <pre is="structure-display" display="[[schemaDisplay]]" class="language-xml" data-type="xml" auto-hide></pre>
+        </div>
+      </template>
+      <template is="dom-if" if="[[hasExamples]]" restamp="true">
+        <paper-tabs class="schemas" selected="{{selectedSchemaPage}}">
+          <paper-tab>Schema</paper-tab>
+          <paper-tab>Examples</paper-tab>
+        </paper-tabs>
+        <iron-pages selected="{{selectedSchemaPage}}">
+          <div class="schema">
+            <h5 hidden$="[[!type.schema]]">Schema: [[type.schema]]</h5>
+            <pre is="structure-display" display="[[schemaDisplay]]" class="language-xml" data-type="xml" auto-hide></pre>
+          </div>
+          <div class="examples">
+            <template is="dom-repeat" items="[[examples]]">
+              <pre is="structure-display" display="[[item]]" class="language-xml" data-type="xml" auto-hide></pre>
+            </template>
+          </div>
+        </iron-pages>
+    </div>
+    </template>
+  </template>
+  <script>
+  Polymer({
+    is: 'docs-xml-parameters-table',
+
+    behaviors: [RamlBehaviors.DocsParametersBehavior],
+
+    properties: {
+      /**
+       * A RAML's type definition for the body payload.
+       */
+      type: Object,
+      // A schema to display. Computed value from provided `type` object.
+      schemaDisplay: {
+        type: String,
+        computed: '_computeDisplay(type.*)'
+      },
+      // True when `type` is present
+      hasType: {
+        type: Boolean,
+        computed: '_computeHasType(schemaDisplay)',
+        value: false,
+        notify: true,
+        reflectToAttribute: true
+      },
+      /**
+       * A list of examples in the definition.
+       * This is a computed value for both `example` and `examples` properties.
+       */
+      examples: {
+        type: Array,
+        computed: '_computeExamples(type.*)'
+      },
+      // Selected page in the tabs (where examples exists for this page)
+      selectedSchemaPage: {
+        type: Number,
+        value: 0
+      }
+    },
+    // Computed boolean value if the `type` object has XML relevant information.
+    _computeHasType: function(display) {
+      return !!display;
+    },
+    // Computes the schema content to display.
+    _computeDisplay: function(record) {
+      var object = record.base;
+      if (!object) {
+        return undefined;
+      }
+      if (object.schema && object.schemaContent) {
+        return object.schemaContent;
+      }
+      if (object.type && typeof object.type === 'string') {
+        return object.type;
+      }
+      return undefined;
+    }
+  });
+  </script>
+</dom-module>

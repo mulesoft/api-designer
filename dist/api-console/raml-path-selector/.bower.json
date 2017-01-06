@@ -1,0 +1,68 @@
+{
+  "name": "raml-path-selector",
+  "description": "Element to select a path in the RAML resources structure. It displays RAML's API structure in the tree view and allow to select a node and signal path selected by the user",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "authors": [
+    "The Advanced REST client authors <arc@mulesoft.com>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "private": true,
+  "main": [
+    "raml-path-selector.html",
+    "raml-resource-tree-item.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:advanced-rest-client/raml-path-selector.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "raml-behaviors": "advanced-rest-client/raml-behaviors#^1.0.1",
+    "paper-item": "PolymerElements/paper-item#^1.2.1",
+    "iron-collapse": "PolymerElements/iron-collapse#^1.2.1",
+    "paper-icon-button": "PolymerElements/paper-icon-button#^1.1.4",
+    "arc-icons": "advanced-rest-client/arc-icons#^1.0.10",
+    "paper-styles": "PolymerElements/paper-styles#^1.1.5",
+    "raml-aware": "advanced-rest-client/raml-aware#^1.0.2",
+    "iron-a11y-keys-behavior": "PolymerElements/iron-a11y-keys-behavior#^1.1.9",
+    "paper-menu-button": "PolymerElements/paper-menu-button#^1.5.2",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.1",
+    "iron-media-query": "PolymerElements/iron-media-query#^1.0.8"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "raml-docs-helpers": "advanced-rest-client/raml-docs-helpers#^1.0.1",
+    "paper-input": "PolymerElements/paper-input#^1.1.20",
+    "paper-checkbox": "PolymerElements/paper-checkbox#^1.4.2",
+    "paper-ripple": "PolymerElements/paper-ripple#^1.0.10",
+    "iron-icon": "PolymerElements/iron-icon#^1.0.12"
+  },
+  "ignore": [
+    "**/.*",
+    "dependencyci.yml",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks"
+  ],
+  "version": "1.0.11",
+  "homepage": "https://github.com/advanced-rest-client/raml-path-selector",
+  "_release": "1.0.11",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.0.11",
+    "commit": "64b5176245798e6beac590d21d513889e8cdbfda"
+  },
+  "_source": "https://github.com/advanced-rest-client/raml-path-selector.git",
+  "_target": "^1.0.3",
+  "_originalSource": "advanced-rest-client/raml-path-selector"
+}

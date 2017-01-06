@@ -1,0 +1,58 @@
+{
+  "name": "raml-documentation-viewer",
+  "description": "A documentation viewer for RAML file. This is the main element to be used to display a documentation from a RAML file",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "authors": [
+    "The Advanced REST client authors <arc@mulesoft.com>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "private": true,
+  "main": [
+    "raml-documentation-viewer.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:advanced-rest-client/raml-documentation-viewer.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "paper-tabs": "PolymerElements/paper-tabs#^1.7.0",
+    "iron-pages": "PolymerElements/iron-pages#^1.0.8",
+    "raml-aware": "advanced-rest-client/raml-aware#^1.0.2",
+    "raml-behaviors": "advanced-rest-client/raml-behaviors#^1.0.1",
+    "raml-summary-view": "advanced-rest-client/raml-summary-view#^1.0.2",
+    "raml-documentation-panel": "advanced-rest-client/raml-documentation-panel#^1.0.4"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.5"
+  },
+  "ignore": [
+    "**/.*",
+    "dependencyci.yml",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks"
+  ],
+  "version": "0.1.1",
+  "homepage": "https://github.com/advanced-rest-client/raml-documentation-viewer",
+  "_release": "0.1.1",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.1",
+    "commit": "8089d0090044ee3dde4b3b90ce4ba72d421ed118"
+  },
+  "_source": "https://github.com/advanced-rest-client/raml-documentation-viewer.git",
+  "_target": "0.1.1",
+  "_originalSource": "advanced-rest-client/raml-documentation-viewer"
+}

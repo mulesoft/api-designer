@@ -1,0 +1,117 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<script>
+/**
+ * Common properties and methods for docs tree view.
+ *
+ * @polymerBehavior Polymer.RamlTreeItemBehavior
+ */
+Polymer.RamlTreeItemBehavior = {
+  properties: {
+    // A path the item represents.
+    path: {
+      type: String,
+      value: ''
+    },
+    // Currently selected path.
+    selectedPath: String,
+    // True if the item is selected
+    isSelected: {
+      type: Boolean,
+      computed: '_computeIsSelected(selectedPath, path)'
+    },
+    /**
+     * Prohibits the selection of the resource and only allow selection of methods.
+     */
+    noResourceSelection: {
+      type: Boolean
+    }
+  },
+  /**
+   * Event handler for the click on an tree item.
+   * It sends the `raml-path-selected` event so the tree selected can set
+   * path.
+   *
+   * @param {Event} e Event fired by the HTML element. The element must have
+   * data-path attribute with its correct path.
+   */
+  _selectPath: function(e) {
+    var target = e.target;
+    while (true) {
+      if (!target || target === document.body) {
+        return;
+      }
+      if (target.nodeName && target.nodeName === 'PAPER-ITEM') {
+        break;
+      }
+      if (!target.parentNode) {
+        return;
+      }
+      target = target.parentNode;
+    }
+    var path = target.dataset ? target.dataset.path : null;
+    if (!path) {
+      return;
+    }
+    if (this.noResourceSelection) {
+      if (/resources.\d+$/.test(path)) {
+        this.opened = !this.opened;
+        return;
+      }
+    }
+
+    this.fire('raml-path-selected', {
+      path: path
+    });
+  },
+  /**
+   * Computes if the tree item should have the `selected` class
+   * indicating that the item is currently selected.
+   *
+   * @param {String} selectedPath Currently selected path
+   * @param {String} path Item's (element's) path
+   * @param {Number} index Optional index of the item in the view.
+   * If set it means that the item is a method of a resource.
+   * @return {String} Either empty string or `selected` if the path match.
+   */
+  _computeItemSelectableClass: function(selectedPath, path, index) {
+    if (index !== undefined) {
+      path = path + '.methods.' + index;
+    }
+    if (path === selectedPath) {
+      return 'selected';
+    }
+    return '';
+  },
+
+  // Computes if selected path equals current item path.
+  _computeIsSelected: function(selectedPath, path) {
+    if (!selectedPath || !path) {
+      return false;
+    }
+    return selectedPath === path;
+  },
+  /**
+   * Scrolls to the element if the element is not in view.
+   */
+  scrollElementIntoView: function() {
+    if (this.scrollIntoViewIfNeeded) {
+      this.scrollIntoViewIfNeeded();
+    } else if (this.scrollIntoView) {
+      this.scrollIntoView();
+    }
+  }
+};
+</script>

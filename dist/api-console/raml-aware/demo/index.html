@@ -1,0 +1,66 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+
+  <title>raml-aware demo</title>
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+  <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
+  <link rel="import" href="../raml-aware.html">
+
+  <style is="custom-style" include="demo-pages-shared-styles">
+
+    .vertical-section-container {
+      max-width: 600px;
+    }
+
+  </style>
+</head>
+<body unresolved>
+  <div class="vertical-section-container centered">
+    <h3>The `raml-aware`</h3>
+    <demo-snippet>
+      <template>
+        <raml-aware id="r1"></raml-aware>
+        <raml-aware id="r2" scope="demo"></raml-aware>
+        <raml-aware id="r3"></raml-aware>
+        <raml-aware id="r4" scope="demo"></raml-aware>
+        <code></code>
+        <script>
+          var awares = ['r1','r2','r3','r4'].map((id) =>
+            document.querySelector('#' + id));
+          var output = document.querySelector('code');
+
+          awares[0].raml = {'a': 'b'};
+          awares[1].raml = {'c': 'd'};
+
+          var txt = '<raml-aware id="r1"></raml-aware>.raml = ' +
+            JSON.stringify(awares[0].raml) + '\n';
+          txt += '<raml-aware id="r2" scope="demo"></raml-aware>.raml = ' +
+            JSON.stringify(awares[1].raml) + '\n';
+          txt += '<raml-aware id="r3"></raml-aware>.raml = ' +
+            JSON.stringify(awares[2].raml) + '\n';
+          txt += '<raml-aware id="r4" scope="demo"></raml-aware>.raml = ' +
+            JSON.stringify(awares[3].raml) + '\n';
+          output.innerText = txt;
+        </script>
+      </template>
+    </demo-snippet>
+  </div>
+</body>
+</html>

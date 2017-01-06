@@ -1,0 +1,79 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="raml-tree-item-behavior.html">
+<link rel="import" href="raml-tree-item-styles.html">
+<!--
+The `<raml-documentation-tree-item>` is an element that displays a list of
+documentation part of the API structure tree.
+It contains titles of the documentation array.
+
+This element is intended to work with `<raml-path-selector>`.
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-docs-tree-item-element` | Mixin applied to the element | `{}`
+`--raml-docs-tree-item-element-background` | Background color of the element | `transparent`
+`--raml-docs-tree-item` | Mixin applied to each tree item  | `{}`
+`--raml-docs-tree-item-background` | Background color of the tree item.  | `transparent`
+`--raml-docs-tree-item-hover-background` | Background color of hovered tree item  | `#F5F5F5`
+`--raml-docs-tree-item-selected-background` | Background color of the selected item | `rgba(3, 169, 244, 0.24)`
+`--raml-docs-tree-outline` | An outline of focused item | `none`
+
+@element raml-resource-tree-item
+@demo demo/index.html
+-->
+<dom-module id="raml-documentation-tree-item">
+  <template>
+    <style include="raml-tree-item-styles"></style>
+    <paper-item data-path$="[[path]]" on-tap="_selectPath" class$="[[_computeItemSelectableClass(selectedPath, path)]]">
+      [[doc.title]]
+    </paper-item>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-documentation-tree-item',
+
+    behaviors: [Polymer.RamlTreeItemBehavior],
+
+    properties: {
+      // A documentation item from the RAML's documentation node.
+      doc: Object,
+      // True if the resource is currently selected.
+      docIsSelected: {
+        type: Boolean,
+        computed: '_computeIsSelected(selectedPath, path)'
+      },
+    },
+
+    observers: [
+      '_isSelectedChanged(isSelected)'
+    ],
+
+    /**
+     * Sets the `tabindex` property if the selection changes.
+     */
+    _isSelectedChanged: function(isSelected) {
+      if (isSelected) {
+        this.setAttribute('tabindex', '0');
+        this.scrollElementIntoView();
+        this.focus();
+      } else {
+        this.setAttribute('tabindex', '-1');
+      }
+    },
+  });
+  </script>
+</dom-module>

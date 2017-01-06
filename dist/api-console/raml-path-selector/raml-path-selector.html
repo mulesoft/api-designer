@@ -1,0 +1,286 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-menu-button/paper-menu-button.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../paper-ripple/paper-ripple.html">
+<link rel="import" href="../raml-aware/raml-aware.html">
+<link rel="import" href="../raml-behaviors/raml-behavior.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+
+<link rel="import" href="../arc-icons/arc-icons.html">
+<link rel="import" href="raml-structure-tree.html">
+<!--
+`<raml-path-selector>`
+Element to select a path in the RAML resources structure. It displays RAML
+API's structure in the tree view and allow to select a node and signal path
+selected by the user.
+
+The `selectedPath` can be then used to get a definition for a particular node
+of the RAML documentation.
+Example path values:
+- documentation.0 - First document in the documentation array
+- resources.0.methods.0 - First method in the first resource
+- resources.0.resources.0 - First sub resource in the first resource array.
+
+See demo for working example.
+
+## Usage
+```
+<raml-path-selector raml="[[raml]]" selected-path="{{path}}"></raml-path-selector>
+```
+
+Inside a Polymer powered web component you can use `get` function to access
+the data:
+```
+var def = this.get('raml.' + selectedPath);
+```
+This assumes that you keep the RAML's JSON structure in the `raml` property.
+
+In other cases you can use libraries like
+<a href="https://lodash.com/" target="_blank">lodash</a> to use it methods to
+access structured data using path notation.
+
+## Responsive view
+This is a navigational element. Therefore in narrow view it hides itself from the view.
+When media queries are lower than `narrowWidth` or the `narrow` attribute is set then the path
+selector render itself as a dropdown list.
+Views that are using this element should keep that in mind and set the layout accordingly.
+For example it may require to switch from `column` to `row` layout.
+
+## Styling
+`<raml-path-selector>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-path-selector` | Mixin applied to the element | `{}`
+`--raml-path-selector-headers` | Mixin applied to the headers in the tree view | `{}`
+`--raml-path-selector-no-structure` | Mixin applied to the paragraph when the structure wasn't recognized in the RAML source | `{}`
+`--raml-docs-tree-outline` | An outline of focused item | `none`
+`--raml-path-selector-narrow-selected-label` | Mixin applied in narrow layout to the control's label | `{}`
+
+See also `raml-documentation-tree-item` and `raml-resource-tree-item` for
+more styling options.
+
+@group RAML Elements
+@element raml-path-selector
+@demo demo/index.html
+@demo demo/resources-only.html
+@hero hero.svg
+-->
+<dom-module id="raml-path-selector">
+  <template>
+    <style>
+    :host {
+      display: block;
+
+      background: var(--raml-path-selector-background-color, --primary-background-color);
+      color: var(--raml-path-selector-color, --primary-text-color);
+
+      overflow: auto;
+      @apply(--raml-path-selector);
+    }
+
+    .dropdown-trigger {
+      @apply(--layout-horizontal);
+      @apply(--layout-relative);
+      @apply(--layout-center);
+    }
+
+    .selected-value {
+      @apply(--layout-flex);
+      @apply(--paper-font-common-nowrap);
+      margin-right: 16px;
+      padding: 4px;
+      @apply(--raml-path-selector-narrow-selected-label);
+    }
+
+    iron-icon {
+      min-width: 24px;
+      min-height: 24px;
+    }
+
+    :host([narrow]:not([force-wide-layout])) raml-structure-tree {
+      margin-right: 16px;
+    }
+
+    </style>
+    <iron-media-query query="(max-width: [[narrowWidth]])" query-matches="{{narrow}}"></iron-media-query>
+
+    <template is="dom-if" if="[[_narrowValue]]" restamp="true">
+      <paper-menu-button hidden="[[!hasResources]]">
+        <div class="dropdown-trigger">
+          <paper-ripple></paper-ripple>
+          <div class="selected-value">
+            <span hidden$="[[selectedLabel]]">Select RAML object</span>
+            <span hidden$="[[!selectedLabel]]">[[selectedLabel]]</span>
+          </div>
+          <iron-icon icon="arc:arrow-drop-down"></iron-icon>
+        </div>
+        <div class="dropdown-content">
+          <raml-structure-tree
+            raml="[[raml]]"
+            has-documentation="[[hasDocumentation]]"
+            has-resources="[[hasResources]]"
+            selected-path="{{selectedPath}}"
+            opened
+            narrow
+            narrow-width="[[narrowWidth]]"
+            resources-only="[[resourcesOnly]]"
+            no-resource-selection="[[noResourceSelection]]"></raml-structure-tree>
+        </div>
+      </paper-menu-button>
+    </template>
+    <template is="dom-if" if="[[!_narrowValue]]" restamp="true">
+      <raml-structure-tree
+        raml="[[raml]]"
+        has-documentation="[[hasDocumentation]]"
+        has-resources="[[hasResources]]"
+        selected-path="{{selectedPath}}"
+        opened="[[opened]]"
+        narrow="{{_narrowValue}}"
+        narrow-width="[[narrowWidth]]"
+        resources-only="[[resourcesOnly]]"
+        no-resource-selection="[[noResourceSelection]]"></raml-structure-tree>
+      <p class="no-structure" hidden$="[[hasResources]]">No structure detected</p>
+    </template>
+    <template is="dom-if" if="[[aware]]" restamp="true">
+      <raml-aware raml="{{raml}}" scope="[[aware]]"></raml-aware>
+    </template>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-path-selector',
+    behaviors: [Polymer.RamlBehavior],
+
+    properties: {
+      // Currently selected by the user path.
+      selectedPath: {
+        type: String,
+        notify: true
+      },
+      // If true then the first level of resources will be opened by default.
+      opened: {
+        type: Boolean,
+        value: false
+      },
+      // Is set to true when the RAML's `resources` array is not empty
+      hasDocumentation: {
+        type: Boolean,
+        value: false,
+        computed: '_computeHasInArray(raml.documentation.length)'
+      },
+      // Is set to true when the RAML's `documentation` array is not empty
+      hasResources: {
+        type: Boolean,
+        value: false,
+        computed: '_computeHasInArray(raml.resources.length)'
+      },
+      // Name of the `<raml-aware>` scope, so it will fill the raml property.
+      aware: String,
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        value: false,
+        notify: true,
+        reflectToAttribute: true
+      },
+      // A widith below which the `narrow` property will be set to true.
+      narrowWidth: {
+        type: String,
+        value: '768px'
+      },
+      /**
+       * If set the element will render the resources / methods tree.
+       * It can be used in views when only resources are relevant giving the
+       * context.
+       */
+      resourcesOnly: {
+        type: Boolean,
+        value: false
+      },
+      // In narrow view it is showing the path of the raml.
+      selectedLabel: {
+        type: String,
+        computed: '_computeSelectedLabel(narrow, raml, selectedPath)'
+      },
+      /**
+       * If set then the selection of the resource node will be not possible.
+       * It will opens / closes child elements.
+       */
+      noResourceSelection: {
+        type: Boolean
+      },
+      /**
+       * If set it will override the narrow layout property and force
+       * wide layout. Then it will also ignore the media queries settings.
+       */
+      forceWideLayout: {
+        type: Boolean,
+        value: false,
+        reflectToAttribute: true
+      },
+
+      _narrowValue: {
+        type: Boolean,
+        value: false,
+        computed: '_computeNarrowValue(forceWideLayout, narrow)'
+      }
+    },
+
+    // Computes if given array has values.
+    _computeHasInArray: function(length) {
+      return !!length;
+    },
+
+    _computeSelectedLabel: function(narrow, raml, selectedPath) {
+      if (!narrow || !selectedPath || !raml) {
+        return '';
+      }
+      var object = this.get('raml.' + selectedPath);
+      if (!object) {
+        return '';
+      }
+      if (selectedPath.indexOf('documentation') === 0) {
+        return object.title || 'Documentation';
+      }
+      var str = ''; //object.displayName || object.method || object.name;
+      var matches = selectedPath.match(/\d+/g);
+      var current = this.raml;
+      matches.pop();
+      matches.forEach(function(item) {
+        item = Number(item);
+        current = current.resources[item];
+        str += (current.displayName || current.name) + ' > ';
+      });
+      str += object.displayName || object.name || object.method;
+      return str;
+    },
+    /**
+     * Computes the `narrowValue` property.
+     * If `forceWideLayout` is set then it will always return `false`.
+     * Otherwise it depends on the `narrow` value.
+     */
+    _computeNarrowValue: function(forceWideLayout, narrow) {
+      if (forceWideLayout) {
+        return false;
+      }
+      return narrow;
+    }
+  });
+  </script>
+</dom-module>

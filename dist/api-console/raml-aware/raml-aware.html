@@ -1,0 +1,139 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<!--
+`<raml-aware>` Element that is aware of the RAML content.
+
+The element contains the same RAML data as other elements whenever their
+location in the document. The RAML data are encapsulated in `scope` attribute.
+By default the `scope` is `default`. If you create two `<raml-aware>`s with
+different scopes then changing one raml will not affect the other.
+
+Setting a RAML data on a `<raml-aware>` will notify other awares with the same
+scopes about the change and update their RAML data so it can be transfered
+between different parts of application on even different web components.
+
+### Example
+```html
+<raml-aware raml="{{raml}}" scope="request"></raml-aware>
+<raml-aware raml="{{importRaml}}" scope="import"></raml-aware>
+```
+```javascript
+var r1 = document.querySelector('raml-aware[scope="request"]');
+var r2 = document.querySelector('raml-aware[scope="import"]');
+r1.raml = {};
+r2.raml = null;
+assert(r1.raml !== r2.raml);
+```
+
+@group RAML Elements
+@element raml-aware
+@demo demo/index.html
+@hero hero.svg
+-->
+<script>
+(function() {
+'use strict';
+var RAMLAware = {
+  defaultScope: 'default',
+  ramlAwares: [],
+  /**
+   * Store for RAML definitions.
+   * @type {Object<String, Object>} The key is a scope (`default` by default)
+   * and the value is the RAML definition for this scope.
+   */
+  raml: {},
+  attachRamlAware: function(aware) {
+    if (this.ramlAwares.indexOf(aware) === -1) {
+      this.ramlAwares.push(aware);
+      this.scopeChanged(aware);
+    }
+  },
+
+  detachRamlAware: function(aware) {
+    var index = this.ramlAwares.indexOf(aware);
+    if (index !== -1) {
+      this.ramlAwares.splice(index, 1);
+    } else {
+      console.warn('The aware wasn\'t attached!');
+    }
+  },
+  /**
+   * [setRaml description]
+   * @param {HTMLElement} srcAware The aware that notified about the change
+   */
+  setRaml: function(srcAware) {
+    var scope = srcAware.scope || this.defaultScope;
+    var raml = srcAware.raml || undefined;
+    this.raml[scope] = raml;
+    this.ramlAwares.forEach((aware) => {
+      if (aware === srcAware) {
+        return;
+      }
+      let localScope = aware.scope || this.defaultScope;
+      if (localScope !== scope) {
+        return;
+      }
+      aware.raml = raml;
+    });
+  },
+
+  scopeChanged: function(aware) {
+    var scope = aware.scope || this.defaultScope;
+    aware.raml = this.raml[scope];
+  }
+};
+
+Polymer({
+  is: 'raml-aware',
+  properties: {
+    /**
+     * Scope for the RAML file.
+     * Different awares may have different scope and keep different RAML objects.
+     * It can be useful when one aware supports request panel and another
+     * RAML import for example. In this case first one may have scope not set
+     * (`default` scope) and second one `import` scope. Then both RAMLs are
+     * encapsulated to the scope.
+     */
+    scope: String,
+    // The RAML definition.
+    raml: {
+      type: Object,
+      notify: true
+    }
+  },
+
+  observers: [
+    '_scopeChanged(scope)',
+    '_ramlChanged(raml.*)',
+  ],
+
+  attached: function() {
+    RAMLAware.attachRamlAware(this);
+  },
+
+  detached: function() {
+    RAMLAware.detachRamlAware(this);
+  },
+  // Update RAML data for selected scope.
+  _scopeChanged(scope) {
+    RAMLAware.scopeChanged(this);
+  },
+  // Notifies other awares about RAML change.
+  _ramlChanged: function() {
+    RAMLAware.setRaml(this);
+  }
+});
+})();
+</script>

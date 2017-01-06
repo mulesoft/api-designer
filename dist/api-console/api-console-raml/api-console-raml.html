@@ -1,0 +1,234 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../raml-aware/raml-aware.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../paper-spinner/paper-spinner.html">
+<link rel="import" href="../raml-documentation-viewer/raml-documentation-viewer.html">
+<link rel="import" href="../raml-request-panel/raml-request-panel.html">
+<link rel="import" href="api-console-raml-styles.html">
+<script src="../raml-js-parser/browser/index.js"></script>
+<link rel="import" href="../raml-js-parser/raml2object.html">
+
+<!--
+The API console to be used as a Web Component. In this case you can import the element
+using Bower:
+```
+bower install --save advanced-rest-client/api-console
+```
+And then use it as a regular HTML element.
+But first you have to tell the browser what's the element dfinition by importing it into the
+document:
+```
+<link rel="import" href="bower_components/api-console/api-console-raml.html">
+```
+Because as for now the `import` specification is not standarized accross all browser vendors
+(unlike other WebComponents spec) you have to use polifill:
+
+```
+<script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+```
+Thisscript is not a polyfill for web components nor the Polymer. It only load components you want
+to import.
+
+## The Polymer
+Basically you don't have to care about the Polymer framework. It is included internally by the
+components. If the browser don't (yet) support shaddow DOM then Polymer will be available in the
+global scope. Otherwise it is not visible to the DOM.
+In both cases you don't have to use or know Polymer to use this element. You must to know how to
+use HTML, JavaScript and CSS though :)
+
+## Styling
+This section is mean to be updated later, when the element's API is finished.
+
+## Usage
+After installing and including the API console into the document, use it as regular HTML element:
+
+```
+<api-console auto src="https://domain.com/api.raml"></api-console>
+```
+It will load the RAML file definition and initially display the documentation of the API.
+Users have to click on the "try it" button to run the request with given parameters.
+
+To display a request form for particular endpoint of the API you can set a `path` property which
+represents a path to the method in the RAML JSON output.
+```
+<api-console path="resources.0.method.1"></api-console>
+```
+Example above will display second method from first resource in the resources tree.
+You can set attribute `display` to `request` to display a request panel for this method. By default
+it is set to `docs`.
+
+@group UI Elements
+@element api-console
+@demo demo/index.html
+-->
+<dom-module id="api-console-raml">
+  <template>
+    <style>
+    :host {
+      display: block;
+      overflow: scroll;
+    }
+
+    *[hidden] {
+      display: none !important;
+    }
+
+    .breadcrumbs {
+      display: block;
+      padding: 16px 12px;
+    }
+
+    .breadcrumbs .separator {
+      display: inline-block;
+      margin: 0 4px;
+    }
+
+    .breadcrumbs .separator::before {
+      content: '·';
+    }
+
+    </style>
+    <div class="loader" hidden$="[[!working]]">
+      <paper-spinner active="[[working]]"></paper-spinner>
+      <p>Loading content. Please wait a sec...</p>
+    </div>
+    <iron-pages attr-for-selected="data-display" selected="[[display]]" fallback-selection="e404">
+      <section data-display="docs">
+        <raml-documentation-viewer selected-path="{{path}}" raml='{{ramlParsed}}' narrow="{{narrow}}" aware="raml"></raml-documentation-viewer>
+      </section>
+      <section data-display="request">
+        <div class="breadcrumbs">
+          <a href="#" data-place="docs" on-tap="_navigate">Documentation</a>
+          <span class="separator"></span>
+          <a>Try it</a>
+        </div>
+        <raml-request-panel path="{{path}}" raml='{{ramlParsed}}' narrow="{{narrow}}" aware="raml"></raml-request-panel>
+      </section>
+      <section data-display="e404">
+        <p>The <b>display</b> attribute is incorrect. Set <b>docs</b> or <b>request</b> only.</p>
+      </section>
+    </iron-pages>
+    <raml-aware raml="[[ramlParsed]]" scope="raml"></raml-aware>
+    <paper-toast text=""></paper-toast>
+  </template>
+  <script>
+  Polymer({
+    is: 'api-console-raml',
+
+    properties: {
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        notify: true
+      },
+      /**
+       * A screen to display. By default it is `docs` but can be `request` to display a request
+       * panel for given `path`.
+       */
+      display: {
+        type: String,
+        value: 'docs',
+        reflectToAttribute: true
+      },
+      /**
+       * Current path to the resource / method / documentation.
+       * This is updated when the user select a specific node in the RAML JSON structure that
+       * represents one of this properties. When changed from the outside (by the app) it will
+       * update the view to display selected path.
+       */
+      path: {
+        type: String,
+        notify: true
+      },
+      // Will be set to true when parsing the RAML file.
+      working: {
+        type: Boolean,
+        value: false,
+        readOnly: true,
+        notify: true
+      },
+      // RAML as the JSON produced by the parser. The `.specification` part of the output.
+      raml: {
+        type: Object,
+        notify: true
+      },
+      //The output of the raml after being parsed
+      ramlParsed: {
+        type: Object,
+        notify: true
+      },
+      // List of parser errors.
+      errors: {
+        type: Array,
+        notify: true,
+        readOnly: true
+      },
+      // True if the element and child elements has been loaded.
+      _loaded: Boolean,
+      // Set by the child element. True whem the user selected any of the RAML data.
+      ramlHasSelected: Boolean
+    },
+
+    listeners: {
+      'tryit-requested': '_tryitHandler'
+    },
+
+    observers: [
+      '_ramlUpdate(raml)'
+    ],
+
+    attached: function() {
+      this._loaded = true;
+      this._ramlUpdate(this.raml);
+    },
+    _ramlUpdate: function(raml) {
+      if (raml) {
+        this.updateRAML();
+      }
+    },
+    // Transforms raml given and pass it to the child
+    updateRAML: function() {
+      if (!this._loaded) {
+        return;
+      }
+      var raml = this.raml;
+      if (!raml) {
+        return;
+      }
+      this.ramlParsed = raml2obj.parse(raml);
+    },
+    // Displays a toast with a `message`.
+    _toastMessage: function(message) {
+      var toast = this.$$('paper-toast');
+      toast.text = message;
+      toast.opened = true;
+    },
+    // Handler for the `tryit` event fired in the `raml-docs-method-viewer` element.
+    _tryitHandler: function() {
+      this.display = 'request';
+    },
+    // An event handler for tap / click on navigation events.
+    _navigate: function(e) {
+      if (e.target.dataset && e.target.dataset.place) {
+        this.set('display', e.target.dataset.place);
+      }
+    }
+  });
+  </script>
+</dom-module>

@@ -1,0 +1,136 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-styles/typography.html">
+<!--
+### Styling
+`<docs-parameters-table>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--docs-parameters-table` | Mixin applied to all parameter table elements | `{}`
+`--docs-parameters-url-table` | Mixin applied to this elements | `{}`
+`--params-table-header-background-color` | Background color of table header | `#00A1DF`
+`--params-table-header-color` | Font color of table header | `rgba(255, 255, 255, 0.87)`
+`--params-table-subheader-background-color` | Background color of table subheader | `rgba(0, 161, 223, 0.24)`
+`--params-table-subheader-color` | Font color of table subheader | `rgba(0, 0, 0, 0.87)`
+`--params-table-row-border-color` | Border color of table's each row | `#00A1DF`
+`--params-table-row-background-color` | Background color of table's each row |  `#fff`
+`--params-table-row-color` | Font color of table's each row |  `#fff`
+`--docs-parameters-table-cell` | Mixin applied to each cell | `{}`
+`--docs-parameters-table-meta` | Mixin applied to property's metadata (example, pattern, etc) | `{}`
+
+-->
+<dom-module id="docs-parameters-table-shared-styles">
+  <template>
+    <style>
+    :host {
+      display: block;
+    }
+
+    :host([hidden]) {
+      display: none;
+    }
+
+    .params-table {
+      border-collapse: collapse;
+      text-align: left;
+      width: 100%;
+      margin-bottom: 40px;
+      @apply(--paper-font-body1);
+      font-size: 15px;
+      @apply(--docs-parameters-table);
+      @apply(--docs-parameters-url-table);
+    }
+
+    .params-table-header tr {
+      vertical-align: middle;
+      height: 36px;
+      background-color: var(--params-table-header-background-color, #00A1DF);
+      color: var(--params-table-header-color, rgba(255, 255, 255, 0.87));
+      @apply(--docs-parameters-table-header);
+    }
+
+    tr.params-table-header.subheader {
+      background-color: var(--params-table-subheader-background-color, rgba(0, 161, 223, 0.24));
+      color: var(--params-table-subheader-color, rgba(0, 0, 0, 0.87));
+      @apply(--docs-parameters-table-subheader);
+    }
+
+    tr {
+      border-bottom-width: 1px;
+      border-bottom-style: solid;
+      border-bottom-color: var(--params-table-row-border-color, rgba(0, 161, 223, 1));
+      background-color: var(--params-table-row-background-color, #fff);
+      color: var(--params-table-row-color, rgba(0, 0, 0, 0.87));
+    }
+
+    tr.subproperty {
+      border-bottom-color: var(--params-table-row-subproperty-border-color, rgba(0, 161, 223, 0.24));
+    }
+
+    tr.subproperty:last-of-type {
+      border-bottom-color: var(--params-table-row-border-color, rgba(0, 161, 223, 1));
+    }
+
+    tr.has-children {
+      border-bottom-color: var(--params-table-row-subproperty-border-color, rgba(0, 161, 223, 0.24));
+    }
+
+    tr:last-of-type {
+      border-bottom-color: transparent;
+    }
+
+    .params-table th,
+    .params-table td {
+      padding: 8px 12px;
+      @apply(--docs-parameters-table-cell);
+    }
+
+    .params-table td {
+      vertical-align: top;
+    }
+
+    .param-desc .pattern,
+    .param-desc .example,
+    .param-desc .enum,
+    .param-desc .min,
+    .param-desc .max {
+      color: rgba(0, 0, 0, 0.54);
+      margin: 8px 0;
+      @apply(--docs-parameters-table-meta);
+    }
+
+    .display ~ .value {
+      margin-left: 8px;
+    }
+
+    td.param-name,
+    td.param-type,
+    td.param-type button {
+      font-weight: 500;
+    }
+
+    .markdown-html p:first-child {
+      margin-top: 0;
+      padding-top: 0;
+    }
+
+    .markdown-html p:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    </style>
+  </template>
+</dom-module>

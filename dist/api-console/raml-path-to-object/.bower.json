@@ -1,0 +1,58 @@
+{
+  "name": "raml-path-to-object",
+  "description": "Helper element that converts selected path to a RAML definition object",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "authors": [
+    "The Advanced REST client authors <arc@mulesoft.com>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer",
+    "raml",
+    "parser normalization",
+    "parser"
+  ],
+  "private": true,
+  "main": [
+    "raml-path-to-object.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:advanced-rest-client/raml-path-to-object.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "raml-behaviors": "advanced-rest-client/raml-behaviors#^1.0.1",
+    "raml-aware": "advanced-rest-client/raml-aware#^1.0.2"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "raml-path-selector": "advanced-rest-client/raml-path-selector#^1.0.0",
+    "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.4"
+  },
+  "ignore": [
+    "**/.*",
+    "dependencyci.yml",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks"
+  ],
+  "version": "1.0.32",
+  "homepage": "https://github.com/advanced-rest-client/raml-path-to-object",
+  "_release": "1.0.32",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.0.32",
+    "commit": "f68c45bcdbc99b95be4a5b620b4907892cab5800"
+  },
+  "_source": "https://github.com/advanced-rest-client/raml-path-to-object.git",
+  "_target": "^1.0.31",
+  "_originalSource": "advanced-rest-client/raml-path-to-object"
+}

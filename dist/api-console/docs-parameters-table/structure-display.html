@@ -1,0 +1,109 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../prism-element/prism-theme-default.html">
+<link rel="import" href="../prism-element/prism-highlighter.html">
+<!--
+A `<pre>` element that displays highlighted text.
+
+## Usage
+```
+<pre is="[[structure-display]]" display="[[json]]"></pre>
+```
+
+## Theming
+Custom property | Description | Default
+----------------|-------------|----------
+`--code-block` | Mixin applied to the code block. | `{}`
+-->
+<dom-module id="structure-display">
+  <template strip-whitespace>
+    <style include="prism-theme-default">
+    #output {
+      @apply(--code-block);
+    }
+    </style>
+    <prism-highlighter></prism-highlighter>
+    <div id="output"></div>
+  </template>
+  <script>
+    Polymer({
+      is: 'structure-display',
+      extends: 'pre',
+      properties: {
+        // A content to parse, highlight and display.
+        display: String,
+        // Data type to pass to the highlight function. js, xml etc.
+        dataType: {
+          type: String,
+          value: 'js'
+        },
+        // If set automatically hides the element if the `display` is empty
+        autoHide: {
+          type: Boolean,
+          value: false
+        },
+        // Set to true when the element has been initialized.
+        _ready: Boolean
+      },
+
+      observers: [
+        '_highlightSchema(display)',
+        '_autoHideChanged(autoHide, display)'
+      ],
+
+      ready: function() {
+        this._ready = true;
+        // This callbacks are be called before the element ready event is fired.
+        // So they must be called again.
+        this._highlightSchema(this.display);
+      },
+
+      _autoHideChanged: function(state, display) {
+        if (state) {
+          if (!display) {
+            if (!this.hasAttribute('hidden')) {
+              this.setAttribute('hidden', true);
+            }
+          } else {
+            if (this.hasAttribute('hidden')) {
+              this.removeAttribute('hidden');
+            }
+          }
+        } else {
+          if (this.hasAttribute('hidden')) {
+            this.removeAttribute('hidden');
+          }
+        }
+      },
+
+      _highlightSchema: function(str) {
+        if (!this._ready) {
+          return;
+        }
+        if (!str) {
+          this.$.output.innerHTML = '';
+          return;
+        }
+        this.debounce('structure-display-highlight', function() {
+          this.$.output.innerHTML = this.highlight(str, this.dataType);
+        }, 10);
+      },
+
+      highlight: function(code, lang) {
+        return this.fire('syntax-highlight', {code: code, lang: lang}).detail.code;
+      },
+    });
+  </script>
+</dom-module>

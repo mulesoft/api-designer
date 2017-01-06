@@ -1,0 +1,51 @@
+{
+  "name": "api-console-raml",
+  "description": "The API Console used in RAML platform.",
+  "authors": [
+    "The Advanced REST client authors <arc@mulesoft.com>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer",
+    "raml",
+    "api",
+    "console"
+  ],
+  "private": true,
+  "main": "api-console-raml.html",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:mulesoft/api-console-raml.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "paper-toast": "PolymerElements/paper-toast#^1.3.0",
+    "iron-pages": "PolymerElements/iron-pages#^1.0.8",
+    "paper-spinner": "PolymerElements/paper-spinner#^1.2.1",
+    "raml-request-panel": "advanced-rest-client/raml-request-panel#0.0.5",
+    "raml-documentation-viewer": "advanced-rest-client/raml-documentation-viewer#0.1.1",
+    "raml-js-parser": "https://github.com/advanced-rest-client/raml-js-parser.git"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.4",
+    "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^1.4.3",
+    "paper-listbox": "polymerelements/paper-listbox#^1.1.2",
+    "paper-item": "PolymerElements/paper-item#^1.2.1"
+  },
+  "ignore": [
+    "**/.*",
+    "dependencyci.yml",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks"
+  ],
+  "version": "0.0.1"
+}

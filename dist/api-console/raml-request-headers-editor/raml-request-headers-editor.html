@@ -1,0 +1,229 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../headers-parser-behavior/headers-parser-behavior.html">
+<link rel="import" href="../vertical-tabs/vertical-tabs.html">
+<link rel="import" href="../raml-headers-form/raml-headers-form.html">
+<link rel="import" href="../code-mirror/code-mirror.html">
+<!-- CodeMirror autocomplete -->
+<link rel="import" href="../paper-material/paper-material.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-item/paper-item.html">
+
+<link rel="import" href="cm-arc-styles.html">
+<link rel="import" href="cm-modules-import.html">
+<!--
+`<raml-request-headers-editor>` A headers editor to be used with the RAML defined requests
+
+### Example
+```
+<raml-request-headers-editor></raml-request-headers-editor>
+```
+
+### Styling
+`<raml-request-headers-editor>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-request-headers-editor` | Mixin applied to the element | `{}`
+
+@group RAML Elements
+@element raml-request-headers-editor
+@demo demo/index.html
+-->
+<dom-module id="raml-request-headers-editor">
+  <template>
+    <style>
+     :host {
+      display: block;
+      position: relative;
+
+      @apply(--raml-request-headers-editor);
+
+      --code-mirror-editor: {
+        z-index: 0;
+      }
+
+      --paper-autocomplete: {
+        top: 32px;
+      }
+    }
+    .CodeMirror-hints {
+      position: absolute;
+      z-index: 10;
+      background: white;
+      overflow: hidden;
+      overflow-y: auto;
+      max-height: 20em;
+      margin-left: 20px;
+    }
+    </style>
+    <iron-media-query query="(max-width: [[narrowWidth]])" query-matches="{{narrow}}"></iron-media-query>
+    <div class="content">
+      <vertical-tabs selected="{{selected}}">
+        <paper-tab>Headers form</paper-tab>
+        <paper-tab>Raw headers</paper-tab>
+        <iron-pages content selected="{{selected}}" on-iron-select="_tabChangedHandler">
+          <raml-headers-form value="{{value}}" narrow="[[narrow]]" narrow-width="[[narrowWidth]]" raml-headers="[[ramlHeaders]]"></raml-headers-form>
+          <code-mirror mode="http-headers" theme="cm-arc" value="{{value}}"></code-mirror>
+        </iron-pages>
+      </vertical-tabs>
+    </div>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-request-headers-editor',
+    behaviors: [ArcBehaviors.HeadersParserBehavior],
+    /**
+     * Fired when the content type header has been set / updated.
+     *
+     * @event content-type-changed
+     * @param {String} value New Content type.
+     */
+    properties: {
+      /**
+       * A HTTP headers message part as defined in HTTP spec.
+       *
+       * @type {String}
+       */
+      value: {
+        type: String,
+        notify: true
+      },
+      // Currently selected tab.
+      selected: {
+        type: Number,
+        value: 0
+      },
+
+      ramlHeaders: Object,
+      /**
+       * A value of a Content-Type header.
+       * This can be changed externally and the editor will reflect the change.
+       *
+       * @type {Stirng}
+       */
+      contentType: {
+        type: String,
+        notify: true,
+        observer: '_onContentTypeChanged'
+      },
+
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        value: false,
+        notify: true
+      },
+      // A widith below which the `narrow` property will be set to true.
+      narrowWidth: {
+        type: String,
+        value: '768px'
+      }
+    },
+
+    observers: ['valueChanged(value)'],
+
+    ready: function() {
+      var cm = this.$$('code-mirror');
+      cm.setOption('extraKeys', {
+        'Ctrl-Space': function(cm) {
+          CodeMirror.showHint(cm, CodeMirror.hint['http-headers'], {
+            container: Polymer.dom(this.root)
+          });
+        }.bind(this)
+      });
+    },
+
+    /**
+     * Called by CodeMirror editor.
+     * When something change n the headers list, detect content type header.
+     */
+    valueChanged: function(value) {
+      this._detectContentType(value);
+    },
+
+    _detectContentType: function(value) {
+      if (!value && this.contentType) {
+        this.set('contentType', null);
+        return;
+      }
+      if (!this.value) {
+        return;
+      }
+      var ct = this.getContentType(value);
+      if (!ct) {
+        return;
+      }
+      this.set('contentType', ct);
+    },
+
+    _onContentTypeChanged: function() {
+      if (!this.isPayload || !this.contentType) {
+        this.fire('content-type-changed', {
+          'value': ''
+        });
+        return;
+      }
+      var arr = this.headersToJSON(this.value);
+      var updated = false;
+      var notChanged = false; //True when values are equal, no change needed.
+      arr.map(function(item) {
+        if (updated || item.name.toLowerCase() !== 'content-type') {
+          return item;
+        }
+        updated = true;
+        if (item.value === this.contentType) {
+          notChanged = true;
+          return item;
+        }
+        item.value = this.contentType;
+        return item;
+      }.bind(this));
+
+      if (notChanged) {
+        return;
+      }
+      if (!updated) {
+        arr.push({
+          name: 'Content-Type',
+          value: this.contentType
+        });
+      }
+
+      var headers = this.headersToString(arr);
+      this.set('value', headers);
+      this.fire('content-type-changed', {
+        'value': this.contentType
+      });
+    },
+
+    _tabChangedHandler: function(e) {
+      var name = e.detail.item && e.detail.item.nodeName;
+      if (!name) {
+        return;
+      }
+      if (name === 'CODE-MIRROR') {
+        e.detail.item.editor.refresh();
+      }
+    }
+  });
+  </script>
+</dom-module>

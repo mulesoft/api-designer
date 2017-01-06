@@ -1,0 +1,29 @@
+{
+  "name": "raml-js-parser",
+  "version": "1.1.2",
+  "license": "LICENSE.md",
+  "description": "RAML parser (JS version) as a web component",
+  "devDependencies": {
+    "polymer-cli": "^0.17.0"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "private": false,
+  "main": [
+    "raml-js-parser.html"
+  ],
+  "author": "The Advanced REST client authors",
+  "scripts": {
+    "serve": "node_modules/.bin/polymer serve",
+    "lint": "node_modules/.bin/polymer lint raml-js-parser.html",
+    "test-sauce": "node_modules/.bin/polymer test --plugin sauce --job-name \"raml-js-parser:local-test\"",
+    "test": "node_modules/.bin/polymer test",
+    "deps": "npm install --quiet && bower install --quiet",
+    "update-deps": "npm update --quiet && bower update --quiet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/advanced-rest-client/raml-js-parser.git"
+  }
+}

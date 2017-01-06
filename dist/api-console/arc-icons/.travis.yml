@@ -1,0 +1,21 @@
+language: node_js
+sudo: required
+dist: trusty
+node_js: stable
+before_script:
+- npm install --silent -g bower polymer-cli
+- bower install --silent
+addons:
+  sauce_connect: true
+script:
+- polymer lint arc-icons.html
+cache:
+  directories:
+  - bower_components
+  - node_modules
+branches:
+  only:
+  - stage
+  - develop
+after_success:
+- node tasks/ci.js

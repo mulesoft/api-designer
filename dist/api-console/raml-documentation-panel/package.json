@@ -1,0 +1,33 @@
+{
+  "name": "raml-documentation-panel",
+  "version": "1.0.6",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "description": "A documentation details panel. Its purpose is to compute documentation from the RAML file and display the result as a main documentation panel",
+  "devDependencies": {
+    "polymer-cli": "^0.16.0"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "private": false,
+  "main": [
+    "raml-documentation-panel.html"
+  ],
+  "author": "The Advanced REST client authors <arc@mulesoft.com>",
+  "scripts": {
+    "serve": "node_modules/.bin/polymer serve",
+    "lint": "node_modules/.bin/polymer lint raml-documentation-panel.html",
+    "test-sauce": "node_modules/.bin/polymer test --plugin sauce --job-name \"raml-documentation-panel:local-test\"",
+    "test": "node_modules/.bin/polymer test",
+    "deps": "npm install --quiet && bower install --quiet",
+    "update-deps": "npm update --quiet && bower update --quiet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/advanced-rest-client/raml-documentation-panel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/advanced-rest-client/raml-documentation-panel/issues",
+    "email": "arc@mulesoft.com"
+  }
+}

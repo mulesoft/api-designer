@@ -1,0 +1,71 @@
+{
+  "name": "raml-request-panel",
+  "description": "The request panel view for the request defined as a RAML method",
+  "authors": [
+    "The Advanced REST client authors <arc@mulesoft.com>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "private": true,
+  "main": [
+    "raml-request-panel.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:advanced-rest-client/raml-request-panel.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "raml-aware": "advanced-rest-client/raml-aware#^1.0.2",
+    "raml-path-selector": "advanced-rest-client/raml-path-selector#^1.0.3",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.1",
+    "paper-tabs": "PolymerElements/paper-tabs#^1.7.0",
+    "iron-pages": "PolymerElements/iron-pages#^1.0.8",
+    "body-editor-panel": "advanced-rest-client/body-editor-panel#^0.1.1",
+    "raml-request-headers-editor": "advanced-rest-client/raml-request-headers-editor#^0.1.2",
+    "raml-path-to-object": "advanced-rest-client/raml-path-to-object#^1.0.31",
+    "raml-docs-response-panel": "advanced-rest-client/raml-docs-response-panel#^1.0.2",
+    "raml-docs-method-viewer": "advanced-rest-client/raml-docs-method-viewer#^0.1.4",
+    "paper-styles": "PolymerElements/paper-styles#^1.1.5",
+    "raml-request-parameters-editor": "advanced-rest-client/raml-request-parameters-editor#^0.1.1",
+    "iron-media-query": "PolymerElements/iron-media-query#^1.0.8",
+    "raml-request-url-editor": "advanced-rest-client/raml-request-url-editor#^0.1.1",
+    "iron-ajax": "PolymerElements/iron-ajax#^1.4.3",
+    "paper-button": "PolymerElements/paper-button#^1.0.14",
+    "paper-progress": "PolymerElements/paper-progress#^1.0.11"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.5",
+    "paper-listbox": "polymerelements/paper-listbox#^1.1.2",
+    "paper-item": "polymerelements/paper-item#^1.2.1",
+    "paper-dropdown-menu": "polymerelements/paper-dropdown-menu#^1.4.3"
+  },
+  "ignore": [
+    "**/.*",
+    "dependencyci.yml",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks"
+  ],
+  "version": "0.0.5",
+  "homepage": "https://github.com/advanced-rest-client/raml-request-panel",
+  "_release": "0.0.5",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.0.5",
+    "commit": "05f0b82967cfa2a75909ecd8a66103e9ffb1f625"
+  },
+  "_source": "https://github.com/advanced-rest-client/raml-request-panel.git",
+  "_target": "0.0.5",
+  "_originalSource": "advanced-rest-client/raml-request-panel"
+}

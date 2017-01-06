@@ -1,0 +1,422 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="body-json-editor-behavior.html">
+<link rel="import" href="object-editor.html">
+<!--
+`<body-json-editor>` A JSON editor for HTTP body
+
+It provides a visual editor for the JSON body.
+
+### Example
+```
+<body-json-editor value='["apple", 1234]'></body-json-editor>
+```
+
+To set / get value on / from the element use the `value` property. Each time
+something change in the editor the string `value` will be regenerated.
+It is also possible to set a JavaScript objkect on this element using
+`json` property but it is immutable and changes will not be reflected to it.
+
+### Styling
+`<body-json-editor>` provides the following custom properties and mixins for
+styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--body-json-editor` | Mixin applied to the element | `{}`
+`--body-json-object-editor` | Mixin applied to the `object-editor` element. Note that because of the recurcy this element contains the same element. So setting padding / margin on this element is basically bad idea. | `{}`,
+`--paper-dropdown-menu-input` | Mixin applied to the dropdown menu input. | `{color: #673AB7;}`
+`--paper-dropdown-menu-button` | Mixin applied to the dropdown menu button. | `{color: #673AB7;}`
+`--primary-color` | Color of the action button | ``
+`--simple-type-editor` | Mixin applied to the `simple-type-editor` element. Note that because of the recurcy this element contains the same element. So setting padding / margin on this element is basically bad idea. | `{}`,
+`--inline-documentation-color` | Color of the documentartion font. Inline documentation appears below text fields as a hint for input. | `rgba(0, 0, 0, 0.64)`
+`--inline-documentation-text-size` | Size of the documentation font. Inline documentation appears below text fields as a hint for input. | `12px`
+`--code-type-text-value-color` | Text color of the code highligted string value | `#080`
+`--code-type-number-value-color` | Text color of the code highligted numeric value | `#303F9F`
+`--code-type-boolean-value-color` | Text color of the code highligted boolean value | `#4A148C`
+`--code-type-null-value-color` | Text color of the code highligted nullable value | `#4A148C`
+`--code-punctuation-value-color` | Text color of the code highligted: the punctuation | `rgba(0, 0, 0, 0.54)`
+
+@group UI Elements
+@element body-json-editor
+@demo demo/index.html
+-->
+<dom-module id="body-json-editor">
+  <template>
+    <style>
+     :host {
+      display: block;
+      @apply(--body-json-editor);
+    }
+
+    .action-button {
+      color: var(--primary-color);
+    }
+    </style>
+    <template is="dom-if" if="[[_isObject(model.type)]]">
+      <template is="dom-repeat" items="{{model.properties}}" id="object">
+        <object-editor narrow="[[narrow]]" value="{{item}}" schema="[[schema]]"></object-editor>
+      </template>
+      <div class="add-action">
+        <paper-button class="action-button" on-tap="_appendProperty">add property</paper-button>
+      </div>
+    </template>
+    <template is="dom-if" if="[[_isArray(model.type)]]">
+      <template is="dom-repeat" items="{{model.items}}" id="array">
+        <object-editor narrow="[[narrow]]" no-key value="{{item}}" schema="[[schema]]"></object-editor>
+      </template>
+      <div class="add-action">
+        <paper-button class="action-button" on-tap="_appendProperty">add array item</paper-button>
+      </div>
+    </template>
+  </template>
+  <script>
+  Number.isInteger = Number.isInteger || function(value) {
+    return typeof value === 'number' &&
+      isFinite(value) &&
+      Math.floor(value) === value;
+  };
+  // Production steps of ECMA-262, Edition 6, 22.1.2.1
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from
+  if (!Array.from) {
+    Array.from = (function() {
+      var toStr = Object.prototype.toString;
+      var isCallable = function(fn) {
+        return typeof fn === 'function' || toStr.call(fn) === '[object Function]';
+      };
+      var toInteger = function(value) {
+        var number = Number(value);
+        if (isNaN(number)) {
+          return 0;
+        }
+        if (number === 0 || !isFinite(number)) {
+          return number;
+        }
+        return (number > 0 ? 1 : -1) * Math.floor(Math.abs(number));
+      };
+      var maxSafeInteger = Math.pow(2, 53) - 1;
+      var toLength = function(value) {
+        var len = toInteger(value);
+        return Math.min(Math.max(len, 0), maxSafeInteger);
+      };
+
+      return function from(arrayLike /*, mapFn, thisArg */) {
+        var C = this;
+        var items = Object(arrayLike);
+        if (arrayLike === null) {
+          throw new TypeError('Array.from requires an array-like object - not null or undefined');
+        }
+        var mapFn = arguments.length > 1 ? arguments[1] : void undefined;
+        var T;
+        if (typeof mapFn !== 'undefined') {
+          if (!isCallable(mapFn)) {
+            throw new TypeError('Array.from: when provided, the second argument must be a function');
+          }
+          if (arguments.length > 2) {
+            T = arguments[2];
+          }
+        }
+        var len = toLength(items.length);
+        var A = isCallable(C) ? Object(new C(len)) : new Array(len);
+        var k = 0;
+        var kValue;
+        while (k < len) {
+          kValue = items[k];
+          if (mapFn) {
+            A[k] = typeof T === 'undefined' ? mapFn(kValue, k) : mapFn.call(T, kValue, k);
+          } else {
+            A[k] = kValue;
+          }
+          k += 1;
+        }
+        A.length = len;
+        return A;
+      };
+    }());
+  }
+
+  Polymer({
+    is: 'body-json-editor',
+    behaviors: [ArcBehaviors.BodyJsonEditorBehavior],
+    properties: {
+      // A JSON object. Please, use the `value` property to set / get JSON
+      json: {
+        type: Object,
+        notify: true
+      },
+      // Generated model.
+      model: Object,
+      /**
+       * If available, this is the RAML's type definition. It will provide schema definition
+       * for the editor.
+       */
+      type: Object,
+      // gets / sets JSON string value
+      value: {
+        type: String,
+        notify: true,
+        value: ''
+      },
+      /**
+       * Determines if the editor is currently displayed in the UI and relevant to the user.
+       * If not (parent element/app set it to false) then all computations will be on hold
+       * until the element is open again.
+       */
+      opened: {
+        type: Boolean,
+        value: true
+      }
+    },
+
+    observers: [
+      '_typeChanged(type.*)',
+      '_valueChanged(opened, value)',
+      '_jsonChanged(opened, json)',
+      '_modelChanged(opened, model.*)',
+    ],
+
+    listeners: {
+      'remove-property': '_onRemoveProperty'
+    },
+
+    ready: function() {
+      if (!this.json) {
+        this.json = {};
+      }
+    },
+
+    _jsonChanged: function(opened, json) {
+      if (!opened) {
+        return;
+      }
+      this.debounce('model-translator', function() {
+        this.model = this._createModel(json);
+      }, 250);
+    },
+    /**
+     * Creates an internal model from the `object`.
+     * Object can be any JavaScript object.
+     *
+     * The result object have following strucure:
+     * - type {String} "object" or "array"
+     * - properties {Array<Object>} if the type is "object"
+     * - items {Array<Object>} if the type is "array"
+     *
+     * Then properties / items array contains a list of objects with following properties:
+     * - type {String} any permitted type like string, number, boolean, object and so on
+     * - name {String} name of the property
+     * - properties {Array<Object>} if the type is "object"
+     * - items {Array<Object>} if the type is "array"
+     * - value {String|Number|Boolean|null} if the type is neither "object" or "array"
+     *
+     * @param {Object|Array} object A source object to create a model from it.
+     * @param {String?} parentType A type of the parent object. If not set or if it value equals
+     * "array" then the resulting object will not contain the `name` property.
+     * @return {Object|undefined} A model of undefined if passed object is nullable.
+     */
+    _createModel: function(object, parentType) {
+      var result = {
+        type: 'object'
+      };
+      if (object === undefined) {
+        return result;
+      }
+
+      if (parentType && parentType !== 'array') {
+        result.name = '';
+      }
+      if (object instanceof Array) {
+        result.type = 'array';
+        var items = [];
+        object.forEach(function(item) {
+          var _m = this._createModel(item, 'array');
+          if (_m) {
+            items[items.length] = _m;
+          }
+        }, this);
+        result.items = items;
+      } else if (object instanceof Object) {
+        try {
+          var keys = Object.keys(object);
+          var properties = [];
+          keys.forEach(function(key) {
+            var _m = this._createModel(object[key], 'object');
+            if (_m) {
+              _m.name = key;
+              properties[properties.length] = _m;
+            }
+          }, this);
+          result.properties = properties;
+        } catch (e) {}
+      } else {
+        if (typeof object === 'string') {
+          result.type = 'string';
+          result.value = object;
+        } else if (typeof object === 'number') {
+          result.type = Number.isInteger(object) ? 'integer' : 'float';
+          result.value = object;
+        } else if (typeof object === 'boolean') {
+          result.type = 'boolean';
+          result.value = object;
+        } else if (object === null) {
+          result.type = 'null';
+          result.value = null;
+        } else {
+          return;
+        }
+      }
+      return result;
+    },
+
+    _isObject: function(type) {
+      return type === 'object';
+    },
+
+    _isArray: function(type) {
+      return type === 'array';
+    },
+
+    /**
+     * Removes the property from this object.
+     */
+    _onRemoveProperty: function(e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+
+      var _repeater;
+      if (this.model.type === 'object') {
+        _repeater = this.$$('#object');
+      } else {
+        _repeater = this.$$('#array');
+      }
+      if (!_repeater) {
+        return;
+      }
+      var index = _repeater.indexForElement(e.target);
+      if (index === -1) {
+        return;
+      }
+      if (this.model.type === 'object') {
+        this.splice('model.properties', index, 1);
+      } else {
+        this.splice('model.items', index, 1);
+      }
+    },
+
+    /**
+     * A handler to any change in the model object.
+     * Model represents a object keys and values. So if any of the object editors change the value
+     * (or key) it will be notified here and the value of the editor will be updated.
+     *
+     * The value won't be updated if the change is comming from the external source.
+     */
+    _modelChanged: function(opened, record) {
+      if (!opened) {
+        return;
+      }
+      var obj = record.base;
+      obj = this._computeJson(obj);
+      this._internalValueChage = true;
+      this.set('value', JSON.stringify(obj, null, 2));
+      this._internalValueChage = false;
+    },
+
+    _computeJson: function(model) {
+      var isArray = model.type === 'array';
+      var result = isArray ? [] : {};
+
+      var properties;
+      if (isArray) {
+        if (!model.items || !model.items.length) {
+          return result;
+        }
+        properties = model.items;
+      } else {
+        if (!model.properties || !model.properties.length) {
+          return result;
+        }
+        properties = model.properties;
+      }
+      properties.forEach(function(item) {
+        var _value;
+        if (item.type === 'object' || item.type === 'array') {
+          _value = this._computeJson(item);
+        } else {
+          _value = item.value;
+          if (['integer', 'float'].indexOf(item.type) !== -1) {
+            _value = Number(_value);
+            if (_value !== _value) {
+              _value = item.value;
+            }
+          }
+        }
+        if (isArray) {
+          result[result.length] = _value;
+        } else {
+          result[item.name] = _value;
+        }
+      }, this);
+      return result;
+    },
+    // Appends a new child property to the Object or the Array.
+    _appendProperty: function() {
+      var property = {
+        name: '',
+        type: ''
+      };
+      if (this.model.type === 'object') {
+        if (this.model.properties) {
+          this.push('model.properties', property);
+        } else {
+          this.set('model.properties', [property]);
+        }
+      } else {
+        if (this.model.items) {
+          // set new item's type to the same as the last item
+          var type = this.model.items[this.model.items.length - 1].type;
+          property.type = type;
+          this.push('model.items', property);
+        } else {
+          this.set('model.items', [property]);
+        }
+      }
+    },
+    // Updates the model if the value attribute change from the outside.
+    _valueChanged: function(opened, value) {
+      if (!opened) {
+        return;
+      }
+      if (this._internalValueChage) {
+        return;
+      }
+      try {
+        var json = JSON.parse(value);
+        this.set('json', json);
+      } catch (e) {}
+    },
+
+    _typeChanged: function(record) {
+      var type = record.base;
+      if (!type) {
+        this.schema = undefined;
+      } else {
+        this.schema = this._generateJsonSchema(type);
+      }
+    }
+  });
+  </script>
+</dom-module>

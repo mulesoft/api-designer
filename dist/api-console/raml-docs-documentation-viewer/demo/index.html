@@ -1,0 +1,107 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+
+  <title>raml-docs-documentation-viewer demo</title>
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+  <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+  <link rel="import" href="../../raml-docs-helpers/raml-docs-parser.html">
+  <link rel="import" href="../../raml-path-to-object/raml-path-to-object.html">
+  <link rel="import" href="../../paper-dropdown-menu/paper-dropdown-menu.html">
+  <link rel="import" href="../../paper-listbox/paper-listbox.html">
+  <link rel="import" href="../../paper-item/paper-item.html">
+
+  <link rel="import" href="../raml-docs-documentation-viewer.html">
+  <style is="custom-style" include="demo-pages-shared-styles">
+  body {
+    background-color: #f5f5f5;
+  }
+  .vertical-section-container {
+    max-width: 600px;
+  }
+
+  raml-docs-method-viewer {
+    background-color: #ffffff;
+  }
+  </style>
+</head>
+<body unresolved>
+  <template is="dom-bind" id="app">
+    <div class="vertical-section-container centered">
+      <raml-docs-parser raml="{{raml}}" raml-file-url="https://raw.githubusercontent.com/advanced-rest-client/raml-example-api/master/api.raml"></raml-docs-parser>
+      <raml-path-to-object
+        raml="[[raml.specification]]"
+        selected-path="{{selectedPath}}"
+        selected-object="{{selectedObject}}"
+        selected-parent="{{selectedParent}}"
+        is-documentation="{{isDoc}}"></raml-path-to-object>
+      <h3>The `raml-docs-documentation-viewer`</h3>
+      <template is="dom-if" if="[[documentations]]">
+        <paper-dropdown-menu label="Selected documentation">
+          <paper-listbox class="dropdown-content" attr-for-selected="data-path" selected="{{selectedPath}}">
+            <template is="dom-repeat" items="[[documentations]]">
+              <paper-item data-path$="[[item.path]]">[[item.name]]</paper-item>
+            </template>
+          </paper-listbox>
+        </paper-dropdown-menu>
+      </template>
+      <raml-docs-documentation-viewer hidden$="[[!isDoc]]" documentation="[[selectedObject]]"></raml-docs-documentation-viewer>
+      <p hidden$="[[isDoc]]" class="info">Documentation is not selected</p>
+    </div>
+  </template>
+  <script>
+  var $ = function(selector) {
+    return document.querySelector(selector);
+  };
+  (function(app) {
+    app.selectedPath = '';
+    app.raml = undefined;
+    app.documentations = undefined;
+    app.observers = [
+      '_ramlChanged(raml.*)'
+    ];
+    app._ramlChanged = function() {
+      app.selectedPath = '';
+      var api = app.raml.specification;
+      if (!api) {
+        return;
+      }
+      var data = [];
+      app._computePaths(data, '');
+      app.documentations = data;
+    };
+    app._computePaths = function(arr, path) {
+      var data = app.get('raml.specification' + path);
+      if (!data) {
+        return;
+      }
+      if (data.documentation) {
+        data.documentation.forEach(function(item, i) {
+          var _path = path + '.documentation.' + i;
+          _path = _path.substr(1);
+          arr.push({
+            path: _path,
+            name: item.title || 'Unnamed'
+          });
+        });
+      }
+    };
+  })($('#app'));
+  </script>
+</body>
+</html>

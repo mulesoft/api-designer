@@ -1,0 +1,243 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../arc-icons/arc-icons.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-a11y-keys-behavior/iron-a11y-keys-behavior.html">
+<link rel="import" href="raml-tree-item-behavior.html">
+<link rel="import" href="raml-tree-item-styles.html">
+<!--
+The `<raml-resource-tree-item>` is an element that displays a resource
+part of the API structure tree. It contains the resource, it's methods and
+sub-resources.
+
+This element is intended to work with `<raml-path-selector>`.
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-docs-tree-item-element` | Mixin applied to the element | `{}`
+`--raml-docs-tree-item-element-background` | Background color of the element | `transparent`
+`--raml-docs-tree-children-margin` | Resource's children left margin.  | `24px`
+`--raml-docs-tree-item` | Mixin applied to each tree item  | `{}`
+`--raml-docs-tree-item-background` | Background color of the tree item.  | `transparent`
+`--raml-docs-tree-item-hover-background` | Background color of hovered tree item  | `#F5F5F5`
+`--raml-docs-tree-item-selected-background` | Background color of the selected item | `rgba(3, 169, 244, 0.24)`
+`--raml-docs-tree-item-selected-color` | Color of the selected item | `#000`
+`--raml-docs-tree-outline` | An outline of focused item | `none`
+
+@element raml-resource-tree-item
+@demo demo/index.html
+-->
+<dom-module id="raml-resource-tree-item">
+  <template>
+    <style include="raml-tree-item-styles">
+
+    .children {
+      /* Never use margin/padding (top-bottom) with this selector */
+      margin-left: var(--raml-docs-tree-children-margin, 24px);
+    }
+
+    :focus {
+      outline: none;
+    }
+
+    paper-icon-button {
+      transition: all 0.4s ease;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
+    }
+    /* In shaggy DOM there must be an exact path for recursive elements */
+
+     :host([opened])>paper-item>paper-icon-button {
+      transform: rotate(90deg);
+    }
+
+    .resource-name {
+      @apply(--layout-flex);
+    }
+
+    paper-item {
+      white-space: nowrap;
+    }
+    </style>
+    <paper-item data-path$="[[path]]" on-tap="_selectPath" class$="[[_computeItemSelectableClass(selectedPath, path)]]" title$="[[resourceTitle]]" id="resource">
+      <paper-icon-button icon="arc:chevron-right" on-tap="toggle"></paper-icon-button>
+      <span class="resource-name">[[_getName(resource)]]</span>
+    </paper-item>
+    <iron-collapse id="collapse" opened="[[opened]]">
+      <div class="children">
+        <template is="dom-repeat" items="[[resource.methods]]">
+          <paper-item data-path$="[[path]].methods.[[index]]" on-tap="_selectPath" class$="[[_computeItemSelectableClass(selectedPath, path, index)]]" title$="[[item.method]] [[item.description]]">[[_getMethodName(item)]]</paper-item>
+        </template>
+        <template is="dom-repeat" items="[[resource.resources]]">
+          <raml-resource-tree-item selected-path="[[selectedPath]]" resource="[[item]]" path="[[path]].resources.[[index]]" no-resource-selection="[[noResourceSelection]]"></raml-resource-tree-item>
+        </template>
+      </div>
+    </iron-collapse>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-resource-tree-item',
+    behaviors: [Polymer.RamlTreeItemBehavior, Polymer.IronA11yKeysBehavior],
+    properties: {
+      // A resource object from the RAML definition
+      resource: Object,
+      // If set the item will have methods and 1st level subresources visible
+      opened: {
+        type: Boolean,
+        value: false,
+        reflectToAttribute: true
+      },
+      // Title attribute of the resource item
+      resourceTitle: {
+        type: String,
+        computed: '_computeResourceTitle(resource.*)'
+      },
+      // Computed value, true if method of this resource is selected.
+      methodIsSelected: {
+        type: Boolean,
+        value: false,
+        computed: '_computeIsSelectedMethod(isSelected, selectedPath, path, _isReady)'
+      },
+      // True when the element has been initialized
+      _isReady: {
+        type: Boolean,
+        value: false
+      }
+    },
+
+    observers: [
+      '_isSelectedChanged(isSelected, methodIsSelected, _isReady)',
+      '_openedChanged(opened)'
+    ],
+
+    listeners: {
+      'opened-changed': '_openedHandler'
+    },
+
+    keyBindings: {
+      'left': '_onLeftKey',
+      'right': '_onRightKey'
+    },
+
+    ready: function() {
+      this._isReady = true;
+    },
+
+    // Returns a `displayName` or `relativeUri` for the resource.
+    _getName: function(resource) {
+      return resource.displayName || resource.relativeUri;
+    },
+    // Returns a `displayName` or method uppercased for the method.
+    _getMethodName: function(item) {
+      return item.displayName || item.method.toUpperCase();
+    },
+    // Toggles `opened` attribute
+    toggle: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.opened = !this.opened;
+    },
+    // Compute resource's title attribute
+    _computeResourceTitle: function() {
+      var r = this.resource;
+      if (!r || !r.relativeUri) {
+        return '';
+      }
+      var result = r.relativeUri;
+      if (r.description) {
+        result += ': ' + r.description;
+      }
+      return result;
+    },
+    /**
+     * Sets the `tabindex` property if the selection changes.
+     */
+    _isSelectedChanged: function(isSelected, methodIsSelected, ready) {
+      if ((isSelected || methodIsSelected) && ready) {
+        this.setAttribute('tabindex', '0');
+        this.scrollElementIntoView();
+        if (!this.opened) {
+          this.set('opened', true);
+        }
+        this.focus();
+      } else {
+        this.setAttribute('tabindex', '-1');
+      }
+    },
+    // Computes if any method of this resource is currently selected.
+    _computeIsSelectedMethod: function(isSelected, selectedPath, path, ready) {
+      if (isSelected === true || !selectedPath || !path || !ready) {
+        return false;
+      }
+      if (selectedPath.indexOf(path + '.methods.') === 0) {
+        return true;
+      }
+      return false;
+    },
+    /**
+     * Fires an event to parent elements that this element has been opened and they should be
+     * opened as well.
+     */
+    _openedChanged: function(opened) {
+      if (opened) {
+        this.fire('opened-changed', {
+          value: true
+        });
+      }
+    },
+    /**
+     * Handler for the `opened-changed` event from the child elements.
+     * It opens this element if child was opened.
+     */
+    _openedHandler: function(event) {
+      if (event.target === this) {
+        return;
+      }
+      if (event.detail.value) {
+        this.opened = true;
+      }
+    },
+    /**
+     * Handler that is called when the left key is pressed.
+     *
+     * @param {CustomEvent} event A key combination event.
+     */
+    _onLeftKey: function(event) {
+      if (!this.isSelected) {
+        return;
+      }
+      this.opened = false;
+      event.detail.keyboardEvent.preventDefault();
+    },
+    /**
+     * Handler that is called when the right key is pressed.
+     *
+     * @param {CustomEvent} event A key combination event.
+     */
+    _onRightKey: function(event) {
+      if (!this.isSelected) {
+        return;
+      }
+      this.opened = true;
+      event.detail.keyboardEvent.preventDefault();
+    }
+  });
+  </script>
+</dom-module>

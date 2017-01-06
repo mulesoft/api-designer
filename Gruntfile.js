@@ -220,27 +220,6 @@ module.exports = function (grunt) {
             cwd:    'bower_components/font-awesome/fonts',
             src:    '*',
             dest:   '<%= yeoman.dist %>/fonts'
-          },
-
-          {
-            expand: true,
-            cwd:    'bower_components/api-console/dist/authentication',
-            src:    '*',
-            dest:   '<%= yeoman.dist %>/authentication'
-          },
-
-          {
-            expand: true,
-            cwd:    'bower_components/api-console/dist/fonts',
-            src:    '*',
-            dest:   '<%= yeoman.dist %>/fonts'
-          },
-
-          {
-            expand: true,
-            cwd:    'bower_components/api-console/dist/img',
-            src:    '*',
-            dest:   '<%= yeoman.dist %>/img'
           }
         ]
       }

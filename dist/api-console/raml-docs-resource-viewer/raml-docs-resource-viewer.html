@@ -1,0 +1,611 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../raml-behaviors/raml-behavior.html">
+<link rel="import" href="../marked-element/marked-element.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../docs-parameters-table/docs-body-parameters-table.html">
+<link rel="import" href="../markdown-styles/markdown-styles.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+<link rel="import" href="../docs-parameters-table/docs-parameters-table-shared-styles.html">
+
+<!--
+`<raml-docs-resource-viewer>` An element that displays a documentation for a RAML's resource object
+
+**Note: This element requires `currentPath` property to be set** in order to compute methods and
+sub-resources list. It is required for navigation.
+
+### Example
+```
+<raml-docs-resource-viewer current-path="{{path}}" raml="{{resource}}"></raml-docs-resource-viewer>
+```
+
+## Requesting navigation to method / sub-property
+When the user click on the name of a method or a sub-resource then two things will hapen:
+1) `currentPath` will be set to the path corresponded to requested resource
+2) `raml-path-changed` event will be fired with the `path` property in event detail object.
+
+Parent element(s) should use one of this method to handle the change and navigate to sub-resource.
+
+Method 1) assumes that Polymer's data binding model is used and parent element listens to change
+in `currentPath`:
+```
+<raml-docs-resource-viewer current-path="{{path}}"></raml-docs-resource-viewer>
+```
+Note use of `{{}}` instead of `[[]]` ([more about that](https://www.polymer-project.org/1.0/docs/devguide/data-binding)).
+Observers can observe change to the `path` property and change current object.
+
+Second method uses event handling to handle path change:
+```
+<raml-docs-resource-viewer id="resourceViewer" current-path="[[path]]"></raml-docs-resource-viewer>
+```
+```
+init: function() {
+  document.querySelector('#resourceViewer').addEventListener('raml-path-changed', this._navigate.bind(this));
+},
+
+_navigate: function(e) {
+  var path = e.detail.path;
+  // Do somethind with path, like use `<raml-path-to-object>` element.
+}
+```
+
+
+### Styling
+`<raml-docs-resource-viewer>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-docs-resource-viewer` | Mixin applied to the element | `{}` |
+`--raml-docs-h1` | Mixin applied to H1 | `{}` |
+`--raml-docs-h2` | Mixin applied to H2 | `{}` |
+`--raml-docs-h3` | Mixin applied to H3 | `{}` |
+`--raml-docs-item-description` | Mixin applied to the description field. | `{}` |
+`--raml-docs-table-max-width` | Max width applied to the tables. Suggested to not exceed 800px, otherwise it may cause usability issues. | `800px` |
+`--raml-docs-link` | Mixin applied to the links elements. | `{}` |
+`--raml-docs-link-color` | Color of the link elements | `#00A1DF` |
+`--docs-parameters-table` | Mixin applied to all parameter table elements | `{}`
+`--docs-parameters-url-table` | Mixin applied to this elements | `{}`
+`--params-table-header-background-color` | Background color of table header | `#00A1DF`
+`--params-table-header-color` | Font color of table header | `rgba(255, 255, 255, 0.87)`
+`--params-table-subheader-background-color` | Background color of table subheader | `rgba(0, 161, 223, 0.24)`
+`--params-table-subheader-color` | Font color of table subheader | `rgba(0, 0, 0, 0.87)`
+`--params-table-row-border-color` | Border color of table's each row | `#00A1DF`
+`--params-table-row-background-color` | Background color of table's each row |  `#fff`
+`--params-table-row-color` | Font color of table's each row |  `#fff`
+`--docs-parameters-table-cell` | Mixin applied to each cell | `{}`
+`--docs-parameters-table-meta` | Mixin applied to property's metadata (example, pattern, etc) | `{}`
+`--raml-docs-resource-viewer-narrow-container-width` | width of the main container in the narrow view | `calc(100vw - 32px)`
+`--raml-docs-resource-viewer-navigation` | Mixin applied to the links section | `{}`
+`--raml-docs-resource-viewer-navigation-wide-layout` | Mixin applied to the links section in wide layout | `{}`
+`--raml-docs-resource-viewer-content` | Mixin applied to the main content section. | `{}`
+`--raml-docs-resource-viewer-container` | Mixin applied to the container that is holding main content and navigation containers | `{}`
+
+@group RAML Elements
+@element raml-docs-resource-viewer
+@demo demo/index.html
+-->
+<dom-module id="raml-docs-resource-viewer">
+  <template>
+    <style include="markdown-styles"></style>
+    <style include="docs-parameters-table-shared-styles"></style>
+    <style>
+     :host {
+      display: block;
+      @apply(--raml-docs-resource-viewer);
+
+      --paper-tabs-selection-bar-color: var(--params-table-header-background-color, #00A1DF);
+      --paper-tab-ink: var(--params-table-header-background-color, #00A1DF);
+
+      --paper-tab: {
+        flex: initial;
+      }
+      --content-section: {
+        padding: 8px 12px;
+      }
+    }
+
+    :host([hidden]) {
+      display: none !important;
+    }
+
+    h1 {
+      @apply(--paper-font-headline);
+      @apply(--content-section);
+      @apply(--raml-docs-h1);
+    }
+
+    h2 {
+      @apply(--paper-font-title);
+      @apply(--content-section);
+      @apply(--raml-docs-h2);
+    }
+
+    h3 {
+      @apply(--paper-font-subhead);
+      @apply(--content-section);
+      @apply(--raml-docs-h3);
+    }
+
+    .resource-name {
+      font-weight: 500;
+    }
+
+    .resource-desc {
+      @apply(--paper-font-body1);
+      @apply(--content-section);
+      @apply(--raml-docs-item-description);
+    }
+
+    .section-desc {
+      @apply(--content-section);
+    }
+
+    .type-block {
+      @apply(--content-section);
+    }
+
+    .params-table,
+    docs-body-parameters-table {
+      max-width: var(--raml-docs-table-max-width, 800px);
+    }
+
+    .sub-resources-list {
+      @apply(--content-section);
+    }
+
+    a {
+      color: var(--raml-docs-link-color, #00A1DF);
+      @apply(--raml-docs-link);
+    }
+
+    .container {
+      @apply(--layout-horizontal);
+      @apply(--raml-docs-resource-viewer-container);
+    }
+
+    .main {
+      @apply(--layout-flex);
+      overflow: auto;
+      @apply(--raml-docs-resource-viewer-content);
+    }
+
+    nav {
+      width: 210px;
+      border-left: 1px #e5e5e5 solid;
+      padding-left: 12px;
+      margin: 12px 0;
+      position: relative;
+      display: none;
+      @apply(--raml-docs-resource-viewer-navigation);
+    }
+
+    [wide-layout] nav {
+      display: block;
+      @apply(--raml-docs-resource-viewer-navigation-wide-layout);
+    }
+
+    .nav-links {
+      position: absolute;
+    }
+
+    .nav-links a {
+      display: block;
+      padding: 8px 12px;
+      margin: 8px 0;
+    }
+
+    :host([narrow]) .container {
+      max-width: var(--raml-docs-resource-viewer-narrow-container-width, calc(100vw - 32px));
+      overflow: auto;
+    }
+    </style>
+
+    <iron-media-query query="(min-width: 800px)" query-matches="{{wide}}"></iron-media-query>
+    <iron-media-query query="(max-width: [[narrowWidth]])" query-matches="{{narrow}}"></iron-media-query>
+
+    <div class="container" wide-layout$="{{wide}}">
+      <div class="main">
+        <div class="title-area">
+          <h1 id="overview" class="title">
+            <span>Resource: </span>
+            <span class="resource-name">[[_computeResourceName(raml.*)]]</span>
+          </h1>
+        </div>
+        <template is="dom-if" if="[[raml.description]]">
+          <marked-element smartypants markdown="[[raml.description]]">
+            <div class="markdown-html resource-desc"></div>
+          </marked-element>
+        </template>
+        <section hidden$="[[!hasTypes]]">
+          <h2 id="resources">Resources representation</h2>
+          <p class="section-desc">This section describes list of resource representations used in this endpoint.</p>
+          <template is="dom-repeat" items="[[types]]">
+            <div class="type-block">
+              <docs-body-parameters-table narrow="[[narrow]]" body="[[item]]" auto-hide></docs-body-parameters-table>
+            </div>
+          </template>
+        </section>
+        <section hidden$="[[!hasSubproperties]]">
+          <h2 id="methods">Methods and sub-resources</h2>
+          <div class="sub-resources-list">
+            <table class="params-table" id="substable">
+              <thead class="params-table-header">
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr hidden$="[[!methods]]" class="params-table-header subheader">
+                  <td colspan="3">Methods</td>
+                </tr>
+                <template is="dom-repeat" items="[[methods]]">
+                  <tr>
+                    <td class="param-name"><a href="#" data-path$="[[item.path]]">[[item.meta.name]]</a></td>
+                    <td class="param-desc">[[item.meta.description]]</td>
+                  </tr>
+                </template>
+                <tr hidden$="[[!resources]]" class="params-table-header subheader">
+                  <td colspan="3">Sub-resources</td>
+                </tr>
+                <template is="dom-repeat" items="[[resources]]">
+                  <tr>
+                    <td class="param-name"><a href="#" data-path$="[[item.path]]">[[item.meta.name]]</a></td>
+                    <td class="param-desc">[[item.meta.description]]</td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+      <nav>
+        <div class="nav-links">
+          <a href="#overview">Overview</a>
+          <a hidden$="[[!hasTypes]]" href="#resources">Resources</a>
+          <a href="#methods">Methods</a>
+        </div>
+      </nav>
+    </div>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-docs-resource-viewer',
+
+    behaviors: [Polymer.RamlBehavior],
+    /**
+     * An event fired when the user cliecked on a method/sub-resource link.
+     * Before the event is fired the `currentPath` propery is set. If parent element
+     * is listening for change on this property then it's redundand to listen for this event.
+     *
+     * @event raml-path-changed
+     * @property {String} path Path requested by the user.
+     */
+    properties: {
+      /**
+       * List of computed types used by this endpoint.It looks for types inside methods
+       * defined for this resource. It will not search for types nested resources.
+       */
+      types: {
+        type: Array,
+        readOnly: true
+      },
+      // Computed value of is the resource has types defined in it.
+      hasTypes: {
+        type: Boolean,
+        value: false,
+        computed: '_computeHasTypes(types.length)'
+      },
+      /**
+       * This is used when the resource types has more than one mime type that describe the type.
+       * When the user change the type in one place then all descriptions will change.
+       */
+      selectedMime: String,
+      // Curently selected path in the RAML JSON structure. Required to compute sub-resources.
+      currentPath: {
+        type: String,
+        notify: true
+      },
+      // Computed list of methods. It's the element's internal structure.
+      methods: Array,
+      // Computed list of resources. It's the element's internal structure.
+      resources: Array,
+      // Computed value, True if the resource has methods or sub-resources.
+      hasSubproperties: {
+        type: Boolean,
+        computed: '_computeHasSubproperties(methods,resources)'
+      },
+      /**
+       * If true then the element will start listen for the
+       * `raml-is-resource-changed`, `raml-selected-object-changed` and
+       * `raml-selected-path-changed` event and set corresponding properties
+       * when needed. It's a replacement for the Polymer's data biding
+       * for apps that are not Polymer powered.
+       */
+      autoHide: {
+        type: Boolean,
+        value: false,
+        observer: '_autoHideChanged'
+      },
+      // If true then the element will be hidden ui the UI.
+      hidden: {
+        type: Boolean,
+        value: false,
+        reflectToAttribute: true
+      },
+      // If true then there's enough space to display right column
+      wide: {
+        type: Boolean,
+        value: false
+      },
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        notify: true,
+        reflectToAttribute: true
+      },
+      // A widith below which the `narrow` property will be set to true.
+      narrowWidth: {
+        type: String,
+        value: '768px'
+      }
+    },
+
+    observers: [
+      '_computeTypes(raml.*)',
+      '_computeMethods(currentPath, raml.*)',
+      '_computeResources(currentPath, raml.*)'
+    ],
+
+    listeners: {
+      'substable.tap': '_subResourceTap'
+    },
+
+    attached: function() {
+      this._eventTarget = Polymer.dom(this).host || document;
+      if (this.autoHide) {
+        this._attacheListeners();
+      }
+      this.listen(window, 'scroll', '_scrollHandler');
+    },
+
+    detached: function() {
+      this._detachListeners();
+      this.unlisten(window, 'scroll', '_scrollHandler');
+    },
+
+    _autoHideChanged: function(state) {
+      if (state) {
+        this._attacheListeners();
+      } else {
+        this._detachListeners();
+      }
+    },
+
+    _attacheListeners: function() {
+      if (!this._eventTarget) {
+        this.hidden = true;
+        return;
+      }
+      this._detachListeners();
+      this.listen(this._eventTarget, 'raml-is-resource-changed',
+        '_isResourceHandler');
+      this.listen(this._eventTarget, 'raml-selected-object-changed',
+        '_selectedChangeHandler');
+      this.listen(this._eventTarget, 'raml-selected-path-changed',
+        '_selectedPathChangeHandler');
+    },
+
+    _detachListeners: function() {
+      if (!this._eventTarget) {
+        return;
+      }
+      this.unlisten(this._eventTarget, 'raml-is-resource-changed',
+        '_isResourceHandler');
+      this.unlisten(this._eventTarget, 'raml-selected-object-changed',
+        '_selectedChangeHandler');
+      this.unlisten(this._eventTarget, 'raml-selected-path-changed',
+        '_selectedPathChangeHandler');
+    },
+    /**
+     * It's a handler for the `raml-is-resource-changed` event fired
+     * by other element. It sets the `hidden` value depending on the
+     * event's `state` parameter.
+     */
+    _isResourceHandler: function(e, detail) {
+      var state = detail.state;
+      this.hidden = !state;
+    },
+    /**
+     * Handler for the `selectedObject` (from the `<raml-path-to-object>`).
+     */
+    _selectedChangeHandler: function(e, detail) {
+      if (this.hidden) {
+        this.raml = undefined;
+        return;
+      }
+      this.raml = detail.selectedObject;
+    },
+
+    _selectedPathChangeHandler: function(e, detail) {
+      if (this.hidden) {
+        this.currentPath = undefined;
+        return;
+      }
+      this.currentPath = detail.path;
+    },
+
+    // Computes the name of the resource.
+    _computeResourceName: function() {
+      var r = this.raml;
+      if (!r) {
+        return '';
+      }
+      return r.displayName || r.relativeUri;
+    },
+    // Computes list of the types in current resource. Called automatically when `raml` change.
+    _computeTypes: function() {
+      var r = this.raml;
+      if (!r) {
+        this._setTypes(undefined);
+        return;
+      }
+      var types = [];
+      var self = this;
+      if (r.methods && r.methods.length) {
+        r.methods.forEach(function(method) {
+          var type = self._listTypes(method);
+          if (type) {
+            types = types.concat(type);
+          }
+        });
+      }
+      this._setTypes(types);
+      this.selectedMime = 0;
+    },
+
+    _listTypes: function(obj) {
+      var self = this;
+      var types = [];
+      var type = self._extractType(obj);
+      if (type) {
+        types[types.length] = type;
+      }
+
+      if (obj.responses) {
+        var keys = Object.keys(obj.responses);
+        keys.forEach(function(status) {
+          var response = obj.responses[status];
+          var type = self._extractType(response);
+          if (type) {
+            types[types.length] = type;
+          }
+        });
+      }
+      return types;
+    },
+
+    _extractType: function(obj) {
+      if (!obj || !obj.body || !obj.body.length) {
+        return;
+      }
+      return obj.body;
+    },
+
+    // Computes if the resource has defined types. It will revalidate when `types` array change.
+    _computeHasTypes: function() {
+      return !!(this.types && this.types.length);
+    },
+
+    _computeType: function(types, index, selectedMime) {
+      if (!types || !types.length) {
+        return;
+      }
+      var type = types[index];
+      if (!type) {
+        return;
+      }
+      if ((type.mimeTypes.length - 1) < selectedMime) {
+        return;
+      }
+      var mime = type.mimeTypes[selectedMime];
+      for (var i = 0, len = type.types.length; i < len; i++) {
+        if (type.types[i].contentType === mime) {
+          return type.types[i];
+        }
+      }
+      return undefined;
+    },
+
+    _computeMethods: function(currentPath) {
+      var r = this.raml;
+      if (!currentPath || !r || !r.methods || !r.methods.length) {
+        this.methods = null;
+        return;
+      }
+      var methods = [];
+      r.methods.forEach(function(method, i) {
+        methods[methods.length] = {
+          path: currentPath + '.methods.' + i,
+          meta: {
+            name: method.displayName || method.method,
+            description: method.description
+          }
+        };
+      });
+      if (methods.length === 0) {
+        methods = null;
+      }
+      this.methods = methods;
+    },
+
+    _computeResources: function(currentPath) {
+      var r = this.raml;
+      if (!currentPath || !r || !r.resources || !r.resources.length) {
+        this.resources = null;
+        return;
+      }
+      var resources = [];
+      r.resources.forEach(function(resource, i) {
+        resources[resources.length] = {
+          path: currentPath + '.resources.' + i,
+          meta: {
+            name: resource.displayName || resource.relativeUri,
+            description: resource.description
+          }
+        };
+      });
+      if (resources.length === 0) {
+        resources = null;
+      }
+      this.resources = resources;
+    },
+    // Computes the value for the hasSubproperties property.
+    _computeHasSubproperties: function(methods, resources) {
+      return ((methods && methods.length) || (resources && resources.length));
+    },
+
+    _subResourceTap: function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var path = e.target.dataset.path;
+      if (!path) {
+        return;
+      }
+      this.set('currentPath', path);
+      this.fire('raml-path-changed', {
+        path: path
+      });
+    },
+
+    _scrollHandler: function() {
+      var elm = this.$$('.nav-links');
+      var parent = elm.parentNode;
+      var top = parent.getBoundingClientRect().top;
+      if (top < 24) {
+        var _top = Math.abs(top) + 24;
+        elm.style.top = _top + 'px';
+      } else {
+        elm.style.removeProperty('top');
+      }
+    }
+  });
+  </script>
+</dom-module>

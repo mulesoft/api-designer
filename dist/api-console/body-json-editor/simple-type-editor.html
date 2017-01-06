@@ -1,0 +1,382 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-styles/typography.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<!-- <link rel="import" href="../paper-menu-button/paper-menu-button.html"> -->
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<!-- <link rel="import" href="../paper-menu/paper-menu.html"> -->
+<link rel="import" href="../paper-autocomplete/paper-autocomplete.html">
+<link rel="import" href="../arc-icons/arc-icons.html">
+<link rel="import" href="../marked-element/marked-element.html">
+<link rel="import" href="../prism-element/prism-theme-default.html">
+<link rel="import" href="../markdown-styles/markdown-styles.html">
+<link rel="import" href="body-json-editor-behavior.html">
+<!--
+The `simple-type-editor` is the most atomic type editor. It only support basic types like
+strings, numbers, booleans or nulls.
+It shows the name and value editor and on demand type change / select dropdown.
+
+### Styling
+`<simple-type-editor>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--simple-type-editor` | Mixin applied to the element. Note that because of the recurcy this element contains the same element. So setting padding / margin on this element is basically bad idea. | `{}`,
+`--inline-documentation-color` | Color of the documentartion font. Inline documentation appears below text fields as a hint for input. | `rgba(0, 0, 0, 0.64)`
+`--inline-documentation-text-size` | Size of the documentation font. Inline documentation appears below text fields as a hint for input. | `12px`
+`--code-type-text-value-color` | Text color of the code highligted string value | `#080`
+`--code-type-number-value-color` | Text color of the code highligted numeric value | `#303F9F`
+`--code-type-boolean-value-color` | Text color of the code highligted boolean value | `#4A148C`
+`--code-type-null-value-color` | Text color of the code highligted nullable value | `#4A148C`
+`--code-punctuation-value-color` | Text color of the code highligted: the punctuation | `rgba(0, 0, 0, 0.54)`
+
+@group UI Elements
+@element simple-type-editor
+@demo demo/index.html
+-->
+<dom-module id="simple-type-editor">
+  <template>
+    <style include="markdown-styles"></style>
+    <style>
+    :host {
+      display: block;
+      @apply(--simple-type-editor);
+    }
+
+    #container {
+      @apply(--layout-horizontal);
+      position: relative;
+    }
+
+    .input-values {
+      @apply(--layout-flex);
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+    }
+
+    .input-actions {
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+    }
+
+    paper-input,
+    .input-value {
+      width: 100%;
+      display: block;
+    }
+
+    .value-input[type="text"] {
+      --paper-input-container-input: {
+        color: var(--code-type-text-value-color, #080);
+      }
+    }
+
+    .value-input[type="number"] {
+      --paper-input-container-input: {
+        color: var(--code-type-number-value-color, #303F9F);
+      }
+    }
+
+    .boolean-input {
+      --paper-input-container-input: {
+        color: var(--code-type-boolean-value-color, #4A148C);
+      }
+    }
+
+    .null-input {
+      color: var(--code-type-null-value-color, #4A148C);
+    }
+
+    .punctuation {
+      color: var(--code-punctuation-value-color, rgba(0, 0, 0, 0.54));
+      font-size: 14px;
+      display: inline-block;
+      margin: 0 4px;
+    }
+
+    .complex-type-label {
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.54);
+      text-transform: capitalize;
+    }
+
+    paper-icon-button {
+      @apply(--icon-button);
+    }
+
+    paper-icon-button:hover {
+      @apply(--icon-button-hover);
+    }
+
+    paper-autocomplete {
+      position: fixed !important;
+    }
+
+    #docs .markdown-body {
+      color: var(--inline-documentation-text-color, rgba(0, 0, 0, 0.64));
+      font-size: var(--inline-documentation-text-size, 12px);
+      @apply(--code-block);
+    }
+
+    .type-selector {
+      @apply(--layout-horizontal);
+    }
+
+    :host([narrow]) #container {
+      margin-bottom: 24px;
+    }
+
+    :host([narrow]) .input-values {
+      @apply(--layout-vertical);
+      @apply(--layout-start);
+    }
+
+    :host([narrow]) .input-actions {
+      @apply(--layout-start);
+      padding-top: 16px;
+    }
+
+    :host([narrow]) .punctuation {
+      display: none;
+    }
+
+    </style>
+    <div id="container">
+      <div class="input-values">
+        <paper-input id="keyInput" hidden$="[[noKey]]" label="property name" class="key-input" no-label-float="[[!narrow]]" value="{{value.name}}"></paper-input>
+        <paper-autocomplete target="[[keyInput]]" source="[[nameSuggestions]]" on-selected="_onSuggestion" open-on-focus vertical-align="top"></paper-autocomplete>
+        <span class="punctuation" hidden$="[[noKey]]">:</span>
+        <template is="dom-if" if="[[!_typeIs(value.type, 'array', 'object')]]" restamp="true">
+          <!-- String / number types -->
+          <template is="dom-if" if="[[_typeIs(value.type, 'number', 'float', 'integer', 'string')]]" restamp="true">
+            <paper-input
+              label="property value"
+              class="value-input"
+              no-label-float="[[!narrow]]"
+              auto-validate
+              required="[[value.required]]"
+              value="{{value.value}}"
+              type$="[[_compueInputType(value.type)]]"
+              step="[[_computeStep(value.type)]]"></paper-input>
+          </template>
+          <!-- Boolean type -->
+          <template is="dom-if" if="[[_typeIs(value.type, 'boolean')]]" restamp="true">
+            <paper-dropdown-menu class="boolean-input" no-label-float="[[!narrow]]" label="Boolean value">
+              <paper-listbox class="dropdown-content" selected="{{value.value}}" attr-for-selected="data-value">
+                <template is="dom-repeat" items="{{booleanValues}}">
+                  <paper-item data-value="[[item.value]]">[[item.display]]</paper-item>
+                </template>
+              </paper-listbox>
+            </paper-dropdown-menu>
+          </template>
+          <!-- Nullable type -->
+          <template is="dom-if" if="[[_typeIs(value.type, 'null')]]" restamp="true">
+            <span class="null-input input-value">null</span>
+          </template>
+        </template>
+        <template is="dom-if" if="[[_typeIs(value.type, 'array', 'object')]]">
+          <span class="complex-type-label input-value">[[value.type]]</span>
+        </template>
+
+        <!-- Type change combobox -->
+        <template is="dom-if" if="[[_typeIs(value.type, '')]]" restamp="true">
+          <div class="type-selector">
+            <paper-dropdown-menu no-label-float label="Select type">
+              <paper-listbox class="dropdown-content" selected="{{value.type}}" attr-for-selected="data-type">
+                <template is="dom-repeat" items="{{_computeTypesList(typesValues, allowedTypes)}}">
+                  <paper-item data-type$="[[item.value]]">[[item.display]]</paper-item>
+                </template>
+              </paper-listbox>
+            </paper-dropdown-menu>
+            <paper-icon-button hidden$="[[!_previousType]]" icon="arc:cancel" on-tap="_cancelTypeChange" title="Cancel"></paper-icon-button>
+          </div>
+        </template>
+      </div>
+      <div class="input-actions" hidden$="[[_typeIs(value.type, '')]]">
+        <!-- <paper-menu-button>
+          <paper-icon-button icon="arc:more-vert" class="dropdown-trigger"></paper-icon-button>
+          <paper-menu class="dropdown-content" on-iron-select="_contextMenuItemSelected">
+            <paper-item data-action="type-change">Change type</paper-item>
+            <paper-item data-action="delete">Delete</paper-item>
+          </paper-menu>
+        </paper-menu-button> -->
+        <paper-icon-button icon="arc:arc:refresh" on-tap="_changeType" title="Change data type"></paper-icon-button>
+        <paper-icon-button icon="arc:remove-circle-outline" on-tap="_remove" title="Remove property"></paper-icon-button>
+      </div>
+    </div>
+    <div id="docs" hidden$="[[!description]]">
+      <marked-element markdown="[[description]]">
+        <div class="markdown-html markdown-body"></div>
+      </marked-element>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'simple-type-editor',
+
+      behaviors: [ArcBehaviors.BodyJsonEditorBehavior],
+
+      properties: {
+        // A list of boolean value to set in the boolean dropdown list
+        booleanValues: {
+          type: Array,
+          value: function() {
+            return [{
+              display: 'True',
+              value: true
+            }, {
+              display: 'False',
+              value: false
+            }];
+          },
+          readOnly: true
+        },
+        // A list of types to display in the type selector.
+        typesValues: {
+          type: Array,
+          value: function() {
+            return [{
+              display: 'String',
+              value: 'string'
+            }, {
+              display: 'Float',
+              value: 'float'
+            }, {
+              display: 'Integer',
+              value: 'integer'
+            }, {
+              display: 'Boolean',
+              value: 'boolean'
+            }, {
+              display: 'Null',
+              value: 'null'
+            }, {
+              display: 'Object',
+              value: 'object'
+            }, {
+              display: 'Array',
+              value: 'array'
+            }];
+          },
+          readOnly: true
+        },
+        // When changing a type this is previously selected type.
+        _previousType: {
+          type: String,
+          value: ''
+        },
+        // input to the property name input
+        keyInput: {
+          type: HTMLElement,
+          value: function() {
+            return this.$.keyInput;
+          }
+        },
+        // List of allowed types
+        allowedTypes: {
+          type: Array,
+          value: []
+        },
+        narrow: {
+          type: Boolean,
+          value: false
+        }
+      },
+
+      observers: ['_descriptionChanged(value.description)'],
+
+      // Computes the input type for given type.
+      _compueInputType: function(type) {
+        switch (type) {
+          case 'number':
+          case 'integer':
+          case 'float':
+            return 'number';
+          default:
+            return 'text';
+        }
+      },
+
+      // Computes the `step` attribute value for given type.
+      _computeStep: function(type) {
+        switch (type) {
+          case 'number':
+          case 'float':
+            return 0.0000001;
+          case 'integer':
+            return 1;
+          default:
+            return;
+        }
+      },
+      // // A handler for the item's context menu
+      // _contextMenuItemSelected: function(e) {
+      //   switch (e.detail.item.dataset.action) {
+      //     case 'type-change':
+      //       this._changeType();
+      //       break;
+      //     case 'delete':
+      //       this._remove();
+      //       break;
+      //   }
+      //   var target = Polymer.dom(e).rootTarget;
+      //   target.selected = -1;
+      // },
+      // Send an event to the parent element (which must represent object or array) to remove the
+      // propety.
+      _remove: function() {
+        this.fire('remove-property', {
+          value: this.value
+        });
+      },
+
+      _changeType: function() {
+        this._previousType = this.value.type;
+        this.set('value.type', '');
+      },
+
+      // Cancels the type change and sets previous value.
+      _cancelTypeChange: function() {
+        this.set('value.type', this._previousType);
+      },
+
+      // The description is set when the suggestion is selected. But the `value` can also contain
+      // a description when the property of object (this value) was pre-filled.
+      _descriptionChanged: function(description) {
+        if (!description) {
+          return;
+        }
+        this.description = description;
+      },
+
+      _computeTypesList: function(typesValues, allowedTypes) {
+        if (!allowedTypes || !allowedTypes.length) {
+          return typesValues;
+        }
+        var result = allowedTypes.map(function(item) {
+          return {
+            display: item,
+            value: item
+          };
+        });
+        return result;
+      }
+
+    });
+  </script>
+</dom-module>

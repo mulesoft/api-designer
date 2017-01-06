@@ -1,0 +1,348 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../marked-element/marked-element.html">
+<link rel="import" href="../prism-element/prism-theme-default.html">
+<link rel="import" href="../prism-element/prism-highlighter.html">
+<link rel="import" href="../markdown-styles/markdown-styles.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="docs-parameters-behavior.html">
+<link rel="import" href="docs-parameters-table-shared-styles.html">
+<link rel="import" href="structure-display.html">
+<link rel="import" href="docs-json-parameters-table.html">
+<link rel="import" href="docs-xml-parameters-table.html">
+<link rel="import" href="docs-form-parameters-table.html">
+<!--
+`<docs-parameters-table>` A parameters list and description table for the RAML documentation view
+
+This element renders a table of body type paramteres with the doccumentation.
+
+For headers documentation table pleae, use `<docs-headers-table>` element.
+For uri parameters documentation table pleae, use `<docs-parameters-table>`
+element.
+
+### Example
+```
+<docs-body-parameters-table
+  type="[[bodType]]"></docs-body-parameters-table>
+```
+
+Currently following properties are supported:
+
+- name (required) - name of the property, in case of UIR parameter it should be the parameter itself
+- type - the type of the parameter, any RAML allowed value will be accepted
+- description - description of the parameter
+- required - mark that the property is a required property
+- pattern - validation pattern to be applied to the parameter value
+- example - example value of the parameter
+- min - minimum value of the parametre when the type is numeric
+- max - maximum value of the parametre when the type is numeric
+
+### Styling
+`<docs-body-parameters-table>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--docs-parameters-table` | Mixin applied to all parameter table elements | `{}`
+`--docs-parameters-url-table` | Mixin applied to this elements | `{}`
+`--params-table-header-background-color` | Background color of table header | `#00A1DF`
+`--params-table-header-color` | Font color of table header | `rgba(255, 255, 255, 0.87)`
+`--params-table-subheader-background-color` | Background color of table subheader | `rgba(0, 161, 223, 0.24)`
+`--params-table-subheader-color` | Font color of table subheader | `rgba(0, 0, 0, 0.87)`
+`--params-table-row-border-color` | Border color of table's each row | `#00A1DF`
+`--params-table-row-background-color` | Background color of table's each row |  `#fff`
+`--params-table-row-color` | Font color of table's each row |  `#fff`
+`--docs-parameters-table-cell` | Mixin applied to each cell | `{}`
+`--docs-parameters-table-meta` | Mixin applied to property's metadata (example, pattern, etc) | `{}`
+`--docs-body-parameters-table-json` | Mixin applied to the JSON output | `{}`
+`--docs-body-parameters-table-type-name` | Mixin applied to the name of the type | `{}`
+
+@group RAML Elements
+@element docs-parameters-table
+@demo demo/docs-body-parameters-table.html
+-->
+<dom-module id="docs-body-parameters-table">
+  <template>
+    <style include="prism-theme-default"></style>
+    <style include="markdown-styles"></style>
+    <style include="docs-parameters-table-shared-styles"></style>
+    <style>
+
+    :host {
+      --paper-tabs-selection-bar-color: var(--params-table-header-background-color, #00A1DF);
+      --paper-tab-ink: var(--params-table-header-background-color, #00A1DF);
+      display: block;
+      overflow: auto;
+      width: 100%;
+    }
+
+    h4 {
+      padding: 0 12px;
+      @apply(--docs-body-parameters-table-type-name);
+    }
+
+    paper-listbox paper-item {
+      cursor: pointer;
+    }
+
+    .body-selector {
+      margin: 0 12px;
+    }
+
+    </style>
+    <prism-highlighter></prism-highlighter>
+
+
+    <paper-dropdown-menu label="Body type" hidden$="[[!displayBodySelector]]" class="body-selector">
+      <paper-listbox class="dropdown-content" attr-for-selected="data-type" selected="{{selectedBodyType}}">
+        <template is="dom-repeat" items="[[bodyTypes]]">
+          <paper-item data-type$="[[item]]">[[item]]</paper-item>
+        </template>
+      </paper-listbox>
+    </paper-dropdown-menu>
+
+    <h4 hidden$="[[!displayName]]">Type: [[displayName]]</h4>
+
+    <template is="dom-if" if="[[isJson]]">
+      <docs-json-parameters-table type="[[selectedBody]]" has-type="{{hasTypeJson}}"></docs-json-parameters-table>
+    </template>
+    <template is="dom-if" if="[[isXml]]">
+      <docs-xml-parameters-table type="[[selectedBody]]" has-type="{{hasTypeXml}}"></docs-xml-parameters-table>
+    </template>
+
+    <template is="dom-if" if="[[isFormUrlEncoded]]">
+      <docs-form-parameters-table type="[[selectedBody]]" has-type="{{hasForm}}"><docs-form-parameters-table>
+    </template>
+  </template>
+  <script>
+  Polymer({
+    is: 'docs-body-parameters-table',
+
+    behaviors: [RamlBehaviors.DocsParametersBehavior],
+
+    properties: {
+      /**
+       * An array of the `body` part of the method part of the RAML definition.
+       * It is expecting to be an output of the RAML to JS and ransformed with
+       * the `raml2obj` library. This is available in `<raml-js-parser>`
+       * element.
+       */
+      body: Array,
+      // Display name of the property.
+      displayName: {
+        type: String,
+        computed: '_computeDisplayName(selectedBodyType, ' +
+          'displayBodySelector, selectedBody.*)'
+      },
+      // Computed value, true if current type is a JSON type object
+      isJson: {
+        type: Object,
+        value: false,
+        readOnly: true
+      },
+      // Computed value, true if current type is an XML type object
+      isXml: {
+        type: Object,
+        value: false,
+        readOnly: true
+      },
+      isFormUrlEncoded: {
+        type: Object,
+        value: false,
+        readOnly: true
+      },
+      hasTypeJson: {
+        type: Boolean,
+        vealue: false
+      },
+      hasTypeXml: {
+        type: Boolean,
+        vealue: false
+      },
+      hasForm: {
+        type: Boolean,
+        vealue: false
+      },
+      // True if body is set.
+      hasBody: {
+        value: false,
+        type: Boolean,
+        computed: '_computeHasBody(body)',
+        notify: true
+      },
+      // Computed list of names of the body content types.
+      bodyTypes: {
+        type: Array,
+        readOnly: true,
+        value: function() {
+          return [];
+        }
+      },
+      /**
+       * Computed value, true if the body selector can be shown.
+       * Body selector can be shown if there is more than one body defined
+       * (many media types).
+       */
+      displayBodySelector: {
+        type: Boolean,
+        computed: '_computeDisplayBodySelector(bodyTypes.*)'
+      },
+      // A name of the selected body type. E.g. "application/json".
+      selectedBodyType: {
+        type: String,
+        notify: true
+      },
+      // Definition of the body for `selectedBodyType`
+      selectedBody: {
+        type: Object,
+        computed: '_computeSelectedBody(selectedBodyType)'
+      }
+    },
+
+    observers: [
+      '_computeBodyTypes(body.*)',
+      '_autoHide(autoHide, hasBody)',
+      '_computeContentType(selectedBody.*)',
+      '_bodyTypesChanged(bodyTypes.*)'
+    ],
+
+    reset: function() {
+      this._setBodyTypes([]);
+      this.selectedBodyType = '';
+      this._setIsJson(false);
+      this._setIsXml(false);
+    },
+
+    _autoHide: function(autoHide, hasBody) {
+      if (!autoHide) {
+        return;
+      }
+      if (hasBody) {
+        this.removeAttribute('hidden');
+      } else {
+        this.setAttribute('hidden', true);
+      }
+    },
+
+    _computeDisplayName: function(selectedBodyType, displayBodySelector) {
+      var body = this.selectedBody;
+      if (!body || !selectedBodyType) {
+        return '';
+      }
+      var type = body.displayName || body.name || body.type;
+      if (type === selectedBodyType && displayBodySelector) {
+        return '';
+      }
+      return type;
+    },
+
+    _computeContentType: function(record) {
+      var type = record.base;
+      var isXml = false;
+      var isJson = false;
+      var isFormUrlEncoded = false;
+      if (!type) {
+        this._setIsJson(isJson);
+        this._setIsXml(isXml);
+        this._setIsFormUrlEncoded(isFormUrlEncoded);
+        return;
+      }
+      var mime;
+      if (type.contentType) {
+        mime = type.contentType;
+      } else {
+        mime = type.key;
+      }
+      if (!mime) {
+        mime = 'application/json';
+      }
+
+      if (mime.indexOf('json') !== -1) {
+        isJson = true;
+      } else if (mime.indexOf('xml') !== -1) {
+        isXml = true;
+      } else if (mime.indexOf('x-www-form-urlencoded') !== -1) {
+        isFormUrlEncoded = true;
+      } else {
+        // for now, default value;
+        isJson = true;
+      }
+      this._setIsJson(isJson);
+      this._setIsXml(isXml);
+      this._setIsFormUrlEncoded(isFormUrlEncoded);
+    },
+
+    // Computes if current boddy array has any value that can be presented.
+    _computeHasBody: function(body) {
+      return !!(body && body.length);
+    },
+
+    // Compute a list of media types for the body array
+    _computeBodyTypes: function() {
+      this.reset();
+      var body = this.body;
+      if (!body || !body.length) {
+        return;
+      }
+      var mime = body.map(function(item) {
+        return item.key;
+      });
+      this._setBodyTypes(mime);
+      // this.selectedBodyType = mime[0];
+    },
+
+    // returns true if given argument is an array and has more than 1 element.
+    _computeDisplayBodySelector: function() {
+      var size = this.bodyTypes ? this.bodyTypes.length : 0;
+      return !!(size && size > 1);
+    },
+
+    /**
+     * When the selection of body types change it will compute proper
+     * body object.
+     */
+    _computeSelectedBody: function(selectedBodyType) {
+      var body = this.body;
+      if (!selectedBodyType || !body || !body.length) {
+        return undefined;
+      }
+
+      for (var i = 0, len = body.length; i < len; i++) {
+        if (body[i].key === selectedBodyType) {
+          return body[i];
+        }
+      }
+
+      return undefined;
+    },
+    /**
+     * When the `bodyTypes` change it will set a default (first) mime as
+     * selected.
+     */
+    _bodyTypesChanged: function() {
+      var bt;
+      if (this.bodyTypes && this.bodyTypes.length) {
+        bt = this.bodyTypes[0];
+      }
+      this.set('selectedBodyType', bt);
+    }
+
+  });
+  </script>
+</dom-module>

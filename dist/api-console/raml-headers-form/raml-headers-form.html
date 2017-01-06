@@ -1,0 +1,554 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../arc-icons/arc-icons.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-autocomplete/paper-autocomplete.html">
+<link rel="import" href="../arc-definitions/arc-definitions.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-input/paper-input-container.html">
+<link rel="import" href="../paper-input/paper-input-error.html">
+<link rel="import" href="../headers-parser-behavior/headers-parser-behavior.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+<link rel="import" href="../iron-validatable-behavior/iron-validatable-behavior.html">
+<link rel="import" href="../marked-element/marked-element.html">
+<link rel="import" href="../markdown-styles/markdown-styles.html">
+<link rel="import" href="../iron-form/iron-form.html">
+<!--
+A headers form to be used to rended a form of pre-defined headers with documentation comming
+from the RAML definition.
+
+### Example
+```
+<raml-headers-form></raml-headers-form>
+```
+```
+var form = document.querySelector('raml-headers-form');
+form.ramlHeaders = []; // Put headers property from the RAML JS parser.
+form.addEventListener('value-changed', function(e) {
+  var value = e.detail.value;
+});
+```
+Note: this element mean to use `raml-js-parser` elements. This element transforms parser output
+to the one recognizable by this element.
+
+### Styling
+`<raml-headers-form>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-headers-form` | Mixin applied to the element | `{}`
+`--raml-headers-form-input-label-color` | Color of the lable of the `paper-input` element. | `rgba(0, 0, 0, 0.38)`
+`--raml-headers-form-prodefined-name-color` | Color of the prodefined header name | `rgba(0, 0, 0, 0.87)`
+`--raml-headers-form-docs-color` | Color of the description below the input field | `rgba(0, 0, 0, 0.87)`
+`--primary-color` | Color of the button to add new header | `--primary-color`
+
+## TODO
+- Remove arc-definitions and place only request headers definitions or instruct to use definitions as an external element
+
+@group RAML Elements
+@element raml-headers-form
+@demo demo/index.html
+-->
+<dom-module id="raml-headers-form">
+  <template>
+    <style include="markdown-styles"></style>
+    <style>
+     :host {
+
+      display: block;
+
+      @apply(--raml-headers-form);
+
+      --paper-input-container-label: {
+        color: var(--raml-headers-form-input-label-color, rgba(0, 0, 0, 0.38));
+      }
+    }
+
+    .predefined-row {
+      @apply(--layout-horizontal);
+      position: relative;
+    }
+
+    :host([narrow]) .predefined-row {
+      display: block;
+    }
+
+    :host([narrow]) .header-name {
+      width: 100%;
+    }
+
+    .predefined-row label {
+      display: block;
+      min-width: 120px;
+      @apply(--layout-horizontal);
+      @apply(--layout-end-justified);
+      @apply(--paper-font-body1);
+      font-size: 15px;
+      color: var(--raml-headers-form-prodefined-name-color, rgba(0, 0, 0, 0.87));
+      text-align: right;
+      margin-right: 8px;
+      padding-top: 12px;
+      @apply(--form-label);
+    }
+
+    .header-value {
+      @apply(--layout-vertical);
+      @apply(--layout-flex);
+    }
+
+    .header-value .input {
+      @apply(--layout-horizontal);
+    }
+
+    paper-input {
+      width: 100%;
+    }
+
+    .docs {
+      @apply(--paper-font-common-base);
+      font-size: 13px;
+      font-weight: 200;
+      line-height: 24px;
+      color: var(--raml-headers-form-docs-color, rgba(0, 0, 0, 0.87));
+    }
+
+    .action-button {
+      color: var(--primary-color);
+    }
+
+    .header-name {
+      margin-right: 8px;
+    }
+    </style>
+    <iron-media-query query="(max-width: [[narrowWidth]])" query-matches="{{narrow}}"></iron-media-query>
+
+    <form is="iron-form" id="form">
+      <template is="dom-repeat" items="{{renderedRamlHeaders}}" id="headersList">
+        <div class="predefined-row">
+
+          <template is="dom-if" if="[[_hasName(item)]]">
+            <label class="label" for="hdr-[[index]]" hidden="[[narrow]]">[[item.name]]</label>
+          </template>
+
+          <template is="dom-if" if="[[!_hasName(item)]]">
+            <div class="header-name">
+              <paper-input-container class="header-name" no-label-float="[[!narrow]]" auto-validate>
+                <input is="iron-input" class="name-change-input" on-focus="_headerNameFocus" type="text" value="{{item.name::input}}" placeholder="Header name" required pattern="\S*" on-change="_headerNameChanged" />
+                <paper-input-error>Header name is not valid</paper-input-error>
+              </paper-input-container>
+            </div>
+          </template>
+
+          <div class="header-value">
+            <div class="input">
+              <paper-input
+                no-label-float="[[!narrow]]"
+                label="[[_computeInputLabel(item.*, narrow)]]"
+                id="hdr-[[index]]"
+                value="{{item.value}}"
+                required="[[item.required]]"
+                pattern="[[item.pattern]]"
+                name="[[item.name]]"
+                auto-validate
+                type="[[_computeInputType(item.type)]]"
+                min="[[item.minimum]]"
+                max="[[item.maximum]]"></paper-input>
+              <paper-icon-button icon="arc:close" on-tap="_removeHeader"></paper-icon-button>
+            </div>
+            <div class="docs" hidden$="[[!hasValue(item.description)]]">
+              <marked-element markdown="[[item.description]]">
+                <div class="markdown-html markdown-body"></div>
+              </marked-element>
+            </div>
+          </div>
+          <paper-autocomplete open-on-focus on-query="_queryHeaderName" on-selected="_onHeaderNameSelected"></paper-autocomplete>
+        </div>
+      </template>
+    </form>
+    <div class="add-action">
+      <paper-button class="action-button" on-tap="add">add</paper-button>
+    </div>
+    <arc-definitions></arc-definitions>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-headers-form',
+
+    behaviors: [ArcBehaviors.HeadersParserBehavior],
+
+    /**
+     * Fired when the headers value changed.
+     *
+     * @event headers-value-changed
+     * @param {String} value The headers value.
+     */
+
+    properties: {
+      // Headers description defined in the RAML file.
+      ramlHeaders: Array,
+      // It's a copy of the `ramlHeaders` array that can be manipulated by the user.
+      renderedRamlHeaders: Array,
+      /**
+       * It is currently focused input field for header name.
+       * This field will receive autocomplete support.
+       * @type {HTMLElement}
+       */
+      activeHeaderNameField: {
+        type: HTMLElement,
+        readOnly: true
+      },
+      /**
+       * Active autocomplete element.
+       *
+       * @type {HTMLElement}
+       */
+      activeAutocompleteNameField: {
+        type: HTMLElement,
+        readOnly: true
+      },
+      // Current value of the headers. Changing the value will update the list of the headers.
+      value: {
+        type: String,
+        value: '',
+        notify: true
+      },
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        value: false,
+        notify: true,
+        reflectToAttribute: true
+      },
+      // A widith below which the `narrow` property will be set to true.
+      narrowWidth: {
+        type: String,
+        value: '768px'
+      },
+      // A node on which this element add it's listeners.
+      _eventTarget: HTMLElement
+    },
+
+    observers: [
+      '_ramlHeadersChanged(ramlHeaders.*)',
+      '_renderedRamlHeaders(renderedRamlHeaders.*)',
+      '_valueChanged(value)'
+    ],
+
+    attached: function() {
+      this._eventTarget = Polymer.dom(this).host || document;
+      this.listen(this._eventTarget, 'headers-value-changed', '_extValueChangedHandler');
+    },
+
+    detached: function() {
+      if (!this._eventTarget) {
+        return;
+      }
+      this.unlisten(this._eventTarget, 'headers-value-changed', '_extValueChangedHandler');
+    },
+
+    _ramlHeadersChanged: function() {
+      var h = this.ramlHeaders;
+      if (!h || !h.length) {
+        this.renderedRamlHeaders = [];
+      } else {
+        this.renderedRamlHeaders = h.map(function(item) {
+          if (item.example) {
+            if (item.examples) {
+              item.examples.push(item.example);
+            } else {
+              item.examples = [item.example];
+            }
+          }
+          return item;
+        }); //make a copy!
+      }
+    },
+
+    // Computes the name of the label to display in the input field.
+    _computeInputLabel: function(record, narrow) {
+      var object = record.base;
+      if (!object) {
+        return;
+      }
+      if (narrow) {
+        return object.name;
+      }
+      if (!!object.examples && object.examples.length && object.examples[0]) {
+        return 'Example: ' + object.examples[0];
+      }
+      return 'Header value';
+    },
+
+    // Computes input type attribute based on item's type
+    _computeInputType(itemType) {
+      if (!itemType || itemType === 'text') {
+        return 'text';
+      }
+      switch (itemType) {
+        case 'number':
+        case 'integer':
+        case 'float':
+          return 'number';
+        default:
+          return 'text';
+      }
+    },
+
+    // Handler for the remove button click.
+    _removeHeader: function(e) {
+      if (!e.model) {
+        return;
+      }
+      var i = e.model.get('index');
+      if (i < 0) {
+        return;
+      }
+      this.splice('renderedRamlHeaders', i, 1);
+    },
+    // Appends an empty header to the list.
+    add: function() {
+      var obj = {
+        type: 'string',
+        value: '',
+        name: ''
+      };
+      if (!this.renderedRamlHeaders) {
+        this.set('renderedRamlHeaders', [obj]);
+      } else {
+        this.push('renderedRamlHeaders', obj);
+      }
+    },
+    // Returns true if the `name` property is not set or empty
+    _hasName: function(item) {
+      return !!item.name;
+    },
+
+    // Handler for header name field focus
+    _headerNameFocus: function(e) {
+      var i = this.$.headersList.indexForElement(e.target);
+      if (i === undefined || i < 0) {
+        return;
+      }
+      var elm = Polymer.dom(this.root)
+        .querySelector('.predefined-row:nth-child(' + (i + 1) + ') paper-autocomplete');
+      if (!elm) {
+        console.warn('Autocomplete element not found.');
+        return;
+      }
+      elm.target = e.target;
+      this._setActiveHeaderNameField(e.target);
+      this._setActiveAutocompleteNameField(elm);
+    },
+
+    /**
+     * A handler called when the user selects a suggestion.
+     * @param {[type]} e [description]
+     * @return {[type]}
+     */
+    _onHeaderNameSelected: function(e) {
+      var index = e.model.get('index');
+      // var index = this.$.headersList.indexForElement(this.activeHeaderNameField);
+      if (index || index === 0) {
+        this.set(['renderedRamlHeaders', index, 'name'], e.detail.value);
+        var elm = Polymer.dom(this.root)
+          .querySelector('.predefined-row:nth-child(' + (index + 1) + ') .name-change-input');
+        if (elm) {
+          elm.fire('change');
+        }
+      }
+    },
+
+    /**
+     * A handler for the name change.
+     * It updates the description and example of the header is the header is known.
+     */
+    _headerNameChanged: function(e) {
+      // console.log('_headerNameChanged', e);
+      if (!e.model) {
+        return;
+      }
+      var item = e.model.get('item');
+      var index = this.$.headersList.indexForElement(e.target);
+      if (!index) {
+        return;
+      }
+      if (item.name) {
+        var info = this._queryHeaderNameSuggestions(item.name);
+        if (info && info.length) {
+          for (var i = 0, len = info.length; i < len; i++) {
+            if (info[i].key === item.name) {
+              this.set(['renderedRamlHeaders', index, 'description'], info[i].desc);
+              this.set(['renderedRamlHeaders', index, 'examples'], [info[i].example]);
+              return;
+            }
+          }
+        }
+      }
+      this.set(['renderedRamlHeaders', index, 'description'], '');
+      this.set(['renderedRamlHeaders', index, 'examples'], ['']);
+    },
+
+    /**
+     * Handler for autosuggestion element.
+     * It takes value from currently focused header name element (input) and query the datastore
+     * for suggestions.
+     *
+     * @param {Event} e Autocomplete event
+     */
+    _queryHeaderName: function(e) {
+      if (!this.activeAutocompleteNameField) {
+        return;
+      }
+      var value = e.detail.value;
+      if (!value) {
+        var defs = this.$$('arc-definitions');
+        if (defs && defs.requestHeaders) {
+          this.activeAutocompleteNameField.source = defs.requestHeaders.map(function(item) {
+            return item.key;
+          });
+        } else {
+          this.activeAutocompleteNameField.source = [];
+        }
+        return;
+      }
+      var suggestions = this._queryHeaderNameSuggestions(value);
+      if (!suggestions || !suggestions.length) {
+        this.activeAutocompleteNameField.source = [];
+        return;
+      }
+      this.activeAutocompleteNameField.source = suggestions.map(function(item) {
+        return {
+          value: item.key,
+          display: item.key
+        };
+      });
+    },
+
+    _queryHeaderNameSuggestions: function(q) {
+      var event = this.fire('query-headers', {
+        'type': 'request',
+        'query': q
+      });
+      return event.detail.headers;
+    },
+
+    _renderedRamlHeaders: function(record) {
+      if (this._internalValueChange) {
+        return;
+      }
+      if (record.path === 'renderedRamlHeaders') {
+        // whole object has changed
+        this._updateValue();
+      } else if (record.path.match(/renderedRamlHeaders.#\d+.(name|value)/)) {
+        this._updateValue();
+      } else if (record.path === 'renderedRamlHeaders.splices') {
+        this._updateValue();
+      }
+    },
+
+    _updateValue: function() {
+      var h = this.renderedRamlHeaders;
+      if (!h || !h.length) {
+        this.value = '';
+        return;
+      }
+      var value = h.map(function(item) {
+        var n = item.name || '';
+        var v = item.value || '';
+        if (!n && !v) {
+          return;
+        }
+        return n + ': ' + v;
+      }).filter(function(item) {
+        return !!item;
+      }).join('\n');
+      this._internalValueChange = true;
+      this.set('value', value);
+      this._internalValueChange = false;
+    },
+
+    _valueChanged: function(value) {
+      if (this._internalValueChange) {
+        this.fire('headers-value-changed', {
+          value: value
+        });
+        return;
+      }
+
+      var def = this.renderedRamlHeaders;
+      if (!def || !def.length) {
+        return;
+      }
+
+      var headers = this.headersToJSON(value);
+      if (!headers || !headers.length) {
+        return;
+      }
+
+      this._internalValueChange = true;
+      var defLength = def.length;
+      for (var i = 0, len = headers.length; i < len; i++) {
+        for (var j = 0; j < defLength; j++) {
+          if (headers[i].name === def[j].name) {
+            this.set(['renderedRamlHeaders', j, 'value'], headers[i].value);
+            break;
+          }
+        }
+      }
+      this._internalValueChange = false;
+    },
+
+    /**
+     * A handler for the `url-value-changed` event.
+     * If this element is not the source of the event then it will update the `value` property.
+     * It's to be used besides the Polymer's data binding system.
+     */
+    _extValueChangedHandler: function(e) {
+      if (e.target === this) {
+        return;
+      }
+      this.set('value', e.detail.value);
+    },
+
+    // Overidden from Polymer.IronValidatableBehavior. Will set the `invalid`
+    // attribute automatically, which should be used for styling.
+    _getValidity: function() {
+      return this.$.form.validate();
+    },
+
+    /**
+     * Check if passed object is not empty.
+     * 0 (zero) returns true while empty string returns false.
+     *
+     * @return {Boolean} True/False depending if passed object has a value.
+     */
+    hasValue: function(obj) {
+      if (typeof obj === 'number' && obj === 0) {
+        return true;
+      }
+      if (typeof obj === 'boolean') {
+        return true;
+      }
+      return !!obj;
+    }
+
+  });
+  </script>
+</dom-module>

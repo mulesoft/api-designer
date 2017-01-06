@@ -1,0 +1,11 @@
+{
+  "manifest_version": 2,
+  "name": "_element_ _type_",
+  "version": "0.0.1",
+  "minimum_chrome_version": "34",
+  "app": {
+    "background": {
+      "scripts": ["main.js"]
+    }
+  }
+}

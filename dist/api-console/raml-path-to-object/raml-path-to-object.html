@@ -1,0 +1,409 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../raml-behaviors/raml-behavior.html">
+<link rel="import" href="../raml-aware/raml-aware.html">
+<!--
+`<raml-path-to-object>`
+
+test
+
+Helper element that converts selected path to a RAML definition object.
+It also fill up `selectedObject` with additional properties to match internall data model
+so this element must always be used whem displaying documentation using ARC's set of elements.
+
+RAML's JS parser don't add definitions for traits or security schemes to resources or
+methods. This element will look for the definition in source RAML and assign this definitions
+to the `selectedObject`.
+
+To ilustrate, parser's JSON output for a method would be:
+```
+{
+  "method": "get",
+  "is": {
+    Paginated: {
+      "resourceType": "..."
+    }
+  },
+  "securedBy": [
+    "oauth_2_0"
+  ]
+}
+```
+But after using this element it would be:
+```
+{
+  "method": "get",
+  "is": [{
+    "name": "Paginated",
+    "description": "...",
+    ...
+  }],
+  "securedBy": [{
+    "describedBy": {...},
+    "settings": {...},
+    "name": "oauth_2_0"
+  }]
+}
+```
+
+Full list of affected properties:
+- is - replaced IDs with object definition
+- securedBy - replaced IDs with object definition
+- queryParameters - computed all possible params from all parent resources, traits ans security schemas
+- headers - computed all possible headers from all parent resources, traits ans security schemas
+- uriParameters - computed all possible params from all parent resources, traits ans security schemas
+- responses - computed all possible responses from all parent resources, traits ans security schemas
+- fullUrl - a full URL for given resource / method
+
+### Usage
+```
+<raml-path-selector raml="[[raml]]" selected-path="{{selectedPath}}"></raml-path-selector>
+<raml-path-to-object
+  raml="[[raml]]"
+  selected-path="{{selectedPath}}"
+  selected-object="{{selectedObject}}"
+  is-method="{{isMethod}}"
+  is-resource="{{isResource}}"
+  is-documentation="{{isDocumentation}}"></raml-path-to-object>
+```
+
+### The path
+Path is the JSON path to the value in the JSON structure. It is a string that contains structure
+information to get a value. For example:
+```
+resources.1.methods.0
+```
+means that the path to the value is through resources array, 2nd element, then methods array
+first element.
+
+@group RAML Elements
+@element raml-path-to-object
+@demo demo/index.html
+@hero hero.svg
+-->
+
+<dom-module id="raml-path-to-object">
+  <template>
+    <style>
+    :host {
+      display: none;
+    }
+    </style>
+    <template is="dom-if" if="[[aware]]" restamp="true">
+      <raml-aware raml="{{raml}}" scope="[[aware]]"></raml-aware>
+    </template>
+  </template>
+<script>
+Polymer({
+  is: 'raml-path-to-object',
+  behaviors: [Polymer.RamlBehavior],
+  properties: {
+    // Currently selected path by the path selector (or anhy other)
+    selectedPath: String,
+    // An object read from path.
+    selectedObject: {
+      type: Object,
+      notify: true,
+      readOnly: true
+    },
+    // Parent of the selected object (if any is possible)
+    selectedParent: {
+      type: Object,
+      notify: true,
+      readOnly: true
+    },
+    // True if the selected object is a method definition
+    isMethod: {
+      type: Boolean,
+      value: false,
+      notify: true,
+      readOnly: true
+    },
+    // True if the selected object is a resource definition
+    isResource: {
+      type: Boolean,
+      value: false,
+      notify: true,
+      readOnly: true
+    },
+    // True if the selected object is a documentation definition
+    isDocumentation: {
+      type: Boolean,
+      value: false,
+      notify: true,
+      readOnly: true
+    },
+    // Name of the `<raml-aware>` scope, so it will fill the raml property.
+    aware: String,
+    // If true, then it will listen for change events instead using data binding
+    auto: {
+      type: Boolean,
+      value: false,
+      observer: '_autoChanged'
+    }
+  },
+
+  observers: [
+    '_ramlChanged(raml.*)',
+    '_pathChanged(selectedPath, raml)',
+    '_fireSelectedObject(selectedObject.*)',
+    '_fireSelectedParent(selectedParent.*)',
+    '_fireIsMethodState(isMethod)',
+    '_fireIsResourceState(isResource)',
+    '_fireIsDocumentationState(isDocumentation)'
+  ],
+
+  attached: function() {
+    this._eventTarget = Polymer.dom(this).host || document;
+    this._autoChanged(this.auto);
+  },
+
+  _autoChanged: function(state) {
+    if (state) {
+      this._attacheListeners();
+    } else {
+      this._detachListeners();
+    }
+  },
+
+  _attacheListeners: function() {
+    if (!this._eventTarget) {
+      return;
+    }
+    this._detachListeners();
+    this.listen(this._eventTarget, 'raml-selected-path-changed',
+      '_pathChangeHandler');
+  },
+
+  _detachListeners: function() {
+    if (!this._eventTarget) {
+      return;
+    }
+    this.unlisten(this._eventTarget, 'raml-selected-path-changed',
+      '_pathChangeHandler');
+  },
+
+  _pathChangeHandler: function(e, detail) {
+    this.set('selectedPath', detail.path);
+  },
+
+  // Restore properties to the original state
+  clear: function() {
+    this._setSelectedObject(undefined);
+    this._setIsMethod(false);
+    this._setIsResource(false);
+    this._setIsDocumentation(false);
+    this._cachedRegexps = {};
+  },
+  _ramlChanged: function() {
+    this.clear();
+  },
+  _pathChanged: function(path, raml) {
+    if (!raml || !path) {
+      return this.clear();
+    }
+    this._analysePath(path);
+    var obj = this._computeObject(path);
+    if (!obj) {
+      return this.clear();
+    }
+    this._setSelectedObject(obj);
+    this._selectParent(path);
+  },
+
+  _analysePath: function(path) {
+    var parts = path.split('.');
+    parts.pop(); // Last array index
+    var type = parts.pop();
+    switch (type) {
+      case 'resources':
+        this._setIsMethod(false);
+        this._setIsResource(true);
+        this._setIsDocumentation(false);
+        break;
+      case 'methods':
+        this._setIsMethod(true);
+        this._setIsResource(false);
+        this._setIsDocumentation(false);
+        break;
+      case 'documentation':
+        this._setIsMethod(false);
+        this._setIsResource(false);
+        this._setIsDocumentation(true);
+        break;
+      default:
+        return this.clear();
+    }
+  },
+
+  _selectParent: function(path) {
+    if (!(this.isMethod || this.isResource)) {
+      // No parent.
+      return this._setSelectedParent(undefined);
+    }
+    var parts = path.split('.');
+    parts.splice(parts.length - 2, 2);
+    var parentPath = parts.join('.');
+    if (!parentPath) {
+      return this._setSelectedParent(undefined);
+    }
+    var obj = this.get('raml.' + parentPath);
+    if (!obj) {
+      return this._setSelectedParent(undefined);
+    }
+    this._setSelectedParent(obj);
+  },
+  /**
+   * Inserts dependencies definitions to current node.
+   * It will update query parameters, uri parameters, security schemas etc with it's definitions.
+   *
+   * As a result, instead of array of ID's in the `is` property, full definition of trait will
+   * be inserted. `uriParameters` will be added as a `uriParameters` property. Ans so on.
+   *
+   * This function must be called after type of object has been determined.
+   * @param {String} path A path to the object.
+   */
+  _computeObject: function(path) {
+    if (this.isDocumentation) {
+      // No dependencies here
+      return this.get('raml.' + path);
+    }
+    var current = this.get('raml.' + path);
+    var raml = this.raml;
+    // sugar security schemes
+    if (current.securedBy && current.securedBy.length) {
+      var added = false;
+      current.securedBy.forEach(function(item, i) {
+        if (typeof item === 'string') {
+          if (raml && raml.securitySchemes && item in raml.securitySchemes) {
+            added = true;
+            current.securedBy[i] = raml.securitySchemes[item];
+          }
+        }
+      });
+      if (added) {
+        this.applySecuritySchemes(current);
+      }
+    }
+    return current;
+  },
+  /**
+   * Applies security schemas properties to the resources and methods.
+   * If the security scheme has a `describedBy` field the corresponding fields
+   * will be updated.
+   *
+   * This function should be called once per object since it won't check
+   * if the properties from the security schema was already applied.
+   *
+   * This function returns nothing. Changes are made deep inside the object
+   * so it is resolved by referewnce.
+   *
+   * @param {Object} object resource or method definition
+   */
+  applySecuritySchemes: function(object) {
+    if (!object.queryParameters) {
+      object.queryParameters = [];
+    }
+    if (!object.headers) {
+      object.headers = [];
+    }
+    var isResource = this.isMethod;
+    var responses = [];
+    object.securedBy.forEach(function(scheme) {
+      if (!scheme || typeof scheme === 'string') {
+        return;
+      }
+      if (scheme.describedBy) {
+        if (scheme.describedBy.queryParameters) {
+          object.queryParameters = object.queryParameters
+            .concat(scheme.describedBy.queryParameters);
+        }
+        if (scheme.describedBy.headers) {
+          object.headers = object.headers.concat(scheme.describedBy.headers);
+        }
+        if (scheme.describedBy.responses) {
+          responses = responses.concat(scheme.describedBy.responses);
+        }
+      }
+    });
+    if (object.responses) {
+      responses = responses.concat(object.responses);
+    }
+    responses.sort(function(a, b) {
+      var aCode = Number(a.code);
+      var bCode = Number(b.code);
+      if (aCode > bCode) {
+        return 1;
+      }
+      if (aCode < bCode) {
+        return -1;
+      }
+      return 0;
+    });
+    object.responses = responses;
+  },
+
+  // propagateMethodProperties: function(src, property, value, replace) {
+  //   var i;
+  //   var len;
+  //   if (src.methods && src.methods.length) {
+  //     for (i = 0, len = src.methods.length; i < len; i++) {
+  //       if (replace) {
+  //         src.methods[i][property] = value;
+  //       } else {
+  //         var current = src.methods[i][property] || [];
+  //         src.methods[i][property] = src.methods[i][property].concat(value);
+  //       }
+  //     }
+  //   }
+  //   if (src.resources && src.resources.length) {
+  //     for (i = 0, len = src.resources.length; i < len; i++) {
+  //       this.propagateMethodProperties(src.resources[i], property, value, replace);
+  //     }
+  //   }
+  // },
+
+  _fireSelectedObject: function() {
+    this.fire('raml-selected-object-changed', {
+      selectedObject: this.selectedObject
+    });
+  },
+
+  _fireSelectedParent: function() {
+    this.fire('raml-selected-parent-changed', {
+      selectedParent: this.selectedParent
+    });
+  },
+
+  _fireIsMethodState: function(isMethod) {
+    this.fire('raml-is-method-changed', {
+      state: isMethod
+    });
+  },
+
+  _fireIsResourceState: function(isResource) {
+    this.fire('raml-is-resource-changed', {
+      state: isResource
+    });
+  },
+
+  _fireIsDocumentationState: function(isDocumentation) {
+    this.fire('raml-is-documentation-changed', {
+      state: isDocumentation
+    });
+  }
+});
+</script>
+</dom-module>

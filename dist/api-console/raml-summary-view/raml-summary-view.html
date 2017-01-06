@@ -1,0 +1,199 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../raml-behaviors/raml-behavior.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../iron-icon/iron-icon.html">
+<link rel="import" href="../arc-icons/arc-icons.html">
+<!--
+# `<raml-summary-view>`
+A basic information about the RAML definition viewer for the documentation panel.
+
+### Example
+```
+<raml-summary-view raml="[[raml]]"></raml-summary-view>
+```
+or in vanila JavaScript
+```
+let summary = document.querySelector('#raml-summary-view');
+summary.raml = raml;
+```
+
+### Styling
+`<raml-summary-view>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-summary-view` | Mixin applied to the element | `{}`
+`--raml-summary-view-title` | Mixin applied to the API title element | `{}`
+`--raml-summary-view-property` | Mixin applied to each line of attributes applied in the basic documentation view | `{}`
+`--raml-summary-view-description-color` | Color of the description of the API. | `rgba(0, 0, 0, 0.54)`
+`--raml-summary-view-description-max-width` | Max width of the API description | `700px`
+`--raml-summary-view-description-value-color` | The color of the property value description | `rgba(0, 0, 0, 0.74)`
+
+@group RAML Elements
+@element raml-summary-view
+@demo demo/index.html
+@hero hero.svg
+-->
+<dom-module id="raml-summary-view">
+  <template>
+    <style>
+    :host {
+      display: block;
+      @apply(--raml-summary-view);
+    }
+
+    :host([hidden]) {
+      display: none;
+    }
+
+    h1 {
+      @apply(--paper-font-title);
+      @apply(--raml-summary-view-title);
+    }
+
+    p.simple-desc {
+      @apply(--paper-font-subhead);
+      margin: 4px 0;
+      @apply(--raml-summary-view-property);
+    }
+
+    .simple-desc > span {
+      color: var(--raml-summary-view-description-value-color, rgba(0, 0, 0, 0.74));
+    }
+
+    .api-description {
+      @apply(--paper-font-body2);
+      color: var(--raml-summary-view-description-color, rgba(0, 0, 0, 0.54));
+      max-width: var(--raml-summary-view-description-max-width, 700px);
+      @apply(--raml-summary-view-property);
+    }
+
+    </style>
+    <h1>[[raml.title]]</h1>
+
+    <p class="simple-desc" hidden$="[[isEmpty(raml.version)]]">
+      <label>Version</label>
+      <span>[[raml.version]]</span>
+    </p>
+
+    <p class="simple-desc" hidden$="[[isEmpty(raml.baseUri)]]">
+      <label>Base URL</label>
+      <span>[[raml.baseUri]]</span>
+    </p>
+
+    <p class="api-description" hidden$="[[isEmpty(raml.description)]]">[[raml.description]]</p>
+    <template is="dom-if" if="[[hasMoreInfo]]">
+      <iron-collapse opened=[[opened]]>
+        <div>
+          <p class="simple-desc" hidden$="[[isEmpty(raml.mediaType)]]">
+            <label>Supported media type:</label>
+            <span>[[_displayArray(raml.mediaType)]]</span>
+          </p>
+          <p class="simple-desc" hidden$="[[isEmpty(raml.protocols)]]">
+            <label>Supported protocols:</label>
+            <span>[[_displayArray(raml.protocols)]]</span>
+          </p>
+        </div>
+      </iron-collapse>
+      <paper-button on-tap="toggleMoreInfo">[[_moreButtonLabel(opened)]] <iron-icon icon="[[_moreButtonIcon(opened)]]"></iron-icon></paper-button>
+    </template>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-summary-view',
+    behaviors: [Polymer.RamlBehavior],
+
+    properties: {
+      raml: {
+        type: Object,
+        observer: '_ramlChanged'
+      },
+      // Computed value, True if there are more basic information than displayed in the default
+      // view
+      hasMoreInfo: {
+        type: Boolean,
+        value: false,
+        computed: '_computeHasMoreInfo(raml)'
+      },
+      // The `opened` property of the toggle area.
+      opened: {
+        type: Boolean,
+        value: false
+      },
+      // If set then the element will set the `hidden` attribute if there's no data.
+      autoHide: {
+        type: Boolean,
+        value: false
+      }
+    },
+
+    ready: function() {
+      this._autoHide(this.autoHide, this.raml);
+    },
+
+    _ramlChanged: function(value) {
+      this._autoHide(this.autoHide, value);
+    },
+
+    // Computes if there is more information to display than in the regular view.
+    _computeHasMoreInfo: function(raml) {
+      if (!raml) {
+        return false;
+      }
+      return !!(raml.mediaType || raml.protocols);
+    },
+    // Toggles the toggagle area.
+    toggleMoreInfo: function() {
+      this.opened = !this.opened;
+    },
+    // Displays array values.
+    _displayArray: function(arr) {
+      if (!arr) {
+        return '';
+      }
+      if (!(arr instanceof Array)) {
+        return arr;
+      }
+      return arr.join(', ');
+    },
+    // Hides / shows the element depending on the parameters.
+    _autoHide: function(autoHide, raml) {
+      var visible = true;
+      if (autoHide) {
+        visible = !!raml;
+      }
+      if (visible) {
+        if (this.hasAttribute('hidden')) {
+          this.removeAttribute('hidden');
+        }
+      } else {
+        if (!this.hasAttribute('hidden')) {
+          this.setAttribute('hidden', true);
+        }
+      }
+    },
+    // Computes More / Less button label depending on toggable state.
+    _moreButtonLabel: function(opened) {
+      return opened ? 'Less' : 'More';
+    },
+    // Computes icon for the More / Less button.
+    _moreButtonIcon: function(opened) {
+      return opened ? 'arc:arrow-drop-up' : 'arc:arrow-drop-down';
+    }
+  });
+  </script>
+</dom-module>

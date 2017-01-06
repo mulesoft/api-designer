@@ -1,0 +1,146 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../iron-pages/iron-pages.html">
+<link rel="import" href="../code-mirror/code-mirror.html">
+<link rel="import" href="../vertical-tabs/vertical-tabs.html">
+<link rel="import" href="../body-json-editor/body-json-editor.html">
+<link rel="import" href="cm-arc-styles.html">
+<!--
+`<body-editor-panel>` A body editor panel containin JSON and XML editors
+
+### Example
+```
+<body-editor-panel></body-editor-panel>
+```
+
+### Styling
+`<body-editor-panel>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--body-editor-panel` | Mixin applied to the element | `{}`
+
+Use `paper-tabs` and `code-mirror` variables to style this elements.
+
+@group UI Elements
+@element body-editor-panel
+@demo demo/index.html
+-->
+<dom-module id="body-editor-panel">
+  <template>
+    <style>
+     :host {
+      display: block;
+
+      @apply(--body-editor-panel);
+
+      --code-mirror-wrapper: {
+        display: block;
+        height: 100%;
+      };
+
+      --code-mirror-editor: {
+        z-index: 0;
+        display: block;
+      }
+
+      --paper-tabs-content: {
+        overflow: auto;
+      }
+    }
+    </style>
+    <vertical-tabs selected="{{selected}}">
+      <paper-tab>JSON</paper-tab>
+      <paper-tab>Raw data</paper-tab>
+      <iron-pages content selected="{{selected}}" on-iron-select="_tabChangedHandler">
+        <body-json-editor value="{{value}}"></body-json-editor>
+        <code-mirror mode="[[cmMode]]" value="{{value}}" theme="cm-arc"></code-mirror>
+      </iron-pages>
+    </vertical-tabs>
+  </template>
+  <script>
+  Polymer({
+    is: 'body-editor-panel',
+    /**
+     * Fires when the value change.
+     *
+     * @event body-value-changed
+     * @param {String} value Current editor value
+     */
+    properties: {
+      // Selected tab.
+      selected: {
+        type: Number,
+        value: 0
+      },
+      // Sets and gets the editor value.
+      value: {
+        type: String,
+        value: '',
+        notify: true
+      },
+      // Code mirror mode. See `<code-mirror>` docs for more information.
+      cmMode: {
+        type: String,
+        value: 'application/json'
+      },
+      /**
+       * When set it will attempt to run associated code mirror mode.
+       * This element listens for the `content-type-changed` event and when
+       * handled it will automatically update content type and `mode`.
+       * If this value is set than it will override code-mirror `mode`
+       * until this value change.
+       */
+      contentType: String
+    },
+
+    observers: ['_valueChanged(value)'],
+
+    attached: function() {
+      this.listen(window, 'content-type-changed', '_ctHandler');
+    },
+
+    detached: function() {
+      this.unlisten(window, 'content-type-changed', '_ctHandler');
+    },
+    // Refreshes the code mirror editor when its tab is displayed.
+    _tabChangedHandler: function(e) {
+      var name = e.detail.item && e.detail.item.nodeName;
+      if (!name) {
+        return;
+      }
+      if (name === 'CODE-MIRROR') {
+        e.detail.item.editor.refresh();
+      }
+    },
+    // Handler for content type changed event.
+    _ctHandler: function(e, detail) {
+      if (!detail || !detail.value || this.contentType) {
+        return;
+      }
+      this.set('cmMode', detail.value);
+    },
+    // Fires the `body-value-changed` event when the value has changed.
+    _valueChanged: function(value) {
+      this.fire('body-value-changed', {
+        value: value
+      });
+    }
+  });
+  </script>
+</dom-module>

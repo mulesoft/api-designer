@@ -1,0 +1,78 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <title>docs-parameters-table demo</title>
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+  <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+  <link rel="import" href="../docs-parameters-table.html">
+  <link rel="import" href="../docs-headers-table.html">
+  <link rel="import" href="../docs-body-parameters-table.html">
+  <script src="structure.js"></script>
+
+  <style is="custom-style" include="demo-pages-shared-styles">
+  .vertical-section-container {
+    max-width: 600px;
+  }
+
+  docs-parameters-table {
+    --params-table-header-color: rgba(255, 255, 255, 0.87);
+    --params-table-header-background-color: #00A1DF;
+    --params-table-subheader-background-color: rgba(0, 161, 223, 0.24);
+    --params-table-row-background-color: rgba(0, 161, 223, 0.08);
+  }
+
+  </style>
+</head>
+
+<body unresolved>
+  <div class="vertical-section-container centered">
+    <h3>URI parameters table</h3>
+    <demo-snippet id="demo1">
+      <template>
+        <docs-parameters-table id="table1" auto-hide></docs-parameters-table>
+        <script>
+        var table = document.querySelector('#table1');
+        table.uriParameters = uriParameters;
+        table.queryParameters = queryParameters;
+        </script>
+      </template>
+    </demo-snippet>
+    <h3>Headers table</h3>
+    <demo-snippet>
+      <template>
+        <docs-headers-table id="table2" auto-hide></docs-headers-table>
+        <script>
+        var table = document.querySelector('#table2');
+        table.headers = headersDef;
+        </script>
+      </template>
+    </demo-snippet>
+
+    <h3>Type parameters table</h3>
+    <demo-snippet>
+      <template>
+        <docs-body-parameters-table id="table3" auto-hide></docs-body-parameters-table>
+        <script>
+        var table = document.querySelector('#table3');
+        table.type = window.personType;
+        </script>
+      </template>
+    </demo-snippet>
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,64 @@
+{
+  "name": "raml-request-parameters-editor",
+  "description": "An element responsible for displaying a form of query / uri parameters",
+  "version": "0.1.1",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "authors": [
+    "The Advanced REST client authors <arc@mulesoft.com>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "private": true,
+  "main": [
+    "raml-request-parameters-editor.html",
+    "raml-request-parameters-form.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:advanced-rest-client/raml-request-parameters-editor.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "iron-form": "PolymerElements/iron-form#^1.1.4",
+    "paper-input": "PolymerElements/paper-input#^1.1.22",
+    "paper-styles": "PolymerElements/paper-styles#^1.1.5",
+    "paper-listbox": "PolymerElements/paper-listbox#^1.1.2",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.1",
+    "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#^1.4.3",
+    "paper-item": "PolymerElements/paper-item#^1.2.1",
+    "prism-element": "PolymerElements/prism-element#^1.2.0",
+    "markdown-styles": "advanced-rest-client/markdown-styles#^1.0.1",
+    "iron-media-query": "PolymerElements/iron-media-query#^1.0.8",
+    "iron-validatable-behavior": "PolymerElements/iron-validatable-behavior#^1.1.1"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.9"
+  },
+  "ignore": [
+    "**/.*",
+    "dependencyci.yml",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks"
+  ],
+  "homepage": "https://github.com/advanced-rest-client/raml-request-parameters-editor",
+  "_release": "0.1.1",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.1",
+    "commit": "99dc20fe2fc1eed3526ca6cbcffc5cb8c3f77b04"
+  },
+  "_source": "https://github.com/advanced-rest-client/raml-request-parameters-editor.git",
+  "_target": "^0.1.1",
+  "_originalSource": "advanced-rest-client/raml-request-parameters-editor"
+}

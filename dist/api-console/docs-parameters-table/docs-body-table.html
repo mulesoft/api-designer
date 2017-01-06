@@ -1,0 +1,63 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="docs-body-parameters-table.html">
+<!--
+The `docs-body-table` is a view for the RAML documentation body.
+Body may contain more than one type (RAML's union types) so in this case
+this will show a more than one table of the parameters.
+-->
+<dom-module id="docs-body-table">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <div hidden$="[[!hasTypes]]">
+      <template is="dom-repeat" items="[[type.type]]" index-as="index">
+        <docs-body-parameters-table type="[[item]]" auto-hide="[[autoHide]]"></docs-body-parameters-table>
+      </template>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'docs-body-table',
+
+      properties: {
+        /**
+         * A RAML types definition for the body payload.
+         */
+        type: Object,
+
+        hasTypes: {
+          type: Boolean,
+          value: false,
+          notify: true,
+          computed: '_computeHasTypes(type.*)'
+        },
+        // If set automatically hides the element which doesn't have parameteres set
+        autoHide: {
+          type: Boolean,
+          value: false
+        }
+      },
+
+      _computeHasTypes: function() {
+        var type = this.type;
+        return !!(type && (type.properties || type.type));
+      }
+    });
+  </script>
+</dom-module>

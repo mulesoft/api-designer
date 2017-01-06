@@ -1,0 +1,204 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../arc-icons/arc-icons.html">
+<link rel="import" href="simple-type-editor.html">
+<link rel="import" href="body-json-editor-behavior.html">
+<!--
+`<object-editor>` Is a part of the `body-json-editor`. This element is used to recursively
+display a JSON object editor.
+
+### Styling
+`<object-editor>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--body-json-object-editor` | Mixin applied to the element. Note that because of the recurcy this element contains the same element. So setting padding / margin on this element is basically bad idea. | `{}`,
+`--paper-dropdown-menu-input` | Mixin applied to the dropdown menu input. | `{color: #673AB7;}`
+`--paper-dropdown-menu-button` | Mixin applied to the dropdown menu button. | `{color: #673AB7;}`
+`--primary-color` | Color of the action button | ``
+
+@group UI Elements
+@element object-editor
+@demo demo/index.html
+-->
+<dom-module id="object-editor">
+  <template>
+    <style>
+     :host {
+      display: block;
+
+      @apply(--body-json-object-editor);
+      --paper-input-container-color: rgba(0, 0, 0, 0.24);
+      --paper-dropdown-menu-input: {
+        color: #673AB7;
+      }
+      --paper-dropdown-menu-button: {
+        color: #673AB7;
+      }
+    }
+
+    .indent {
+      margin-left: 12px;
+    }
+
+    .action-button {
+      color: var(--primary-color);
+    }
+
+    </style>
+    <template is="dom-if" if="[[_typeIs(value.type, 'object')]]">
+      <simple-type-editor value="{{value}}"></simple-type-editor>
+      <template is="dom-repeat" items="{{value.properties}}" id="object">
+        <object-editor narrow="[[narrow]]" class="indent" value="{{item}}" schema="[[subPropertySchema]]"></object-editor>
+      </template>
+      <div class="indent add-action">
+        <paper-button class="action-button" on-tap="_appendProperty">add subproperty</paper-button>
+      </div>
+    </template>
+    <template is="dom-if" if="[[_typeIs(value.type, 'array')]]">
+      <simple-type-editor value="{{value}}"></simple-type-editor>
+      <template is="dom-repeat" items="{{value.items}}" id="array">
+        <object-editor narrow="[[narrow]]" class="indent" no-key value="{{item}}" schema="[[subPropertySchema]]" is-array-item allowed-types="[[allowedTypes]]"></object-editor>
+      </template>
+      <div class="indent add-action">
+        <paper-button class="action-button" on-tap="_appendProperty">add array item</paper-button>
+      </div>
+    </template>
+    <template is="dom-if" if="[[!_typeIs(value.type, 'array', 'object')]]">
+      <simple-type-editor narrow="[[narrow]]" value="{{value}}" no-key="[[noKey]]" schema="[[schema]]" allowed-types="[[allowedTypes]]"></simple-type-editor>
+    </template>
+  </template>
+  <script>
+  Polymer({
+    is: 'object-editor',
+    behaviors: [ArcBehaviors.BodyJsonEditorBehavior],
+    properties: {
+      // If true this element should not show a key field.
+      noKey: {
+        type: Boolean
+      },
+      // The value of this editor.
+      value: {
+        type: Object,
+        notify: true
+      },
+      // If set, means that this object is a sub-property of an array.
+      isArrayItem: {
+        type: Boolean,
+        value: false
+      }
+    },
+
+    observers: [
+      '_schemaChanged(schema.*)',
+      '_computeChildTypes(isArrayItem, schema.*)'
+    ],
+
+    listeners: {
+      'remove-property': '_onRemoveProperty'
+    },
+
+    /**
+     * Removes the property from this object.
+     */
+    _onRemoveProperty: function(e) {
+      var value = this.value;
+      if (!value) {
+        return;
+      }
+      if (['object', 'array'].indexOf(value.type) !== -1) {
+        var _repeater;
+        if (this.value.type === 'object') {
+          _repeater = this.$$('#object');
+        } else {
+          _repeater = this.$$('#array');
+        }
+        if (!_repeater) {
+          return;
+        }
+        var index = _repeater.indexForElement(e.target);
+        if (index === -1 || index === undefined) {
+          // top object (in this properties tree) can't remove itself from the parent. Only parent
+          // can do this. Stop here and the event bubbles up.
+          return;
+        }
+
+        if (this.value.type === 'object') {
+          this.splice('value.properties', index, 1);
+        } else {
+          this.splice('value.items', index, 1);
+        }
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        e.stopPropagation();
+      }
+      // pass it to the parent.
+    },
+
+    // Appends a new child property to the Object or the Array.
+    _appendProperty: function() {
+      var property = {
+        name: '',
+        type: ''
+      };
+      if (this.value.type === 'object') {
+        if (this.value.properties) {
+          this.push('value.properties', property);
+        } else {
+          this.set('value.properties', [property]);
+        }
+      } else {
+        if (this.value.items && this.value.items.length) {
+          // set new item's type to the same as the last item
+          var type = this.value.items[this.value.items.length - 1].type;
+          property.type = type;
+          this.push('value.items', property);
+        } else {
+          this.set('value.items', [property]);
+        }
+      }
+    },
+
+    _computeChildTypes: function(isArray, record) {
+      if (!isArray) {
+        return;
+      }
+      var s = record.base;
+      if (!s || !s.length) {
+        this.set('allowedTypes', null);
+        return;
+      }
+      var allowedTypes = [];
+      s.forEach(function(item) {
+        if (!item.type) {
+          return;
+        }
+        if (allowedTypes.indexOf(item.type) !== -1) {
+          return;
+        }
+        allowedTypes[allowedTypes.length] = item.type;
+      });
+      this.set('allowedTypes', allowedTypes);
+    }
+  });
+  </script>
+</dom-module>

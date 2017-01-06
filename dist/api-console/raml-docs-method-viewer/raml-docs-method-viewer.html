@@ -1,0 +1,416 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../raml-behaviors/raml-behavior.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../prism-element/prism-import.html">
+<link rel="import" href="../prism-element/prism-theme-default.html">
+<link rel="import" href="../docs-parameters-table/docs-parameters-table.html">
+<link rel="import" href="../docs-parameters-table/docs-headers-table.html">
+<link rel="import" href="../docs-parameters-table/docs-body-table.html">
+<link rel="import" href="../docs-parameters-table/docs-body-parameters-table.html">
+<link rel="import" href="../raml-docs-response-panel/raml-docs-response-panel.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+<!--
+`<raml-docs-method-viewer>` Documentation view for the method defined in RAML file
+
+This element is meant to work with data structure returned by the
+`<raml-js-parser>` and `<raml-path-to-object>`. Regular JSON output from the
+RAML JS parser will not work with this element.
+
+### Example
+```
+<raml-docs-method-viewer
+  raml="[[methodDefinition]]"
+  parent-endpoint="[[selectedParent]]"></raml-docs-method-viewer>
+```
+To properly compute values displayed in the view it needs to know its
+`parentEndpoint`. Though, it will work properly if the parent is not passed.
+Parent is used to display title of the method.
+
+### Styling
+`<raml-docs-method-viewer>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-docs-method-viewer` | Mixin applied to the element | `{}`
+`--raml-docs-h1` | Mixin applied to H1 | `{}` |
+`--raml-docs-h2` | Mixin applied to H2 | `{}` |
+`--raml-docs-h3` | Mixin applied to H3 | `{}` |
+`--raml-docs-method-viewer-title-method-font-weight` | Font weight of the name if the method | `500` |
+`--raml-docs-method-viewer-http-method-font-weight` | Font weight of the HTTP method | `500` |
+`--raml-docs-item-description` | Mixin applied to the description field. | `{}` |
+`--raml-docs-method-viewer-url-color` | Color of the URL field | `--accent-color` |
+`--raml-docs-method-viewer-url-font-style` | font-style of the URL value | `italic` |
+`--raml-docs-method-viewer-url` | Mixin applied to the URL field | `{}` |
+`--action-button` | Mixin applied to the main action button (Try it) | `{}`
+
+@group RAML Elements
+@element raml-docs-method-viewer
+@demo demo/index.html
+-->
+<dom-module id="raml-docs-method-viewer">
+  <template>
+    <style include="prism-theme-default"></style>
+    <style>
+    :host {
+      display: block;
+      @apply(--raml-docs-method-viewer);
+
+      --content-section: {
+        padding: 8px 12px;
+      }
+    }
+
+    :host([hidden]) {
+      display: none !important;
+    }
+
+    h1 {
+      @apply(--paper-font-headline);
+      @apply(--content-section);
+      @apply(--raml-docs-h1);
+    }
+
+    h2 {
+      @apply(--paper-font-title);
+      @apply(--content-section);
+      @apply(--raml-docs-h2);
+    }
+
+    h3 {
+      @apply(--paper-font-subhead);
+      @apply(--content-section);
+      @apply(--raml-docs-h3);
+    }
+
+    .method-name {
+      font-weight: var(--raml-docs-method-viewer-title-method-font-weight, 500);
+    }
+
+    .method-value {
+      text-transform: uppercase;
+      font-weight: var(--raml-docs-method-viewer-http-method-font-weight, 500);
+    }
+
+    .title-area {
+      @apply(--layout-horizontal);
+      @apply(--layout-center);
+    }
+
+    .title {
+      @apply(--layout-flex);
+      /*@apply(--paper-font-title);*/
+    }
+
+    .method-desc {
+      @apply(--paper-font-body1);
+      @apply(--content-section);
+      @apply(--raml-docs-item-description);
+    }
+
+    .url-area {
+      @apply(--layout-horizontal);
+      @apply(--paper-font-body1);
+      font-size: 16px;
+      margin-bottom: 40px;
+      color: var(--raml-docs-method-viewer-url-color, --accent-color);
+      @apply(--content-section);
+    }
+
+    .url-value {
+      font-style: var(--raml-docs-method-viewer-url-font-style, italic);
+      margin-left: 12px;
+      word-break: break-all;
+      @apply(--raml-docs-method-viewer-url);
+    }
+
+    .body-selector {
+      margin: 0 12px;
+    }
+
+    .action-button {
+      background-color: var(--primary-color);
+      color: var(--primary-action-color, #fff);
+      @apply(--action-button);
+    }
+
+    :host([no-tryit]) .action {
+      display: none !important;
+    }
+
+    .bottom.action {
+      @apply(--layout-horizontal);
+      @apply(--layout-end-justified);
+    }
+
+    :host([narrow]) .container {
+      max-width: var(--raml-docs-method-viewer-narrow-container-width, calc(100vw - 32px));
+      overflow: auto;
+    }
+    :host([narrow]) docs-parameters-table,
+    :host([narrow]) docs-headers-table,
+    :host([narrow]) docs-body-parameters-table,
+    :host([narrow]) raml-docs-response-panel {
+      max-width: var(--raml-docs-method-viewer-narrow-container-width, calc(100vw - 32px));
+      overflow: auto;
+    }
+
+    :host([narrow]) .title-area {
+      @apply(--layout-vertical);
+      margin-bottom: 24px;
+    }
+    </style>
+    <iron-media-query query="(max-width: [[narrowWidth]])" query-matches="{{narrow}}"></iron-media-query>
+    <section class="container">
+      <div class="title-area">
+        <h1 class="title">
+          <span>[[parentName]]</span>
+          <span hidden$="[[!parentName]]">:</span>
+          <span class="method-name">[[methodName]]</span>
+        </h1>
+        <div class="action">
+          <paper-button class="action-button" on-tap="_tryIt">Try it</paper-button>
+        </div>
+      </div>
+      <div hidden$="[[_computeHideMethodDesc(raml.description)]]" class="method-desc">[[raml.description]]</div>
+
+      <section class="request-doc">
+        <h2>Request</h2>
+
+        <div class="url-area">
+          <div class="method-value">[[raml.method]]</div>
+          <div class="url-value">[[raml.absoluteUrl]]</div>
+        </div>
+
+        <h3 hidden$="[[!hasParameters]]">Parameters</h3>
+        <docs-parameters-table hidden$="[[!hasParameters]]" uri-parameters="[[raml.allUriParameters]]" query-parameters="[[raml.queryParameters]]" has-query-parameteres="{{hasQueryParameteres}}" has-uri-parameteres="{{hasUriParameteres}}" auto-hide></docs-parameters-table>
+
+        <h3 hidden$="[[!hasHeaders]]">Headers</h3>
+        <docs-headers-table has-headers="{{hasHeaders}}" headers="[[raml.headers]]" auto-hide></docs-headers-table>
+
+        <div hidden$="[[!hasBody]]">
+          <h3>Body</h3>
+          <docs-body-parameters-table body="[[raml.body]]"></docs-body-parameters-table>
+        </div>
+      </section>
+
+      <section class="response-doc" hidden$="[[!hasResponses]]">
+        <h2>Response</h2>
+        <raml-docs-response-panel has-responses="{{hasResponses}}" responses="[[raml.responses]]" narrow="[[narrow]]"></raml-docs-response-panel>
+      </section>
+
+      <div class="bottom action">
+        <paper-button class="action-button" on-tap="_tryIt">Try it</paper-button>
+      </div>
+    </section>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-docs-method-viewer',
+    /**
+     * Fired when the user pressed the `try it` button.
+     *
+     * @event tryit-requested
+     */
+    properties: {
+      // Parent endpoint object
+      parentEndpoint: {
+        type: Object,
+        value: false
+      },
+      // True if current endpont has a body
+      hasBody: {
+        value: false,
+        type: Boolean,
+        computed: '_computeHasBody(raml.body)'
+      },
+      // Computed name of the parent resource
+      parentName: {
+        type: String,
+        value: null,
+        computed: '_computeParentName(parentEndpoint.*)'
+      },
+      // Computed name of current method
+      methodName: {
+        type: String,
+        computed: '_computeMethodName(raml.*)'
+      },
+      // Value obtained from the `docs-parameters-table`
+      hasUriParameteres: Boolean,
+      // Value obtained from the `docs-parameters-table`
+      hasQueryParameteres: Boolean,
+      // Computed flag if there are any parameters to display
+      hasParameters: {
+        value: false,
+        type: Boolean,
+        computed: '_computeHasParameters(hasUriParameteres,hasQueryParameteres)'
+      },
+      // Value obtained from the `raml-docs-response-panel`
+      hasResponses: Boolean,
+      /**
+       * If true then the element will start listen for the
+       * `raml-is-method-changed`, `raml-selected-object-changed` and
+       * `raml-selected-path-changed` event and set corresponding properties
+       * when needed. It's a replacement for the Polymer's data biding
+       * for apps that are not Polymer powered.
+       */
+      autoHide: {
+        type: Boolean,
+        value: false,
+        observer: '_autoHideChanged'
+      },
+      // If true then the element will be hidden ui the UI.
+      hidden: {
+        type: Boolean,
+        value: false,
+        reflectToAttribute: true
+      },
+      // If set then the `tryit` button will be hidden.
+      noTryit: {
+        type: Boolean,
+        value: false,
+        reflectToAttribute: true
+      },
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        notify: true,
+        reflectToAttribute: true
+      },
+      // A widith below which the `narrow` property will be set to true.
+      narrowWidth: {
+        type: String,
+        value: '768px'
+      }
+    },
+
+    observers: [
+      '_objectChanged(raml.*)'
+    ],
+
+    attached: function() {
+      this._eventTarget = Polymer.dom(this).host || document;
+      if (this.autoHide) {
+        this._attacheListeners();
+      }
+    },
+
+    _autoHideChanged: function(state) {
+      if (state) {
+        this._attacheListeners();
+      } else {
+        this._detachListeners();
+      }
+    },
+
+    _attacheListeners: function() {
+      if (!this._eventTarget) {
+        this.hidden = true;
+        return;
+      }
+      this._detachListeners();
+      this.listen(this._eventTarget, 'raml-is-method-changed',
+        '_isMethodHandler');
+      this.listen(this._eventTarget, 'raml-selected-object-changed',
+        '_selectedChangeHandler');
+      this.listen(this._eventTarget, 'raml-selected-parent-changed',
+        '_selectedParentChangeHandler');
+    },
+
+    _detachListeners: function() {
+      if (!this._eventTarget) {
+        return;
+      }
+      this.unlisten(this._eventTarget, 'raml-is-method-changed',
+        '_isMethodHandler');
+      this.unlisten(this._eventTarget, 'raml-selected-object-changed',
+        '_selectedChangeHandler');
+      this.unlisten(this._eventTarget, 'raml-selected-parent-changed',
+        '_selectedParentChangeHandler');
+    },
+
+    // Resets the variables to the original state
+    clear: function() {
+      this.hasUriParameteres = undefined;
+      this.hasQueryParameteres = undefined;
+    },
+
+    _objectChanged: function() {
+      this.clear();
+      // this.hidden = false;
+      if (!this.raml) {
+        return;
+      }
+    },
+
+    _computeMethodName: function() {
+      var m = this.raml;
+      if (!m) {
+        return '';
+      }
+      return m.displayName || m.method;
+    },
+
+    _computeHideMethodDesc: function(description) {
+      return !description;
+    },
+
+    _computeHasParameters: function(hasUriParameteres, hasQueryParameteres) {
+      return hasUriParameteres || hasQueryParameteres;
+    },
+
+    _computeHasBody: function(body) {
+      return !!(body && body.length > 0);
+    },
+
+    _isMethodHandler: function(e, detail) {
+      var state = detail.state;
+      this.hidden = !state;
+    },
+
+    _selectedChangeHandler: function(e, detail) {
+      if (this.hidden) {
+        this.raml = undefined;
+        return;
+      }
+      this.raml = detail.selectedObject;
+    },
+
+    _selectedParentChangeHandler: function(e, detail) {
+      if (this.hidden) {
+        this.parentEndpoint = undefined;
+        return;
+      }
+      this.parentEndpoint = detail.selectedParent;
+    },
+
+    _tryIt: function() {
+      this.fire('tryit-requested');
+    },
+
+    _computeParentName: function() {
+      var endpoint = this.parentEndpoint;
+      if (!endpoint) {
+        return '';
+      }
+      return endpoint.displayName || endpoint.relativeUri;
+    }
+  });
+  </script>
+</dom-module>

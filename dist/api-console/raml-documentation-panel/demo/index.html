@@ -1,0 +1,73 @@
+<!doctype html>
+<!--
+@license
+Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+  <title>raml-documentation-panel demo</title>
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+  <link rel="import" href="../../arc-demo-helpers/raml-demo-page.html">
+  <link rel="import" href="../../font-roboto/roboto.html">
+  <link rel="import" href="../../paper-toast/paper-toast.html">
+
+  <link rel="import" href="../raml-documentation-panel.html">
+  <style>
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', 'Noto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+  }
+
+  h1.main-title {
+    white-space: pre-line !important;
+    word-break: break-all;
+  }
+  </style>
+</head>
+
+<body unresolved>
+  <template is="dom-bind" id="app">
+    <raml-demo-page raml="{{raml}}" no-selector narrow="{{forceNarrow}}">
+      <h1 class="main-title">The raml-documentation-panel element</h1>
+      <div main>
+        <raml-documentation-panel raml="{{raml}}" auto-hide narrow="{{narrow}}" on-tryit-requested="_tryit"></raml-documentation-panel>
+      </div>
+    </raml-demo-page>
+    <paper-toast opened="{{toastOpened}}" text="The request panel has been requested"></paper-toast>
+  </template>
+  <script>
+  (function(app) {
+    app.toastOpened = false;
+    app.forceNarrow = false;
+    app.observers = ['_forceNarrowChanged(forceNarrow)'];
+    app._tryit = function() {
+      app.toastOpened = true;
+    };
+    app._forceNarrowChanged = function(forceNarrow) {
+      if (!app._forceInitialTrigger) {
+        app._forceInitialTrigger = true;
+        return;
+      }
+      app.narrow = forceNarrow;
+    };
+  })(document.querySelector('#app'));
+  </script>
+</body>
+
+</html>

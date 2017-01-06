@@ -1,0 +1,48 @@
+{
+  "name": "raml-js-parser",
+  "description": "RAML parser (JS version) as a web component",
+  "author": "The Advanced REST client authors",
+  "keywords": [
+    "web-components",
+    "polymer"
+  ],
+  "private": true,
+  "main": [
+    "raml-js-parser.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:advanced-rest-client/raml-js-parser.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "fetch": "^2.0.1",
+    "promise-polyfill": "PolymerLabs/promise-polyfill#^1.0.1"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "PolymerElements/paper-styles#^1.1.4",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "paper-button": "PolymerElements/paper-button#^1.0.13",
+    "paper-spinner": "PolymerElements/paper-spinner#^1.2.0",
+    "prism-element": "PolymerElements/prism-element#^1.1.1",
+    "paper-tabs": "PolymerElements/paper-tabs#^1.6.2",
+    "iron-pages": "PolymerElements/iron-pages#^1.0.8",
+    "paper-input": "PolymerElements/paper-input#^1.1.20",
+    "file-drop": "advanced-rest-client/file-drop#^1.0.2",
+    "raml-main-entry-lookup": "advanced-rest-client/raml-main-entry-lookup#^1.0.1"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks",
+    "old.*"
+  ],
+  "version": "1.1.2"
+}

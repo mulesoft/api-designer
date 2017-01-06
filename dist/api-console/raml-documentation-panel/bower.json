@@ -1,0 +1,55 @@
+{
+  "name": "raml-documentation-panel",
+  "description": "A documentation details panel. Its purpose is to compute documentation from the RAML file and display the result as a main documentation panel",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "authors": [
+    "The Advanced REST client authors <arc@mulesoft.com>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer",
+    "raml",
+    "documentation"
+  ],
+  "private": true,
+  "main": [
+    "raml-documentation-panel.html"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:advanced-rest-client/raml-documentation-panel.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "raml-behaviors": "advanced-rest-client/raml-behaviors#^1.0.1",
+    "raml-path-selector": "advanced-rest-client/raml-path-selector#^1.0.0",
+    "raml-path-to-object": "advanced-rest-client/raml-path-to-object#^1.0.0",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.3.1",
+    "raml-docs-method-viewer": "advanced-rest-client/raml-docs-method-viewer#^0.1.4",
+    "raml-docs-resource-viewer": "advanced-rest-client/raml-docs-resource-viewer#^1.0.1",
+    "raml-docs-response-panel": "advanced-rest-client/raml-docs-response-panel#^1.0.1",
+    "raml-docs-documentation-viewer": "advanced-rest-client/raml-docs-documentation-viewer#^1.0.1",
+    "raml-aware": "advanced-rest-client/raml-aware#^1.0.2",
+    "iron-media-query": "PolymerElements/iron-media-query#^1.0.8"
+  },
+  "devDependencies": {
+    "iron-component-page": "polymerelements/iron-component-page#1.0.0",
+    "web-component-tester": "^4.0.0",
+    "paper-styles": "polymerelements/paper-styles#^1.0.2",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "iron-test-helpers": "PolymerElements/iron-test-helpers#^1.0.0",
+    "test-fixture": "PolymerElements/test-fixture#^1.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0",
+    "arc-demo-helpers": "advanced-rest-client/arc-demo-helpers#^1.0.5",
+    "paper-toast": "PolymerElements/paper-toast#^1.3.0"
+  },
+  "ignore": [
+    "**/.*",
+    "dependencyci.yml",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tasks"
+  ],
+  "version": "1.0.6"
+}

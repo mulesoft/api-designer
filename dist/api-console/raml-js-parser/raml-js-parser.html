@@ -1,0 +1,574 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="raml-js-parser-imports.html">
+<!--
+# `<raml-js-parser>`
+The RAML parser (JS version) as a web component.
+
+The `<raml-js-parser>` can accept an URL from where the API definition can be
+downloaded or a RAML file from web filesystem. If the file contains references
+to other files they can be passed as well to the `files` attribute and the pareser
+will search files/directories structure for referenced file.
+
+Files in web environment can be obtained if the user selects a file using
+input file element or drop directory / files to a droppable element.
+
+See demo for example of both.
+
+### Events based approach
+
+Parser can be included only once in the DOM and other element do not need to have
+direct access to this element. It uses browser's events system to pass data.
+The `<raml-js-parser>` will listen for `parse-raml-url`, `parse-raml-content`
+and `parse-raml-file` events and in a result the event details will contain the
+`raml` property which is a Promise that will resolve itself when parser
+finish work.
+
+#### `parse-raml-url` event
+This event will be handled only if it contains the `url` property in the
+event detail object. It should be an URL to the RAML resource that will be
+downloaded.
+Note, that the web app has to have an CORS access to the resource in order to
+download it.
+
+#### `parse-raml-content` event
+This event if useful when the app already have content of the RAML file as string
+and it's ready to parse it.
+Additionally it may contain a list of files or directory structure where the
+parser will search for delepndencies (referenced libraries).
+
+This event will be handled only if it contains the `content` property in
+the event detail object. Additional files or directory structure can be
+passed in the `files` property.
+
+#### `parse-raml-file` event
+To be used when the app want to parse a RAML file which is a FileEntry or
+a File (Blob) object. It similar to the `parse-raml-content` event but before
+invoking the same method it will read file content firest.
+
+This event will be handled only if it contains the `file` property in
+the event detail object. Additional files or directory structure can be
+passed in the `files` property.
+
+
+### Example
+``` html
+<raml-js-parser></raml-js-parser>
+```
+
+``` javascript
+// Handler for drop event
+processFile = (e) => {
+  var items = Array.from(e.dataTransfer.items);
+  var main = this.findMainRamlFileSomehow(items);
+
+  let detail = {
+    'file': main,
+    'files': items // this is optional.
+  };
+  let event = this.fire('parse-raml-file', detail);
+
+  if (!event.detail.raml) {
+    // uuups, raml parser is not attached to the DOM.
+    return;
+  }
+
+  event.detail.raml.then((api) => {
+    // api is the parser output.
+  });
+};
+```
+
+The element contains a set of Polyfills so it will work in the IE11+ browsers.
+
+@group RAML Elements
+@element raml-js-parser
+@demo demo/demo.html
+@hero hero.svg
+-->
+<script>
+(function() {
+  'use strict';
+  /* global RAML */
+  var importLocation = '';
+  (function() {
+    if (window.currentImport && window.currentImport.URL) {
+      var url = window.currentImport.URL;
+      if (url === 'about:blank' && window.currentImport._URL) {
+        url = window.currentImport._URL;
+      }
+      if (url === 'about:blank') {
+        importLocation = '../';
+        // in test cases for edge this will fail because it should be set to ../../
+        // but right now I can't waste time to check how to check if this is the particular case.
+      } else {
+        var path = url.substr(url.indexOf('/', url.indexOf('/') + 2))
+          .replace('raml-js-parser.html', '');
+        var lastDot = path.lastIndexOf('.');
+        if (lastDot !== -1 && path.substr(lastDot + 1) === 'html') {
+          // remove element file name path
+          path = path.substr(0, path.lastIndexOf('/') + 1);
+        }
+        if (path.indexOf('/test') !== -1) {
+          path = path.substr(0, path.lastIndexOf('/') + 1);
+        }
+        importLocation = path;
+      }
+    }
+  })();
+  Polymer({
+    is: 'raml-js-parser',
+    /**
+     * Fired when the RAML file has been parsed and the result is ready.
+     *
+     * @event api-parse-ready
+     * @param {Object} result The parsing result.
+     * @param {Object} json (optional) Set when `normalizeRaml` property is set. JSON output.
+     */
+    /**
+     * Fired when error occurred while parsing the file.
+     *
+     * @event error
+     * @param {Error} error The error object.
+     */
+    /**
+     * Fired when the element has been attached to the DOM and is ready to
+     * parse data.
+     * @event raml-js-parser-ready
+     */
+    properties: {
+      _eventTarget: {
+        type: Object
+      },
+      /**
+       * A file entry object with the RAML spec.
+       * The file can be obtained using web filesystem or file input.
+       */
+      ramlFile: Object,
+      /**
+       * List of files (from web filesystem) where the parser should
+       * look for a libraries.
+       */
+      files: Array,
+      /**
+       * Latest parsed data.
+       */
+      latestResult: {
+        type: Object,
+        readOnly: true,
+        notify: true
+      },
+      /**
+       * Latest error message
+       */
+      latestError: {
+        type: Object,
+        readOnly: true,
+        notify: true
+      },
+      /**
+       * If true then the parser will extract JSON data and set it to the `json` property
+       * and normalise output for ARC components.
+       */
+      normalizeRaml: {
+        type: Boolean,
+        value: false
+      },
+      /**
+       * Latest JSON API structure. It will be set if `normalizeRaml` is set to true.
+       */
+      latestJson: {
+        type: Object,
+        readOnly: true,
+        notify: true
+      }
+    },
+
+    attached: function() {
+      this._eventTarget = Polymer.dom(this).host || document;
+      this.listen(this._eventTarget, 'parse-raml-url', '_parseRamlUrl');
+      this.listen(this._eventTarget, 'parse-raml-content', '_parseRamlContent');
+      this.listen(this._eventTarget, 'parse-raml-file', '_parseRamlFile');
+    },
+
+    detached: function() {
+      this.unlisten(this._eventTarget, 'parse-raml-url', '_parseRamlUrl');
+      this.unlisten(this._eventTarget, 'parse-raml-content', '_parseRamlContent');
+      this.unlisten(this._eventTarget, 'parse-raml-file', '_parseRamlFile');
+    },
+
+    ready: function() {
+      this.fire('raml-js-parser-ready', {});
+    },
+
+    _parseRamlUrl: function(event) {
+      if (!event.detail.url) {
+        return;
+      }
+      // Always stop the event from being propagated.
+      event.stopImmediatePropagation();
+      event.detail.raml = this.loadApi(event.detail.url);
+    },
+
+    _parseRamlContent: function(event) {
+      if (!event.detail.content) {
+        return;
+      }
+      // Always stop the event from being propagated.
+      event.stopImmediatePropagation();
+      if (event.detail.files) {
+        this.files = event.detail.files;
+      }
+      event.detail.raml = this.parseRaml(event.detail.content);
+    },
+
+    _parseRamlFile: function(event) {
+      if (!event.detail.file) {
+        return;
+      }
+      // Always stop the event from being propagated.
+      event.stopImmediatePropagation();
+      this.ramlFile = event.detail.file;
+      if (event.detail.files) {
+        this.files = event.detail.files;
+      }
+      event.detail.raml = this.loadFiles();
+    },
+
+    /**
+     * Parses RAML file content.
+     *
+     * @param {String} content The RAML file content to parse.
+     * @return {Promise} A promise that will resolve itself when the
+     * conent was parsed and rejects when error occured.
+     */
+    parseRaml: function(content) {
+      var context = this;
+      return RAML.Parser.parseRAML(content, {
+        fsResolver: {
+          contentAsync: function(path) {
+            return context.contentAsync(path);
+          }
+        },
+        httpResolver: {
+          getResourceAsync: function(path) {
+            return context.getResourceAsync(path);
+          }
+        }
+      })
+      .then(function(api) {
+        return context.setApiData(api);
+      })
+      .catch(function(err) {
+        context._setLatestError(err);
+        context.fire('error', {
+          error: err
+        });
+        throw err;
+      });
+    },
+    // Load API from the URL.
+    loadApi: function(url) {
+      var context = this;
+      return RAML.Parser.loadApi(url, {
+        fsResolver: {
+          contentAsync: function(path) {
+            return context.contentAsync(path);
+          }
+        },
+        httpResolver: {
+          getResourceAsync: function(path) {
+            return context.getResourceAsync(path);
+          }
+        }
+      })
+      .then(function(api) {
+        return context.setApiData(api);
+      })
+      .catch(function(err) {
+        context._setLatestError(err);
+        context.fire('error', {
+          error: err
+        });
+        throw err;
+      });
+    },
+    /**
+     * Sets parsed RAML data and assigns variables.
+     * If `normalize` is set then it also normalize parser's JSON output
+     */
+    setApiData: function(api) {
+      var result = {
+        result: api
+      };
+      if (this.normalizeRaml) {
+        var object = api.expand(true).toJSON({
+          dumpSchemaContents: false,
+          rootNodeDetails: true,
+          serializeMetadata: false
+        });
+
+        // object.specification = RamlNormalizer.transform(object.specification);
+        object.specification = raml2obj.parse(object.specification);
+        this._setLatestJson(object);
+        result.json = object;
+      } else {
+        this._setLatestJson(undefined);
+      }
+      this._setLatestResult(api);
+      this.fire('api-parse-ready', result);
+      return this.normalizeRaml ? [api, result.json] : api;
+    },
+
+    /**
+     * Handler for RAML's parser FsResolver.contentAsync.
+     * It's purpose is to provide a content of the file.
+     */
+    contentAsync: function(path) {
+      return new Promise(function(resolve, reject) {
+        this.findEntry(path)
+        .then(function(entry) {
+          if (!entry) {
+            reject(new Error('Entry not found.'));
+            return;
+          }
+          var reader;
+          if (entry.isFile) { // typeof FileEntry
+            entry.file(function(result) {
+              reader = new FileReader();
+              reader.addEventListener('loadend', function(e) {
+                resolve(e.target.result);
+              });
+              reader.addEventListener('error', function(e) {
+                reject(e);
+              });
+              reader.readAsText(result);
+            });
+          } else if (!entry.isDirectory) {
+            reader = new FileReader();
+            reader.addEventListener('loadend', function(e) {
+              resolve(e.target.result);
+            });
+            reader.addEventListener('error', function(e) {
+              reject(e);
+            });
+            reader.readAsText(entry);
+          } else {
+            reject(new Error('File entry for ' + path + ' do not exists.'));
+          }
+        })
+        .catch(function(e) {
+          reject(e);
+        });
+      }.bind(this));
+    },
+    /**
+     * Handler for RAML's parser HttpResolver.getResourceAsync.
+     * It's purpose is to provide a content of the file downloading it
+     * from the URL.
+     */
+    getResourceAsync: function(path) {
+      return fetch(path)
+      .then(function(response) {
+        return response.text();
+      })
+      .then(function(text) {
+        return {
+          content: text
+        };
+      });
+    },
+
+    // Load API from file defined in `ramlFile` attribute
+    loadFiles: function() {
+      var context = this;
+      return new Promise(function(resolve, reject) {
+        if (!context.ramlFile) {
+          reject(new Error('No file entry available'));
+          return;
+        }
+        var reader;
+        if (context.ramlFile.isFile) { // typeof FileEntry
+          context.ramlFile.file(function(result) {
+            reader = new FileReader();
+            reader.addEventListener('loadend', function(e) {
+              resolve(context.parseRaml(e.target.result));
+            });
+            reader.addEventListener('error', function(e) {
+              reject(e);
+            });
+            reader.readAsText(result);
+          });
+        } else if (!context.ramlFile.isDirectory) {
+          reader = new FileReader();
+          reader.addEventListener('loadend', function(e) {
+            resolve(context.parseRaml(e.target.result));
+          });
+          reader.addEventListener('error', function(e) {
+            reject(e);
+          });
+          reader.readAsText(context.ramlFile);
+        }
+      });
+    },
+
+    /**
+     * This function is called by the RAML parser's filesystem resolver.
+     * It is used when files were provided to the element as a source of the
+     * RAML definition. Source of the file can be web filesystem (by using
+     * file drag and drop of input file).
+     *
+     * If the user dragged / selected more than one file this function will
+     * search for a file identified by it's `path` in this files list.
+     * If the ficle couldn't be found the parser continue parsing RAML but
+     * information about the error will be included into `api.errors()`
+     * function (`api` is the result of calling parse function).
+     *
+     * @param {String} path A path of the file to look for.
+     * @return {Promise} Fulfilled promise will result with FileEntry | File
+     * object or null if the wile couldn't be find.
+     */
+    findEntry: function(path) {
+      var entries = this.files;
+      if (!entries ||
+        (entries.length === 1 && entries[0] === this.ramlFile)) {
+        return Promise.resolve(null);
+      }
+      return new Promise(function(resolve) {
+        // quick run to find a file in a root dir
+        for (var i = 0, len = entries.length; i < len; i++) {
+          var entry = entries[i];
+          if (!entry.isDirectory) {
+            if (entry.fullPath === path) {
+              resolve(entry);
+              return;
+            }
+          }
+        }
+        var all = [];
+        entries.forEach(function(item) {
+          if (item.isDirectory) {
+            all.push(this._processEntryPath(item, path));
+          }
+        }, this);
+        Promise.all(all)
+          .then(function(entries) {
+            entries = entries.filter(function(item) {
+              return !!item;
+            });
+            if (entries.length > 0) {
+              resolve(entries[0]);
+              return;
+            }
+            resolve(null);
+          });
+      }.bind(this));
+    },
+    /**
+     * Recursively process the file entry that can be either a file
+     * or the directory. This function is seachring for a file identified
+     * by `path` parameter.
+     *
+     * @param {FileEntry|DirectoryEntry} entry An entry to process
+     * @param {String} path A path of the searched file
+     * @return {Promise} The promise will resolve when entry was found (will
+     * return FileEntry), when entry wans't found (will return null) or in case
+     * of directory it will return an array of recursive results.
+     */
+    _processEntryPath: function(entry, path) {
+      if (entry.isDirectory) {
+        var context = this;
+        return new Promise(function(resolve, reject) {
+          var reader = entry.createReader();
+          var all = [];
+          var readEntries = function() {
+            reader.readEntries(function(result) {
+              var res = context._readDirectoryEntries(result, all, path);
+              if (res) {
+                readEntries();
+              } else {
+                Promise.all(all)
+                  .then(function(candidates) {
+                    var result = context._cleanUpCandidates(candidates);
+                    resolve(result);
+                  })
+                  .catch(reject);
+              }
+            }, reject);
+          };
+          readEntries();
+        });
+      } else {
+        if (entry.fullPath === path) {
+          return Promise.resolve(entry);
+        } else if (entry.fullPath.substr(entry.fullPath.indexOf('/', 1)) === path) {
+          // If the user dropped full directory the it need to remove first dir path
+          return Promise.resolve(entry);
+        }
+      }
+      return Promise.resolve(null);
+    },
+
+    /**
+     * Handler function for Direcory's `readEntries` function.
+     * It processes all files that are in this directory.
+     *
+     * @param {Array} results A result of calling DirectoryEntry.readEntries
+     * @param {Array<Promise>} all A list of promises of reading a directory.
+     * @param {String} path A path of the searched file
+     */
+    _readDirectoryEntries: function(results, all, path) {
+      // No more entries
+      if (!results.length) {
+        return false;
+      } else {
+        for (var i = 0, len = results.length; i < len; i++) {
+          all.push(this._processEntryPath(results[i], path));
+        }
+        return true;
+      }
+    },
+
+    /**
+     * Cleans the array of files found in the files array.
+     * It always should be an array of nulls, array of nulls and one file
+     * found or just a file.
+     * It will remove all nulls and then look for a file to return.
+     *
+     * @param {Array} candidates A list of files returned by the recursive
+     * search function
+     * @return {FileEntry|null} A file or null if not found.
+     */
+    _cleanUpCandidates: function(candidates) {
+      candidates = candidates.filter(function(item) {
+        return !!item;
+      });
+      var len = candidates.length;
+      if (len === 0) {
+        return null;
+      }
+      for (var i = 0; i < len; i++) {
+        var item = candidates[i];
+        if (item instanceof Array) {
+          if (item.length > 0) {
+            return item[0];
+          }
+        } else {
+          return item;
+        }
+      }
+    }
+  });
+})();
+</script>

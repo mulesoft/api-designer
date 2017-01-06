@@ -1,0 +1,35 @@
+<dom-module id="raml-tree-item-styles">
+  <template>
+    <style>
+    :host {
+      display: block;
+      @apply(--raml-docs-tree-item-element);
+      background-color: var(--raml-docs-tree-item-element-background, transparent);
+      --paper-item-focused-before: {
+        background-color: transparent;
+      }
+    }
+    :host(:focus),
+    :focus {
+      outline: var(--raml-docs-tree-outline, none);
+    }
+
+    paper-item {
+      min-height: 48px;
+      padding: 0px 16px;
+      cursor: pointer;
+      @apply(--raml-docs-tree-item);
+      background-color: var(--raml-docs-tree-item-background, transparent);
+    }
+
+    paper-item:not(:focus):not(.selected):hover {
+      background-color: var(--raml-docs-tree-item-hover-background, #F5F5F5);
+    }
+
+    .selected {
+      background-color: var(--raml-docs-tree-item-selected-background, rgba(3, 169, 244, 0.24));
+      color: var(--raml-docs-tree-item-selected-color, #000);
+    }
+    </style>
+  </template>
+</dom-module>

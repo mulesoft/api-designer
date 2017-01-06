@@ -1,0 +1,33 @@
+{
+  "name": "raml-docs-method-viewer",
+  "version": "0.1.6",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "description": "Documentation view for the method defined in RAML file",
+  "devDependencies": {
+    "polymer-cli": "^0.17.0"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "private": false,
+  "main": [
+    "raml-docs-method-viewer.html"
+  ],
+  "author": "The Advanced REST client authors <arc@mulesoft.com>",
+  "scripts": {
+    "serve": "node_modules/.bin/polymer serve",
+    "lint": "node_modules/.bin/polymer lint raml-docs-method-viewer.html",
+    "test-sauce": "exit 0; node_modules/.bin/polymer test --plugin sauce --job-name \"raml-docs-method-viewer:local-test\"",
+    "test": "node_modules/.bin/polymer test",
+    "deps": "npm install --quiet && bower install --quiet",
+    "update-deps": "npm update --quiet && bower update --quiet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/advanced-rest-client/raml-docs-method-viewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/advanced-rest-client/raml-docs-method-viewer/issues",
+    "email": "arc@mulesoft.com"
+  }
+}

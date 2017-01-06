@@ -1,0 +1,32 @@
+{
+  "name": "raml-behaviors",
+  "version": "1.0.2",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "description": "Behaviors for the RAML elements.",
+  "authors": [
+    "Pawel Psztyc",
+    "Advanced REST client team"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer",
+    "files",
+    "filesystem",
+    "chrome"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/advanced-rest-client/raml-behaviors.git"
+  },
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.1.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "paper-styles": "PolymerElements/paper-styles#^1.0.4"
+  },
+  "main": [
+    "raml-behavior.html"
+  ],
+  "ignore": []
+}

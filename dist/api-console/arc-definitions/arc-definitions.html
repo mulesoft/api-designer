@@ -1,0 +1,311 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<!--
+`<arc-definitions>` Internal data definitions used in ARC. Contains definitions for status codes and
+request and response headers.
+
+The fileds may be empty when not yet initialized.
+
+The `<arc-definitions>` element listens at its nearest ShadowRoot boundary for query events.
+Other elements can send the `query-headers` and `query-status-codes` events that will be
+handled by this element. Events will be stopped from propagation. Event returned value will
+contain the data.
+
+### Example
+```
+<arc-definitions
+  downloaded="{{definitionsReady}}"
+  requests="{{requestsDefinitions}}"
+  responses="{{responsesDefinitions}}"
+  status-codes="{{statusCodesDefinitions}}"></arc-definitions>
+```
+
+### Firing events Example
+This is a Polymer way but regular JavaScript event will do.
+```
+let event = this.fire('query-headers', {
+  'type': 'request', // or response, mandatory
+  'query': 'Acce' // finds all request headers containing `acce` in their name
+});
+let headers = event.detail.headers;
+```
+
+```
+let event = this.fire('query-status-codes', {
+  'code': 200
+});
+let statusCode = event.detail.statusCode;
+```
+
+@group Logic Elements
+@element arc-definitions
+@demo demo/index.html
+@hero hero.svg
+-->
+<script>
+(function() {
+  'use strict';
+  /* global chrome */
+  var importLocation = '';
+  (function() {
+    if (window.currentImport && window.currentImport.URL) {
+      var url = window.currentImport.URL;
+      if (url === 'about:blank' && window.currentImport._URL) {
+        url = window.currentImport._URL;
+      }
+      if (url === 'about:blank') {
+        importLocation = '../';
+        // in test cases for edge this will fail because it should be set to ../../
+        // but right now I can't waste time to check how to check if this is the particular case.
+      } else {
+        var path = url.substr(url.indexOf('/', url.indexOf('/') + 2))
+          .replace('arc-definitions.html', '');
+        var lastDot = path.lastIndexOf('.');
+        if (lastDot !== -1 && path.substr(lastDot + 1) === 'html') {
+          // remove element file name path
+          path = path.substr(0, path.lastIndexOf('/') + 1);
+        }
+        if (path.indexOf('/test') !== -1) {
+          path = path.substr(0, path.lastIndexOf('/') + 1);
+        }
+        importLocation = path;
+      }
+    }
+  })();
+
+  Polymer({
+    is: 'arc-definitions',
+    properties: {
+      // True when definitions are assigned to the attributes.
+      downloaded: {
+        type: Boolean,
+        readOnly: true,
+        notify: true,
+        value: false
+      },
+      /**
+       * A list of request headers.
+       *
+       * Each object contains a `key`, `desc` and `example` property. `key` is a header name,
+       * `desc` is a description of the header and `example` is an example of usage.
+       *
+       * ### Example
+       * ```
+       * [{
+       *  "key": "Accept",
+       *  "desc": "Content-Types that are acceptable.",
+       *  "example": "Accept: text/plain"
+       * }],
+       * ```
+       */
+      requestHeaders: {
+        type: Array,
+        notify: true,
+        readOnly: true,
+        value: function() {
+          return [];
+        }
+      },
+      /**
+       * A list of response headers.
+       *
+       * Each object contains a `key`, `desc` and `example` property. `key` is a header name,
+       * `desc` is a description of the header and `example` is an example of usage.
+       *
+       * ### Example
+       * ```
+       * [{
+       *  "key": "Age",
+       *  "desc": "The age the object has been in a proxy cache in seconds",
+       *  "example": "Age: 12"
+       * }],
+       * ```
+       */
+      responseHeaders: {
+        type: Array,
+        notify: true,
+        readOnly: true,
+        value: function() {
+          return [];
+        }
+      },
+      /**
+       * A list of status codes definitions.
+       *
+       * Each object contains a `key`, `label` and `desc` property. `key` is a status code (as
+       * a number), `label` is a status code message and `desc` is description for the status
+       * code.
+       *
+       * ### Example
+       * ```
+       * [{
+       *  "key": 306,
+       *  "label": "Switch Proxy",
+       *  "desc": "No longer used."
+       * }]
+       */
+      statusCodes: {
+        type: Array,
+        notify: true,
+        readOnly: true,
+        value: function() {
+          return [];
+        }
+      }
+    },
+
+    ready: function() {
+      var self = this;
+      this.downloadDefinitions()
+      .then(function(defs) {
+        self._setRequestHeaders(defs.requests);
+        self._setResponseHeaders(defs.responses);
+        self._setStatusCodes(defs.codes);
+        self._setDownloaded(true);
+      })
+      .catch(function() {
+        console.warn('Definitions wasn\'t imported. File not found.');
+      });
+    },
+
+    attached: function() {
+      this._eventTarget = Polymer.dom(this).host || window;
+      this.listen(this._eventTarget, 'query-headers', '_queryHeadersHandler');
+      this.listen(this._eventTarget, 'query-status-codes', '_queryCodesHandler');
+    },
+
+    detached: function() {
+      this.unlisten(this._eventTarget, 'query-headers', '_queryHeadersHandler');
+      this.unlisten(this._eventTarget, 'query-status-codes', '_queryCodesHandler');
+    },
+    // Downloads the definitions and sets attrinbuttes.
+    downloadDefinitions: function() {
+      var file = importLocation + 'definitions.json';
+      var url;
+      if (typeof chrome !== 'undefined') {
+        url = !!(chrome.runtime && chrome.runtime.getURL) ?
+         chrome.runtime.getURL(file) : file;
+      } else {
+        url = file;
+      }
+      // for test cases
+      return new Promise(function(resolve, reject) {
+        var r = new XMLHttpRequest();
+        r.addEventListener('load', function(e) {
+          var result = {};
+          try {
+            result = JSON.parse(e.target.response);
+          } catch (ex) {
+            console.warn(ex);
+          }
+          resolve(result);
+        });
+        r.addEventListener('error', function(e) {
+          reject(e);
+        });
+        r.open('GET', url);
+        r.send();
+      });
+    },
+
+    /**
+     * Query for request headers containin a `query`.
+     *
+     * @param {String} name A header name to look for. It will match a header where the header
+     * name contains the `name` param.
+     * @return {Array<Object>} Array of the request headers matched `name` in the `key` field.
+     */
+    queryRequestHeaders: function(name) {
+      return this.queryHeaders(name, 'request');
+    },
+
+    /**
+     * Query for response headers containin a `query`.
+     *
+     * @param {String} name A header name to look for. It will match a header where the header
+     * name contains the `name` param.
+     * @return {Array<Object>} Array of the response headers matched `name` in the `key` field.
+     */
+    queryResponseHeaders: function(name) {
+      return this.queryHeaders(name);
+    },
+
+    /**
+     * Query for headers containin a `query`.
+     *
+     * @param {String} query A query to search for in the `key` field of the headers array.
+     * @param {String} type If this equals `request` then it will look in the request headers
+     *                       array. In the response headers list otherwise.
+     * @return {Array<Object>} Array of the headers of selected `type` matched a `query` in a
+     * `key` field.
+     */
+    queryHeaders: function(query, type) {
+      var headers = type === 'request' ? this.requestHeaders : this.responseHeaders;
+      if (!this.downloaded || !query || !headers || !headers.length) {
+        return [];
+      }
+      query = query.trim().toLowerCase();
+      if (!query) {
+        return [];
+      }
+      return headers.filter(function(item) {
+        return item.key.toLowerCase().indexOf(query) !== -1;
+      });
+    },
+
+    /**
+     * Convinient function to look for a status code in the array.
+     *
+     * @param {Number} code The status code to look for.
+     * @return {Object|null} Status code definition or null if not found or not downloaded.
+     */
+    getStatusCode: function(code) {
+      var codes = this.statusCodes;
+      if (!this.downloaded || !code || !codes || !codes.length) {
+        return null;
+      }
+      code = Number(code);
+      if (code !== code) {
+        console.warn('Passed code is not a number.');
+        return null;
+      }
+      var res = codes.filter(function(item) {
+        return item.key === code;
+      });
+      if (!res.length) {
+        return null;
+      }
+      return res[0];
+    },
+
+    _queryHeadersHandler: function(event) {
+      // Always stop the event from being propagated.
+      event.stopImmediatePropagation();
+      var type = event.detail.type;
+      if (!type) {
+        event.detail.headers = [];
+        return;
+      }
+      event.detail.headers = this.queryHeaders(event.detail.query, type);
+    },
+
+    _queryCodesHandler: function(event) {
+      // Always stop the event from being propagated.
+      event.stopImmediatePropagation();
+      event.detail.statusCode = this.getStatusCode(event.detail.code);
+    }
+  });
+})();
+</script>

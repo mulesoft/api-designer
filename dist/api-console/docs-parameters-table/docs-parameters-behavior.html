@@ -1,0 +1,198 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+
+<script>
+(function() {
+  if (typeof Object.assign !== 'function') {
+    (function() {
+      Object.assign = function(target) {
+        'use strict';
+        if (target === undefined || target === null) {
+          throw new TypeError('Cannot convert undefined or null to object');
+        }
+        var output = Object(target);
+        for (var index = 1; index < arguments.length; index++) {
+          var source = arguments[index];
+          if (source !== undefined && source !== null) {
+            for (var nextKey in source) {
+              if (source.hasOwnProperty(nextKey)) {
+                output[nextKey] = source[nextKey];
+              }
+            }
+          }
+        }
+        return output;
+      };
+    })();
+  }
+
+  window.RamlBehaviors = window.RamlBehaviors || {};
+  /**
+   * Use `RamlBehaviors.DocsParametersBehavior` to implement a custom element
+   * that is rendering a parameters table in the RAML documentation view.
+   * @polymerBehavior RamlBehaviors.DocsParametersBehavior
+   */
+  window.RamlBehaviors.DocsParametersBehavior = {
+    properties: {
+      // If set automatically hides the element which doesn't have parameteres set
+      autoHide: {
+        type: Boolean,
+        value: false
+      },
+      // RAML base types
+      baseTypes: {
+        type: Array,
+        value: function() {
+          return ['object', 'array','integer', 'string','number','boolean',
+            'datetime','file', 'null','any'];
+        }
+      },
+      /**
+       * A list of examples in the definition.
+       * This is a computed value for both `example` and `examples` properties.
+       *
+       * This is not computed automatically. Set the type object change observer. See the
+       * `_computeExamples()` function for more information.
+       *
+       * If you see this documentation it means that the element that implements this behavior is
+       * not using examples and it's not relevant for this element.
+       */
+      examples: Array,
+      // Computed value if current type has examples.
+      hasExamples: {
+        type: Boolean,
+        value: false,
+        notify: true,
+        computed: '_computeHasExamples(examples.*)'
+      },
+    },
+    /**
+     * Check if passed object is not empty.
+     * 0 (zero) returns true while empty string returns false.
+     *
+     * @return {Boolean} True/False depending if passed object has a value.
+     */
+    hasValue: function(obj) {
+      if (typeof obj === 'number' && obj === 0) {
+        return true;
+      }
+      if (typeof obj === 'boolean') {
+        return true;
+      }
+      return !!obj;
+    },
+    /**
+     * in RAML `properties` property of the type object is an object.
+     * To make it useful while itereing using `dom-repeat` this function
+     * produces an array of objects. Object content is the same as
+     * RAML parser's. Object's key is the same as the `name` property in the
+     * object.
+     *
+     * ## Example
+     * Source object:
+     * ```javascript
+     *  properties: {
+     *    available: {
+     *      description: 'description',
+     *      displayName: 'available',
+     *      name: 'available',
+     *      required: true
+     *    }
+     *  }
+     * ```
+     * becomes:
+     * ```javascript
+     *  properties: [
+     *    {
+     *      description: 'description',
+     *      displayName: 'available',
+     *      name: 'available',
+     *      required: true
+     *    }
+     *  ]
+     * ```
+     * @param {Object} obj The original RAML parser properties value.
+     * @return {Array}
+     */
+    readProperties: function(obj) {
+      if (!obj) {
+        return [];
+      }
+      if (obj instanceof Array) {
+        return obj;
+      }
+      var names = Object.getOwnPropertyNames(obj);
+      if (!names) {
+        return [];
+      }
+      return names.map(function(i) { return obj[i]; });
+    },
+
+    _computeEnumValue: function(enumValue) {
+      if (!enumValue || !enumValue.length) {
+        return '';
+      }
+      enumValue = enumValue.map(function(item) {
+        if (typeof item === 'string') {
+          if (item === '') {
+            return '""';
+          }
+          return item;
+        }
+        return item.displayName || item.name || item.key;
+      });
+      return enumValue.join(', ');
+    },
+
+    /**
+     * Computes list of examples.
+     * This function to be used with object sub-properties observer:
+     * ```
+     * examples: {
+     *   type: Array,
+     *   computed: '_computeExamples(type.*)'
+     * }
+     * ```
+     * or in the observers list.
+     */
+    _computeExamples: function(record) {
+      var object = record.base;
+      if (!object) {
+        return undefined;
+      }
+      if (object.examples && object.examples.length) {
+        return object.examples;
+      }
+      if (object.example) {
+        if (typeof object.example === 'string') {
+          return [object.example];
+        } else {
+          return [JSON.stringify(object.example, null, 2)];
+        }
+      }
+      return undefined;
+    },
+    // Computes boolean value when the `examples` property change.
+    _computeHasExamples: function(record) {
+      var object = record.base;
+      if (!object) {
+        return false;
+      }
+      return !!object.length;
+    }
+  };
+})();
+
+</script>

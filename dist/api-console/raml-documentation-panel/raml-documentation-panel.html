@@ -1,0 +1,207 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../raml-behaviors/raml-behavior.html">
+<link rel="import" href="../raml-path-selector/raml-path-selector.html">
+<link rel="import" href="../raml-path-to-object/raml-path-to-object.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../raml-docs-method-viewer/raml-docs-method-viewer.html">
+<link rel="import" href="../raml-docs-documentation-viewer/raml-docs-documentation-viewer.html">
+<link rel="import" href="../raml-docs-resource-viewer/raml-docs-resource-viewer.html">
+<link rel="import" href="../raml-aware/raml-aware.html">
+<link rel="import" href="../iron-media-query/iron-media-query.html">
+<!--
+`<raml-documentation-panel>` A documentation details panel.
+Its purpose is to compute documentation from the RAML file and display the
+result as a main documentation panel.
+
+### Example
+```
+<raml-documentation-panel raml="[[raml]]"></raml-documentation-panel>
+```
+or
+```
+document.querySelector('raml-documentation-panel').raml = raml;
+```
+
+Note: If you are using `raml-js-parser` element, remember that the Api object must be transformed
+to JSON and returned object's `specification` property is what this element accepts.
+
+Note: This element (actually `raml-path-to-object`) will chnage the strucure of the `raml` property.
+It's due to internal optymisation when computing required definitions.
+
+### Styling
+`<raml-documentation-panel>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-documentation-panel` | Mixin applied to the element | `{}`
+`--raml-docs-path-selector-width` | Width of the path selector. It is applied to both `width` and `min-width` properties | `256px`
+`--raml-docs-main-content` | Mixin applied to the main docs content (where the docs content is displayed). | `{}`
+`--raml-docs-main-content-width` | Max width of the documentation panel. Additional space is required for innner panels navigation | `900px`
+`--raml-docs-documentation-width` | Width of the documentation panel. It should be used to avoid usability issues for reading long texts. | `700px`
+
+@group RAML Elements
+@element raml-documentation-panel
+@demo demo/index.html
+-->
+<dom-module id="raml-documentation-panel">
+  <template>
+    <style>
+    :host {
+      display: block;
+      @apply(--raml-documentation-panel);
+    }
+
+    .content {
+      @apply(--layout-horizontal);
+    }
+
+    :host([narrow]) .content {
+      @apply(--layout-vertical);
+    }
+
+    raml-path-selector {
+      width: var(--raml-docs-path-selector-width, 256px);
+      min-width: var(--raml-docs-path-selector-width, 256px);
+      overflow: auto;
+      margin-right: 8px;
+    }
+
+    :host([narrow]) raml-path-selector {
+      width: auto;
+      min-width: 1px;
+    }
+
+    .docs-content {
+      max-width: var(--raml-docs-main-content-width, 900px);
+      @apply(--layout-flex);
+      @apply(--raml-docs-main-content);
+    }
+
+    .docs-content raml-docs-documentation-viewer {
+      max-width: var(--raml-docs-documentation-width, 700px);
+    }
+
+    </style>
+    <iron-media-query query="(max-width: [[narrowWidth]])" query-matches="{{narrow}}"></iron-media-query>
+    <div class="content">
+      <raml-path-selector raml="[[raml]]" selected-path="{{selectedPath}}" narrow="[[narrow]]"></raml-path-selector>
+      <section class="docs-content">
+        <div class="no-selection" hidden$="[[hasSelection]]">
+          <p>Select topic in the RAML selector to see the documentation.</p>
+        </div>
+        <template is="dom-if" if="[[isMethod]]">
+          <raml-docs-method-viewer parent-endpoint="[[selectedParent]]" base-uri="[[raml.baseUri]]" raml="[[selectedObject]]" narrow="[[narrow]]"></raml-docs-method-viewer>
+        </template>
+        <template is="dom-if" if="[[isResource]]">
+          <raml-docs-resource-viewer raml="[[selectedObject]]" current-path="{{selectedPath}}" narrow="[[narrow]]"></raml-docs-resource-viewer>
+        </template>
+        <template is="dom-if" if="[[isDocumentation]]">
+          <raml-docs-documentation-viewer documentation="[[selectedObject]]" narrow="[[narrow]]"></raml-docs-documentation-viewer>
+        </template>
+      </section>
+    </div>
+    <raml-path-to-object
+      raml="[[raml]]"
+      selected-path="{{selectedPath}}"
+      selected-object="{{selectedObject}}"
+      selected-parent="{{selectedParent}}"
+      is-method="{{isMethod}}"
+      is-resource="{{isResource}}"
+      is-documentation="{{isDocumentation}}"></raml-path-to-object>
+    <template is="dom-if" if="[[aware]]" restamp="true">
+      <raml-aware raml="{{raml}}" scope="[[aware]]"></raml-aware>
+    </template>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-documentation-panel',
+    behaviors: [Polymer.RamlBehavior],
+    properties: {
+      raml: {
+        type: Object,
+        observer: '_ramlChanged'
+      },
+      // Slected path.
+      selectedPath: {
+        type: String,
+        notify: true
+      },
+      // Selected object in the navigation menu
+      selectedObject: Object,
+      // A parent endpoint of selected method object (if any)
+      selectedParent: Object,
+      // True when current selection is a method
+      isMethod: {
+        type: Boolean,
+        value: false,
+        notify: true
+      },
+      // True when current selection is a resource
+      isResource: {
+        type: Boolean,
+        value: false,
+        notify: true
+      },
+      // True when current selection is a documentation node
+      isDocumentation: {
+        type: Boolean,
+        value: false,
+        notify: true
+      },
+      // True when anything is selected
+      hasSelection: {
+        type: Boolean,
+        value: false,
+        computed: '_computeHasSelection(isMethod,isResource,isDocumentation)',
+        notify: true
+      },
+      // Name of the `<raml-aware>` scope, it will update the `raml` property.
+      aware: String,
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        notify: true,
+        reflectToAttribute: true
+      },
+      // A widith below which the `narrow` property will be set to true.
+      narrowWidth: {
+        type: String,
+        value: '768px'
+      }
+    },
+
+    // Computes a boolean value if the user selected anything in the path selector.
+    _computeHasSelection: function(isMethod, isResource, isDocumentation) {
+      return !!(isMethod || isResource || isDocumentation);
+    },
+
+    // Resets the path then the RAML object change
+    _ramlChanged: function(raml) {
+      if (!raml) {
+        return this.set('selectedPath', '');
+      }
+      if (raml.documentation && raml.documentation.length) {
+        return this.set('selectedPath', 'documentation.0');
+      }
+      if (raml.resources && raml.resources.length) {
+        return this.set('selectedPath', 'resources.0');
+      }
+    }
+  });
+  </script>
+</dom-module>

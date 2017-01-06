@@ -1,0 +1,37 @@
+<!--
+The API Console main stylesheet.
+It is a Polymer's custom style element. It will propagate variables and mixins on all elements;
+-->
+<style is="custom-style">
+:root {
+  /* Theme */
+  --primary-color: #00A2DF;
+  --secondary-color: #506773;
+  --primary-background-color: #fff;
+  --accent-color: #9A63F9;
+    /*Mixin applied to `paper-icon-buttons`.*/
+  --icon-button: {
+    background-color: rgba(0, 0, 0, 0.54);
+    transition: background-color 0.35s linear;
+  }
+  --icon-button-hover: {
+    background-color:  var(--primary-color);
+  }
+    /* Mixin applied to all labels that are form elements */
+  --form-label: {
+    font-weight: 500;
+  }
+  --input-line-color:  var(--primary-color);
+    /* Mixin applied to all the "missing info" paragraphs. By deafult all elements this kind are the <p> elements. But it may vary. */
+  --no-info-message: {
+    font-style: italic;
+  }
+    /* Mixin applied to all code blocks that highlights schemas / types / etc. All code block uses the `prism-theme-default`. */
+  --code-block: {}
+
+  /* Paper tabs styling */
+  --paper-tabs-selection-bar-color: var(--primary-color);
+  --paper-tab-ink: var(--primary-color);
+  /* Documentaion */
+}
+</style>

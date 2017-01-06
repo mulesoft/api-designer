@@ -1,0 +1,159 @@
+<!--
+@license
+Copyright 2016 The Advanced REST client authors <arc@mulesoft.com>
+Licensed under the Apache License, Version 2.0 (the "License"); you may not
+use this file except in compliance with the License. You may obtain a copy of
+the License at
+http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations under
+the License.
+
+USED BOWER LINKS (dev only):
+raml-documentation-panel
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../raml-aware/raml-aware.html">
+<link rel="import" href="../raml-behaviors/raml-behavior.html">
+<!-- <link rel="import" href="../paper-tabs/paper-tabs.html">
+<link rel="import" href="../paper-tabs/paper-tab.html">
+<link rel="import" href="../iron-pages/iron-pages.html"> -->
+<link rel="import" href="../raml-summary-view/raml-summary-view.html">
+<link rel="import" href="../raml-documentation-panel/raml-documentation-panel.html">
+
+<!--
+# `<raml-documentation-viewer>`
+A documentation viewer for RAML file. This is the main element to be used to display the
+documentation from a RAML file.
+
+**Note: This element do not parse RAML file. It accepts parsed JSON output from the RAML JS parser**
+
+This element accepts RAML parser's json output. It can be produced using the `<raml-js-parser>`
+element from ARC's catalog.
+
+### Example
+Passing a RAML data into the element can be done by using the `raml` property. It's a recommended
+way of passing the data.
+
+```
+<raml-documentation-viewer raml="[[raml]]"></raml-documentation-viewer>
+```
+
+This element also uses the `<raml-aware>` element. It helps to set RAML data globally for the
+application and once it's set the documenation viewer will apply set data. To use this you have
+to set `aware` attribute with the name of `<raml-aware>`'s scope attribute.
+
+```
+<raml-documentation-viewer aware="doc-raml"></raml-documentation-viewer>
+<raml-aware raml="{{raml}}" scope="doc-raml"></raml-aware>
+```
+
+## Roadmap
+This element will be updated in near future. The view will support tabs where the user can switch
+between the documentation and the types view. Further tabs are possible.
+
+### Styling
+`<raml-documentation-viewer>` provides the following custom properties and mixins for styling:
+
+Custom property | Description | Default
+----------------|-------------|----------
+`--raml-documentation-viewer` | Mixin applied to the element | `{}`
+
+@group RAML Elements
+@element raml-documentation-viewer
+@demo demo/index.html
+-->
+<dom-module id="raml-documentation-viewer">
+  <template>
+    <style>
+     :host {
+      display: block;
+    }
+    </style>
+    <raml-summary-view raml="[[raml]]" narrow="{{narrow}}" narrow-width="{{narrowWidth}}"></raml-summary-view>
+    <!-- <paper-tabs selected="{{selectedPage}}">
+      <paper-tab>DOCUMENTATION</paper-tab>
+      <paper-tab>TYPES</paper-tab>
+    </paper-tabs> -->
+    <!-- <iron-pages selected="{{selectedPage}}"> -->
+      <raml-documentation-panel raml="[[raml]]" selected-path="{{selectedPath}}" has-selection="[[ramlHasSelected]]" aware="raml" narrow="{{narrow}}" narrow-width="{{narrowWidth}}"></raml-documentation-panel>
+      <!-- <raml-types-viewer raml="[[raml]]"></raml-types-viewer> -->
+    <!-- </iron-pages> -->
+    <template is="dom-if" if="[[hasAware]]" restamp="true">
+      <raml-aware raml="{{raml}}" scope="[[aware]]"></raml-aware>
+    </template>
+  </template>
+  <script>
+  Polymer({
+    is: 'raml-documentation-viewer',
+
+    behaviors: [Polymer.RamlBehavior],
+
+    properties: {
+      /**
+       * Name of the `scope` attribute of the `<raml-aware>` element. If set then there's no need
+       * to set the `raml` property for this element and the RAML definition should be set via
+       * `<raml-aware>` element.
+       *
+       * Note: When you use `aware` and the you set `raml` property then aware will not be updated.
+       * However newest RAML data set win (either set in aware and on this element).
+       */
+      aware: String,
+      // Will be set to true when the `aware` attribute is set. Do not try to set this attribute.
+      hasAware: {
+        type: Boolean,
+        value: false,
+        computed: '_computeHasAware(aware)'
+      },
+      // // Selected page of the documentation details.
+      // selectedPage: {
+      //   type: Number,
+      //   value: 0
+      // },
+      /**
+       * Selected path for the documentation panel and for the api structure viewer.
+       * It's a path in the JSON structure to the method / endpoint.
+       *
+       * ### Example
+       * ```
+       * resources.2.resources.0.method.0
+       * ```
+       * Which means that currently selected item is the 1st method that is located as a
+       * 3rd resource definition (from root) and then as a 1st sub-resource in the API definition.
+       */
+      selectedPath: {
+        type: String,
+        notify: true
+      },
+
+      // Set by the child element. True whem the user selected any of the RAML data.
+      ramlHasSelected: {
+        type:  Boolean,
+        notify: true
+      },
+      /**
+       * If set it will renders the view in the narrow layout.
+       */
+      narrow: {
+        type: Boolean,
+        notify: true
+      },
+      /**
+       * A width below which the `narrow` property will be set to true.
+       * Thids element do not controls child elements and they are have own resizable behavior.
+       * It just pasess the `narrow` and `narrowWidth` to child elements.
+       */
+      narrowWidth: {
+        type: String,
+        notify: true
+      }
+    },
+    // Computes the `hasAware` attribute.
+    _computeHasAware: function(aware) {
+      return !!aware;
+    }
+  });
+  </script>
+</dom-module>

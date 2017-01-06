@@ -1,0 +1,126 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+
+  <title>raml-js-parser demo</title>
+
+  <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+  <link rel="import" href="../raml-js-parser.html">
+  <link rel="import" href="../../file-drop/file-drop.html">
+  <link rel="import" href="../../paper-button/paper-button.html">
+  <link rel="import" href="../../paper-spinner/paper-spinner.html">
+  <link rel="import" href="../../prism-element/prism-highlighter.html">
+  <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+  <link rel="import" href="../../paper-styles/paper-styles.html">
+  <link rel="import" href="../../paper-tabs/paper-tabs.html">
+  <link rel="import" href="../../paper-tabs/paper-tab.html">
+  <link rel="import" href="../../iron-pages/iron-pages.html">
+  <link rel="import" href="../../paper-input/paper-input.html">
+  <link rel="import" href="../../raml-main-entry-lookup/raml-main-entry-lookup.html">
+
+  <style is="custom-style" include="demo-pages-shared-styles">
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    .vertical-section-container {
+      max-width: 600px;
+    }
+
+    output {
+      white-space: pre-wrap;
+      @apply(--paper-font-code1);
+      margin-top: 20px;
+      display: block;
+    }
+
+    file-drop {
+      margin: 0;
+    }
+
+    .loader {
+      margin: 24px;
+    }
+
+    h1 {
+      @apply(--paper-font-title);
+    }
+
+    h2 {
+      @apply(--paper-font-subhead);
+    }
+
+    small {
+      color: rgba(0, 0, 0, 0.54);
+    }
+
+    .url-field {
+      @apply(--layout-horizontal);
+    }
+    .url-field paper-input {
+      @apply(--layout-flex);
+    }
+  </style>
+</head>
+<body unresolved>
+  <template is="dom-bind" id="app">
+    <raml-js-parser id="parser" normalize-raml on-raml-js-parser-ready="_parserReady"></raml-js-parser>
+
+    <div class="vertical-section-container centered">
+      <h1>Drop RAML file here.</h1>
+      <file-drop multiple file="{{file}}" on-file-accepted="fileListChanged"></file-drop>
+      <raml-main-entry-lookup files="[[file]]" on-entry="entryFound"></raml-main-entry-lookup>
+
+      <h2>Or enter RAML file URL here</h2>
+      <div class="url-field">
+        <paper-input label="RAML url" value="{{ramlFileUrl}}"></paper-input>
+        <paper-button raised on-tap="_downloadRaml">Download</paper-button>
+      </div>
+
+      <section class="no-entry-point" hidden$="[[!noEntryPoint]]">
+        <h3>No entry point found</h3>
+        <p>The app scanned files and there were no candidates for entry point raml file. Please, try again.</p>
+      </section>
+
+      <section class="multiple-entry-points" hidden$="[[!multipleEntryPoints]]">
+        <h3>Multiple entry points found</h3>
+        <p>Please, select file that is the entry point to the API definition.</p>
+        <template is="dom-repeat" items="[[entryPoints]]" index-as="index">
+          <p>[[item.path]][[item.name]] <paper-button raised on-tap="_useEntryPoint">use this</paper-button></p>
+        </template>
+      </section>
+
+      <section class="loader">
+        <paper-spinner active="[[working]]"></paper-spinner>
+      </section>
+
+      <section hidden$="[[!hasData]]">
+
+        <paper-tabs selected="{{selectedOutput}}">
+          <paper-tab>Structure</paper-tab>
+          <!-- <paper-tab>JSON</paper-tab> -->
+          <paper-tab>Parser errors</paper-tab>
+        </paper-tabs>
+        <iron-pages selected="[[selectedOutput]]">
+          <output id="outStruct"></output>
+          <!-- <output id="out"></output> -->
+          <section>
+            <template is="dom-repeat" items="[[errors]]" index-as="index">
+              <p>#[[index]]: [[item.message]]</p>
+            </template>
+          </section>
+        </iron-pages>
+      </section>
+
+    </div>
+    <prism-highlighter></prism-highlighter>
+  </template>
+  <script src="demo.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "raml-docs-resource-viewer",
+  "version": "1.0.8",
+  "license": "Apache-2.0 OR CC-BY-4.0",
+  "description": "An element that displays a documentation for a RAML's resource object",
+  "devDependencies": {
+    "polymer-cli": "^0.17.0"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "private": false,
+  "main": [
+    "raml-docs-resource-viewer.html"
+  ],
+  "author": "The Advanced REST client authors <arc@mulesoft.com>",
+  "scripts": {
+    "serve": "node_modules/.bin/polymer serve",
+    "lint": "node_modules/.bin/polymer lint raml-docs-resource-viewer.html",
+    "test-sauce": "exit 0; node_modules/.bin/polymer test --plugin sauce --job-name \"raml-docs-resource-viewer:local-test\"",
+    "test": "node_modules/.bin/polymer test",
+    "deps": "npm install --quiet && bower install --quiet",
+    "update-deps": "npm update --quiet && bower update --quiet"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/advanced-rest-client/raml-docs-resource-viewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/advanced-rest-client/raml-docs-resource-viewer/issues",
+    "email": "arc@mulesoft.com"
+  }
+}
