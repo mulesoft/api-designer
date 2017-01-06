@@ -657,7 +657,7 @@ div .noselect {
   overflow: auto;
   list-style: none;
   line-height: 15px;
-  background-color: #141519;
+  background-color: #161616;
   color: #888;
   -webkit-box-flex: 1;
   -webkit-flex: 1;
@@ -694,11 +694,11 @@ div .noselect {
   height: 80px;
 }
 [role=browser] .file-list .file-item:not(.currentfile):hover {
-  color: #ddd;
+  color: #aaaaaa;
 }
 [role=browser] .file-list .file-item.currentfile {
-  color: #ddd;
-  background-color: #1e4f6a;
+  color: #aaaaaa;
+  background-color: #262626;
 }
 [role=browser] .file-list .file-item.dragover {
   color: #ddd;
@@ -881,108 +881,108 @@ div[role=raml-editor].light [role=browser] .file-list .file-item.dragover.direct
 }
 
 /* CodeMirror Overrides */
-div.CodeMirror {
+div[role=editor] div.CodeMirror {
   font-size: 12px;
-  position: absolute;
+  position: absolute !important;
 }
-.CodeMirror-foldgutter {
+div[role=editor] .CodeMirror-foldgutter {
   width: 15px;
 }
-.CodeMirror-foldgutter-open,
-.CodeMirror-foldgutter-folded {
+div[role=editor] .CodeMirror-foldgutter-open,
+div[role=editor] .CodeMirror-foldgutter-folded {
   color: #555;
   cursor: pointer;
 }
-.CodeMirror-foldgutter-open:after {
+div[role=editor] .CodeMirror-foldgutter-open:after {
   content: "\25BE";
 }
-.CodeMirror-foldgutter-folded:after {
+div[role=editor] .CodeMirror-foldgutter-folded:after {
   content: "\25B8";
 }
-.cm-s-solarized.CodeMirror,
-.cm-s-solarized .CodeMirror-gutters {
+div[role=editor] .cm-s-solarized.CodeMirror,
+div[role=editor] .cm-s-solarized .CodeMirror-gutters {
   background-image: none;
 }
-.cm-s-solarized.cm-s-dark {
-  background-color: #18191d;
+div[role=editor] .cm-s-solarized.cm-s-dark {
+  background-color: #262626;
 }
-.cm-s-solarized.cm-s-dark .CodeMirror-gutters {
-  background-color: #141519;
+div[role=editor] .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+  background-color: #262626;
 }
-.CodeMirror-code .CodeMirror-hint-ghost {
+div[role=editor] .CodeMirror-code .CodeMirror-hint-ghost {
   color: #777777;
 }
-.CodeMirror-hints {
+div[role=editor] .CodeMirror-hints {
   background-color: #132128;
   border-radius: 0;
   -webkit-transition: ease-in 0.1s;
   transition: ease-in 0.1s;
 }
-.CodeMirror-hint {
+div[role=editor] .CodeMirror-hint {
   background-color: #132128;
   border-radius: 0;
   color: gray;
   max-width: 100%;
 }
-.CodeMirror-hint-active {
+div[role=editor] .CodeMirror-hint-active {
   background-color: #9b225c !important;
   border-radius: 0;
   color: white;
   -webkit-transition: background-color 0.1s;
   transition: background-color 0.1s;
 }
-.CodeMirror-hint div {
+div[role=editor] .CodeMirror-hint div {
   float: left;
 }
-.CodeMirror-hint div.category {
+div[role=editor] .CodeMirror-hint div.category {
   float: right;
   font-size: 10px;
   padding-left: 10px;
 }
-.cm-s-solarized .cm-indent::before,
-.cm-s-solarized .cm-indent-incomplete::before {
+div[role=editor] .cm-s-solarized .cm-indent::before,
+div[role=editor] .cm-s-solarized .cm-indent-incomplete::before {
   content: " ";
   position: absolute;
   height: 100%;
   border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 /* CodeMirror Overrides (Light) */
-[role="raml-editor"].light .CodeMirror-code .CodeMirror-hint-ghost {
+[role="raml-editor"].light div[role=editor] .CodeMirror-code .CodeMirror-hint-ghost {
   color: #bbbbbb;
 }
-[role="raml-editor"].light .CodeMirror-hints {
+[role="raml-editor"].light div[role=editor] .CodeMirror-hints {
   background-color: white;
 }
-[role="raml-editor"].light .CodeMirror-hint {
+[role="raml-editor"].light div[role=editor] .CodeMirror-hint {
   background-color: white;
 }
-[role="raml-editor"].light div.cm-s-solarized.cm-s-dark {
+[role="raml-editor"].light div[role=editor] div.cm-s-solarized.cm-s-dark {
   text-shadow: #fefefe 0 1px;
   background-color: white;
 }
-[role="raml-editor"].light .cm-s-solarized.CodeMirror {
+[role="raml-editor"].light div[role=editor] .cm-s-solarized.CodeMirror {
   box-shadow: none;
 }
-[role="raml-editor"].light div[role=tab-box],
-[role="raml-editor"].light div[role=tab].active div[role=tab-box] {
+[role="raml-editor"].light div[role=editor] div[role=tab-box],
+[role="raml-editor"].light div[role=editor] div[role=tab].active div[role=tab-box] {
   background-color: white;
   border: 1px solid #555;
 }
-[role="raml-editor"].light div[role=tab].active {
+[role="raml-editor"].light div[role=editor] div[role=tab].active {
   text-shadow: #eee 0 1px;
 }
-[role="raml-editor"].light .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
+[role="raml-editor"].light div[role=editor] .cm-s-solarized.cm-s-dark .CodeMirror-gutters {
   background-color: #f1f1f1;
   border-right: 1px solid #999;
 }
-[role="raml-editor"].light .cm-s-solarized.cm-s-dark .CodeMirror-linenumber {
+[role="raml-editor"].light div[role=editor] .cm-s-solarized.cm-s-dark .CodeMirror-linenumber {
   text-shadow: #fefefe 0 1px;
 }
-[role="raml-editor"].light .cm-s-solarized.cm-s-dark .CodeMirror-selected {
+[role="raml-editor"].light div[role=editor] .cm-s-solarized.cm-s-dark .CodeMirror-selected {
   background-color: #ddd;
 }
-[role="raml-editor"].light .cm-s-solarized .cm-indent::before,
-[role="raml-editor"].light .cm-s-solarized .cm-indent-incomplete::before {
+[role="raml-editor"].light div[role=editor] .cm-s-solarized .cm-indent::before,
+[role="raml-editor"].light div[role=editor] .cm-s-solarized .cm-indent-incomplete::before {
   border-right-color: rgba(0, 0, 0, 0.15);
 }
 
@@ -1104,6 +1104,21 @@ div.CodeMirror {
 }
 [role=raml-editor] .raml-console-sidebar-response-item {
   font-size: 14px;
+}
+api-console-raml {
+  background: white;
+}
+api-console-raml .raml-summary-view-0 {
+  padding: 0 12px;
+}
+api-console-raml .raml-summary-view-0 .paper-button-0 {
+  margin: 0;
+}
+api-console-raml .raml-path-selector-0 {
+  margin-left: 12px;
+}
+api-console-raml .raml-docs-resource-viewer-0 [wide-layout].raml-docs-resource-viewer nav.raml-docs-resource-viewer {
+  display: none;
 }
 
 * {
