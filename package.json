@@ -22,7 +22,7 @@
     "yargs": "~3.11.0"
   },
   "devDependencies": {
-    "oas-raml-converter": "^0.0.11",
+    "oas-raml-converter": "^0.0.12",
     "browser-request": "^0.3.3",
     "browserify-global-shim": "^1.0.3",
     "babel-preset-latest": "^6.16.0",
