@@ -36905,7 +36905,13 @@
                       delete resource.uriParameters;
                     resource[methodKey] = method;
                     if (!_.isEmpty(pathParamsRef)) {
-                      resource.is = pathParamsRef;
+                      var is = [];
+                      for (var key in pathParamsRef) {
+                        if (!pathParamsRef.hasOwnProperty(key))
+                          continue;
+                        is.push(_.camelCase(pathParamsRef[key]));
+                      }
+                      resource.is = is;
                     }
                   } else {
                     var currentURI = '/' + methodURIs[0];
@@ -37129,13 +37135,16 @@
                   for (var key in pathParamData.properties) {
                     if (!pathParamData.properties.hasOwnProperty(key))
                       continue;
-                    var prop = RAMLExporter.withoutFormatParameter(pathParamData.properties[key]);
+                    var prop = pathParamData.properties[key];
+                    RAMLExporter._mapFormats(prop);
                     pathParams[key] = ramlHelper.setParameterFields(prop, {});
                     if (prop.description) {
                       pathParams[key].displayName = prop.description;
                     }
                     if (prop.items) {
-                      pathParams[key].items = RAMLExporter.withoutFormatParameter(prop.items);
+                      var items = prop.items;
+                      RAMLExporter._mapFormats(items);
+                      pathParams[key].items = items;
                     }
                     if (prop.format) {
                       pathParams[key].format = prop.format;
@@ -37173,6 +37182,7 @@
               {
                 key: 'convertRefFromModel',
                 value: function convertRefFromModel(object, insideProperties) {
+                  RAMLExporter._mapFormats(object);
                   for (var id in object) {
                     if (object.hasOwnProperty(id)) {
                       var val = object[id];
@@ -37185,6 +37195,17 @@
                           object.type = '!include ' + val.replace('#/', '#');
                         }
                         delete object[id];
+                      } else if (id == 'type' && !insideProperties) {
+                        if (val === 'null')
+                          object.type = 'nil';
+                        else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                          for (var key in val) {
+                            if (!val.hasOwnProperty(key))
+                              continue;
+                            if (val[key] === 'null')
+                              val[key] = 'nil';
+                          }
+                        }
                       } else if (typeof val === 'string') {
                         if (id == 'ref') {
                           object.type = val;
@@ -37203,6 +37224,7 @@
                           object.facets['collectionFormat'] = 'string';
                         }
                       } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                        RAMLExporter._mapFormats(val);
                         if (!insideProperties) {
                           if (id === 'example' && object.type === undefined)
                             object['type'] = typeof val === 'undefined' ? 'undefined' : _typeof(val);
@@ -37210,22 +37232,7 @@
                             object['type'] = 'array';
                         } else if (val.hasOwnProperty('additionalProperties'))
                           val.type = 'object';
-                        if (val.type == 'string') {
-                          if (val.format == 'byte' || val.format == 'binary' || val.format == 'password') {
-                            object[id]['type'] = 'string';
-                            val['facets'] = { 'format': 'string' };
-                          } else if (val.format == 'date') {
-                            object[id]['type'] = 'date-only';
-                            delete object[id].format;
-                          } else if (val.format == 'date-time') {
-                            object[id]['type'] = 'datetime';
-                            object[id]['format'] = 'rfc3339';
-                          } else {
-                            if (val.format && ramlHelper.getValidFormat.indexOf(val.format) < 0) {
-                              val['facets'] = { 'format': 'string' };
-                            }
-                          }
-                        } else {
+                        if (val.type != 'string') {
                           object[id] = this.convertRefFromModel(val, id === 'properties');
                         }
                       } else if (id === '$ref') {
@@ -37248,10 +37255,14 @@
                           object.facets['collectionFormat'] = 'string';
                         }
                       } else if (id === 'readOnly') {
-                        object['facets'] = { 'readOnly?': 'boolean' };
+                        if (!object['facets'])
+                          object['facets'] = {};
+                        object['facets']['readOnly?'] = 'boolean';
                       }
-                      if (val.hasOwnProperty('readOnly')) {
-                        val['facets'] = { 'readOnly?': 'boolean' };
+                      if (val.hasOwnProperty('readOnly') && id !== 'properties') {
+                        if (!val['facets'])
+                          val['facets'] = {};
+                        val['facets']['readOnly?'] = 'boolean';
                       }
                     }
                   }
@@ -37889,30 +37900,6 @@
                 }
               },
               {
-                key: 'withoutFormatParameter',
-                value: function withoutFormatParameter(obj) {
-                  if (obj.hasOwnProperty('format')) {
-                    var format = obj.format;
-                    switch (obj.type) {
-                    case 'string':
-                      delete obj.format;
-                      break;
-                    case 'integer':
-                      if ([
-                          'int',
-                          'int8',
-                          'int16',
-                          'int32',
-                          'int64'
-                        ].indexOf(format) < 0)
-                        delete obj.format;
-                      break;
-                    }
-                  }
-                  return obj;
-                }
-              },
-              {
                 key: 'mapProtocols',
                 value: function mapProtocols(protocols) {
                   var validProtocols = [];
@@ -37924,6 +37911,40 @@
                     validProtocols.push(_.toUpper(protocols[i]));
                   }
                   return validProtocols;
+                }
+              },
+              {
+                key: '_mapFormats',
+                value: function _mapFormats(object) {
+                  if (object && !object.hasOwnProperty('type') && object.format == 'string') {
+                    object['type'] = 'string';
+                    delete object.format;
+                  } else if (object && object.type == 'string') {
+                    if (object.format == 'byte' || object.format == 'binary' || object.format == 'password' || object.format == 'uuid') {
+                      if (!object['facets'])
+                        object['facets'] = {};
+                      object['facets']['format'] = 'string';
+                    } else if (object.format == 'date') {
+                      object['type'] = 'date-only';
+                      delete object.format;
+                    } else if (object.format == 'date-time') {
+                      object['type'] = 'datetime';
+                      object['format'] = 'rfc3339';
+                    } else {
+                      if (object.format && ramlHelper.getValidFormat.indexOf(object.format) < 0) {
+                        object['facets'] = { 'format': 'string' };
+                      }
+                    }
+                  } else if (object && object.type == 'integer') {
+                    if ([
+                        'int',
+                        'int8',
+                        'int16',
+                        'int32',
+                        'int64'
+                      ].indexOf(object.format) < 0)
+                      delete object.format;
+                  }
                 }
               },
               {
@@ -38233,9 +38254,13 @@
                                 importer.import();
                                 resolve(exportedData);
                               } catch (err) {
+                                err.exportedData = exportedData;
                                 reject(err);
                               }
-                            }).catch(reject);
+                            }).catch(function (err) {
+                              err.exportedData = exportedData;
+                              reject(err);
+                            });
                           }());
                         } else {
                           resolve(exportedData);
@@ -38662,6 +38687,11 @@
                     result.example = jsonHelper.parse(bodyData.example);
                     if (type && result.example[type]) {
                       result.example = jsonHelper.parse(result.example[type]);
+                      if (result.example.hasOwnProperty('value')) {
+                        var value = {};
+                        value.value = result.example.value;
+                        result.example.value = value;
+                      }
                     }
                   }
                   return result;
@@ -40229,7 +40259,15 @@
           if (superClass)
             Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
         }
-        var fs = require('fs'), _ = require('lodash'), Importer = require('./importer'), Swagger = require('./swagger'), RAML08Importer = require('./raml08'), RAML10Importer = require('./raml10'), Postman = require('./postman'), StopLightX = require('./stoplightx'), urlHelper = require('../utils/url');
+        var fs = require('fs'), _ = require('lodash'), Formats = require('../formats'), Importer = require('./importer'), urlHelper = require('../utils/url');
+        var importers = {
+            Postman: require('./postman'),
+            RAML08: require('./raml08'),
+            RAML10: require('./raml10'),
+            Swagger: require('./swagger'),
+            StopLight: require('./stoplight'),
+            StopLightX: require('./stoplightx')
+          };
         var Auto = function (_Importer) {
             _inherits(Auto, _Importer);
             // Detect input format automatically
@@ -40248,102 +40286,34 @@
                 }
               },
               {
-                key: '_parseStopLightX',
-                value: function _parseStopLightX(data, resolve, reject, options) {
-                  var self = this, stopLightX = new StopLightX();
-                  stopLightX.loadData(data, options).then(function () {
-                    self.detectedFormat = 'STOPLIGHTX';
-                    self.data = stopLightX.data;
-                    self.importer = stopLightX;
-                    resolve();
-                  }).catch(reject);
-                }
-              },
-              {
-                key: '_parsePostman',
-                value: function _parsePostman(data, resolve, reject) {
-                  var self = this, postman = new Postman();
-                  postman.loadData(data).then(function () {
-                    self.detectedFormat = 'POSTMAN';
-                    self.data = postman.data;
-                    self.importer = postman;
-                    resolve();
-                  }).catch(reject);
-                }
-              },
-              {
-                key: '_parseRAML',
-                value: function _parseRAML(data, resolve, reject, options) {
-                  var self = this;
-                  var raml = void 0;
-                  var detectedFormat = void 0;
-                  if (/#%RAML[\s]*0\.?8?/.test(data)) {
-                    raml = new RAML08Importer();
-                    detectedFormat = RAML08Importer.name;
-                  } else if (/#%RAML[\s]*1\.?0?/.test(data)) {
-                    raml = new RAML10Importer();
-                    detectedFormat = RAML10Importer.name;
-                  }
-                  raml.loadData(data, options).then(function () {
-                    self.detectedFormat = detectedFormat;
-                    self.data = raml.data;
-                    self.importer = raml;
-                    resolve();
-                  }).catch(function (err) {
-                    reject(err);
-                  });
-                }
-              },
-              {
-                key: '_parseSwagger',
-                value: function _parseSwagger(data, resolve, reject, options) {
-                  var self = this, swagger = new Swagger();
-                  swagger.loadData(data, options).then(function () {
-                    self.detectedFormat = 'SWAGGER';
-                    self.data = swagger.data;
-                    self.importer = swagger;
-                    resolve();
-                  }).catch(function (err) {
-                    reject(err);
-                  });
-                }
-              },
-              {
                 key: 'loadData',
-                value: function loadData(data, options) {
-                  var self = this, format = Auto.detectFormat(data);
+                value: function loadData(data, options, url) {
+                  var _this2 = this;
                   return new Promise(function (resolve, reject) {
-                    switch (format) {
-                    case 'STOPLIGHTX':
-                      return self._parseStopLightX(data, resolve, reject, options);
-                    case 'POSTMAN':
-                      return self._parsePostman(data, resolve, reject);
-                    case 'RAML08Importer':
-                    case 'RAML10Importer':
-                      return self._parseRAML(data, resolve, reject, options);
-                    case 'SWAGGER':
-                      return self._parseSwagger(data, resolve, reject, options);
-                    case 'UNKNOWN':
-                      return reject(new Error('Unable to parse file. Invalid or unsupported syntax.'));
-                    default:
+                    if (!data) {
                       return reject(new Error('No data provided'));
                     }
+                    var detectedFormat = Auto.detectFormat(data);
+                    if (!detectedFormat) {
+                      return reject(new Error('Unable to parse file. Invalid or unsupported syntax.'));
+                    }
+                    return _this2._parse(detectedFormat, data, url, resolve, reject, options);
                   });
                 }
               },
               {
                 key: 'loadFile',
-                value: function loadFile(filePath) {
-                  var self = this;
+                value: function loadFile(filePath, options) {
+                  var _this3 = this;
                   if (urlHelper.isURL(filePath)) {
                     // Remote file
                     return urlHelper.get(filePath).then(function (body) {
-                      return self.loadData(body);
+                      return _this3.loadData(body, options, filePath);
                     });
                   } else {
                     // Local file
                     var fileContent = fs.readFileSync(filePath, 'utf8');
-                    return self.loadData(fileContent);
+                    return this.loadData(fileContent, options);
                   }
                 }
               },
@@ -40353,40 +40323,40 @@
                   this.importer._import();
                   this.project = this.importer.project;
                 }
+              },
+              {
+                key: '_parse',
+                value: function _parse(detectedFormat, data, url, resolve, reject, options) {
+                  var _this4 = this;
+                  var importer = new importers[detectedFormat.className]();
+                  var promise = url ? importer.loadFile(url, options) : importer.loadData(data, options);
+                  promise.then(function () {
+                    _this4.detectedFormat = detectedFormat;
+                    _this4.data = importer.data;
+                    _this4.importer = importer;
+                    resolve();
+                  }).catch(reject);
+                }
               }
             ], [{
                 key: 'detectFormat',
                 value: function detectFormat(data) {
-                  if (!data) {
+                  if (!data)
                     return;
-                  }
-                  var parsedData = _.trim(data);
-                  var type = void 0;
+                  data = _.trim(data);
                   try {
-                    parsedData = JSON.parse(data);
-                    type = 'json';
+                    var json = JSON.parse(data);
+                    // found a json
+                    return json.swagger ? Formats.STOPLIGHTX : Formats.POSTMAN;
                   } catch (err) {
-                    parsedData = data;
-                    type = 'yaml';
+                    // assume a yaml
+                    if (/#%RAML[\s]*1\.?0?/.test(data))
+                      return Formats.RAML10;
+                    if (/#%RAML[\s]*0\.?8?/.test(data))
+                      return Formats.RAML08;
+                    if (/swagger:[\s'"]*\d\.?\d?/.test(data))
+                      return Formats.SWAGGER;
                   }
-                  if (type === 'json') {
-                    if (parsedData.swagger) {
-                      return 'STOPLIGHTX';
-                    } else {
-                      return 'POSTMAN';
-                    }
-                  }
-                  if (type === 'yaml') {
-                    if (/#%RAML[\s]*0\.?8?/.test(parsedData)) {
-                      return RAML08Importer.name;
-                    } else if (/#%RAML[\s]*1\.?0?/.test(parsedData)) {
-                      return RAML10Importer.name;
-                    }
-                    if (/swagger:[\s'"]*\d\.?\d?/.test(parsedData)) {
-                      return 'SWAGGER';
-                    }
-                  }
-                  return 'UNKNOWN';
                 }
               }]);
             return Auto;
@@ -40394,11 +40364,13 @@
         module.exports = Auto;
       },
       {
+        '../formats': 229,
         '../utils/url': 245,
         './importer': 234,
         './postman': 236,
         './raml08': 237,
         './raml10': 238,
+        './stoplight': 239,
         './stoplightx': 240,
         './swagger': 241,
         'fs': 4,
