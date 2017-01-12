@@ -1,293 +1,295 @@
 @import "colors.less";
 @import "mixins.less";
 
-[role=browser] {
-  font-size: 12px;
-  color: grey;
-  user-select: none;
-  position: relative;
-  z-index: 200;
-
-  flex: 0;
-  min-width: 200px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  button {
-    .button;
-    float: left;
-    margin: 4px 4px 4px 0;
-  }
-
-  .file-list {
-    margin: 0;
-    padding: 0;
-    overflow: auto;
-    list-style: none;
-    line-height: 15px;
-
-    background-color: rgb(20,21,25);
-    color: #888;
-
-    flex: 1;
-
-    .drag-elm div {
-      color: #333;
-    }
-
-    .file-item {
-      padding: 5px 10px;
-      cursor: pointer;
-      white-space: nowrap;
-
-      display: flex;
-
-      align-items: center;
-
-      &.dummy {
-        padding: 0;
-        background: none !important;
-        &.top {
-          height: 6px;
-          min-height: 6px;
-        }
-        &.bottom {
-          height: 80px;
-        }
-      }
-
-      &:not(.currentfile):hover{
-        color: #ddd;
-      }
-
-      &.currentfile {
-        color: #ddd;
-        background-color: @cello_blue;
-      }
-
-      &.dragover {
-        color: #ddd;
-        background-color: #222;
-
-        &.directory {
-          background-color: darken(@cello_blue, 10%);
-        }
-        &.top {
-          border-bottom: 1px #888 dotted;
-        }
-        &.bottom {
-          border-top: 1px #888 dotted;
-        }
-      }
-
-      .file-name {
-        flex: 1;
-
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .fa:not(.icon) {
-        display: none;
-        padding-left: 10px;
-        font-size: 15px;
-      }
-
-      &.geared .fa:not(.icon), &:hover .fa:not(.icon) {
-        display: block;
-      }
-
-      &.dirty .file-name:before {
-        content: '* ';
-      }
-
-      &.no-drop {
-        cursor: no-drop !important;
-      }
-
-      &.copy {
-        cursor: copy !important;
-      }
-
-      /* Patch for embedded designer */
-      [ng-click] {
-        cursor: inherit;
-      }
-    }
-  }
-}
-
-.hidden {
-  display: none!important;
-  visibility: hidden!important;
-}
-
-/* angular ui tree overrides */
-.angular-ui-tree-handle {
-  font-weight: normal;
-}
-
-.angular-ui-tree-drag {
-  color: white;
-  font-size: 12px;
-  div {
-    padding: 5px 10px;
-  }
-  .fa-cog {
-    display: none!important;
-  }
-}
-
-/* Light theme */
-div[role=raml-editor].light {
+raml-editor {
   [role=browser] {
-    color: rgb(202,204,212);
+    font-size: 12px;
+    color: grey;
+    user-select: none;
+    position: relative;
+    z-index: 200;
+
+    flex: 0;
+    min-width: 200px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    button {
+      .button;
+      float: left;
+      margin: 4px 4px 4px 0;
+    }
 
     .file-list {
-      color: #999;
-      background-color: white;
-      border: 1px solid rgb(131,148,150);
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+      line-height: 15px;
+
+      background-color: rgb(20, 21, 25);
+      color: #888;
+
+      flex: 1;
 
       .drag-elm div {
-        color: #ddd;
+        color: #333;
       }
 
       .file-item {
+        padding: 5px 10px;
+        cursor: pointer;
+        white-space: nowrap;
+
+        display: flex;
+
+        align-items: center;
+
+        &.dummy {
+          padding: 0;
+          background: none !important;
+          &.top {
+            height: 6px;
+            min-height: 6px;
+          }
+          &.bottom {
+            height: 80px;
+          }
+        }
+
         &:not(.currentfile):hover {
-          color: #444;
+          color: #ddd;
         }
 
         &.currentfile {
           color: #ddd;
-          background-color: lighten(@cello_blue, 30%);
+          background-color: @cello_blue;
         }
 
         &.dragover {
-          color: #444;
-          background-color: #ddd;
+          color: #ddd;
+          background-color: #222;
 
           &.directory {
-            background-color: lighten(@cello_blue, 50%);
+            background-color: darken(@cello_blue, 10%);
+          }
+          &.top {
+            border-bottom: 1px #888 dotted;
+          }
+          &.bottom {
+            border-top: 1px #888 dotted;
+          }
+        }
+
+        .file-name {
+          flex: 1;
+
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .fa:not(.icon) {
+          display: none;
+          padding-left: 10px;
+          font-size: 15px;
+        }
+
+        &.geared .fa:not(.icon), &:hover .fa:not(.icon) {
+          display: block;
+        }
+
+        &.dirty .file-name:before {
+          content: '* ';
+        }
+
+        &.no-drop {
+          cursor: no-drop !important;
+        }
+
+        &.copy {
+          cursor: copy !important;
+        }
+
+        /* Patch for embedded designer */
+        [ng-click] {
+          cursor: inherit;
+        }
+      }
+    }
+  }
+
+  .hidden {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* angular ui tree overrides */
+  .angular-ui-tree-handle {
+    font-weight: normal;
+  }
+
+  .angular-ui-tree-drag {
+    color: white;
+    font-size: 12px;
+    div {
+      padding: 5px 10px;
+    }
+    .fa-cog {
+      display: none !important;
+    }
+  }
+
+  /* Light theme */
+  div[role=raml-editor].light {
+    [role=browser] {
+      color: rgb(202, 204, 212);
+
+      .file-list {
+        color: #999;
+        background-color: white;
+        border: 1px solid rgb(131, 148, 150);
+
+        .drag-elm div {
+          color: #ddd;
+        }
+
+        .file-item {
+          &:not(.currentfile):hover {
+            color: #444;
+          }
+
+          &.currentfile {
+            color: #ddd;
+            background-color: lighten(@cello_blue, 30%);
+          }
+
+          &.dragover {
+            color: #444;
+            background-color: #ddd;
+
+            &.directory {
+              background-color: lighten(@cello_blue, 50%);
+            }
           }
         }
       }
     }
   }
-}
 
-.drag-light {
-  color: #444;
-}
+  .drag-light {
+    color: #444;
+  }
 
-[role="context-menu"] {
-  position: fixed;
-  z-index: 210;
-  list-style: none;
-  margin: 0;
-  border: 1px solid #AAA;
-  background-color: #EEE;
-  color: #666;
+  [role="context-menu"] {
+    position: fixed;
+    z-index: 210;
+    list-style: none;
+    margin: 0;
+    border: 1px solid #AAA;
+    background-color: #EEE;
+    color: #666;
 
-  padding: 3px 0;
-  min-width: 145px;
-  font-size: 13px;
-  border-radius: 2px;
-  box-shadow: 3px 3px 10px 0 rgba(0,0,0,0.25);
-  opacity: 0.95;
+    padding: 3px 0;
+    min-width: 145px;
+    font-size: 13px;
+    border-radius: 2px;
+    box-shadow: 3px 3px 10px 0 rgba(0, 0, 0, 0.25);
+    opacity: 0.95;
 
-  li {
-    padding: 2px 5px;
+    li {
+      padding: 2px 5px;
 
-    &:hover {
+      &:hover {
+        color: white;
+        background-color: #969494;
+      }
+    }
+
+    .submenu-item {
+      margin-left: 138px;
+      margin-top: -21px;
+      left: inherit !important;
+    }
+  }
+
+  [role="menu-dropdown"] {
+    z-index: 2000;
+    list-style: none;
+    border-top: 1px solid #AAA;
+    background-color: #EEE;
+    color: #666;
+
+    padding: 3px 0;
+    min-width: 145px;
+    font-size: 13px;
+    border-radius: 2px;
+    box-shadow: 3px 3px 10px 0 rgba(0, 0, 0, 0.25);
+    opacity: 0.95;
+
+    i {
+      width: 18px;
+    }
+
+    li {
+      padding: 8px 5px 0 5px;
+
+      > a {
+        width: 100%;
+      }
+
+      a:after {
+        content: "";
+        display: block;
+        height: 1px;
+        margin-top: 2px;
+        background: #c6c0c0;
+      }
+    }
+
+    > li:last-child > a:after, raml-editor-export-menu > a:after, raml-editor-export-menu > li > a:after {
+      background: none;
+    }
+
+    li:hover {
       color: white;
       background-color: #969494;
     }
-  }
 
-  .submenu-item {
-    margin-left: 138px;
-    margin-top: -21px;
-    left: inherit !important;
-  }
-}
-
-[role="menu-dropdown"] {
-  z-index: 2000;
-  list-style: none;
-  border-top: 1px solid #AAA;
-  background-color: #EEE;
-  color: #666;
-
-  padding: 3px 0;
-  min-width: 145px;
-  font-size: 13px;
-  border-radius: 2px;
-  box-shadow: 3px 3px 10px 0 rgba(0,0,0,0.25);
-  opacity: 0.95;
-
-  i {
-      width: 18px;
-  }
-
-  li {
-    padding: 8px 5px 0 5px;
-
-    > a {
-      width: 100%;
+    [role="new-button"] {
+      white-space: nowrap;
     }
 
-    a:after {
-      content: "";
-      display: block;
-      height: 1px;
-      margin-top: 2px;
-      background: #c6c0c0;
+    .submenu-icon {
+      float: right;
+    }
+
+    .submenu-item {
+      top: inherit !important;
+      left: 112% !important;
+    }
+
+    .submenu-item {
+      margin-top: -29px;
     }
   }
 
-  > li:last-child > a:after, raml-editor-export-menu > a:after, raml-editor-export-menu > li > a:after {
-    background: none;
+  [role="menu-item"] {
+    i, span {
+      cursor: pointer;
+    }
   }
 
-  li:hover {
-    color: white;
-    background-color: #969494;
-  }
+  [role="context-menu-item"] {
+    .submenu-item {
+      top: inherit;
+      left: 15%;
+    }
 
-  [role="new-button"] {
-    white-space: nowrap;
-  }
-
-  .submenu-icon {
-    float: right;
-  }
-
-  .submenu-item{
-    top: inherit !important;
-    left: 112% !important;
-  }
-
-  .submenu-item {
-    margin-top: -29px;
-  }
-}
-
-[role="menu-item"] {
-  i, span {
-    cursor: pointer;
-  }
-}
-
-[role="context-menu-item"] {
-  .submenu-item{
-    top:inherit;
-    left: 15%;
-  }
-
-  .subsubmenu-item{
-    top:inherit;
-    left: 30%;
+    .subsubmenu-item {
+      top: inherit;
+      left: 30%;
+    }
   }
 }

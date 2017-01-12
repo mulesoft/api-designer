@@ -1,45 +1,47 @@
-div .noselect {
-  user-select: none;
-}
-
-[ng-splitter] {
-  position: relative;
-
-  flex: 0;
-
-  cursor: col-resize;
-  background-color: #57585a;
-
-  .split {
-    position: absolute;
-    background-repeat: no-repeat;
-    cursor: pointer;
-  }
-}
-
-[ng-splitter=vertical] {
-  min-width: 8px;
-
-  .split {
-    width: 8px;
-    height: 48px;
-    top: 50%;
-    margin-top: -25px;
+raml-editor {
+  div .noselect {
+    user-select: none;
   }
 
-  .split-left {
-    background-image: data-uri('../../images/mini-left.png');
+  [ng-splitter] {
+    position: relative;
+
+    flex: 0;
+
+    cursor: col-resize;
+    background-color: #57585a;
+
+    .split {
+      position: absolute;
+      background-repeat: no-repeat;
+      cursor: pointer;
+    }
   }
 
-  &.collapsed .split-left {
-    background-image: data-uri('../../images/mini-right.png');
-  }
+  [ng-splitter=vertical] {
+    min-width: 8px;
 
-  .split-right {
-    background-image: data-uri('../../images/mini-right.png');
-  }
+    .split {
+      width: 8px;
+      height: 48px;
+      top: 50%;
+      margin-top: -25px;
+    }
 
-  &.collapsed .split-right {
-    background-image: data-uri('../../images/mini-left.png');
+    .split-left {
+      background-image: data-uri('../../images/mini-left.png');
+    }
+
+    &.collapsed .split-left {
+      background-image: data-uri('../../images/mini-right.png');
+    }
+
+    .split-right {
+      background-image: data-uri('../../images/mini-right.png');
+    }
+
+    &.collapsed .split-right {
+      background-image: data-uri('../../images/mini-left.png');
+    }
   }
 }

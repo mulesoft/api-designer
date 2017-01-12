@@ -1,160 +1,162 @@
-div[role=raml-editor] .menubar {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-
-  color: gray;
-  background-color: #343436;
-  font-size: 14px;
-  line-height: 1em;
-
-  border: 1px solid #2c2c2e;
-  border-width: 1px 0;
-
-  > li {
+raml-editor {
+  div[role=raml-editor] .menubar {
     margin: 0;
-    display: block;
-    background-color: #404040;
+    padding: 0;
+    list-style: none;
 
-    span {
-      float: left;
-      padding: 5px 10px;
-    }
-  }
+    display: flex;
+    flex-direction: row;
+    align-items: center;
 
-  .menu-item-toggle {
-    padding-left: 5px;
-  }
+    color: gray;
+    background-color: #343436;
+    font-size: 14px;
+    line-height: 1em;
 
-  .menu-icon {
-    padding-left: 8px;
-  }
+    border: 1px solid #2c2c2e;
+    border-width: 1px 0;
 
-  hr.line-with-linear-gradient {
-    border: 0;
-    height: 1px;
-    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
-  }
-
-  .menu-item-context {
-    position: absolute;
-    top: 100%;
-    left: 18%;
-    margin-left: -18px;
-    border: 1px solid black;
-
-    a {
-      color: inherit;
-      text-decoration: none;
+    > li {
+      margin: 0;
       display: block;
-      white-space: nowrap;
-    }
-  }
+      background-color: #404040;
 
-  .menu-item {
-    position: relative;
-    box-shadow: inset 1px 1px 1px #4c4c5E;
-  }
-
-  .menu-item:hover {
-    cursor: pointer;
-    color: white;
-    background-color: lighten(#343436, 20%);
-  }
-
-  .menu-item-ll {
-    border-right: 1px solid #2a2c33;
-  }
-
-  .menu-item-fr {
-    border-left: 1px solid #2a2c33;
-  }
-
-  .spacer {
-    flex: 1;
-    background-color: transparent;
-  }
-
-  .file-absolute-path {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    padding-left: 12px;
-  }
-
-  .menu-item-mocking-service {
-    padding: 5px 10px;
-
-    .title {
-      float: left;
-      margin-right: 10px;
-    }
-
-    .field-wrapper {
-      float: right;
-      width: 4.5em;
-      height: 1em;
-
-      &.loading {
-        text-align: center;
+      span {
+        float: left;
+        padding: 5px 10px;
       }
     }
 
-    .field {
-      width: 100%;
-      height: 100%;
-      background: #333;
-      position: relative;
-      border-radius: 50px;
-      box-shadow: inset 0 1px 1px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.2);
+    .menu-item-toggle {
+      padding-left: 5px;
+    }
 
-      &:after {
-        content: 'OFF';
-        color: #000;
-        position: absolute;
-        top: 0;
-        right: 3px;
-        z-index: 0;
-        font-size: 0.7em;
-        font-weight: bold;
-        text-shadow: 1px 1px 0 rgba(255,255,255,.15);
-      }
+    .menu-icon {
+      padding-left: 8px;
+    }
 
-      &:before {
-        content: 'ON';
-        color: #00bf00;
-        position: absolute;
-        top: 0;
-        left: 3px;
-        z-index: 0;
-        font-size: 0.7em;
-        font-weight: bold;
-      }
+    hr.line-with-linear-gradient {
+      border: 0;
+      height: 1px;
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+    }
 
-      label {
+    .menu-item-context {
+      position: absolute;
+      top: 100%;
+      left: 18%;
+      margin-left: -18px;
+      border: 1px solid black;
+
+      a {
+        color: inherit;
+        text-decoration: none;
         display: block;
-        width: 2em;
-        height: 0.7em;
-        cursor: pointer;
-        position: absolute;
-        top: 2px;
-        left: 3px;
-        z-index: 1;
-        background: #fcfff4;
-        background: linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
-        border-radius: 50px;
-        transition: all .4s ease;
-        box-shadow: 0 2px 5px 0 rgba(0,0,0,0.3);
+        white-space: nowrap;
+      }
+    }
+
+    .menu-item {
+      position: relative;
+      box-shadow: inset 1px 1px 1px #4c4c5E;
+    }
+
+    .menu-item:hover {
+      cursor: pointer;
+      color: white;
+      background-color: lighten(#343436, 20%);
+    }
+
+    .menu-item-ll {
+      border-right: 1px solid #2a2c33;
+    }
+
+    .menu-item-fr {
+      border-left: 1px solid #2a2c33;
+    }
+
+    .spacer {
+      flex: 1;
+      background-color: transparent;
+    }
+
+    .file-absolute-path {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding-left: 12px;
+    }
+
+    .menu-item-mocking-service {
+      padding: 5px 10px;
+
+      .title {
+        float: left;
+        margin-right: 10px;
       }
 
-      input[type=checkbox] {
-        visibility: hidden;
-        &:checked + label {
-          left: ~"calc(100% - 2em - 3px)"; // 100% - <label-widht> - <initial-left-position>
+      .field-wrapper {
+        float: right;
+        width: 4.5em;
+        height: 1em;
+
+        &.loading {
+          text-align: center;
+        }
+      }
+
+      .field {
+        width: 100%;
+        height: 100%;
+        background: #333;
+        position: relative;
+        border-radius: 50px;
+        box-shadow: inset 0 1px 1px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.2);
+
+        &:after {
+          content: 'OFF';
+          color: #000;
+          position: absolute;
+          top: 0;
+          right: 3px;
+          z-index: 0;
+          font-size: 0.7em;
+          font-weight: bold;
+          text-shadow: 1px 1px 0 rgba(255,255,255,.15);
+        }
+
+        &:before {
+          content: 'ON';
+          color: #00bf00;
+          position: absolute;
+          top: 0;
+          left: 3px;
+          z-index: 0;
+          font-size: 0.7em;
+          font-weight: bold;
+        }
+
+        label {
+          display: block;
+          width: 2em;
+          height: 0.7em;
+          cursor: pointer;
+          position: absolute;
+          top: 2px;
+          left: 3px;
+          z-index: 1;
+          background: #fcfff4;
+          background: linear-gradient(top, #fcfff4 0%, #dfe5d7 40%, #b3bead 100%);
+          border-radius: 50px;
+          transition: all .4s ease;
+          box-shadow: 0 2px 5px 0 rgba(0,0,0,0.3);
+        }
+
+        input[type=checkbox] {
+          visibility: hidden;
+          &:checked + label {
+            left: ~"calc(100% - 2em - 3px)"; // 100% - <label-widht> - <initial-left-position>
+          }
         }
       }
     }
