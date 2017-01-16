@@ -63361,6 +63361,9 @@ if (!window.Map) {
     RamlDirectory.prototype.sortChildren = function sortChildren() {
       this.children.sort(sortingFunction);
     };
+    var entryType = function (entry) {
+      return (entry.type || 'file').toLowerCase();
+    };
     RamlDirectory.prototype.setChildren = function setChildren(children) {
       function notMetaFile(file) {
         return file.path.slice(-5) !== '.meta';
@@ -63370,7 +63373,7 @@ if (!window.Map) {
           file: []
         };
       children.forEach(function (entry) {
-        separated[entry.type || 'file'].push(entry);
+        separated[entryType(entry)].push(entry);
       });
       var files = separated.file.filter(notMetaFile).map(function (file) {
           return new RamlFile(file.path, file.contents, {
