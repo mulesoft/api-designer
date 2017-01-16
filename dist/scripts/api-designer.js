@@ -63521,7 +63521,7 @@ if (!window.Map) {
       service.loadAndUpdateDirectory = function loadAndUpdateDirectory() {
         return fileSystem.directory(BASE_PATH).then(this.updateDirectory.bind(this));
       };
-      service.updateDirectory = function updateDirectory(directory) {
+      service.updateDirectory = function updateDirectory(rootChildren) {
         var dirtyFiles = new Map(this.rootFile.listAllDescendants().filter(function (element) {
             return element && !element.isDirectory && element.dirty;
           }).map(function (element) {
@@ -63530,7 +63530,7 @@ if (!window.Map) {
               element
             ];
           }));
-        this.rootFile.setChildren(directory.children);
+        this.rootFile.setChildren(rootChildren);
         this.rootFile.listAllDescendants().forEach(function (element) {
           var path = element.path;
           if (dirtyFiles.has(path)) {

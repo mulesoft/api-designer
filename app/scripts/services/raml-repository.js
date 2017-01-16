@@ -115,6 +115,10 @@
         this.children.sort(sortingFunction);
       };
 
+      var entryType = function (entry) {
+        return (entry.type || 'file').toLowerCase();
+      };
+
       RamlDirectory.prototype.setChildren = function setChildren(children) {
         function notMetaFile(file) {
           return file.path.slice(-5) !== '.meta';
@@ -122,7 +126,7 @@
 
         var separated = {folder: [], file: []};
         children.forEach(function (entry) {
-          separated[entry.type || 'file'].push(entry);
+          separated[entryType(entry)].push(entry);
         });
 
         var files = separated.file.filter(notMetaFile).map(function (file) {
@@ -314,14 +318,14 @@
             .then(this.updateDirectory.bind(this));
         };
 
-        service.updateDirectory = function updateDirectory(directory) {
+        service.updateDirectory = function updateDirectory(rootChildren) {
           var dirtyFiles = new Map(
             this.rootFile.listAllDescendants()
               .filter(function (element) { return element && !element.isDirectory && element.dirty; })
               .map(function (element) { return [element.path, element]; })
           );
 
-          this.rootFile.setChildren(directory.children);
+          this.rootFile.setChildren(rootChildren);
 
           this.rootFile.listAllDescendants()
             .forEach(function (element) {
