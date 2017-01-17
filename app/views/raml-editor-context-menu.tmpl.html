@@ -2,6 +2,6 @@
   <li role="context-menu-item" ng-mouseenter="openFileMenu(action)" ng-mouseleave="closeFileMenu()" ng-repeat="action in actions" ng-click="action.execute()">
     {{ action.label }}
     <i class="submenu-icon fa fa-caret-right" ng-if="action.fragments !== undefined"></i>
-    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>
+    <raml-editor-new-file-menu ng-if="action.fragments !== undefined" target="target" show-file-menu="showFileMenu" show-fragment-menu="showFragmentMenu" open-file-menu-condition="showFragmentMenu" menu-role="context-menu"></raml-editor-new-file-menu>
   </li>
 </ul>

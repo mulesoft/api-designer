@@ -164,6 +164,7 @@
             open: function open(event, target) {
               scroll.disable();
               this.target = target;
+              scope.target = target;
 
               scope.actions = createActions(target);
 
