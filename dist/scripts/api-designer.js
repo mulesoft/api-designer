@@ -36939,10 +36939,15 @@
               _this.hasInfo = false;
               _this.hasSummary = false;
               _this.hasSchemaTitle = false;
+              _this.hasPropertyTitle = false;
               _this.hasBodyName = false;
               _this.hasResponsesDefault = false;
               _this.hasGlobalResponseDefinition = false;
               _this.hasDefinitionName = false;
+              _this.hasAllowEmptyValue = false;
+              _this.hasCollectionFormat = false;
+              _this.hasExclusiveMaximum = false;
+              _this.hasExclusiveMinimum = false;
               return _this;
             }
             _createClass(RAMLExporter, [
@@ -37042,6 +37047,7 @@
                   switch (mimeType) {
                   case 'application/json':
                     body[mimeType] = this.mapBody(bodyData);
+                    this.convertRequiredFromProperties(body[mimeType]);
                     if (bodyData.name) {
                       this.hasBodyName = true;
                       body[mimeType]['(oas-body-name)'] = bodyData.name;
@@ -37050,7 +37056,7 @@
                   case 'multipart/form-data':
                   case 'application/x-www-form-urlencoded': {
                       var parsedBody = jsonHelper.parse(bodyData.body);
-                      body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody));
+                      body[mimeType] = this.mapRequestBodyForm(this.convertRefFromModel(parsedBody), false);
                       break;
                     }
                   default:  //unsuported format
@@ -37068,7 +37074,7 @@
                   if (!params || _.isEmpty(params.properties))
                     return;
                   var newParams = {};
-                  var convertedParams = this.convertRefFromModel(params.properties);
+                  var convertedParams = this.convertRefFromModel(params.properties, false);
                   for (var key in convertedParams) {
                     if (!convertedParams.hasOwnProperty(key))
                       continue;
@@ -37138,12 +37144,11 @@
                     var prop = pathParamData.properties[key];
                     RAMLExporter._mapFormats(prop);
                     pathParams[key] = ramlHelper.setParameterFields(prop, {});
-                    if (prop.description) {
-                      pathParams[key].displayName = prop.description;
-                    }
+                    RAMLExporter.fixEnumValueFormat(prop);
                     if (prop.items) {
                       var items = prop.items;
                       RAMLExporter._mapFormats(items);
+                      RAMLExporter.fixEnumValueFormat(items);
                       pathParams[key].items = items;
                     }
                     if (prop.format) {
@@ -37181,16 +37186,18 @@
               },
               {
                 key: 'convertRefFromModel',
-                value: function convertRefFromModel(object, insideProperties) {
+                value: function convertRefFromModel(object, isTypeDeclaration, insideProperties) {
                   RAMLExporter._mapFormats(object);
                   for (var id in object) {
                     if (object.hasOwnProperty(id)) {
                       var val = object[id];
-                      if (id == '$ref') {
+                      if (insideProperties)
+                        val = this.convertSchemaTitles(val, 'property');
+                      if (id == '$ref' && !insideProperties) {
                         if (val.indexOf('#/') == 0) {
                           object.type = val.replace('#/definitions/', '');
                           //check if object.type has invalid characters.
-                          object.type = stringHelper.checkAndReplaceInvalidChars(object.type, ramlHelper.getInvalidCharacters, ramlHelper.getReplacementCharacter);
+                          object.type = stringHelper.checkAndReplaceInvalidChars(object.type, ramlHelper.getValidCharacters, ramlHelper.getReplacementCharacter);
                         } else {
                           object.type = '!include ' + val.replace('#/', '#');
                         }
@@ -37213,17 +37220,13 @@
                         } else if (id == 'include') {
                           object.type = '!include ' + val;
                           delete object[id];
-                        } else if (id === 'title') {
-                          object['(oas-schema-title)'] = val;
-                          this.hasSchemaTitle = true;
-                          delete object[id];
                         } else if (id === 'collectionFormat') {
-                          if (!object.facets) {
-                            object.facets = {};
-                          }
-                          object.facets['collectionFormat'] = 'string';
+                          if (isTypeDeclaration)
+                            this._defineFacet(object, id);
+                          else
+                            this._defineAnnotationType(object, id);
                         }
-                      } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                      } else if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && (id !== 'facets' || insideProperties)) {
                         RAMLExporter._mapFormats(val);
                         if (!insideProperties) {
                           if (id === 'example' && object.type === undefined)
@@ -37233,27 +37236,16 @@
                         } else if (val.hasOwnProperty('additionalProperties'))
                           val.type = 'object';
                         if (val.type != 'string') {
-                          object[id] = this.convertRefFromModel(val, id === 'properties');
+                          object[id] = this.convertRefFromModel(val, isTypeDeclaration, id === 'properties' && !insideProperties);
                         }
                       } else if (id === '$ref') {
                         object.type = val.replace('#/definitions/', '');
                         delete object[id];
                       } else if (id === 'exclusiveMinimum' || id === 'exclusiveMaximum' || id === 'allowEmptyValue' || id === 'collectionFormat') {
-                        if (!object.facets) {
-                          object.facets = {};
-                        }
-                        if (id === 'exclusiveMinimum') {
-                          object.facets['exclusiveMinimum'] = 'boolean';
-                        }
-                        if (id === 'exclusiveMaximum') {
-                          object.facets['exclusiveMaximum'] = 'boolean';
-                        }
-                        if (id === 'allowEmptyValue') {
-                          object.facets['allowEmptyValue'] = 'boolean';
-                        }
-                        if (id === 'collectionFormat') {
-                          object.facets['collectionFormat'] = 'string';
-                        }
+                        if (isTypeDeclaration)
+                          this._defineFacet(object, id);
+                        else
+                          this._defineAnnotationType(object, id);
                       } else if (id === 'readOnly') {
                         if (!object['facets'])
                           object['facets'] = {};
@@ -37264,6 +37256,70 @@
                           val['facets'] = {};
                         val['facets']['readOnly?'] = 'boolean';
                       }
+                    }
+                  }
+                  return object;
+                }
+              },
+              {
+                key: '_defineFacet',
+                value: function _defineFacet(object, id) {
+                  if (!object.facets) {
+                    object.facets = {};
+                  }
+                  if (id === 'allowEmptyValue') {
+                    object.facets['allowEmptyValue'] = 'boolean';
+                  }
+                  if (id === 'collectionFormat') {
+                    object.facets['collectionFormat'] = 'string';
+                  }
+                  if (id === 'exclusiveMaximum') {
+                    object.facets['exclusiveMaximum'] = 'boolean';
+                  }
+                  if (id === 'exclusiveMinimum') {
+                    object.facets['exclusiveMinimum'] = 'boolean';
+                  }
+                }
+              },
+              {
+                key: '_defineAnnotationType',
+                value: function _defineAnnotationType(object, id) {
+                  if (!object.hasOwnProperty(id))
+                    return;
+                  var val = object[id];
+                  if (id === 'allowEmptyValue') {
+                    this.hasAllowEmptyValue = true;
+                    object['(oas-allowEmptyValue)'] = val;
+                  }
+                  if (id === 'collectionFormat') {
+                    this.hasCollectionFormat = true;
+                    object['(oas-collectionFormat)'] = val;
+                  }
+                  if (id === 'exclusiveMaximum') {
+                    this.hasExclusiveMaximum = true;
+                    object['(oas-exclusiveMaximum)'] = val;
+                  }
+                  if (id === 'exclusiveMinimum') {
+                    this.hasExclusiveMinimum = true;
+                    object['(oas-exclusiveMinimum)'] = val;
+                  }
+                  delete object[id];
+                }
+              },
+              {
+                key: 'convertSchemaTitles',
+                value: function convertSchemaTitles(object, objectType) {
+                  for (var id in object) {
+                    if (!object.hasOwnProperty(id))
+                      continue;
+                    var val = object[id];
+                    if (id === 'title' && typeof val === 'string') {
+                      object['(oas-' + objectType + '-title)'] = val;
+                      delete object[id];
+                      if (objectType === 'schema')
+                        this.hasSchemaTitle = true;
+                      else if (objectType === 'property')
+                        this.hasPropertyTitle = true;
                     }
                   }
                   return object;
@@ -37337,7 +37393,7 @@
               {
                 key: '_annotationsSignature',
                 value: function _annotationsSignature(ramlDef) {
-                  if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasSchemaTitle || this.hasBodyName || this.hasResponsesDefault || this.hasGlobalResponseDefinition || this.hasDefinitionName) {
+                  if (this.hasTags || this.hasDeprecated || this.hasExternalDocs || this.hasInfo || this.hasSummary || this.hasSchemaTitle || this.hasPropertyTitle || this.hasBodyName || this.hasResponsesDefault || this.hasGlobalResponseDefinition || this.hasDefinitionName || this.hasAllowEmptyValue || this.hasCollectionFormat || this.hasExclusiveMaximum || this.hasExclusiveMinimum) {
                     if (!ramlDef.annotationTypes) {
                       ramlDef.annotationTypes = {};
                     }
@@ -37399,6 +37455,12 @@
                         allowedTargets: 'TypeDeclaration'
                       };
                     }
+                    if (this.hasPropertyTitle) {
+                      ramlDef.annotationTypes['oas-property-title'] = {
+                        type: 'string',
+                        allowedTargets: 'TypeDeclaration'
+                      };
+                    }
                     if (this.hasBodyName) {
                       ramlDef.annotationTypes['oas-body-name'] = {
                         type: 'string',
@@ -37422,6 +37484,18 @@
                         type: 'string',
                         allowedTargets: 'TypeDeclaration'
                       };
+                    }
+                    if (this.hasAllowEmptyValue) {
+                      ramlDef.annotationTypes['oas-allowEmptyValue'] = { type: 'boolean' };
+                    }
+                    if (this.hasCollectionFormat) {
+                      ramlDef.annotationTypes['oas-collectionFormat'] = { type: 'string' };
+                    }
+                    if (this.hasExclusiveMaximum) {
+                      ramlDef.annotationTypes['oas-exclusiveMaximum'] = { type: 'boolean' };
+                    }
+                    if (this.hasExclusiveMinimum) {
+                      ramlDef.annotationTypes['oas-exclusiveMinimum'] = { type: 'boolean' };
                     }
                   }
                 }
@@ -37730,11 +37804,11 @@
                       continue;
                     var val = object[id];
                     if (val && (typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object' && id !== 'required') {
-                      this.convertRequiredFromProperties(val, id === 'properties');
+                      this.convertRequiredFromProperties(val, id === 'properties' && !insideProperties);
                     }
                     if (id === 'properties' && !insideProperties) {
                       for (var propId in object.properties) {
-                        if (!object.properties.hasOwnProperty(propId))
+                        if (!object.properties.hasOwnProperty(propId) || propId === '//')
                           continue;
                         var property = object.properties[propId];
                         if (!RAMLExporter.checkRequiredProperty(object, propId) && (typeof property === 'undefined' ? 'undefined' : _typeof(property)) === 'object') {
@@ -37887,6 +37961,10 @@
                       case 'exclusiveMaximum':
                       case 'exclusiveMinimum':
                       case 'facets':
+                      case '(oas-allowEmptyValue)':
+                      case '(oas-collectionFormat)':
+                      case '(oas-exclusiveMaximum)':
+                      case '(oas-exclusiveMinimum)':
                         break;
                       default:
                         //not supported types
@@ -37897,6 +37975,25 @@
                     }
                   }
                   return params;
+                }
+              },
+              {
+                key: 'fixEnumValueFormat',
+                value: function fixEnumValueFormat(object) {
+                  if (object.hasOwnProperty('enum')) {
+                    if (object.type === 'date-only') {
+                      for (var index in object.enum) {
+                        if (!object.enum.hasOwnProperty(index))
+                          continue;
+                        var val = object.enum[index];
+                        if (ramlHelper.getDateOnlyFormat.test(val)) {
+                          val = val.replace(/_/g, '-');
+                          val = val.replace(new RegExp('/', 'g'), '-');
+                          object['enum'][index] = val;
+                        }
+                      }
+                    }
+                  }
                 }
               },
               {
@@ -37916,6 +38013,13 @@
               {
                 key: '_mapFormats',
                 value: function _mapFormats(object) {
+                  var intValidFormats = [
+                      'int',
+                      'int8',
+                      'int16',
+                      'int32',
+                      'int64'
+                    ];
                   if (object && !object.hasOwnProperty('type') && object.format == 'string') {
                     object['type'] = 'string';
                     delete object.format;
@@ -37936,14 +38040,18 @@
                       }
                     }
                   } else if (object && object.type == 'integer') {
-                    if ([
-                        'int',
-                        'int8',
-                        'int16',
-                        'int32',
-                        'int64'
-                      ].indexOf(object.format) < 0)
+                    if (intValidFormats.indexOf(object.format) < 0)
                       delete object.format;
+                  } else if (object && object.type == 'number') {
+                    if (intValidFormats.concat([
+                        'long',
+                        'float',
+                        'double'
+                      ]).indexOf(object.format) < 0) {
+                      if (object.format == 'integer')
+                        object['type'] = 'integer';
+                      delete object.format;
+                    }
                   }
                 }
               },
@@ -38489,7 +38597,7 @@
               {
                 key: 'mapBody',
                 value: function mapBody(bodyData) {
-                  var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body))) };
+                  var body = { schema: jsonHelper.format(this.convertRefFromModel(jsonHelper.parse(bodyData.body), false)) };
                   var example = jsonHelper.format(bodyData.example);
                   if (!_.isEmpty(example)) {
                     body.example = example;
@@ -38682,7 +38790,9 @@
                 key: 'mapBody',
                 value: function mapBody(bodyData, type) {
                   var body = jsonHelper.parse(bodyData.body);
-                  var result = this.convertAllOfToModel(this.convertRefFromModel(body));
+                  var result = this.convertAllOfToModel(this.convertRefFromModel(body, false));
+                  result = this.convertSchemaTitles(result, 'schema');
+                  result = this.mapAdditionalProperties(result);
                   if (bodyData.example) {
                     result.example = jsonHelper.parse(bodyData.example);
                     if (type && result.example[type]) {
@@ -38692,9 +38802,25 @@
                         value.value = result.example.value;
                         result.example.value = value;
                       }
+                      if (_typeof(result.example) === 'object')
+                        result.example = this.fixValuesFormat(result.example);
                     }
                   }
                   return result;
+                }
+              },
+              {
+                key: 'fixValuesFormat',
+                value: function fixValuesFormat(object) {
+                  for (var id in object) {
+                    if (object.hasOwnProperty(id)) {
+                      var val = object[id];
+                      object[id] = RAML10Exporter.fixDateFormat(val);
+                      if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object')
+                        object[id] = this.fixValuesFormat(val);
+                    }
+                  }
+                  return object;
                 }
               },
               {
@@ -38782,7 +38908,8 @@
                     if (!slSchemas.hasOwnProperty(i))
                       continue;
                     var schema = slSchemas[i];
-                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition));
+                    var definition = this.convertRefFromModel(jsonHelper.parse(schema.Definition), true);
+                    definition = this.convertSchemaTitles(definition, 'schema');
                     if (definition.allOf) {
                       definition = this.convertAllOfToModel(definition);
                     } else {
@@ -38790,6 +38917,7 @@
                         definition = this.mapSchemaProperties(definition);
                       }
                     }
+                    definition = this.mapAdditionalProperties(definition);
                     if (definition.externalDocs) {
                       definition['(oas-externalDocs)'] = definition.externalDocs;
                       this.hasExternalDocs = true;
@@ -38808,7 +38936,7 @@
                                                                               // 	definition.example = example;
                     }
                     //check if schemaId contains invalid characters.
-                    var schemaId = stringHelper.checkAndReplaceInvalidChars(schema.NameSpace, ramlHelper.getInvalidCharacters, ramlHelper.getReplacementCharacter);
+                    var schemaId = stringHelper.checkAndReplaceInvalidChars(schema.NameSpace, ramlHelper.getValidCharacters, ramlHelper.getReplacementCharacter);
                     if (schemaId !== schema.NameSpace) {
                       this.hasDefinitionName = true;
                       definition['(oas-definition-name)'] = schema.NameSpace;
@@ -38822,12 +38950,33 @@
                 key: 'mapSchemaProperties',
                 value: function mapSchemaProperties(definition) {
                   this.convertRequiredFromProperties(definition);
-                  if (definition.additionalProperties) {
-                    definition.properties['//'] = definition.additionalProperties;
-                    delete definition.additionalProperties;
-                  }
                   if (definition.properties && definition.type == 'object') {
                     delete definition.type;
+                  }
+                  return definition;
+                }
+              },
+              {
+                key: 'mapAdditionalProperties',
+                value: function mapAdditionalProperties(definition, insideProperties) {
+                  for (var key in definition) {
+                    if (!definition.hasOwnProperty(key))
+                      continue;
+                    var val = definition[key];
+                    if (key === 'additionalProperties' && !insideProperties) {
+                      var hasObjectType = definition.type === 'object';
+                      var hasProperties = definition.hasOwnProperty('properties');
+                      if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) !== 'object' && val || !val && !hasObjectType && !hasProperties) {
+                        delete definition.additionalProperties;
+                      } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                        if (!hasProperties)
+                          definition.properties = {};
+                        definition.properties['//'] = val;
+                        delete definition.additionalProperties;
+                      }
+                    } else if ((typeof val === 'undefined' ? 'undefined' : _typeof(val)) === 'object') {
+                      val = this.mapAdditionalProperties(val, key === 'properties' && !insideProperties);
+                    }
                   }
                   return definition;
                 }
@@ -38870,7 +39019,16 @@
                   traits[_.camelCase(id)] = trait;
                 }
               }
-            ]);
+            ], [{
+                key: 'fixDateFormat',
+                value: function fixDateFormat(val) {
+                  if (typeof val === 'string' && ramlHelper.getRFC3339Format.test(val)) {
+                    if (val.match(/\d*Z/)[0].length > 3)
+                      return val.replace(/\d*Z/, val.match(/\d*Z/)[0].slice(0, 3) + 'Z');
+                  }
+                  return val;
+                }
+              }]);
             return RAML10Exporter;
           }(RAMLExporter);
         module.exports = RAML10Exporter;
@@ -40074,9 +40232,72 @@
         'use strict';
         var _ = require('lodash');
         module.exports = {
-          getInvalidCharacters: [
-            '[',
-            ']'
+          getValidCharacters: [
+            'A',
+            'B',
+            'C',
+            'D',
+            'E',
+            'F',
+            'G',
+            'H',
+            'I',
+            'J',
+            'K',
+            'L',
+            'M',
+            'N',
+            'O',
+            'P',
+            'Q',
+            'R',
+            'S',
+            'T',
+            'U',
+            'V',
+            'W',
+            'X',
+            'Y',
+            'Z',
+            'a',
+            'b',
+            'c',
+            'd',
+            'e',
+            'f',
+            'g',
+            'h',
+            'i',
+            'j',
+            'k',
+            'l',
+            'm',
+            'n',
+            'o',
+            'p',
+            'q',
+            'r',
+            's',
+            't',
+            'u',
+            'v',
+            'w',
+            'x',
+            'y',
+            'z',
+            '0',
+            '1',
+            '2',
+            '3',
+            '4',
+            '5',
+            '6',
+            '7',
+            '8',
+            '9',
+            '.',
+            '-',
+            '_'
           ],
           getReplacementCharacter: '_',
           getScalarTypes: [
@@ -40122,8 +40343,14 @@
             'uniqueItems',
             'required',
             'facets',
-            'items'
+            'items',
+            '(oas-allowEmptyValue)',
+            '(oas-collectionFormat)',
+            '(oas-exclusiveMaximum)',
+            '(oas-exclusiveMinimum)'
           ],
+          getRFC3339Format: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.(\d*)Z$/,
+          getDateOnlyFormat: /^\d{4}[^-]\d{2}[^-]\d{2}$/,
           setParameterFields: function setParameterFields(source, target) {
             for (var prop in source) {
               if (!source.hasOwnProperty(prop))
@@ -43793,11 +44020,12 @@
             }
             return traitName;
           },
-          checkAndReplaceInvalidChars: function checkAndReplaceInvalidChars(object, invalidChars, replacement) {
-            for (var index in invalidChars) {
-              if (!invalidChars.hasOwnProperty(index))
+          checkAndReplaceInvalidChars: function checkAndReplaceInvalidChars(object, validChars, replacement) {
+            for (var index in object) {
+              if (!object.hasOwnProperty(index))
                 continue;
-              object = _.replace(object, invalidChars[index], replacement);
+              if (!validChars.includes(object[index]))
+                object = _.replace(object, object[index], replacement);
             }
             return object;
           }
@@ -44023,12 +44251,6 @@
     ],
     249: [
       function (require, module, exports) {
-        /**!
- * Ono v2.2.1
- *
- * @link https://github.com/BigstickCarpet/ono
- * @license MIT
- */
         'use strict';
         var _typeof = typeof Symbol === 'function' && typeof Symbol.iterator === 'symbol' ? function (obj) {
             return typeof obj;
@@ -44072,6 +44294,7 @@
    * @returns {Error}
    */
           return function ono(err, props, message, params) {
+            // eslint-disable-line no-unused-vars
             var formattedMessage;
             var formatter = module.exports.formatter;
             if (typeof err === 'string') {
@@ -44155,7 +44378,6 @@
  * @returns {object}
  */
         function errorToJSON() {
-          // jshint -W040
           var json = {};
           // Get all the properties of this error
           var keys = Object.keys(this);
@@ -44177,7 +44399,6 @@
  * @returns {string}
  */
         function errorToString() {
-          // jshint -W040
           return JSON.stringify(this, null, 2).replace(/\\n/g, '\n');
         }
         /**
@@ -74834,7 +75055,7 @@ angular.module('ramlEditorApp').run([
   function ($templateCache) {
     'use strict';
     $templateCache.put('views/confirm-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>{{title}}</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    <p>{{message}}</p>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">{{dismissButtonLabel}}</button>\n' + '    <button type="button" class="btn btn-default" ng-if="canDiscard" ng-click="discard()">{{discardButtonLabel}}</button>\n' + '    <button type="button" class="btn" ng-class="closeButtonCssClass" ng-click="$close()" ng-auto-focus="true">{{closeButtonLabel}}</button>\n' + '  </div>\n' + '</form>\n');
-    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file (beta)</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="url" placeholder="http://petstore.swagger.io/v2/swagger.json">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'url\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.spec === \'OAS\'">\n' + '      <p>Note: Currently supports OAS (Swagger) v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
+    $templateCache.put('views/import-modal.html', '<form name="form" novalidate ng-submit="import(form)">\n' + '  <div class="modal-header">\n' + '    <h3>Import file</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body" ng-class="{\'has-error\': submittedType === mode.type && form.$invalid}">\n' + '    <div style="text-align: center; font-size: 2em; margin-bottom: 1em;" ng-show="importing">\n' + '      <i class="fa fa-spin fa-spinner"></i>\n' + '    </div>\n' + '\n' + '    <div class="form-group" style="margin-bottom: 10px;">\n' + '      <div style="float: left; width: 130px;">\n' + '        <select class="form-control" ng-model="mode" ng-options="option.name for option in options"></select>\n' + '      </div>\n' + '\n' + '      <div style="margin-left: 145px;" ng-switch="mode.type">\n' + '        <input id="swagger" name="swagger" type="url" ng-model="mode.value" class="form-control" required ng-switch-when="url" placeholder="http://petstore.swagger.io/v2/swagger.json">\n' + '\n' + '        <input id="file" name="file" type="file" ng-model="mode.value" class="form-control" required ng-switch-when="file" onchange="angular.element(this).scope().handleFileSelect(this)">\n' + '      </div>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'url\'">\n' + '      <p class="help-block" ng-show="form.swagger.$error.required || form.swagger.$error.url">Please provide a valid URL.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="submittedType === \'file\'">\n' + '      <p class="help-block" ng-show="form.file.$error.required">Please select a file to import.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.type === \'file\'">\n' + '      <p>If you want to upload multiple files, you can .zip them and import them in a single step.</p>\n' + '    </div>\n' + '\n' + '    <div ng-if="mode.spec === \'OAS\'">\n' + '      <p>Note: Currently supports OAS (Swagger) v2.0</p>\n' + '    </div>\n' + '  </div>\n' + '\n' + '  <div class="modal-footer" style="margin-top: 0;">\n' + '    <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>\n' + '    <button type="submit" class="btn btn-primary">Import</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/import-service-conflict-modal.html', '<form name="form" novalidate>\n' + '  <div class="modal-header">\n' + '    <h3>Path already exists</h3>\n' + '  </div>\n' + '\n' + '  <div class="modal-body">\n' + '    The path (<strong>{{path}}</strong>) already exists.\n' + '  </div>\n' + '\n' + '  <div class="modal-footer">\n' + '    <button type="button" class="btn btn-default pull-left" ng-click="skip()">Skip</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="keep()">Keep Both</button>\n' + '    <button type="submit" class="btn btn-primary" ng-click="replace()">Replace</button>\n' + '  </div>\n' + '</form>\n');
     $templateCache.put('views/menu/export-menu.tmpl.html', '<li ng-if="!xOasExport" role="export-zip" ng-click="exportZipFiles()">\n' + '  <a><i class="fa fa-download"></i>&nbsp;Export files</a>\n' + '</li>\n' + '\n' + '<a ng-if="xOasExport">\n' + '  <i class="fa fa-plus"></i>&nbsp;Export\n' + '  <i class="submenu-icon fa fa-caret-right"></i>\n' + '</a>\n' + '\n' + '<ul ng-if="xOasExport" role="menu-dropdown" class="submenu-item menu-item-context" ng-show="showExportMenu">\n' + '  <li role="export-zip" ng-click="exportZipFiles()"><a>&nbsp;Project Zip</a></li>\n' + '  <li role="export-json" ng-click="exportJsonFiles()"><a>&nbsp;OAS 2.0 JSON</a></li>\n' + '  <li role="export-yaml" ng-click="exportYamlFiles()"><a>&nbsp;OAS 2.0 YAML</a></li>\n' + '</ul>\n');
     $templateCache.put('views/menu/help-menu.tmpl.html', '<span role="help-button" class="menu-item-toggle" ng-click="openHelpContextMenu($event)">\n' + '  <i class="fa fa-question-circle"></i>&nbsp;Help\n' + '  <i class="menu-icon fa fa-caret-down"></i>\n' + '</span>\n' + '<ul role="menu-dropdown" class="menu-item-context" ng-show="menuContextHelpOpen">\n' + '  <li role="context-menu-item"><a role="raml-specification" href="https://github.com/raml-org/raml-spec/blob/master/versions/raml-10/raml-10.md" target="_blank">RAML Specification</a></li>\n' + '  <li rile="context-menu-item"><a role="raml-website" href="http://raml.org" target="_blank">raml.org Website</a></li>\n' + '  <li role="context-menu-item"><a role="report-raml-bug" href="https://github.com/mulesoft/api-designer/issues" target="_blank">Report a Bug</a></li>\n' + '  <li role="context-menu-item"><a role="raml-guide" href="http://raml.org/docs.html" target="_blank">Getting Started Guide</a></li>\n' + '  <li role="context-menu-item" ng-click="openHelpModal()"><a role="raml-about">About</a></li>\n' + '</ul>\n');
