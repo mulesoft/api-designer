@@ -86,7 +86,7 @@ angular.module('ramlEditorApp')
             _post('requestFile', {path: request.path, content: contents});
           }).catch(function (err) {
             console.error(err);
-            _post('requestFile', {path: request.path, content: ''});
+            _post('requestFile', {path: request.path, error: err});
           });
         }
       });

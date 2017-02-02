@@ -72671,7 +72671,7 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
             console.error(err);
             _post('requestFile', {
               path: request.path,
-              content: ''
+              error: err
             });
           });
         }
