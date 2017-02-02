@@ -17,7 +17,7 @@
       }
 
       function loadFile(file, defer) {
-        (file.loaded ? $q.when(file) : ramlRepository.loadFile({path: file.path}))
+        (file.loaded ? $q.when(file) : ramlRepository.loadFile(file))
           .then(function (loadedFile) {
             if (ramlEditorMainHelpers.isApiDefinition(loadedFile.contents)) {
               defer.resolve(loadedFile);
@@ -49,14 +49,7 @@
               throw new Error('ramlParser: loadPath: loadApi: content: ' + path + ': no such path');
             },
             contentAsync: function contentAsync(path) {
-              var file = ramlRepository.getByPath(path);
-              if (!file) {
-                return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
-              }
-
-              return (file.loaded ? $q.when(file) : ramlRepository.loadFile({path: path})).then(function (file) {
-                return file.contents;
-              });
+              return ramlRepository.getContentByPath(path);
             }
           }
         };

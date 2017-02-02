@@ -21,5 +21,5 @@ app.use(express.static(join(__dirname, '../dist')))
 app.listen(argv.p, function () {
   console.log('API designer running on port ' + argv.p + '...')
 
-  open('http://localhost:' + argv.p)
+  open('http://localhost:' + argv.p + '/?bypassProxy=true')
 })
