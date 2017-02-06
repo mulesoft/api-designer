@@ -26,7 +26,6 @@
                 });
 
                 if (ramlRepositoryConfig.reloadFilesOnSave){
-                  console.log(scope.homeDirectory);
                   $rootScope.$broadcast('event:raml-editor-file-selected', file);
                   file.dirty = false;
                   file.persisted = true;
