@@ -63313,8 +63313,6 @@ if (!window.Map) {
       this.dirty = false;
       this.persisted = true;
       this.loaded = false;
-      this.contents = undefined;
-      this.doc = undefined;
       return this;
     };
     function RamlDirectory(path, meta, children) {
@@ -63593,7 +63591,7 @@ if (!window.Map) {
          */
       service.saveAndUpdate = function saveAndUpdate(files, file, update) {
         if (update) {
-          return this.saveAndUpdateRoot(files).then(this.loadFile.bind(this, file));
+          return this.saveAndUpdateRoot(files).then(this.getByPath.bind(this, file.path)).then(this.loadFile.bind(this));
         } else {
           return saveFiles(files).then(function () {
             return file;
@@ -63603,7 +63601,7 @@ if (!window.Map) {
       service.saveAndUpdateRoot = function (files) {
         var _this = this;
         function updateRootDirectory(directory) {
-          return directory ? _this.updateDirectory(directory) : _this.loadAndUpdateDirectory();
+          return directory ? _this.updateDirectory(directory.children) : _this.loadAndUpdateDirectory();
         }
         return saveFiles(files).then(updateRootDirectory);
       };
@@ -63866,7 +63864,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
     return Promise.resolve(this.list(path));
   };
   this.exists = function (path) {
-    return this.getElement(path) ? true : false;
+    return !!this.getElement(path);
   };
   this.existsAsync = function (path) {
     return Promise.resolve(this.exists(path));
@@ -66953,9 +66951,10 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
     '$timeout',
     'config',
     'ramlRepository',
+    'ramlRepositoryConfig',
     'newNameModal',
     'importService',
-    function ($q, $window, $rootScope, $timeout, config, ramlRepository, newNameModal, importService) {
+    function ($q, $window, $rootScope, $timeout, config, ramlRepository, ramlRepositoryConfig, newNameModal, importService) {
       function Controller($scope) {
         var fileBrowser = this;
         var unwatchSelectedFile = angular.noop;
@@ -67057,10 +67056,13 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
         }
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file).then(function () {
-            return $rootScope.$broadcast('event:notification', {
+            $rootScope.$broadcast('event:notification', {
               message: 'File saved.',
               expires: true
             });
+            if (ramlRepositoryConfig.reloadFilesOnSave) {
+              $rootScope.$broadcast('event:raml-editor-file-select', file.path);
+            }
           });
           ;
         };
@@ -67231,34 +67233,18 @@ angular.module('ramlEditorApp').factory('ramlSuggest', [
 }());
 (function () {
   'use strict';
-  angular.module('ramlEditorApp').directive('ramlEditorSaveFileButton', [
-    '$rootScope',
-    'ramlRepository',
-    'ramlRepositoryConfig',
-    function ramlEditorSaveFileButton($rootScope, ramlRepository, ramlRepositoryConfig) {
-      return {
-        restrict: 'E',
-        replace: true,
-        template: '<li role="save-button" ng-click="saveFile()">' + '<a><i class="fa fa-save"></i>&nbsp;Save</a>' + '</li>',
-        link: function (scope) {
-          scope.saveFile = function saveFile() {
-            var file = scope.fileBrowser.selectedFile;
-            return ramlRepository.saveFile(file).then(function success(file) {
-              $rootScope.$broadcast('event:notification', {
-                message: 'File saved.',
-                expires: true
-              });
-              if (ramlRepositoryConfig.reloadFilesOnSave) {
-                $rootScope.$broadcast('event:raml-editor-file-selected', file);
-                file.dirty = false;
-                file.persisted = true;
-              }
-            });
-          };
-        }
-      };
-    }
-  ]);
+  angular.module('ramlEditorApp').directive('ramlEditorSaveFileButton', function ramlEditorSaveFileButton() {
+    return {
+      restrict: 'E',
+      replace: true,
+      template: '<li role="save-button" ng-click="saveFile()">' + '<a><i class="fa fa-save"></i>&nbsp;Save</a>' + '</li>',
+      link: function (scope) {
+        scope.saveFile = function saveFile() {
+          scope.fileBrowser.saveFile(scope.fileBrowser.selectedFile);
+        };
+      }
+    };
+  });
   ;
 }());
 (function () {

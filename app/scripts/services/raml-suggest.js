@@ -66,7 +66,7 @@ var FSResolver = function (homeDirectory, ramlRepository) {
 
   this.listAsync = function(path){ return Promise.resolve(this.list(path)); };
 
-  this.exists = function(path) { return this.getElement(path)? true : false; };
+  this.exists = function(path) { return !!this.getElement(path); };
 
   this.existsAsync = function(path) { return Promise.resolve(this.exists(path)); };
 

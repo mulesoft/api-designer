@@ -52,8 +52,6 @@
         this.dirty = false;
         this.persisted = true;
         this.loaded = false;
-        this.contents = undefined;
-        this.doc = undefined;
 
         return this;
       };
@@ -404,7 +402,8 @@
         service.saveAndUpdate = function saveAndUpdate(files, file, update) {
           if (update) {
             return this.saveAndUpdateRoot(files)
-              .then(this.loadFile.bind(this, file));
+              .then(this.getByPath.bind(this, file.path))
+              .then(this.loadFile.bind(this));
           } else {
             return saveFiles(files)
               .then(function () {
@@ -416,7 +415,7 @@
         service.saveAndUpdateRoot = function (files) {
           var _this = this;
           function updateRootDirectory(directory) {
-            return directory ? _this.updateDirectory(directory) : _this.loadAndUpdateDirectory();
+            return directory ? _this.updateDirectory(directory.children) : _this.loadAndUpdateDirectory();
           }
 
           return saveFiles(files)
@@ -443,9 +442,7 @@
             directory = fileSystem.saveAll(files.map(pathContentObject));
           } else {
             directory = Promise.all(files.map(saveSingleFile))
-              .then(function (results) {
-                return results[0];
-              });
+              .then(function (results) { return results[0]; });
           }
 
           return directory.then(clearFiles);

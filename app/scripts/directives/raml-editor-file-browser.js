@@ -9,6 +9,7 @@
       $timeout,
       config,
       ramlRepository,
+      ramlRepositoryConfig,
       newNameModal,
       importService
     ) {
@@ -149,10 +150,13 @@
         fileBrowser.saveFile = function saveFile(file) {
           ramlRepository.saveFile(file)
             .then(function () {
-              return $rootScope.$broadcast('event:notification', {
+              $rootScope.$broadcast('event:notification', {
                 message: 'File saved.',
                 expires: true
               });
+              if (ramlRepositoryConfig.reloadFilesOnSave){
+                $rootScope.$broadcast('event:raml-editor-file-select', file.path);
+              }
             })
           ;
         };

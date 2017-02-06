@@ -2,11 +2,7 @@
   'use strict';
 
   angular.module('ramlEditorApp')
-    .directive('ramlEditorSaveFileButton', function ramlEditorSaveFileButton(
-      $rootScope,
-      ramlRepository,
-      ramlRepositoryConfig
-    ) {
+    .directive('ramlEditorSaveFileButton', function ramlEditorSaveFileButton() {
       return {
         restrict: 'E',
         replace: true,
@@ -16,20 +12,7 @@
         '</li>',
         link:     function(scope) {
           scope.saveFile = function saveFile() {
-            var file = scope.fileBrowser.selectedFile;
-
-            return ramlRepository.saveFile(file)
-              .then(function success(file) {
-                $rootScope.$broadcast('event:notification', {
-                  message: 'File saved.',
-                  expires: true
-                });
-                if (ramlRepositoryConfig.reloadFilesOnSave){
-                  $rootScope.$broadcast('event:raml-editor-file-selected', file);
-                  file.dirty = false;
-                  file.persisted = true;
-                }
-              });
+            scope.fileBrowser.saveFile(scope.fileBrowser.selectedFile);
           };
         }
       };
