@@ -16,33 +16,6 @@
         <raml-editor></raml-editor>
     </div>
 
-<<<<<<< HEAD
-    <script src="scripts/api-designer-parser.js"></script>
-
-    <script>
-      (function(w) {
-        if (!w.Worker) return;
-
-        if (!w.RAML) w.RAML = {};
-        if (!w.RAML.Settings) w.RAML.Settings = {};
-        var settings = w.RAML.Settings;
-        if (!settings.bypassProxy) settings.bypassProxy = location.search.indexOf('bypassProxy=true') > -1;
-        settings.proxy = settings.bypassProxy ? '' : settings.proxy ? settings.proxy : '/proxy/';
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js#parser=./api-designer-parser.js&proxy=' + settings.proxy);
-=======
-        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js?parser=./api-designer-parser.js&proxy=' + settings.proxy);
->>>>>>> parent of 52ad6d6... Correct minification
-=======
-        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js?parser=/scripts/api-designer-parser.js&proxy=' + settings.proxy);
->>>>>>> parent of 1113882... Relative route to parser.js
-      })(window);
-    </script>
-
-=======
->>>>>>> parent of 5867a59... Permonce inprovements: move parse to web worker, avoid console and shelf render when closed
     <script src="scripts/api-designer-vendor.js"></script>
 
     <script src="scripts/api-designer.js"></script>

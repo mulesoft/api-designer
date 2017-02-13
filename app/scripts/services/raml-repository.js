@@ -373,19 +373,18 @@
 
         service.loadAndUpdateDirectory = function loadAndUpdateDirectory() {
           return fileSystem.directory(BASE_PATH)
-            .then(this.updateDirectory.bind(this));
+            .then(service.updateDirectory.bind(this));
         };
 
         service.updateDirectory = function updateDirectory(rootChildren) {
-          var _this = this;
           var shouldNotUpdate = function (element) {
             return element &&
               ((element.isDirectory && (element.containsDirtyChildren() || !element.containsFiles())) ||
               (!element.isDirectory && element.dirty));
           };
           var addElement = function (element) {
-            if (!!_this.getByPath(element.path)) { return; }
-            var parent = _this.getByPath(element.parent());
+            if (!!service.getByPath(element.path)) { return; }
+            var parent = service.getByPath(element.parent());
             parent.addChild(element);
           };
 
@@ -461,7 +460,7 @@
         };
 
         service.saveFile = function saveFile(file) {
-          return this.saveAndUpdate([file], file, ramlRepositoryConfig.reloadFilesOnSave);
+          return service.saveAndUpdate([file], file, ramlRepositoryConfig.reloadFilesOnSave);
         };
 
         service.saveAllFiles = function saveAllFiles(currentFile) {
@@ -470,7 +469,7 @@
               return !element.isDirectory && element.dirty;
             });
 
-          return this.saveAndUpdate(filesToBeSaved, currentFile, ramlRepositoryConfig.reloadFilesOnSave);
+          return service.saveAndUpdate(filesToBeSaved, currentFile, ramlRepositoryConfig.reloadFilesOnSave);
         };
 
         /**
@@ -480,9 +479,9 @@
 
         service.saveAndUpdate = function saveAndUpdate(files, file, update) {
           if (update) {
-            return this.saveAndUpdateRoot(files)
-              .then(this.getByPath.bind(this, file.path))
-              .then(this.loadFile.bind(this));
+            return service.saveAndUpdateRoot(files)
+              .then(service.getByPath.bind(this, file.path))
+              .then(service.loadFile.bind(this));
           } else {
             return saveFiles(files)
               .then(function () {
@@ -492,10 +491,8 @@
         };
 
         service.saveAndUpdateRoot = function (files) {
-          var _this = this;
-
           function updateRootDirectory(directory) {
-            return directory ? _this.updateDirectory(directory.children) : _this.loadAndUpdateDirectory();
+            return directory ? service.updateDirectory(directory.children) : service.loadAndUpdateDirectory();
           }
 
           return saveFiles(files)

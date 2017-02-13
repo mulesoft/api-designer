@@ -54,17 +54,7 @@
 
       function read$Ref($ref) {
         var path = $ref.path[0] === '/' ? $ref.path : ('/' + $ref.path);
-        var file = ramlRepository.getByPath(path);
-
-        if (file) {
-          return file.loaded ? $q.when(file) : ramlRepository.loadFile({path: path})
-            .then(function (file) {
-              return file.contents;
-            })
-          ;
-        }
-
-        return $q.reject('File with path "' + path + '" does not exist');
+        return ramlRepository.getContentByPath(path, true);
       }
     })
   ;

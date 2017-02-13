@@ -121,17 +121,7 @@
 
       $scope.loadRaml = function loadRaml(definition, location) {
         return ramlParser.loadPath(location, function contentAsync(path) {
-          var file = ramlRepository.getByPath(path);
-
-          if (file) {
-            return (file.loaded ? $q.when(file) : ramlRepository.loadFile({path: path}))
-              .then(function (file) {
-                return file.contents;
-              })
-              ;
-          }
-
-          return $q.reject('ramlEditorMain: loadRaml: contentAsync: ' + path + ': no such path');
+          return ramlRepository.getContentByPath(path, true);
         })
           .then(function (raml) {
             return ramlEditorMainHelpers.isApiDefinitionLike(definition) ? raml : null;
