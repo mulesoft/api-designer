@@ -53,7 +53,7 @@
         if (!settings.bypassProxy) settings.bypassProxy = location.search.indexOf('bypassProxy=true') > -1;
         settings.proxy = settings.bypassProxy ? '' : settings.proxy ? settings.proxy : '/proxy/';
 
-        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js?parser=./api-designer-parser.js&proxy=' + settings.proxy);
+        w.apiDesignerWorker = new Worker('scripts/api-designer-worker.js?parser=/scripts/api-designer-parser.js&proxy=' + settings.proxy);
       })(window);
     </script>
 
