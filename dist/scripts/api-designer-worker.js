@@ -21,7 +21,7 @@ var workerParameters = (function getQueryParams(qs) {
 
 console.log('Worker initialed with parameter:', workerParameters);
 if (!workerParameters) {
-  console.error('Missing Worker parameter in url hash');
+  console.error('Missing Worker parameters in url hash');
 }
 
 if (self.location.host.indexOf('localhost:9013') > -1) {

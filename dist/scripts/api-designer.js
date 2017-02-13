@@ -4312,6 +4312,9 @@ angular.module('ramlEditorApp').factory('ramlWorker', [
         $timeout.cancel(parseTimer);
         parseTimer = $timeout(function defer() {
           $scope.clearErrorMarks();
+          if (!currentFile || !$scope.fileParsable || currentFile.doc.getValue().trim() === '') {
+            return;
+          }
           $scope.parsing++;
           $scope.loadRaml(currentFile.doc.getValue(), currentFile.path).then(safeApplyWrapper($scope, function completeParse(api) {
             $scope.parsing--;
